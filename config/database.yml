@@ -84,7 +84,7 @@ production:
   primary: &primary_production
     <<: *default
     database: inventory_app_production
-    username: inventory_app
+    username: <%= ENV["INVENTORY_APP_DATABASE_USER"] %>
     password: <%= ENV["INVENTORY_APP_DATABASE_PASSWORD"] %>
   cache:
     <<: *primary_production
