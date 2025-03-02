@@ -83,18 +83,7 @@ test:
 production:
   primary: &primary_production
     <<: *default
-    database: inventory_app_production
+    database: dfcb0qfr8p5r0t
     username: <%= ENV["INVENTORY_APP_DATABASE_USER"] %>
     password: <%= ENV["INVENTORY_APP_DATABASE_PASSWORD"] %>
-  cache:
-    <<: *primary_production
-    database: inventory_app_production_cache
-    migrations_paths: db/cache_migrate
-  queue:
-    <<: *primary_production
-    database: inventory_app_production_queue
-    migrations_paths: db/queue_migrate
-  cable:
-    <<: *primary_production
-    database: inventory_app_production_cable
-    migrations_paths: db/cable_migrate
+
