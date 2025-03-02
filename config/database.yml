@@ -83,7 +83,7 @@ test:
 production:
   primary: &primary_production
     <<: *default
-    hostname: c9mq4861d16jlm.cluster-czrs8kj4isg7.us-east-1.rds.amazonaws.com
+    hostname: 52.45.114.134
     port: 5432
     database: dfcb0qfr8p5r0t
     username: <%= ENV["INVENTORY_APP_DATABASE_USER"] %>
