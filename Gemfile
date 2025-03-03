@@ -77,3 +77,5 @@ group :test do
   gem "guard-minitest", "2.4.6"
 end
 
+
+gem "devise", "~> 4.9"
