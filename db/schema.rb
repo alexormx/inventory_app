@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_03_03_054256) do
+ActiveRecord::Schema[8.0].define(version: 2025_03_05_055515) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -26,7 +26,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_03_03_054256) do
     t.index ["product_id"], name: "index_canceled_order_items_on_product_id"
   end
 
-  create_table "inventory", force: :cascade do |t|
+  create_table "inventories", force: :cascade do |t|
     t.bigint "product_id", null: false
     t.string "purchase_order_id"
     t.string "sale_order_id"
@@ -37,9 +37,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_03_03_054256) do
     t.text "notes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["product_id"], name: "index_inventory_on_product_id"
-    t.index ["purchase_order_id"], name: "index_inventory_on_purchase_order_id"
-    t.index ["sale_order_id"], name: "index_inventory_on_sale_order_id"
+    t.index ["product_id"], name: "index_inventories_on_product_id"
+    t.index ["purchase_order_id"], name: "index_inventories_on_purchase_order_id"
+    t.index ["sale_order_id"], name: "index_inventories_on_sale_order_id"
   end
 
   create_table "payments", force: :cascade do |t|
@@ -88,6 +88,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_03_03_054256) do
     t.text "notes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.decimal "shipping_cost", precision: 10, scale: 2, default: "0.0", null: false
+    t.decimal "tax_cost", precision: 10, scale: 2, default: "0.0", null: false
+    t.decimal "other_cost", precision: 10, scale: 2, default: "0.0", null: false
     t.index ["user_id"], name: "index_purchase_orders_on_user_id"
   end
 
@@ -111,7 +114,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_03_03_054256) do
   end
 
   create_table "shipments", force: :cascade do |t|
-    t.string "order_id", null: false
     t.string "tracking_number", null: false
     t.string "carrier", null: false
     t.string "status", default: "Pending", null: false
@@ -120,6 +122,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_03_03_054256) do
     t.datetime "last_update", precision: nil, default: -> { "CURRENT_TIMESTAMP" }, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "sale_order_id", null: false
   end
 
   create_table "users", force: :cascade do |t|
@@ -145,13 +148,14 @@ ActiveRecord::Schema[8.0].define(version: 2025_03_03_054256) do
 
   add_foreign_key "canceled_order_items", "products"
   add_foreign_key "canceled_order_items", "sale_orders"
-  add_foreign_key "inventory", "products"
-  add_foreign_key "inventory", "purchase_orders"
-  add_foreign_key "inventory", "sale_orders"
+  add_foreign_key "inventories", "products"
+  add_foreign_key "inventories", "purchase_orders"
+  add_foreign_key "inventories", "sale_orders"
   add_foreign_key "payments", "sale_orders"
   add_foreign_key "products", "users", column: "supplier_id"
   add_foreign_key "purchase_orders", "users"
   add_foreign_key "sale_orders", "payments"
   add_foreign_key "sale_orders", "shipments"
   add_foreign_key "sale_orders", "users"
+  add_foreign_key "shipments", "sale_orders"
 end

@@ -1,81 +1,70 @@
 source "https://rubygems.org"
 
-# set ruby version 3.2.2
+# ✅ Define Ruby version
 ruby "3.2.2"
 
-# Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
+# ✅ Core Rails Framework
 gem "rails", "~> 8.0.1"
-# The modern asset pipeline for Rails [https://github.com/rails/propshaft]
-gem "propshaft"
-# Use postgresql as the database for Active Record
-gem "pg", "~> 1.1"
-# Use the Puma web server [https://github.com/puma/puma]
-gem "puma", ">= 5.0"
-# Use JavaScript with ESM import maps [https://github.com/rails/importmap-rails]
-gem "importmap-rails"
-# Hotwire's SPA-like page accelerator [https://turbo.hotwired.dev]
-gem "turbo-rails"
-# Hotwire's modest JavaScript framework [https://stimulus.hotwired.dev]
-gem "stimulus-rails"
-# Build JSON APIs with ease [https://github.com/rails/jbuilder]
-gem "jbuilder"
-# add tailwindcss-rails gem
-gem "tailwindcss-rails"
-#add faker gem
+
+# ✅ Database
+gem "pg", "~> 1.1"  # PostgreSQL as the database for Active Record
+
+# ✅ Web Server
+gem "puma", ">= 5.0"  # Puma web server
+
+# ✅ Asset Pipeline & Frontend
+gem "propshaft"  # Modern asset pipeline for Rails
+gem "tailwindcss-rails"  # Tailwind CSS for styling
+
+# ✅ Hotwire (Turbo + Stimulus)
+gem "importmap-rails"  # ESM import maps for JavaScript
+gem "turbo-rails"  # SPA-like page accelerator
+gem "stimulus-rails"  # JavaScript framework
+
+# ✅ JSON API Support
+gem "jbuilder"  # Build JSON APIs
+
+# ✅ Authentication
+gem "devise", "~> 4.9"  # User authentication and session handling
+
+# ✅ Caching & Performance
+gem "solid_cache"  # Database-backed caching
+gem "solid_queue"  # Background job system
+gem "solid_cable"  # WebSocket connection for ActionCable
+gem "bootsnap", require: false  # Improves boot times through caching
+
+# ✅ Deployment & Production Enhancements
+gem "kamal", require: false  # Deploy Rails app as a Docker container
+gem "thruster", require: false  # HTTP caching/compression with Puma
+
+# ✅ Faker for Testing & Seeding
 gem "faker"
 
+# ✅ Timezone Handling (Windows-specific)
+gem "tzinfo-data", platforms: %i[windows jruby]
 
-# Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
-# gem "bcrypt", "~> 3.1.7"
+# ✅ Image Processing (Commented Out but Available)
+# gem "image_processing", "~> 1.2"  # ActiveStorage image transformations
 
-# Windows does not include zoneinfo files, so bundle the tzinfo-data gem
-gem "tzinfo-data", platforms: %i[ windows jruby ]
-
-# Use the database-backed adapters for Rails.cache, Active Job, and Action Cable
-gem "solid_cache"
-gem "solid_queue"
-gem "solid_cable"
-
-# Reduces boot times through caching; required in config/boot.rb
-gem "bootsnap", require: false
-
-# Deploy this application anywhere as a Docker container [https://kamal-deploy.org]
-gem "kamal", require: false
-
-# Add HTTP asset caching/compression and X-Sendfile acceleration to Puma [https://github.com/basecamp/thruster/]
-gem "thruster", require: false
-
-# Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
-# gem "image_processing", "~> 1.2"
-
+# 🔹 **Development & Testing Group**
 group :development, :test do
-  # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
-  gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"
-
-  # Static analysis for security vulnerabilities [https://brakemanscanner.org/]
-  gem "brakeman", require: false
-
-  # Omakase Ruby styling [https://github.com/rails/rubocop-rails-omakase/]
-  gem "rubocop-rails-omakase", require: false
+  gem "debug", platforms: %i[mri windows], require: "debug/prelude"  # Debugging
+  gem "brakeman", require: false  # Security vulnerability scanner
+  gem "rubocop-rails-omakase", require: false  # Omakase Ruby style guide
+  gem "dotenv-rails"  # Manage environment variables securely
 end
 
+# 🔹 **Development Group**
 group :development do
-  # Use console on exceptions pages [https://github.com/rails/web-console]
-  gem "web-console"
-  gem 'dotenv-rails'
+  gem "web-console"  # Rails console in browser for debugging
 end
 
+# 🔹 **Testing Group**
 group :test do
-  # Use system testing [https://guides.rubyonrails.org/testing.html#system-testing]
-  gem "capybara"
-  gem "selenium-webdriver"
-  gem "webdrivers", "5.0.0"
-  gem "rails-controller-testing", "1.0.5"
-  gem "minitest", "5.15.0"
-  gem "minitest-reporters", "1.5.0"
-  gem "guard", "2.18.0"
-  gem "guard-minitest", "2.4.6"
+  gem "capybara"  # Feature test framework (UI testing)
+  gem "selenium-webdriver"  # Browser automation for system tests
+  gem "webdrivers", "5.0.0"  # Keeps browser drivers up-to-date
+  gem "rails-controller-testing", "1.0.5"  # Helps test controllers
+  gem "rspec-rails"  # RSpec testing framework
+  gem "shoulda-matchers", "~> 5.0"  # Simplifies model testing
 end
-
-
-gem "devise", "~> 4.9"

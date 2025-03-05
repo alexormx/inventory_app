@@ -4,8 +4,6 @@ class CreateSaleOrders < ActiveRecord::Migration[8.0]
       t.string :id, primary_key: true  # Define custom primary key
       t.references :user, null: false, foreign_key: true
       t.date :order_date, null: false
-      t.references :payment, foreign_key: true, null: false
-      t.references :shipment, foreign_key: true, null: false
       t.decimal :subtotal, precision: 10, scale: 2, null: false
       t.decimal :tax_rate, precision: 5, scale: 2, null: false
       t.decimal :total_tax, precision: 10, scale: 2, null: false
