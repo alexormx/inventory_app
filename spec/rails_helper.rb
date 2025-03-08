@@ -74,4 +74,10 @@ RSpec.configure do |config|
       with.library :rails
     end
   end
+  # FactoryBot Configuration
+  config.include FactoryBot::Syntax::Methods
+  # Devise Configuration
+  config.include Devise::Test::IntegrationHelpers, type: :system
+  Capybara.javascript_driver = :selenium_chrome_headless
+
 end

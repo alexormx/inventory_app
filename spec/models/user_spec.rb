@@ -18,6 +18,10 @@ RSpec.describe User, type: :model do
     # ✅ Role validations
     it { should validate_presence_of(:role) }
     it { should validate_inclusion_of(:role).in_array(%w[customer supplier admin]) }
+    it "rejects invalid role values" do
+      user = User.new(email: "user@test.com", password: "password", role: "invalid_role")
+      expect(user).to_not be_valid
+    end
 
     # ✅ Name validations
     it { should allow_value(nil).for(:name) }
@@ -35,11 +39,18 @@ RSpec.describe User, type: :model do
     # ✅ Discount rate validations
     it { should allow_value(nil).for(:discount_rate) }
     it { should validate_numericality_of(:discount_rate).is_greater_than_or_equal_to(0) }
-
+    it { should validate_numericality_of(:discount_rate).is_less_than_or_equal_to(100) }
   end
 
   describe "Associations" do
     it { should have_many(:purchase_orders).dependent(:restrict_with_error) }
     it { should have_many(:sale_orders).dependent(:restrict_with_error) }
+  end
+
+  describe "Default values" do
+    it "sets default role to customer" do
+      user = User.new(email: "test@example.com", password: "password123")
+      expect(user.role).to eq("customer")
+    end
   end
 end

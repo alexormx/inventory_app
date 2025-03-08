@@ -45,6 +45,7 @@ gem "tzinfo-data", platforms: %i[windows jruby]
 
 # ✅ Image Processing (Commented Out but Available)
 # gem "image_processing", "~> 1.2"  # ActiveStorage image transformations
+gem 'devise-i18n', '~> 1.12'  # Devise internationalization
 
 # 🔹 **Development & Testing Group**
 group :development, :test do
@@ -52,6 +53,7 @@ group :development, :test do
   gem "brakeman", require: false  # Security vulnerability scanner
   gem "rubocop-rails-omakase", require: false  # Omakase Ruby style guide
   gem "dotenv-rails"  # Manage environment variables securely
+  gem "factory_bot_rails"  # Define test data
 end
 
 # 🔹 **Development Group**
