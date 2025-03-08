@@ -8,11 +8,11 @@ class User < ApplicationRecord
   has_many :sale_orders, foreign_key: :user_id, dependent: :restrict_with_error
 
   validates :role, presence: true, inclusion: { in: %w[customer supplier admin] }
-  validates :name, presence: true, length: { maximum: 255 }
+  validates :name, length: { maximum: 255 }
   validates :email, presence: true, uniqueness: true, format: { with: URI::MailTo::EMAIL_REGEXP }
-  validates :contact_name, presence: true, length: { maximum: 100 }
-  validates :phone, presence: true, format: { with: /\A\+?\d{7,15}\z/, message: "must be a valid phone number" }
-  validates :address, presence: true
+  # Optional fields
+  validates :phone, format: { with: /\A\d{10}\z/, message: "Tiene que ser un numer de 10 digitos" }, allow_blank: true
+
   validates :discount_rate, numericality: { greater_than_or_equal_to: 0, less_than_or_equal_to: 100 }, allow_nil: true
 
   before_destroy :check_dependencies
