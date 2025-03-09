@@ -53,4 +53,5 @@ RSpec.describe User, type: :model do
       expect(user.role).to eq("customer")
     end
   end
+  
 end

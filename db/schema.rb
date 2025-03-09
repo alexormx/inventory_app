@@ -97,8 +97,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_03_08_030329) do
   create_table "sale_orders", id: :string, force: :cascade do |t|
     t.bigint "user_id", null: false
     t.date "order_date", null: false
-    t.bigint "payment_id", null: false
-    t.bigint "shipment_id", null: false
     t.decimal "subtotal", precision: 10, scale: 2, null: false
     t.decimal "tax_rate", precision: 5, scale: 2, null: false
     t.decimal "total_tax", precision: 10, scale: 2, null: false
@@ -108,8 +106,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_03_08_030329) do
     t.text "notes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["payment_id"], name: "index_sale_orders_on_payment_id"
-    t.index ["shipment_id"], name: "index_sale_orders_on_shipment_id"
     t.index ["user_id"], name: "index_sale_orders_on_user_id"
   end
 
@@ -153,8 +149,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_03_08_030329) do
   add_foreign_key "payments", "sale_orders"
   add_foreign_key "products", "users", column: "supplier_id"
   add_foreign_key "purchase_orders", "users"
-  add_foreign_key "sale_orders", "payments"
-  add_foreign_key "sale_orders", "shipments"
   add_foreign_key "sale_orders", "users"
   add_foreign_key "shipments", "sale_orders"
 end

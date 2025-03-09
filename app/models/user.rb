@@ -17,7 +17,12 @@ class User < ApplicationRecord
 
   before_destroy :check_dependencies
 
-  private
+  # Roles
+  def admin?
+    role == 'admin'
+  end
+  
+  private 
 
   def check_dependencies
     if purchase_orders.exists? || sale_orders.exists?
