@@ -1,253 +1,164 @@
+# 📌 **Rails Inventory WebApp Progress Update**
 
-# 📌 **Rails Database Migration, Models, RSpec Testing & Gemfile Summary**
-
-## **1️⃣ Overview**
-This document outlines all the steps taken to set up and migrate the database for the Rails 8.0.1 application, including Devise authentication, database structure, model relationships, RSpec testing, and required gems.
-
----
-
-## **2️⃣ Required Gems & Their Purpose**
-
-### **🔹 Core Framework & Dependencies**
-| Gem | Version | Purpose & Usage |
-|------|---------|----------------|
-| `rails` | `~> 8.0.1` | Core framework for building web applications in Ruby. |
-| `puma` | `>= 5.0` | High-performance web server for running Rails applications. |
-| `pg` | `~> 1.1` | PostgreSQL adapter for Active Record, used as the database. |
-| `propshaft` | | Modern asset pipeline for Rails applications. |
-
-### **🔹 Frontend & JavaScript Support**
-| Gem | Version | Purpose & Usage |
-|------|---------|----------------|
-| `importmap-rails` | | Enables JavaScript ESM import maps without Webpack. |
-| `turbo-rails` | | Hotwire’s Turbo for fast page updates and SPA-like navigation. |
-| `stimulus-rails` | | JavaScript framework for managing UI interactions. |
-| `tailwindcss-rails` | | Integrates Tailwind CSS for styling Rails applications. |
-
-### **🔹 Authentication & Security**
-| Gem | Version | Purpose & Usage |
-|------|---------|----------------|
-| `devise` | `~> 4.9` | User authentication, session management, and password recovery. |
-| `brakeman` | | Security scanner for finding vulnerabilities in Rails apps. |
-
-### **🔹 Caching & Performance**
-| Gem | Version | Purpose & Usage |
-|------|---------|----------------|
-| `solid_cache` | | Caching mechanism for Rails applications. |
-| `solid_queue` | | Background job system for handling asynchronous tasks. |
-| `solid_cable` | | WebSockets for real-time features using ActionCable. |
-| `bootsnap` | | Caches expensive operations to reduce application boot time. |
-
-### **🔹 Database & API Support**
-| Gem | Version | Purpose & Usage |
-|------|---------|----------------|
-| `jbuilder` | | Allows easy generation of JSON APIs in Rails. |
-
-### **🔹 Deployment & Production Enhancements**
-| Gem | Version | Purpose & Usage |
-|------|---------|----------------|
-| `kamal` | | Docker-based deployment tool for Rails applications. |
-| `thruster` | | Adds HTTP caching, compression, and X-Sendfile acceleration. |
-
-### **🔹 Development & Debugging**
-| Gem | Version | Purpose & Usage |
-|------|---------|----------------|
-| `debug` | | Debugging tool for Rails applications. |
-| `dotenv-rails` | | Manages environment variables securely. |
-| `rubocop-rails-omakase` | | Omakase-style Ruby linting and code style enforcement. |
-| `web-console` | | Allows interactive Rails console access from error pages. |
-
-### **🔹 Testing Frameworks**
-| Gem | Version | Purpose & Usage |
-|------|---------|----------------|
-| `rspec-rails` | | Core RSpec framework for unit testing in Rails. |
-| `capybara` | | Feature testing framework for simulating user interactions. |
-| `selenium-webdriver` | | Enables browser automation for system tests. |
-| `webdrivers` | `5.0.0` | Manages and updates browser drivers automatically. |
-| `rails-controller-testing` | `1.0.5` | Adds support for controller tests in RSpec. |
-| `shoulda-matchers` | `~> 5.0` | Simplifies testing of models and associations. |
+## 🚀 **Project Overview**
+This document provides an updated progress report on the Rails Inventory WebApp, including completed tasks, current state, and next steps. The project is being developed using Rails 8.0.1, Ruby 3.2.2, and PostgreSQL, with Devise for authentication and Bootstrap for styling. The development follows an agile approach, with tasks broken down into sprints.
 
 ---
 
-## **3️⃣ Database Tables Created & Adjustments**
-### **✅ Tables Created:**
+## ✅ **Completed Tasks (Sprint 1)**
 
-1. **`users`**
-   - **Devise authentication implemented.**
-   - **Role-based authorization:** Roles include `admin`, `customer`, and `supplier`.
-   - **Wholesale customers:** Introduced `discount_rate` for wholesale customers.
-   - **Column `user_type` renamed to `role` for clarity.**
-   - **Constraints:**
-     - `email`: unique, required
-     - `name`: required
-     - `role`: required, default `customer`
+### **Task 1.1: Configure Devise (Authentication)**
+- **Status:** Completed
+- **Details:**
+  - Devise installed and configured.
+  - Custom fields (`role`, `name`, `contact_name`, `phone`, `address`) integrated with Devise.
+  - Roles (`admin`, `customer`) implemented and validated.
+  - RSpec tests for user sign-up, login/logout, and role assignment implemented and passing.
 
-2. **`products`**
-   - **New columns:**
-     - `discount_limited_stock` to control how many products can be sold at a discounted rate.
-     - `maximum_discount` to define the highest possible discount.
-     - `barcode` is now optional.
-   - **Constraints:**
-     - `product_sku`: unique, required
-     - `selling_price`: required
-     - `supplier_id`: foreign key references `users`
-
-3. **`inventory`**
-   - **Each row represents an individual product unit.**
-   - Tracks **purchase cost and sale cost per item**.
-   - **Status-based tracking:** `Available`, `Reserved`, `Sold`, `Lost`, `Damaged`, `Scrap`, `In Transit`.
-   - **Stores `purchase_order_id` and `sale_order_id` instead of separate order items tables.**
-   - **Constraints:**
-     - `product_id`: required, foreign key
-     - `purchase_cost`: required, numeric
-     - `status`: required
-
-4. **`purchase_orders`**
-   - **Handles supplier orders.**
-   - **Backorders are supported.**
-   - **Purchase orders split when partial shipments occur.**
-   - **Updated Columns:**
-     - Added `shipping_cost`, `tax_cost`, and `other_cost`.
-   - **Constraints:**
-     - `id`: primary key (string)
-     - `user_id`: foreign key
-     - `subtotal`, `total_order_cost`: required, numeric
-     - `status`: required
-
-5. **`sale_orders`**
-   - **Handles customer orders.**
-   - **Linked to `payments` and `shipments` tables.**
-   - **Constraints:**
-     - `id`: primary key (string)
-     - `user_id`: foreign key
-     - `subtotal`, `total_order_value`: required, numeric
-     - `status`: required
-
-6. **`payments`**
-   - **Tracks customer payments.**
-   - **New `status` column** to track `Pending`, `Completed`, `Refunded`, etc.
-   - **Constraints:**
-     - `amount`: required, numeric
-     - `payment_method`: required
-     - `status`: required
-     - `sale_order_id`: foreign key (added in separate migration)
-
-7. **`shipments`**
-   - **Tracks shipments for both sales and purchases.**
-   - **New columns:** `last_update` (timestamp) & `status` (e.g., Pending, Shipped, Delivered).
-   - **Constraints:**
-     - `sale_order_id`: required, foreign key
-     - `tracking_number`, `carrier`: required
-
-8. **`canceled_order_items`**
-   - **Tracks items from canceled orders, preserving historical pricing data.**
-   - **Includes `sale_price` at the time of cancellation.**
-   - **Constraints:**
-     - `sale_order_id`: required, foreign key
-     - `product_id`: required, foreign key
-     - `canceled_quantity`: required, numeric
+### **Task 1.2: Set Up Admin Dashboard Controller**
+- **Status:** Completed
+- **Details:**
+  - Admin dashboard controller created under the `admin` namespace.
+  - Routes configured for admin dashboard access.
+  - Authorization logic implemented to restrict access to admin users only.
+  - RSpec tests for dashboard access control (admin vs. non-admin) implemented and passing.
 
 ---
 
-## **3️⃣ Model Implementations & Associations**
+## 📌 **Current State**
 
-### **✅ Key Considerations in Models**
-- **Explicit Foreign Key Handling:**
-  - Used `belongs_to` with `foreign_key: "column_name"` where necessary.
-- **Validation of Required Fields:**
-  - Ensured `presence: true` for critical attributes.
-- **Restrict Delete Dependencies:**
-  - `dependent: :restrict_with_error` used to prevent accidental deletions.
+### **Core Framework & Setup**
+- **Rails Version:** 8.0.1
+- **Ruby Version:** 3.2.2
+- **Database:** PostgreSQL
+- **Authentication:** Devise with role-based access control (admin, customer).
 
-### **✅ Model List**
+### **Admin Dashboard**
+- **Controller:** `Admin::DashboardController` with `index` action.
+- **Authorization:** Only admin users can access the dashboard.
+- **Routes:** Namespaced under `admin` with `get 'dashboard', to: 'dashboard#index'`.
 
-1. **`User`**
-   - **Associations:**
-     - `has_many :purchase_orders`
-     - `has_many :sale_orders`
-   - **Validations:**
-     - `email`: required, unique
-     - `name`: required
-     - `role`: required
-
-2. **`Product`**
-   - **Associations:**
-     - `belongs_to :supplier, class_name: "User"`
-   - **Validations:**
-     - `product_sku`, `product_name`, `selling_price`: required
-
-3. **`PurchaseOrder`**
-   - **Associations:**
-     - `belongs_to :user`
-     - `has_many :inventory`
-   - **Validations:**
-     - `order_date`, `subtotal`, `total_order_cost`, `status`: required
-
-4. **`SaleOrder`**
-   - **Associations:**
-     - `belongs_to :user`
-     - `has_one :shipment`
-     - `has_one :payment`
-   - **Validations:**
-     - `order_date`, `total_order_value`: required
-
-5. **`Payment`**
-   - **Associations:**
-     - `belongs_to :sale_order`
-   - **Validations:**
-     - `amount`, `payment_method`, `status`: required
-
-6. **`Shipment`**
-   - **Associations:**
-     - `belongs_to :sale_order`
-   - **Validations:**
-     - `tracking_number`, `carrier`, `status`: required
-
-7. **`Inventory`**
-   - **Associations:**
-     - `belongs_to :product`
-     - `belongs_to :purchase_order, optional: true`
-     - `belongs_to :sale_order, optional: true`
-   - **Validations:**
-     - `purchase_cost`, `status`: required
-
-8. **`CanceledOrderItem`**
-   - **Associations:**
-     - `belongs_to :sale_order`
-     - `belongs_to :product`
-   - **Validations:**
-     - `canceled_quantity`, `sale_price_at_cancellation`: required
+### **Testing**
+- **RSpec Tests:**
+  - Authentication: User registration, login/logout, role assignment.
+  - Dashboard Access: Admin access allowed, non-admin access denied.
+- **Capybara Tests:** Basic UI integration tests for Bootstrap styles and navigation links.
 
 ---
 
-## **4️⃣ RSpec Testing Summary**
+## 📌 **Next Steps (Sprint 1 Remaining Tasks)**
 
-### **✅ Key Issues & Fixes**
-1. **Unknown Validator `DateValidator` in Shipment Model** 🚨 → Removed incorrect validator.
-2. **Missing Database Columns in PurchaseOrder Tests** 🚨 → Updated schema, ensured correct column names.
-3. **User Email Uniqueness Validation Failure** 🚨 → Added `before do` block to create a valid user before testing uniqueness.
+### **Task 1.3: Choose & Set Up CSS Framework**
+- **Status:** In Progress
+- **Next Steps:**
+  - Add Bootstrap gem: `bundle add bootstrap`.
+  - Import Bootstrap in `application.scss`: `@import "bootstrap";`.
+  - Test Bootstrap installation by adding a simple styled button or navbar to the admin dashboard view.
 
-### **✅ Models Tested in RSpec**
-- User
-- Product
-- PurchaseOrder
-- SaleOrder
-- Payment
-- Shipment
-- Inventory
-- CanceledOrderItem
+### **Task 1.4: Admin Dashboard Basic View**
+- **Status:** Not Started
+- **Next Steps:**
+  - Create a clear and simple admin dashboard layout (`app/views/admin/dashboard/index.html.erb`).
+  - Integrate responsive layout using Bootstrap classes.
+  - Add navigation links for future features (Products, Inventory, Sales Orders, etc.).
 
-All models successfully pass validation, association, and custom logic tests. 🎉
+### **Task 1.5: Push Changes to GitHub & Deploy to Heroku**
+- **Status:** Not Started
+- **Next Steps:**
+  - Push the `feature/admin-dashboard` branch to GitHub.
+  - Merge to `main` via Pull Request.
+  - Deploy to Heroku:
+    ```bash
+    git checkout main
+    git pull origin main
+    git push heroku main
+    heroku run rails db:migrate
+    ```
 
 ---
 
-## **5️⃣ Next Steps**
-✅ Finalize integration testing with RSpec.
-✅ Push latest updates to Git & deploy.
-✅ Optimize queries for better performance.
+## 📌 **Sprint 1 Test Cases (RSpec)**
 
-🚀 **Database, models, and testing are now fully set up!** 🚀
+### **Authentication Tests (Devise)**
+- User registration, login, logout.
+- Role assignment (admin vs. customer).
 
+### **Dashboard Access Control Tests**
+- Admin user access allowed.
+- Non-admin users denied (redirected or shown alert).
 
+### **Basic UI Integration Tests (Capybara)**
+- Verify Bootstrap styles appear correctly.
+- Verify all navigation links are present.
 
+---
 
+## 📌 **Sprint Completion Criteria**
+
+- **Authentication & Authorization:** Fully operational.
+- **Admin Dashboard:** Accessible only to admin users.
+- **Bootstrap UI Framework:** Successfully integrated and functional.
+- **Testing:** All related tests passing.
+- **Deployment:** Changes pushed to GitHub and deployed successfully on Heroku.
+
+---
+
+## 📌 **Next Suggested Sprints**
+
+### **Sprint 2: Admin Product Management (CRUD Actions and Views)**
+- **Objective:** Implement CRUD operations for product management in the admin dashboard.
+- **Tasks:**
+  - Create database migrations for products.
+  - Implement Product model with validations.
+  - Create `Admin::ProductsController` with CRUD actions.
+  - Implement views for product management.
+  - Write RSpec tests for Product model and controller.
+
+### **Sprint 3: Inventory Management (Individual Item Tracking)**
+- **Objective:** Implement inventory management features, including individual item tracking.
+- **Tasks:**
+  - Create database migrations for inventory.
+  - Implement Inventory model with validations.
+  - Create `Admin::InventoryController` with CRUD actions.
+  - Implement views for inventory management.
+  - Write RSpec tests for Inventory model and controller.
+
+### **Sprint 4: Orders Management (Sales & Purchase)**
+- **Objective:** Implement order management features for sales and purchase orders.
+- **Tasks:**
+  - Create database migrations for orders.
+  - Implement Order models (SalesOrder, PurchaseOrder) with validations.
+  - Create `Admin::OrdersController` with CRUD actions.
+  - Implement views for order management.
+  - Write RSpec tests for Order models and controller.
+
+### **Sprint 5: Payments & Shipments Tracking**
+- **Objective:** Implement payment and shipment tracking features.
+- **Tasks:**
+  - Create database migrations for payments and shipments.
+  - Implement Payment and Shipment models with validations.
+  - Create `Admin::PaymentsController` and `Admin::ShipmentsController` with CRUD actions.
+  - Implement views for payment and shipment tracking.
+  - Write RSpec tests for Payment and Shipment models and controllers.
+
+### **Sprint 6 & 7: Customer Interface (Catalog & Shopping Cart)**
+- **Objective:** Implement customer-facing features, including product catalog and shopping cart.
+- **Tasks:**
+  - Create database migrations for customer-related features.
+  - Implement Customer model with validations.
+  - Create `Customer::ProductsController` and `Customer::CartController` with necessary actions.
+  - Implement views for product catalog and shopping cart.
+  - Write RSpec tests for Customer models and controllers.
+
+### **Sprint 8: Security & Performance Optimization, Final Deployment**
+- **Objective:** Optimize security and performance, and finalize deployment.
+- **Tasks:**
+  - Implement security best practices (e.g., SSL, secure headers).
+  - Optimize database queries and application performance.
+  - Conduct final testing and bug fixes.
+  - Deploy the final version to Heroku.
+
+---
+
+## 🚀 **Next step we will start with Sprint 2**
+Let's proceed with **Sprint 2: Admin Product Management**. If you have any questions or need further adjustments, please let me know! 🚀

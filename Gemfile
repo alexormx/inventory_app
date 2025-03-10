@@ -14,7 +14,6 @@ gem "puma", ">= 5.0"  # Puma web server
 
 # ✅ Asset Pipeline & Frontend
 gem "propshaft"  # Modern asset pipeline for Rails
-gem "tailwindcss-rails"  # Tailwind CSS for styling
 
 # ✅ Hotwire (Turbo + Stimulus)
 gem "importmap-rails"  # ESM import maps for JavaScript
@@ -45,7 +44,15 @@ gem "tzinfo-data", platforms: %i[windows jruby]
 
 # ✅ Image Processing (Commented Out but Available)
 # gem "image_processing", "~> 1.2"  # ActiveStorage image transformations
+
+# ✅ Internationalization for Devise
 gem 'devise-i18n', '~> 1.12'  # Devise internationalization
+
+# ✅ Bootstrap framework for styling
+gem "bootstrap", "~> 5.3"
+
+# ✅ Sass for Bootstrap
+gem "dartsass-rails", "~> 0.5.1"
 
 # 🔹 **Development & Testing Group**
 group :development, :test do
@@ -70,3 +77,4 @@ group :test do
   gem "rspec-rails"  # RSpec testing framework
   gem "shoulda-matchers", "~> 5.0"  # Simplifies model testing
 end
+
