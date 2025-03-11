@@ -49,7 +49,6 @@ gem "tzinfo-data", platforms: %i[windows jruby]
 gem 'devise-i18n', '~> 1.12'  # Devise internationalization
 
 # ✅ Bootstrap framework for styling
-gem "bootstrap", "~> 5.3"
 
 # ✅ Sass for Bootstrap
 gem "dartsass-rails", "~> 0.5.1"
@@ -78,3 +77,4 @@ group :test do
   gem "shoulda-matchers", "~> 5.0"  # Simplifies model testing
 end
 
+gem "bulma-rails", "~> 1.0"

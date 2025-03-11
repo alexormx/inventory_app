@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Inventory App</title>
+  <%= csrf_meta_tags %>
+  <%= csp_meta_tag %>
+
+  <!-- ✅ FontAwesome via CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- ✅ Bulma -->
+  <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
+  <%= javascript_include_tag "application", "data-turbo-track": "reload", defer: true %>
+  <%= javascript_importmap_tags %>
+
+</head>
+<body>
+
+  <!-- ✅ NAVBAR -->
+  <nav class="navbar has-background-light py-2">
+    <div class="container">
+      <!-- ✅ Logo -->
+      <div class="navbar-brand">
+        <%= link_to root_path, class: "navbar-item" do %>
+          <%= image_tag "logo.png", alt: "Your Logo"%>
+        <% end %>
+        
+        <!-- ✅ Mobile Burger -->
+        <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-action="click->navbar#toggle">
+          <span aria-hidden="true"></span>
+          <span aria-hidden="true"></span>
+          <span aria-hidden="true"></span>
+        </a>
+      </div>
+
+      <!-- ✅ Navbar Menu -->
+      <div class="navbar-menu">
+        
+        <!-- ✅ Search Bar Centered -->
+        <div class="navbar-start is-flex-grow-1">
+          <div class="navbar-item is-expanded">
+            <form class="field has-addons is-flex-grow-1" style="width: 100%;">
+              <div class="control is-expanded">
+                <input class="input" type="text" placeholder="Buscar productos, marcas y más...">
+              </div>
+              <div class="control">
+                <button class="button is-info">
+                  <i class="fa fa-search"></i>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- ✅ User & Cart Menu -->
+        <div class="navbar-end">
+          <div class="navbar-item has-dropdown is-hoverable">
+            <a class="navbar-link has-text-white">
+              <i class="fa-solid fa-user"></i> Mi cuenta
+            </a>
+            <div class="navbar-dropdown is-right">
+              <a class="navbar-item" href="#">Mi perfil</a>
+              <a class="navbar-item" href="#">Mis compras</a>
+              <hr class="navbar-divider">
+              <a class="navbar-item" href="#">Cerrar sesión</a>
+            </div>
+          </div>
+
+          <!-- ✅ Cart Button -->
+          <div class="navbar-item">
+            <a class="button is-light" href="#">
+              <i class="fa-solid fa-cart-shopping"></i> Carrito
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ✅ Main Content -->
+  <main class="container mt-4">
+    <%= yield %>
+  </main>
+
+  <!-- ✅ Footer -->
+  <footer class="footer has-background-light has-text-centered">
+    <p>© 2024 Your App. Todos los derechos reservados.</p>
+  </footer>
+
+</body>
+</html>
