@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "@popperjs/core": "^2.11.8",
-    "bulma": "^1.0.3"
+    "@hotwired/turbo-rails": "^8.0.13",
+    "@popperjs/core": "^2.11.8"
   }
 }
