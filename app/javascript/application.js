@@ -8,3 +8,5 @@ import * as controllers from "./controllers"
 for (const name in controllers) {
   application.register(name, controllers[name])
 }
+
+import "custom/menu"
