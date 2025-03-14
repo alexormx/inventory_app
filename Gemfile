@@ -49,7 +49,7 @@ gem "tzinfo-data", platforms: %i[windows jruby]
 gem 'devise-i18n', '~> 1.12'  # Devise internationalization
 
 # ✅ Bootstrap framework for styling
-gem "bootstrap-sass"
+gem 'bootstrap', '~> 5.3.3'
 gem "sassc-rails"
 gem "sprockets-rails"
 

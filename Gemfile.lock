@@ -85,9 +85,9 @@ GEM
     bindex (0.8.1)
     bootsnap (1.18.4)
       msgpack (~> 1.2)
-    bootstrap-sass (3.4.1)
-      autoprefixer-rails (>= 5.2.1)
-      sassc (>= 2.0.0)
+    bootstrap (5.3.3)
+      autoprefixer-rails (>= 9.1.0)
+      popper_js (>= 2.11.8, < 3)
     brakeman (7.0.0)
       racc
     builder (3.3.0)
@@ -208,6 +208,7 @@ GEM
       ast (~> 2.4.1)
       racc
     pg (1.5.9)
+    popper_js (2.11.8)
     pp (0.6.2)
       prettyprint
     prettyprint (0.2.0)
@@ -414,7 +415,7 @@ PLATFORMS
 
 DEPENDENCIES
   bootsnap
-  bootstrap-sass
+  bootstrap (~> 5.3.3)
   brakeman
   capybara
   debug
