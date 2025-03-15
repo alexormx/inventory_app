@@ -1,0 +1,23 @@
+<h2>Admin - Orders</h2>
+<table class="table">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Status</th>
+      <th>Total</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @purchase_orders.each do |order| %>
+      <tr>
+        <td><%= order.id %></td>
+        <td><%= order.status %></td>
+        <td>$<%= order.total %></td>
+        <td>
+          <%= link_to "View", admin_order_path(order), class: "btn btn-primary btn-sm" %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

@@ -6,7 +6,7 @@ class ApplicationController < ActionController::Base
   protected
   def after_sign_in_path_for(resource)
     if resource.admin?
-      admin_dashboard_path
+      admin_dashboard_index_path
     else
       root_path
     end
@@ -18,6 +18,13 @@ class ApplicationController < ActionController::Base
       "admin"
     else
       "customer"
+    end
+  end
+
+  def authorize_admin!
+    unless current_user.admin?
+      flash[:alert] = "Acceso denegado: Solo los administradores pueden acceder a esta sección."
+      redirect_to root_path
     end
   end
 end

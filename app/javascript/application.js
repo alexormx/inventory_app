@@ -10,3 +10,4 @@ for (const name in controllers) {
 }
 
 import "custom/menu"
+import "custom/flash"

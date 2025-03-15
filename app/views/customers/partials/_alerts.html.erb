@@ -1,0 +1,7 @@
+<div class="container mt-3">
+  <% flash.each do |type, message| %>
+    <div class="alert <%= bootstrap_class_for(type) %> alert-dismissible fade show flash-message" role="alert">
+      <%= message %>
+    </div>
+  <% end %>
+</div>

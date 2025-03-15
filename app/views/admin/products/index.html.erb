@@ -1,0 +1,22 @@
+<h2>Admin - Product Management</h2>
+<table class="table">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Price</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @products.each do |product| %>
+      <tr>
+        <td><%= product.name %></td>
+        <td>$<%= product.price %></td>
+        <td>
+          <%= link_to "View", admin_product_path(product), class: "btn btn-primary btn-sm" %>
+          <%= link_to "Edit", edit_admin_product_path(product), class: "btn btn-warning btn-sm" %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

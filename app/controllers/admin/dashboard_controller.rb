@@ -4,7 +4,9 @@ class Admin::DashboardController < ApplicationController
   layout "admin"
 
   def index
-     # Dashboard logic goes here
+    @total_products = Product.count
+    @total_users = User.count
+    @total_orders = PurchaseOrder.count
   end
 
   private

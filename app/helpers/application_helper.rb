@@ -1,11 +1,11 @@
 module ApplicationHelper
-  def flash_class(level)
-    case level
-    when 'notice' then "bg-green-100 text-green-700"
-    when 'alert', 'error'
-      "bg-red-100 text-red-700"
-    else
-      "bg-gray-200"
+  def bootstrap_class_for(flash_type)
+    case flash_type.to_sym
+    when :notice then "alert-success"
+    when :alert then "alert-danger"
+    when :error then "alert-danger"
+    when :warning then "alert-warning"
+    else "alert-info"
     end
   end
 end

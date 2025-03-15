@@ -14,71 +14,16 @@
 <body>
 
   <!-- ✅ NAVBAR -->
-  <nav class="navbar navbar-expand-lg bg-light" data-controller="navbar">
-    <div class="container">
-      
-      <!-- ✅ Logo -->
-      <%= link_to root_path, class: "navbar-brand" do %>
-        <%= image_tag "logo.png", alt: "Pasatiempos Logo", class: "img-fluid", width: 40 %>
-      <% end %>
-
-      <!-- ✅ Mobile Toggle Button -->
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" 
-              aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation" data-action="click->navbar#toggleMenu">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-
-      <!-- ✅ Navbar Menu -->
-      <div class="collapse navbar-collapse" id="navbarNav" data-navbar-target="menu">
-        
-        <!-- ✅ Search Bar (Centered) -->
-        <form class="d-flex mx-auto w-50">
-          <input class="form-control me-2" type="search" id="search-products" name="search" 
-                  placeholder="Buscar productos, marcas y más..." aria-label="Buscar productos" autocomplete="off">
-          <button class="btn btn-outline-secondary" type="submit" aria-label="Buscar">
-            <i class="fa fa-search"></i>
-          </button>
-        </form>
-
-        <!-- ✅ User & Cart Menu -->
-        <ul class="navbar-nav ms-auto">
-          
-          <!-- ✅ User Dropdown -->
-          <li class="nav-item dropdown" data-controller="dropdown">
-            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" 
-               data-bs-toggle="dropdown"  data-dropdown-target="button">
-              <i class="fa-solid fa-user"></i> Mi cuenta
-            </a>
-            <ul class="dropdown-menu dropdown-menu-end" id="dropdownMenu">
-              <li><a class="dropdown-item" href="#">Mi perfil</a></li>
-              <li><a class="dropdown-item" href="#">Mis compras</a></li>
-              <li><hr class="dropdown-divider"></li>
-              <li><a class="dropdown-item" href="#">Cerrar sesión</a></li>
-            </ul>
-          </li>
-
-          <!-- ✅ Cart Button -->
-          <li class="nav-item">
-            <a class="btn btn-outline-primary ms-2" href="#">
-              <i class="fa-solid fa-cart-shopping"></i> Carrito
-            </a>
-          </li>
-          
-        </ul>
-
-      </div>
-    </div>
-  </nav>
+  <%= render 'customers/partials/navbar' %>
 
   <!-- ✅ Main Content -->
   <main class="container mt-4">
+    <%= render 'customers/partials/alerts' %>
     <%= yield %>
   </main>
 
   <!-- ✅ Footer -->
-  <footer class="footer text-center bg-light py-3">
-    <p>Pasatiempos 2025 ©. Todos los derechos reservados.</p>
-  </footer>
+  <%= render 'customers/partials/footer' %>
 
 </body>
 </html>

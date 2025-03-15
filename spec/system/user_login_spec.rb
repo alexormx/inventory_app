@@ -13,7 +13,8 @@ RSpec.describe "User login/logout", type: :system do
 
     expect(page).to have_content("Signed in successfully.")
 
-    click_link "Logout" # <-- Devise default text for sign out link
+    find("#userDropdown").click
+    click_link "Cerrar sesión" # <-- Devise default text for sign out link
     expect(page).to have_content("Signed out successfully.")
   end
 

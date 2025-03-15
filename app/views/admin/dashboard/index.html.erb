@@ -1,25 +1,35 @@
 <div class="container">
-  <h1>Admin Dashboard</h1>
+  <h2 class="mb-4"><i class="fa-solid fa-chart-line"></i> Dashboard Overview</h2>
 
-  <div class="dashboard-cards">
-    <div class="card">
-      <h2>Products</h2>
-      <%= link_to "Manage Products",  class: "btn btn-primary" %>
+  <div class="row">
+    <div class="col-md-4">
+      <div class="card text-white bg-primary">
+        <div class="card-header">Total Products</div>
+        <div class="card-body">
+          <h3><%= @total_products %></h3>
+          <%= link_to "Manage Products", "admin_products_path", class: "btn btn-light btn-sm" %>
+        </div>
+      </div>
     </div>
 
-    <div class="card">
-      <h2>Purchase Orders</h2>
-      <%= link_to "Manage Purchase Orders",  class: "btn btn-primary" %>
+    <div class="col-md-4">
+      <div class="card text-white bg-success">
+        <div class="card-header">Total Users</div>
+        <div class="card-body">
+          <h3><%= @total_users  %></h3>
+          <%= link_to "Manage Users", "admin_users_path", class: "btn btn-light btn-sm" %>
+        </div>
+      </div>
     </div>
 
-    <div class="card">
-      <h2>Sales Orders</h2>
-      <%= link_to "Manage Sales Orders",  class: "btn btn-primary" %>
-    </div>
-
-    <div class="card">
-      <h2>Inventory</h2>
-      <%= link_to "View Inventory", class: "btn btn-primary" %>
+    <div class="col-md-4">
+      <div class="card text-white bg-warning">
+        <div class="card-header">Total Purchase Orders</div>
+        <div class="card-body">
+          <h3><%= @total_orders %></h3>
+          <%= link_to "Manage Orders", "admin_orders_path", class: "btn btn-dark btn-sm" %>
+        </div>
+      </div>
     </div>
   </div>
 </div>

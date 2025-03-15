@@ -1,0 +1,69 @@
+  <!-- ✅ NAVBAR -->
+  <nav class="navbar navbar-expand-lg bg-light" data-controller="navbar">
+    <div class="container">
+      
+      <!-- ✅ Logo -->
+      <%= link_to root_path, class: "navbar-brand" do %>
+        <%= image_tag "logo.png", alt: "Pasatiempos Logo", class: "img-fluid", width: 40 %>
+      <% end %>
+
+      <!-- ✅ Mobile Toggle Button -->
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" 
+              aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation" data-action="click->navbar#toggleMenu">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <!-- ✅ Navbar Menu -->
+      <div class="collapse navbar-collapse" id="navbarNav" data-navbar-target="menu">
+        
+        <!-- ✅ Search Bar (Centered) -->
+        <form class="d-flex mx-auto w-50">
+          <input class="form-control me-2" type="search" id="search-products" name="search" 
+                  placeholder="Buscar productos, marcas y más..." aria-label="Buscar productos" autocomplete="off">
+          <button class="btn btn-outline-secondary" type="submit" aria-label="Buscar">
+            <i class="fa fa-search"></i>
+          </button>
+        </form>
+
+        <!-- ✅ User & Cart Menu -->
+        <div class="collapse navbar-collapse" id="customerNavbar">
+          <ul class="navbar-nav ms-auto">
+            
+            <!-- ✅ If the User is NOT Logged In: Show Sign In & Sign Up Buttons -->
+            <% unless user_signed_in? %>
+              <li class="nav-item">
+                <%= link_to "Iniciar sesión", new_user_session_path, class: "nav-link" %>
+              </li>
+              <li class="nav-item">
+                <%= link_to "Registrarse", new_user_registration_path, class: "btn btn-primary" %>
+              </li>
+            <% else %>
+
+            <!-- ✅ User Dropdown -->
+            <li class="nav-item dropdown" >
+              <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" 
+                data-bs-toggle="dropdown"  data-dropdown-target="button">
+                <i class="fa-solid fa-user"></i> Mi cuenta
+              </a>
+              <ul class="dropdown-menu dropdown-menu-end" id="dropdownMenu">
+                <li><a class="dropdown-item" href="#">Mi perfil</a></li>
+                <li><a class="dropdown-item" href="#">Mis compras</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                  <%= link_to "Cerrar sesión", destroy_user_session_path, data: { "turbo-method": :delete }, class: "dropdown-item" %>
+                </li>
+              </ul>
+            </li>
+
+            <!-- ✅ Cart Button -->
+            <li class="nav-item">
+              <%= link_to "<i class='fa-solid fa-cart-shopping'></i> Carrito".html_safe, "cart_path", class: "btn btn-outline-primary" %>
+            </li>
+            <% end %>
+            
+          </ul>
+        </div>
+
+      </div>
+    </div>
+  </nav>

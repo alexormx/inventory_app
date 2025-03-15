@@ -1,37 +1,28 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Admin Panel</title>
+  <title>Admin Dashboard</title>
   <%= csrf_meta_tags %>
   <%= csp_meta_tag %>
+
+  <!-- ✅ Bootstrap, FontAwesome & AdminLTE Styles -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <%= stylesheet_link_tag "application", media: "all", "data-turbo-track": "reload" %>
   <%= javascript_importmap_tags %>
 </head>
-<body>
 
-  <nav class="navbar navbar-dark bg-dark">
-    <div class="container">
-      <a class="navbar-brand" href="#">Admin Dashboard</a>
-      <ul class="navbar-nav ms-auto">
-        <li class="nav-item">
-          <a class="nav-link" href="<%= destroy_user_session_path %>" data-method="delete">Logout</a>
-        </li>
-      </ul>
-    </div>
-  </nav>
+<body class="d-flex flex-column vh-100">
+  <div class="d-flex">
+    <%= render 'admin/partials/sidebar' %>
 
-  <div class="container mt-4">
-    <div class="row">
-      <aside class="col-md-3">
-        <ul class="list-group">
-          <li class="list-group-item"><a href="#">📦 Products</a></li>
-          <li class="list-group-item"><a href="#">📊 Orders</a></li>
-          <li class="list-group-item"><a href="#">🚚 Shipments</a></li>
-        </ul>
-      </aside>
-      <main class="col-md-9">
+    <div class="flex-grow-1">
+      <%= render 'admin/partials/navbar' %>
+
+      <main class="container mt-4">
         <%= yield %>
       </main>
+
+      <%= render 'admin/partials/footer' %>
     </div>
   </div>
 
