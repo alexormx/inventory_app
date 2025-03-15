@@ -9,3 +9,8 @@
  * Consider organizing styles into separate files for maintainability.
  */
  @import "custom";
+
+ body {
+  -webkit-text-size-adjust: auto; /* Disables the Bootstrap default */
+  text-size-adjust: 100%; /* ✅ Standard property supported in modern browsers */
+}
