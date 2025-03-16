@@ -75,10 +75,20 @@ RSpec.configure do |config|
     end
   end
   Capybara.javascript_driver = :selenium_chrome_headless
+  Capybara.default_driver = :selenium_chrome # or :cuprite, etc.
+  Capybara.default_max_wait_time = 10
   # FactoryBot Configuration
   config.include FactoryBot::Syntax::Methods
   # Include Devise test helpers
   config.include Devise::Test::ControllerHelpers, type: :controller
   config.include Devise::Test::IntegrationHelpers, type: :system
+  config.include Devise::Test::IntegrationHelpers, type: :request
+
+  # Automatically open screenshot on test failure (Capybara & Launchy)
+  config.after(:each, type: :system) do |example|
+    if example.exception
+      save_and_open_page
+    end
+  end
 
 end

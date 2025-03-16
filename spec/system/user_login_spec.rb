@@ -5,7 +5,7 @@ RSpec.describe "User login/logout", type: :system do
 
   # ✅ Successful login and logout
   #
-  it "successful login and logout" do
+  it "successful login and logout", js: true do
     visit new_user_session_path
     fill_in "Email", with: "user@example.com"
     fill_in "Password", with: "password123"
@@ -13,8 +13,9 @@ RSpec.describe "User login/logout", type: :system do
 
     expect(page).to have_content("Signed in successfully.")
 
-    find("#userDropdown").click
-    click_link "Cerrar sesión" # <-- Devise default text for sign out link
+    find(".navbar-toggler").click # Open the mobile menu
+    find("#userDropdown").click # Open the dropdown
+    click_link "Cerrar sesión" # Click the sign-out link
     expect(page).to have_content("Signed out successfully.")
   end
 

@@ -8,15 +8,16 @@ RSpec.describe Admin::DashboardController, type: :controller do
 
   describe "GET #index" do
     context "when admin is logged in" do
-      let(:user) { create(:user, :admin) }
+      let(:user) { create(:user, role: 'admin') }
  
       before do
-        @request.env["devise.mapping"] = Devise.mappings[:user]
+        #@request.env["devise.mapping"] = Devise.mappings[:user]
         sign_in user
-        get :index, params: { use_route: :admin_dashboard }
+        #get :index, params: { use_route: :admin_dashboard }
       end
       
       it "returns http success" do
+        get :index, params: { use_route: :admin_dashboard } # ✅ FIX: Use symbol instead of `admin_dashboard_path`
         expect(response).to have_http_status(:success)
       end
 
