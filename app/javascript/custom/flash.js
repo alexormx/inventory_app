@@ -1,5 +1,5 @@
 
-document.addEventListener("turbo:render", function() {
+document.addEventListener("turbo:load", function() {
   let flash = document.querySelector(".flash-message");
   if(!flash) return;
   setTimeout(() => {
