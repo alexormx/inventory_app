@@ -1,26 +1,23 @@
-<header class="navbar navbar-expand-lg navbar-light bg-light">
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
   <div class="container">
     <%= link_to root_path, id: "logo" do %>
       <%= image_tag "logo.png", alt: "Pasatiempos Logo", class: "img-fluid", width: "40" %>
     <% end %>
-    <nav>
-      <div class="navbar-header">
-        <button class="navbar-toggler" id="hamburger" type="button" data-bs-toggle="collapse" data-bs-target="#navbarToggleExternalContent" aria-controls="navbarToggleExternalContent" aria-expanded="false" aria-label="Toggle navigation">
-          <span class="navbar-toggler-icon"></span>
+
+    <button class="navbar-toggler" id="hamburger" type="button" data-bs-toggle="collapse" data-bs-target="#navbarToggleExternalContent" aria-controls="navbarToggleExternalContent" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    
+    <div class="collapse navbar-collapse" id="navbarScroll">
+      <form class=" d-flex mx-auto" role="search">
+        <input type="search" class="form-control me-2" placeholder="Buscar productos, marcas y más..." aria-label="Buscar productos">
+        <button type="submit" class="btn btn-outline-secondary">
+          <i class="fa fa-search"></i>
         </button>
-      </div>
-      <ul id="navbar-menu" class="nav navbar-nav collapse navbar-collapse">
+      </form>
+      <ul id="navbar-menu" class="navbar-nav me-auto my-2 my-lg-0 navbar-nav-scroll">
         <li>
-          <form class=" d-flex mx-auto" role="search">
-            <div class="input-group">
-              <input type="search" class="form-control me-2" placeholder="Buscar productos, marcas y más..." aria-label="Buscar productos">
-              <span class="input-group-btn">
-                <button type="submit" class="btn btn-outline-secondary">
-                  <i class="fa fa-search"></i>
-                </button>
-              </span>
-            </div>
-          </form>
+
         </li>
         <% unless user_signed_in? %>
         <li class="nav-item">
@@ -53,6 +50,7 @@
         </li>
         <% end %>
       </ul>
-    </nav>
+    </div>
   </div>
-</header>
+</nav>
+

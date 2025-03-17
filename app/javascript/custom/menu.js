@@ -12,6 +12,6 @@ function addToggleListener(selected_id, menu_id, toggle_class) {
 
 // Add toggle listeners to listen for clicks.
 document.addEventListener("turbo:load", function() {
-  addToggleListener("hamburger", "navbar-menu",   "collapse");
+  addToggleListener("hamburger", "navbarScroll",   "collapse");
   addToggleListener("account",   "dropdown-menu", "active");
 });
