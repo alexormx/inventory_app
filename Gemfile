@@ -70,7 +70,7 @@ end
 # 🔹 **Testing Group**
 group :test do
   gem "capybara"  # Feature test framework (UI testing)
-    gem 'launchy' # Open HTML pages in the default browser
+  gem 'launchy' # Open HTML pages in the default browser
   gem "selenium-webdriver"  # Browser automation for system tests
   gem "webdrivers", "5.0.0"  # Keeps browser drivers up-to-date
   gem "rails-controller-testing", "1.0.5"  # Helps test controllers

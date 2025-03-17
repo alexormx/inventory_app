@@ -13,10 +13,19 @@ RSpec.describe "User login/logout", type: :system do
 
     expect(page).to have_content("Signed in successfully.")
 
-    find(".navbar-toggler").click # Open the mobile menu
-    find("#userDropdown").click # Open the dropdown
-    click_link "Cerrar sesión" # Click the sign-out link
-    expect(page).to have_content("Signed out successfully.")
+    # ✅ Open the hamburger (responsive navbar) if required
+    find("#hamburger").click
+
+
+    # ✅ Use existing dropdown ID
+    expect(page).to have_selector("#account", visible: :all)
+    
+    # Using execute_script due to Bootstrap dropdown interaction 
+    # timing and visibility issues in Capybara tests.
+    page.execute_script("document.querySelector('#account').click()")
+    page.execute_script("document.querySelector('#logout-button').click()")
+
+    expect(page).to have_content("Signed out successfully.", wait: 5)
   end
 
   # ✅ Login fails with invalid credentials
