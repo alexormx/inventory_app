@@ -53,6 +53,7 @@ gem 'bootstrap', '~> 5.3.3'
 gem "sassc-rails"
 gem "sprockets-rails"
 
+
 # 🔹 **Development & Testing Group**
 group :development, :test do
   gem "debug", platforms: %i[mri windows], require: "debug/prelude"  # Debugging
