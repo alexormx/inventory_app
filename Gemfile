@@ -65,6 +65,7 @@ end
 # 🔹 **Development Group**
 group :development do
   gem "web-console"  # Rails console in browser for debugging
+  gem 'letter_opener' # Preview email in the browser instead of sending
 end
 
 # 🔹 **Testing Group**
