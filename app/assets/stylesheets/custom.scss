@@ -6,6 +6,69 @@
   display: block;
 }
 
+#password-requirements {
+  max-width: 330px; /* Adjust width */
+  font-size: 12px; /* Smaller text */
+  color: gray; /* Lighter text */
+  padding: 10px 20px; /* Reduce padding */
+  left: 0; /* Adjust as needed */
+  right: 20px;
+  top: 0; /* Adjust as needed */
+  bottom: 20px; /* Adjust as needed */
+  border-radius: 5px;
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1); /* Add shadow */
+  margin-top: 10px; /* Reduce top margin */
+  margin-bottom: 10px; /* Reduce bottom margin */
+
+  ul {
+    padding: 0;
+    margin: 0;
+    li {
+      list-style: none;
+      margin: 1px 0;
+    }
+  }
+}
+
+.link-registration {
+  text-align: center;
+  margin-top: 10px;
+}
+
+.form-signin {
+  max-width: 330px;
+  padding: 1rem;
+
+  .form-floating:focus-within {
+    z-index: 2;
+  }
+
+  .top-input {
+    margin-bottom: -1px;
+    border-bottom-right-radius: 0;
+    border-bottom-left-radius: 0;
+  }
+
+  .middle-input {
+    margin-bottom: -1px;
+    margin-top: -1px;
+    border-bottom-right-radius: 0;
+    border-bottom-left-radius: 0;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+  }
+
+  .bottom-input {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+  }
+
+  .btn {
+    margin: 10px 0;
+  }
+}
+
+/* Footer */
 @media (max-width: 800px) {
   footer {
     small {

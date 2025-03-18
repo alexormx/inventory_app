@@ -53,6 +53,15 @@ en:
       send_instructions: "You will receive an email with instructions for how to unlock your account in a few minutes."
       send_paranoid_instructions: "If your account exists, you will receive an email with instructions for how to unlock it in a few minutes."
       unlocked: "Your account has been unlocked successfully. Please sign in to continue."
+    shared:
+      password_complexity:
+        one_lowercase: 'must contain at least one lowercase letter'
+        one_uppercase: 'must contain at least one uppercase letter'
+        one_number: 'must contain at least one digit'
+        one_special_character: 'must contain at least one special character'
+        requirement: 'Password must contain at least %{requirements}'
+        title: 'Password complexity requirement'
+        password_confirmation: 'Password and confirmation must match'
   errors:
     messages:
       already_confirmed: "was already confirmed, please try signing in"

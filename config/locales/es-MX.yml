@@ -129,6 +129,14 @@ es-MX:
       minimum_password_length:
         one: "(Mínimo %{count} carácter)"
         other: "(Mínimo %{count} caracteres)"
+      password_complexity:
+        one_lowercase: 'Contiene una letra minúscula.'
+        one_uppercase: 'Contiene una letra mayúscula.'
+        one_number: 'Contiene un número.'
+        one_special_character: 'Contiene un carácter especial.'
+        requirement: 'Contiene %{requirements} carácteres o más.'
+        title: 'Requisitos de contraseña:'
+        password_confirmation: 'Contraseña y confirmación deben de coincidir.'
     unlocks:
       new:
         resend_unlock_instructions: Reenviar instrucciones para desbloquear la cuenta
