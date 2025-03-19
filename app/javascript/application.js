@@ -10,3 +10,8 @@ for (const name in controllers) {
 }
 
 import "custom/menu"
+import "modules/toggle_menu"
+import "modules/flash_messages"
+import "modules/disable_enter_until_email"
+import "components/password_validation"
+import "components/show_password_requirements"
