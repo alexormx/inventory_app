@@ -310,4 +310,7 @@ Devise.setup do |config|
   # When set to false, does not sign a user in automatically after their password is
   # changed. Defaults to true, so a user is signed in automatically after changing a password.
   # config.sign_in_after_change_password = true
+
+  # Prevent Devise from wrapping input fields in "field_with_errors"
+  Rails.application.config.action_view.field_error_proc = Proc.new { |html_tag, instance| html_tag.html_safe }  
 end
