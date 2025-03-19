@@ -153,3 +153,47 @@ es-MX:
       not_saved:
         one: 'Un error ocurrió al tratar de guardar %{resource}:'
         other: "%{count} errores ocurrieron al tratar de guardar %{resource}:"
+      invalid:  'no es válido'
+      blank: 'no puede estar en blanco'
+      taken: 'ya ha sido tomado'
+      too_short: 'es demasiado corta (mínimo %{count} caracteres)'
+      not_a_number: 'no es un número'
+      greater_than: 'debe ser mayor que %{count}'
+      greater_than_or_equal_to: 'debe ser mayor o igual a %{count}'
+      equal_to: 'debe ser igual a %{count}'
+      less_than: 'debe ser menor que %{count}'
+      less_than_or_equal_to: 'debe ser menor o igual a %{count}'
+      confirmation: 'no coincide con la contraseña'
+    models:
+      user:
+        attributes:
+          email:
+            invalid: 'no es válido'
+            taken: 'ya ha sido tomado'
+            blank: 'no puede estar en blanco'
+          password:
+            confirmation: 'no coincide con la contraseña'
+            invalid: 'no es válido'
+            too_short: 'es demasiado corta (mínimo %{count} caracteres)'
+            blank: 'no puede estar en blanco'
+          password_confirmation:
+            confirmation: 'no coincide con la contraseña'
+        confirmation: 'no coincide con la contraseña'
+        blank: 'no puede estar en blanco'
+        invalid: 'no es válido'
+        not_found: 'no se encontró'
+        required: 'es requerido'
+        taken: 'ya ha sido tomado'
+    attrubutes:
+      email:
+        invalid: 'no es válido'
+        blank: 'no puede estar en blanco'
+        taken: 'ya ha sido tomado'
+      password:
+        confirmation: 'no coincide con la contraseña'
+        invalid: 'no es válido'
+        too_short: 'es demasiado corta (mínimo %{count} caracteres)'
+        blank: 'no puede estar en blanco'
+      password_confirmation:
+        confirmation: 'no coincide con la contraseña'
+        
