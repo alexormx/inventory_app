@@ -1,4 +1,3 @@
-
 // Adds a toggle listener.
 function addToggleListener(selected_id, menu_id, toggle_class) {
   const selected_element = document.querySelector(`#${selected_id}`);
@@ -64,7 +63,7 @@ function showPasswordRequirements() {
 // Run for full page loads
 document.addEventListener("turbo:load", showPasswordRequirements);
 
-document.addEventListener("DOMContentLoaded", function () {
+function passwordValidationMain() {
   const passwordInput = document.querySelector(".pwd-input");
   const confirmPasswordInput = document.querySelector(".pwd-conf-input");
   const submitButton = document.querySelector(".btn-pwd"); // Get the submit button
@@ -124,4 +123,7 @@ document.addEventListener("DOMContentLoaded", function () {
   if (confirmPasswordInput) {
     confirmPasswordInput.addEventListener("input", validatePassword);
   }
-});
+};
+
+document.addEventListener("DOMContentLoaded", passwordValidationMain);
+document.addEventListener("turbo:load", passwordValidationMain);
