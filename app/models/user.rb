@@ -21,8 +21,8 @@ class User < ApplicationRecord
   def admin?
     role == "admin"
   end
-  
-  private 
+
+  private
 
   def check_dependencies
     if purchase_orders.exists? || sale_orders.exists?

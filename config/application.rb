@@ -14,10 +14,10 @@ module InventoryApp
     # Please, add to the `ignore` list any other `lib` subdirectories that do
     # not contain `.rb` files, or that should not be reloaded or eager loaded.
     # Common ones are `templates`, `generators`, or `middleware`, for example.
-    config.autoload_lib(ignore: %w[assets tasks])
+    config.autoload_lib(ignore: %w[ assets tasks ])
 
     # Add i18n configuration to your application.
-    config.i18n.available_locales = [:"es-MX", :es, :en]
+    config.i18n.available_locales = [ :"es-MX", :es, :en ]
     config.i18n.default_locale = :"es-MX"
     config.i18n.fallbacks = { :"es-MX" => :es }
 
