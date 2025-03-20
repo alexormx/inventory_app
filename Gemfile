@@ -46,10 +46,10 @@ gem "tzinfo-data", platforms: %i[windows jruby]
 # gem "image_processing", "~> 1.2"  # ActiveStorage image transformations
 
 # ✅ Internationalization for Devise
-gem 'devise-i18n', '~> 1.12'  # Devise internationalization
+gem "devise-i18n", "~> 1.12"  # Devise internationalization
 
 # ✅ Bootstrap framework for styling
-gem 'bootstrap', '~> 5.3.3'
+gem "bootstrap", "~> 5.3.3"
 gem "sassc-rails"
 gem "sprockets-rails"
 
@@ -66,17 +66,16 @@ end
 # 🔹 **Development Group**
 group :development do
   gem "web-console"  # Rails console in browser for debugging
-  gem 'letter_opener' # Preview email in the browser instead of sending
+  gem "letter_opener" # Preview email in the browser instead of sending
 end
 
 # 🔹 **Testing Group**
 group :test do
   gem "capybara"  # Feature test framework (UI testing)
-  gem 'launchy' # Open HTML pages in the default browser
+  gem "launchy" # Open HTML pages in the default browser
   gem "selenium-webdriver"  # Browser automation for system tests
   gem "webdrivers", "5.0.0"  # Keeps browser drivers up-to-date
   gem "rails-controller-testing", "1.0.5"  # Helps test controllers
   gem "rspec-rails"  # RSpec testing framework
   gem "shoulda-matchers", "~> 5.0"  # Simplifies model testing
 end
-
