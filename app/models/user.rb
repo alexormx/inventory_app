@@ -19,7 +19,7 @@ class User < ApplicationRecord
 
   # Roles
   def admin?
-    role == 'admin'
+    role == "admin"
   end
   
   private 
