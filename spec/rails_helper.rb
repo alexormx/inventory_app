@@ -47,22 +47,23 @@ RSpec.configure do |config|
   # ✅ **REGISTER SELENIUM DRIVER**
   Capybara.register_driver :selenium do |app|
     options = Selenium::WebDriver::Chrome::Options.new
-
-    # ✅ Add these flags to disable GPU errors
-    options.add_argument('--disable-dev-tools') # Prevent DevTools errors
+  
+    # ✅ Essential flags to disable GPU errors
     options.add_argument('--disable-gpu')
     options.add_argument('--disable-software-rasterizer')
-    options.add_argument('--disable-vulkan') # Vulkan errors
-    
-    # ✅ Keep these for WSL stability
-    #options.add_argument('--headless') # Run Chrome in headless mode
-    options.add_argument('--headless=new') # Use updated headless mode
-    options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
-
+    options.add_argument('--disable-dev-tools')
+    options.add_argument('--disable-features=VizDisplayCompositor') # Helps prevent GPU rendering issues
+    options.add_argument('--disable-features=IsolateOrigins,site-per-process')
+  
+    # ✅ Keep these for stability in WSL & Docker
+    options.add_argument('--no-sandbox')
+    options.add_argument('--headless=new') # Use updated headless mode
+    options.add_argument('--disable-background-networking')
+  
     Capybara::Selenium::Driver.new(app, browser: :chrome, options: options)
   end
-
+  
   Capybara.javascript_driver = :selenium
 
   # FactoryBot Configuration
