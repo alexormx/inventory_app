@@ -52,6 +52,12 @@ gem "devise-i18n", "~> 1.12"  # Devise internationalization
 gem "bootstrap", "~> 5.3.3"
 gem "sassc-rails"
 gem "sprockets-rails"
+gem "image_processing", "~> 1.2"
+gem 'mini_magick'
+
+
+
+
 
 
 # 🔹 **Development & Testing Group**
@@ -78,4 +84,12 @@ group :test do
   gem "rails-controller-testing", "1.0.5"  # Helps test controllers
   gem "rspec-rails"  # RSpec testing framework
   gem "shoulda-matchers", "~> 5.0"  # Simplifies model testing
+end
+
+
+# 🔹 **Production Group*
+group :production do
+  # images storage in aws
+  gem 'aws-sdk-s3', "1.114.0", require: false
+  
 end

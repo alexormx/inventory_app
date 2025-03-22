@@ -1,8 +1,8 @@
 function disableEnterUntilEmail() {
   const emailInput = document.querySelector(".email-input"); // get the email input
+  if (!emailInput) return; // If no email input, exit early
   const form = emailInput.closest("form"); // Get the closest form
-  
-  if (!emailInput || !form) return;
+  if (!form) return;
 
   // Validate email format
   function isValidEmail(email) {

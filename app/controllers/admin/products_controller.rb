@@ -17,6 +17,7 @@ class Admin::ProductsController < ApplicationController
       redirect_to admin_products_path
     else
       flash.now[:alert] = "Error creating product."
+      puts @product.errors.full_messages.inspect # 👈 Add this line
       render :new
     end
   end
@@ -34,6 +35,10 @@ class Admin::ProductsController < ApplicationController
       flash.now[:alert] = "Error updating product."
       render :edit
     end
+  end
+
+  def show
+    @product = Product.find(params[:id])
   end
   
   def destroy
@@ -57,7 +62,6 @@ class Admin::ProductsController < ApplicationController
       :category,
       :product_name,
       :reorder_point,
-      :product_description,
       :selling_price,
       :maximum_discount,
       :minimum_price,
@@ -67,7 +71,12 @@ class Admin::ProductsController < ApplicationController
       :status,
       :product_images,
       :custom_attributes,
-      :supplier_id
+      :supplier_id,
+      product_images: [] # allow multiple file uploads
     )
+  end
+
+  def set_product
+    @product = Product.find(params[:id])
   end
 end

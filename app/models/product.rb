@@ -3,6 +3,7 @@ class Product < ApplicationRecord
 
   has_many :inventory, dependent: :restrict_with_error
   has_many :canceled_order_items, dependent: :restrict_with_error
+  has_many_attached :product_images
 
   validates :product_sku, presence: true, uniqueness: true
   validates :product_name, presence: true
