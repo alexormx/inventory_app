@@ -213,7 +213,7 @@ GEM
       logger
     mini_mime (1.1.5)
     mini_portile2 (2.8.8)
-    minitest (5.25.4)
+    minitest (5.25.5)
     msgpack (1.8.0)
     net-imap (0.5.6)
       date
@@ -376,7 +376,7 @@ GEM
       rexml (~> 3.2, >= 3.2.5)
       rubyzip (>= 1.2.2, < 3.0)
       websocket (~> 1.0)
-    shoulda-matchers (5.3.0)
+    shoulda-matchers (6.4.0)
       activesupport (>= 5.2.0)
     solid_cable (3.0.7)
       actioncable (>= 7.2)
@@ -476,7 +476,7 @@ DEPENDENCIES
   rubocop-rails-omakase
   sassc-rails
   selenium-webdriver
-  shoulda-matchers (~> 5.0)
+  shoulda-matchers (~> 6.4)
   solid_cable
   solid_cache
   solid_queue

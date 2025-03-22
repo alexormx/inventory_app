@@ -83,7 +83,7 @@ group :test do
   gem "webdrivers", "5.0.0"  # Keeps browser drivers up-to-date
   gem "rails-controller-testing", "1.0.5"  # Helps test controllers
   gem "rspec-rails"  # RSpec testing framework
-  gem "shoulda-matchers", "~> 5.0"  # Simplifies model testing
+  gem "shoulda-matchers", "~> 6.4"  # Simplifies model testing
 end
 
 
