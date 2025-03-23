@@ -5,28 +5,37 @@
   <%= csrf_meta_tags %>
   <%= csp_meta_tag %>
 
-  <!-- ✅ Bootstrap, FontAwesome & AdminLTE Styles -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <!-- Styles & Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-d9hj8..." crossorigin="anonymous" referrerpolicy="no-referrer" />
   <%= stylesheet_link_tag "application", media: "all", "data-turbo-track": "reload" %>
   <%= javascript_importmap_tags %>
 </head>
 
-<body class="d-flex flex-column vh-100">
+<body class="d-flex flex-column min-vh-100 bg-light">
   <%= turbo_stream_from "flash" %>
   <%= render "layouts/flash" %>
-  <div class="d-flex">
-    <%= render 'admin/partials/sidebar' %>
 
-    <div class="flex-grow-1">
-      <%= render 'admin/partials/navbar' %>
+  <div class="container-fluid">
+    <div class="row">
 
-      <main class="container mt-4">
-        <%= yield %>
-      </main>
+      <!-- Sidebar -->
+      <aside id="sidebar" class="col-auto col-md-3 col-lg-2 bg-dark text-white p-0 sidebar-expanded transition border-end">
+        <%= render "admin/partials/sidebar" %>
+      </aside>
 
-      <%= render 'admin/partials/footer' %>
+      <!-- Main Content -->
+      <div class="col p-0 d-flex flex-column">
+
+        <!-- Navbar with toggle -->
+        <%= render "admin/partials/navbar" %>
+
+        <main class="flex-grow-1 p-4">
+          <%= yield %>
+        </main>
+
+        <%= render "admin/partials/footer" %>
+      </div>
     </div>
   </div>
-
 </body>
 </html>
