@@ -3,6 +3,8 @@ class PurchaseOrder < ApplicationRecord
   before_create :generate_custom_id
 
   has_many :inventory, foreign_key: "purchase_order_id", dependent: :restrict_with_error
+  has_many :purchase_order_items, dependent: :destroy
+  has_many :products, through: :purchase_order_items
 
   validates :order_date, presence: true
   validates :expected_delivery_date, presence: true
