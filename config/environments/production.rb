@@ -98,4 +98,14 @@ Rails.application.configure do
   #
   # Skip DNS rebinding protection for the default health check endpoint.
   # config.host_authorization = { exclude: ->(request) { request.path == "/up" } }
+
+  if ENV["REDIS_URL"]
+    config.action_cable.url = "wss://pasatiempos.com.mx/cable"
+  
+    config.action_cable.cable = {
+      adapter: 'redis',
+      url: ENV['REDIS_URL'],
+      ssl_params: { verify_mode: OpenSSL::SSL::VERIFY_NONE } # 👈 THIS FIXES THE CRASH
+    }
+  end
 end
