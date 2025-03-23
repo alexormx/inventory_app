@@ -1,0 +1,6 @@
+<%= render "admin/shared/user_table",
+  title: "Administrators",
+  users: @admins,
+  new_path: new_admin_admin_path,
+  edit_path: ->(user) { edit_admin_admin_path(user) },
+  include_offline_column: false %>

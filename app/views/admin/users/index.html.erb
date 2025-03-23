@@ -1,5 +1,5 @@
-<h2>Admin - Users</h2>
-<table class="table">
+<h1 class="h5 mb-3">Admin - Users</h1>
+<table class="table table-sm table-hover align-middle">
   <thead>
     <tr>
       <th>Name</th>
@@ -15,7 +15,10 @@
         <td><%= user.email %></td>
         <td><%= user.role %></td>
         <td>
-          <%= link_to "View", admin_user_path(user), class: "btn btn-primary btn-sm" %>
+          <%= link_to admin_user_path(user), class: "small text-success", title: "View" do %>
+            <i class="fa-solid fa-eye"></i>
+            View
+          <% end %>
         </td>
       </tr>
     <% end %>

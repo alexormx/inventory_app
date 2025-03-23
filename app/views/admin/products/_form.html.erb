@@ -74,6 +74,29 @@
     <%= f.file_field :product_images, multiple: true, direct_upload: true, class: "form-control" %>
   </div>
 
+  <% if @product.persisted? && @product.product_images.attached? %>
+    <div class="col-md-12">
+      <label class="form-label">Current Images</label>
+      <div class="row g-2">
+        <% @product.product_images.each do |image| %>
+          <div id="image_<%= image.id %>" class="col-4 col-sm-3 col-md-2 position-relative">
+            <div class="border rounded p-1 text-center bg-light">
+              <%= image_tag image.variant(resize_to_limit: [100, 100]), class: "img-fluid rounded" %>
+
+              <%= link_to admin_product_purge_image_path(@product, image_id: image.id),
+                          method: :delete,
+                          data: { turbo_confirm: "Remove this image?",
+                                 turbo_method: :delete },
+                          class: "btn btn-sm btn-danger position-absolute top-0 end-0 m-1" do %>
+                <i class="fa-solid fa-xmark"></i>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
   <div class="col-md-12">
     <%= f.label :custom_attributes %>
     <%= f.text_area :custom_attributes, class: "form-control", rows: 2, placeholder: "JSON or key-value string (for now)" %>

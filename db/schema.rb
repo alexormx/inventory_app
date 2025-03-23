@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_03_22_041450) do
+ActiveRecord::Schema[8.0].define(version: 2025_03_22_185705) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -191,6 +191,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_03_22_041450) do
     t.datetime "expired_at"
     t.datetime "last_activity_at"
     t.string "unique_session_id"
+    t.boolean "created_offline"
     t.index ["confirmation_token"], name: "index_users_on_confirmation_token", unique: true
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["expired_at"], name: "index_users_on_expired_at"

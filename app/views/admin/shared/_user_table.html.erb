@@ -1,0 +1,37 @@
+<h1 class="h5 mb-3"><%= title %></h1>
+
+<%= link_to "Add #{title.singularize}", new_path, class: "btn btn-primary mb-3" %>
+
+<table class="table table-sm table-hover align-middle">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Email</th>
+      <% if include_offline_column %>
+        <th>Offline?</th>
+      <% end %>
+      <th>Created</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <% users.each do |user| %>
+      <tr>
+        <td><%= user.name %></td>
+        <td><%= user.email.presence || "—" %></td>
+
+        <% if include_offline_column %>
+          <td><%= user.created_offline? ? "✅" : "❌" %></td>
+        <% end %>
+
+        <td><%= l(user.created_at, format: :short) %></td>
+        <td>
+          <%= link_to edit_path.call(user), class: "small text-primary", title: "Edit" do %>
+            <i class="fas fa-edit"></i>
+            Edit
+          <% end %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

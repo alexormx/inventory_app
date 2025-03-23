@@ -1,0 +1,55 @@
+<%= form_with model: user, url: url, local: true, class: "row g-3" do |f| %>
+  <% if user.errors.any? %>
+    <div class="alert alert-danger">
+      <h5>Form contains errors:</h5>
+      <ul>
+        <% user.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="col-md-6">
+    <%= f.label :name %>
+    <%= f.text_field :name, class: "form-control" %>
+  </div>
+
+  <div class="col-md-6">
+    <%= f.label :email %>
+    <%= f.email_field :email, class: "form-control" %>
+  </div>
+
+  <div class="col-md-6">
+    <%= f.label :phone %>
+    <%= f.telephone_field :phone, class: "form-control" %>
+  </div>
+
+  <div class="col-md-6">
+    <%= f.label :address %>
+    <%= f.text_field :address, class: "form-control" %>
+  </div>
+
+  <% if user.role == "customer" %>
+    <div class="col-md-4">
+      <%= f.label :discount_rate %>
+      <%= f.number_field :discount_rate, step: 0.1, class: "form-control" %>
+    </div>
+
+    <div class="col-md-4">
+      <%= f.label :created_offline %><br>
+      <%= f.check_box :created_offline %>
+      <span class="form-text text-muted">Offline customer?</span>
+    </div>
+  <% end %>
+
+  <div class="col-md-12">
+    <%= f.label :notes %>
+    <%= f.text_area :notes, class: "form-control", rows: 2 %>
+  </div>
+
+  <div class="col-12">
+    <%= f.submit "Save", class: "btn btn-success" %>
+    <%= link_to "Cancel", request.referer || admin_dashboard_path, class: "btn btn-secondary" %>
+  </div>
+<% end %>

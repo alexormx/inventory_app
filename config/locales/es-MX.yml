@@ -196,4 +196,11 @@ es-MX:
         blank: 'no puede estar en blanco'
       password_confirmation:
         confirmation: 'no coincide con la contraseña'
-        
+  date:
+    formats:
+      short: "%d %b %Y"
+    abbr_month_names:
+      [~, "Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
+  time:
+    formats:
+      short: "%d %b %Y %H:%M"

@@ -1,14 +1,77 @@
-<h1>Admin::Products#show</h1>
-<p>Find me in app/views/admin/products/show.html.erb</p>
+<h1 class="h4 mb-3"><%= @product.product_name %></h1>
 
-<% if @product.product_images.attached? %>
-  <div class="row">
-    <% @product.product_images.each do |image| %>
-      <div class="col-md-3 mb-2">
-        <%= image_tag image.variant(resize_to_limit: [300, 300]), class: "img-fluid rounded" %>
-      </div>
+<div class="row">
+  <div class="col-md-4">
+    <% if @product.product_images.attached? %>
+      <%= image_tag @product.product_images.first.variant(resize_to_limit: [400, 400]),
+                    class: "img-fluid rounded border" %>
+    <% else %>
+      <div class="text-muted text-center p-4 border bg-light">No image available</div>
     <% end %>
   </div>
-<% else %>
-  <p>No images uploaded yet.</p>
+
+  <div class="col-md-8">
+    <table class="table table-sm table-borderless">
+      <tbody>
+        <tr>
+          <th scope="row">SKU:</th>
+          <td><%= @product.product_sku %></td>
+        </tr>
+        <tr>
+          <th scope="row">Brand:</th>
+          <td><%= @product.brand %></td>
+        </tr>
+        <tr>
+          <th scope="row">Category:</th>
+          <td><%= @product.category %></td>
+        </tr>
+        <tr>
+          <th scope="row">Status:</th>
+          <td><%= @product.status %></td>
+        </tr>
+        <tr>
+          <th scope="row">Supplier:</th>
+          <td><%= @product.supplier&.name || "—" %></td>
+        </tr>
+        <tr>
+          <th scope="row">Stock:</th>
+          <td><%= @product.stock_quantity %> available</td>
+        </tr>
+        <tr>
+          <th scope="row">Reorder Point:</th>
+          <td><%= @product.reorder_point %></td>
+        </tr>
+        <tr>
+          <th scope="row">Selling Price:</th>
+          <td><%= number_to_currency(@product.selling_price) %></td>
+        </tr>
+        <tr>
+          <th scope="row">Min. Price / Max. Discount:</th>
+          <td>
+            <%= number_to_currency(@product.minimum_price) %> /
+            <%= number_to_percentage(@product.maximum_discount, precision: 0) %>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<% if @product.product_images.attached? && @product.product_images.many? %>
+  <div class="mt-4">
+    <h5>Gallery</h5>
+    <div class="row">
+      <% @product.product_images.each_with_index do |image, index| %>
+        <% next if index == 0 %> <!-- Skip main image -->
+        <div class="col-6 col-md-3 mb-2">
+          <%= image_tag image.variant(resize_to_limit: [200, 200]), class: "img-thumbnail" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
 <% end %>
+
+<div class="mt-4">
+  <%= link_to "Edit", edit_admin_product_path(@product), class: "btn btn-outline-primary me-2" %>
+  <%= link_to "Back to Products", admin_products_path, class: "btn btn-secondary" %>
+</div>

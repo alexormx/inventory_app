@@ -1,11 +1,69 @@
-<nav class="bg-dark text-white vh-100 p-3" style="width: 250px;">
-  <h4 class="text-center">Admin Panel</h4>
+<div class="bg-dark text-white p-3 vh-100">
+  <h4 class="text-center mb-4"><i class="fa-solid fa-gear me-2"></i>Admin Panel</h4>
+
   <ul class="nav flex-column">
-    <li class="nav-item"><%= link_to "Dashboard", admin_dashboard_index_path, class: "nav-link text-white" %></li>
-    <li class="nav-item"><%= link_to "Products", admin_products_path, class: "nav-link text-white" %></li>
-    <li class="nav-item"><%= link_to "Purchase Orders", admin_purchase_orders_path, class: "nav-link text-white" %></li>
-    <li class="nav-item"><%= link_to "Users", admin_users_path, class: "nav-link text-white" %></li>
-    <li class="nav-item"><%= link_to "Reports", admin_reports_path, class: "nav-link text-white" %></li>
-    <li class="nav-item"><%= link_to "Settings", admin_settings_path, class: "nav-link text-white" %></li>
+
+    <!-- 📊 Dashboard -->
+    <li class="nav-item mb-1">
+      <%= link_to admin_dashboard_path, class: "nav-link text-white" do %>
+        <i class="fa-solid fa-chart-line me-2"></i> Dashboard
+      <% end %>
+    </li>
+
+    <hr class="text-secondary my-2">
+
+    <!-- 🧑 Users -->
+    <li class="text-uppercase small text-secondary ps-2 mb-1">Users</li>
+    <li class="nav-item">
+      <%= link_to admin_customers_path, class: "nav-link text-white" do %>
+        <i class="fa-solid fa-user me-2"></i> Customers
+      <% end %>
+    </li>
+    <li class="nav-item">
+      <%= link_to admin_suppliers_path, class: "nav-link text-white" do %>
+        <i class="fa-solid fa-truck me-2"></i> Suppliers
+      <% end %>
+    </li>
+    <li class="nav-item">
+      <%= link_to admin_admins_path, class: "nav-link text-white" do %>
+        <i class="fa-solid fa-user-shield me-2"></i> Admins
+      <% end %>
+    </li>
+    <li class="nav-item">
+      <%= link_to admin_users_path, class: "nav-link text-white" do %>
+        <i class="fa-solid fa-user-tag me-2"></i> Users
+      <% end %>
+    </li>
+
+    <hr class="text-secondary my-2">
+
+    <!-- 📦 Inventory -->
+    <li class="text-uppercase small text-secondary ps-2 mb-1">Inventory</li>
+    <li class="nav-item">
+      <%= link_to admin_products_path, class: "nav-link text-white" do %>
+        <i class="fa-solid fa-boxes-stacked me-2"></i> Products
+      <% end %>
+    </li>
+    <li class="nav-item">
+      <%= link_to admin_purchase_orders_path, class: "nav-link text-white" do %>
+        <i class="fa-solid fa-file-invoice-dollar me-2"></i> Purchase Orders
+      <% end %>
+    </li>
+
+    <hr class="text-secondary my-2">
+
+    <!-- ⚙️ System -->
+    <li class="text-uppercase small text-secondary ps-2 mb-1">System</li>
+    <li class="nav-item">
+      <%= link_to admin_reports_path, class: "nav-link text-white" do %>
+        <i class="fa-solid fa-chart-pie me-2"></i> Reports
+      <% end %>
+    </li>
+    <li class="nav-item">
+      <%= link_to admin_settings_path, class: "nav-link text-white" do %>
+        <i class="fa-solid fa-sliders me-2"></i> Settings
+      <% end %>
+    </li>
+
   </ul>
-</nav>
+</div>

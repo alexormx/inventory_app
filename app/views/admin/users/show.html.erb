@@ -1,2 +1,53 @@
-<h1>Admin::Users#show</h1>
-<p>Find me in app/views/admin/users/show.html.erb</p>
+<h1 class="h4 mb-4">Customer Details</h1>
+
+<div class="card">
+  <div class="card-body">
+    <table class="table table-sm table-borderless">
+      <tbody>
+        <tr>
+          <th scope="row">Name:</th>
+          <td><%= @user.name %></td>
+        </tr>
+        <tr>
+          <th scope="row">Email:</th>
+          <td><%= @user.email.presence || "—" %></td>
+        </tr>
+        <tr>
+          <th scope="row">Phone:</th>
+          <td><%= @user.phone.presence || "—" %></td>
+        </tr>
+        <tr>
+          <th scope="row">Address:</th>
+          <td><%= @user.address.presence || "—" %></td>
+        </tr>
+        <tr>
+          <th scope="row">Role:</th>
+          <td><%= @user.role.capitalize %></td>
+        </tr>
+        <% if @user.role == "customer" %>
+          <tr>
+            <th scope="row">Discount Rate:</th>
+            <td><%= number_to_percentage(@user.discount_rate, precision: 0) if @user.discount_rate %></td>
+          </tr>
+          <tr>
+            <th scope="row">Offline Created:</th>
+            <td><%= @user.created_offline? ? "✅ Yes" : "❌ No" %></td>
+          </tr>
+        <% end %>
+        <tr>
+          <th scope="row">Notes:</th>
+          <td><%= simple_format(@user.notes) if @user.notes.present? %></td>
+        </tr>
+        <tr>
+          <th scope="row">Created At:</th>
+          <td><%= l(@user.created_at, format: :short) %></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="mt-3">
+  <%= link_to "Edit", edit_admin_customer_path(@user), class: "btn btn-outline-primary" %>
+  <%= link_to "Back to Customers", admin_customers_path, class: "btn btn-secondary" %>
+</div>

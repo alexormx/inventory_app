@@ -1,6 +1,7 @@
 class Admin::ProductsController < ApplicationController
   before_action :authenticate_user!
   before_action :authorize_admin!
+  before_action :set_product, only: %i[show edit update destroy purge_image]
 
   def index
     @products = Product.all
@@ -28,7 +29,15 @@ class Admin::ProductsController < ApplicationController
 
   def update
     @product = Product.find(params[:id])
-    if @product.update(product_params)
+
+    if params[:product][:product_images]
+      # Attach new images *without removing existing ones*
+      params[:product][:product_images].each do |image|
+        @product.product_images.attach(image)
+      end
+    end
+
+    if @product.update(product_params.except(:product_images))
       flash[:notice] = "Product updated successfully."
       redirect_to admin_product_path(@product)
     else
@@ -49,6 +58,17 @@ class Admin::ProductsController < ApplicationController
     else
       flash[:alert] = "Error deleting product."
       redirect_to admin_product_path(@product)
+    end
+  end
+
+  def purge_image
+    image = @product.product_images.find(params[:image_id])
+    image_id = image.id
+    image.purge # or purge_later for async
+  
+    respond_to do |format|
+      format.html { redirect_to edit_admin_product_path(@product), notice: "Image removed successfully." }
+      format.turbo_stream { render turbo_stream: turbo_stream.remove("image_#{image_id}")}# optional: for dynamic deletion
     end
   end
 
@@ -77,6 +97,10 @@ class Admin::ProductsController < ApplicationController
   end
 
   def set_product
-    @product = Product.find(params[:id])
+    @product = if params[:id]
+      Product.find(params[:id])
+    elsif params[:product_id]
+      Product.find(params[:product_id])
+    end
   end
 end

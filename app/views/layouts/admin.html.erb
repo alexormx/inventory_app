@@ -12,6 +12,8 @@
 </head>
 
 <body class="d-flex flex-column vh-100">
+  <%= turbo_stream_from "flash" %>
+  <%= render "layouts/flash" %>
   <div class="d-flex">
     <%= render 'admin/partials/sidebar' %>
 
