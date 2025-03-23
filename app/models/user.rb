@@ -36,6 +36,11 @@ class User < ApplicationRecord
     role == "customer" && created_offline?
   end
 
+  # app/models/user.rb
+  def created_offline?
+    self.created_offline == true
+  end
+
   def normalize_blank_email
     self.email = nil if email.blank?
   end
