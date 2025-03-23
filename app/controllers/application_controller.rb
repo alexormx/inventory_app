@@ -6,7 +6,7 @@ class ApplicationController < ActionController::Base
   protected
   def after_sign_in_path_for(resource)
     if resource.admin?
-      admin_dashboard_index_path
+      admin_dashboard_path
     else
       root_path
     end
