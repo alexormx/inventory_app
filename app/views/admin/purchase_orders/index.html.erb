@@ -1,21 +1,48 @@
-<h2>Admin - Orders</h2>
-<table class="table">
-  <thead>
+<h1 class="h4 mb-4">Purchase Orders</h1>
+
+<%= link_to "New Purchase Order", new_admin_purchase_order_path, class: "btn btn-primary mb-3" %>
+
+<table class="table table-sm table-hover align-middle">
+  <thead class="table-light">
     <tr>
-      <th>ID</th>
-      <th>Status</th>
-      <th>Total</th>
-      <th>Actions</th>
+      <th scope="col">#</th>
+      <th scope="col">Supplier</th>
+      <th scope="col">Order Date</th>
+      <th scope="col">Expected Delivery</th>
+      <th scope="col">Status</th>
+      <th scope="col" class="text-end">Currency</th>
+      <th scope="col" class="text-end">Total Cost</th>
+      <th scope="col" class="text-end">Total Cost MXN</th>
+      <th></th>
     </tr>
   </thead>
   <tbody>
-    <% @purchase_orders.each do |order| %>
+    <% @purchase_orders.each do |po| %>
       <tr>
-        <td><%= order.id %></td>
-        <td><%= order.status %></td>
-        <td>$<%= order.total %></td>
+        <td><%= po.id %></td>
+        <td><%= po.user&.name || "—" %></td>
+        <td><%= l(po.order_date, format: :short) %></td>
+        <td><%= l(po.expected_delivery_date, format: :short) if po.expected_delivery_date %></td>
         <td>
-          <%= link_to "View", admin_order_path(order), class: "btn btn-primary btn-sm" %>
+          <span class="badge bg-<%= po.status == "Delivered" ? "success" : "warning" %>">
+            <%= po.status %>
+          </span>
+        </td>
+        <td class="text-end"> <%= po.currency %> (<%= currency_symbol_for(po.currency)%>) </td>
+        <td class="text-end">
+          <%= number_to_currency(po.total_order_cost, unit: currency_symbol_for(po.currency)) %>
+        </td>
+        <td class="text-end"><%= number_to_currency(po.total_cost_mxn, unit: "$") %></td>
+        <td class="text-end">
+          <%= link_to admin_purchase_order_path(po), class: "btn btn-sm btn-outline-secondary" do %>
+            <i class="fa fa-eye"></i>
+          <% end %>
+          <%= link_to edit_admin_purchase_order_path(po), class: "btn btn-sm btn-outline-primary" do %>
+            <i class="fa fa-edit"></i>
+          <% end %>
+          <%= link_to admin_purchase_order_path(po), method: :delete, data: { turbo_confirm: "Are you sure?" }, class: "btn btn-sm btn-outline-danger" do %>
+            <i class="fa fa-trash"></i>
+          <% end %>
         </td>
       </tr>
     <% end %>

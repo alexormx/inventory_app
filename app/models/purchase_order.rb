@@ -1,5 +1,7 @@
 class PurchaseOrder < ApplicationRecord
   belongs_to :user
+  before_create :generate_custom_id
+
   has_many :inventory, foreign_key: "purchase_order_id", dependent: :restrict_with_error
 
   validates :order_date, presence: true
@@ -28,5 +30,25 @@ class PurchaseOrder < ApplicationRecord
     if actual_delivery_date < expected_delivery_date
       errors.add(:actual_delivery_date, "must be after or equal to expected delivery date")
     end
+  end
+
+  def generate_custom_id
+    return if self.id.present?
+    return unless self.order_date.present?  # Ensure order_date is set
+  
+    year = order_date.year
+  
+    last_order = PurchaseOrder
+      .where("id LIKE ?", "PO-#{year}-%")
+      .order(:created_at)
+      .last
+  
+    sequence = if last_order
+                 last_order.id.split("-").last.to_i + 1
+               else
+                 1
+               end
+  
+    self.id = format("PO-%<year>d-%<seq>05d", year: year, seq: sequence)
   end
 end

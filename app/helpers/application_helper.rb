@@ -8,4 +8,16 @@ module ApplicationHelper
     else "alert-info"
     end
   end
+
+  def currency_symbol_for(code)
+    {
+      "MXN" => "$",
+      "USD" => "$",
+      "EUR" => "€",
+      "JPY" => "¥",
+      "GBP" => "£",
+      "CNY" => "¥",
+      "KRW" => "₩"
+    }[code] || code
+  end
 end

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_03_22_185705) do
+ActiveRecord::Schema[8.0].define(version: 2025_03_23_083026) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -128,6 +128,10 @@ ActiveRecord::Schema[8.0].define(version: 2025_03_22_185705) do
     t.decimal "shipping_cost", precision: 10, scale: 2, default: "0.0", null: false
     t.decimal "tax_cost", precision: 10, scale: 2, default: "0.0", null: false
     t.decimal "other_cost", precision: 10, scale: 2, default: "0.0", null: false
+    t.string "currency", default: "MXN", null: false
+    t.decimal "exchange_rate", precision: 10, scale: 4, default: "1.0", null: false
+    t.decimal "total_cost", precision: 10, scale: 2, default: "0.0", null: false
+    t.decimal "total_cost_mxn", precision: 10, scale: 2, default: "0.0", null: false
     t.index ["user_id"], name: "index_purchase_orders_on_user_id"
   end
 

@@ -1,0 +1,82 @@
+<%= form_with model: [:admin, purchase_order], local: true, class: "row g-3" do |f| %>
+  <!-- Supplier -->
+  <div class="col-md-3">
+    <%= f.label :user_id, "Supplier" %>
+    <%= f.collection_select :user_id, User.where(role: "supplier"), :id, :name, { include_blank: true }, class: "form-select" %>
+  </div>
+
+  <!-- Dates -->
+  <div class="col-md-3">
+    <%= f.label :order_date %>
+    <%= f.date_field :order_date, class: "form-control" %>
+  </div>
+
+  <div class="col-md-3">
+    <%= f.label :expected_delivery_date %>
+    <%= f.date_field :expected_delivery_date, class: "form-control" %>
+  </div>
+
+  <div class="col-md-3">
+    <%= f.label :actual_delivery_date %>
+    <%= f.date_field :actual_delivery_date, class: "form-control" %>
+  </div>
+
+  <!-- Financials -->
+  <div class="col-md-3">
+    <%= f.label :subtotal %>
+    <%= f.number_field :subtotal, step: 0.01, class: "form-control" %>
+  </div>
+
+  <div class="col-md-3">
+    <%= f.label :shipping_cost %>
+    <%= f.number_field :shipping_cost, step: 0.01, class: "form-control" %>
+  </div>
+
+  <div class="col-md-3">
+    <%= f.label :tax_cost %>
+    <%= f.number_field :tax_cost, step: 0.01, class: "form-control" %>
+  </div>
+
+  <div class="col-md-3">
+    <%= f.label :other_cost %>
+    <%= f.number_field :other_cost, step: 0.01, class: "form-control" %>
+  </div>
+
+  <!-- Status -->
+  <div class="col-md-3">
+    <%= f.label :status %>
+    <%= f.select :status, ["Pending", "In Transit", "Delivered", "Canceled"], {}, class: "form-select" %>
+  </div>
+
+  <div class="col-md-3">
+    <%= f.label :currency %>
+    <%= f.select :currency, ["JPY", "USD", "MXN", "JPY", "GBP"], {}, class: "form-select" %>
+  </div>
+
+  <div class="col-md-3">
+    <%= f.label :exchange_rate, "Exchange Rate vs MXN" %>
+    <%= f.number_field :exchange_rate, step: 0.0001, class: "form-control", placeholder: "e.g., 17.5000" %>
+  </div>
+
+  <div class="col-md-3">
+    <%= f.label :total_order_cost, "Total Order Cost" %>
+    <%= f.number_field :total_order_cost, class: "form-control", readonly: true, id: "total_order_cost" %>
+  </div>
+
+  <div class="col-md-3">
+    <%= f.label :total_cost_mxn, "Total in MXN" %>
+    <%= f.number_field :total_cost_mxn, class: "form-control", readonly: true, id: "total_cost_mxn" %>
+  </div>
+
+  <!-- Notes -->
+  <div class="col-md-6">
+    <%= f.label :notes %>
+    <%= f.text_area :notes, class: "form-control", rows: 3 %>
+  </div>
+
+  <!-- Buttons -->
+  <div class="col-12">
+    <%= f.submit "Save Purchase Order", class: "btn btn-success" %>
+    <%= link_to "Cancel", admin_purchase_orders_path, class: "btn btn-secondary" %>
+  </div>
+<% end %>
