@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_03_23_083026) do
+ActiveRecord::Schema[8.0].define(version: 2025_03_24_043700) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -110,8 +110,22 @@ ActiveRecord::Schema[8.0].define(version: 2025_03_23_083026) do
     t.jsonb "custom_attributes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "weight_gr", default: 100, null: false
+    t.integer "length_cm", default: 16, null: false
+    t.integer "width_cm", default: 4, null: false
+    t.integer "height_cm", default: 4, null: false
     t.index ["product_sku"], name: "index_products_on_product_sku", unique: true
     t.index ["supplier_id"], name: "index_products_on_supplier_id"
+  end
+
+  create_table "purchase_order_items", force: :cascade do |t|
+    t.string "purchase_order_id", null: false
+    t.bigint "product_id", null: false
+    t.integer "quantity", null: false
+    t.decimal "unit_cost", precision: 10, scale: 2, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["product_id"], name: "index_purchase_order_items_on_product_id"
   end
 
   create_table "purchase_orders", id: :string, force: :cascade do |t|
@@ -132,6 +146,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_03_23_083026) do
     t.decimal "exchange_rate", precision: 10, scale: 4, default: "1.0", null: false
     t.decimal "total_cost", precision: 10, scale: 2, default: "0.0", null: false
     t.decimal "total_cost_mxn", precision: 10, scale: 2, default: "0.0", null: false
+    t.decimal "total_volume", precision: 10, scale: 2, default: "0.0", null: false
+    t.decimal "total_weight", precision: 10, scale: 2, default: "0.0", null: false
     t.index ["user_id"], name: "index_purchase_orders_on_user_id"
   end
 
@@ -215,6 +231,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_03_23_083026) do
   add_foreign_key "old_passwords", "users", column: "password_archivable_id", on_delete: :cascade
   add_foreign_key "payments", "sale_orders"
   add_foreign_key "products", "users", column: "supplier_id"
+  add_foreign_key "purchase_order_items", "products"
+  add_foreign_key "purchase_order_items", "purchase_orders"
   add_foreign_key "purchase_orders", "users"
   add_foreign_key "sale_orders", "users"
   add_foreign_key "shipments", "sale_orders"
