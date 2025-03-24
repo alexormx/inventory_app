@@ -91,6 +91,6 @@ end
 # 🔹 **Production Group*
 group :production do
   # images storage in aws
-  gem 'aws-sdk-s3', "1.114.0", require: false
+  gem 'aws-sdk-s3', "1.182.0", require: false
   
 end
