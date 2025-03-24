@@ -68,6 +68,17 @@
     <%= f.number_field :total_cost_mxn, class: "form-control", readonly: true, id: "total_cost_mxn" %>
   </div>
 
+  <!-- Add total volume and weight based on new columns created in last migration-->
+  <div class="col-md-3">
+    <%= f.label :total_volume, "Total Volume (cm³)" %>
+    <%= f.number_field :total_volume, class: "form-control", readonly: true, id: "total_volume" %>
+  </div>
+
+  <div class="col-md-3">
+    <%= f.label :total_weight, "Total Weight (gr)" %>
+    <%= f.number_field :total_weight, class: "form-control", readonly: true, id: "total_weight" %>
+  </div>
+
   <!-- Notes -->
   <div class="col-md-6">
     <%= f.label :notes %>

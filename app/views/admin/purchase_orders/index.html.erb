@@ -13,7 +13,9 @@
       <th scope="col" class="text-end">Currency</th>
       <th scope="col" class="text-end">Total Cost</th>
       <th scope="col" class="text-end">Total Cost MXN</th>
-      <th></th>
+      <th scope="col" class="text-end">Total Weight</th>
+      <th scope="col" class="text-end">Total Volume</th>
+      <th scope="col" class="text-end">Actions</th>
     </tr>
   </thead>
   <tbody>
@@ -33,6 +35,8 @@
           <%= number_to_currency(po.total_order_cost, unit: currency_symbol_for(po.currency)) %>
         </td>
         <td class="text-end"><%= number_to_currency(po.total_cost_mxn, unit: "$") %></td>
+        <td class="text-end"><%= po.total_weight %></td>
+        <td class="text-end"><%= po.total_volume %></td>
         <td class="text-end">
           <%= link_to admin_purchase_order_path(po), class: "btn btn-sm btn-outline-secondary" do %>
             <i class="fa fa-eye"></i>

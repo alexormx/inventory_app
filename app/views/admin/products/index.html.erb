@@ -4,12 +4,16 @@
 <table class="table table-sm table-hover align-middle">
   <thead class="table-light">
     <tr>
-      <th>Image</th>
+     <th>Image</th>
       <th>SKU</th>
       <th>Name</th>
       <th>Price</th>
       <th>Stock</th>
       <th>Status</th>
+      <th>Weight (g)</th>
+      <th>Length (cm)</th>
+      <th>Width (cm)</th>
+      <th>Height (cm)</th>
       <th></th>
     </tr>
   </thead>
@@ -28,6 +32,10 @@
         <td><%= number_to_currency(product.selling_price, precision: 2) %></td>
         <td><%= product.stock_quantity %></td>
         <td><%= product.status %></td>
+        <td><%= product.weight_gr %></td>
+        <td><%= product.length_cm %></td>
+        <td><%= product.width_cm %></td>
+        <td><%= product.height_cm %></td>
         <td class="text-end">
           <%= link_to admin_product_path(product), class: "small text-success", title: "View" do %>
             <i class="fa-solid fa-eye"></i>

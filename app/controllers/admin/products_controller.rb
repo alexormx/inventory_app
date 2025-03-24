@@ -92,6 +92,10 @@ class Admin::ProductsController < ApplicationController
       :product_images,
       :custom_attributes,
       :supplier_id,
+      :weight_gr, 
+      :length_cm,
+      :width_cm,
+      :height_cm,
       product_images: [] # allow multiple file uploads
     )
   end

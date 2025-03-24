@@ -1,70 +1,90 @@
 <%= form_with model: [:admin, @product], local: false, class: "row g-3" do |f| %>
-  <div class="col-md-6">
+  <div class="col-md-3">
     <%= f.label :product_name %>
     <%= f.text_field :product_name, class: "form-control" %>
   </div>
 
-  <div class="col-md-6">
+  <div class="col-md-3">
     <%= f.label :product_sku %>
     <%= f.text_field :product_sku, class: "form-control" %>
   </div>
 
-  <div class="col-md-6">
+  <div class="col-md-3">
     <%= f.label :barcode %>
     <%= f.text_field :barcode, class: "form-control" %>
   </div>
 
-  <div class="col-md-6">
+  <div class="col-md-3">
     <%= f.label :brand %>
     <%= f.text_field :brand, class: "form-control" %>
   </div>
 
-  <div class="col-md-6">
+  <div class="col-md-3">
     <%= f.label :category %>
     <%= f.text_field :category, class: "form-control" %>
   </div>
 
-  <div class="col-md-6">
+  <div class="col-md-2">
     <%= f.label :reorder_point %>
     <%= f.number_field :reorder_point, class: "form-control" %>
   </div>
 
-  <div class="col-md-4">
+  <div class="col-md-2">
     <%= f.label :selling_price %>
     <%= f.number_field :selling_price, step: 0.01, class: "form-control" %>
   </div>
 
-  <div class="col-md-4">
+  <div class="col-md-2">
     <%= f.label :maximum_discount %>
     <%= f.number_field :maximum_discount, step: 0.01, class: "form-control" %>
   </div>
 
-  <div class="col-md-4">
+  <div class="col-md-2">
     <%= f.label :minimum_price %>
     <%= f.number_field :minimum_price, step: 0.01, class: "form-control" %>
   </div>
 
-  <div class="col-md-6">
+  <div class="col-md-2">
     <%= f.label :discount_limited_stock %>
     <%= f.number_field :discount_limited_stock, class: "form-control" %>
   </div>
 
-  <div class="col-md-6">
+  <div class="col-md-2">
     <%= f.label :status %>
     <%= f.select :status, ["Active", "Discontinued", "Out of Stock"], {}, class: "form-select" %>
   </div>
 
-  <div class="col-md-4">
+  <div class="col-md-2">
+    <%= f.label :weight_grams, "Weight (grams)" %>
+    <%= f.number_field :weight_gr, class: "form-control", min: 0 %>
+  </div>
+
+  <div class="col-md-2">
+    <%= f.label :length_cm, "Length (cm)" %>
+    <%= f.number_field :length_cm, class: "form-control", min: 0 %>
+  </div>
+
+  <div class="col-md-2">
+    <%= f.label :width_cm, "Width (cm)" %>
+    <%= f.number_field :width_cm, class: "form-control", min: 0 %>
+  </div>
+
+  <div class="col-md-2">
+    <%= f.label :height_cm, "Height (cm)" %>
+    <%= f.number_field :height_cm, class: "form-control", min: 0 %>
+  </div>
+
+  <div class="col-md-2">
     <%= f.label :backorder_allowed %>
     <%= f.check_box :backorder_allowed %>
   </div>
 
-  <div class="col-md-4">
+  <div class="col-md-2">
     <%= f.label :preorder_available %>
     <%= f.check_box :preorder_available %>
   </div>
 
-  <div class="col-md-4">
+  <div class="col-md-2">
     <%= f.label :supplier_id %>
     <%= f.collection_select :supplier_id, User.where(role: "supplier"), :id, :name, include_blank: true, class: "form-select" %>
   </div>

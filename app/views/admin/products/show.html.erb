@@ -51,6 +51,26 @@
             <%= number_to_currency(@product.minimum_price) %> /
             <%= number_to_percentage(@product.maximum_discount, precision: 0) %>
           </td>
+          <tr>
+            <th scope="row">Weight (g):</th>
+            <td><%= @product.weight_gr %> gr</td>
+          </tr>
+          <tr>
+            <th scope="row">Length (cm):</th>
+            <td><%= @product.length_cm %> cm</td>
+          </tr>
+          <tr>
+            <th scope="row">Width (cm):</th>
+            <td><%= @product.width_cm %> cm</td>
+          </tr>
+          <tr>
+            <th scope="row">Height (cm):</th>
+            <td><%= @product.height_cm %> cm</td>
+          </tr>
+          <tr>
+            <th scope="row">Volume (cm³):</th>
+            <td><%= @product.length_cm * @product.width_cm * @product.height_cm %> cm³</td>
+          </tr>
         </tr>
       </tbody>
     </table>
