@@ -1,0 +1,38 @@
+<div class="row g-3">
+  <!-- Product Searcher Card -->
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-body">
+        <label for="product-search" class="form-label">Search Product</label>
+        <input type="text" id="product-search" class="form-control form-control-sm" placeholder="Type product name or SKU...">
+        <div id="product-search-results" class="list-group mt-1"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Purchase Order Items Table Card -->
+  <div class="col-md-8">
+    <div class="card">
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-sm align-middle" id="purchase-order-items-table">
+            <thead class="table-light">
+              <tr>
+                <th>Product</th>
+                <th>Qty</th>
+                <th>Unit Cost</th>
+                <th>Total</th>
+                <th>Line Volume</th>
+                <th>Line Weight</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Dynamic JS rows will be injected here -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,86 @@
+
+  <!-- Supplier -->
+  <div class="col-md-2">
+    <%= f.label :user_id, "Supplier", class: "form-label-sm" %>
+    <%= f.collection_select :user_id, User.where(role: "supplier"), :id, :name,
+          { include_blank: true }, class: "form-select form-select-sm" %>
+  </div>
+
+  <!-- Dates -->
+  <div class="col-md-2">
+    <%= f.label :order_date, class: "form-label-sm" %>
+    <%= f.date_field :order_date, class: "form-control form-control-sm" %>
+  </div>
+  <div class="col-md-2">
+    <%= f.label :expected_delivery_date, class: "form-label-sm" %>
+    <%= f.date_field :expected_delivery_date, class: "form-control form-control-sm" %>
+  </div>
+  <div class="col-md-2">
+    <%= f.label :actual_delivery_date, class: "form-label-sm" %>
+    <%= f.date_field :actual_delivery_date, class: "form-control form-control-sm" %>
+  </div>
+
+
+
+  <!-- Financials -->
+  <div class="col-md-2">
+    <%= f.label :subtotal, class: "form-label-sm" %>
+    <%= f.number_field :subtotal, step: 0.01, class: "form-control form-control-sm" %>
+  </div>
+  <div class="col-md-2">
+    <%= f.label :shipping_cost, class: "form-label-sm" %>
+    <%= f.number_field :shipping_cost, step: 0.01, class: "form-control form-control-sm" %>
+  </div>
+  <div class="col-md-2">
+    <%= f.label :tax_cost, class: "form-label-sm" %>
+    <%= f.number_field :tax_cost, step: 0.01, class: "form-control form-control-sm" %>
+  </div>
+  <div class="col-md-2">
+    <%= f.label :other_cost, class: "form-label-sm" %>
+    <%= f.number_field :other_cost, step: 0.01, class: "form-control form-control-sm" %>
+  </div>
+
+
+
+  <!-- Status & Currency -->
+  <div class="col-md-1">
+    <%= f.label :status, class: "form-label-sm" %>
+    <%= f.select :status, ["Pending", "In Transit", "Delivered", "Canceled"],
+          {}, class: "form-select form-select-sm" %>
+  </div>
+  <div class="col-md-1">
+    <%= f.label :currency, class: "form-label-sm" %>
+    <%= f.select :currency, ["JPY", "USD", "MXN", "GBP"],
+          {}, class: "form-select form-select-sm" %>
+  </div>
+  <div class="col-md-2">
+    <%= f.label :exchange_rate, "Exchange Rate vs MXN", class: "form-label-sm" %>
+    <%= f.number_field :exchange_rate, step: 0.0001, placeholder: "e.g. 17.50",
+          class: "form-control form-control-sm" %>
+  </div>
+  <div class="col-md-2">
+    <%= f.label :total_order_cost, class: "form-label-sm" %>
+    <%= f.number_field :total_order_cost, class: "form-control form-control-sm form-control-plaintext", readonly: true, id: "total_order_cost" %>
+  </div>
+  <div class="col-md-2">
+    <%= f.label :total_cost_mxn, class: "form-label-sm" %>
+    <%= f.number_field :total_cost_mxn, class: "form-control form-control-sm form-control-plaintext", readonly: true, id: "total_cost_mxn" %>
+  </div>
+
+
+
+  <div class="col-md-2">
+    <%= f.label :total_volume, "Total Volume (cm³)", class: "form-label-sm" %>
+    <%= f.number_field :total_volume, class: "form-control form-control-sm form-control-plaintext", readonly: true, id: "total_volume" %>
+  </div>
+  <div class="col-md-2">
+    <%= f.label :total_weight, "Total Weight (gr)", class: "form-label-sm" %>
+    <%= f.number_field :total_weight, class: "form-control form-control-sm form-control-plaintext", readonly: true, id: "total_weight" %>
+  </div>
+
+
+
+  <div class="col-md-4">
+    <%= f.label :notes, class: "form-label-sm" %>
+    <%= f.text_area :notes, class: "form-control form-control-sm", rows: 2 %>
+  </div>

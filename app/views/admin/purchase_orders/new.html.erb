@@ -1,3 +1,16 @@
 <h1 class="h4 mb-4">New Purchase Order</h1>
+<%= form_with model: [:admin, @purchase_order], local: true, class: "row g-3" do |f| %>
+  <div class="card mb-4">
+    <div class="card-body row">
+      <%= render "admin/purchase_orders/order_info_fields", f: f %>
+    </div>
+  </div>
 
-<%= render "form", purchase_order: @purchase_order %>
+  <!-- Add product searcher & item list here -->
+  <%= render "admin/purchase_orders/item_search_and_table", f: f %>
+
+  <div class="col-12">
+    <%= f.submit "Save Purchase Order", class: "btn btn-success" %>
+    <%= link_to "Cancel", admin_purchase_orders_path, class: "btn btn-secondary" %>
+  </div>
+<% end %>
