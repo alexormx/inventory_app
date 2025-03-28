@@ -108,6 +108,10 @@ document.addEventListener("turbo:load", () => {
     weightField.value = product.weight_gr;
     weightField.dataset.unitWeight = product.weight_gr;
 
+      // ✅ Remove placeholder row
+    const placeholderRow = document.querySelector("#purchase-without-items");
+    if (placeholderRow) placeholderRow.remove();
+
     tbody.appendChild(row);
     index++;
 
@@ -231,7 +235,10 @@ function updateItemTotals() {
 
 
   // First, calculate total volume for all items to use for volume unit cost calculation
-  document.querySelectorAll(".purchase-item-row").forEach(row => {    
+  document.querySelectorAll(".purchase-item-row").forEach(row => {
+    const destroyInput = row.querySelector("input.item-destroy-flag");
+    if (destroyInput?.value === "1") return;
+    
     const qty = parseFloat(row.querySelector(".item-qty")?.value) || 0;
     const unitVolume = parseFloat(row.querySelector(".item-volume")?.dataset?.unitVolume) || 0;
     const unitWeight = parseFloat(row.querySelector(".item-weight")?.dataset?.unitWeight) || 0;
@@ -240,20 +247,28 @@ function updateItemTotals() {
     totalLinesWeight += qty * unitWeight;
   });
 
-  const additionalCostRate = totalVolume > 0 ? (((shippingCost + taxCost + otherCost) / totalLinesVolume)) : 0;
+  const totalAdditionalCost = shippingCost + taxCost + otherCost;
+
 
   // Now calculate line totals and accumulate subtotal
   document.querySelectorAll(".purchase-item-row").forEach(row => {
+    const destroyInput = row.querySelector("input.item-destroy-flag");
+    if (destroyInput?.value === "1") return;
+
     const qty = parseFloat(row.querySelector(".item-qty")?.value) || 0;
     const unitVolume = parseFloat(row.querySelector(".item-volume")?.dataset?.unitVolume) || 0;
     const unitWeight = parseFloat(row.querySelector(".item-weight")?.dataset?.unitWeight) || 0;
     const unitCost = parseFloat(row.querySelector(".item-unit-cost")?.value) || 0;
  
-    const unitAdditionalCost = additionalCostRate * unitVolume;
+    const lineVolume = qty * unitVolume;
+    const volumeRate = totalLinesVolume > 0 ? lineVolume / totalLinesVolume : 0;
+    const unitAdditionalCost = totalAdditionalCost * volumeRate;
     const unitComposeCost = unitAdditionalCost + unitCost;
     const unitComposeCostMXN = unitComposeCost * exchangeRate;
     const lineTotal = qty * unitComposeCost;
     const lineTotalMXN = lineTotal * exchangeRate;
+
+
 
     // Update line fields
     const unitAdditionalCostField = row.querySelector(".item-unit-additional-cost");
@@ -310,14 +325,6 @@ function updateLineTotals(row) {
   if (weightField) weightField.value = totalWeight.toFixed(2);
 }
 
-// Remove item row
-function removeItemRow(row) {
-  const tbody = document.querySelector("#purchase-order-items-table tbody");
-  if (tbody) {
-    tbody.removeChild(row);
-    updateItemTotals();
-  }
-}
 // Event listeners for item quantity and unit cost changes
 document.addEventListener("input", (e) => {
   if (e.target.matches(".item-qty, .item-unit-cost")) {
@@ -330,7 +337,7 @@ document.addEventListener("input", (e) => {
 });
 // Event listener for remove button click
 document.addEventListener("click", (e) => {
-  if (e.target.matches(".remove-item")) {
+  if (e.target.matches(".remove-item, .remove-item *")) {
     const row = e.target.closest(".purchase-item-row");
     if (row) {
       removeItemRow(row);
@@ -338,7 +345,25 @@ document.addEventListener("click", (e) => {
   }
 });
 
+// Update totals for the entire order
+function updateTotals() {
+  const subtotal = parseFloat(document.querySelector("#purchase_order_subtotal")?.value) || 0;
+  const shipping = parseFloat(document.querySelector("#purchase_order_shipping_cost")?.value) || 0;
+  const tax = parseFloat(document.querySelector("#purchase_order_tax_cost")?.value) || 0;
+  const other = parseFloat(document.querySelector("#purchase_order_other_cost")?.value) || 0;
+  const exchangeRate = parseFloat(document.querySelector("#purchase_order_exchange_rate")?.value) || 0;
 
+  const total = subtotal + shipping + tax + other;
+  const totalMXN = total * exchangeRate;
+
+  const totalCostInput = document.querySelector("#total_order_cost");
+  const totalMXNInput = document.querySelector("#total_cost_mxn");
+
+  if (totalCostInput) totalCostInput.value = total.toFixed(2);
+  if (totalMXNInput) totalMXNInput.value = exchangeRate ? totalMXN.toFixed(2) : "";
+}
+
+// Reattach listeners
 document.addEventListener("turbo:load", function () {
   const subtotalInput = document.querySelector("#purchase_order_subtotal");
   const shippingInput = document.querySelector("#purchase_order_shipping_cost");
@@ -346,31 +371,24 @@ document.addEventListener("turbo:load", function () {
   const otherInput = document.querySelector("#purchase_order_other_cost");
   const exchangeInput = document.querySelector("#purchase_order_exchange_rate");
 
-  const totalCostInput = document.querySelector("#total_order_cost");
-  const totalMXNInput = document.querySelector("#total_cost_mxn");
-
-  if (!subtotalInput || !shippingInput || !taxInput || !otherInput || !exchangeInput) {
-    return;
-  }
-
-  function updateTotals() {
-    const subtotal = parseFloat(subtotalInput?.value) || 0;
-    const shipping = parseFloat(shippingInput?.value) || 0;
-    const tax = parseFloat(taxInput?.value) || 0;
-    const other = parseFloat(otherInput?.value) || 0;
-    const exchangeRate = parseFloat(exchangeInput?.value) || 0;
-
-    const total = subtotal + shipping + tax + other;
-    totalCostInput.value = total.toFixed(2);
-
-    const totalMXN = total * exchangeRate;
-    totalMXNInput.value = exchangeRate ? totalMXN.toFixed(2) : "";
-    updateItemTotals(); 
-  }
-
   [subtotalInput, shippingInput, taxInput, otherInput, exchangeInput].forEach(input => {
     input?.addEventListener("input", updateTotals);
   });
 
   updateTotals(); // initial run
 });
+
+function removeItemRow(row) {
+  const destroyField = row.querySelector(".item-destroy-flag");
+
+  if (destroyField) {
+    // This row represents a saved record; mark it for deletion
+    destroyField.value = "1";
+    row.style.display = "none"; // hide it visually
+  } else {
+    // This is a new unsaved row; remove from DOM
+    row.remove();
+  }
+
+  updateItemTotals();
+}

@@ -1,2 +1,120 @@
-<h1>Admin::Orders#show</h1>
-<p>Find me in app/views/admin/orders/show.html.erb</p>
+<div class="container mt-4">
+  <h2>Purchase Order ##<%= @purchase_order.id %></h2>
+
+  <!-- Order Info -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-3">
+      <strong>Supplier:</strong>
+      <p><%= @purchase_order.user&.name || "N/A" %></p>
+    </div>
+    <div class="col-md-3">
+      <strong>Status:</strong>
+      <p><%= @purchase_order.status %></p>
+    </div>
+    <div class="col-md-3">
+      <strong>Currency:</strong>
+      <p><%= @purchase_order.currency %></p>
+    </div>
+    <div class="col-md-3">
+      <strong>Exchange Rate:</strong>
+      <p><%= @purchase_order.exchange_rate %></p>
+    </div>
+
+    <div class="col-md-3">
+      <strong>Order Date:</strong>
+      <p><%= @purchase_order.order_date %></p>
+    </div>
+    <div class="col-md-3">
+      <strong>Expected Delivery:</strong>
+      <p><%= @purchase_order.expected_delivery_date %></p>
+    </div>
+    <div class="col-md-3">
+      <strong>Actual Delivery:</strong>
+      <p><%= @purchase_order.actual_delivery_date || "—" %></p>
+    </div>
+  </div>
+
+  <!-- Financial Summary -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-2">
+      <strong>Subtotal:</strong>
+      <p>$<%= number_with_precision(@purchase_order.subtotal, precision: 2) %></p>
+    </div>
+    <div class="col-md-2">
+      <strong>Shipping:</strong>
+      <p>$<%= number_with_precision(@purchase_order.shipping_cost, precision: 2) %></p>
+    </div>
+    <div class="col-md-2">
+      <strong>Tax:</strong>
+      <p>$<%= number_with_precision(@purchase_order.tax_cost, precision: 2) %></p>
+    </div>
+    <div class="col-md-2">
+      <strong>Other:</strong>
+      <p>$<%= number_with_precision(@purchase_order.other_cost, precision: 2) %></p>
+    </div>
+    <div class="col-md-2">
+      <strong>Total:</strong>
+      <p>$<%= number_with_precision(@purchase_order.total_order_cost, precision: 2) %></p>
+    </div>
+    <div class="col-md-2">
+      <strong>Total MXN:</strong>
+      <p>$<%= number_with_precision(@purchase_order.total_cost_mxn, precision: 2) %></p>
+    </div>
+  </div>
+
+  <!-- Items Table -->
+  <div class="card mb-4">
+    <div class="card-body">
+      <h5 class="card-title">Purchase Order Items</h5>
+      <div class="table-responsive">
+        <table class="table table-bordered table-sm align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>Product</th>
+              <th>Qty</th>
+              <th>Unit Cost</th>
+              <th>Line Volume</th>
+              <th>Line Weight</th>
+              <th>Unit Add. Cost</th>
+              <th>Unit Comp. Cost</th>
+              <th>Unit Comp. MXN</th>
+              <th>Total Line Cost</th>
+              <th>Total MXN</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @purchase_order.purchase_order_items.each do |item| %>
+              <tr>
+                <td><%= item.product&.product_name || "—" %></td>
+                <td><%= item.quantity %></td>
+                <td><%= number_with_precision(item.unit_cost, precision: 2) %></td>
+                <td><%= number_with_precision(item.total_line_volume, precision: 2) %></td>
+                <td><%= number_with_precision(item.total_line_weight, precision: 2) %></td>
+                <td><%= number_with_precision(item.unit_additional_cost, precision: 2) %></td>
+                <td><%= number_with_precision(item.unit_compose_cost, precision: 2) %></td>
+                <td><%= number_with_precision(item.unit_compose_cost_in_mxn, precision: 2) %></td>
+                <td><%= number_with_precision(item.total_line_cost, precision: 2) %></td>
+                <td><%= number_with_precision(item.total_line_cost_in_mxn, precision: 2) %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notes & Metadata -->
+  <% if @purchase_order.notes.present? %>
+    <div class="card mb-3">
+      <div class="card-body">
+        <strong>Notes:</strong>
+        <p><%= @purchase_order.notes %></p>
+      </div>
+    </div>
+  <% end %>
+
+  <div class="text-muted small">
+    Created at: <%= @purchase_order.created_at.strftime("%F %T") %> |
+    Updated at: <%= @purchase_order.updated_at.strftime("%F %T") %>
+  </div>
+</div>

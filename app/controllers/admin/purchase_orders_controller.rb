@@ -23,6 +23,19 @@ class Admin::PurchaseOrdersController < ApplicationController
     end
   end
 
+  def edit
+    @purchase_order = PurchaseOrder.includes(:purchase_order_items).find(params[:id])
+  end
+  
+  def update
+    @purchase_order = PurchaseOrder.find(params[:id])
+    if @purchase_order.update(purchase_order_params)
+      redirect_to admin_purchase_orders_path, notice: "Purchase order updated successfully."
+    else
+      render :edit
+    end
+  end
+
   private
 
   def purchase_order_params
