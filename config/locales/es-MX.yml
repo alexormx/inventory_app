@@ -29,6 +29,37 @@ es-MX:
       user:
         one: Usuario
         other: Usuarios
+    errors:
+      models:
+        user:
+          attributes:
+            confirmation_sent_at: "no se puede confirmar"
+            confirmation_token: "no se puede confirmar"
+            confirmed_at: "no se puede confirmar"
+            created_at: "no se puede crear"
+            current_password: "no se puede crear"
+            current_sign_in_at: "no se puede crear"
+            current_sign_in_ip: "no se puede crear"
+            email: "no se puede crear"
+            encrypted_password: "no se puede crear"
+            failed_attempts: "no se puede crear"
+            last_sign_in_at: "no se puede crear"
+            last_sign_in_ip: "no se puede crear"
+            locked_at: "no se puede crear"
+            password: "no se puede crear"
+            password_confirmation: "no se puede crear"
+            remember_created_at: "no se puede crear"
+            remember_me: "no se puede crear"
+            reset_password_sent_at: "no se puede crear"
+            reset_password_token: "no se puede crear"
+            sign_in_count: "no se puede crear"
+            unconfirmed_email: "no se puede crear"
+            unlock_token: "no se puede crear"
+            updated_at: "no se puede crear"
+        purchase_order:
+          attributes:
+            status:
+              inclusion: "no está incluido en la lista de opciones permitidas"
   devise:
     confirmations:
       confirmed: Se ha confirmado la dirección de correo electrónico correctamente.
@@ -164,6 +195,7 @@ es-MX:
       less_than: 'debe ser menor que %{count}'
       less_than_or_equal_to: 'debe ser menor o igual a %{count}'
       confirmation: 'no coincide con la contraseña'
+      inclusion: "no está incluido en la lista válida"
     models:
       user:
         attributes:

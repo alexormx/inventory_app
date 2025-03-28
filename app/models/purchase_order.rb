@@ -6,6 +6,8 @@ class PurchaseOrder < ApplicationRecord
   has_many :purchase_order_items, dependent: :destroy
   has_many :products, through: :purchase_order_items
 
+  accepts_nested_attributes_for :purchase_order_items, allow_destroy: true
+
   validates :order_date, presence: true
   validates :expected_delivery_date, presence: true
   validates :subtotal, presence: true, numericality: { greater_than_or_equal_to: 0 }
@@ -13,7 +15,7 @@ class PurchaseOrder < ApplicationRecord
   validates :shipping_cost, presence: true, numericality: { greater_than_or_equal_to: 0 }
   validates :tax_cost, presence: true, numericality: { greater_than_or_equal_to: 0 }
   validates :other_cost, presence: true, numericality: { greater_than_or_equal_to: 0 }
-  validates :status, presence: true, inclusion: { in: %w[Pending Approved Shipped Delivered Canceled] }
+  validates :status, presence: true, inclusion: { in: ["Pending", "In Transit", "Delivered", "Canceled"]  }
 
   validate :expected_delivery_after_order_date
   validate :actual_delivery_after_expected_delivery

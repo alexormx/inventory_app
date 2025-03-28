@@ -83,6 +83,13 @@
   margin-right: 0 !important;
 }
 
+img.product-order-image {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+}
+
+
 /* Footer */
 @media (max-width: 800px) {
   footer {

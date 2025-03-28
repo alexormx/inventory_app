@@ -72,6 +72,26 @@ class Admin::ProductsController < ApplicationController
     end
   end
 
+  def search
+    @products = Product.where("product_name ILIKE ? OR product_sku ILIKE ?", "%#{params[:query]}%", "%#{params[:query]}%")
+
+    render json: @products.map { |product|
+      {
+        id: product.id,
+        product_name: product.product_name,
+        product_sku: product.product_sku,
+        weight_gr: product.weight_gr,
+        length_cm: product.length_cm,
+        width_cm: product.width_cm,
+        height_cm: product.height_cm,
+        thumbnail_url: product.product_images.attached? ?
+          url_for(product.product_images.first.variant(resize_to_limit: [40, 40])) :
+          ActionController::Base.helpers.asset_path("placeholder.png") # fallback
+      }
+    }
+  end
+
+
   private
   # Strong parameters for product
   def product_params
@@ -101,10 +121,13 @@ class Admin::ProductsController < ApplicationController
   end
 
   def set_product
-    @product = if params[:id]
-      Product.find(params[:id])
-    elsif params[:product_id]
-      Product.find(params[:product_id])
+    @product = Product.find_by(id: params[:id]) || Product.find_by(id: params[:product_id])
+
+    unless @product
+      respond_to do |format|
+        format.html { redirect_to admin_products_path, alert: "Product not found." }
+        format.json { render json: { error: "Product not found" }, status: :not_found }
+      end
     end
   end
 end

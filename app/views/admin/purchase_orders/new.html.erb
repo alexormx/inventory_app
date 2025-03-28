@@ -1,4 +1,14 @@
 <h1 class="h4 mb-4">New Purchase Order</h1>
+<% if @purchase_order.errors.any? %>
+  <div class="alert alert-danger">
+    <h5>There were errors saving this purchase order:</h5>
+    <ul>
+      <% @purchase_order.errors.full_messages.each do |message| %>
+        <li><%= message %></li>
+      <% end %>
+    </ul>
+  </div>
+<% end %>
 <%= form_with model: [:admin, @purchase_order], local: true, class: "row g-3" do |f| %>
   <div class="card mb-4">
     <div class="card-body row">

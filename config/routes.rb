@@ -11,6 +11,11 @@ Rails.application.routes.draw do
     resources :products do
       # Image removal for ActiveStorage
       delete "images/:image_id", to: "products#purge_image", as: :purge_image
+
+      # Product serach as JSON
+      collection do
+        get "search"
+      end
     end
 
     # Customer Management
@@ -29,6 +34,7 @@ Rails.application.routes.draw do
 
     # General user management (admin-facing)
     resources :users
+
   end
 
   # Rails health check (uptime monitor, etc.)
