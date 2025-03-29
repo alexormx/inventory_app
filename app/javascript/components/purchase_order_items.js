@@ -361,6 +361,7 @@ function updateTotals() {
 
   if (totalCostInput) totalCostInput.value = total.toFixed(2);
   if (totalMXNInput) totalMXNInput.value = exchangeRate ? totalMXN.toFixed(2) : "";
+  updateItemTotals();
 }
 
 // Reattach listeners
