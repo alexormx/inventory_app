@@ -261,7 +261,7 @@ function updateItemTotals() {
     const unitCost = parseFloat(row.querySelector(".item-unit-cost")?.value) || 0;
  
     const lineVolume = qty * unitVolume;
-    const volumeRate = totalLinesVolume > 0 ? lineVolume / totalLinesVolume : 0;
+    const volumeRate = totalLinesVolume > 0 ? (lineVolume / qty) / totalLinesVolume : 0;
     const unitAdditionalCost = totalAdditionalCost * volumeRate;
     const unitComposeCost = unitAdditionalCost + unitCost;
     const unitComposeCostMXN = unitComposeCost * exchangeRate;
