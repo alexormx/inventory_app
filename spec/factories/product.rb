@@ -9,8 +9,6 @@ FactoryBot.define do
 
     discount_limited_stock { 10 }
 
-    association :supplier, factory: [:user, :supplier]
-
     # Opcional para que se vea completo, no es requerido por validaciones
     stock_quantity { 100 }
     reserved_quantity { 10 }

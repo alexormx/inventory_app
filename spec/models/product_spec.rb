@@ -9,8 +9,4 @@ RSpec.describe Product, type: :model do
     it { should validate_numericality_of(:maximum_discount).is_greater_than_or_equal_to(0) }
     it { should validate_numericality_of(:minimum_price).is_greater_than_or_equal_to(0) }
   end
-
-  describe "Associations" do
-    it { should belong_to(:supplier).class_name("User").with_foreign_key("supplier_id") }
-  end
 end

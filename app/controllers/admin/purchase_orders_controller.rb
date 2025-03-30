@@ -36,6 +36,16 @@ class Admin::PurchaseOrdersController < ApplicationController
     end
   end
 
+  def confirm_receipt
+    @purchase_order = PurchaseOrder.find(params[:id])
+    if @purchase_order.update(status: "Delivered")
+      flash[:notice] = "Recepción confirmada. Inventario actualizado."
+    else
+      flash[:alert] = "No se pudo confirmar la recepción."
+    end
+    redirect_to admin_purchase_order_path(@purchase_order)
+  end
+
   private
 
   def purchase_order_params

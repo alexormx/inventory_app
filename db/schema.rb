@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_03_27_045026) do
+ActiveRecord::Schema[8.0].define(version: 2025_03_30_044423) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -65,6 +65,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_03_27_045026) do
     t.text "notes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.datetime "status_changed_at", default: -> { "CURRENT_TIMESTAMP" }, null: false
+    t.integer "purchase_order_item_id"
     t.index ["product_id"], name: "index_inventories_on_product_id"
     t.index ["purchase_order_id"], name: "index_inventories_on_purchase_order_id"
     t.index ["sale_order_id"], name: "index_inventories_on_sale_order_id"
@@ -95,7 +97,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_03_27_045026) do
     t.string "product_name", null: false
     t.string "brand", null: false
     t.string "category", null: false
-    t.bigint "supplier_id", null: false
     t.integer "stock_quantity", default: 0, null: false
     t.integer "reserved_quantity", default: 0, null: false
     t.integer "reorder_point", default: 0, null: false
@@ -114,8 +115,28 @@ ActiveRecord::Schema[8.0].define(version: 2025_03_27_045026) do
     t.integer "length_cm", default: 16, null: false
     t.integer "width_cm", default: 4, null: false
     t.integer "height_cm", default: 4, null: false
+    t.bigint "preferred_supplier_id"
+    t.bigint "last_supplier_id"
+    t.integer "total_purchase_quantity", default: 0, null: false
+    t.decimal "total_purchase_value", precision: 10, scale: 2, default: "0.0", null: false
+    t.decimal "average_purchase_cost", precision: 10, scale: 2, default: "0.0", null: false
+    t.decimal "last_purchase_cost", precision: 10, scale: 2, default: "0.0", null: false
+    t.date "last_purchase_date"
+    t.integer "total_sales_quantity", default: 0, null: false
+    t.decimal "average_sales_price", precision: 10, scale: 2, default: "0.0", null: false
+    t.decimal "last_sales_price", precision: 10, scale: 2, default: "0.0", null: false
+    t.date "last_sales_date"
+    t.decimal "total_sales_value", precision: 10, scale: 2, default: "0.0", null: false
+    t.integer "total_purchase_order", default: 0, null: false
+    t.integer "total_sales_order", default: 0, null: false
+    t.integer "total_units_sold", default: 0, null: false
+    t.decimal "current_profit", precision: 15, scale: 2, default: "0.0", null: false
+    t.decimal "current_inventory_value", precision: 15, scale: 2, default: "0.0", null: false
+    t.decimal "projected_sales_value", precision: 15, scale: 2, default: "0.0", null: false
+    t.decimal "projected_profit", precision: 15, scale: 2, default: "0.0", null: false
+    t.index ["last_supplier_id"], name: "index_products_on_last_supplier_id"
+    t.index ["preferred_supplier_id"], name: "index_products_on_preferred_supplier_id"
     t.index ["product_sku"], name: "index_products_on_product_sku", unique: true
-    t.index ["supplier_id"], name: "index_products_on_supplier_id"
   end
 
   create_table "purchase_order_items", force: :cascade do |t|
@@ -237,7 +258,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_03_27_045026) do
   add_foreign_key "inventories", "sale_orders"
   add_foreign_key "old_passwords", "users", column: "password_archivable_id", on_delete: :cascade
   add_foreign_key "payments", "sale_orders"
-  add_foreign_key "products", "users", column: "supplier_id"
+  add_foreign_key "products", "users", column: "last_supplier_id"
+  add_foreign_key "products", "users", column: "preferred_supplier_id"
   add_foreign_key "purchase_order_items", "products"
   add_foreign_key "purchase_order_items", "purchase_orders"
   add_foreign_key "purchase_orders", "users"

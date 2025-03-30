@@ -1,5 +1,7 @@
 class Product < ApplicationRecord
-  belongs_to :supplier, class_name: "User", foreign_key: "supplier_id"
+  belongs_to :preferred_supplier, class_name: "User", optional: true
+  belongs_to :last_supplier, class_name: "User", optional: true
+
 
   has_many :inventory, dependent: :restrict_with_error
   has_many :canceled_order_items, dependent: :restrict_with_error
@@ -16,6 +18,16 @@ class Product < ApplicationRecord
 
   validate :minimum_price_not_exceed_selling_price
 
+  def update_stock_quantity!
+    available = Inventory.where(product_id: id, status: "Available").count
+    reserved  = Inventory.where(product_id: id, status: "Reserved").count
+  
+    update!(
+      stock_quantity: available,
+      reserved_quantity: reserved
+    )
+  end
+
   private
 
   def minimum_price_not_exceed_selling_price
@@ -23,4 +35,6 @@ class Product < ApplicationRecord
       errors.add(:minimum_price, "cannot be higher than the selling price")
     end
   end
+
+
 end

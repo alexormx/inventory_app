@@ -19,7 +19,11 @@ class PurchaseOrder < ApplicationRecord
 
   validate :expected_delivery_after_order_date
   validate :actual_delivery_after_expected_delivery
-
+  after_commit :update_product_purchase_stats, on: [:create, :update]
+  after_update :update_inventory_status_based_on_order_status, if: :saved_change_to_status?
+  after_create :create_inventory_records
+  after_update :update_stock_if_delivered
+  
   private
 
   def expected_delivery_after_order_date
@@ -54,5 +58,46 @@ class PurchaseOrder < ApplicationRecord
                end
   
     self.id = format("PO-%<year>d-%<seq>05d", year: year, seq: sequence)
+  end
+
+  def update_product_purchase_stats
+    Rails.logger.info "Updating stats for PO ##{id} with #{purchase_order_items.size} items"
+    purchase_order_items.each do |item|
+      Rails.logger.info "→ Item: #{item.product_id} × #{item.quantity}"
+      Products::UpdatePurchaseStatsService.new(item.product).call
+    end
+  end
+
+  def update_inventory_status_based_on_order_status
+    case status
+    when "Delivered"
+      inventory.where(status: "In Transit").update_all(status: "Available", updated_at: Time.current)
+    when "Canceled"
+      # Alternativa si quieres conservarlos:
+      inventory.where(status: "In Transit").update_all(status: "Canceled")
+    end
+  end
+  def create_inventory_records
+    purchase_order_items.each do |item|
+      item.quantity.times do
+        Inventory.create!(
+          product_id: item.product_id,
+          purchase_order_id: self.id,
+          status: "In Transit", # 👈 por defecto
+          purchase_cost: item.unit_compose_cost,
+          status_changed_at: Time.current
+        )
+      end
+    end
+  end
+
+  def update_stock_if_delivered
+    return unless saved_change_to_status? && status == "Delivered"
+  
+    Inventory.where(purchase_order_id: id, status: "In Transit").find_each do |inv|
+      inv.update!(status: "Available", status_changed_at: Time.current)
+    end
+  
+    products.uniq.each(&:update_stock_quantity!)
   end
 end

@@ -1,88 +1,120 @@
-<h1 class="h4 mb-3"><%= @product.product_name %></h1>
+<h1 class="h4 mb-4"><%= @product.product_name %></h1>
 
 <div class="row">
-  <div class="col-md-4">
+  <!-- Left: Main image -->
+  <div class="col-md-4 mb-4">
     <% if @product.product_images.attached? %>
-      <%= image_tag @product.product_images.first.variant(resize_to_limit: [400, 400]),
-                    class: "img-fluid rounded border" %>
+      <%= image_tag @product.product_images.first.variant(resize_to_limit: [400, 400]), class: "img-fluid rounded border" %>
     <% else %>
       <div class="text-muted text-center p-4 border bg-light">No image available</div>
     <% end %>
   </div>
 
-  <div class="col-md-8">
-    <table class="table table-sm table-borderless">
-      <tbody>
-        <tr>
-          <th scope="row">SKU:</th>
-          <td><%= @product.product_sku %></td>
-        </tr>
-        <tr>
-          <th scope="row">Brand:</th>
-          <td><%= @product.brand %></td>
-        </tr>
-        <tr>
-          <th scope="row">Category:</th>
-          <td><%= @product.category %></td>
-        </tr>
-        <tr>
-          <th scope="row">Status:</th>
-          <td><%= @product.status %></td>
-        </tr>
-        <tr>
-          <th scope="row">Supplier:</th>
-          <td><%= @product.supplier&.name || "—" %></td>
-        </tr>
-        <tr>
-          <th scope="row">Stock:</th>
-          <td><%= @product.stock_quantity %> available</td>
-        </tr>
-        <tr>
-          <th scope="row">Reorder Point:</th>
-          <td><%= @product.reorder_point %></td>
-        </tr>
-        <tr>
-          <th scope="row">Selling Price:</th>
-          <td><%= number_to_currency(@product.selling_price) %></td>
-        </tr>
-        <tr>
-          <th scope="row">Min. Price / Max. Discount:</th>
-          <td>
-            <%= number_to_currency(@product.minimum_price) %> /
-            <%= number_to_percentage(@product.maximum_discount, precision: 0) %>
-          </td>
-          <tr>
-            <th scope="row">Weight (g):</th>
-            <td><%= @product.weight_gr %> gr</td>
-          </tr>
-          <tr>
-            <th scope="row">Length (cm):</th>
-            <td><%= @product.length_cm %> cm</td>
-          </tr>
-          <tr>
-            <th scope="row">Width (cm):</th>
-            <td><%= @product.width_cm %> cm</td>
-          </tr>
-          <tr>
-            <th scope="row">Height (cm):</th>
-            <td><%= @product.height_cm %> cm</td>
-          </tr>
-          <tr>
-            <th scope="row">Volume (cm³):</th>
-            <td><%= @product.length_cm * @product.width_cm * @product.height_cm %> cm³</td>
-          </tr>
-        </tr>
-      </tbody>
-    </table>
+  <!-- Right: Info blocks -->
+  <div class="col-md-8 bg-secondary-subtle rounded border">
+    <div class="row g-3">
+
+      <!-- 📌 Basic Info -->
+      <div class="col-md-6">
+        <h6 class="fw-bold mb-2">📌 Basic Info</h6>
+        <dl class="row mb-0">
+          <dt class="col-sm-6">SKU:</dt><dd class="col-sm-6"><%= @product.product_sku %></dd>
+          <dt class="col-sm-6">Brand:</dt><dd class="col-sm-6"><%= @product.brand %></dd>
+          <dt class="col-sm-6">Category:</dt><dd class="col-sm-6"><%= @product.category %></dd>
+          <dt class="col-sm-6">Status:</dt><dd class="col-sm-6"><%= @product.status %></dd>
+          <dt class="col-sm-6">Preferred Supplier:</dt><dd class="col-sm-6"><%= @product.preferred_supplier&.name || "—" %></dd>
+          <dt class="col-sm-6">Last Supplier:</dt><dd class="col-sm-6"><%= @product.last_supplier&.name || "—" %></dd>
+        </dl>
+      </div>
+
+      <!-- 📦 Inventory & Pricing -->
+      <div class="col-md-6">
+        <h6 class="fw-bold mb-2">📦 Inventory & Pricing</h6>
+        <dl class="row mb-0">
+          <dt class="col-sm-6">Stock:</dt><dd class="col-sm-6"><%= @product.stock_quantity %> available</dd>
+          <dt class="col-sm-6">Reserved:</dt><dd class="col-sm-6"><%= @product.reserved_quantity %> units</dd>
+          <dt class="col-sm-6">Reorder Point:</dt><dd class="col-sm-6"><%= @product.reorder_point %></dd>
+          <dt class="col-sm-6">Selling Price:</dt><dd class="col-sm-6"><%= number_to_currency(@product.selling_price) %></dd>
+          <dt class="col-sm-6">Min. Price:</dt><dd class="col-sm-6"><%= number_to_currency(@product.minimum_price) %></dd>
+          <dt class="col-sm-6">Max. Discount:</dt><dd class="col-sm-6"><%= number_to_percentage(@product.maximum_discount, precision: 0) %></dd>
+          <dt class="col-sm-6">Discount Stock:</dt><dd class="col-sm-6"><%= @product.discount_limited_stock %></dd>
+        </dl>
+      </div>
+
+      <!-- 📏 Dimensions -->
+      <div class="col-md-6">
+        <h6 class="fw-bold mt-3 mb-2">📏 Dimensions</h6>
+        <dl class="row mb-0">
+          <dt class="col-sm-6">Weight (g):</dt><dd class="col-sm-6"><%= @product.weight_gr %> g</dd>
+          <dt class="col-sm-6">Length:</dt><dd class="col-sm-6"><%= @product.length_cm %> cm</dd>
+          <dt class="col-sm-6">Width:</dt><dd class="col-sm-6"><%= @product.width_cm %> cm</dd>
+          <dt class="col-sm-6">Height:</dt><dd class="col-sm-6"><%= @product.height_cm %> cm</dd>
+          <dt class="col-sm-6">Volume:</dt><dd class="col-sm-6"><%= @product.length_cm * @product.width_cm * @product.height_cm %> cm³</dd>
+        </dl>
+      </div>
+
+      <!-- 🧾 Purchase Tracking -->
+      <div class="col-md-6">
+        <h6 class="fw-bold mt-3 mb-2">🧾 Purchase Tracking</h6>
+        <dl class="row mb-0">
+          <dt class="col-sm-6">Total Purchased:</dt><dd class="col-sm-6"><%= @product.total_purchase_quantity %> units</dd>
+          <dt class="col-sm-6">Total Value:</dt><dd class="col-sm-6"><%= number_to_currency(@product.total_purchase_value) %></dd>
+          <dt class="col-sm-6">Avg. Cost:</dt><dd class="col-sm-6"><%= number_to_currency(@product.average_purchase_cost) %></dd>
+          <dt class="col-sm-6">Last Cost:</dt><dd class="col-sm-6"><%= number_to_currency(@product.last_purchase_cost) %></dd>
+          <dt class="col-sm-6">Last Date:</dt><dd class="col-sm-6"><%= @product.last_purchase_date || "—" %></dd>
+          <dt class="col-sm-6">Total PO:</dt><dd class="col-sm-6"><%= @product.total_purchase_order %></dd>
+        </dl>
+      </div>
+
+      <!-- 💰 Sales Tracking -->
+      <div class="col-md-6">
+        <h6 class="fw-bold mt-3 mb-2">💰 Sales Tracking</h6>
+        <dl class="row mb-0">
+          <dt class="col-sm-6">Total Sold:</dt><dd class="col-sm-6"><%= @product.total_sales_quantity %> units</dd>
+          <dt class="col-sm-6">Avg. Price:</dt><dd class="col-sm-6"><%= number_to_currency(@product.average_sales_price) %></dd>
+          <dt class="col-sm-6">Last Price:</dt><dd class="col-sm-6"><%= number_to_currency(@product.last_sales_price) %></dd>
+          <dt class="col-sm-6">Last Date:</dt><dd class="col-sm-6"><%= @product.last_sales_date || "—" %></dd>
+          <dt class="col-sm-6">Total Sales Value:</dt><dd class="col-sm-6"><%= number_to_currency(@product.total_sales_value) %></dd>
+          <dt class="col-sm-6">Total SO:</dt><dd class="col-sm-6"><%= @product.total_sales_order %></dd>
+        </dl>
+      </div>
+
+      <!-- 📊 Financial Summary -->
+      <div class="col-md-6">
+        <h6 class="fw-bold mb-2">📊 Financial Summary</h6>
+        <dl class="row mb-0">
+          <dt class="col-sm-6">Current Profit:</dt>
+          <dd class="col-sm-6">
+            <%= number_to_currency(@product.current_profit) %>
+          </dd>
+
+          <dt class="col-sm-6">Current Value:</dt>
+          <dd class="col-sm-6">
+            <%= number_to_currency(@product.current_inventory_value) %>
+          </dd>
+
+          <dt class="col-sm-6">Projected Sales Value:</dt>
+          <dd class="col-sm-6">
+            <%= number_to_currency(@product.projected_sales_value) %>
+          </dd>
+
+          <dt class="col-sm-6">Projected Profit:</dt>
+          <dd class="col-sm-6">
+            <%= number_to_currency(@product.projected_profit) %>
+          </dd>
+        </dl>
+      </div>
+    </div>
   </div>
 </div>
 
+<!-- Gallery -->
 <% if @product.product_images.attached? && @product.product_images.many? %>
   <div class="mt-4">
-    <h5>Gallery</h5>
+    <h5>📸 Gallery</h5>
     <div class="row">
       <% @product.product_images.each_with_index do |image, index| %>
-        <% next if index == 0 %> <!-- Skip main image -->
+        <% next if index == 0 %>
         <div class="col-6 col-md-3 mb-2">
           <%= image_tag image.variant(resize_to_limit: [200, 200]), class: "img-thumbnail" %>
         </div>
@@ -91,6 +123,7 @@
   </div>
 <% end %>
 
+<!-- Actions -->
 <div class="mt-4">
   <%= link_to "Edit", edit_admin_product_path(@product), class: "btn btn-outline-primary me-2" %>
   <%= link_to "Back to Products", admin_products_path, class: "btn btn-secondary" %>

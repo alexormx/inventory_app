@@ -84,11 +84,6 @@
     <%= f.check_box :preorder_available %>
   </div>
 
-  <div class="col-md-2">
-    <%= f.label :supplier_id %>
-    <%= f.collection_select :supplier_id, User.where(role: "supplier"), :id, :name, include_blank: true, class: "form-select" %>
-  </div>
-
   <div class="col-md-12">
     <%= f.label :product_images, "Upload Product Images" %>
     <%= f.file_field :product_images, multiple: true, direct_upload: true, class: "form-control" %>

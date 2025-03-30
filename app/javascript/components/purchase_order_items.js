@@ -299,9 +299,6 @@ function updateItemTotals() {
   const weightField = document.querySelector("#total_weight");
   if (weightField) weightField.value = totalLinesWeight.toFixed(2);
 
-  if (typeof updateTotals === "function") {
-    updateTotals(); // call it directly to avoid triggering event listener
-  }
 }
 
 // ✅ Update a single row's total fields
@@ -392,4 +389,5 @@ function removeItemRow(row) {
   }
 
   updateItemTotals();
+  updateTotals();
 }

@@ -10,8 +10,9 @@ class SaleOrder < ApplicationRecord
   validates :total_tax, presence: true, numericality: { greater_than_or_equal_to: 0 }
   validates :total_order_value, presence: true, numericality: { greater_than_or_equal_to: 0 }
   validates :status, presence: true, inclusion: { in: %w[Pending Confirmed Shipped Delivered Canceled] }
-
   validate :ensure_payment_and_shipment_present
+
+  after_commit :update_product_sales_stats, on: [:create, :update]
 
   private
 
@@ -22,6 +23,12 @@ class SaleOrder < ApplicationRecord
 
     if status == "Shipped" && !shipment
       errors.add(:shipment, "must be present when order is shipped")
+    end
+  end
+
+  def update_product_sales_stats
+    sale_order_items.each do |item|
+      Products::UpdateSalesStatsService.new(item.product).call
     end
   end
 end

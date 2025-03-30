@@ -62,6 +62,12 @@
     </div>
   </div>
 
+  <% if (@purchase_order.status == "In Transit" || @purchase_order.status == "Pending") %>
+  <%= button_to "Confirmar recepción", confirm_receipt_admin_purchase_order_path(@purchase_order),
+                method: :patch, class: "btn btn-success mb-3",
+                data: { turbo_confirm: "¿Confirmas que ya recibiste todos los productos?" } %>
+  <% end %>
+
   <!-- Items Table -->
   <div class="card mb-4">
     <div class="card-body">

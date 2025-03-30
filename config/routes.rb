@@ -26,7 +26,9 @@ Rails.application.routes.draw do
     resources :admins, only: [:index, :new, :create, :edit, :update]
 
     # Purchase Orders
-    resources :purchase_orders
+    resources :purchase_orders do 
+      patch :confirm_receipt, on: :member
+    end
 
     # Reports & Settings
     resources :reports, only: [:index]

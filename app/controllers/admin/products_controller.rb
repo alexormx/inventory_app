@@ -111,7 +111,6 @@ class Admin::ProductsController < ApplicationController
       :status,
       :product_images,
       :custom_attributes,
-      :supplier_id,
       :weight_gr, 
       :length_cm,
       :width_cm,
