@@ -16,13 +16,11 @@ class PurchaseOrder < ApplicationRecord
   validates :tax_cost, presence: true, numericality: { greater_than_or_equal_to: 0 }
   validates :other_cost, presence: true, numericality: { greater_than_or_equal_to: 0 }
   validates :status, presence: true, inclusion: { in: ["Pending", "In Transit", "Delivered", "Canceled"]  }
-
   validate :expected_delivery_after_order_date
   validate :actual_delivery_after_expected_delivery
-  after_commit :update_product_purchase_stats, on: [:create, :update]
-  after_update :update_inventory_status_based_on_order_status, if: :saved_change_to_status?
+  after_update :update_inventory_status_based_on_order_status
   after_create :create_inventory_records
-  after_update :update_stock_if_delivered
+  
   
   private
 
@@ -60,44 +58,20 @@ class PurchaseOrder < ApplicationRecord
     self.id = format("PO-%<year>d-%<seq>05d", year: year, seq: sequence)
   end
 
-  def update_product_purchase_stats
-    Rails.logger.info "Updating stats for PO ##{id} with #{purchase_order_items.size} items"
-    purchase_order_items.each do |item|
-      Rails.logger.info "→ Item: #{item.product_id} × #{item.quantity}"
-      Products::UpdatePurchaseStatsService.new(item.product).call
-    end
-  end
-
   def update_inventory_status_based_on_order_status
-    case status
-    when "Delivered"
-      inventory.where(status: "In Transit").update_all(status: "Available", updated_at: Time.current)
-    when "Canceled"
-      # Alternativa si quieres conservarlos:
-      inventory.where(status: "In Transit").update_all(status: "Canceled")
-    end
-  end
-  def create_inventory_records
-    purchase_order_items.each do |item|
-      item.quantity.times do
-        Inventory.create!(
-          product_id: item.product_id,
-          purchase_order_id: self.id,
-          status: "In Transit", # 👈 por defecto
-          purchase_cost: item.unit_compose_cost,
-          status_changed_at: Time.current
-        )
-      end
-    end
+    return unless saved_change_to_status?
+  
+    new_status = case status
+                 when "Delivered" then :available
+                 when "Canceled" then :scrap
+                 when "Pending", "In Transit" then :in_transit
+                 else nil
+                 end
+  
+    return unless new_status
+  
+    inventory.where.not(status: [:sold, :reserved])
+             .update_all(status: Inventory.statuses[new_status], status_changed_at: Time.current)
   end
 
-  def update_stock_if_delivered
-    return unless saved_change_to_status? && status == "Delivered"
-  
-    Inventory.where(purchase_order_id: id, status: "In Transit").find_each do |inv|
-      inv.update!(status: "Available", status_changed_at: Time.current)
-    end
-  
-    products.uniq.each(&:update_stock_quantity!)
-  end
 end

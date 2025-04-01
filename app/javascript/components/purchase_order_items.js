@@ -223,7 +223,7 @@ function buildInputTd(field, index, options = {}) {
 }
 
 // Calculate totals (subtotal, weight, volume, and extended line costs)
-function updateItemTotals() {
+function updateItemTotals(fromTotals = false) {
   let subtotal = 0;
   let totalLinesVolume = 0;
   let totalLinesWeight = 0;
@@ -299,6 +299,11 @@ function updateItemTotals() {
   const weightField = document.querySelector("#total_weight");
   if (weightField) weightField.value = totalLinesWeight.toFixed(2);
 
+  // ✅ Only call updateTotals if we are NOT already coming from updateTotals
+  if (!fromTotals) {
+    updateTotals();
+  }
+
 }
 
 // ✅ Update a single row's total fields
@@ -358,7 +363,9 @@ function updateTotals() {
 
   if (totalCostInput) totalCostInput.value = total.toFixed(2);
   if (totalMXNInput) totalMXNInput.value = exchangeRate ? totalMXN.toFixed(2) : "";
-  updateItemTotals();
+  
+  // ✅ Safely update items first (but prevent infinite loop)
+  updateItemTotals(true);
 }
 
 // Reattach listeners

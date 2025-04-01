@@ -21,9 +21,6 @@
       @product.total_purchase_value = items.sum("quantity * unit_cost")
       @product.average_purchase_cost = @product.total_purchase_quantity > 0 ? @product.total_purchase_value / @product.total_purchase_quantity : 0.0
       
-      @product.stock_quantity = @product.total_purchase_quantity - @product.total_sales_quantity
-
-
       last_item = items.order("purchase_orders.order_date DESC").first
       if last_item
         @product.last_purchase_cost = last_item.unit_cost
@@ -36,7 +33,7 @@
 
     def update_derived_metrics
       @product.current_profit = @product.total_sales_value - @product.total_purchase_value
-      @product.current_inventory_value = @product.average_purchase_cost * @product.stock_quantity
+      @product.current_inventory_value = @product.average_purchase_cost * @product.inventory.available.count
       remaining_stock = @product.total_purchase_quantity - @product.total_sales_quantity
       @product.total_purchase_value = remaining_stock * @product.average_purchase_cost
       @product.projected_sales_value = remaining_stock * @product.selling_price

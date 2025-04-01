@@ -18,16 +18,6 @@ class Product < ApplicationRecord
 
   validate :minimum_price_not_exceed_selling_price
 
-  def update_stock_quantity!
-    available = Inventory.where(product_id: id, status: "Available").count
-    reserved  = Inventory.where(product_id: id, status: "Reserved").count
-  
-    update!(
-      stock_quantity: available,
-      reserved_quantity: reserved
-    )
-  end
-
   private
 
   def minimum_price_not_exceed_selling_price

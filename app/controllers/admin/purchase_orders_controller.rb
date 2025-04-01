@@ -38,11 +38,19 @@ class Admin::PurchaseOrdersController < ApplicationController
 
   def confirm_receipt
     @purchase_order = PurchaseOrder.find(params[:id])
-    if @purchase_order.update(status: "Delivered")
+
+    if @purchase_order.status == "In Transit"
+      Inventory.where(purchase_order_id: @purchase_order.id).in_transit.update_all(
+        status: :available,
+        updated_at: Time.current,
+        status_changed_at: Time.current
+      )
+      @purchase_order.update!(status: "Delivered")
       flash[:notice] = "Recepción confirmada. Inventario actualizado."
     else
-      flash[:alert] = "No se pudo confirmar la recepción."
+      flash[:alert] = "Solo se pueden confirmar órdenes 'In Transit'."
     end
+  
     redirect_to admin_purchase_order_path(@purchase_order)
   end
 

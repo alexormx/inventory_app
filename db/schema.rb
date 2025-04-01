@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_03_30_044423) do
+ActiveRecord::Schema[8.0].define(version: 2025_03_31_053935) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -60,13 +60,12 @@ ActiveRecord::Schema[8.0].define(version: 2025_03_30_044423) do
     t.string "sale_order_id"
     t.decimal "purchase_cost", precision: 10, scale: 2, null: false
     t.decimal "sold_price", precision: 10, scale: 2
-    t.string "status", default: "Available", null: false
-    t.datetime "last_status_change", precision: nil, default: -> { "CURRENT_TIMESTAMP" }, null: false
     t.text "notes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.datetime "status_changed_at", default: -> { "CURRENT_TIMESTAMP" }, null: false
     t.integer "purchase_order_item_id"
+    t.integer "status", default: 0, null: false
     t.index ["product_id"], name: "index_inventories_on_product_id"
     t.index ["purchase_order_id"], name: "index_inventories_on_purchase_order_id"
     t.index ["sale_order_id"], name: "index_inventories_on_sale_order_id"
@@ -97,8 +96,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_03_30_044423) do
     t.string "product_name", null: false
     t.string "brand", null: false
     t.string "category", null: false
-    t.integer "stock_quantity", default: 0, null: false
-    t.integer "reserved_quantity", default: 0, null: false
     t.integer "reorder_point", default: 0, null: false
     t.decimal "selling_price", precision: 10, scale: 2, null: false
     t.decimal "maximum_discount", precision: 10, scale: 2, null: false

@@ -4,6 +4,10 @@ Rails.application.routes.draw do
 
   # Admin namespace
   namespace :admin do
+
+    #Inventory Management views
+    get "inventory", to: "inventory#index", as: :inventory
+    
     # Admin Dashboard
     get 'dashboard', to: 'dashboard#index', as: :dashboard
 

@@ -1,0 +1,61 @@
+<h2>📦 Inventory Overview</h2>
+
+<% @products_with_inventory.each do |product| %>
+  <div class="card mb-3">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <strong><%= product.product_name %></strong>
+
+      <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#inventory-items-<%= product.id %>">
+        <i class="fa-solid fa-eye"></i> View Items
+      </button>
+    </div>
+
+    <div class="card-body">
+      <dl class="row">
+        <dt class="col-sm-3">Available:</dt><dd class="col-sm-3"><%= product.inventory.available.count %></dd>
+        <dt class="col-sm-3">Reserved:</dt><dd class="col-sm-3"><%= product.inventory.reserved.count %></dd>
+        <dt class="col-sm-3">In Transit:</dt><dd class="col-sm-3"><%= product.inventory.in_transit.count %></dd>
+        <dt class="col-sm-3">Sold:</dt><dd class="col-sm-3"><%= product.inventory.sold.count %></dd>
+        <dt class="col-sm-3">Damaged:</dt><dd class="col-sm-3"><%= product.inventory.damaged.count %></dd>
+        <dt class="col-sm-3">Lost:</dt><dd class="col-sm-3"><%= product.inventory.lost.count %></dd>
+        <dt class="col-sm-3">Scrap:</dt><dd class="col-sm-3"><%= product.inventory.scrap.count %></dd>
+        <dt class="col-sm-3">Total:</dt><dd class="col-sm-3"><%= product.inventory.count %></dd>
+      </dl>
+    </div>
+
+    <div class="collapse" id="inventory-items-<%= product.id %>">
+      <div class="card-body border-top">
+        <% if product.inventory.any? %>
+          <table class="table table-sm table-bordered">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Status</th>
+                <th>Purchase Order</th>
+                <th>Sale Order</th>
+                <th>Purchase Cost</th>
+                <th>Sale Price</th>
+                <th>Updated</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% product.inventory.each do |item| %>
+                <tr>
+                  <td><%= item.id %></td>
+                  <td><%= item.status %></td>
+                  <td><%= item.purchase_order_id || "—" %></td>
+                  <td><%= item.sale_order_id || "—" %></td>
+                  <td><%= number_to_currency(item.purchase_cost) %></td>
+                  <td><%= number_to_currency(item.sold_price) %></td>
+                  <td><%= item.status_changed_at.strftime("%F") if item.status_changed_at %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        <% else %>
+          <p class="text-muted">No inventory items found.</p>
+        <% end %>
+      </div>
+    </div>
+  </div>
+<% end %>

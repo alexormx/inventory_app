@@ -26,7 +26,7 @@
         <td><%= l(po.order_date, format: :short) %></td>
         <td><%= l(po.expected_delivery_date, format: :short) if po.expected_delivery_date %></td>
         <td>
-          <span class="badge bg-<%= po.status == "Delivered" ? "success" : "warning" %>">
+          <span class="badge <%= status_badge_class(po.status) %>">
             <%= po.status %>
           </span>
         </td>
