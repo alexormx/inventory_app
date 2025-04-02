@@ -7,6 +7,11 @@ Rails.application.routes.draw do
 
     #Inventory Management views
     get "inventory", to: "inventory#index", as: :inventory
+    resources :inventory do      
+      member do
+        get :items
+      end   
+    end
     
     # Admin Dashboard
     get 'dashboard', to: 'dashboard#index', as: :dashboard

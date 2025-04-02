@@ -24,7 +24,7 @@
           <% if product.product_images.attached? %>
             <%= image_tag product.product_images.first.variant(resize_to_fill: [48, 48]), class: "img-thumbnail" %>
           <% else %>
-            <span class="text-muted small">No image</span>
+            <%= image_tag "placeholder.png", class: "img-thumbnail", size: "58x58" %>
           <% end %>
         </td>
         <td><%= product.product_sku %></td>

@@ -3,11 +3,13 @@ class Admin::InventoryController < ApplicationController
   before_action :authorize_admin!
 
   def index
-    @products_with_inventory = Product.includes(:inventory).order(:product_name)
+    @products_with_inventory = Product.includes(:inventory)
   end
 
-  def show
+  def items
     @product = Product.find(params[:id])
-    @inventory_items = @product.inventory.order(:status, :created_at)
+    @inventory_items = @product.inventory.includes(:purchase_order)
+  
+    render partial: "admin/inventory/items", locals: { product: @product, items: @inventory_items }
   end
 end

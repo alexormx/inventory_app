@@ -1,61 +1,42 @@
-<h2>📦 Inventory Overview</h2>
+<h2 class="mb-4">📦 Inventory Overview</h2>
 
 <% @products_with_inventory.each do |product| %>
-  <div class="card mb-3">
-    <div class="card-header d-flex justify-content-between align-items-center">
-      <strong><%= product.product_name %></strong>
-
-      <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#inventory-items-<%= product.id %>">
-        <i class="fa-solid fa-eye"></i> View Items
-      </button>
-    </div>
-
-    <div class="card-body">
-      <dl class="row">
-        <dt class="col-sm-3">Available:</dt><dd class="col-sm-3"><%= product.inventory.available.count %></dd>
-        <dt class="col-sm-3">Reserved:</dt><dd class="col-sm-3"><%= product.inventory.reserved.count %></dd>
-        <dt class="col-sm-3">In Transit:</dt><dd class="col-sm-3"><%= product.inventory.in_transit.count %></dd>
-        <dt class="col-sm-3">Sold:</dt><dd class="col-sm-3"><%= product.inventory.sold.count %></dd>
-        <dt class="col-sm-3">Damaged:</dt><dd class="col-sm-3"><%= product.inventory.damaged.count %></dd>
-        <dt class="col-sm-3">Lost:</dt><dd class="col-sm-3"><%= product.inventory.lost.count %></dd>
-        <dt class="col-sm-3">Scrap:</dt><dd class="col-sm-3"><%= product.inventory.scrap.count %></dd>
-        <dt class="col-sm-3">Total:</dt><dd class="col-sm-3"><%= product.inventory.count %></dd>
-      </dl>
-    </div>
-
-    <div class="collapse" id="inventory-items-<%= product.id %>">
-      <div class="card-body border-top">
-        <% if product.inventory.any? %>
-          <table class="table table-sm table-bordered">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Status</th>
-                <th>Purchase Order</th>
-                <th>Sale Order</th>
-                <th>Purchase Cost</th>
-                <th>Sale Price</th>
-                <th>Updated</th>
-              </tr>
-            </thead>
-            <tbody>
-              <% product.inventory.each do |item| %>
-                <tr>
-                  <td><%= item.id %></td>
-                  <td><%= item.status %></td>
-                  <td><%= item.purchase_order_id || "—" %></td>
-                  <td><%= item.sale_order_id || "—" %></td>
-                  <td><%= number_to_currency(item.purchase_cost) %></td>
-                  <td><%= number_to_currency(item.sold_price) %></td>
-                  <td><%= item.status_changed_at.strftime("%F") if item.status_changed_at %></td>
-                </tr>
-              <% end %>
-            </tbody>
-          </table>
+  <div class="card mb-3 shadow-sm main-inventory-card">
+    <div class="card-header d-flex justify-content-between align-items-center bg-light">
+      <div class="d-flex align-items-center">
+        <% if product.product_images.attached? %>
+          <%= image_tag product.product_images.first.variant(resize_to_fill: [40, 40]), class: "rounded me-2" %>
         <% else %>
-          <p class="text-muted">No inventory items found.</p>
+          <%= image_tag "placeholder.png", size: "40x40", class: "rounded me-2" %>
+        <% end %>
+        <strong><%= product.product_name %></strong>
+        <span class="text-muted ms-2 small">SKU: <%= product.product_sku %></span>
+      </div>
+    </div>
+
+    <div class="card-body py-2">
+      <div class="row text-center small">
+        <% {
+          "Available" => product.inventory.available.count,
+          "Reserved" => product.inventory.reserved.count,
+          "In Transit" => product.inventory.in_transit.count,
+          "Sold" => product.inventory.sold.count,
+          "Damaged" => product.inventory.damaged.count,
+          "Lost" => product.inventory.lost.count,
+          "Scrap" => product.inventory.scrap.count,
+          "Total" => product.inventory.count
+        }.each do |label, count| %>
+          <div class="col-6 col-md-3 col-lg-2 mb-2">
+            <strong><%= label %>:</strong> <%= count %>
+          </div>
         <% end %>
       </div>
     </div>
+    <div id="inventory-items-<%= product.id %>">
+      <%= link_to "👁 View Items", items_admin_inventory_path(product), data: { turbo_frame: "inventory-items-frame-#{product.id}" }, class: "btn btn-sm btn-outline-primary" %>
+    </div>
+    <turbo-frame id="inventory-items-frame-<%= product.id %>" class="mt-2">
+
+    </turbo-frame>
   </div>
 <% end %>
