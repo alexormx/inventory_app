@@ -29,7 +29,7 @@ class PurchaseOrderItem < ApplicationRecord
         inventory.create!(
           product: product,
           purchase_order: purchase_order,
-          purchase_cost: unit_compose_cost.to_f,
+          purchase_cost: unit_compose_cost_in_mxn.to_f,
           status: inventory_status_from_po,
           status_changed_at: Time.current,
           purchase_order_item_id: id
