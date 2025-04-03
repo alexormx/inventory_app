@@ -19,10 +19,24 @@ class PurchaseOrderItem < ApplicationRecord
   end
 
   def sync_inventory_records
-    existing_items = Inventory.where(purchase_order_item_id: id)
-    current_count = existing_items.count
-    difference = quantity - current_count
-  
+    return unless product && purchase_order
+
+    # Fetch existing inventory records linked to this PO item
+    inventory_items = Inventory.where(purchase_order_item_id: id)
+    # If more items were added (increase in quantity), create the difference
+    existing_count = inventory_items.count
+    desired_count = quantity.to_i
+    difference = (desired_count - existing_count)
+
+    # Sunchronize inventory records
+    inventory_items.each do |item|
+      item.update(
+        purchase_cost: unit_compose_cost_in_mxn.to_f,
+        status: inventory_status_from_po,
+        status_changed_at: Time.current
+      )
+    end
+   
     if difference > 0
       # Add new inventory items
       difference.times do
