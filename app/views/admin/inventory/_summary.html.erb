@@ -1,0 +1,20 @@
+<turbo-frame id="inventory-summary-<%= product.id %>">
+  <div class="card-body py-2">
+    <div class="row text-center small">
+      <% {
+        "Available" => product.inventory.available.count,
+        "Reserved" => product.inventory.reserved.count,
+        "In Transit" => product.inventory.in_transit.count,
+        "Sold" => product.inventory.sold.count,
+        "Damaged" => product.inventory.damaged.count,
+        "Lost" => product.inventory.lost.count,
+        "Scrap" => product.inventory.scrap.count,
+        "Total" => product.inventory.count
+      }.each do |label, count| %>
+        <div class="col-6 col-md-3 col-lg-2 mb-2">
+          <strong><%= label %>:</strong> <%= count %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</turbo-frame>

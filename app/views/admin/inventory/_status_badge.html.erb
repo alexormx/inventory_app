@@ -1,0 +1,14 @@
+<turbo-frame id="inventory_status_<%= item.id %>">
+  <span class="badge bg-<%= inventory_status_color(item.status) %>">
+    <i class="fas fa-tag me-1"></i><%= item.status.humanize %>
+  </span>
+
+  <% unless item.status == "sold" %>
+    <%= link_to edit_status_admin_inventory_path(item),
+                data: { turbo_frame: "inventory_status_#{item.id}" },
+                class: "btn btn-sm btn-light ms-1",
+                title: "Edit Status" do %>
+      <i class="fas fa-pen"></i>
+    <% end %>
+  <% end %>
+</turbo-frame>

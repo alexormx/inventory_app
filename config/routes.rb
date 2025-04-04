@@ -10,6 +10,9 @@ Rails.application.routes.draw do
     resources :inventory do      
       member do
         get :items
+        get :edit_status
+        patch :update_status
+        get :cancel_edit_status
       end   
     end
     

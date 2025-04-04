@@ -4,12 +4,14 @@ import { Application } from "@hotwired/stimulus"
 
 const application = Application.start()
 
+
 import * as controllers from "./controllers"
 for (const name in controllers) {
   application.register(name, controllers[name])
 }
 
 import "custom/menu"
+import "custom/toggle_inventory_items"
 import "modules/toggle_menu"
 import "modules/flash_messages"
 import "modules/disable_enter_until_email"
