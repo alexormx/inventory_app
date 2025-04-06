@@ -238,7 +238,7 @@ function updateItemTotals(fromTotals = false) {
   document.querySelectorAll(".purchase-item-row").forEach(row => {
     const destroyInput = row.querySelector("input.item-destroy-flag");
     if (destroyInput?.value === "1") return;
-    
+
     const qty = parseFloat(row.querySelector(".item-qty")?.value) || 0;
     const unitVolume = parseFloat(row.querySelector(".item-volume")?.dataset?.unitVolume) || 0;
     const unitWeight = parseFloat(row.querySelector(".item-weight")?.dataset?.unitWeight) || 0;
@@ -259,7 +259,7 @@ function updateItemTotals(fromTotals = false) {
     const unitVolume = parseFloat(row.querySelector(".item-volume")?.dataset?.unitVolume) || 0;
     const unitWeight = parseFloat(row.querySelector(".item-weight")?.dataset?.unitWeight) || 0;
     const unitCost = parseFloat(row.querySelector(".item-unit-cost")?.value) || 0;
- 
+
     const lineVolume = qty * unitVolume;
     const volumeRate = totalLinesVolume > 0 ? (lineVolume / qty) / totalLinesVolume : 0;
     const unitAdditionalCost = totalAdditionalCost * volumeRate;
@@ -363,7 +363,7 @@ function updateTotals() {
 
   if (totalCostInput) totalCostInput.value = total.toFixed(2);
   if (totalMXNInput) totalMXNInput.value = exchangeRate ? totalMXN.toFixed(2) : "";
-  
+
   // ✅ Safely update items first (but prevent infinite loop)
   updateItemTotals(true);
 }

@@ -53,18 +53,17 @@ gem "bootstrap", "~> 5.3.3"
 gem "sassc-rails"
 gem "sprockets-rails"
 gem "image_processing", "~> 1.2"
-gem 'mini_magick'
-gem 'redis', '~> 4.8' # Redis for caching and background jobs
-
-
-
-
+gem "mini_magick"
+gem "redis", "~> 4.8" # Redis for caching and background jobs
 
 
 # 🔹 **Development & Testing Group**
 group :development, :test do
   gem "debug", platforms: %i[mri windows], require: "debug/prelude"  # Debugging
   gem "brakeman", require: false  # Security vulnerability scanner
+  gem "rubocop", require: false  # Ruby static code analyzer
+  gem "rubocop-rails", require: false  # Ruby style guide
+  gem "rubocop-rspec", require: false  # RSpec style guide
   gem "rubocop-rails-omakase", require: false  # Omakase Ruby style guide
   gem "dotenv-rails"  # Manage environment variables securely
   gem "factory_bot_rails"  # Define test data
@@ -72,6 +71,7 @@ end
 
 # 🔹 **Development Group**
 group :development do
+  gem "overcommit" # Git hooks for code quality
   gem "web-console"  # Rails console in browser for debugging
   gem "letter_opener" # Preview email in the browser instead of sending
 end
@@ -91,6 +91,5 @@ end
 # 🔹 **Production Group*
 group :production do
   # images storage in aws
-  gem 'aws-sdk-s3', "1.114.0", require: false
-  
+  gem "aws-sdk-s3", "1.114.0", require: false
 end
