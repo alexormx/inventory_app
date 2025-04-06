@@ -1,0 +1,33 @@
+<% @sale_order.sale_order_items.each_with_index do |item, index| %>
+  <tr class="sale-item-row">
+    <td>
+      <input type="hidden" name="sale_order[sale_order_items_attributes][<%= index %>][id]" value="<%= item.id %>">
+      <input type="hidden" name="sale_order[sale_order_items_attributes][<%= index %>][product_id]" value="<%= item.product_id %>" class="item-product-id">
+      <span class="item-product-name text-muted small"><%= item.product.product_name %></span>
+    </td>
+
+    <td>
+      <input type="number" name="sale_order[sale_order_items_attributes][<%= index %>][quantity]" value="<%= item.quantity %>" min="1" class="form-control form-control-sm item-qty">
+    </td>
+
+    <td>
+      <input type="number" name="sale_order[sale_order_items_attributes][<%= index %>][unit_price]" value="<%= item.unit_price %>" step="0.01" class="form-control form-control-sm item-unit-price">
+    </td>
+
+    <td>
+      <input type="text" name="sale_order[sale_order_items_attributes][<%= index %>][total_line_price]" value="<%= item.total_line_price %>" readonly class="form-control-plaintext form-control-sm item-line-total-price">
+    </td>
+
+    <td>
+      <input type="hidden" name="sale_order[sale_order_items_attributes][<%= index %>][_destroy]" value="false" class="item-destroy-flag">
+      <button type="button" class="btn btn-sm btn-outline-danger remove-item"><i class="fa fa-trash"></i></button>
+    </td>
+  </tr>
+<% end %>
+
+<% if @sale_order.sale_order_items.empty? %>
+  <tr id="sale-without-items">
+    <td colspan="5" class="text-center text-muted">No items added yet.</td>
+  </tr>
+<% end %>
+

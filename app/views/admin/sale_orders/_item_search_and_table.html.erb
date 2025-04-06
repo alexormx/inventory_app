@@ -1,0 +1,36 @@
+<div class="row g-3">
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-body">
+        <label for="product-search" class="form-label">Search Product</label>
+        <input type="text" id="product-search-sale" class="form-control form-control-sm" placeholder="Type product name or SKU...">
+        <div id="product-search-results-sale" class="list-group mt-1"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-8">
+    <div class="card">
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-sm align-middle" id="sale-order-items-table">
+            <thead class="table-light">
+              <tr>
+                <th>Product</th>
+                <th>Qty</th>
+                <th>Unit Price</th>
+                <th>Volume</th>
+                <th>Weight</th>
+                <th>Total</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <%= render "admin/sale_orders/preloaded_items" %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

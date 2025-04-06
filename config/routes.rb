@@ -49,6 +49,10 @@ Rails.application.routes.draw do
     # General user management (admin-facing)
     resources :users
 
+    resources :sale_orders do
+      resources :sales_order_items, only: [:create, :update, :destroy]
+    end
+
   end
 
   # Rails health check (uptime monitor, etc.)
