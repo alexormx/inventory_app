@@ -54,7 +54,7 @@ gem "sassc-rails"
 gem "sprockets-rails"
 gem "image_processing", "~> 1.2"
 gem "mini_magick"
-gem "redis", "~> 4.8" # Redis for caching and background jobs
+gem "redis", "~> 5.4" # Redis for caching and background jobs
 
 
 # 🔹 **Development & Testing Group**
