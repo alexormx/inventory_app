@@ -1,0 +1,27 @@
+<h1 class="h4 mb-4">New Sale Order</h1>
+
+<% if @sale_order.errors.any? %>
+  <div class="alert alert-danger">
+    <h5>There were errors saving this sale order:</h5>
+    <ul>
+      <% @sale_order.errors.full_messages.each do |message| %>
+        <li><%= message %></li>
+      <% end %>
+    </ul>
+  </div>
+<% end %>
+
+<%= form_with model: [:admin, @sale_order], local: true, class: "row g-3" do |f| %>
+  <div class="card mb-4">
+    <div class="card-body row">
+      <%= render "admin/sale_orders/order_info_fields", f: f %>
+    </div>
+  </div>
+
+  <%= render "admin/sale_orders/item_search_and_table", f: f %>
+
+  <div class="col-12">
+    <%= f.submit "Save Sale Order", class: "btn btn-success" %>
+    <%= link_to "Cancel", admin_sale_orders_path, class: "btn btn-secondary" %>
+  </div>
+<% end %>

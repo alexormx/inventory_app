@@ -1,0 +1,50 @@
+<h1 class="h4 mb-4">Sales Orders</h1>
+
+<%= link_to "New Sale Order", new_admin_sale_order_path, class: "btn btn-primary mb-3" %>
+
+<table class="table table-sm table-hover align-middle">
+  <thead class="table-light">
+    <tr>
+      <th scope="col">#</th>
+      <th scope="col">Customer</th>
+      <th scope="col">Order Date</th>
+      <th scope="col">Status</th>
+      <th scope="col" class="text-end">Total</th>
+      <th scope="col" class="text-end">Total MXN</th>
+      <th scope="col" class="text-end">Discount</th>
+      <th scope="col" class="text-end">Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @sale_orders.each do |so| %>
+      <tr>
+        <td><%= so.id %></td>
+        <td><%= so.user&.name || "—" %></td>
+        <td><%= l(so.order_date, format: :short) %></td>
+        <td>
+          <span class="badge <%= status_badge_class(so.status) %>">
+            <%= so.status %>
+          </span>
+        </td>
+        <td class="text-end">
+          <%= number_to_currency(so.total_order_value, unit: currency_symbol_for(so.currency || "MXN")) %>
+        </td>
+        <td class="text-end">
+          <%= number_to_currency(so.total_cost_mxn, unit: "$") if so.total_cost_mxn.present? %>
+        </td>
+        <td class="text-end"><%= "#{so.discount}%" if so.discount.present? %></td>
+        <td class="text-end">
+          <%= link_to admin_sale_order_path(so), class: "btn btn-sm btn-outline-secondary" do %>
+            <i class="fa fa-eye"></i>
+          <% end %>
+          <%= link_to edit_admin_sale_order_path(so), class: "btn btn-sm btn-outline-primary" do %>
+            <i class="fa fa-edit"></i>
+          <% end %>
+          <%= link_to admin_sale_order_path(so), method: :delete, data: { turbo_confirm: "Are you sure?" }, class: "btn btn-sm btn-outline-danger" do %>
+            <i class="fa fa-trash"></i>
+          <% end %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

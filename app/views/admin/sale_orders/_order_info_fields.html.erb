@@ -1,0 +1,45 @@
+<!-- Customer -->
+<div class="col-md-3">
+  <%= f.label :user_id, "Customer", class: "form-label-sm" %>
+  <%= f.collection_select :user_id, User.where(role: "customer"), :id, :name, { include_blank: true }, class: "form-select form-select-sm" %>
+</div>
+
+<!-- Order Date -->
+<div class="col-md-3">
+  <%= f.label :order_date, class: "form-label-sm" %>
+  <%= f.date_field :order_date, class: "form-control form-control-sm" %>
+</div>
+
+<!-- Financials -->
+<div class="col-md-2">
+  <%= f.label :subtotal, class: "form-label-sm" %>
+  <%= f.number_field :subtotal, step: 0.01, class: "form-control form-control-sm" %>
+</div>
+<div class="col-md-2">
+  <%= f.label :tax_rate, class: "form-label-sm" %>
+  <%= f.number_field :tax_rate, step: 0.01, class: "form-control form-control-sm" %>
+</div>
+<div class="col-md-2">
+  <%= f.label :total_tax, class: "form-label-sm" %>
+  <%= f.number_field :total_tax, step: 0.01, class: "form-control form-control-sm" %>
+</div>
+<div class="col-md-2">
+  <%= f.label :total_order_value, class: "form-label-sm" %>
+  <%= f.number_field :total_order_value, step: 0.01, class: "form-control form-control-sm" %>
+</div>
+<div class="col-md-2">
+  <%= f.label :discount, class: "form-label-sm" %>
+  <%= f.number_field :discount, step: 0.01, class: "form-control form-control-sm" %>
+</div>
+
+<!-- Status -->
+<div class="col-md-2">
+  <%= f.label :status, class: "form-label-sm" %>
+  <%= f.select :status, %w[Pending Confirmed Shipped Delivered Canceled], {}, class: "form-select form-select-sm" %>
+</div>
+
+<!-- Notes -->
+<div class="col-md-6">
+  <%= f.label :notes, class: "form-label-sm" %>
+  <%= f.text_area :notes, class: "form-control form-control-sm", rows: 2 %>
+</div>

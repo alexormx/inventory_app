@@ -14,13 +14,14 @@ module Products
     private
 
     def update_sales_data
-      items = @product.sale_order_items.joins(:sale_order).where(sale_orders: { status: 'completed' })
+      items = @product.sale_order_items.joins(:sale_order)
+         .where(sale_orders: { status: %w[Shipped Delivered] })
 
       @product.total_sales_quantity = items.sum(:quantity)
       @product.total_sales_value = items.sum("quantity * unit_price")
       @product.average_sales_price = @product.total_sales_quantity > 0 ? @product.total_sales_value / @product.total_sales_quantity : 0.0
 
-      last_item = items.order("sale_orders.order_date DESC").first
+      last_item = items.includes(:sale_order).order("sale_orders.order_date DESC").first
       if last_item
         @product.last_sales_price = last_item.unit_price
         @product.last_sales_date = last_item.sale_order.order_date

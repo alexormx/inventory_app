@@ -23,6 +23,10 @@ class Inventory < ApplicationRecord
   before_update :track_status_change
   after_commit :update_product_stock_quantities, if: -> { saved_change_to_status? }
 
+  # inventory.rb
+  scope :assignable, -> { where(status: [:available, :in_transit], sale_order_id: nil) }
+
+
   private
 
   def track_status_change
@@ -32,6 +36,10 @@ class Inventory < ApplicationRecord
   end
 
   def update_product_stock_quantities
+  if status_previously_was.in?(%w[reserved sold]) || status.in?(%w[reserved sold])
+    Products::UpdateSalesStatsService.new(product).call
+  else
     Products::UpdatePurchaseStatsService.new(product).call
   end
+end
 end

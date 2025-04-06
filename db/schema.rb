@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_03_31_053935) do
+ActiveRecord::Schema[8.0].define(version: 2025_04_05_145954) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -176,6 +176,21 @@ ActiveRecord::Schema[8.0].define(version: 2025_03_31_053935) do
     t.index ["user_id"], name: "index_purchase_orders_on_user_id"
   end
 
+  create_table "sale_order_items", force: :cascade do |t|
+    t.string "sale_order_id", null: false
+    t.bigint "product_id", null: false
+    t.integer "quantity"
+    t.decimal "unit_cost", precision: 10, scale: 2, null: false
+    t.decimal "unit_discount", precision: 10, scale: 2, default: "0.0"
+    t.decimal "unit_final_price", precision: 10, scale: 2
+    t.decimal "total_line_cost", precision: 10, scale: 2
+    t.decimal "total_line_volume", precision: 10, scale: 2
+    t.decimal "total_line_weight", precision: 10, scale: 2
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["product_id"], name: "index_sale_order_items_on_product_id"
+  end
+
   create_table "sale_orders", id: :string, force: :cascade do |t|
     t.bigint "user_id", null: false
     t.date "order_date", null: false
@@ -260,6 +275,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_03_31_053935) do
   add_foreign_key "purchase_order_items", "products"
   add_foreign_key "purchase_order_items", "purchase_orders"
   add_foreign_key "purchase_orders", "users"
+  add_foreign_key "sale_order_items", "products"
+  add_foreign_key "sale_order_items", "sale_orders"
   add_foreign_key "sale_orders", "users"
   add_foreign_key "shipments", "sale_orders"
 end

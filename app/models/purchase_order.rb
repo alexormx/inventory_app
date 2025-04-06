@@ -19,7 +19,7 @@ class PurchaseOrder < ApplicationRecord
   validate :expected_delivery_after_order_date
   validate :actual_delivery_after_expected_delivery
   after_update :update_inventory_status_based_on_order_status
-  after_create :create_inventory_records
+
   
   
   private
@@ -43,9 +43,10 @@ class PurchaseOrder < ApplicationRecord
     return unless self.order_date.present?  # Ensure order_date is set
   
     year = order_date.year
+    month = order_date.month
   
     last_order = PurchaseOrder
-      .where("id LIKE ?", "PO-#{year}-%")
+      .where("id LIKE ?", "PO-#{year}-#{month}-%")
       .order(:created_at)
       .last
   
@@ -55,7 +56,7 @@ class PurchaseOrder < ApplicationRecord
                  1
                end
   
-    self.id = format("PO-%<year>d-%<seq>05d", year: year, seq: sequence)
+    self.id = format("PO-%<year>d-%<month>02d-%<seq>03d", year: year, month: month, seq: sequence)
   end
 
   def update_inventory_status_based_on_order_status
