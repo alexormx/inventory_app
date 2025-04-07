@@ -9,18 +9,20 @@
     </ul>
   </div>
 <% end %>
-<%= form_with model: [:admin, @purchase_order], local: true, class: "row g-3" do |f| %>
-  <div class="card mb-4">
-    <div class="card-body row">
-      <%= render "admin/purchase_orders/order_info_fields", f: f %>
+<div class="order-context" data-context="purchase-order">
+  <%= form_with model: [:admin, @purchase_order], local: true, class: "row g-3" do |f| %>
+    <div class="card mb-4">
+      <div class="card-body row">
+        <%= render "admin/purchase_orders/order_info_fields", f: f %>
+      </div>
     </div>
-  </div>
 
-  <!-- Add product searcher & item list here -->
-  <%= render "admin/purchase_orders/item_search_and_table", f: f %>
+    <!-- Add product searcher & item list here -->
+    <%= render "admin/shared/item_search_and_table", f: f, context: "purchase" %>
 
-  <div class="col-12">
-    <%= f.submit "Save Purchase Order", class: "btn btn-success" %>
-    <%= link_to "Cancel", admin_purchase_orders_path, class: "btn btn-secondary" %>
-  </div>
-<% end %>
+    <div class="col-12">
+      <%= f.submit "Save Purchase Order", class: "btn btn-success" %>
+      <%= link_to "Cancel", admin_purchase_orders_path, class: "btn btn-secondary" %>
+    </div>
+  <% end %>
+</div>

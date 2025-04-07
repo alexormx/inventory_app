@@ -25,19 +25,19 @@
   <!-- Financials -->
   <div class="col-md-2">
     <%= f.label :subtotal, class: "form-label-sm" %>
-    <%= f.number_field :subtotal, step: 0.01, class: "form-control form-control-sm" %>
+    <%= f.number_field :subtotal, step: 0.01, id: "order_subtotal", class: "form-control form-control-sm" %>
   </div>
   <div class="col-md-2">
     <%= f.label :shipping_cost, class: "form-label-sm" %>
-    <%= f.number_field :shipping_cost, step: 0.01, class: "form-control form-control-sm" %>
+    <%= f.number_field :shipping_cost, step: 0.01, id: "order_shipping_cost", class: "form-control form-control-sm" %>
   </div>
   <div class="col-md-2">
     <%= f.label :tax_cost, class: "form-label-sm" %>
-    <%= f.number_field :tax_cost, step: 0.01, class: "form-control form-control-sm" %>
+    <%= f.number_field :tax_cost, step: 0.01, id: "order_tax_cost", class: "form-control form-control-sm" %>
   </div>
   <div class="col-md-2">
     <%= f.label :other_cost, class: "form-label-sm" %>
-    <%= f.number_field :other_cost, step: 0.01, class: "form-control form-control-sm" %>
+    <%= f.number_field :other_cost, step: 0.01, id: "order_other_cost", class: "form-control form-control-sm" %>
   </div>
 
 
@@ -56,7 +56,7 @@
   <div class="col-md-2">
     <%= f.label :exchange_rate, "Exchange Rate vs MXN", class: "form-label-sm" %>
     <%= f.number_field :exchange_rate, step: 0.0001, placeholder: "e.g. 17.50",
-          class: "form-control form-control-sm" %>
+          class: "form-control form-control-sm", id: "order_exchange_rate" %>
   </div>
   <div class="col-md-2">
     <%= f.label :total_order_cost, class: "form-label-sm" %>

@@ -13,7 +13,7 @@
 <!-- Financials -->
 <div class="col-md-2">
   <%= f.label :subtotal, class: "form-label-sm" %>
-  <%= f.number_field :subtotal, step: 0.01, class: "form-control form-control-sm" %>
+  <%= f.number_field :subtotal, id: "order_subtotal", step: 0.01, class: "form-control form-control-sm" %>
 </div>
 <div class="col-md-2">
   <%= f.label :tax_rate, class: "form-label-sm" %>

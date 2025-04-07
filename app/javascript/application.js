@@ -19,6 +19,5 @@ import "modules/sidebar_toggle"
 import "components/password_validation"
 import "components/show_password_requirements"
 import "components/total_cost_calculation"
-import "components/purchase_order_items"
-import "components/sale_order_items"
-import "components/product_search_results"
+import "components/order_items"
+

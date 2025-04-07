@@ -4,8 +4,8 @@
     <div class="card">
       <div class="card-body">
         <label for="product-search" class="form-label">Search Product</label>
-        <input type="text" id="product-search" class="form-control form-control-sm" placeholder="Type product name or SKU...">
-        <div id="product-search-results" class="list-group mt-1"></div>
+        <input type="text" id="product-search" class="form-control form-control-sm product-search" placeholder="Type product name or SKU...">
+        <div id="product-search-results" class="list-group mt-1 product-search-results"></div>
       </div>
     </div>
   </div>
@@ -15,7 +15,7 @@
     <div class="card">
       <div class="card-body">
         <div class="table-responsive">
-          <table class="table table-sm align-middle" id="purchase-order-items-table">
+          <table class="table table-sm align-middle order-items" id="order-items-table">
             <thead class="table-light">
               <tr>
                 <th>Product</th>
@@ -23,16 +23,22 @@
                 <th>Unit Cost</th>
                 <th>Line Volume</th>
                 <th>Line Weight</th>
-                <th>Unit alpha cost</th>
-                <th>Unit comp cost</th>
-                <th>Unit comp MXN</th>
-                <th>Tot Cost</th>
+                <% if context == "purchase" %>
+                  <th>Unit alpha cost</th>
+                  <th>Unit comp cost</th>
+                  <th>Unit comp MXN</th>
+                  <th>Tot Cost</th>
+                <% end %>
                 <th>Tot Cost MXN</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              <%= render "admin/purchase_orders/preloaded_items" %>
+              <% if context == "purchase" %>
+                <%= render "admin/purchase_orders/preloaded_items" %>
+              <% else %>
+                <%= render "admin/sale_orders/preloaded_items" %>
+              <% end %>
             </tbody>
           </table>
         </div>
