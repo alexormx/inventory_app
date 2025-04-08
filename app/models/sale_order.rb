@@ -8,6 +8,8 @@ class SaleOrder < ApplicationRecord
   has_many :sale_order_items, dependent: :destroy
   has_many :products, through: :sale_order_items
 
+  accepts_nested_attributes_for :sale_order_items, allow_destroy: true
+
   validates :order_date, presence: true
   validates :subtotal, presence: true, numericality: { greater_than_or_equal_to: 0 }
   validates :tax_rate, presence: true, numericality: { greater_than_or_equal_to: 0, less_than_or_equal_to: 100 }
@@ -39,22 +41,22 @@ class SaleOrder < ApplicationRecord
   def generate_custom_id
     return if self.id.present?
     return unless self.order_date.present?  # Ensure order_date is set
-  
+
     year = order_date.year
     month = order_date.month
 
-  
+
     last_order = SaleOrder
       .where("id LIKE ?", "SO-#{year}-#{month}-%")
       .order(:created_at)
       .last
-  
+
     sequence = if last_order
                  last_order.id.split("-").last.to_i + 1
-               else
+    else
                  1
-               end
-  
+    end
+
     self.id = format("SO-%<year>d-%<month>02d-%<seq>03d", year: year, month: month, seq: sequence)
   end
 end

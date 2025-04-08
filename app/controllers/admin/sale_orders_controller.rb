@@ -42,7 +42,17 @@ class Admin::SaleOrdersController < ApplicationController
     @sale_order = SaleOrder.find_by!(id: params[:id])
   end
 
-  def sals_order_params
-    params.require(:sale_order).permit(:user_id, :order_date, :status, :notes, :discount, :subtotal, :tax_rate, :total_tax, :total_order_value)
+  def sale_order_params
+    params.require(:sale_order).permit(
+      :user_id, :order_date, :subtotal, :tax_rate,
+      :total_tax, :total_order_value, :discount,
+      :status, :notes,
+      sale_order_items_attributes: [
+        :id, :product_id, :quantity, :unit_cost, :unit_discount,
+        :unit_final_price, :total_line_cost, :total_line_volume,
+        :total_line_weight, :_destroy
+      ]
+    )
   end
 end
+

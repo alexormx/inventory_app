@@ -21,6 +21,10 @@
                 <th>Product</th>
                 <th>Qty</th>
                 <th>Unit Cost</th>
+                <% if context == "sale" %>
+                  <th>Unit Discount</th>
+                  <th>Unit Total Price</th>
+                <% end %>
                 <th>Line Volume</th>
                 <th>Line Weight</th>
                 <% if context == "purchase" %>

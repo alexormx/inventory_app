@@ -3,8 +3,8 @@ class SaleOrderItem < ApplicationRecord
   belongs_to :product
 
   validates :quantity, presence: true, numericality: { greater_than: 0 }
-  validates :unit_price, presence: true, numericality: { greater_than_or_equal_to: 0 }
-  validates :total_line_price, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true
+  validates :unit_cost, presence: true, numericality: { greater_than_or_equal_to: 0 }
+  validates :total_line_cost, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true
 
   # 🔧 Callbacks
   after_save :sync_inventory_records, if: :saved_change_to_quantity?

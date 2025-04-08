@@ -1,25 +1,31 @@
 <% @sale_order.sale_order_items.each_with_index do |item, index| %>
   <tr class="sale_item_row item-row">
     <td>
-      <input type="hidden" name="order[order_items_attributes][<%= index %>][id]" value="<%= item.id %>">
-      <input type="hidden" name="order[order_items_attributes][<%= index %>][product_id]" value="<%= item.product_id %>" class="item-product-id">
-      <span class="item-product-name text-muted small"><%= item.product.product_name %></span>
+      <input type="hidden" name="sale_order[sale_order_items_attributes][<%= index %>][id]" value="<%= item.id %>">
+      <input type="hidden" name="sale_order[sale_order_items_attributes][<%= index %>][product_id]" value="<%= item.product_id %>" class="item-product-id">
+      <span class="item-product-name text-muted small"><%= item.product&.product_name || "—" %></span>
     </td>
 
     <td>
-      <input type="number" name="order[order_items_attributes][<%= index %>][quantity]" value="<%= item.quantity %>" min="1" class="form-control form-control-sm item-qty">
+      <input type="number" name="sale_order[sale_order_items_attributes][<%= index %>][quantity]" value="<%= item.quantity %>" min="1" class="form-control form-control-sm item-qty">
+    </td>
+    <td>
+      <input type="text" name="sale_order[sale_order_items_attributes][<%= index %>][unit_cost]" value="<%= item.unit_cost %>" class=" form-control-sm item-unit-cost">
+    </td>
+    <td>
+      <input type="text" name="sale_order[sale_order_items_attributes][<%= index %>][unit_discount]" value="<%= item.unit_discount %>" step="0.01" class="form-control form-control-sm item-unit-discount">
     </td>
 
     <td>
-      <input type="number" name="order[order_items_attributes][<%= index %>][unit_cost]" value="<%= item.unit_cost %>" step="0.01" class="form-control form-control-sm item-unit-cost">
+      <input type="number" name="sale_order[sale_order_items_attributes][<%= index %>][unit_final_price]" value="<%= item.unit_final_price %>" step="0.01" class="form-control form-control-sm item-unit-final-price form-control-plaintext" readonly>
     </td>
 
     <td>
-      <input type="text" name="order[order_items_attributes][<%= index %>][total_line_cost]" value="<%= item.total_line_cost %>" readonly class="form-control-plaintext form-control-sm item-line-total-cost">
+      <input type="text" name="sale_order[sale_order_items_attributes][<%= index %>][total_line_cost]" value="<%= item.total_line_cost %>" readonly class="form-control-plaintext form-control-sm item-line-total-cost">
     </td>
 
     <td>
-      <input type="hidden" name="order[order_items_attributes][<%= index %>][_destroy]" value="false" class="item-destroy-flag">
+      <input type="hidden" name="sale_order[sale_order_items_attributes][<%= index %>][_destroy]" value="false" class="item-destroy-flag">
       <button type="button" class="btn btn-sm btn-outline-danger remove-item"><i class="fa fa-trash"></i></button>
     </td>
   </tr>
@@ -27,7 +33,7 @@
 
 <% if @sale_order.sale_order_items.empty? %>
   <tr id="sale-without-items" class="order-without-items">
-    <td colspan="7" class="text-center text-muted">No items added yet.</td>
+    <td colspan="9" class="text-center text-muted">No items added yet.</td>
   </tr>
 <% end %>
 

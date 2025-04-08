@@ -1,49 +1,50 @@
 <% @purchase_order.purchase_order_items.each_with_index do |item, index| %>
   <tr class="purchase-item-row item-row">
     <td>
-      <input type="hidden" name="order[order_items_attributes][<%= index %>][id]" value="<%= item.id %>">
-      <input type="hidden" name="order[order_items_attributes][<%= index %>][product_id]" value="<%= item.product_id %>" class="item-product-id">
+      <input type="hidden" name="purchase_order[purchase_order_items_attributes][<%= index %>][id]" value="<%= item.id %>">
+      <input type="hidden" name="purchase_order[purchase_order_items_attributes][<%= index %>][product_id]" value="<%= item.product_id %>" class="item-product-id">
       <span class="item-product-name text-muted small"><%= item.product.product_name %></span>
     </td>
 
     <td>
-      <input type="number" name="order[order_items_attributes][<%= index %>][quantity]" value="<%= item.quantity %>" min="1" class="form-control form-control-sm item-qty">
+      <input type="number" name="purchase_order[purchase_order_items_attributes][<%= index %>][quantity]" value="<%= item.quantity %>" min="1" class="form-control form-control-sm item-qty">
     </td>
 
     <td>
-      <input type="number" name="order[order_items_attributes][<%= index %>][unit_cost]" value="<%= item.unit_cost %>" step="0.01" class="form-control form-control-sm item-unit-cost">
+      <input type="number" name="purchase_order[purchase_order_items_attributes][<%= index %>][unit_cost]" value="<%= item.unit_cost %>" step="0.01" class="form-control form-control-sm item-unit-cost">
+    </td>
+    <% unit_volume = item.quantity.to_f > 0 ? item.total_line_volume.to_f / item.quantity.to_f : 0 %>
+    <td>
+      <input type="text" value="<%= item.total_line_volume %>" readonly class="form-control-plaintext form-control-sm item-volume" data-unit-volume="<%= unit_volume %>">
+    </td>
+    <% unit_weight = item.quantity.to_f > 0 ? item.total_line_weigth.to_f / item.quantity.to_f : 0 %>
+
+    <td>
+      <input type="text" value="<%= item.total_line_weight %>" readonly class="form-control-plaintext form-control-sm item-weight" data-unit-weight="<%= unit_weight %>">
     </td>
 
     <td>
-      <input type="text" value="<%= item.total_line_volume %>" readonly class="form-control-plaintext form-control-sm item-volume" data-unit-volume="<%= item.total_line_volume.to_f / item.quantity %>">
+      <input type="number" name="purchase_order[purchase_order_items_attributes][<%= index %>][unit_additional_cost]" value="<%= item.unit_additional_cost %>" readonly class="form-control-plaintext form-control-sm item-unit-additional-cost">
     </td>
 
     <td>
-      <input type="text" value="<%= item.total_line_weight %>" readonly class="form-control-plaintext form-control-sm item-weight" data-unit-weight="<%= item.total_line_weight.to_f / item.quantity %>">
+      <input type="text" name="purchase_order[purchase_order_items_attributes][<%= index %>][unit_compose_cost]" value="<%= item.unit_compose_cost %>" readonly class="form-control-plaintext form-control-sm item-unit-compose-cost">
     </td>
 
     <td>
-      <input type="number" name="order[order_items_attributes][<%= index %>][unit_additional_cost]" value="<%= item.unit_additional_cost %>" readonly class="form-control-plaintext form-control-sm item-unit-additional-cost">
+      <input type="text" name="purchase_order[purchase_order_items_attributes][<%= index %>][unit_compose_cost_in_mxn]" value="<%= item.unit_compose_cost_in_mxn %>" readonly class="form-control-plaintext form-control-sm item-unit-compose-cost-mxn">
     </td>
 
     <td>
-      <input type="text" name="order[order_items_attributes][<%= index %>][unit_compose_cost]" value="<%= item.unit_compose_cost %>" readonly class="form-control-plaintext form-control-sm item-unit-compose-cost">
+      <input type="text" name="purchase_order[purchase_order_items_attributes][<%= index %>][total_line_cost]" value="<%= item.total_line_cost %>" readonly class="form-control-plaintext form-control-sm item-total-cost">
     </td>
 
     <td>
-      <input type="text" name="order[order_items_attributes][<%= index %>][unit_compose_cost_in_mxn]" value="<%= item.unit_compose_cost_in_mxn %>" readonly class="form-control-plaintext form-control-sm item-unit-compose-cost-mxn">
+      <input type="text" name="purchase_order[purchase_order_items_attributes][<%= index %>][total_line_cost_in_mxn]" value="<%= item.total_line_cost_in_mxn %>" readonly class="form-control-plaintext form-control-sm item-line-total-cost-mxn">
     </td>
 
     <td>
-      <input type="text" name="order[order_items_attributes][<%= index %>][total_line_cost]" value="<%= item.total_line_cost %>" readonly class="form-control-plaintext form-control-sm item-total-cost">
-    </td>
-
-    <td>
-      <input type="text" name="order[order_items_attributes][<%= index %>][total_line_cost_in_mxn]" value="<%= item.total_line_cost_in_mxn %>" readonly class="form-control-plaintext form-control-sm item-line-total-cost-mxn">
-    </td>
-
-    <td>
-      <input type="hidden" name="order[order_items_attributes][<%= index %>][_destroy]" value="false" class="item-destroy-flag">
+      <input type="hidden" name="purchase_order[purchase_order_items_attributes][<%= index %>][_destroy]" value="false" class="item-destroy-flag">
       <button type="button" class="btn btn-sm btn-outline-danger remove-item"><i class="fa fa-trash"></i></button>
     </td>
   </tr>
