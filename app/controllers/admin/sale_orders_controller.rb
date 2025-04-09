@@ -15,7 +15,7 @@ class Admin::SaleOrdersController < ApplicationController
     if @sale_order.save
       redirect_to admin_sale_order_path(@sale_order), notice: "Sale order created"
     else
-      render :new
+      render :new, status: :unprocessable_entity
     end
   end
 

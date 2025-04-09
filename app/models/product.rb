@@ -8,6 +8,8 @@ class Product < ApplicationRecord
   has_many :purchase_order_items
   has_many :purchase_orders, through: :purchase_order_items
   has_many_attached :product_images
+  has_many :sale_order_items
+  has_many :sale_orders, through: :sale_order_items
 
   validates :product_sku, presence: true, uniqueness: true
   validates :product_name, presence: true

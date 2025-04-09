@@ -1,4 +1,5 @@
 class SaleOrder < ApplicationRecord
+  include CustomIdGenerator
   belongs_to :user
   before_create :generate_custom_id
 
@@ -18,8 +19,6 @@ class SaleOrder < ApplicationRecord
   validates :status, presence: true, inclusion: { in: %w[Pending Confirmed Shipped Delivered Canceled] }
   validate :ensure_payment_and_shipment_present
 
-  after_commit :update_product_sales_stats, on: [:create, :update]
-
   private
 
   def ensure_payment_and_shipment_present
@@ -32,32 +31,8 @@ class SaleOrder < ApplicationRecord
     end
   end
 
-  def update_product_sales_stats
-    sale_order_items.each do |item|
-      Products::UpdateSalesStatsService.new(item.product).call
-    end
-  end
-
   def generate_custom_id
-    return if self.id.present?
-    return unless self.order_date.present?  # Ensure order_date is set
-
-    year = order_date.year
-    month = order_date.month
-
-
-    last_order = SaleOrder
-      .where("id LIKE ?", "SO-#{year}-#{month}-%")
-      .order(:created_at)
-      .last
-
-    sequence = if last_order
-                 last_order.id.split("-").last.to_i + 1
-    else
-                 1
-    end
-
-    self.id = format("SO-%<year>d-%<month>02d-%<seq>03d", year: year, month: month, seq: sequence)
+    self.id = generate_unique_id("SO") if id.blank?
   end
 end
 

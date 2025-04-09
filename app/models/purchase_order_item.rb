@@ -1,34 +1,31 @@
 class PurchaseOrderItem < ApplicationRecord
   belongs_to :purchase_order
   belongs_to :product
-  has_many :inventory
-  
+  has_many :inventories
+
   validates :product_id, presence: true
   validates :quantity, presence: true, numericality: { greater_than: 0 }
 
   after_destroy :update_product_stock
   after_save :sync_inventory_records
   before_destroy :delete_related_inventory
-  after_save :update_product_purchase_stats
+  after_save :update_product_stats
   after_destroy :update_product_purchase_stats
 
   private
 
   def update_product_stock
-    inventory.update_all(status: "Removed", status_changed_at: Time.current)
+    inventories.update_all(status: "Removed", status_changed_at: Time.current)
   end
 
   def sync_inventory_records
     return unless product && purchase_order
 
-    # Fetch existing inventory records linked to this PO item
     inventory_items = Inventory.where(purchase_order_item_id: id)
-    # If more items were added (increase in quantity), create the difference
     existing_count = inventory_items.count
     desired_count = quantity.to_i
-    difference = (desired_count - existing_count)
+    difference = desired_count - existing_count
 
-    # Sunchronize inventory records
     inventory_items.each do |item|
       item.update(
         purchase_cost: unit_compose_cost_in_mxn.to_f,
@@ -36,11 +33,10 @@ class PurchaseOrderItem < ApplicationRecord
         status_changed_at: Time.current
       )
     end
-   
+
     if difference > 0
-      # Add new inventory items
       difference.times do
-        inventory.create!(
+        inventories.create!(
           product: product,
           purchase_order: purchase_order,
           purchase_cost: unit_compose_cost_in_mxn.to_f,
@@ -50,14 +46,13 @@ class PurchaseOrderItem < ApplicationRecord
         )
       end
     elsif difference < 0
-      # Remove extra inventory items (only if not sold or reserved)
-      items_to_delete = existing_items.where(status: [:in_transit, :available]).limit(difference.abs)
+      items_to_delete = inventory_items.where(status: [:in_transit, :available]).limit(difference.abs)
       items_to_delete.destroy_all
     end
   end
 
-  def update_product_purchase_stats
-    Products::UpdatePurchaseStatsService.new(product).call
+  def update_product_stats
+    Products::UpdateStatsService.new(product).call
   end
 
   def inventory_status_from_po
@@ -67,9 +62,9 @@ class PurchaseOrderItem < ApplicationRecord
     when "Delivered"
       :available
     when "Canceled"
-      :scrap # or use :returned or :canceled if you prefer
+      :scrap
     else
-      :in_transit # fallback default
+      :in_transit
     end
   end
 
@@ -78,5 +73,4 @@ class PurchaseOrderItem < ApplicationRecord
              .where.not(status: [:sold, :reserved])
              .destroy_all
   end
-  
 end

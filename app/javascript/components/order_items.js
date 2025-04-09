@@ -331,7 +331,7 @@ function updateItemTotals(fromTotals = false) {
       if (unitFinalPriceField) unitFinalPriceField.value = unitFinalPrice.toFixed(2);
       lineTotal = qty * unitFinalPrice;
       const totalLineCostField = row.querySelector(".item-total-line-cost");
-      console.log("totalLineCostField", totalLineCostField);
+
       if (totalLineCostField) totalLineCostField.value = lineTotal.toFixed(2);
 
       subtotal += qty * unitFinalPrice;
@@ -438,8 +438,7 @@ function updateTotals() {
     // FIX: The cost are not being updated.
     const taxRate = document.querySelector("#sale_order_tax_rate");
     const taxTotal = document.querySelector("#sale_order_total_tax");
-    console.log("taxRate", taxRate);
-    console.log("taxTotal", taxTotal);
+
     if (taxRate && taxTotal) {
       const taxRateValue = parseFloat(taxRate.value) || 0;
       const taxTotalValue = subtotal * (taxRateValue);

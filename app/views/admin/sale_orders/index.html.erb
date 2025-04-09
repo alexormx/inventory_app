@@ -27,10 +27,7 @@
           </span>
         </td>
         <td class="text-end">
-          <%= number_to_currency(so.total_order_value, unit: currency_symbol_for(so.currency || "MXN")) %>
-        </td>
-        <td class="text-end">
-          <%= number_to_currency(so.total_cost_mxn, unit: "$") if so.total_cost_mxn.present? %>
+          <%= number_to_currency(so.total_order_value, unit: "$") %>
         </td>
         <td class="text-end"><%= "#{so.discount}%" if so.discount.present? %></td>
         <td class="text-end">

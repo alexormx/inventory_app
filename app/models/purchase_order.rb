@@ -1,4 +1,5 @@
 class PurchaseOrder < ApplicationRecord
+  include CustomIdGenerator
   belongs_to :user
   before_create :generate_custom_id
 
@@ -20,8 +21,8 @@ class PurchaseOrder < ApplicationRecord
   validate :actual_delivery_after_expected_delivery
   after_update :update_inventory_status_based_on_order_status
 
-  
-  
+
+
   private
 
   def expected_delivery_after_order_date
@@ -39,38 +40,21 @@ class PurchaseOrder < ApplicationRecord
   end
 
   def generate_custom_id
-    return if self.id.present?
-    return unless self.order_date.present?  # Ensure order_date is set
-  
-    year = order_date.year
-    month = order_date.month
-  
-    last_order = PurchaseOrder
-      .where("id LIKE ?", "PO-#{year}-#{month}-%")
-      .order(:created_at)
-      .last
-  
-    sequence = if last_order
-                 last_order.id.split("-").last.to_i + 1
-               else
-                 1
-               end
-  
-    self.id = format("PO-%<year>d-%<month>02d-%<seq>03d", year: year, month: month, seq: sequence)
+    self.id = generate_unique_id("PO") if id.blank?
   end
 
   def update_inventory_status_based_on_order_status
     return unless saved_change_to_status?
-  
+
     new_status = case status
                  when "Delivered" then :available
                  when "Canceled" then :scrap
                  when "Pending", "In Transit" then :in_transit
                  else nil
                  end
-  
+
     return unless new_status
-  
+
     inventory.where.not(status: [:sold, :reserved])
              .update_all(status: Inventory.statuses[new_status], status_changed_at: Time.current)
   end

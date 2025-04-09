@@ -11,7 +11,7 @@ class Inventory < ApplicationRecord
     :damaged,
     :lost,
     :returned,
-    :scrap], 
+    :scrap],
     default: :available
 
 
@@ -36,10 +36,6 @@ class Inventory < ApplicationRecord
   end
 
   def update_product_stock_quantities
-  if status_previously_was.in?(%w[reserved sold]) || status.in?(%w[reserved sold])
-    Products::UpdateSalesStatsService.new(product).call
-  else
-    Products::UpdatePurchaseStatsService.new(product).call
+    Products::UpdateStatsService.new(product).call
   end
-end
 end
