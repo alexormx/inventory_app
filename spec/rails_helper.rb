@@ -30,7 +30,7 @@ RSpec.configure do |config|
   config.use_transactional_fixtures = true
 
   config.filter_rails_from_backtrace!
-  
+
   # Shoulda Matchers Configuration
   Shoulda::Matchers.configure do |shoulda|
     shoulda.integrate do |with|
@@ -42,12 +42,12 @@ RSpec.configure do |config|
 
   # ✅ **SET CHROMEDRIVER PATH & VERSION BEFORE REGISTERING DRIVER**
   Webdrivers::Chromedriver.required_version = '134.0.6998.0' # Set the correct version
-  Selenium::WebDriver::Chrome::Service.driver_path = "/usr/local/bin/chromedriver" # Ensure correct path
+  Selenium::WebDriver::Chrome::Service.driver_path = "/usr/bin/chromedriver" # Ensure correct path
 
   # ✅ **REGISTER SELENIUM DRIVER**
   Capybara.register_driver :selenium do |app|
     options = Selenium::WebDriver::Chrome::Options.new
-  
+
     # ✅ Essential flags to disable GPU errors
     options.add_argument('--disable-gpu')
     options.add_argument('--disable-software-rasterizer')
@@ -55,20 +55,20 @@ RSpec.configure do |config|
     options.add_argument('--disable-dev-tools')
     options.add_argument('--disable-features=VizDisplayCompositor') # Helps prevent GPU rendering issues
     options.add_argument('--disable-features=IsolateOrigins,site-per-process')
-  
+
     # ✅ Keep these for stability in WSL & Docker
     options.add_argument('--no-sandbox')
     options.add_argument('--headless=new') # Use updated headless mode
     options.add_argument('--disable-background-networking')
-  
+
     Capybara::Selenium::Driver.new(app, browser: :chrome, options: options)
   end
-  
+
   Capybara.javascript_driver = :selenium
 
   # FactoryBot Configuration
   config.include FactoryBot::Syntax::Methods
-  
+
   # Include Devise test helpers
   config.include Devise::Test::ControllerHelpers, type: :controller
   config.include Devise::Test::IntegrationHelpers, type: :system

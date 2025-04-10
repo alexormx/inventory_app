@@ -1,5 +1,6 @@
 class PurchaseOrder < ApplicationRecord
   include CustomIdGenerator
+
   belongs_to :user
   before_create :generate_custom_id
 
