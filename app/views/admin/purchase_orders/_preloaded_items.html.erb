@@ -17,7 +17,7 @@
     <td>
       <input type="text" value="<%= item.total_line_volume %>" readonly class="form-control-plaintext form-control-sm item-volume" data-unit-volume="<%= unit_volume %>">
     </td>
-    <% unit_weight = item.quantity.to_f > 0 ? item.total_line_weigth.to_f / item.quantity.to_f : 0 %>
+    <% unit_weight = item.quantity.to_f > 0 ? item.total_line_weight.to_f / item.quantity.to_f : 0 %>
 
     <td>
       <input type="text" value="<%= item.total_line_weight %>" readonly class="form-control-plaintext form-control-sm item-weight" data-unit-weight="<%= unit_weight %>">

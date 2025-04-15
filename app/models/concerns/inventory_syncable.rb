@@ -2,83 +2,97 @@
 module InventorySyncable
   extend ActiveSupport::Concern
 
-  included do
-    # Puede incluir validaciones o callbacks compartidos si lo deseas
-  end
-
-  # Método principal que sincroniza el inventario con base en la cantidad y estado
   def sync_inventory_records
+    Rails.logger.debug "[🔍 InventorySync] Syncing for product_id=#{product_id}, order_id=#{parent_order&.id}"
     return unless product && parent_order&.persisted?
 
     is_sale = respond_to?(:sale_order)
     is_purchase = respond_to?(:purchase_order)
 
-    # Busca ítems ya asignados a esta orden
-    assigned_items = Inventory.where(product_id: product.id)
-    assigned_items = assigned_items.where(sale_order_id: sale_order_id) if is_sale
-    assigned_items = assigned_items.where(purchase_order_id: purchase_order_id) if is_purchase
+    desired_quantity = quantity.to_i
 
-    existing_count = assigned_items.count
-    desired_count = quantity.to_i
-    difference = desired_count - existing_count
+    if is_purchase
+      sync_inventory_for_purchase(desired_quantity)
+    elsif is_sale
+      sync_inventory_for_sale(desired_quantity)
+    end
+  rescue => e
+    Rails.logger.error "[❌ InventorySync Error] #{e.class}: #{e.message}"
+    raise
+  end
 
-    # Actualiza inventario existente
-    assigned_items.each do |item|
+  private
+
+  def sync_inventory_for_purchase(desired_quantity)
+    existing_items = Inventory.where(product_id: product.id, purchase_order_id: purchase_order_id)
+    current_count = existing_items.count
+    difference = desired_quantity - current_count
+
+    # Update existing items
+    existing_items.each do |item|
       item.update!(
-        purchase_cost: respond_to?(:unit_compose_cost_in_mxn) ? unit_compose_cost_in_mxn.to_f : item.purchase_cost,
-        sold_price: respond_to?(:unit_final_price) ? unit_final_price.to_f : item.sold_price,
         status: inventory_status_from_order,
-        status_changed_at: Time.current
+        status_changed_at: Time.current,
+        purchase_cost: respond_to?(:unit_compose_cost_in_mxn) ? unit_compose_cost_in_mxn.to_f : item.purchase_cost,
+        purchase_order_item_id: id
       )
     end
 
     if difference > 0
-      # Crear inventario adicional
       difference.times do
         Inventory.create!(
           product: product,
+          purchase_order_id: purchase_order_id,
+          purchase_order_item_id: id,
           status: inventory_status_from_order,
           status_changed_at: Time.current,
-          purchase_cost: respond_to?(:unit_compose_cost_in_mxn) ? unit_compose_cost_in_mxn.to_f : nil,
-          sold_price: respond_to?(:unit_final_price) ? unit_final_price.to_f : nil,
-          purchase_order_id: is_purchase ? purchase_order_id : nil,
-          sale_order_id: is_sale ? sale_order_id : nil,
-          purchase_order_item_id: is_purchase ? id : nil
+          purchase_cost: respond_to?(:unit_compose_cost_in_mxn) ? unit_compose_cost_in_mxn.to_f : 0
         )
       end
-      append_pending_note(difference) if is_sale
     elsif difference < 0
-      # Eliminar exceso de inventario no vendido/reservado
-      assigned_items
-        .where(status: [ :in_transit, :available ])
-        .order(status_changed_at: :desc)
-        .limit(difference.abs)
-        .destroy_all
-      remove_pending_note if is_sale
-    else
-      remove_pending_note if is_sale
+      # Remove excess unassigned items
+      existing_items.where(status: [ :in_transit, :available ])
+                    .order(status_changed_at: :desc)
+                    .limit(difference.abs)
+                    .destroy_all
     end
   end
 
+  def sync_inventory_for_sale(desired_quantity)
+    # Only assign inventory if it's not already assigned
+    assigned = Inventory.where(product_id: product.id, sale_order_id: sale_order_id)
+    current_count = assigned.count
+    needed = desired_quantity - current_count
+
+    if needed > 0
+      available_items = Inventory.assignable
+                                 .where(product_id: product.id)
+                                 .limit(needed)
+
+      reserve_inventory_items(available_items)
+
+      if available_items.count < needed
+        append_pending_note(needed - available_items.count)
+      else
+        remove_pending_note
+      end
+    elsif needed < 0
+      # Too many assigned, release extras
+      extra_items = assigned.where(status: :reserved)
+                            .order(status_changed_at: :desc)
+                            .limit(needed.abs)
+      release_inventory_items(extra_items)
+      remove_pending_note
+    end
+  end
 
   def reserve_inventory_items(items)
     items.each do |item|
       item.update!(
         status: :reserved,
-        sale_order_id: respond_to?(:sale_order_id) ? sale_order_id : nil,
-        purchase_order_id: respond_to?(:purchase_order_id) ? purchase_order_id : nil,
-        status_changed_at: Time.current
-      )
-    end
-  end
-
-  def release_inventory_items(items)
-    items.each do |item|
-      item.update!(
-        status: :available,
-        sale_order_id: nil,
-        purchase_order_id: nil,
-        status_changed_at: Time.current
+        sale_order_id: sale_order_id,
+        status_changed_at: Time.current,
+        sold_price: respond_to?(:unit_final_price) ? unit_final_price.to_f : item.sold_price
       )
     end
   end
@@ -86,37 +100,51 @@ module InventorySyncable
   def append_pending_note(remaining)
     return unless respond_to?(:sale_order) && sale_order.persisted?
 
-    line_note = "🛑 Producto #{product.product_name} (#{product.product_sku}): cliente pidió #{quantity}, solo reservados #{quantity - remaining}"
-    lines = sale_order.notes.to_s.split("\n").reject { |line| line.include?(product.product_sku) }
-    lines << line_note
-    sale_order.update!(notes: lines.join("\n"))
+    line_identifier = id || object_id # usa ID si existe, o fallback a object_id temporal si aún no está persistido
+    note_prefix = "🛑 Producto #{product.product_name} (#{product.product_sku}), línea #{line_identifier}:"
+
+    new_line = "#{note_prefix} cliente pidió #{quantity}, solo reservados #{quantity - remaining}"
+
+    # Elimina notas anteriores de esta misma línea (basado en ID)
+    existing_lines = sale_order.notes.to_s.split("\n")
+    filtered_lines = existing_lines.reject { |line| line.starts_with?(note_prefix) }
+
+    # Agrega la nueva nota
+    filtered_lines << new_line
+    sale_order.update!(notes: filtered_lines.join("\n"))
   end
 
   def remove_pending_note
-    return unless respond_to?(:sale_order) && sale_order.persisted? && sale_order.notes.present?
+    return unless respond_to?(:sale_order) && sale_order.persisted?
 
-    lines = sale_order.notes.to_s.split("\n").reject { |line| line.include?(product.product_sku) }
-    sale_order.update!(notes: lines.join("\n"))
+    line_identifier = id || object_id
+    note_prefix = "🛑 Producto #{product.product_name} (#{product.product_sku}), línea #{line_identifier}:"
+
+    updated_notes = sale_order.notes.to_s.split("\n").reject { |line| line.starts_with?(note_prefix) }
+    sale_order.update!(notes: updated_notes.join("\n"))
   end
 
-  # Determina el estado de inventario basado en el estado de la orden
   def inventory_status_from_order
     case parent_order&.status
-    when "Pending", "In Transit"
-      :in_transit
-    when "Delivered"
-      :available
-    when "Canceled"
-      :scrap
-    when "Shipped", "Confirmed"
-      :sold
-    else
-      :in_transit
+    when "Pending", "In Transit" then :in_transit
+    when "Delivered" then :available
+    when "Canceled" then :scrap
+    when "Shipped", "Confirmed" then :sold
+    else :in_transit
     end
   end
 
-  # Devuelve el objeto padre (sale_order o purchase_order)
   def parent_order
     respond_to?(:sale_order) ? sale_order : (respond_to?(:purchase_order) ? purchase_order : nil)
+  end
+
+  def release_inventory_items(items)
+    items.each do |item|
+      item.update!(
+        status: :available,
+        sale_order_id: nil,
+        status_changed_at: Time.current
+      )
+    end
   end
 end

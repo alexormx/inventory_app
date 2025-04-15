@@ -14,7 +14,8 @@ class Products::UpdateStatsService
 
   def update_purchase_stats
     items = @product.purchase_order_items.joins(:purchase_order)
-                  .where(purchase_orders: { status: %w[Received Completed] })
+                    .where.not(purchase_orders: { status: "Canceled" })
+
 
     @product.total_purchase_quantity = items.sum(:quantity)
     @product.total_purchase_value = items.sum("quantity * unit_cost")

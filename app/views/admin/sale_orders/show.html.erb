@@ -1,0 +1,143 @@
+<!-- app/views/admin/sale_orders/show.html.erb -->
+<div class="container mt-4">
+  <h2>Sale Order ##<%= @sale_order.id %></h2>
+
+  <!-- Order Info -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-3">
+      <strong>Customer:</strong>
+      <p><%= @sale_order.user&.name || "N/A" %></p>
+    </div>
+    <div class="col-md-3">
+      <strong>Status:</strong>
+      <p><%= @sale_order.status %></p>
+    </div>
+    <div class="col-md-3">
+      <strong>Order Date:</strong>
+      <p><%= @sale_order.order_date %></p>
+    </div>
+  </div>
+
+  <!-- Financial Summary -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-3">
+      <strong>Subtotal:</strong>
+      <p>$<%= number_with_precision(@sale_order.subtotal, precision: 2) %></p>
+    </div>
+    <div class="col-md-3">
+      <strong>Tax Rate:</strong>
+      <p><%= (@sale_order.tax_rate * 100).round(1) %>%</p>
+    </div>
+    <div class="col-md-3">
+      <strong>Tax Total:</strong>
+      <p>$<%= number_with_precision(@sale_order.total_tax, precision: 2) %></p>
+    </div>
+    <div class="col-md-3">
+      <strong>Total Order Value:</strong>
+      <p>$<%= number_with_precision(@sale_order.total_order_value, precision: 2) %></p>
+    </div>
+  </div>
+
+  <!-- Items Table -->
+  <div class="card mb-4">
+    <div class="card-body">
+      <h5 class="card-title">Sale Order Items</h5>
+      <div class="table-responsive">
+        <table class="table table-bordered table-sm align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>Product</th>
+              <th>Qty</th>
+              <th>Unit Cost</th>
+              <th>Discount</th>
+              <th>Final Price</th>
+              <th>Volume</th>
+              <th>Weight</th>
+              <th>Total Line Cost</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @sale_order.sale_order_items.each do |item| %>
+              <tr>
+                <td><%= item.product&.product_name || "—" %></td>
+                <td><%= item.quantity %></td>
+                <td><%= number_with_precision(item.unit_cost, precision: 2) %></td>
+                <td><%= number_with_precision(item.unit_discount, precision: 2) %></td>
+                <td><%= number_with_precision(item.unit_final_price, precision: 2) %></td>
+                <td><%= number_with_precision(item.total_line_volume, precision: 2) %></td>
+                <td><%= number_with_precision(item.total_line_weight, precision: 2) %></td>
+                <td><%= number_with_precision(item.total_line_cost, precision: 2) %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Payments Section -->
+  <% if @sale_order.payments.any? %>
+    <div class="card my-3">
+      <div class="card-body">
+        <h5 class="card-title">Payments</h5>
+        <table class="table table-bordered table-sm">
+          <thead>
+            <tr>
+              <th>Amount</th>
+              <th>Method</th>
+              <th>Status</th>
+              <th>Paid At</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @sale_order.payments.each do |payment| %>
+              <tr>
+                <td>$<%= number_with_precision(payment.amount, precision: 2) %></td>
+                <td><%= payment.payment_method %></td>
+                <td><%= payment.status %></td>
+                <td><%= payment.paid_at&.strftime("%F") || "—" %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  <% end %>
+
+  <%= link_to "Add Payment", new_admin_sale_order_payment_path(sale_order_id: @sale_order.id), class: "btn btn-outline-primary" %>
+
+
+  <!-- Shipment Info -->
+  <% if @sale_order.shipment.present? %>
+    <div class="card mb-3">
+      <div class="card-body">
+        <h5 class="card-title">🚚 Shipment Info</h5>
+        <div class="row">
+          <div class="col-md-4"><strong>Carrier:</strong> <%= @sale_order.shipment.carrier %></div>
+          <div class="col-md-4"><strong>Tracking #:</strong> <%= @sale_order.shipment.tracking_number %></div>
+          <div class="col-md-4"><strong>Status:</strong> <%= @sale_order.shipment.status %></div>
+          <div class="col-md-4"><strong>Estimated Delivery:</strong> <%= @sale_order.shipment.estimated_delivery %></div>
+          <div class="col-md-4"><strong>Actual Delivery:</strong> <%= @sale_order.shipment.actual_delivery || "—" %></div>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- Notes -->
+  <% if @sale_order.notes.present? %>
+    <div class="card mb-3">
+      <div class="card-body">
+        <strong>📝 Notes:</strong>
+        <% @sale_order.notes.to_s.split("\n").each do |line| %>
+          <p class="mb-1 text-danger"><%= line %></p>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- Metadata -->
+  <div class="text-muted small">
+    Created at: <%= @sale_order.created_at.strftime("%F %T") %> |
+    Updated at: <%= @sale_order.updated_at.strftime("%F %T") %>
+  </div>
+</div>

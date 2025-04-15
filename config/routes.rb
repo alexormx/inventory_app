@@ -7,15 +7,15 @@ Rails.application.routes.draw do
 
     #Inventory Management views
     get "inventory", to: "inventory#index", as: :inventory
-    resources :inventory do      
+    resources :inventory do
       member do
         get :items
         get :edit_status
         patch :update_status
         get :cancel_edit_status
-      end   
+      end
     end
-    
+
     # Admin Dashboard
     get 'dashboard', to: 'dashboard#index', as: :dashboard
 
@@ -38,7 +38,7 @@ Rails.application.routes.draw do
     resources :admins, only: [:index, :new, :create, :edit, :update]
 
     # Purchase Orders
-    resources :purchase_orders do 
+    resources :purchase_orders do
       patch :confirm_receipt, on: :member
     end
 
@@ -51,6 +51,7 @@ Rails.application.routes.draw do
 
     resources :sale_orders do
       resources :sales_order_items, only: [:create, :update, :destroy]
+      resources :payments, only: [:new, :create]
     end
 
   end

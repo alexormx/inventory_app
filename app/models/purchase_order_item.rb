@@ -11,8 +11,7 @@ class PurchaseOrderItem < ApplicationRecord
   after_destroy :update_product_stock
   after_save :sync_inventory_records
   before_destroy :delete_related_inventory
-  after_save :update_product_stats
-  after_destroy :update_product_purchase_stats
+  after_commit :update_product_stats
 
   private
 

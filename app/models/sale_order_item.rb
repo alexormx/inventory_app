@@ -11,7 +11,7 @@ class SaleOrderItem < ApplicationRecord
   after_save :sync_inventory_records, if: :saved_change_to_quantity?
   before_destroy :unset_inventory_links
   after_destroy :release_inventory_and_update_notes
-  after_save :update_product_stats
+  after_commit :update_product_stats
 
 
   private

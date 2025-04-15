@@ -8,7 +8,7 @@ class Payment < ApplicationRecord
 
   private
 
-  def set_paid_at_if_completed
-    self.paid_at = Time.current if status_changed? && status == "Completed"
+  def update_sale_order_status
+    sale_order.update_status_if_fully_paid!
   end
 end

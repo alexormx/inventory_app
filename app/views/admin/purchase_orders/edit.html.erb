@@ -17,7 +17,7 @@
   </div>
 
   <!-- Add product searcher & item list here -->
-  <%= render "admin/purchase_orders/item_search_and_table", f: f %>
+  <%= render "admin/shared/item_search_and_table", f: f, context: "purchase" %>
 
   <div class="col-12">
     <%= f.submit "Save Purchase Order", class: "btn btn-success" %>

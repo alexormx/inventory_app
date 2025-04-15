@@ -1,5 +1,5 @@
 # app/views/admin/sales_orders/_form.html.erb
-<%= form_with model: [:admin, @sales_order], local: true do |f| %>
+<%= form_with model: [:admin, sales_order], local: true do |f| %>
   <div class="mb-3">
     <%= f.label :user_id, "Customer" %>
     <%= f.collection_select :user_id, User.where(role: "customer"), :id, :name, { prompt: "Select Customer" }, class: "form-select" %>

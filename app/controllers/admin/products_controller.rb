@@ -49,7 +49,7 @@ class Admin::ProductsController < ApplicationController
   def show
     @product = Product.find(params[:id])
   end
-  
+
   def destroy
     @product = Product.find(params[:id])
     if @product.destroy
@@ -65,7 +65,7 @@ class Admin::ProductsController < ApplicationController
     image = @product.product_images.find(params[:image_id])
     image_id = image.id
     image.purge # or purge_later for async
-  
+
     respond_to do |format|
       format.html { redirect_to edit_admin_product_path(@product), notice: "Image removed successfully." }
       format.turbo_stream { render turbo_stream: turbo_stream.remove("image_#{image_id}")}# optional: for dynamic deletion
@@ -111,7 +111,7 @@ class Admin::ProductsController < ApplicationController
       :status,
       :product_images,
       :custom_attributes,
-      :weight_gr, 
+      :weight_gr,
       :length_cm,
       :width_cm,
       :height_cm,

@@ -17,6 +17,7 @@ class Admin::SaleOrdersController < ApplicationController
     if @sale_order.save
       redirect_to admin_sale_order_path(@sale_order), notice: "Sale order created"
     else
+      Rails.logger.error(@sale_order.errors.full_messages)
       render :new, status: :unprocessable_entity
     end
   end
@@ -27,7 +28,8 @@ class Admin::SaleOrdersController < ApplicationController
     if @sale_order.update(sale_order_params)
       redirect_to admin_sale_order_path(@sale_order), notice: "Sale order updated"
     else
-      render :edit
+      Rails.logger.debug "[❌ SaleOrder Errors] " + @sale_order.errors.full_messages.join(", ")
+      render :edit, status: :unprocessable_entity
     end
   end
 
