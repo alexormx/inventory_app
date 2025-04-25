@@ -10,7 +10,9 @@
     </div>
     <div class="col-md-3">
       <strong>Status:</strong>
-      <p><%= @sale_order.status %></p>
+      <turbo-frame id="sale_order_status">
+        <p><%= @sale_order.status %></p>
+      </turbo-frame>
     </div>
     <div class="col-md-3">
       <strong>Order Date:</strong>
@@ -75,37 +77,18 @@
     </div>
   </div>
 
-  <!-- Payments Section -->
-  <% if @sale_order.payments.any? %>
-    <div class="card my-3">
-      <div class="card-body">
-        <h5 class="card-title">Payments</h5>
-        <table class="table table-bordered table-sm">
-          <thead>
-            <tr>
-              <th>Amount</th>
-              <th>Method</th>
-              <th>Status</th>
-              <th>Paid At</th>
-            </tr>
-          </thead>
-          <tbody>
-            <% @sale_order.payments.each do |payment| %>
-              <tr>
-                <td>$<%= number_with_precision(payment.amount, precision: 2) %></td>
-                <td><%= payment.payment_method %></td>
-                <td><%= payment.status %></td>
-                <td><%= payment.paid_at&.strftime("%F") || "—" %></td>
-              </tr>
-            <% end %>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  <% end %>
+  <!-- Add Payment Button -->
+  <%= link_to "Add Payment",
+      new_admin_sale_order_payment_path(@sale_order),
+      data: { turbo_frame: "modal_frame" },
+      class: "btn btn-outline-primary mb-3" %>
 
-  <%= link_to "Add Payment", new_admin_sale_order_payment_path(sale_order_id: @sale_order.id), class: "btn btn-outline-primary" %>
+  <!-- Payment Modal -->
+  <turbo-frame id="modal_frame"></turbo-frame>
 
+  <turbo-frame id="payments_table">
+    <%= render "admin/payments/payment_table", payments: @sale_order.payments %>
+  </turbo-frame>
 
   <!-- Shipment Info -->
   <% if @sale_order.shipment.present? %>

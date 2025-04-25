@@ -12,6 +12,7 @@ for (const name in controllers) {
 
 import "custom/menu"
 import "custom/toggle_inventory_items"
+import "custom/payment_modal"
 import "modules/toggle_menu"
 import "modules/flash_messages"
 import "modules/disable_enter_until_email"

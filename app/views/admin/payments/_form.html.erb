@@ -1,0 +1,39 @@
+<% if payment.errors.any? %>
+  <div class="alert alert-danger">
+    <h5>There were errors with your payment:</h5>
+    <ul>
+      <% payment.errors.full_messages.each do |msg| %>
+        <li><%= msg %></li>
+      <% end %>
+    </ul>
+  </div>
+<% end %>
+
+<%= form_with model: [:admin, payment], url: admin_payments_path, data: { turbo_frame: "_top" }, class: "row g-3" do |f| %>
+  <div class="col-md-6">
+    <%= f.label :amount, class: "form-label" %>
+    <%= f.number_field :amount, step: 0.01, class: "form-control", data: { modal_target: "focusField" } %>
+  </div>
+
+  <div class="col-md-6">
+    <%= f.label :payment_method, class: "form-label" %>
+    <%= f.select :payment_method, Payment.payment_methods.keys.map { |k| [k.humanize, k] }, {}, class: "form-select" %>
+  </div>
+
+  <div class="col-md-6">
+    <%= f.label :status, class: "form-label" %>
+    <%= f.select :status, ["Pending", "Completed", "Refunded"], {}, class: "form-select" %>
+  </div>
+
+  <div class="col-md-6">
+    <%= f.label :paid_at, class: "form-label" %>
+    <%= f.date_field :paid_at, class: "form-control", value: Date.current.strftime("%Y-%m-%d") %>
+  </div>
+
+  <%= f.hidden_field :sale_order_id %>
+
+  <div class="col-12 d-flex justify-content-end">
+    <%= f.submit "Add", class: "btn btn-success me-2" %>
+    <button type="button" class="btn btn-secondary" id="cancelModal">Cancel</button>
+  </div>
+<% end %>

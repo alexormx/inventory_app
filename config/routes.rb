@@ -49,6 +49,10 @@ Rails.application.routes.draw do
     # General user management (admin-facing)
     resources :users
 
+    # Payments Management
+    resources :payments, only: [:create]
+
+    # Sales Order Management
     resources :sale_orders do
       resources :sales_order_items, only: [:create, :update, :destroy]
       resources :payments, only: [:new, :create]

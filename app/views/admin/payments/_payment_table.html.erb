@@ -1,0 +1,50 @@
+  <!-- Payments Table -->
+<% if payments.any? %>
+  <div class="card mb-4">
+    <div class="card-body">
+      <h5 class="card-title">Payments</h5>
+
+      <div class="table-responsive">
+        <table class="table table-bordered table-sm align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>Amount</th>
+              <th>Method</th>
+              <th>Status</th>
+              <th>Paid At</th>
+              <th>Created At</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% payments.each do |payment| %>
+              <tr>
+                <td><%= number_to_currency(payment.amount) %></td>
+                <td>
+                  <% case payment.payment_method %>
+                  <% when "tarjeta_de_credito" %>
+                    <span class="badge bg-primary">💳 Tarjeta</span>
+                  <% when "efectivo" %>
+                    <span class="badge bg-success">💵 Efectivo</span>
+                  <% when "transferencia_bancaria" %>
+                    <span class="badge bg-info text-dark">🏦 Transferencia</span>
+                  <% else %>
+                    <span class="text-muted fst-italic">-</span>
+                  <% end %>
+                </td>
+                <td>
+                  <span class="badge bg-<%= payment.status == "Completed" ? "success" : payment.status == "Pending" ? "warning" : "danger" %>">
+                    <%= payment.status %>
+                  </span>
+                </td>
+                <td><%= payment.paid_at&.strftime("%F") || "—" %></td>
+                <td><%= payment.created_at.strftime("%F %H:%M") %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+<% else %>
+  <div class="alert alert-info">No payments have been recorded yet.</div>
+<% end %>

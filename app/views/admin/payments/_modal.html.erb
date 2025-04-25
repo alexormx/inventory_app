@@ -1,0 +1,24 @@
+<turbo-frame id="modal_frame">
+  <dialog id="new_payment_modal">
+    <div class="modal-dialog">
+      <div class="modal-content p-3 shadow rounded">
+        <div class="modal-header position-relative">
+          <h5 class="modal-title">Add Payment</h5>
+          <div class="modal-close-container">
+            <button
+              type="button"
+              class="custom-close"
+              id="closeModal"
+              aria-label="Close"
+            >
+              &times; <!-- Este es el carácter "×" (X tipográfica) -->
+            </button>
+          </div>
+        </div>
+        <div class="modal-body">
+          <%= render "admin/payments/form", payment: @payment, sale_order: @sale_order %>
+        </div>
+      </div>
+    </div>
+  </dialog>
+</turbo-frame>

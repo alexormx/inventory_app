@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_04_05_145954) do
+ActiveRecord::Schema[8.0].define(version: 2025_04_16_050850) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -71,14 +71,23 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_05_145954) do
     t.index ["sale_order_id"], name: "index_inventories_on_sale_order_id"
   end
 
+  create_table "old_passwords", force: :cascade do |t|
+    t.string "encrypted_password", null: false
+    t.string "password_archivable_type", null: false
+    t.integer "password_archivable_id", null: false
+    t.string "password_salt"
+    t.datetime "created_at"
+    t.index ["password_archivable_type", "password_archivable_id"], name: "index_password_archivable"
+  end
+
   create_table "payments", force: :cascade do |t|
     t.decimal "amount", precision: 10, scale: 2, null: false
-    t.string "payment_method", null: false
     t.string "status", default: "Pending", null: false
     t.date "paid_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "sale_order_id", null: false
+    t.integer "payment_method"
   end
 
   create_table "products", force: :cascade do |t|
@@ -225,9 +234,31 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_05_145954) do
     t.text "notes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "confirmation_token"
+    t.datetime "confirmed_at"
+    t.datetime "confirmation_sent_at"
+    t.string "unconfirmed_email"
+    t.integer "failed_attempts", default: 0, null: false
+    t.string "unlock_token"
+    t.datetime "locked_at"
+    t.integer "sign_in_count", default: 0, null: false
+    t.datetime "current_sign_in_at"
+    t.datetime "last_sign_in_at"
+    t.string "current_sign_in_ip"
+    t.string "last_sign_in_ip"
+    t.integer "timeout_in", default: 21600
+    t.datetime "password_changed_at"
+    t.datetime "expired_at"
+    t.datetime "last_activity_at"
+    t.string "unique_session_id"
     t.boolean "created_offline"
+    t.index ["confirmation_token"], name: "index_users_on_confirmation_token", unique: true
     t.index ["email"], name: "index_users_on_email", unique: true
+    t.index ["expired_at"], name: "index_users_on_expired_at"
+    t.index ["last_activity_at"], name: "index_users_on_last_activity_at"
+    t.index ["password_changed_at"], name: "index_users_on_password_changed_at"
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
+    t.index ["unlock_token"], name: "index_users_on_unlock_token", unique: true
   end
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
@@ -237,6 +268,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_05_145954) do
   add_foreign_key "inventories", "products"
   add_foreign_key "inventories", "purchase_orders"
   add_foreign_key "inventories", "sale_orders"
+  add_foreign_key "old_passwords", "users", column: "password_archivable_id", on_delete: :cascade
   add_foreign_key "payments", "sale_orders"
   add_foreign_key "products", "users", column: "last_supplier_id"
   add_foreign_key "products", "users", column: "preferred_supplier_id"

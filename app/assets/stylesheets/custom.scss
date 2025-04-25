@@ -11,6 +11,48 @@
   padding: 0.4em 0.6em;
 }
 
+dialog::backdrop {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+dialog.modal-dialog-centered {
+  border: none;
+  padding: 0;
+  border-radius: 0.5rem;
+  max-width: 600px;
+  width: 100%;
+}
+
+.modal-close-container {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  z-index: 10;
+}
+
+.custom-close {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  width: 2.5rem;
+  height: 2.5rem;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  border-radius: 0.5rem;
+  cursor: pointer;
+}
+
+.custom-close:hover,
+.custom-close:focus {
+  background-color: rgba(0, 0, 0, 0.05);
+  outline: none;
+}
 .box-requirements {
   max-width: 330px; /* Adjust width */
   font-size: 12px; /* Smaller text */
