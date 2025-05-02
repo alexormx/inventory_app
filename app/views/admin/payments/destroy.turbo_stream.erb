@@ -3,9 +3,6 @@
     <%= render "admin/payments/payment_table", payments: @sale_order.payments %>
   </turbo-frame>
 <% end %>
-<%= turbo_stream.update "modal_frame" do %>
-  <template></template> <!-- Limpia el contenido pero conserva el frame -->
-<% end %>
 
 <%= turbo_stream.update "sale_order_status" do %>
   <span class="badge <%= status_badge_class(@sale_order.status) %> px-3 py-2"><%= @sale_order.status %></span>

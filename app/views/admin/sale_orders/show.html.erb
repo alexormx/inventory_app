@@ -11,7 +11,7 @@
     <div class="col-md-3">
       <strong>Status:</strong>
       <turbo-frame id="sale_order_status">
-        <p><%= @sale_order.status %></p>
+        <span class="badge <%= status_badge_class(@sale_order.status) %> px-3 py-2"><%= @sale_order.status %></span>
       </turbo-frame>
     </div>
     <div class="col-md-3">
@@ -28,7 +28,7 @@
     </div>
     <div class="col-md-3">
       <strong>Tax Rate:</strong>
-      <p><%= (@sale_order.tax_rate * 100).round(1) %>%</p>
+      <p><%= @sale_order.tax_rate.to_i %>%</p>
     </div>
     <div class="col-md-3">
       <strong>Tax Total:</strong>
@@ -39,6 +39,21 @@
       <p>$<%= number_with_precision(@sale_order.total_order_value, precision: 2) %></p>
     </div>
   </div>
+  <turbo-frame id="payment_balance">
+    <div class="row g-3 mb-4">
+      <div class="col-md-3">
+        <strong>Total Paid:</strong>
+        <p>$<%= number_with_precision(@sale_order.total_paid, precision: 2) %></p>
+      </div>
+
+      <div class="col-md-3">
+        <strong>Balance Due:</strong>
+        <p class="<%= @sale_order.fully_paid? ? 'text-success' : 'text-danger' %>">
+          $<%= number_with_precision(@sale_order.total_order_value - @sale_order.total_paid, precision: 2) %>
+        </p>
+      </div>
+    </div>
+  </turbo-frame>
 
   <!-- Items Table -->
   <div class="card mb-4">

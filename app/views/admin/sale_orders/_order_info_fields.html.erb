@@ -33,9 +33,13 @@
 </div>
 
 <!-- Status -->
-<div class="col-md-2">
+<div class="col-md-3">
   <%= f.label :status, class: "form-label-sm" %>
-  <%= f.select :status, %w[Pending Confirmed Shipped Delivered Canceled], {}, class: "form-select form-select-sm" %>
+  <div>
+    <% current_status = f.object.status.presence || "Pending" %>
+    <span class="badge <%= status_badge_class(current_status) %> px-3 py-2"><%= current_status %></span>
+    <%= f.hidden_field :status, value: current_status %>
+  </div>
 </div>
 
 <!-- Notes -->

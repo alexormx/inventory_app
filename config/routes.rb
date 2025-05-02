@@ -55,7 +55,7 @@ Rails.application.routes.draw do
     # Sales Order Management
     resources :sale_orders do
       resources :sales_order_items, only: [:create, :update, :destroy]
-      resources :payments, only: [:new, :create]
+      resources :payments, only: [:new, :create, :edit, :update, :destroy]
     end
 
   end

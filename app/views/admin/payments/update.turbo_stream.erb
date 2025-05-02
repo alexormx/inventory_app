@@ -1,10 +1,9 @@
-<%= turbo_stream.replace "payments_table" do %>
-  <turbo-frame id="payments_table">
-    <%= render "admin/payments/payment_table", payments: @sale_order.payments %>
-  </turbo-frame>
-<% end %>
+<%= turbo_stream.replace "payments_table",
+    partial: "admin/payments/payment_table",
+    locals: { payments: @sale_order.payments } %>
+
 <%= turbo_stream.update "modal_frame" do %>
-  <template></template> <!-- Limpia el contenido pero conserva el frame -->
+  <template></template>
 <% end %>
 
 <%= turbo_stream.update "sale_order_status" do %>

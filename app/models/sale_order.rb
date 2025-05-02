@@ -1,7 +1,6 @@
 class SaleOrder < ApplicationRecord
   include CustomIdGenerator
   belongs_to :user
-  before_create :generate_custom_id
 
   has_many :inventory, foreign_key: "sale_order_id", dependent: :restrict_with_error
   has_many :payments, dependent: :restrict_with_error
@@ -19,7 +18,8 @@ class SaleOrder < ApplicationRecord
   validates :status, presence: true, inclusion: { in: %w[Pending Confirmed Shipped Delivered Canceled] }
   validate :ensure_payment_and_shipment_present
 
-  after_commit :auto_update_status
+  before_validation :set_default_status, on: :create
+  before_create :generate_custom_id
 
   def total_paid
     payments.where(status: "Completed").sum(:amount)
@@ -30,7 +30,11 @@ class SaleOrder < ApplicationRecord
   end
 
   def update_status_if_fully_paid!
-    update!(status: "Confirmed") if fully_paid? && status != "Confirmed"
+    if fully_paid? && status != "Confirmed"
+      update!(status: "Confirmed")
+    elsif !fully_paid? && status == "Confirmed"
+      update!(status: "Pending")
+    end
   end
 
   private
@@ -38,30 +42,23 @@ class SaleOrder < ApplicationRecord
   def ensure_payment_and_shipment_present
     case status
     when "Confirmed"
-      errors.add(:payment, "must exist to confirm the order") unless payment
+      errors.add(:payment, "must exist to confirm the order") unless payments.any?
     when "Shipped"
-      errors.add(:payment, "must exist to ship the order") unless payment
-      errors.add(:shipment, "must exist to ship the order") unless shipment
+      errors.add(:payment, "must exist to ship the order") unless payments.any?
+      errors.add(:shipment, "must exist to ship the order") unless shipment.present?
     when "Delivered"
-      errors.add(:payment, "must exist to deliver the order") unless payment
-      errors.add(:shipment, "must exist to deliver the order") unless shipment
-    end
-  end
+      errors.add(:payment, "must exist to deliver the order") unless payment.any?
+      errors.add(:shipment, "must exist to deliver the order") unless shipment.present?
 
-  def auto_update_status
-    return if status == "Delivered" # Delivered must remain final unless explicitly changed
-
-    if shipment&.delivered? && payment.present?
-      update_column(:status, "Delivered")
-    elsif shipment.present? && payment.present?
-      update_column(:status, "Shipped")
-    elsif payment.present?
-      update_column(:status, "Confirmed")
     end
   end
 
   def generate_custom_id
     self.id = generate_unique_id("SO") if id.blank?
+  end
+
+  def set_default_status
+    self.status ||= "Pending"
   end
 end
 

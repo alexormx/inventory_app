@@ -22,17 +22,19 @@
   </div>
 <% end %>
 
-<%= form_with model: [:admin, @sale_order], local: true, class: "row g-3" do |f| %>
-  <div class="card mb-4">
-    <div class="card-body row">
-      <%= render "admin/sale_orders/order_info_fields", f: f %>
+<div class="order-context" data-context="sale-order">
+  <%= form_with model: [:admin, @sale_order], local: true, class: "row g-3" do |f| %>
+    <div class="card mb-4">
+      <div class="card-body row">
+        <%= render "admin/sale_orders/order_info_fields", f: f %>
+      </div>
     </div>
-  </div>
 
-  <%= render "admin/shared/item_search_and_table", f: f, context: "sale" %>
+    <%= render "admin/shared/item_search_and_table", f: f, context: "sale" %>
 
-  <div class="col-12">
-    <%= f.submit "Save Sale Order", class: "btn btn-success" %>
-    <%= link_to "Cancel", admin_sale_orders_path, class: "btn btn-secondary" %>
-  </div>
-<% end %>
+    <div class="col-12">
+      <%= f.submit "Save Sale Order", class: "btn btn-success" %>
+      <%= link_to "Cancel", admin_sale_orders_path, class: "btn btn-secondary" %>
+    </div>
+  <% end %>
+</div>

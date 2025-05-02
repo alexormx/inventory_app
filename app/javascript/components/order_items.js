@@ -136,7 +136,8 @@ document.addEventListener("turbo:load", () => {
 function buildBlankPurchaseOrderItemRow(index) {
   const tr = createElementWithClasses("tr", ["item-row"]);
   const contextElement = document.querySelector(".order-context");
-  const context = contextElement.dataset.context || "default";
+  if (!contextElement) console.warn("⚠️ .order-context not found in DOM");
+  const context = contextElement?.dataset?.context || "default";
   const contextText = context === "purchase-order" ? "purchase" : "sale";
 
   // --- Product ID and name ---
@@ -432,43 +433,46 @@ function updateTotals() {
   const contextElement = document.querySelector(".order-context");
   const context = contextElement?.dataset?.context || "default";
 
-  const subtotal = parseFloat(document.querySelector("#order_subtotal")?.value) || 0;
-  let total = 0
-  if(context === "sale-order") {
-    // FIX: The cost are not being updated.
+  const subtotal = parseFloat(document.querySelector("#sale_order_subtotal")?.value) || parseFloat(document.querySelector("#order_subtotal")?.value) || 0;
+  let total = 0;
+
+  if (context === "sale-order") {
     const taxRate = document.querySelector("#sale_order_tax_rate");
     const taxTotal = document.querySelector("#sale_order_total_tax");
+    const discount = parseFloat(document.querySelector("#sale_order_discount")?.value) || 0;
 
     if (taxRate && taxTotal) {
       const taxRateValue = parseFloat(taxRate.value) || 0;
-      const taxTotalValue = subtotal * (taxRateValue);
+      const taxTotalValue = subtotal * (taxRateValue / 100);
       taxTotal.value = taxTotalValue.toFixed(2);
 
-      total = subtotal + taxTotalValue;
+      total = subtotal + taxTotalValue - discount;
+
       const totalOrderValueInput = document.querySelector("#sale_order_total_order_value");
       if (totalOrderValueInput) totalOrderValueInput.value = total.toFixed(2);
     }
 
   } else {
     const other = parseFloat(document.querySelector("#order_other_cost")?.value) || 0;
-    const exchangeRate = parseFloat(document.querySelector("#order_exchange_rate")?.value) || 0;
+    const exchangeRate = parseFloat(document.querySelector("#order_exchange_rate")?.value) || 1;
     const shipping = parseFloat(document.querySelector("#order_shipping_cost")?.value) || 0;
     const tax = parseFloat(document.querySelector("#order_tax_cost")?.value) || 0;
+
     total = subtotal + shipping + tax + other;
     const totalMXN = total * exchangeRate;
+
     const totalCostInput = document.querySelector("#total_order_cost");
     const totalMXNInput = document.querySelector("#total_cost_mxn");
+
     if (totalCostInput) totalCostInput.value = total.toFixed(2);
     if (totalMXNInput) totalMXNInput.value = exchangeRate ? totalMXN.toFixed(2) : "";
   }
 
-  // ✅ Safely update items first (but prevent infinite loop)
-  updateItemTotals(true);
+  updateItemTotals(true); // Prevent infinite loop
 }
-
 // Reattach listeners
 document.addEventListener("turbo:load", function () {
-  const subtotalInput = document.querySelector("#order_subtotal");
+  const subtotalInput = document.querySelector("#sale_order_subtotal") || document.querySelector("#order_subtotal");
   const shippingInput = document.querySelector("#order_shipping_cost");
   const taxInput = document.querySelector("#order_tax_cost");
   const otherInput = document.querySelector("#order_other_cost");

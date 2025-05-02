@@ -13,6 +13,7 @@
               <th>Status</th>
               <th>Paid At</th>
               <th>Created At</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -38,6 +39,22 @@
                 </td>
                 <td><%= payment.paid_at&.strftime("%F") || "—" %></td>
                 <td><%= payment.created_at.strftime("%F %H:%M") %></td>
+                <td class="text-center">
+                  <div class="d-inline-flex gap-2">
+                    <%= link_to edit_admin_sale_order_payment_path(payment.sale_order, payment),
+                        data: { turbo_frame: "modal_frame" },
+                        class: "btn btn-sm btn-outline-primary", title: "Edit" do %>
+                      <i class="fas fa-pen"></i>
+                    <% end %>
+
+                    <%= button_to admin_sale_order_payment_path(payment.sale_order, payment),
+                        method: :delete,
+                        data: { turbo_confirm: "Are you sure you want to delete this payment?", turbo_stream: true },
+                        class: "btn btn-sm btn-outline-danger", title: "Delete" do %>
+                      <i class="fas fa-trash"></i>
+                    <% end %>
+                  </div>
+                </td>
               </tr>
             <% end %>
           </tbody>

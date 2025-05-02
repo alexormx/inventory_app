@@ -15,6 +15,7 @@ class Admin::SaleOrdersController < ApplicationController
   def create
     @sale_order = SaleOrder.new(sale_order_params)
     if @sale_order.save
+      @payment.sale_order.auto_update_status
       redirect_to admin_sale_order_path(@sale_order), notice: "Sale order created"
     else
       Rails.logger.error(@sale_order.errors.full_messages)
@@ -25,10 +26,12 @@ class Admin::SaleOrdersController < ApplicationController
   def edit; end
 
   def update
+    @sale_order = SaleOrder.find(params[:id])
     if @sale_order.update(sale_order_params)
-      redirect_to admin_sale_order_path(@sale_order), notice: "Sale order updated"
+      @sale_order.auto_update_status
+      redirect_to admin_sale_order_path(@sale_order), notice: "Sale order updated successfully"
     else
-      Rails.logger.debug "[❌ SaleOrder Errors] " + @sale_order.errors.full_messages.join(", ")
+      flash.now[:alert] = "There were errors saving the sale order"
       render :edit, status: :unprocessable_entity
     end
   end
