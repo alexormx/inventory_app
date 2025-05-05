@@ -1,9 +1,8 @@
 class Shipment < ApplicationRecord
-  belongs_to :sale_order, foreign_key: "sale_order_id"
+  belongs_to :sale_order, foreign_key: "sale_order_id", primary_key: "id"
 
-  validates :tracking_number, presence: true, uniqueness: true
+  validates :tracking_number, presence: true
   validates :carrier, presence: true
-  validates :status, presence: true, inclusion: { in: %w[Pending Shipped Delivered] }
   validates :estimated_delivery, presence: true
   validates :actual_delivery, date: { after_or_equal_to: :estimated_delivery, allow_blank: true }
 
@@ -11,6 +10,8 @@ class Shipment < ApplicationRecord
   validates :actual_delivery, date: { after_or_equal_to: :estimated_delivery, allow_blank: true }
 
   before_update :update_last_status_change
+
+  enum :status, [ :pending, :shipped, :delivered, :canceled, :returned ], default: :pending
 
   private
 

@@ -1,0 +1,5 @@
+<%= turbo_stream.replace "shipment_modal", "" %>
+
+<%= turbo_stream.replace "shipment_info", partial: "admin/shipments/info", locals: { sale_order: @sale_order } %>
+
+<%= turbo_stream.replace "shipment_button", partial: "admin/shipments/button", locals: { sale_order: @sale_order } %>

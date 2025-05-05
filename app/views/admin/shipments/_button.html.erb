@@ -1,0 +1,11 @@
+<% if sale_order.shipment.present? %>
+  <%= link_to "✏️ Edit Shipment",
+      edit_admin_sale_order_shipment_path(sale_order),
+      data: { turbo_frame: "shipment_modal" },
+      class: "btn btn-outline-primary mb-3" %>
+<% else %>
+  <%= link_to "➕ Add Shipment",
+      new_admin_sale_order_shipment_path(sale_order),
+      data: { turbo_frame: "shipment_modal" },
+      class: "btn btn-outline-success mb-3" %>
+<% end %>
