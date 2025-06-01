@@ -12,12 +12,9 @@
   <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
     <div class="modal-dialog">
       <div class="modal-content">
-        <%= form_with(
-              model: [:admin, sale_order, shipment],
-              url: shipment.persisted? ? admin_sale_order_shipment_path(sale_order) : admin_sale_order_shipment_path(sale_order),
-              method: shipment.persisted? ? :patch : :post,
-              data: { turbo_frame: "shipment_modal" }
-            ) do |f| %>
+        <%= form_with model: [:admin, sale_order, shipment], 
+                      data: { turbo_frame: "shipment_modal" },
+                      local: false do |f| %>
           <div class="modal-header">
             <h5 class="modal-title"><%= shipment.persisted? ? "Edit Shipment" : "Add Shipment" %></h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" onclick="document.getElementById('shipment_modal').innerHTML = ''"></button>

@@ -30,17 +30,28 @@ class Admin::ShipmentsController < ApplicationController
   end
 
   def edit
+    @shipment = @sale_order.shipment || @sale_order.build_shipment
     render partial: "admin/shipments/form", locals: { shipment: @shipment, sale_order: @sale_order }
   end
 
   def update
     if @shipment.update(shipment_params)
       respond_to do |format|
-        format.turbo_stream
+        format.turbo_stream # 🚀 Rails usará views/admin/shipments/update.turbo_stream.erb
         format.html { redirect_to admin_sale_order_path(@sale_order), notice: "Shipment updated successfully" }
       end
     else
-      render partial: "admin/shipments/form", locals: { shipment: @shipment, sale_order: @sale_order }, status: :unprocessable_entity
+      respond_to do |format|
+        format.turbo_stream do
+          render partial: "admin/shipments/form", 
+                locals: { shipment: @shipment, sale_order: @sale_order },
+                status: :unprocessable_entity
+        end
+        format.html do
+          flash.now[:alert] = "Error updating shipment"
+          render :edit, status: :unprocessable_entity
+        end
+      end
     end
   end
 

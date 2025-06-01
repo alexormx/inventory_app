@@ -15,7 +15,7 @@ class Admin::SaleOrdersController < ApplicationController
   def create
     @sale_order = SaleOrder.new(sale_order_params)
     if @sale_order.save
-      @payment.sale_order.auto_update_status
+      @sale_order.update_status_if_fully_paid! # If you want to trigger status logic
       redirect_to admin_sale_order_path(@sale_order), notice: "Sale order created"
     else
       Rails.logger.error(@sale_order.errors.full_messages)
@@ -28,7 +28,7 @@ class Admin::SaleOrdersController < ApplicationController
   def update
     @sale_order = SaleOrder.find(params[:id])
     if @sale_order.update(sale_order_params)
-      @sale_order.auto_update_status
+      @sale_order.update_status_if_fully_paid!
       redirect_to admin_sale_order_path(@sale_order), notice: "Sale order updated successfully"
     else
       flash.now[:alert] = "There were errors saving the sale order"

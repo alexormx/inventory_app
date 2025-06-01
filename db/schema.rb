@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_04_16_050850) do
+ActiveRecord::Schema[8.0].define(version: 2025_05_12_040916) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -209,13 +209,13 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_16_050850) do
   create_table "shipments", force: :cascade do |t|
     t.string "tracking_number", null: false
     t.string "carrier", null: false
-    t.string "status", default: "Pending", null: false
     t.date "estimated_delivery", null: false
     t.date "actual_delivery"
     t.datetime "last_update", precision: nil, default: -> { "CURRENT_TIMESTAMP" }, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "sale_order_id", null: false
+    t.integer "status"
   end
 
   create_table "users", force: :cascade do |t|
