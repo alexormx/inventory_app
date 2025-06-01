@@ -1,4 +1,6 @@
 Rails.application.routes.draw do
+  get "products/index"
+  get "products/show"
   # Devise authentication for all users
   devise_for :users
 
