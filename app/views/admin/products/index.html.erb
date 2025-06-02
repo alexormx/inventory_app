@@ -4,7 +4,7 @@
 <table class="table table-sm table-hover align-middle">
   <thead class="table-light">
     <tr>
-     <th>Image</th>
+      <th>Image</th>
       <th>SKU</th>
       <th>Name</th>
       <th>Price</th>
@@ -14,7 +14,7 @@
       <th>Length (cm)</th>
       <th>Width (cm)</th>
       <th>Height (cm)</th>
-      <th></th>
+      <th class="text-end">Actions</th>
     </tr>
   </thead>
   <tbody>
@@ -31,26 +31,27 @@
         <td><%= product.product_name %></td>
         <td><%= number_to_currency(product.selling_price, precision: 2) %></td>
         <td><%= product.inventory.available.count %></td>
-        <td><%= product.status %></td>
+        <td>
+          <turbo-frame id="product_toggle_<%= product.id %>">
+            <%= render partial: "toggle", locals: { product: product } %>
+          </turbo-frame>
+        </td>
         <td><%= product.weight_gr %></td>
         <td><%= product.length_cm %></td>
         <td><%= product.width_cm %></td>
         <td><%= product.height_cm %></td>
         <td class="text-end">
-          <%= link_to admin_product_path(product), class: "small text-success", title: "View" do %>
+          <%= link_to admin_product_path(product), class: "btn btn-sm btn-outline-success me-1", title: "View" do %>
             <i class="fa-solid fa-eye"></i>
-            View
           <% end %>
-          <%= link_to edit_admin_product_path(product), class: "small text-primary", title: "View" do %>
+          <%= link_to edit_admin_product_path(product), class: "btn btn-sm btn-outline-primary me-1", title: "Edit" do %>
             <i class="fas fa-edit"></i>
-            Edit
           <% end %>
           <%= link_to admin_product_path(product),
-                       data: { turbo_confirm: "Are you sure?", turbo_method: :delete },
-                       class: "small text-danger",
-                       title: "Delete" do %>
+                      data: { turbo_confirm: "Are you sure?", turbo_method: :delete },
+                      class: "btn btn-sm btn-outline-danger",
+                      title: "Delete" do %>
             <i class="fa-solid fa-trash"></i>
-            Delete
           <% end %>
         </td>
       </tr>

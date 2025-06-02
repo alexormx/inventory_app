@@ -1,0 +1,26 @@
+<h1 class="mb-3">🛒 Tu Carrito</h1>
+
+<% if @cart_items.empty? %>
+  <p class="text-muted">Tu carrito está vacío.</p>
+<% else %>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Producto</th>
+        <th>Cantidad</th>
+        <th>Precio</th>
+        <th>Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @cart_items.each do |product, quantity| %>
+        <tr>
+          <td><%= product.product_name %></td>
+          <td><%= quantity %></td>
+          <td><%= number_to_currency(product.selling_price) %></td>
+          <td><%= number_to_currency(product.selling_price * quantity) %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>

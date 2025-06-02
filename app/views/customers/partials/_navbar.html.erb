@@ -18,12 +18,22 @@
         </form>
       </div>
       <ul id="navbar-menu" class="navbar-nav me-auto my-2 my-lg-0 navbar-nav-scroll">
+        <li class="nav-item">
+          <%= link_to catalog_path, class: "nav-link" do %>
+            <i class="fas fa-store"></i> Catalog
+          <% end %>
+        </li>
         <% unless user_signed_in? %>
         <li class="nav-item">
-          <%= link_to "Iniciar sesión", new_user_session_path, class: "nav-link" %>
+          <%= link_to new_user_session_path, class: "nav-link" do %>
+            <i class="fas fa-sign-in-alt"></i> Iniciar sesión
+          <% end %>
         </li>
+
         <li class="nav-item">
-          <%= link_to "Registrarse", new_user_registration_path, class: "btn btn-outline-primary" %>
+          <%= link_to new_user_registration_path, class: "btn btn-outline-primary" do %>
+            <i class="fas fa-user-plus"></i> Registrarse
+          <% end %>
         </li>
         <% else %>
         <% if current_user.admin? %>
@@ -49,9 +59,11 @@
             </li>
           </ul>
         </li>
-        <li class="nav-item">
-          <%= link_to "<i class='fa-solid fa-cart-shopping'></i> Carrito".html_safe, "cart_path", class: "btn btn-outline-primary" %>
-        </li>
+        <%= link_to cart_path, class: "btn btn-outline-primary btn-sm" do %>
+          <i class="fas fa-shopping-cart"></i>
+          Carrito
+          (<%= session[:cart]&.values&.sum || 0 %>)
+        <% end %>
         <% end %>
       </ul>
     </div>

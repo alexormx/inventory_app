@@ -1,0 +1,3 @@
+<%= turbo_stream.replace "product_toggle_#{@product.id}" do %>
+  <%= render partial: "admin/products/toggle", locals: { product: @product } %>
+<% end %>

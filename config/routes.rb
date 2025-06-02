@@ -1,4 +1,5 @@
 Rails.application.routes.draw do
+  get "carts/show"
   get "products/index"
   get "products/show"
   # Devise authentication for all users
@@ -23,6 +24,11 @@ Rails.application.routes.draw do
 
     # Product Management
     resources :products do
+      # Activar / Desactivar productos
+      member do
+        patch :activate
+        patch :deactivate
+      end
       # Image removal for ActiveStorage
       delete "images/:image_id", to: "products#purge_image", as: :purge_image
 
@@ -62,6 +68,13 @@ Rails.application.routes.draw do
     end
 
   end
+  # Public product views
+  get '/catalog', to: 'products#index', as: :catalog
+  resources :products, only: [:show]
+
+  # Shopping Cart routes
+  resources :cart_items, only: [:create]
+  get "/cart", to: "carts#show", as: :cart
 
   # Rails health check (uptime monitor, etc.)
   get "up" => "rails/health#show", as: :rails_health_check

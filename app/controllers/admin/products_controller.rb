@@ -91,6 +91,26 @@ class Admin::ProductsController < ApplicationController
     }
   end
 
+  def activate
+    @product = Product.find(params[:id])
+    @product.update(status: "active")
+
+    respond_to do |format|
+      format.turbo_stream
+      format.html { redirect_to admin_products_path, notice: "Product activated" }
+    end
+  end
+
+  def deactivate
+    @product = Product.find(params[:id])
+    @product.update(status: "inactive")
+
+    respond_to do |format|
+      format.turbo_stream
+      format.html { redirect_to admin_products_path, notice: "Product deactivated" }
+    end
+  end
+
 
   private
   # Strong parameters for product

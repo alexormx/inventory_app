@@ -1,0 +1,9 @@
+<%= form_with url: product.status == "active" ? deactivate_admin_product_path(product) : activate_admin_product_path(product),
+              method: :patch,
+              data: { turbo_frame: "product_toggle_#{product.id}" },
+              class: "d-inline" do %>
+  <label class="toggle-switch">
+    <%= check_box_tag "status_toggle", nil, product.status == "active", onchange: "this.form.requestSubmit()" %>
+    <span class="slider"></span>
+  </label>
+<% end %>
