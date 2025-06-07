@@ -32,7 +32,7 @@ Rails.application.routes.draw do
       # Image removal for ActiveStorage
       delete "images/:image_id", to: "products#purge_image", as: :purge_image
 
-      # Product serach as JSON
+      # Product search as JSON
       collection do
         get "search"
       end
