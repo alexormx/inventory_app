@@ -1,4 +1,4 @@
-# app/controllers/admin/sales_orders_controller.rb
+# app/controllers/admin/sale_orders_controller.rb
 class Admin::SaleOrdersController < ApplicationController
   before_action :authenticate_user!
   before_action :authorize_admin!
