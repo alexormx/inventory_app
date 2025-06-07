@@ -47,7 +47,7 @@ class SaleOrder < ApplicationRecord
       errors.add(:payment, "must exist to ship the order") unless payments.any?
       errors.add(:shipment, "must exist to ship the order") unless shipment.present?
     when "Delivered"
-      errors.add(:payment, "must exist to deliver the order") unless payment.any?
+      errors.add(:payment, "must exist to deliver the order") unless payments.any?
       errors.add(:shipment, "must exist to deliver the order") unless shipment.present?
 
     end
