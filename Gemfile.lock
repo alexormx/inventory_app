@@ -213,7 +213,7 @@ GEM
       benchmark
       logger
     mini_mime (1.1.5)
-    mini_portile2 (2.8.8)
+    mini_portile2 (2.8.9)
     minitest (5.25.4)
     msgpack (1.8.0)
     net-imap (0.5.6)
@@ -410,6 +410,8 @@ GEM
       actionpack (>= 6.1)
       activesupport (>= 6.1)
       sprockets (>= 3.0.0)
+    sqlite3 (2.6.0)
+      mini_portile2 (~> 2.8.0)
     sshkit (1.24.0)
       base64
       logger
@@ -495,6 +497,7 @@ DEPENDENCIES
   solid_cache
   solid_queue
   sprockets-rails
+  sqlite3 (~> 2.2)
   stimulus-rails
   thruster
   turbo-rails
