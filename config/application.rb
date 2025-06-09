@@ -21,6 +21,8 @@ module InventoryApp
     config.i18n.default_locale = :"es-MX"
     config.i18n.fallbacks = { :"es-MX" => :es }
 
+    config.active_record.schema_format = :sql if Rails.env.test?
+
     # Configuration for the application, engines, and railties goes here.
     #
     # These settings can be overridden in specific environments using the files

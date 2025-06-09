@@ -18,7 +18,11 @@ class CreateProducts < ActiveRecord::Migration[8.0]
       t.boolean :preorder_available, default: false
       t.string :status, null: false, default: "Active"
       t.text :product_images
-      t.jsonb :custom_attributes
+      if ActiveRecord::Base.connection.adapter_name.downcase.starts_with?("sqlite")
+        t.text :custom_attributes
+      else
+        t.jsonb :custom_attributes, default: {}
+      end
 
       t.timestamps
     end
