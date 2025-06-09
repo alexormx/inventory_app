@@ -41,8 +41,12 @@ RSpec.configure do |config|
 
 
   # ✅ **SET CHROMEDRIVER PATH & VERSION BEFORE REGISTERING DRIVER**
-  Webdrivers::Chromedriver.required_version = '134.0.6998.0' # Set the correct version
-  Selenium::WebDriver::Chrome::Service.driver_path = "/usr/bin/chromedriver" # Ensure correct path
+  Webdrivers::Chromedriver.required_version = '134.0.6998.0'
+  if File.exist?("/usr/bin/chromedriver")
+    Selenium::WebDriver::Chrome::Service.driver_path = "/usr/bin/chromedriver"
+  else
+    config.filter_run_excluding type: :system
+  end
 
   # ✅ **REGISTER SELENIUM DRIVER**
   Capybara.register_driver :selenium do |app|

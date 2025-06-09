@@ -1,6 +1,6 @@
 <h1 class="mb-3">🛒 Tu Carrito</h1>
 
-<% if @cart_items.empty? %>
+<% if @cart.empty? %>
   <p class="text-muted">Tu carrito está vacío.</p>
 <% else %>
   <table class="table">
@@ -8,19 +8,36 @@
       <tr>
         <th>Producto</th>
         <th>Cantidad</th>
-        <th>Precio</th>
-        <th>Total</th>
+        <th class="text-end">Precio</th>
+        <th class="text-end">Total</th>
+        <th></th>
       </tr>
     </thead>
     <tbody>
-      <% @cart_items.each do |product, quantity| %>
+      <% @cart.items.each do |product, quantity| %>
         <tr>
           <td><%= product.product_name %></td>
-          <td><%= quantity %></td>
-          <td><%= number_to_currency(product.selling_price) %></td>
-          <td><%= number_to_currency(product.selling_price * quantity) %></td>
+          <td>
+            <%= form_with url: cart_item_path(product), method: :put, local: true, class: "d-inline" do %>
+              <%= hidden_field_tag :product_id, product.id %>
+              <%= number_field_tag :quantity, quantity, in: 1..100, class: "form-control form-control-sm d-inline w-auto" %>
+              <%= submit_tag "Actualizar", class: "btn btn-sm btn-secondary" %>
+            <% end %>
+          </td>
+          <td class="text-end"><%= number_to_currency(product.selling_price) %></td>
+          <td class="text-end"><%= number_to_currency(product.selling_price * quantity) %></td>
+          <td>
+            <%= button_to "Eliminar", cart_item_path(product), method: :delete, params: { product_id: product.id }, class: "btn btn-sm btn-danger" %>
+          </td>
         </tr>
       <% end %>
     </tbody>
+    <tfoot>
+      <tr>
+        <td colspan="3" class="text-end"><strong>Total:</strong></td>
+        <td class="text-end"><%= number_to_currency(@cart.total) %></td>
+        <td></td>
+      </tr>
+    </tfoot>
   </table>
 <% end %>

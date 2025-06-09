@@ -73,7 +73,7 @@ Rails.application.routes.draw do
   resources :products, only: [:show]
 
   # Shopping Cart routes
-  resources :cart_items, only: [:create]
+  resources :cart_items, only: [:create, :update, :destroy]
   get "/cart", to: "carts#show", as: :cart
 
   # Rails health check (uptime monitor, etc.)
