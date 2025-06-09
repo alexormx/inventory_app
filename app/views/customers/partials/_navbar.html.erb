@@ -1,72 +1,95 @@
-<nav class="navbar navbar-expand-lg navbar-light bg-light">
+<nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
   <div class="container">
-    <%= link_to root_path, id: "logo" do %>
-      <%= image_tag "logo.png", alt: "Pasatiempos Logo", class: "img-fluid", width: "40" %>
+
+    <!-- LOGO -->
+    <%= link_to root_path, id: "logo", class: "navbar-brand d-flex align-items-center" do %>
+      <%= image_tag "logo.png", alt: "Pasatiempos Logo", class: "img-fluid me-2", width: "40" %>
+      <span class="fw-bold">PASATIEMPOS</span>
     <% end %>
 
-    <button class="navbar-toggler" id="hamburger" type="button" data-bs-toggle="collapse" data-bs-target="#navbarToggleExternalContent" aria-controls="navbarToggleExternalContent" aria-expanded="false" aria-label="Toggle navigation">
+    <!-- HAMBURGER BUTTON -->
+    <button class="navbar-toggler" id="hamburger" type="button" data-bs-toggle="collapse" data-bs-target="#navbar-scroll" aria-controls="navbar-scroll" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
     </button>
-    
+
+    <!-- COLLAPSIBLE CONTENT -->
     <div class="collapse navbar-collapse" id="navbar-scroll">
-      <div class="w-50 mx-auto">
-        <form class=" d-flex" role="search">
+
+      <!-- SEARCH FORM -->
+      <div class="mx-auto my-2 my-lg-0 w-100 d-flex justify-content-center">
+        <form class="d-flex w-75" role="search">
           <input type="search" class="form-control me-2" placeholder="Buscar productos, marcas y más..." aria-label="Buscar productos">
           <button type="submit" class="btn btn-outline-secondary">
             <i class="fa fa-search"></i>
           </button>
         </form>
       </div>
-      <ul id="navbar-menu" class="navbar-nav me-auto my-2 my-lg-0 navbar-nav-scroll">
+
+      <!-- NAV MENU -->
+      <ul id="navbar-menu" class="navbar-nav ms-auto d-flex align-items-center gap-2">
+
+        <!-- Catalogo -->
         <li class="nav-item">
-          <%= link_to catalog_path, class: "nav-link" do %>
-            <i class="fas fa-store"></i> Catalog
-          <% end %>
-        </li>
-        <% unless user_signed_in? %>
-        <li class="nav-item">
-          <%= link_to new_user_session_path, class: "nav-link" do %>
-            <i class="fas fa-sign-in-alt"></i> Iniciar sesión
+          <%= link_to catalog_path, class: "btn btn-outline-secondary d-flex align-items-center" do %>
+            <i class="fas fa-store me-1"></i> Catálogo
           <% end %>
         </li>
 
-        <li class="nav-item">
-          <%= link_to new_user_registration_path, class: "btn btn-outline-primary" do %>
-            <i class="fas fa-user-plus"></i> Registrarse
-          <% end %>
-        </li>
-        <% else %>
-        <% if current_user.admin? %>
-        <li class="nav-item">
-          <%= link_to "Dashboard", admin_dashboard_path, class: "btn btn-outline-primary" %>
-        </li>
-        <% end %>
-        <!-- ✅ Dropdown & Cart Button -->
-        <li class="nav-item dropdown">
-          <a href="#" id="account" class="nav-link dropdown-toggle">
-            <i class="fa-solid fa-user"></i> Mi cuenta
-          </a>
-          <ul class="dropdown-menu" id="dropdown-menu">
-            <li><%= link_to "Mi Perfil", "#", class: "dropdown-item nav-link" %></li>
-            <li><%= link_to "Mis compras", "#", class: "dropdown-item nav-link" %></li>
-            <li><hr class="dropdown-divider"></li>
-            <li>
-              <%= button_to "Cerrar sesión", destroy_user_session_path, 
-              method: :delete, 
-              class: "dropdown-item", 
-              id: "logout-button", 
-              form: { data: { turbo: true } } %>  
+        <% if user_signed_in? %>
+          <% if current_user.admin? %>
+            <li class="nav-item">
+              <%= link_to admin_dashboard_path, class: "btn btn-outline-primary d-flex align-items-center" do %>
+                <i class="fas fa-cogs me-1"></i> Admin
+              <% end %>
             </li>
-          </ul>
-        </li>
-        <%= link_to cart_path, class: "btn btn-outline-primary btn-sm" do %>
-          <i class="fas fa-shopping-cart"></i>
-          Carrito
-          (<%= session[:cart]&.values&.sum || 0 %>)
+          <% end %>
+
+          <!-- Account Dropdown -->
+          <li class="nav-item dropdown">
+            <a href="#" id="account" class="btn btn-outline-dark dropdown-toggle d-flex align-items-center" data-bs-toggle="dropdown">
+              <i class="fas fa-user me-1"></i> Mi cuenta
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end" id="dropdown-menu">
+              <li><%= link_to "Mi Perfil", "#", class: "dropdown-item" %></li>
+              <li><%= link_to "Mis compras", "#", class: "dropdown-item" %></li>
+              <li><hr class="dropdown-divider"></li>
+              <li>
+                <%= button_to "Cerrar sesión", destroy_user_session_path,
+                              method: :delete,
+                              id: "logout-button",
+                              class: "dropdown-item",
+                              form: { data: { turbo: true } } %>
+              </li>
+            </ul>
+          </li>
+
+          <!-- Cart Button -->
+          <li class="nav-item">
+            <%= link_to cart_path, class: "btn btn-outline-primary position-relative d-flex align-items-center" do %>
+              <i class="fas fa-shopping-cart me-1"></i> Carrito
+              <span class="badge bg-primary rounded-pill position-absolute top-0 start-100 translate-middle">
+                <%= session[:cart]&.values&.sum || 0 %>
+              </span>
+            <% end %>
+          </li>
+
+        <% else %>
+          <!-- Login -->
+          <li class="nav-item">
+            <%= link_to new_user_session_path, class: "btn btn-outline-primary d-flex align-items-center" do %>
+              <i class="fas fa-sign-in-alt me-1"></i> Iniciar sesión
+            <% end %>
+          </li>
+
+          <!-- Register -->
+          <li class="nav-item">
+            <%= link_to new_user_registration_path, class: "btn btn-primary d-flex align-items-center" do %>
+              <i class="fas fa-user-plus me-1"></i> Registrarse
+            <% end %>
+          </li>
         <% end %>
-        <% end %>
+
       </ul>
     </div>
   </div>
 </nav>
-
