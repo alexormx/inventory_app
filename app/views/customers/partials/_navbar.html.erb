@@ -30,7 +30,7 @@
 
         <!-- Catalogo -->
         <li class="nav-item">
-          <%= link_to catalog_path, class: "btn btn-outline-secondary d-flex align-items-center" do %>
+          <%= link_to catalog_path, class: "btn btn-outline-danger d-flex align-items-center" do %>
             <i class="fas fa-store me-1"></i> Catálogo
           <% end %>
         </li>
@@ -38,7 +38,7 @@
         <% if user_signed_in? %>
           <% if current_user.admin? %>
             <li class="nav-item">
-              <%= link_to admin_dashboard_path, class: "btn btn-outline-primary d-flex align-items-center" do %>
+              <%= link_to admin_dashboard_path, class: "btn btn-outline-danger d-flex align-items-center" do %>
                 <i class="fas fa-cogs me-1"></i> Admin
               <% end %>
             </li>
@@ -46,7 +46,7 @@
 
           <!-- Account Dropdown -->
           <li class="nav-item dropdown">
-            <a href="#" id="account" class="btn btn-outline-dark dropdown-toggle d-flex align-items-center" data-bs-toggle="dropdown">
+            <a href="#" id="account" class="btn btn-outline-danger dropdown-toggle d-flex align-items-center" data-bs-toggle="dropdown">
               <i class="fas fa-user me-1"></i> Mi cuenta
             </a>
             <ul class="dropdown-menu dropdown-menu-end" id="dropdown-menu">
@@ -65,9 +65,9 @@
 
           <!-- Cart Button -->
           <li class="nav-item">
-            <%= link_to cart_path, class: "btn btn-outline-primary position-relative d-flex align-items-center" do %>
+            <%= link_to cart_path, class: "btn btn-outline-danger position-relative d-flex align-items-center" do %>
               <i class="fas fa-shopping-cart me-1"></i> Carrito
-              <span class="badge bg-primary rounded-pill position-absolute top-0 start-100 translate-middle">
+              <span class="badge bg-danger rounded-pill position-absolute top-0 start-100 translate-middle">
                 <%= session[:cart]&.values&.sum || 0 %>
               </span>
             <% end %>
@@ -76,14 +76,14 @@
         <% else %>
           <!-- Login -->
           <li class="nav-item">
-            <%= link_to new_user_session_path, class: "btn btn-outline-primary d-flex align-items-center" do %>
+            <%= link_to new_user_session_path, class: "btn btn-outline-danger d-flex align-items-center" do %>
               <i class="fas fa-sign-in-alt me-1"></i> Iniciar sesión
             <% end %>
           </li>
 
           <!-- Register -->
           <li class="nav-item">
-            <%= link_to new_user_registration_path, class: "btn btn-primary d-flex align-items-center" do %>
+            <%= link_to new_user_registration_path, class: "btn btn-danger d-flex align-items-center" do %>
               <i class="fas fa-user-plus me-1"></i> Registrarse
             <% end %>
           </li>

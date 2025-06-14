@@ -1,4 +1,57 @@
-<div>
-  <h1>Welcome to My Rails App</h1>
-  <p>This is a test home page.</p>
+<div class="container mt-5 text-center">
+  <h1 class="display-4 fw-bold mb-4">Bienvenidos a <span class="text-danger">PASATIEMPOS</span></h1>
+  <p class="lead text-muted mb-5">Un espacio donde el coleccionismo cobra vida, se fortalecen amistades y se celebran los valores familiares.</p>
+
+  <div class="row g-4">
+    <!-- Sección 1 -->
+    <div class="col-md-6">
+      <div class="card h-100 shadow-sm">
+        <%= image_tag "collection_shelf.jpg", class: "card-img-top", alt: "Colección organizada" %>
+        <div class="card-body">
+          <h5 class="card-title fw-semibold">Pasión por el coleccionismo</h5>
+          <p class="card-text">Desde autos a escala hasta cartas y figuras, aquí celebramos cada colección única con orgullo.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sección 2 -->
+    <div class="col-md-6">
+      <div class="card h-100 shadow-sm">
+        <%= image_tag "father_son_collecting.jpg", class: "card-img-top", alt: "Padre e hijo coleccionando" %>
+        <div class="card-body">
+          <h5 class="card-title fw-semibold">Un legado familiar</h5>
+          <p class="card-text">El coleccionismo une generaciones y refuerza los lazos familiares a través de momentos compartidos.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sección 3 -->
+    <div class="col-md-6">
+      <div class="card h-100 shadow-sm">
+        <%= image_tag "collector_friends.jpg", class: "card-img-top", alt: "Amigos coleccionistas" %>
+        <div class="card-body">
+          <h5 class="card-title fw-semibold">Comunidad y amistad</h5>
+          <p class="card-text">Creemos en compartir, intercambiar y crecer juntos. La comunidad es el corazón de Pasatiempos.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sección 4 -->
+    <div class="col-md-6">
+      <div class="card h-100 shadow-sm">
+        <%= image_tag "good_practices.jpg", class: "card-img-top", alt: "Buenas prácticas de colección" %>
+        <div class="card-body">
+          <h5 class="card-title fw-semibold">Buenas prácticas</h5>
+          <p class="card-text">Fomentamos la conservación, el orden, y la documentación de cada pieza para que trascienda generaciones.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="my-5">
+
+  <h2 class="fw-bold text-danger">Únete a nosotros</h2>
+  <p class="lead">¡Explora el catálogo, encuentra esa pieza especial y sé parte de nuestra familia coleccionista!</p>
+
+  <%= link_to "Explorar Catálogo", catalog_path, class: "btn btn-danger btn-lg mt-3" %>
 </div>
