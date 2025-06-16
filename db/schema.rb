@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_06_02_000841) do
+ActiveRecord::Schema[8.0].define(version: 2025_06_16_154008) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -139,9 +139,11 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_02_000841) do
     t.decimal "current_inventory_value", precision: 15, scale: 2, default: "0.0", null: false
     t.decimal "projected_sales_value", precision: 15, scale: 2, default: "0.0", null: false
     t.decimal "projected_profit", precision: 15, scale: 2, default: "0.0", null: false
+    t.string "slug"
     t.index ["last_supplier_id"], name: "index_products_on_last_supplier_id"
     t.index ["preferred_supplier_id"], name: "index_products_on_preferred_supplier_id"
     t.index ["product_sku"], name: "index_products_on_product_sku", unique: true
+    t.index ["slug"], name: "index_products_on_slug", unique: true
   end
 
   create_table "purchase_order_items", force: :cascade do |t|

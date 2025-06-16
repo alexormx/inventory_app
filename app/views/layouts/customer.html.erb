@@ -1,7 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <title>Inventory App</title>
+  <title><%= content_for(:title) || 'Inventory App' %></title>
+  <meta name="description" content="<%= content_for(:description) || 'Explore our products' %>">
+  <link rel="canonical" href="<%= request.original_url %>">
+  <meta property="og:title" content="<%= content_for(:title) || 'Inventory App' %>">
+  <meta property="og:description" content="<%= content_for(:description) || 'Explore our products' %>">
+  <meta property="og:url" content="<%= request.original_url %>">
+  <meta property="og:image" content="<%= image_url('logo.png') %>">
+  <meta name="twitter:card" content="summary_large_image">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta charset="utf-8">
   <%= csrf_meta_tags %>
@@ -9,6 +16,10 @@
 
   <!-- ✅ FontAwesome via CDN -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <%= favicon_link_tag 'favicon.ico' %>
+    <%= favicon_link_tag 'favicon.svg', type: 'image/svg+xml' %>
+    <link rel="apple-touch-icon" href="/favicon.ico">
   
   <%= stylesheet_link_tag "application", media: "all", "data-turbo-track": "reload" %>
   <%= javascript_importmap_tags %>

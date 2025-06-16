@@ -1,4 +1,6 @@
 class Product < ApplicationRecord
+  extend FriendlyId
+  friendly_id :product_name, use: :slugged
   belongs_to :preferred_supplier, class_name: "User", optional: true
   belongs_to :last_supplier, class_name: "User", optional: true
 

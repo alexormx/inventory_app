@@ -55,6 +55,8 @@ gem "sprockets-rails"
 gem "image_processing", "~> 1.2"
 gem "mini_magick"
 gem "redis", "~> 4.8" # Redis for caching and background jobs
+gem "sitemap_generator"
+gem "friendly_id", "~> 5.5"
 
 
 # 🔹 **Development & Testing Group**

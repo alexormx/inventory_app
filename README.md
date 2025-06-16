@@ -162,3 +162,8 @@ This document provides an updated progress report on the Rails Inventory WebApp,
 
 ## 🚀 **Next step we will start with Sprint 2**
 Let's proceed with **Sprint 2: Admin Product Management**. If you have any questions or need further adjustments, please let me know! 🚀
+
+## 🚀 SEO Improvements
+- Meta tags for description, canonical URL, and Open Graph have been added to layouts.
+- `sitemap_generator` gem generates `sitemap.xml.gz`; run `rake sitemap:generate`.
+- `robots.txt` references the sitemap to help search engines crawl the site.
