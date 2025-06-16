@@ -1,7 +1,7 @@
 source "https://rubygems.org"
 
 # ✅ Define Ruby version
-ruby "3.2.2"
+ruby "3.2.3"
 
 # ✅ Core Rails Framework
 gem "rails", "~> 8.0.1"
