@@ -13,18 +13,13 @@
 # gem "pg"
 #
 default: &default
-  adapter: postgresql
-  encoding: unicode
-  # For details on connection pooling, see Rails configuration guide
-  # https://guides.rubyonrails.org/configuring.html#database-pooling
+  adapter: sqlite3
   pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
-  username: inventory_user
-  password: <%= ENV["INVENTORY_APP_DATABASE_PASSWORD"] %>
 
 
 development:
   <<: *default
-  database: inventory_app_development
+  database: db/development.sqlite3
 
   # The specified database role being used to connect to PostgreSQL.
   # To create additional roles in PostgreSQL see `$ createuser --help`.
@@ -83,7 +78,9 @@ test:
 #
 production:
   primary: &primary_production
-    <<: *default
+    adapter: postgresql
+    encoding: unicode
+    pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
     hostname: 52.45.114.134
     port: 5432
     database: dfcb0qfr8p5r0t
