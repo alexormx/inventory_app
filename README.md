@@ -27,10 +27,9 @@ This document provides an updated progress report on the Rails Inventory WebApp,
 
 ## 📌 **Current State**
 
-### **Core Framework & Setup**
 - **Rails Version:** 8.0.1
-- **Ruby Version:** 3.2.2
-- **Database:** PostgreSQL
+- **Ruby Version:** 3.2.3
+- **Database:** SQLite (development & test), PostgreSQL (production)
 - **Authentication:** Devise with role-based access control (admin, customer).
 
 ### **Admin Dashboard**
