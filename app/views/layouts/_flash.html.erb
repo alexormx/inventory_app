@@ -1,19 +1,8 @@
-<div class="container mx-auto">
+<div class="container mt-3" id="flash">
   <% flash.each do |key, message| %>
-    <div class="px-4 py-3 rounded text-center">
+    <div class="alert <%= bootstrap_class_for(key) %> alert-dismissible fade show flash-message" role="alert">
       <%= message %>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
   <% end %>
 </div>
-<% if flash.any? %>
-  <turbo-stream action="update" target="flash">
-    <template>
-      <% flash.each do |key, message| %>
-        <div class="alert alert-<%= key == 'notice' ? 'success' : 'danger' %> alert-dismissible fade show" role="alert">
-          <%= message %>
-          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-      <% end %>
-    </template>
-  </turbo-stream>
-<% end %>

@@ -32,10 +32,10 @@
   </header>
 
   <!-- ✅ Main Content -->
-  <main class="container mt-4">
-    <%= render 'customers/partials/alerts' %>
-    <%= yield %>
-  </main>
+    <main class="container mt-4">
+      <%= render 'layouts/flash' %>
+      <%= yield %>
+    </main>
 
   <!-- ✅ Footer -->
   <%= render 'customers/partials/footer' %>
