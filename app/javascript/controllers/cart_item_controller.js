@@ -1,72 +1,50 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
+  static values = { productId: Number }
   static targets = ["quantity", "lineTotal"]
-  static values = { productId: Number, price: Number }
 
   connect() {
-    this.updateLineTotal()
-    this.updateCartTotal()
-    this.updateCartCount()
+    this.csrfToken = document.querySelector('meta[name="csrf-token"]').content
   }
 
   increase() {
-    this.quantityTarget.stepUp()
-    this.quantityChanged()
+    const qty = parseInt(this.quantityTarget.value || 0) + 1
+    this.updateQuantity(qty)
   }
 
   decrease() {
-    if (parseInt(this.quantityTarget.value) > 1) {
-      this.quantityTarget.stepDown()
-      this.quantityChanged()
-    }
+    let qty = parseInt(this.quantityTarget.value || 0) - 1
+    if (qty < 1) qty = 1
+    this.updateQuantity(qty)
   }
 
   quantityChanged() {
-    if (parseInt(this.quantityTarget.value) < 1) this.quantityTarget.value = 1
-    this.updateLineTotal()
-    this.updateCartTotal()
-    this.updateCartCount()
-    this.save()
+    let qty = parseInt(this.quantityTarget.value || 0)
+    if (isNaN(qty) || qty < 1) qty = 1
+    this.updateQuantity(qty)
   }
 
-  updateLineTotal() {
-    const quantity = parseInt(this.quantityTarget.value)
-    const total = quantity * this.priceValue
-    this.lineTotalTarget.textContent = this.formatCurrency(total)
-    this.lineTotalTarget.dataset.amount = total
-  }
-
-  updateCartTotal() {
-    const totals = Array.from(document.querySelectorAll('[data-cart-item-target="lineTotal"]'))
-    const sum = totals.reduce((acc, el) => acc + (parseFloat(el.dataset.amount) || 0), 0)
-    const totalCell = document.querySelector('[data-cart-total]')
-    if (totalCell) totalCell.textContent = this.formatCurrency(sum)
-  }
-
-  updateCartCount() {
-    const quantities = Array.from(document.querySelectorAll('[data-cart-item-target="quantity"]'))
-    const count = quantities.reduce((acc, input) => acc + (parseInt(input.value) || 0), 0)
-    const badge = document.getElementById('cart-count')
-    if (badge) badge.textContent = count
-  }
-
-  save() {
-    const quantity = parseInt(this.quantityTarget.value)
-    const token = document.querySelector('meta[name="csrf-token"]').content
+  updateQuantity(qty) {
     fetch(`/cart_items/${this.productIdValue}`, {
       method: 'PUT',
       headers: {
-        'X-CSRF-Token': token,
         'Content-Type': 'application/json',
-        'Accept': 'text/vnd.turbo-stream.html'
+        'X-CSRF-Token': this.csrfToken,
+        'Accept': 'application/json'
       },
-      credentials: 'same-origin',
-      body: JSON.stringify({ product_id: this.productIdValue, quantity: quantity })
+      body: JSON.stringify({ product_id: this.productIdValue, quantity: qty })
     })
-  }
-
-  formatCurrency(amount) {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount)
+      .then(res => res.json())
+      .then(data => {
+        this.quantityTarget.value = data.quantity
+        if (this.lineTotalTarget) {
+          this.lineTotalTarget.textContent = data.line_total
+        }
+        const cartTotalEl = document.getElementById('cart-total')
+        if (cartTotalEl) cartTotalEl.textContent = data.cart_total
+        const badge = document.getElementById('cart-count')
+        if (badge) badge.textContent = data.total_items
+      })
   }
 }
