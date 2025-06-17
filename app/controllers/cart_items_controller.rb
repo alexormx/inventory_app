@@ -13,7 +13,10 @@ class CartItemsController < ApplicationController
   def update
     product = Product.find(params[:product_id])
     @cart.update(product.id, params[:quantity])
-    redirect_to cart_path
+    respond_to do |format|
+      format.turbo_stream { head :ok }
+      format.html { redirect_to cart_path }
+    end
   end
 
   def destroy

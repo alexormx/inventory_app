@@ -6,6 +6,8 @@ export default class extends Controller {
 
   connect() {
     this.updateLineTotal()
+    this.updateCartTotal()
+    this.updateCartCount()
   }
 
   increase() {
@@ -24,6 +26,7 @@ export default class extends Controller {
     if (parseInt(this.quantityTarget.value) < 1) this.quantityTarget.value = 1
     this.updateLineTotal()
     this.updateCartTotal()
+    this.updateCartCount()
     this.save()
   }
 
@@ -39,6 +42,13 @@ export default class extends Controller {
     const sum = totals.reduce((acc, el) => acc + (parseFloat(el.dataset.amount) || 0), 0)
     const totalCell = document.querySelector('[data-cart-total]')
     if (totalCell) totalCell.textContent = this.formatCurrency(sum)
+  }
+
+  updateCartCount() {
+    const quantities = Array.from(document.querySelectorAll('[data-cart-item-target="quantity"]'))
+    const count = quantities.reduce((acc, input) => acc + (parseInt(input.value) || 0), 0)
+    const badge = document.getElementById('cart-count')
+    if (badge) badge.textContent = count
   }
 
   save() {
