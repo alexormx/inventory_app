@@ -1,13 +1,15 @@
 // Function to handle fading flash messages
 function handleFlashMessages() {
-  const flash = document.querySelector(".flash-message");
-  if (!flash) return;
-  
-  setTimeout(() => {
-    flash.classList.remove("show");
-    flash.classList.add("fade");
-    setTimeout(() => flash.remove(), 500);
-  }, 5000);
+  const flashes = document.querySelectorAll(".flash-message");
+  if (!flashes.length) return;
+
+  flashes.forEach((flash) => {
+    setTimeout(() => {
+      flash.classList.remove("show");
+      flash.classList.add("fade");
+      setTimeout(() => flash.remove(), 500);
+    }, 5000);
+  });
 }
 
 // Run for full page loads
