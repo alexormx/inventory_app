@@ -11,9 +11,6 @@
 # It's strongly recommended that you check this file into your version control system.
 
 ActiveRecord::Schema[8.0].define(version: 2025_06_16_154008) do
-  # These are extensions that must be enabled in order to support this database
-  enable_extension "pg_catalog.plpgsql"
-
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -44,18 +41,18 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_16_154008) do
 
   create_table "canceled_order_items", force: :cascade do |t|
     t.string "sale_order_id", null: false
-    t.bigint "product_id", null: false
+    t.integer "product_id", null: false
     t.integer "canceled_quantity", null: false
     t.decimal "sale_price_at_cancellation", precision: 10, scale: 2, null: false
     t.text "cancellation_reason"
-    t.datetime "canceled_at", precision: nil, default: -> { "CURRENT_TIMESTAMP" }, null: false
+    t.datetime "canceled_at", default: -> { "CURRENT_TIMESTAMP" }, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["product_id"], name: "index_canceled_order_items_on_product_id"
   end
 
   create_table "cart_items", force: :cascade do |t|
-    t.bigint "product_id", null: false
+    t.integer "product_id", null: false
     t.integer "quantity"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -63,7 +60,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_16_154008) do
   end
 
   create_table "inventories", force: :cascade do |t|
-    t.bigint "product_id", null: false
+    t.integer "product_id", null: false
     t.string "purchase_order_id"
     t.string "sale_order_id"
     t.decimal "purchase_cost", precision: 10, scale: 2, null: false
@@ -77,15 +74,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_16_154008) do
     t.index ["product_id"], name: "index_inventories_on_product_id"
     t.index ["purchase_order_id"], name: "index_inventories_on_purchase_order_id"
     t.index ["sale_order_id"], name: "index_inventories_on_sale_order_id"
-  end
-
-  create_table "old_passwords", force: :cascade do |t|
-    t.string "encrypted_password", null: false
-    t.string "password_archivable_type", null: false
-    t.integer "password_archivable_id", null: false
-    t.string "password_salt"
-    t.datetime "created_at"
-    t.index ["password_archivable_type", "password_archivable_id"], name: "index_password_archivable"
   end
 
   create_table "payments", force: :cascade do |t|
@@ -113,15 +101,15 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_16_154008) do
     t.boolean "preorder_available", default: false
     t.string "status", default: "Active", null: false
     t.text "product_images"
-    t.jsonb "custom_attributes"
+    t.text "custom_attributes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "weight_gr", default: 100, null: false
     t.integer "length_cm", default: 16, null: false
     t.integer "width_cm", default: 4, null: false
     t.integer "height_cm", default: 4, null: false
-    t.bigint "preferred_supplier_id"
-    t.bigint "last_supplier_id"
+    t.integer "preferred_supplier_id"
+    t.integer "last_supplier_id"
     t.integer "total_purchase_quantity", default: 0, null: false
     t.decimal "total_purchase_value", precision: 10, scale: 2, default: "0.0", null: false
     t.decimal "average_purchase_cost", precision: 10, scale: 2, default: "0.0", null: false
@@ -148,7 +136,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_16_154008) do
 
   create_table "purchase_order_items", force: :cascade do |t|
     t.string "purchase_order_id", null: false
-    t.bigint "product_id", null: false
+    t.integer "product_id", null: false
     t.integer "quantity", null: false
     t.decimal "unit_cost", precision: 10, scale: 2, null: false
     t.datetime "created_at", null: false
@@ -164,7 +152,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_16_154008) do
   end
 
   create_table "purchase_orders", id: :string, force: :cascade do |t|
-    t.bigint "user_id", null: false
+    t.integer "user_id", null: false
     t.date "order_date", null: false
     t.date "expected_delivery_date", null: false
     t.date "actual_delivery_date"
@@ -188,7 +176,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_16_154008) do
 
   create_table "sale_order_items", force: :cascade do |t|
     t.string "sale_order_id", null: false
-    t.bigint "product_id", null: false
+    t.integer "product_id", null: false
     t.integer "quantity"
     t.decimal "unit_cost", precision: 10, scale: 2, null: false
     t.decimal "unit_discount", precision: 10, scale: 2, default: "0.0"
@@ -202,7 +190,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_16_154008) do
   end
 
   create_table "sale_orders", id: :string, force: :cascade do |t|
-    t.bigint "user_id", null: false
+    t.integer "user_id", null: false
     t.date "order_date", null: false
     t.decimal "subtotal", precision: 10, scale: 2, null: false
     t.decimal "tax_rate", precision: 5, scale: 2, null: false
@@ -221,7 +209,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_16_154008) do
     t.string "carrier", null: false
     t.date "estimated_delivery", null: false
     t.date "actual_delivery"
-    t.datetime "last_update", precision: nil, default: -> { "CURRENT_TIMESTAMP" }, null: false
+    t.datetime "last_update", default: -> { "CURRENT_TIMESTAMP" }, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "sale_order_id", null: false
@@ -244,31 +232,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_16_154008) do
     t.text "notes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.string "confirmation_token"
-    t.datetime "confirmed_at"
-    t.datetime "confirmation_sent_at"
-    t.string "unconfirmed_email"
-    t.integer "failed_attempts", default: 0, null: false
-    t.string "unlock_token"
-    t.datetime "locked_at"
-    t.integer "sign_in_count", default: 0, null: false
-    t.datetime "current_sign_in_at"
-    t.datetime "last_sign_in_at"
-    t.string "current_sign_in_ip"
-    t.string "last_sign_in_ip"
-    t.integer "timeout_in", default: 21600
-    t.datetime "password_changed_at"
-    t.datetime "expired_at"
-    t.datetime "last_activity_at"
-    t.string "unique_session_id"
     t.boolean "created_offline"
-    t.index ["confirmation_token"], name: "index_users_on_confirmation_token", unique: true
     t.index ["email"], name: "index_users_on_email", unique: true
-    t.index ["expired_at"], name: "index_users_on_expired_at"
-    t.index ["last_activity_at"], name: "index_users_on_last_activity_at"
-    t.index ["password_changed_at"], name: "index_users_on_password_changed_at"
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
-    t.index ["unlock_token"], name: "index_users_on_unlock_token", unique: true
   end
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
@@ -279,7 +245,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_16_154008) do
   add_foreign_key "inventories", "products"
   add_foreign_key "inventories", "purchase_orders"
   add_foreign_key "inventories", "sale_orders"
-  add_foreign_key "old_passwords", "users", column: "password_archivable_id", on_delete: :cascade
   add_foreign_key "payments", "sale_orders"
   add_foreign_key "products", "users", column: "last_supplier_id"
   add_foreign_key "products", "users", column: "preferred_supplier_id"
