@@ -20,7 +20,7 @@ function addToggleListener(selected_id, menu_id, toggle_class) {
     const clickedOutsideButton  = !selected_element.contains(event.target);
 
     if (clickedOutsideMenu && clickedOutsideButton) {
-      menu.classList.add(toggle_class);
+      menu.classList.remove(toggle_class);
     }
   });
 }

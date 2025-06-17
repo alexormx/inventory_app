@@ -1,0 +1,4 @@
+  <!-- Update the cart counting with turbo -->
+<%= turbo_stream.update "cart-count" do %>
+  <%= session[:cart]&.values&.sum || 0 %>
+<% end %>

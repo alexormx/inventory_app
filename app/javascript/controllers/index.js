@@ -2,6 +2,7 @@
 import { Application } from "@hotwired/stimulus"
 const application = Application.start()
 
+application.register("cart-item", CartItemController)
 // Configure Stimulus development experience
 application.debug = false
 window.Stimulus   = application

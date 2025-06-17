@@ -17,15 +17,26 @@
       <% @cart.items.each do |product, quantity| %>
         <tr>
           <td><%= product.product_name %></td>
-          <td>
-            <%= form_with url: cart_item_path(product), method: :put, local: true, class: "d-inline" do %>
-              <%= hidden_field_tag :product_id, product.id %>
-              <%= number_field_tag :quantity, quantity, in: 1..100, class: "form-control form-control-sm d-inline w-auto" %>
-              <%= submit_tag "Actualizar", class: "btn btn-sm btn-secondary" %>
-            <% end %>
+          <td data-controller="cart-item"
+              data-cart-item-product-id-value="<%= product.id %>"
+              data-cart-item-price-value="<%= product.selling_price %>">
+            <div class="input-group input-group-sm">
+              <button class="btn btn-outline-secondary" type="button" data-action="click->cart-item#decrease">-</button>
+              <input type="number"
+                     value="<%= quantity %>"
+                     min="1"
+                     class="form-control text-center"
+                     data-cart-item-target="quantity"
+                     data-action="change->cart-item#quantityChanged input->cart-item#quantityChanged">
+              <button class="btn btn-outline-secondary" type="button" data-action="click->cart-item#increase">+</button>
+            </div>
           </td>
           <td class="text-end"><%= number_to_currency(product.selling_price) %></td>
-          <td class="text-end"><%= number_to_currency(product.selling_price * quantity) %></td>
+          <td class="text-end"
+              data-cart-item-target="lineTotal"
+              data-amount="<%= product.selling_price * quantity %>">
+            <%= number_to_currency(product.selling_price * quantity) %>
+          </td>
           <td>
             <%= button_to "Eliminar", cart_item_path(product), method: :delete, params: { product_id: product.id }, class: "btn btn-sm btn-danger" %>
           </td>
@@ -35,7 +46,7 @@
     <tfoot>
       <tr>
         <td colspan="3" class="text-end"><strong>Total:</strong></td>
-        <td class="text-end"><%= number_to_currency(@cart.total) %></td>
+        <td class="text-end" data-cart-total><%= number_to_currency(@cart.total) %></td>
         <td></td>
       </tr>
     </tfoot>
