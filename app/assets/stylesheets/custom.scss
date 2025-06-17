@@ -219,3 +219,19 @@ img.product-order-image {
   font-size: 0.9rem;
   line-height: 1.2;
 }
+
+.input-group-sm .form-control {
+  width: 45px !important;
+  padding: 0.2rem 0.4rem;
+}
+
+/* Hide arrows in number inputs */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield; /* Firefox */
+}

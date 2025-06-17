@@ -1,7 +1,7 @@
 class Admin::ProductsController < ApplicationController
   before_action :authenticate_user!
   before_action :authorize_admin!
-  before_action :set_product, only: %i[show edit update destroy purge_image]
+  before_action :set_product, only: %i[show edit update destroy purge_image activate deactivate]
 
   def index
     @products = Product.all
@@ -24,11 +24,10 @@ class Admin::ProductsController < ApplicationController
   end
 
   def edit
-    @product = Product.find(params[:id])
+
   end
 
   def update
-    @product = Product.find(params[:id])
 
     if params[:product][:product_images]
       # Attach new images *without removing existing ones*
@@ -47,11 +46,11 @@ class Admin::ProductsController < ApplicationController
   end
 
   def show
-    @product = Product.find(params[:id])
+
   end
 
   def destroy
-    @product = Product.find(params[:id])
+
     if @product.destroy
       flash[:notice] = "Product deleted successfully."
       redirect_to admin_products_path
@@ -92,7 +91,7 @@ class Admin::ProductsController < ApplicationController
   end
 
   def activate
-    @product = Product.find(params[:id])
+
     @product.update(status: "active")
 
     respond_to do |format|
@@ -102,7 +101,7 @@ class Admin::ProductsController < ApplicationController
   end
 
   def deactivate
-    @product = Product.find(params[:id])
+
     @product.update(status: "inactive")
 
     respond_to do |format|
@@ -140,9 +139,10 @@ class Admin::ProductsController < ApplicationController
   end
 
   def set_product
-    @product = Product.find_by(id: params[:id]) || Product.find_by(id: params[:product_id])
-
-    unless @product
+    id = params[:id] || params[:product_id]
+    begin
+      @product = Product.friendly.find(id)
+    rescue ActiveRecord::RecordNotFound
       respond_to do |format|
         format.html { redirect_to admin_products_path, alert: "Product not found." }
         format.json { render json: { error: "Product not found" }, status: :not_found }

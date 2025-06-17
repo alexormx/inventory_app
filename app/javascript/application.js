@@ -10,6 +10,9 @@ for (const name in controllers) {
   application.register(name, controllers[name])
 }
 
+import CartItemController from "./controllers/cart_item_controller"
+application.register("cart-item", CartItemController)
+
 import "custom/menu"
 import "custom/toggle_inventory_items"
 import "custom/payment_modal"

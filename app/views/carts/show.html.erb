@@ -3,11 +3,11 @@
 <% if @cart.empty? %>
   <p class="text-muted">Tu carrito está vacío.</p>
 <% else %>
-  <table class="table">
+  <table class="table align-middle">
     <thead>
       <tr>
         <th>Producto</th>
-        <th>Cantidad</th>
+        <th class="text-center">Cantidad</th>
         <th class="text-end">Precio</th>
         <th class="text-end">Total</th>
         <th></th>
@@ -15,17 +15,23 @@
     </thead>
     <tbody>
       <% @cart.items.each do |product, quantity| %>
-        <tr>
-          <td><%= product.product_name %></td>
+        <tr data-controller="cart-item" data-cart-item-product-id-value="<%= product.id %>">
           <td>
-            <%= form_with url: cart_item_path(product), method: :put, local: true, class: "d-inline" do %>
-              <%= hidden_field_tag :product_id, product.id %>
-              <%= number_field_tag :quantity, quantity, in: 1..100, class: "form-control form-control-sm d-inline w-auto" %>
-              <%= submit_tag "Actualizar", class: "btn btn-sm btn-secondary" %>
-            <% end %>
+            <div class="d-flex align-items-center gap-2">
+              <%= image_tag(product.product_images.first, class: "img-thumbnail", size: "50x50") if product.product_images.present? %>
+              <strong><%= product.product_name %></strong>
+            </div>
+          </td>
+          <td class="text-center">
+            <div class="input-group input-group-sm justify-content-center" style="max-width: 140px;">
+              <button class="btn btn-outline-secondary px-2" type="button" data-action="click->cart-item#decrease">-</button>
+              <input type="number" min="1" class="form-control text-center px-1" value="<%= quantity %>" 
+                     data-cart-item-target="quantity" data-action="change->cart-item#quantityChanged" style="width: 45px;">
+              <button class="btn btn-outline-secondary px-2" type="button" data-action="click->cart-item#increase">+</button>
+            </div>
           </td>
           <td class="text-end"><%= number_to_currency(product.selling_price) %></td>
-          <td class="text-end"><%= number_to_currency(product.selling_price * quantity) %></td>
+          <td class="text-end" data-cart-item-target="lineTotal"><%= number_to_currency(product.selling_price * quantity) %></td>
           <td>
             <%= button_to "Eliminar", cart_item_path(product), method: :delete, params: { product_id: product.id }, class: "btn btn-sm btn-danger" %>
           </td>
@@ -35,7 +41,7 @@
     <tfoot>
       <tr>
         <td colspan="3" class="text-end"><strong>Total:</strong></td>
-        <td class="text-end"><%= number_to_currency(@cart.total) %></td>
+        <td id="cart-total" class="text-end"><%= number_to_currency(@cart.total) %></td>
         <td></td>
       </tr>
     </tfoot>

@@ -67,7 +67,7 @@
           <li class="nav-item">
             <%= link_to cart_path, class: "btn btn-outline-danger position-relative d-flex align-items-center" do %>
               <i class="fas fa-shopping-cart me-1"></i> Carrito
-              <span class="badge bg-danger rounded-pill position-absolute top-0 start-100 translate-middle">
+                <span id="cart-count" class="badge bg-danger rounded-pill position-absolute top-0 start-100 translate-middle">
                 <%= session[:cart]&.values&.sum || 0 %>
               </span>
             <% end %>
