@@ -233,5 +233,7 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 input[type="number"] {
+  width: 60px;
+  text-align: center;
   -moz-appearance: textfield; /* Firefox */
 }
