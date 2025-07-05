@@ -1,0 +1,48 @@
+<h1 class="mb-3">🛒 Confirmar Productos</h1>
+
+<% if @cart.empty? %>
+  <p class="text-muted">Tu carrito está vacío.</p>
+<% else %>
+  <%= form_with url: checkout_step1_path, method: :post, local: true do %>
+    <table class="table align-middle">
+      <thead>
+        <tr>
+          <th>Producto</th>
+          <th class="text-center">Cantidad</th>
+          <th class="text-end">Precio</th>
+          <th class="text-end">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @cart.items.each do |product, quantity| %>
+          <tr>
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                <%= image_tag(product.product_images.first, class: "img-thumbnail", size: "50x50") if product.product_images.present? %>
+                <strong><%= product.product_name %></strong>
+              </div>
+            </td>
+            <td class="text-center"><%= quantity %></td>
+            <td class="text-end"><%= number_to_currency(product.selling_price) %></td>
+            <td class="text-end"><%= number_to_currency(product.selling_price * quantity) %></td>
+          </tr>
+        <% end %>
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="3" class="text-end"><strong>Total:</strong></td>
+          <td class="text-end"><%= number_to_currency(@cart.total) %></td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <div class="mb-3">
+      <%= label_tag :notes, "Notas adicionales para esta compra (opcional)" %>
+      <%= text_area_tag :notes, nil, rows: 3, class: "form-control" %>
+    </div>
+
+    <div class="text-end">
+      <%= submit_tag "Continuar con envío ➡️", class: "btn btn-primary" %>
+    </div>
+  <% end %>
+<% end %>

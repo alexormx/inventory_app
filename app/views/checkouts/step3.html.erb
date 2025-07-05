@@ -1,0 +1,30 @@
+<h1 class="mb-3">💳 Selecciona tu método de pago</h1>
+
+<%= form_with url: checkout_complete_path, method: :post, local: true do %>
+  <div class="mb-3">
+    <%= label_tag :payment_method, "Método de pago" %>
+    <%= select_tag :payment_method, options_for_select([
+      ['Transferencia bancaria', 'transferencia_bancaria'],
+      ['Pago con tarjeta', 'tarjeta_de_credito'],
+      ['Pago en efectivo', 'efectivo']
+    ]), class: "form-select", required: true %>
+  </div>
+
+  <h5 class="mt-4">🧾 Resumen del pedido:</h5>
+  <ul class="list-group mb-3">
+    <% @cart.items.each do |product, qty| %>
+      <li class="list-group-item d-flex justify-content-between align-items-center">
+        <%= product.product_name %> × <%= qty %>
+        <span><%= number_to_currency(product.selling_price * qty) %></span>
+      </li>
+    <% end %>
+    <li class="list-group-item d-flex justify-content-between">
+      <strong>Total</strong>
+      <strong><%= number_to_currency(@cart.total) %></strong>
+    </li>
+  </ul>
+
+  <div class="text-end">
+    <%= submit_tag "✅ Finalizar compra", class: "btn btn-success" %>
+  </div>
+<% end %>

@@ -1,0 +1,32 @@
+<h1 class="h4 mb-4">Mis Pedidos</h1>
+
+<% if @orders.any? %>
+  <table class="table table-sm table-hover align-middle">
+    <thead class="table-light">
+      <tr>
+        <th scope="col">#</th>
+        <th scope="col">Fecha</th>
+        <th scope="col">Estado</th>
+        <th scope="col" class="text-end">Total</th>
+        <th scope="col" class="text-end">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @orders.each do |order| %>
+        <tr>
+          <td><%= order.id %></td>
+          <td><%= l(order.order_date, format: :short) %></td>
+          <td>
+            <span class="badge <%= status_badge_class(order.status) %>"><%= order.status %></span>
+          </td>
+          <td class="text-end"><%= number_to_currency(order.total_order_value, unit: "$") %></td>
+          <td class="text-end">
+            <%= link_to 'Ver', order_path(order), class: 'btn btn-sm btn-outline-secondary' %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <p>No tienes pedidos aún.</p>
+<% end %>

@@ -1,0 +1,36 @@
+<h1 class="mb-3">🚚 Dirección y método de envío</h1>
+
+<%= form_with url: checkout_step2_path, method: :post, local: true do %>
+  <div class="mb-3">
+    <%= label_tag :full_name, "Nombre completo" %>
+    <%= text_field_tag :shipping_full_name, nil, class: "form-control", required: true %>
+  </div>
+
+  <div class="mb-3">
+    <%= label_tag :address, "Dirección" %>
+    <%= text_field_tag :shipping_address, nil, class: "form-control", required: true %>
+  </div>
+
+  <div class="mb-3">
+    <%= label_tag :city, "Ciudad" %>
+    <%= text_field_tag :shipping_city, nil, class: "form-control", required: true %>
+  </div>
+
+  <div class="mb-3">
+    <%= label_tag :postal_code, "Código Postal" %>
+    <%= text_field_tag :shipping_postal_code, nil, class: "form-control", required: true %>
+  </div>
+
+  <div class="mb-3">
+    <%= label_tag :shipping_method, "Método de envío" %>
+    <%= select_tag :shipping_method, options_for_select([
+      ['Estándar (3-5 días)', 'standard'],
+      ['Exprés (1-2 días)', 'express'],
+      ['Recoger en tienda', 'pickup']
+    ]), class: "form-select", required: true %>
+  </div>
+
+  <div class="text-end">
+    <%= submit_tag "Continuar con el pago ➡️", class: "btn btn-primary" %>
+  </div>
+<% end %>
