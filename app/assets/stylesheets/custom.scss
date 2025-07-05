@@ -237,3 +237,32 @@ input[type="number"] {
   text-align: center;
   -moz-appearance: textfield; /* Firefox */
 }
+
+.legal-page {
+  max-width: 850px;
+
+  .privacy-notice {
+    h1, h3 {
+      color: #333;
+    }
+
+    p, li {
+      font-size: 1.05rem;
+      line-height: 1.7;
+      color: #444;
+    }
+
+    ul {
+      padding-left: 1.2rem;
+    }
+
+    a {
+      color: #007bff;
+      text-decoration: none;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+  }
+}

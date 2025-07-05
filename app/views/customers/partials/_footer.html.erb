@@ -1,3 +1,9 @@
 <footer class="text-center bg-light py-3 mt-5">
-  <p>© 2025 Pasatiempos. Todos los derechos reservados.</p>
+  <p>
+    © <%= Time.current.year %> Pasatiempos. Todos los derechos reservados.
+    &nbsp;|&nbsp;
+    <%= link_to "Aviso de Privacidad", privacy_notice_path, class: "text-decoration-none" %>
+    &nbsp;|&nbsp;
+    <%= link_to "Términos y Condiciones", terms_path, class: "text-decoration-none" %>
+  </p>
 </footer>

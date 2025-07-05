@@ -1,4 +1,5 @@
 Rails.application.routes.draw do
+  get "pages/privacy_notice"
   get "carts/show"
   get "products/index"
   get "products/show"
@@ -90,6 +91,11 @@ Rails.application.routes.draw do
 
   # Customer orders
   resources :orders, only: [:index, :show]
+
+  # Static pages
+  get "/aviso-de-privacidad", to: "pages#privacy_notice", as: :privacy_notice
+  get "/terminos-y-condiciones", to: "pages#terms", as: :terms
+
 
 
   # Rails health check (uptime monitor, etc.)
