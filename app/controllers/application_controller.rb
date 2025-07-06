@@ -30,23 +30,28 @@ class ApplicationController < ActionController::Base
   end
 
   def track_visitor
-    Rails.logger.debug "🔥 track_visitor ejecutado para #{request.fullpath}"
-    
-    return if request.path.starts_with?("/assets", "/cable") # esta línea sí puede quedar
-    return if request.xhr? # No track AJAX requests
-    return if request.format.html? == false # No track non-HTML requests
-    return if request.path == "/favicon.ico" # No track favicon requests
-    return if request.path == "/robots.txt" # No track robots.txt requests
-    return if request.path == "/sitemap.xml" # No track sitemap requests
+    return if request.path.starts_with?("/assets", "/cable")
+    return if request.xhr?
+    return if !request.format.html?
+    return if request.path.in?([
+      "/favicon.ico", "/robots.txt", "/sitemap.xml"
+    ])
+
+    ip = real_ip_from_cloudflare || request.remote_ip
 
     VisitorLog.track(
-      ip: request.remote_ip,
+      ip: ip,
       agent: request.user_agent,
       path: request.fullpath,
       user: current_user
     )
   rescue => e
     Rails.logger.warn("IP tracking error: #{e.message}")
+  end
+
+  def real_ip_from_cloudflare
+    request.headers['CF-Connecting-IP'] || 
+    request.headers['X-Forwarded-For']&.split(",")&.first&.strip
   end
 
 
