@@ -6,7 +6,7 @@
       <% if @product.product_images.attached? %>
         <div class="main-image-wrapper">
           <button id="prev-btn" class="gallery-nav left">&lsaquo;</button>
-
+      
           <%= image_tag @product.product_images.first.variant(resize_to_limit: [600, 600]),
                         id: "main-image",
                         class: "main-image",
@@ -20,6 +20,7 @@
             <%= image_tag img.variant(resize_to_limit: [80, 80]),
                           class: "thumbnail-image img-thumbnail #{'selected-thumbnail' if index == 0}",
                           alt: "Miniatura",
+                          loading: "lazy",
                           data: {
                             index: index,
                             large: url_for(img.variant(resize_to_limit: [600, 600])) # imagen grande en data attr

@@ -2,7 +2,7 @@ require 'rails_helper'
 
 RSpec.describe "Checkouts", type: :request do
   let!(:user) { create(:user) }
-  let!(:product) { create(:product, selling_price: 10.0) }
+  let!(:product) { create(:product, selling_price: 10.0, minimum_price: 5.0) }
 
   before do
     sign_in user
@@ -12,7 +12,7 @@ RSpec.describe "Checkouts", type: :request do
     post cart_items_path, params: { product_id: product.id }
 
     expect {
-      post checkout_path, params: { sale_order: { notes: 'test' } }
+      post checkout_complete_path, params: { payment_method: 'efectivo' }
     }.to change(SaleOrder, :count).by(1)
 
     expect(session[:cart]).to be_empty

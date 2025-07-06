@@ -5,6 +5,9 @@ RSpec.describe Products::UpdateStatsService, type: :service do
   let(:purchase_order) { create(:purchase_order) }
   let!(:purchase_item) { create(:purchase_order_item, product: product, purchase_order: purchase_order, quantity: 5, unit_cost: 10.0, unit_additional_cost: 0) }
   let(:sale_order) { create(:sale_order) }
+  let!(:shipment) { create(:shipment, sale_order: sale_order) }
+  let!(:payment) { create(:payment, sale_order: sale_order) }
+  before { sale_order.update!(status: 'Shipped') }
   let!(:sale_item) { create(:sale_order_item, product: product, sale_order: sale_order, quantity: 2, unit_final_price: 20.0, unit_cost: 20.0) }
 
   it 'updates product stats based on related items' do

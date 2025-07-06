@@ -3,8 +3,8 @@ require 'rails_helper'
 RSpec.describe Shipment, type: :model do
   describe 'Validations' do
     it { should validate_presence_of(:carrier) }
-    it { should validate_presence_of(:status) }
     it { should validate_presence_of(:tracking_number) }
+    it { should define_enum_for(:status).with_values(%i[pending shipped delivered canceled returned]) }
   end
 
   describe 'Associations' do

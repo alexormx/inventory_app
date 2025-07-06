@@ -9,5 +9,7 @@ class VisitorLog < ApplicationRecord
     log.visit_count = log.visit_count.to_i + 1
     log.last_visited_at = Time.current
     log.save!
+    rescue ActiveRecord::RecordNotUnique
+      retry
   end
 end

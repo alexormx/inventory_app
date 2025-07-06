@@ -9,6 +9,6 @@ RSpec.describe Inventory, type: :model do
   describe "Associations" do
     it { should belong_to(:purchase_order).optional }
     it { should belong_to(:sale_order).optional }
-    it { should belong_to(:product).with_foreign_key("product_id") }
+    it { should belong_to(:product) }
   end
 end

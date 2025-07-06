@@ -166,3 +166,12 @@ Let's proceed with **Sprint 2: Admin Product Management**. If you have any quest
 - Meta tags for description, canonical URL, and Open Graph have been added to layouts.
 - `sitemap_generator` gem generates `sitemap.xml.gz`; run `rake sitemap:generate`.
 - `robots.txt` references the sitemap to help search engines crawl the site.
+
+## 🍪 Cookie Banner Configuration
+The cookie banner text and button label can be customized, or the banner can be disabled entirely, using environment variables:
+
+- `COOKIE_BANNER_ENABLED` – set to `false` to hide the banner (default: `true`).
+- `COOKIE_BANNER_TEXT` – message displayed to users (default shown in Spanish).
+- `COOKIE_BANNER_BUTTON_TEXT` – label for the acceptance button (default: `Aceptar`).
+
+These variables allow tailoring the cookie notice to local regulations without changing application code.

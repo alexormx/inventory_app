@@ -4,15 +4,19 @@ document.addEventListener("turbo:load", () => {
 
   if (!banner || !overlay) return;
 
-  const localAccepted = localStorage.getItem("cookiesAccepted");
-  const sessionAccepted = sessionStorage.getItem("cookiesAccepted");
+  const localStatus = localStorage.getItem("cookiesAccepted");
+  const sessionStatus = sessionStorage.getItem("cookiesAccepted");
   const serverAccepted = banner.dataset.cookiesAccepted === "true"; // viene del servidor
 
-  // ✅ Si aceptó en algún medio: no mostrar banner
-  if (localAccepted || sessionAccepted || serverAccepted) {
+  function hideBanner() {
     banner.remove();
     overlay.remove();
     document.body.classList.remove("no-scroll");
+  }
+
+  // ✅ Si aceptó o rechazó en algún medio: no mostrar banner
+  if (localStatus === "true" || sessionStatus === "true" || localStatus === "false" || sessionStatus === "false" || serverAccepted) {
+    hideBanner();
     return;
   }
 
@@ -27,9 +31,7 @@ document.addEventListener("turbo:load", () => {
     localStorage.setItem("cookiesAccepted", "true");
 
     // ✅ Ocultar banner
-    banner.remove();
-    overlay.remove();
-    document.body.classList.remove("no-scroll");
+    hideBanner();
 
     // 🔐 Si está logueado, registrar aceptación en el servidor
     if (banner.dataset.loggedIn === "true") {
@@ -42,5 +44,11 @@ document.addEventListener("turbo:load", () => {
         body: JSON.stringify({})
       });
     }
+  });
+
+  document.getElementById("reject-cookies")?.addEventListener("click", () => {
+    // ❌ Registrar rechazo solo en la sesión
+    sessionStorage.setItem("cookiesAccepted", "false");
+    hideBanner();
   });
 });

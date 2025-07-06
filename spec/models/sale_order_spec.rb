@@ -9,7 +9,7 @@ RSpec.describe SaleOrder, type: :model do
   describe "Associations" do
     it { should belong_to(:user) }
     it { should have_many(:inventory).with_foreign_key("sale_order_id") }
-    it { should have_one(:payment) }
+    it { should have_many(:payments) }
     it { should have_one(:shipment).with_foreign_key("sale_order_id") }
   end
 end
