@@ -25,14 +25,9 @@
   <%= javascript_importmap_tags %>
 </head>
 
-<div id="cookie-banner" class="cookie-banner bg-dark text-white p-3 fixed-bottom d-none">
-  <div class="container d-flex justify-content-between align-items-center">
-    <div>
-      Este sitio utiliza cookies y tecnologías similares para ofrecerte una mejor experiencia. Al continuar, aceptas el uso de cookies y almacenamiento de sesión.
-    </div>
-    <button id="accept-cookies" class="btn btn-light btn-sm">Aceptar</button>
-  </div>
-</div>
+
+<!-- Incluir el partial del banner -->
+<%= render 'layouts/cookies_banner'%>
 
 <body>
 

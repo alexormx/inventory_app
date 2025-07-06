@@ -1,0 +1,13 @@
+<div id="cookie-banner"
+     class="cookie-banner bg-dark text-white p-3 fixed-bottom d-none"
+     data-cookies-accepted="<%= current_user&.cookies_accepted? %>"
+     data-logged-in="<%= user_signed_in? %>">
+  <div class="container d-flex justify-content-between align-items-center">
+    <div>
+      Este sitio utiliza cookies y tecnologías similares para ofrecerte una mejor experiencia.
+    </div>
+    <button id="accept-cookies" class="btn btn-light btn-sm">Aceptar</button>
+  </div>
+</div>
+
+<div id="cookie-overlay" class="cookie-overlay"></div>

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_06_16_154008) do
+ActiveRecord::Schema[8.0].define(version: 2025_07_06_031134) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -233,8 +233,21 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_16_154008) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.boolean "created_offline"
+    t.boolean "cookies_accepted"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
+  end
+
+  create_table "visitor_logs", force: :cascade do |t|
+    t.string "ip_address"
+    t.text "user_agent"
+    t.string "path"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.integer "user_id"
+    t.integer "visit_count"
+    t.datetime "last_visited_at"
+    t.index ["user_id"], name: "index_visitor_logs_on_user_id"
   end
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
@@ -255,4 +268,5 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_16_154008) do
   add_foreign_key "sale_order_items", "sale_orders"
   add_foreign_key "sale_orders", "users"
   add_foreign_key "shipments", "sale_orders"
+  add_foreign_key "visitor_logs", "users"
 end

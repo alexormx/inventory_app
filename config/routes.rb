@@ -3,11 +3,13 @@ Rails.application.routes.draw do
   get "carts/show"
   get "products/index"
   get "products/show"
+  post "/accept_cookies", to: "users#accept_cookies", as: :accept_cookies
   # Devise authentication for all users
   devise_for :users
 
   # Admin namespace
   namespace :admin do
+    resources :visitor_logs, only: [:index]
 
     #Inventory Management views
     get "inventory", to: "inventory#index", as: :inventory
