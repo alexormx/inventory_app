@@ -1,5 +1,9 @@
+# config/initializers/geocoder.rb
 Geocoder.configure(
-  ip_lookup: :ipinfo_io,
   timeout: 5,
-  use_https: true
+  lookup: :ipinfo_io, # usa :ipinfo_io o :ipapi si no estás autenticado
+  ip_lookup: :ipinfo_io,
+  use_https: true,
+  cache: nil,
+  units: :km
 )
