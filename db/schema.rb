@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_07_06_143253) do
+ActiveRecord::Schema[8.0].define(version: 2025_07_06_150118) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -247,6 +247,11 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_06_143253) do
     t.integer "user_id"
     t.integer "visit_count"
     t.datetime "last_visited_at"
+    t.string "country"
+    t.string "region"
+    t.string "city"
+    t.float "latitude"
+    t.float "longitude"
     t.index ["ip_address", "path", "user_id"], name: "index_visitor_logs_on_ip_path_user_id", unique: true
     t.index ["user_id"], name: "index_visitor_logs_on_user_id"
   end

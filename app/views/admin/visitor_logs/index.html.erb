@@ -9,6 +9,7 @@
       <th>IP</th>
       <th>Usuario</th>
       <th>Dispositivo</th>
+      <th>Localization</th>
     </tr>
   </thead>
   <tbody>
@@ -20,6 +21,10 @@
         <td><%= log.ip_address %></td>
         <td><%= log.user&.email || "Visitante" %></td>
         <td class="text-truncate" style="max-width: 250px;"><%= log.user_agent %></td>
+        <td>
+          <%= image_tag "https://flagcdn.com/24x18/#{log.country.downcase}.png" if log.country %>
+          <%= [log.city, log.region, log.country].compact.join(", ") %>
+        </td>
       </tr>
     <% end %>
   </tbody>

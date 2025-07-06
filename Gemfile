@@ -58,6 +58,9 @@ gem "redis", "~> 4.8" # Redis for caching and background jobs
 gem "sitemap_generator"
 gem "friendly_id", "~> 5.5"
 
+# ✅ Additional Gems for geolocalization
+gem 'geocoder'
+
 
 # 🔹 **Development & Testing Group**
 group :development, :test do
