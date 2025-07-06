@@ -1,31 +1,39 @@
-<h1 class="mb-4">📊 Registro de Visitas</h1>
+<h1 class="mb-3 fs-4">📊 Registro de Visitas</h1>
 
-<table class="table table-bordered table-striped table-sm">
-  <thead class="table-light">
-    <tr>
-      <th>Ruta</th>
-      <th>Visitas</th>
-      <th>Última visita</th>
-      <th>IP</th>
-      <th>Usuario</th>
-      <th>Dispositivo</th>
-      <th>Localization</th>
-    </tr>
-  </thead>
-  <tbody>
-    <% @visitor_logs.each do |log| %>
-      <tr>
-        <td><%= log.path %></td>
-        <td><%= log.visit_count %></td>
-        <td><%= log.last_visited_at&.strftime("%d-%m-%Y %H:%M") %></td>
-        <td><%= log.ip_address %></td>
-        <td><%= log.user&.email || "Visitante" %></td>
-        <td class="text-truncate" style="max-width: 250px;"><%= log.user_agent %></td>
-        <td>
-          <%= image_tag "https://flagcdn.com/24x18/#{log.country.downcase}.png" if log.country %>
-          <%= [log.city, log.region, log.country].compact.join(", ") %>
-        </td>
+<div class="table-responsive">
+  <table class="table table-bordered table-hover table-sm align-middle text-center small">
+    <thead class="table-light">
+      <tr class="align-middle">
+        <th class="fw-semibold">Ruta</th>
+        <th>👁</th>
+        <th>🕒</th>
+        <th>🧭</th>
+        <th>👤</th>
+        <th class="d-none d-md-table-cell">📱</th>
+        <th>🌍</th>
       </tr>
-    <% end %>
-  </tbody>
-</table>
+    </thead>
+    <tbody>
+      <% @visitor_logs.each do |log| %>
+        <tr>
+          <td class="text-truncate" style="max-width: 180px;"><%= log.path %></td>
+          <td><%= log.visit_count %></td>
+          <td><%= log.last_visited_at&.strftime("%d-%m-%Y %H:%M") %></td>
+          <td><%= log.ip_address %></td>
+          <td><%= log.user&.email || "Visitante" %></td>
+          <td class="d-none d-md-table-cell text-truncate" style="max-width: 180px;">
+            <%= truncate(log.user_agent, length: 70) %>
+          </td>
+          <td class="text-truncate" style="max-width: 200px;">
+            <% if log.country.present? %>
+              <%= image_tag "https://flagcdn.com/24x18/#{log.country.downcase}.png",
+                            alt: log.country,
+                            class: "me-1" %>
+            <% end %>
+            <%= [log.city, log.region, log.country].compact.join(", ") %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
