@@ -1,7 +1,13 @@
-<p><%= t('.greeting', recipient: @resource.email) %></p>
+<h1><%= t('.subject') %></h1>
 
-<p><%= t('.message') %></p>
+<p style="text-align: center;"><%= t('.greeting', recipient: @resource.email) %></p>
 
-<p><%= t('.instruction') %></p>
+<p style="text-align: center;"><%= t('.message') %></p>
 
-<p><%= link_to t('.action'), unlock_url(@resource, unlock_token: @token) %></p>
+<p style="text-align: center;"><%= t('.instruction') %></p>
+
+<p style="text-align: center;">
+  <a href="#" class="btn">
+    <%= t('.action') %>
+  </a>
+</p>

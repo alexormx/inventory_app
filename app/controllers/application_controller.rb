@@ -3,6 +3,7 @@ class ApplicationController < ActionController::Base
   allow_browser versions: :modern
   layout :set_layout
   before_action :track_visitor
+  before_action :ensure_confirmed_user!
 
   protected
   def after_sign_in_path_for(resource)
@@ -54,5 +55,12 @@ class ApplicationController < ActionController::Base
     request.headers['X-Forwarded-For']&.split(",")&.first&.strip
   end
 
+  def ensure_confirmed_user!
+    if current_user && !current_user.confirmed?
+      sign_out current_user
+      flash[:alert] = "Debes confirmar tu correo electrónico antes de continuar."
+      redirect_to new_user_session_path
+    end
+  end
 
 end

@@ -1,7 +1,9 @@
-<p><%= t('.greeting', recipient: @email) %></p>
+<h1><%= t('.subject') %></h1>
+
+<p style="text-align: center;"><%= t('.greeting', recipient: @email) %></p>
 
 <% if @resource.try(:unconfirmed_email?) %>
-  <p><%= t('.message_unconfirmed', email: @resource.unconfirmed_email) %></p>
+  <p style="text-align: center;"><%= t('.message_unconfirmed', email: @resource.unconfirmed_email) %></p>
 <% else %>
-  <p><%= t('.message', email: @resource.email) %></p>
+  <p style="text-align: center;"><%= t('.message', email: @resource.email) %></p>
 <% end %>

@@ -88,8 +88,9 @@ es-MX:
       confirmation_instructions:
         action: Confirmar mi cuenta
         greeting: "¡Te damos la bienvenida, %{recipient}!"
-        instruction: 'Se puede confirmar el correo electrónico de la cuenta a través de este enlace:'
+        instruction: "Gracias por registrarte. Para activar tu cuenta, haz clic en el siguiente enlace:"
         subject: Instrucciones de confirmación
+        instruction_2: "Si no te registraste, puedes ignorar este correo."
       email_changed:
         greeting: Hola %{recipient}!
         message: Te estamos contactando para notificarte que tu email ha cambiado a %{email}
@@ -97,8 +98,8 @@ es-MX:
         subject: El email cambió
       password_change:
         greeting: "¡Hola %{recipient}!"
-        message: Lo estamos contactando para notificarle que su contraseña ha cambiado.
-        subject: Contraseña cambiada
+        message: "Este correo es para informarte que tu contraseña ha sido modificada exitosamente. Si no realizaste este cambio, por favor contacta a soporte inmediatamente."
+        subject: "Tu contraseña ha sido cambiada"
       reset_password_instructions:
         action: Cambiar mi contraseña
         greeting: "¡Hola, %{recipient}!"

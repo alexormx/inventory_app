@@ -1,5 +1,13 @@
-<p><%= t('.greeting', recipient: @email) %></p>
+<h1><%= t('.subject') %></h1>
 
-<p><%= t('.instruction') %></p>
+<p style="text-align: center;"><%= t('.greeting', recipient: @resource.email) %></p>
 
-<p><%= link_to t('.action'), confirmation_url(@resource, confirmation_token: @token) %></p>
+<p style="text-align: center;"><%= t('.instruction') %></p>
+
+<p style="text-align: center;">
+  <a href="<%= confirmation_url(@resource, confirmation_token: @token) %>" class="btn">
+    <%= t('.action') %>
+  </a>
+</p>
+
+<p style="text-align: center;"><%= t('.instruction_2') %></p>
