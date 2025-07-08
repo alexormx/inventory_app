@@ -55,10 +55,13 @@
   </header>
 
   <!-- ✅ Main Content -->
-    <main class="container mt-4">
-      <%= render 'layouts/flash' %>
-      <%= yield %>
-    </main>
+  <main class="container mt-4">
+    <%= render 'layouts/flash' %>
+    <%= yield %>
+  </main>
+  
+  <!-- ✅ Floating WhatsApp Button -->
+  <%= render 'layouts/floating_whatsapp' %>
 
   <!-- ✅ Footer -->
   <%= render 'customers/partials/footer' %>

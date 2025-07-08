@@ -23,6 +23,8 @@ module InventoryApp
 
     config.active_record.schema_format = :sql if Rails.env.test?
 
+    config.whatsapp_number = ENV.fetch("WHATSAPP_NUMBER", "525555555555")
+
     # Configuration for the application, engines, and railties goes here.
     #
     # These settings can be overridden in specific environments using the files
