@@ -1,25 +1,40 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
-  <title><%= content_for(:title) || 'Inventory App' %></title>
-  <meta name="description" content="<%= content_for(:description) || 'Explore our products' %>">
-  <link rel="canonical" href="<%= request.original_url %>">
-  <meta property="og:title" content="<%= content_for(:title) || 'Inventory App' %>">
-  <meta property="og:description" content="<%= content_for(:description) || 'Explore our products' %>">
-  <meta property="og:url" content="<%= request.original_url %>">
-  <meta property="og:image" content="<%= image_url('logo.png') %>">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  
+  <title><%= content_for?(:title) ? yield(:title) : "Pasatiempos a Escala" %></title>
+
+  <meta name="description" content="<%= content_for?(:meta_description) ? yield(:meta_description) : 'Pasatiempos a Escala. Muy pronto podrás ver productos disponibles para comprar en línea.' %>">
+  <meta name="author" content="Pasatiempos">
+  <meta name="robots" content="index, follow">
+  <meta name="language" content="es">
+  
+  <!-- Favicon -->
+  <%= favicon_link_tag 'favicon.ico' %>
+  <%= favicon_link_tag 'favicon.svg', type: 'image/svg+xml' %>
+  <link rel="apple-touch-icon" href="/favicon.ico">
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:title" content="<%= content_for?(:title) ? yield(:title) : 'Pasatiempos' %>">
+  <meta property="og:description" content="<%= content_for?(:meta_description) ? yield(:meta_description) : 'Muy pronto podrás ver productos disponibles en Pasatiempos.' %>">
+  <meta property="og:image" content="https://pasatiempos.com.mx/logo.png">
+  <meta property="og:url" content="https://pasatiempos.com.mx">
+  <meta property="og:type" content="website">
+
+  <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta charset="utf-8">
+  <meta name="twitter:title" content="<%= content_for?(:title) ? yield(:title) : 'Pasatiempos' %>">
+  <meta name="twitter:description" content="<%= content_for?(:meta_description) ? yield(:meta_description) : 'Muy pronto podrás ver productos disponibles en Pasatiempos.' %>">
+  <meta name="twitter:image" content="https://pasatiempos.com.mx/logo.png">
+
+
   <%= csrf_meta_tags %>
   <%= csp_meta_tag %>
 
   <!-- ✅ FontAwesome via CDN -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-
-    <%= favicon_link_tag 'favicon.ico' %>
-    <%= favicon_link_tag 'favicon.svg', type: 'image/svg+xml' %>
-    <link rel="apple-touch-icon" href="/favicon.ico">
   
   <%= stylesheet_link_tag "application", media: "all", "data-turbo-track": "reload" %>
   <%= javascript_importmap_tags %>
@@ -30,6 +45,9 @@
 <%= render 'layouts/cookies_banner'%>
 
 <body>
+  <div class="alert alert-warning text-center mb-0 rounded-0" role="alert" style="padding: 0.3rem 1rem; font-size: 0.9rem; position: sticky; top: 0; z-index: 1050;">
+    🚧 Bienvenido a <strong>Pasatiempos a Escala</strong> – Sitio en construcción. Muy pronto podrás ver nuestros autos coleccionables.
+  </div>
 
   <!-- ✅ NAVBAR -->
   <header>
