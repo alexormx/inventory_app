@@ -59,17 +59,19 @@ Rails.application.configure do
   config.action_mailer.raise_delivery_errors = true
   config.action_mailer.perform_deliveries = true
   config.action_mailer.default_url_options = { host: "pasatiempos.com.mx" }
+  config.action_mailer.asset_host = "https://pasatiempos.com.mx"
 
   ActionMailer::Base.smtp_settings = {
-    address: "smtp.sendgrid.net",
+    address: "smtp-relay.brevo.com",
     port: "587",
     authentication: :plain,
-    user_name: "apikey",
-    password: ENV["SENDGRID_API_KEY"],
-    domain: "heroku.com",
+    user_name: "93616f001@smtp-brevo.com",
+    password: ENV["BREVO_SMTP_PASSWORD"],
+    domain: "pasatiempos.com.mx",
+    authentication: :login,
     enable_starttls_auto: true
   }
-  
+
 
   # Specify outgoing SMTP server. Remember to add smtp/* credentials via rails credentials:edit.
   # config.action_mailer.smtp_settings = {
@@ -101,7 +103,7 @@ Rails.application.configure do
 
   if ENV["REDIS_URL"]
     config.action_cable.url = "wss://pasatiempos.com.mx/cable"
-  
+
     config.action_cable.cable = {
       adapter: 'redis',
       url: ENV['REDIS_URL'],
