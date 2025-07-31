@@ -1,7 +1,9 @@
 <div class="container mt-4">
   <h1 class="mb-4">Catálogo de Productos</h1>
-  <% if params[:query].present? %>
-    <p class="text-muted">Resultados para "<strong><%= params[:query] %></strong>":</p>
+  <% if params[:q].present? %>
+      <p class="text-muted mb-3">
+        Showing <strong><%= @products.count %></strong> results for "<%= params[:q] %>"
+      </p>
   <% end %>
   <div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-lg-5 g-3">
     <% @products.each do |product| %>
