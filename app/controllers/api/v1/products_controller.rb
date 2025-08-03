@@ -20,7 +20,7 @@ module Api
 
           render json: {
             message: "Product created",
-            id: @product.id
+            id: @product.id,
             image_urls: @product.product_images.map { |img| url_for(img) }
           }, status: :created
         else
