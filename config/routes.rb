@@ -78,7 +78,7 @@ Rails.application.routes.draw do
   # Shopping Cart routes
   resources :cart_items, only: [:create, :update, :destroy]
   get "/cart", to: "carts#show", as: :cart
-  
+
   #checkout process with multiple steps
   get '/checkout/step1', to: 'checkouts#step1', as: :checkout_step1
   post '/checkout/step1', to: 'checkouts#step1_submit'
@@ -88,7 +88,7 @@ Rails.application.routes.draw do
 
   get '/checkout/step3', to: 'checkouts#step3', as: :checkout_step3
   post '/checkout/complete', to: 'checkouts#complete', as: :checkout_complete
-  
+
   get "/checkout/thank_you", to: "checkouts#thank_you", as: :checkout_thank_you
 
   # Customer orders
@@ -98,7 +98,11 @@ Rails.application.routes.draw do
   get "/aviso-de-privacidad", to: "pages#privacy_notice", as: :privacy_notice
   get "/terminos-y-condiciones", to: "pages#terms", as: :terms
 
-
+  namespace :api do
+    namespace :v1 do
+      resources :products, only: [:create]
+    end
+  end
 
   # Rails health check (uptime monitor, etc.)
   get "up" => "rails/health#show", as: :rails_health_check

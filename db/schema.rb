@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_07_06_165329) do
+ActiveRecord::Schema[8.0].define(version: 2025_08_03_150901) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -128,6 +128,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_06_165329) do
     t.decimal "projected_sales_value", precision: 15, scale: 2, default: "0.0", null: false
     t.decimal "projected_profit", precision: 15, scale: 2, default: "0.0", null: false
     t.string "slug"
+    t.string "whatsapp_code"
+    t.text "description"
     t.index ["last_supplier_id"], name: "index_products_on_last_supplier_id"
     t.index ["preferred_supplier_id"], name: "index_products_on_preferred_supplier_id"
     t.index ["product_sku"], name: "index_products_on_product_sku", unique: true
