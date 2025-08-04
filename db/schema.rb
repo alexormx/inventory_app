@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_08_03_150901) do
+ActiveRecord::Schema[8.0].define(version: 2025_08_04_005839) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -130,6 +130,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_03_150901) do
     t.string "slug"
     t.string "whatsapp_code"
     t.text "description"
+    t.string "supplier_product_code"
     t.index ["last_supplier_id"], name: "index_products_on_last_supplier_id"
     t.index ["preferred_supplier_id"], name: "index_products_on_preferred_supplier_id"
     t.index ["product_sku"], name: "index_products_on_product_sku", unique: true

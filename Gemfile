@@ -40,7 +40,7 @@ gem "thruster", require: false  # HTTP caching/compression with Puma
 gem "faker"
 
 # ✅ Timezone Handling (Windows-specific)
-gem "tzinfo-data", platforms: %i[windows jruby]
+gem "tzinfo-data", platforms: %i[mingw jruby]
 
 # ✅ Image Processing (Commented Out but Available)
 # gem "image_processing", "~> 1.2"  # ActiveStorage image transformations

@@ -4,6 +4,7 @@ class Product < ApplicationRecord
   belongs_to :preferred_supplier, class_name: "User", optional: true
   belongs_to :last_supplier, class_name: "User", optional: true
   after_commit :recalculate_stats_if_needed, on: [:create]
+  after_initialize :set_api_fallback_defaults, if: :new_record?
 
 
   has_many :inventory, dependent: :restrict_with_error
@@ -60,5 +61,12 @@ class Product < ApplicationRecord
     self.projected_profit            ||= 0.0
   end
 
+  def set_api_fallback_defaults
+    self.backorder_allowed = false if self.backorder_allowed.nil?
+    self.preorder_available = false if self.preorder_available.nil?
+    self.status ||= "inactive"  # Only set if nil
+    self.discount_limited_stock ||= 0
+    self.reorder_point ||= 0
+  end
 
 end
