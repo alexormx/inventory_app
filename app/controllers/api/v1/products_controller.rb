@@ -40,7 +40,7 @@ class Api::V1::ProductsController < ApplicationController
 
 
   def product_params
-      params.permit(
+      params.require(:product).permit(
         :product_name,
         :product_sku,
         :whatsapp_code,
