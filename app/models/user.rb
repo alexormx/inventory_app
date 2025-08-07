@@ -2,11 +2,12 @@ class User < ApplicationRecord
   # Include default Devise modules. Others available:
   # :confirmable, :lockable, :timeoutable, :trackable, and :omniauthable
   devise :database_authenticatable, :registerable,
-         :recoverable, :rememberable, :validatable, 
+         :recoverable, :rememberable, :validatable,
          :confirmable
 
   before_validation :normalize_blank_email
   #before_validation :generate_placeholder_email, if: :offline_customer?
+  before_create :generate_api_token, if: -> { admin? && api_token.blank? }
 
   has_many :purchase_orders, foreign_key: :user_id, dependent: :restrict_with_error
   has_many :sale_orders, foreign_key: :user_id, dependent: :restrict_with_error
@@ -52,10 +53,14 @@ class User < ApplicationRecord
 
   private
 
-  def check_dependencies
-    if purchase_orders.exists? || sale_orders.exists?
-      errors.add(:base, "Cannot delete user with associated orders")
-      throw(:abort)
+    def check_dependencies
+      if purchase_orders.exists? || sale_orders.exists?
+        errors.add(:base, "Cannot delete user with associated orders")
+        throw(:abort)
+      end
     end
-  end
+
+    def generate_api_token
+      self.api_token = SecureRandom.hex(20)
+    end
 end
