@@ -5,14 +5,15 @@ class Api::V1::ProductsController < ApplicationController
   def create
     @product = Product.new(product_params.except(:product_images))
 
-    # Attach images if provided
-    if params[:product_images].present?
-      params[:product_images].each do |image|
-        @product.product_images.attach(image)
-      end
-    end
-
     if @product.save
+      # Attach images if provided
+      if params[:product][:product_images].present?
+        params[:product][:product_images].each do |image|
+          @product.product_images.attach(image)
+        end
+      end
+
+
       Products::UpdateStatsService.new(@product).call
 
       render json: {
