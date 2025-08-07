@@ -58,6 +58,7 @@ class Api::V1::ProductsController < ApplicationController
         :weight_gr,
         :description,
         :supplier_product_code,
+        custom_attributes: {},
         product_images: []
       )
   end
