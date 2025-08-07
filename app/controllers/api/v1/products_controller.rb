@@ -1,4 +1,5 @@
 class Api::V1::ProductsController < ApplicationController
+  skip_before_action :verify_authenticity_token
   before_action :authenticate_with_token!
 
   def create
