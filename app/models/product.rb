@@ -23,7 +23,6 @@ class Product < ApplicationRecord
   validates :minimum_price, presence: true, numericality: { greater_than_or_equal_to: 0 }
   validates :discount_limited_stock, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
   validates :whatsapp_code, presence: true, uniqueness: true
-  validates :description, presence: true, length: { minimum: 10 }, if: -> { status == 'active' }
 
   validate :minimum_price_not_exceed_selling_price
 
