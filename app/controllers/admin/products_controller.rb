@@ -93,6 +93,7 @@ class Admin::ProductsController < ApplicationController
   def activate
 
     @product.update(status: "active")
+    p @product.errors.inspect if @product.errors.any? # Debugging line
 
     respond_to do |format|
       format.turbo_stream
