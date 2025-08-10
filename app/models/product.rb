@@ -5,6 +5,7 @@ class Product < ApplicationRecord
   belongs_to :last_supplier, class_name: "User", optional: true
   after_commit :recalculate_stats_if_needed, on: [:create]
   after_initialize :set_api_fallback_defaults, if: :new_record?
+  before_save :normalize_custom_attributes
 
 
   has_many :inventory, dependent: :restrict_with_error
@@ -79,6 +80,10 @@ class Product < ApplicationRecord
     self.status ||= "inactive"  # Only set if nil
     self.discount_limited_stock ||= 0
     self.reorder_point ||= 0
+  end
+
+  def normalize_custom_attributes
+    self.custom_attributes = nil if custom_attributes.blank?
   end
 
 end
