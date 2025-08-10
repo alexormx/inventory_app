@@ -82,7 +82,29 @@ class Product < ApplicationRecord
   end
 
   def normalize_custom_attributes
-    self.custom_attributes = nil if custom_attributes.blank?
+    if custom_attributes.is_a?(String)
+      self.custom_attributes = JSON.parse(custom_attributes) rescue {}
+    elsif custom_attributes.respond_to?(:to_unsafe_h)
+      # Handle case when coming from controller params
+      self.custom_attributes = extract_nested_attributes(custom_attributes.to_unsafe_h)
+    elsif custom_attributes.is_a?(ActionController::Parameters)
+      self.custom_attributes = extract_nested_attributes(custom_attributes.permit!.to_h)
+    elsif custom_attributes.blank?
+      self.custom_attributes = nil
+    end
+  end
+
+  def extract_nested_attributes(attrs)
+    {}.tap do |hash|
+      attrs.each do |key, value|
+        if key.to_s.start_with?('product[custom_attributes][') && key.to_s.end_with?(']')
+          attr_name = key.to_s[/\[([^\]]+)\]\]$/, 1]
+          hash[attr_name] = value unless value.blank?
+        elsif value.present? # Handle regular attributes
+          hash[key] = value
+        end
+      end
+    end
   end
 
 end
