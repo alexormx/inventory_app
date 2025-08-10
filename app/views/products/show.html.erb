@@ -1,80 +1,82 @@
-<div class="container mt-5" id="product-gallery">
-  <div class="row">
+<div class="container my-5" id="product-gallery">
+  <div class="row g-4">
 
-    <!-- Columna de galería de imágenes -->
-    <div class="col-md-5">
+    <!-- Image Gallery -->
+    <div class="col-lg-5">
       <% if @product.product_images.attached? %>
-        <div class="main-image-wrapper">
-          <button id="prev-btn" class="gallery-nav left">&lsaquo;</button>
-      
+        <div class="position-relative">
           <%= image_tag @product.product_images.first.variant(resize_to_limit: [600, 600]),
                         id: "main-image",
-                        class: "main-image",
+                        class: "img-fluid rounded shadow-sm border",
                         data: { index: 0 } %>
 
-          <button id="next-btn" class="gallery-nav right">&rsaquo;</button>
+          <button id="prev-btn" class="btn btn-light position-absolute top-50 start-0 translate-middle-y shadow-sm">
+            &lsaquo;
+          </button>
+          <button id="next-btn" class="btn btn-light position-absolute top-50 end-0 translate-middle-y shadow-sm">
+            &rsaquo;
+          </button>
         </div>
 
-        <div class="thumbnail-row mt-3">
+        <div class="d-flex flex-wrap gap-2 mt-3">
           <% @product.product_images.each_with_index do |img, index| %>
             <%= image_tag img.variant(resize_to_limit: [80, 80]),
-                          class: "thumbnail-image img-thumbnail #{'selected-thumbnail' if index == 0}",
+                          class: "thumbnail-image img-thumbnail #{'border-primary' if index == 0}",
                           alt: "Miniatura",
                           loading: "lazy",
                           data: {
                             index: index,
-                            large: url_for(img.variant(resize_to_limit: [600, 600])) # imagen grande en data attr
+                            large: url_for(img.variant(resize_to_limit: [600, 600]))
                           } %>
           <% end %>
         </div>
       <% else %>
-        <%= image_tag "placeholder.png", class: "img-fluid border rounded", alt: "Imagen no disponible" %>
+        <%= image_tag "placeholder.png", class: "img-fluid rounded border shadow-sm", alt: "Imagen no disponible" %>
       <% end %>
     </div>
 
-    <!-- Columna de información del producto -->
-    <div class="col-md-7">
-      <h2 class="fw-bold"><%= @product.product_name %></h2>
-      <p class="text-muted mb-1">SKU: <%= @product.product_sku %></p>
-      <p class="text-muted mb-1">Marca: <%= @product.brand %></p>
-      <p class="text-muted mb-3">Categoría: <%= @product.category %></p>
+    <!-- Product Info -->
+    <div class="col-lg-7">
+      <h1 class="fw-bold mb-3"><%= @product.product_name %></h1>
+      <p class="text-muted">SKU: <%= @product.product_sku %></p>
+      <p class="text-muted">Marca: <%= @product.brand %></p>
+      <p class="text-muted">Categoría: <%= @product.category %></p>
 
-      <h4 class="text-success"><%= number_to_currency(@product.selling_price) %></h4>
+      <h3 class="text-success fw-bold"><%= number_to_currency(@product.selling_price) %></h3>
 
       <%= button_to cart_items_path,
                     params: { product_id: @product.id },
                     method: :post,
-                    class: "btn btn-danger btn-lg mt-3" do %>
+                    class: "btn btn-danger btn-lg my-3 w-100" do %>
         <i class="fas fa-cart-plus"></i> Agregar al carrito
       <% end %>
 
       <% if @product.status == "active" %>
-        <p class="mt-2 text-success"><i class="fas fa-check-circle"></i> Disponible</p>
+        <p class="text-success"><i class="fas fa-check-circle"></i> Disponible</p>
       <% else %>
-        <p class="mt-2 text-danger"><i class="fas fa-times-circle"></i> No disponible</p>
+        <p class="text-danger"><i class="fas fa-times-circle"></i> No disponible</p>
       <% end %>
     </div>
   </div>
 
-  <!-- Sección de descripción -->
-  <hr class="my-4">
-  <div class="mb-4">
-    <h4 class="mb-2"><i class="fas fa-align-left text-primary me-1"></i> Descripción</h4>
+  <!-- Description -->
+  <hr class="my-5">
+  <div>
+    <h4 class="mb-3"><i class="fas fa-align-left text-primary me-2"></i> Descripción</h4>
     <p class="text-muted">
-      <!--TODO: Agregar descripción del producto-->
-      <%= "Este producto no tiene una descripción disponible por el momento." %>
+      <%= @product.description.presence || "Este producto no tiene una descripción disponible por el momento." %>
     </p>
   </div>
 
-  <!-- Sección de detalles -->
-  <div class="mb-4">
-    <h4 class="mb-2"><i class="fas fa-list-alt text-primary me-1"></i> Detalles</h4>
+  <!-- Details -->
+  <div class="mt-4">
+    <h4 class="mb-3"><i class="fas fa-list-alt text-primary me-2"></i> Detalles</h4>
     <% if @product.custom_attributes.present? %>
-      <table class="table table-striped table-bordered mt-2">
+      <table class="table table-hover align-middle">
         <tbody>
           <% @product.custom_attributes.each do |key, value| %>
             <tr>
-              <th style="width: 200px;"><%= key.to_s.titleize %></th>
+              <th class="text-capitalize" style="width: 200px;"><%= key %></th>
               <td><%= value %></td>
             </tr>
           <% end %>
@@ -83,16 +85,5 @@
     <% else %>
       <p class="text-muted">No hay detalles adicionales para este producto.</p>
     <% end %>
-  </div>
-</div>
-
-<!-- Modal para ampliar imagen -->
-<div id="image-modal" class="modal fade" tabindex="-1">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content bg-transparent border-0">
-      <div class="modal-body p-0">
-        <img src="" id="modal-image" class="img-fluid rounded shadow">
-      </div>
-    </div>
   </div>
 </div>

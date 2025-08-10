@@ -129,11 +129,11 @@ class Admin::ProductsController < ApplicationController
       :preorder_available,
       :status,
       :product_images,
-      :custom_attributes,
       :weight_gr,
       :length_cm,
       :width_cm,
       :height_cm,
+      custom_attributes: [],
       product_images: [] # allow multiple file uploads
     )
   end
