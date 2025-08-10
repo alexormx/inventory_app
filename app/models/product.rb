@@ -26,6 +26,18 @@ class Product < ApplicationRecord
 
   validate :minimum_price_not_exceed_selling_price
 
+  def parsed_custom_attributes
+    return {} unless custom_attributes.present?
+
+    if custom_attributes.is_a?(String)
+      JSON.parse(custom_attributes)
+    else
+      custom_attributes
+    end
+  rescue JSON::ParserError
+    {}
+  end
+
   private
 
   def minimum_price_not_exceed_selling_price
