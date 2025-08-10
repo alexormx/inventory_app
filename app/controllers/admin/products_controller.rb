@@ -120,6 +120,7 @@ class Admin::ProductsController < ApplicationController
       :barcode,
       :brand,
       :category,
+      :description,
       :product_name,
       :reorder_point,
       :selling_price,
