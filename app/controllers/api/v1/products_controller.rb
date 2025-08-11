@@ -41,25 +41,31 @@ class Api::V1::ProductsController < ApplicationController
 
 
   def product_params
-      params.require(:product).permit(
-        :product_name,
-        :product_sku,
-        :whatsapp_code,
-        :barcode,
-        :brand,
-        :category,
-        :selling_price,
-        :maximum_discount,
-        :minimum_price,
-        :length_cm,
-        :width_cm,
-        :height_cm,
-        :weight_gr,
-        :description,
-        :supplier_product_code,
-        custom_attributes: {},
-        product_images: []
+    p = params.require(:product).permit(
+      :product_name,
+      :product_sku,
+      :whatsapp_code,
+      :barcode,
+      :brand,
+      :category,
+      :selling_price,
+      :maximum_discount,
+      :minimum_price,
+      :length_cm,
+      :width_cm,
+      :height_cm,
+      :weight_gr,
+      :description,
+      :supplier_product_code,
+      custom_attributes: {},
+      product_images: []
       )
-  end
+    
+      # 🔹 Step 2: handle stringified JSON sent to the API
+    if p[:custom_attributes].is_a?(String)
+      p[:custom_attributes] = JSON.parse(p[:custom_attributes]) rescue { raw: p[:custom_attributes] }
+    end
 
+    p 
+  end
 end

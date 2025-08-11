@@ -115,7 +115,7 @@ class Admin::ProductsController < ApplicationController
   private
   # Strong parameters for product
   def product_params
-    params.require(:product).permit(
+    p = params.require(:product).permit(
       :product_sku,
       :barcode,
       :brand,
@@ -135,9 +135,16 @@ class Admin::ProductsController < ApplicationController
       :length_cm,
       :width_cm,
       :height_cm,
-      :custom_attributes, # allow custom attributes as a hash
+      custom_attributes: {}, # allow custom attributes as a hash
       product_images: [] # allow multiple file uploads
     )
+    
+    # 🔹 Step 2: handle stringified JSON sent from Admin UI or imports
+    if p[:custom_attributes].is_a?(String)
+      p[:custom_attributes] = JSON.parse(p[:custom_attributes]) rescue { raw: p[:custom_attributes] }
+    end
+
+    p
   end
 
   def set_product
