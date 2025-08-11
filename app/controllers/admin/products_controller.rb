@@ -1,7 +1,9 @@
 class Admin::ProductsController < ApplicationController
+  include CustomAttributesParam
   before_action :authenticate_user!
   before_action :authorize_admin!
   before_action :set_product, only: %i[show edit update destroy purge_image activate deactivate]
+  before_action :fix_custom_attributes_param, only: [:create, :update]
 
   def index
     @products = Product.all
@@ -113,9 +115,14 @@ class Admin::ProductsController < ApplicationController
 
 
   private
+
+  def fix_custom_attributes_param
+    return unless params[:product].present?
+    coerce_custom_attributes!(params[:product])  # <- del concern
+  end
   # Strong parameters for product
   def product_params
-    p = params.require(:product).permit(
+    params.require(:product).permit(
       :product_sku,
       :barcode,
       :brand,
@@ -138,13 +145,7 @@ class Admin::ProductsController < ApplicationController
       custom_attributes: {}, # allow custom attributes as a hash
       product_images: [] # allow multiple file uploads
     )
-    
-    # 🔹 Step 2: handle stringified JSON sent from Admin UI or imports
-    if p[:custom_attributes].is_a?(String)
-      p[:custom_attributes] = JSON.parse(p[:custom_attributes]) rescue { raw: p[:custom_attributes] }
-    end
 
-    p
   end
 
   def set_product

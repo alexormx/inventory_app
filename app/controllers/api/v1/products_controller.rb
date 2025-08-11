@@ -1,6 +1,8 @@
 class Api::V1::ProductsController < ApplicationController
+  include CustomAttributesParam
   skip_before_action :verify_authenticity_token
   before_action :authenticate_with_token!
+  before_action :fix_custom_attributes_param, only: [:create, :update]
 
   def create
     @product = Product.new(product_params.except(:product_images))
@@ -28,6 +30,11 @@ class Api::V1::ProductsController < ApplicationController
 
   private
 
+  def fix_custom_attributes_param
+    return unless params[:product].present?
+    coerce_custom_attributes!(params[:product])  # <- del concern
+  end
+
   def authenticate_with_token!
     token = request.headers["Authorization"].to_s.split(" ").last
     user = User.find_by(api_token: token)
@@ -41,7 +48,7 @@ class Api::V1::ProductsController < ApplicationController
 
 
   def product_params
-    p = params.require(:product).permit(
+    params.require(:product).permit(
       :product_name,
       :product_sku,
       :whatsapp_code,
@@ -60,12 +67,5 @@ class Api::V1::ProductsController < ApplicationController
       custom_attributes: {},
       product_images: []
       )
-    
-      # 🔹 Step 2: handle stringified JSON sent to the API
-    if p[:custom_attributes].is_a?(String)
-      p[:custom_attributes] = JSON.parse(p[:custom_attributes]) rescue { raw: p[:custom_attributes] }
-    end
-
-    p 
   end
 end
