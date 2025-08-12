@@ -7,7 +7,7 @@ class ProductsController < ApplicationController
                         .where("LOWER(product_name) LIKE ? OR LOWER(category) LIKE ? OR LOWER(brand) LIKE ?", query, query, query)
                         .order(created_at: :desc)
     else
-      @products = Product.wpublicly_visible.order(created_at: :desc)
+      @products = Product.publicly_visible.order(created_at: :desc)
     end
   end
 

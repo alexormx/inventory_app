@@ -64,10 +64,9 @@ Rails.application.configure do
   ActionMailer::Base.smtp_settings = {
     address: "smtp-relay.brevo.com",
     port: "587",
-    authentication: :plain,
+    domain: "pasatiempos.com.mx",
     user_name: "93616f001@smtp-brevo.com",
     password: ENV["BREVO_SMTP_PASSWORD"],
-    domain: "pasatiempos.com.mx",
     authentication: :login,
     enable_starttls_auto: true
   }
