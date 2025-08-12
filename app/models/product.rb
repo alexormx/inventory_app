@@ -25,6 +25,11 @@ class Product < ApplicationRecord
   before_validation :normalize_custom_attributes
   validate :custom_attributes_must_be_object
 
+  # --- Create enums for the product status ---
+  enum :status,
+      { draft: 'draft', active: 'active', inactive: 'inactive' },
+      default: :draft
+
   # --- Validations ---
   validates :product_sku, presence: true, uniqueness: true
   validates :product_name, presence: true
@@ -35,9 +40,20 @@ class Product < ApplicationRecord
   validates :whatsapp_code, presence: true, uniqueness: true
   validate  :minimum_price_not_exceed_selling_price
 
+  # --- Scopes ---
+  scope :publicly_visible, -> { active }
+
   # --- Public helper for your current view (optional, can be removed later) ---
   def parsed_custom_attributes
     custom_attributes.is_a?(Hash) ? custom_attributes : {}
+  end
+
+  # NEW: Normalize at assignment time (runs earlier than validations)
+  def status=(value)
+    normalized = value.to_s.strip.downcase
+    normalized = 'draft' if normalized.blank?
+    normalized = 'inactive' unless self.class.statuses.key?(normalized)
+    super(normalized)
   end
 
   private
@@ -76,7 +92,7 @@ class Product < ApplicationRecord
   def set_api_fallback_defaults
     self.backorder_allowed     = false if self.backorder_allowed.nil?
     self.preorder_available    = false if self.preorder_available.nil?
-    self.status              ||= "inactive"
+    self.status              ||= "draft"
     self.discount_limited_stock ||= 0
     self.reorder_point          ||= 0
   end
@@ -123,4 +139,5 @@ class Product < ApplicationRecord
   def custom_attributes_must_be_object
     errors.add(:custom_attributes, 'must be an object') unless custom_attributes.is_a?(Hash)
   end
+
 end
