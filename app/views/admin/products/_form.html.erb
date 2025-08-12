@@ -51,7 +51,10 @@
 
   <div class="col-md-2">
     <%= f.label :status %>
-    <%= f.select :status, ["Active", "Discontinued", "Out of Stock"], {}, class: "form-select" %>
+    <%= f.select :status,
+        Product.statuses.keys.map { |s| [s.titleize, s] },
+        {},
+        class: "form-select" %>
   </div>
 
   <div class="col-md-2">
