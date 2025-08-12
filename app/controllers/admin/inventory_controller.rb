@@ -3,7 +3,11 @@ class Admin::InventoryController < ApplicationController
   before_action :authorize_admin!
 
   def index
-    @products_with_inventory = Product.includes(:inventory)
+    @products_with_inventory =
+      Product
+        .left_outer_joins(:inventories)
+        .includes(inventories: :purchase_order)
+        .distinct
   end
 
   def items
