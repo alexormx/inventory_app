@@ -7,8 +7,8 @@ class Admin::InventoryController < ApplicationController
   end
 
   def items
-    @product = Product.find(params[:id])
-    @inventory_items = @product.inventory.includes(:purchase_order)
+    @product = Product.find_by_identifier!(params[:id])
+    @inventory_items = @product.inventories.includes(:purchase_order)
   
     render partial: "admin/inventory/items", locals: { product: @product, items: @inventory_items }
   end
@@ -51,5 +51,4 @@ class Admin::InventoryController < ApplicationController
   def inventory_params
     params.require(:inventory).permit(:status, :status_changed_at)
   end
-
 end

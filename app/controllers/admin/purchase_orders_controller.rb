@@ -1,13 +1,13 @@
 class Admin::PurchaseOrdersController < ApplicationController
   before_action :authenticate_user!
   before_action :authorize_admin!
+  before_action :set_purchase_order, only: [:show, :edit, :update, :confirm_receipt, :destroy]
 
   def index
     @purchase_orders = PurchaseOrder.all
   end
 
   def show
-    @purchase_order = PurchaseOrder.find(params[:id])
   end
 
   def new
@@ -20,26 +20,40 @@ class Admin::PurchaseOrdersController < ApplicationController
     if @purchase_order.save
       redirect_to admin_purchase_orders_path, notice: "Purchase order created successfully."
     else
+      flash.now[:alert] = @purchase_order.errors.full_messages.to_sentence
       render :new, status: :unprocessable_entity
     end
   end
 
   def edit
-    @purchase_order = PurchaseOrder.includes(:purchase_order_items).find(params[:id])
   end
 
   def update
-    @purchase_order = PurchaseOrder.find(params[:id])
     if @purchase_order.update(purchase_order_params)
       redirect_to admin_purchase_orders_path, notice: "Purchase order updated successfully."
     else
-      render :edit
+      render :edit, status: :unprocessable_entity
+    end
+  end
+
+  def destroy
+    # If you need any guards (e.g., can’t delete when Delivered), add them here.
+    
+    unless @purchase_order.may_be_deleted?
+      return redirect_to admin_purchase_orders_path,
+                        alert: "Cannot delete a Delivered/Closed purchase order."
+    end
+
+    if @purchase_order.destroy
+      redirect_to admin_purchase_orders_path, notice: "Purchase order deleted.", status: :see_other
+    else
+      # Bubble up validation/association errors if any
+      msg = @purchase_order.errors.full_messages.to_sentence.presence || "Failed to delete purchase order."
+      redirect_to admin_purchase_orders_path, alert: msg
     end
   end
 
   def confirm_receipt
-    @purchase_order = PurchaseOrder.find(params[:id])
-
     if @purchase_order.status == "In Transit"
       Inventory.where(purchase_order_id: @purchase_order.id).in_transit.update_all(
         status: :available,
@@ -51,11 +65,14 @@ class Admin::PurchaseOrdersController < ApplicationController
     else
       flash[:alert] = "Solo se pueden confirmar órdenes 'In Transit'."
     end
-
     redirect_to admin_purchase_order_path(@purchase_order)
   end
 
   private
+
+  def set_purchase_order
+    @purchase_order = PurchaseOrder.includes(:purchase_order_items).find(params[:id])
+  end
 
   def purchase_order_params
     params.require(:purchase_order).permit(
@@ -67,6 +84,5 @@ class Admin::PurchaseOrdersController < ApplicationController
       :unit_additional_cost, :unit_compose_cost, :unit_compose_cost_in_mxn, :total_line_cost, :total_line_volume,
       :total_line_weight, :total_line_cost_in_mxn, :_destroy]
     )
-
   end
 end

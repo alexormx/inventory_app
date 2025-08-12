@@ -74,9 +74,28 @@ class Admin::ProductsController < ApplicationController
   end
 
   def search
-    @products = Product.where("product_name ILIKE ? OR product_sku ILIKE ?", "%#{params[:query]}%", "%#{params[:query]}%")
+    q = params[:query].to_s.strip
+    return render json: [] if q.blank?
 
-    render json: @products.map { |product|
+    pattern = "%#{ActiveRecord::Base.sanitize_sql_like(q)}%"
+
+    products = Product
+      .includes(product_images_attachments: :blob) # avoids N+1 when calling variant
+      .where(
+        "LOWER(product_name) LIKE LOWER(?) OR LOWER(product_sku) LIKE LOWER(?)",
+        pattern, pattern
+      )
+      .order(:product_name)
+      .limit(20)
+
+    render json: products.map { |product|
+      thumb_url =
+        if product.product_images.attached?
+          url_for(product.product_images.first.variant(resize_to_limit: [40, 40]).processed)
+        else
+          helpers.asset_path("placeholder.png")
+        end
+
       {
         id: product.id,
         product_name: product.product_name,
@@ -85,9 +104,7 @@ class Admin::ProductsController < ApplicationController
         length_cm: product.length_cm,
         width_cm: product.width_cm,
         height_cm: product.height_cm,
-        thumbnail_url: product.product_images.attached? ?
-          url_for(product.product_images.first.variant(resize_to_limit: [40, 40])) :
-          ActionController::Base.helpers.asset_path("placeholder.png") # fallback
+        thumbnail_url: thumb_url
       }
     }
   end

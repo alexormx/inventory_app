@@ -30,7 +30,7 @@
         <td><%= product.product_sku %></td>
         <td><%= product.product_name %></td>
         <td><%= number_to_currency(product.selling_price, precision: 2) %></td>
-        <td><%= product.inventory.available.count %></td>
+        <td><%= product.inventories.available.count %></td>
         <td>
           <turbo-frame id="product_toggle_<%= product.id %>">
             <%= render partial: "toggle", locals: { product: product } %>

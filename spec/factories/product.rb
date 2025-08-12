@@ -32,14 +32,20 @@ FactoryBot.define do
 
     custom_attributes { {} }
 
-    after(:build) do |p|
-      p.category = p.category.to_s.downcase if p.respond_to?(:category=)
-    end
+    after(:create) do |product|
+      file1 = Rails.root.join('spec/fixtures/files/test1.png')
+      file2 = Rails.root.join('spec/fixtures/files/test2.png')
 
-    trait :cheap do
-      minimum_price { 5.0 }
-      selling_price { 10.0 }
-      maximum_discount { 0 }
+      product.product_images.attach(
+        io: File.open(file1),
+        filename: 'test1.png',
+        content_type: 'image/png'
+      )
+      product.product_images.attach(
+        io: File.open(file2),
+        filename: 'test2.png',
+        content_type: 'image/png'
+      )
     end
   end
 end

@@ -5,7 +5,7 @@ class Product < ApplicationRecord
   belongs_to :preferred_supplier, class_name: "User", optional: true
   belongs_to :last_supplier, class_name: "User", optional: true
 
-  has_many :inventory, dependent: :restrict_with_error
+  has_many :inventories, class_name: "Inventory", foreign_key: :product_id, inverse_of: :product, dependent: :nullify
   has_many :canceled_order_items, dependent: :restrict_with_error
   has_many :purchase_order_items
   has_many :purchase_orders, through: :purchase_order_items
@@ -23,6 +23,7 @@ class Product < ApplicationRecord
   # --- Custom attributes: always a JSON Hash ---
   attribute :custom_attributes, :json, default: {}
   before_validation :normalize_custom_attributes
+  before_validation :ensure_whatsapp_code
   validate :custom_attributes_must_be_object
 
   # --- Create enums for the product status ---
@@ -54,6 +55,15 @@ class Product < ApplicationRecord
     normalized = 'draft' if normalized.blank?
     normalized = 'inactive' unless self.class.statuses.key?(normalized)
     super(normalized)
+  end
+
+  def self.find_by_identifier!(identifier)
+    find_by(id: identifier) ||
+      find_by(product_sku: identifier) ||
+      (column_names.include?("slug") && find_by(slug: identifier)) ||
+      find_by(whatsapp_code: identifier) ||
+      where("LOWER(REPLACE(product_name, ' ', '-')) = ?", identifier.to_s.downcase).first ||
+      (raise ActiveRecord::RecordNotFound)
   end
 
   private
@@ -138,6 +148,11 @@ class Product < ApplicationRecord
 
   def custom_attributes_must_be_object
     errors.add(:custom_attributes, 'must be an object') unless custom_attributes.is_a?(Hash)
+  end
+
+  def ensure_whatsapp_code
+    return if whatsapp_code.present?
+    self.whatsapp_code = SecureRandom.alphanumeric(6).upcase
   end
 
 end
