@@ -3,11 +3,11 @@ class ProductsController < ApplicationController
   def index
     if params[:q].present?
       query = "%#{params[:q].downcase}%"
-      @products = Product.where("status = ?", "active")
+      @products = Product.publicly_visible
                         .where("LOWER(product_name) LIKE ? OR LOWER(category) LIKE ? OR LOWER(brand) LIKE ?", query, query, query)
-                        .order(:product_name)
+                        .order(created_at: :desc)
     else
-      @products = Product.where(status: "active").order(:product_name)
+      @products = Product.wpublicly_visible.order(created_at: :desc)
     end
   end
 
