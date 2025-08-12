@@ -21,7 +21,8 @@ module InventoryApp
     config.i18n.default_locale = :"es-MX"
     config.i18n.fallbacks = { :"es-MX" => :es }
 
-    config.active_record.schema_format = :sql if Rails.env.test?
+    config.active_record.schema_format = :ruby if Rails.env.test?
+    config.active_record.dump_schema_after_migration = true
 
     config.whatsapp_number = ENV.fetch("WHATSAPP_NUMBER", "525555555555")
 
