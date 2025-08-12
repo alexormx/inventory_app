@@ -1,29 +1,45 @@
 FactoryBot.define do
+  sequence(:sku_seq)       { |n| "SKU-#{n.to_s.rjust(5, '0')}" }
+  sequence(:whatsapp_seq)  { |n| "WGT#{n.to_s.rjust(3, '0')}" }
+
   factory :product do
-    sequence(:product_name) { |n| "Product #{n}" }
-    sequence(:product_sku) { |n| "SKU#{n}" }
+    product_sku     { generate(:sku_seq) }
+    product_name    { "Sample Product" }
+    brand           { "Tomica" }
 
-    selling_price { 100.0 }
-    minimum_price { 80.0 }
-    maximum_discount { 20.0 }
+    # Category/status – safe defaults
+    category        { "diecast" }
+    status          { "draft" }
 
-    discount_limited_stock { 10 }
-    reorder_point { 20 }
+    # Prices & discounts – keep valid relationship
+    minimum_price   { 99.99 }
+    selling_price   { 199.99 }
+    maximum_discount { 0 }            # ✅ required numeric
 
-    brand { "BrandName" }
-    category { "CategoryName" }
+    # Inventory-ish
+    reorder_point   { 0 }
+    backorder_allowed   { false }
+    preorder_available  { false }
 
-    length_cm { 10 }
-    width_cm { 5 }
-    height_cm { 3 }
-    weight_gr { 1.2 }
+    # Dimensions
+    weight_gr       { 100 }
+    length_cm       { 16 }
+    width_cm        { 4 }
+    height_cm       { 4 }
 
-    backorder_allowed { false }
-    preorder_available { false }
+    # Identifiers
+    whatsapp_code   { generate(:whatsapp_seq) }  # ✅ required & unique
 
-    custom_attributes { nil }
+    custom_attributes { {} }
 
-    status { "active" }
+    after(:build) do |p|
+      p.category = p.category.to_s.downcase if p.respond_to?(:category=)
+    end
+
+    trait :cheap do
+      minimum_price { 5.0 }
+      selling_price { 10.0 }
+      maximum_discount { 0 }
+    end
   end
 end
-

@@ -17,3 +17,4 @@ RSpec.describe CartItemsController, type: :controller do
       expect(session[:cart][product.id.to_s]).to be_nil
     end
   end
+end

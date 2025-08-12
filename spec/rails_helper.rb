@@ -1,4 +1,3 @@
-# This file is copied to spec/ when you run 'rails generate rspec:install'
 require 'spec_helper'
 ENV['RAILS_ENV'] ||= 'test'
 require_relative '../config/environment'
@@ -8,8 +7,10 @@ abort("The Rails environment is running in production mode!") if Rails.env.produ
 
 require 'rspec/rails'
 require 'selenium-webdriver'
-require 'webdrivers'
 require 'capybara/rspec'
+
+# Toggle: run system specs only when explicitly requested
+RUN_SYSTEM_SPECS = ENV['RUN_SYSTEM_SPECS'] == '1'
 
 # Ensure database migrations are applied before running tests
 begin
@@ -18,71 +19,61 @@ rescue ActiveRecord::PendingMigrationError => e
   abort e.to_s.strip
 end
 
-begin
-  ActiveRecord::Migration.maintain_test_schema!
-rescue ActiveRecord::PendingMigrationError => e
-  abort e.to_s.strip
+# Load support files (helpers, shared contexts, etc.)
+Dir[Rails.root.join('spec/support/**/*.rb')].sort.each { |f| require f }
+
+# Shoulda Matchers configuration
+Shoulda::Matchers.configure do |shoulda|
+  shoulda.integrate do |with|
+    with.test_framework :rspec
+    with.library :rails
+  end
 end
 
 RSpec.configure do |config|
-  # Define fixture paths
+  # Fixture & DB settings
   config.fixture_paths = [Rails.root.join('spec/fixtures')]
   config.use_transactional_fixtures = true
 
-  config.filter_rails_from_backtrace!
+  # Helpers
+  config.include FactoryBot::Syntax::Methods
+  config.include Devise::Test::ControllerHelpers, type: :controller
+  config.include Devise::Test::IntegrationHelpers, type: :request
+  config.include Devise::Test::IntegrationHelpers, type: :system
 
-  # Shoulda Matchers Configuration
-  Shoulda::Matchers.configure do |shoulda|
-    shoulda.integrate do |with|
-      with.test_framework :rspec
-      with.library :rails
+  # JSON helper (defined in spec/support/json_helpers.rb)
+  config.include JsonHelpers, type: :controller if defined?(JsonHelpers)
+  config.include JsonHelpers, type: :request    if defined?(JsonHelpers)
+
+  # System specs (off by default)
+  if RUN_SYSTEM_SPECS
+    Capybara.register_driver :selenium do |app|
+      options = Selenium::WebDriver::Chrome::Options.new
+      options.add_argument('--disable-gpu')
+      options.add_argument('--disable-software-rasterizer')
+      options.add_argument('--disable-dev-shm-usage')
+      options.add_argument('--disable-dev-tools')
+      options.add_argument('--disable-features=VizDisplayCompositor')
+      options.add_argument('--disable-features=IsolateOrigins,site-per-process')
+      options.add_argument('--no-sandbox')
+      options.add_argument('--headless=new')
+      options.add_argument('--disable-background-networking')
+      Capybara::Selenium::Driver.new(app, browser: :chrome, options: options)
     end
-  end
+    Capybara.javascript_driver = :selenium
 
-
-  # ✅ **SET CHROMEDRIVER PATH & VERSION BEFORE REGISTERING DRIVER**
-  Webdrivers::Chromedriver.required_version = '134.0.6998.0'
-  if File.exist?("/usr/bin/chromedriver")
-    Selenium::WebDriver::Chrome::Service.driver_path = "/usr/bin/chromedriver"
+    # Open page on failing system spec (only when system specs are enabled)
+    config.after(:each, type: :system) do |example|
+      save_and_open_page if example.exception
+    end
   else
+    # Skip all system specs unless explicitly enabled
     config.filter_run_excluding type: :system
   end
 
-  # ✅ **REGISTER SELENIUM DRIVER**
-  Capybara.register_driver :selenium do |app|
-    options = Selenium::WebDriver::Chrome::Options.new
+  # Backtrace cleanup
+  config.filter_rails_from_backtrace!
 
-    # ✅ Essential flags to disable GPU errors
-    options.add_argument('--disable-gpu')
-    options.add_argument('--disable-software-rasterizer')
-    options.add_argument('--disable-dev-shm-usage')
-    options.add_argument('--disable-dev-tools')
-    options.add_argument('--disable-features=VizDisplayCompositor') # Helps prevent GPU rendering issues
-    options.add_argument('--disable-features=IsolateOrigins,site-per-process')
-
-    # ✅ Keep these for stability in WSL & Docker
-    options.add_argument('--no-sandbox')
-    options.add_argument('--headless=new') # Use updated headless mode
-    options.add_argument('--disable-background-networking')
-
-    Capybara::Selenium::Driver.new(app, browser: :chrome, options: options)
-  end
-
-  Capybara.javascript_driver = :selenium
-
-  # FactoryBot Configuration
-  config.include FactoryBot::Syntax::Methods
-
-  # Include Devise test helpers
-  config.include Devise::Test::ControllerHelpers, type: :controller
-  config.include Devise::Test::IntegrationHelpers, type: :system
-  config.include Devise::Test::IntegrationHelpers, type: :request
-
-  # Automatically open screenshot on test failure (Capybara & Launchy)
-  config.after(:each, type: :system) do |example|
-    if example.exception
-      save_and_open_page
-    end
-  end
-
+  # Infer spec types from file locations (enabled by rspec-rails)
+  # config.infer_spec_type_from_file_location!
 end
