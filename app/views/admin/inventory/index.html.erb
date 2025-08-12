@@ -35,7 +35,7 @@
       </div>
     </turbo-frame>
     <turbo-frame id="inventory-items-frame-<%= product.id %>" class="mt-2">
-      <% if product.inventory.count > 0 %>
+      <% if product.inventories.count > 0 %>
         <%= link_to "👁 View Items", items_admin_inventory_path(product), data: { turbo_frame: "inventory-items-frame-#{product.id}" }, class: "btn btn-sm btn-outline-primary" %>
       <% end %>
     </turbo-frame>
