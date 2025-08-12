@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_08_11_041010) do
+ActiveRecord::Schema[8.0].define(version: 2025_08_12_141726) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -99,7 +99,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_11_041010) do
     t.decimal "minimum_price", precision: 10, scale: 2, null: false
     t.boolean "backorder_allowed", default: false
     t.boolean "preorder_available", default: false
-    t.string "status", default: "Active", null: false
+    t.string "status", default: "draft", null: false
     t.text "product_images"
     t.text "custom_attributes", default: "{}"
     t.datetime "created_at", null: false
