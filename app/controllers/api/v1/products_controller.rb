@@ -28,6 +28,12 @@ class Api::V1::ProductsController < ApplicationController
     end
   end
 
+  def exists
+    sku = params[:sku].to_s.strip
+    exists = Product.exists?(product_sku: sku)
+    render json: { exists: exists }, status: :ok
+  end
+
   private
 
   def fix_custom_attributes_param
