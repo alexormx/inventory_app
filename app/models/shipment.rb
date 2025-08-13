@@ -4,10 +4,10 @@ class Shipment < ApplicationRecord
   validates :tracking_number, presence: true
   validates :carrier, presence: true
   validates :estimated_delivery, presence: true
-  validates :actual_delivery, date: { after_or_equal_to: :estimated_delivery, allow_blank: true }
 
   # Use the custom DateValidator
   validates :actual_delivery, date: { after_or_equal_to: :estimated_delivery, allow_blank: true }
+  validate :actual_not_before_estimated
 
   before_update :update_last_status_change
 
@@ -18,6 +18,13 @@ class Shipment < ApplicationRecord
   def update_last_status_change
     if status_changed?
       self.last_update = Time.current
+    end
+  end
+  
+  def actual_not_before_estimated
+    return if actual_delivery.blank? || estimated_delivery.blank?
+    if actual_delivery < estimated_delivery
+      errors.add(:actual_delivery, "no puede ser anterior a la fecha estimada")
     end
   end
 end

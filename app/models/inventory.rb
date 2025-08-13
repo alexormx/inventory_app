@@ -25,6 +25,9 @@ class Inventory < ApplicationRecord
 
   # inventory.rb
   scope :assignable, -> { where(status: [:available, :in_transit], sale_order_id: nil) }
+  scope :free,     -> { where(sale_order_id: nil, status: %w[available in_transit]) }
+  scope :reserved, -> { where(status: :reserved) }
+  scope :sold,     -> { where(status: :sold) }
 
 
   private

@@ -39,8 +39,12 @@ class Admin::SaleOrdersController < ApplicationController
   def show; end
 
   def destroy
-    @sale_order.destroy
-    redirect_to admin_sale_orders_path, alert: "Sale order deleted"
+    if @sale_order.destroy
+      redirect_to admin_sale_orders_path, notice: "Sale order eliminada."
+    else
+      redirect_to admin_sale_order_path(@sale_order),
+        alert: @sale_order.errors.full_messages.to_sentence.presence || "No se pudo eliminar la orden."
+    end
   end
 
   private

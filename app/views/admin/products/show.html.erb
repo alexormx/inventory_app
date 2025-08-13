@@ -31,12 +31,12 @@
       <div class="col-md-6">
         <h6 class="fw-bold mb-2">📦 Inventory & Pricing</h6>
         <dl class="row mb-0">
-          <dt class="col-sm-6">Available:</dt><dd class="col-sm-6"><%= @product.inventory.available.count %> units</dd>
-          <dt class="col-sm-6">Reserved:</dt><dd class="col-sm-6"><%= @product.inventory.reserved.count %> units</dd>
-          <dt class="col-sm-6">In Transit:</dt><dd class="col-sm-6"><%= @product.inventory.in_transit.count %> units</dd>
-          <dt class="col-sm-6">Damaged/Cancel:</dt><dd class="col-sm-6"><%= @product.inventory.damaged.count %> units</dd>
-          <dt class="col-sm-6">Lost:</dt><dd class="col-sm-6"><%= @product.inventory.lost.count %> units</dd>
-          <dt class="col-sm-6">Returned:</dt><dd class="col-sm-6"><%= @product.inventory.returned.count %> units</dd>
+          <dt class="col-sm-6">Available:</dt><dd class="col-sm-6"><%= @product.inventories.available.count %> units</dd>
+          <dt class="col-sm-6">Reserved:</dt><dd class="col-sm-6"><%= @product.inventories.reserved.count %> units</dd>
+          <dt class="col-sm-6">In Transit:</dt><dd class="col-sm-6"><%= @product.inventories.in_transit.count %> units</dd>
+          <dt class="col-sm-6">Damaged/Cancel:</dt><dd class="col-sm-6"><%= @product.inventories.damaged.count %> units</dd>
+          <dt class="col-sm-6">Lost:</dt><dd class="col-sm-6"><%= @product.inventories.lost.count %> units</dd>
+          <dt class="col-sm-6">Returned:</dt><dd class="col-sm-6"><%= @product.inventories.returned.count %> units</dd>
           <dt class="col-sm-6">Reorder Point:</dt><dd class="col-sm-6"><%= @product.reorder_point %></dd>
           <dt class="col-sm-6">Selling Price:</dt><dd class="col-sm-6"><%= number_to_currency(@product.selling_price) %></dd>
           <dt class="col-sm-6">Min. Price:</dt><dd class="col-sm-6"><%= number_to_currency(@product.minimum_price) %></dd>

@@ -1,9 +1,11 @@
 require 'rails_helper'
 
 RSpec.describe PurchaseOrder, type: :model do
+  let(:supplier) { create(:user, :supplier) }
+  let(:product)  { create(:product) }
   describe "Associations" do
     it { should belong_to(:user) }
-    it { should have_many(:inventory).with_foreign_key("purchase_order_id") }
+    it { should have_many(:inventories).with_foreign_key("purchase_order_id") }
   end
 
   describe "Validations" do
@@ -40,5 +42,36 @@ RSpec.describe PurchaseOrder, type: :model do
       expect(purchase_order).to_not be_valid
       expect(purchase_order.errors[:actual_delivery_date]).to include("must be after or equal to expected delivery date")
     end
+  end
+  
+  it "deletes free inventories and destroys the PO" do
+    po = create(:purchase_order, user: supplier)
+    create(:purchase_order_item, purchase_order: po, product: product, quantity: 2)
+
+    expect { po.destroy }.to change { PurchaseOrder.count }.by(-1)
+    expect(Inventory.where(purchase_order_id: po.id)).to be_empty
+  end
+
+  it "blocks destroy when reserved/sold exists" do
+    po  = create(:purchase_order, user: supplier, order_date: Date.today, expected_delivery_date: Date.today, status: "Pending")
+    create(:purchase_order_item, purchase_order: po, product: product, quantity: 1, unit_cost: 100)
+    po.update!(status: "Delivered") # ensures inventories flip to :available via after_update
+
+    # Reserve that item via a Sale Order Item (no manual Inventory.create!)
+    customer = create(:user)
+    so = create(:sale_order, user: customer)
+    create(:sale_order_item, sale_order: so, product: product, quantity: 1, unit_final_price: 150)
+
+    # Sanity: confirm a locked row for this PO exists
+    locked = Inventory.where(purchase_order_id: po.id)
+                      .where(status: [:reserved, :sold])
+                      .or(Inventory.where(purchase_order_id: po.id).where.not(sale_order_id: nil))
+    expect(locked.exists?).to be(true)
+
+    # Destroy should be blocked; record remains; error present
+    po.reload 
+    expect(po.destroyed?).to be_falsey
+    expect { po.destroy! }.to raise_error(ActiveRecord::RecordNotDestroyed)
+    expect(po.persisted?).to be(true)
   end
 end

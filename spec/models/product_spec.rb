@@ -11,13 +11,16 @@ RSpec.describe Product, type: :model do
   end
 
   describe 'whatsapp_code' do
-    it 'requires a whatsapp_code' do
-      expect(build(:product, whatsapp_code: nil)).not_to be_valid
-    end
-
     it 'requires uniqueness of whatsapp_code' do
       create(:product, whatsapp_code: 'WGT001')
       expect(build(:product, whatsapp_code: 'WGT001')).not_to be_valid
+    end
+
+    it "auto-generates whatsapp_code when blank" do
+      product = build(:product, whatsapp_code: nil)
+      expect(product).to be_valid
+      product.valid? # dispara before_validation
+      expect(product.whatsapp_code).to be_present
     end
   end
 

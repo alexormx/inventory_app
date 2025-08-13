@@ -8,7 +8,7 @@ class PurchaseOrder < ApplicationRecord
   has_many :products, through: :purchase_order_items
 
   # Direct link by purchase_order_id to allow safe cascade deletes
-  has_many :inventories, foreign_key: :purchase_order_id, dependent: :destroy
+  has_many :inventories, foreign_key: :purchase_order_id
 
   accepts_nested_attributes_for :purchase_order_items, allow_destroy: true
 
@@ -24,8 +24,7 @@ class PurchaseOrder < ApplicationRecord
   validate :actual_delivery_after_expected_delivery
 
   after_update :update_inventory_status_based_on_order_status
-
-  before_destroy :ensure_inventories_not_used
+  before_destroy :ensure_inventories_safe_or_cleanup
 
   def may_be_deleted?
     !%w[Delivered Closed].include?(status)
@@ -58,20 +57,35 @@ class PurchaseOrder < ApplicationRecord
                  when "Delivered" then :available
                  when "Canceled" then :scrap
                  when "Pending", "In Transit" then :in_transit
-                 else nil
                  end
-
     return unless new_status
 
-    inventories.where.not(status: [:sold, :reserved])
-             .update_all(status: Inventory.statuses[new_status], status_changed_at: Time.current)
+    # Use a plain query to avoid association cache
+    Inventory.where(purchase_order_id: self.id)
+             .where.not(status: [:sold, :reserved])
+             .update_all(
+               status: Inventory.statuses[new_status],
+               status_changed_at: Time.current,
+               updated_at: Time.current
+             )
   end
 
-  def ensure_inventories_not_used
-    if inventories.where(status: %w[reserved sold allocated]).exists?
-      errors.add(:base, "Cannot delete PO with inventory reserved/sold/allocated.")
-      throw :abort
+  # Block if any locked; otherwise delete only free and allow destroy
+  def ensure_inventories_safe_or_cleanup
+    # ⬇️ plain relation, no association cache
+    scope  = Inventory.where(purchase_order_id: self.id)
+
+    locked = scope.where(status: [:reserved, :sold])
+                  .or(scope.where.not(sale_order_id: nil))
+
+    if locked.exists?
+      errors.add(:base,
+        "Cannot delete this purchase order: #{locked.count} inventory item(s) are reserved/sold or linked to a sale."
+      )
+      return false
     end
+
+    scope.where(status: [:available, :in_transit], sale_order_id: nil).delete_all
   end
 
 end

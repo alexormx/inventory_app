@@ -36,7 +36,10 @@
           <%= link_to edit_admin_sale_order_path(so), class: "btn btn-sm btn-outline-primary" do %>
             <i class="fa fa-edit"></i>
           <% end %>
-          <%= link_to admin_sale_order_path(so), method: :delete, data: { turbo_confirm: "Are you sure?" }, class: "btn btn-sm btn-outline-danger" do %>
+          <%= button_to admin_sale_order_path(so),
+                        method: :delete,
+                        form: { data: { turbo_confirm: "Are you sure?" }, class: "d-inline" },
+                        class: "btn btn-sm btn-outline-danger" do %>
             <i class="fa fa-trash"></i>
           <% end %>
         </td>

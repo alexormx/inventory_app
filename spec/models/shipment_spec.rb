@@ -11,11 +11,14 @@ RSpec.describe Shipment, type: :model do
     it { should belong_to(:sale_order).with_foreign_key('sale_order_id') }
   end
 
-  describe 'custom date validation' do
-    it 'is invalid when actual_delivery is before estimated_delivery' do
-      shipment = Shipment.new(tracking_number: '123', carrier: 'UPS', sale_order: build(:sale_order), estimated_delivery: Date.today, actual_delivery: Date.yesterday)
+  describe "custom date validation" do
+    it "is invalid when actual_delivery is before estimated_delivery" do
+      estimated = Date.current
+      actual    = estimated - 1.day
+      shipment = build(:shipment, estimated_delivery: estimated, actual_delivery: actual)
+
       expect(shipment).to be_invalid
-      expect(shipment.errors[:actual_delivery]).to be_present
+      expect(shipment.errors[:actual_delivery].join).to match(/no puede ser anterior/i)
     end
   end
 end

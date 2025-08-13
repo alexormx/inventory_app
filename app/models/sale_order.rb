@@ -2,7 +2,7 @@ class SaleOrder < ApplicationRecord
   include CustomIdGenerator
   belongs_to :user
 
-  has_many :inventory, foreign_key: "sale_order_id", dependent: :restrict_with_error
+  has_many :inventories, class_name: "Inventory", foreign_key: :sale_order_id
   has_many :payments, dependent: :restrict_with_error
   has_one :shipment, foreign_key: "sale_order_id", dependent: :restrict_with_error
   has_many :sale_order_items, dependent: :destroy
@@ -18,8 +18,12 @@ class SaleOrder < ApplicationRecord
   validates :status, presence: true, inclusion: { in: %w[Pending Confirmed Shipped Delivered Canceled] }
   validate :ensure_payment_and_shipment_present
 
+  before_destroy :ensure_inventories_safe_or_release
   before_validation :set_default_status, on: :create
   before_create :generate_custom_id
+
+  # Opcional: si cambias status a 'Canceled', libera lo reservado
+  after_update :release_reserved_if_canceled, if: :saved_change_to_status?
 
   def total_paid
     payments.where(status: "Completed").sum(:amount)
@@ -59,6 +63,34 @@ class SaleOrder < ApplicationRecord
 
   def set_default_status
     self.status ||= "Pending"
+  end
+
+    # Bloquea si hay vendidos; si todo está reservado, libera y permite borrar.
+  def ensure_inventories_safe_or_release
+    sold = inventories.where(status: %w[sold])
+    if sold.exists?
+      errors.add(:base, "No se puede eliminar: hay #{sold.count} artículo(s) vendidos en esta orden.")
+      throw :abort
+    end
+
+    # Libera las reservadas
+    inventories.where(status: %w[reserved]).update_all(
+      status: Inventory.statuses[:available],
+      sale_order_id: nil,
+      status_changed_at: Time.current,
+      updated_at: Time.current
+    )
+  end
+
+  def release_reserved_if_canceled
+    return unless status == "Canceled"
+
+    inventories.where(status: %w[reserved]).update_all(
+      status: Inventory.statuses[:available],
+      sale_order_id: nil,
+      status_changed_at: Time.current,
+      updated_at: Time.current
+    )
   end
 end
 

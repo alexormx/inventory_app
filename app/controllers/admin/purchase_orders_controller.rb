@@ -37,19 +37,13 @@ class Admin::PurchaseOrdersController < ApplicationController
   end
 
   def destroy
-    # If you need any guards (e.g., can’t delete when Delivered), add them here.
-    
-    unless @purchase_order.may_be_deleted?
-      return redirect_to admin_purchase_orders_path,
-                        alert: "Cannot delete a Delivered/Closed purchase order."
-    end
+    @purchase_order = PurchaseOrder.find(params[:id])
 
     if @purchase_order.destroy
-      redirect_to admin_purchase_orders_path, notice: "Purchase order deleted.", status: :see_other
+      redirect_to admin_purchase_orders_path, notice: "Purchase order eliminada."
     else
-      # Bubble up validation/association errors if any
-      msg = @purchase_order.errors.full_messages.to_sentence.presence || "Failed to delete purchase order."
-      redirect_to admin_purchase_orders_path, alert: msg
+      redirect_to admin_purchase_order_path(@purchase_order),
+        alert: @purchase_order.errors.full_messages.to_sentence.presence || "No se pudo eliminar."
     end
   end
 
