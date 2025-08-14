@@ -66,6 +66,27 @@ export default class extends Controller {
     this.rowsTarget.appendChild(tr)
   }
 
+  importJson(event) {
+    event.preventDefault()
+    const input = prompt("Pega JSON (objeto) para importar como filas:")
+    if (!input) return
+    let obj
+    try {
+      obj = JSON.parse(input)
+    } catch (_e) {
+      alert("JSON inválido")
+      return
+    }
+    if (obj && typeof obj === "object" && !Array.isArray(obj)) {
+      // limpiar filas actuales
+      this.rowsTarget.innerHTML = ""
+      Object.entries(obj).forEach(([k,v]) => this._appendRow(k, this._valueToString(v)))
+      this.sync()
+    } else {
+      alert("Se esperaba un objeto JSON (clave/valor)")
+    }
+  }
+
   _valueToString(v) {
     // Represent objects/arrays as JSON in the value input
     if (v === null || v === undefined) return ""

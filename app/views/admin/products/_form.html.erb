@@ -1,12 +1,13 @@
 <%= form_with model: [:admin, @product], local: false, class: "row g-3" do |f| %>
+  <% req = ->(text){ raw("#{text} <span class=\"text-danger\">*</span>") } %>
   <div class="col-md-3">
-    <%= f.label :product_name %>
-    <%= f.text_field :product_name, class: "form-control" %>
+    <%= f.label :product_name, req.call('Product name') %>
+    <%= f.text_field :product_name, class: "form-control", required: true %>
   </div>
 
   <div class="col-md-3">
-    <%= f.label :product_sku %>
-    <%= f.text_field :product_sku, class: "form-control" %>
+  <%= f.label :product_sku, req.call('SKU') %>
+  <%= f.text_field :product_sku, class: "form-control", required: true %>
   </div>
 
   <div class="col-md-3">
@@ -35,8 +36,8 @@
   </div>
 
   <div class="col-md-2">
-    <%= f.label :selling_price %>
-    <%= f.number_field :selling_price, step: 0.01, class: "form-control" %>
+  <%= f.label :selling_price, req.call('Selling price') %>
+  <%= f.number_field :selling_price, step: 0.01, class: "form-control", required: true, min: 0 %>
   </div>
 
   <div class="col-md-2">
@@ -98,8 +99,19 @@
   </div>
 
   <div class="col-md-12">
-    <%= f.label :product_images, "Upload Product Images" %>
-    <%= f.file_field :product_images, multiple: true, direct_upload: true, class: "form-control" %>
+    <%= f.label :product_images, req.call('Fotos (requerido)') %>
+    <div class="border border-2 border-dashed rounded p-4 text-center bg-light" 
+         data-controller="dropzone" 
+         data-dropzone-accept-value="image/*"
+         data-dropzone-max-files-value="10">
+      <div class="mb-2 text-muted">
+        <i class="fa-regular fa-images me-1"></i>
+        Seleccionar o arrastrar los archivos aquí
+      </div>
+      <small class="text-muted d-block">Sube máximo 10 fotos JPG, JPEG, PNG o WEBP. Recomendado: > 500px por lado, máximo 10MB.</small>
+      <%= f.file_field :product_images, multiple: true, direct_upload: true, class: "d-none", data: { dropzone_target: "input" }, accept: "image/*" %>
+      <ul class="list-group list-group-flush mt-3 text-start" data-dropzone-target="preview"></ul>
+    </div>
   </div>
 
   <% if @product.persisted? && @product.product_images.attached? %>
@@ -140,7 +152,10 @@
         <tbody data-kv-editor-target="rows"></tbody>
       </table>
     </div>
-    <button type="button" class="btn btn-outline-primary btn-sm" data-action="kv-editor#addRow">Agregar atributo</button>
+    <div class="d-flex gap-2">
+      <button type="button" class="btn btn-outline-primary btn-sm" data-action="kv-editor#addRow">Agregar atributo</button>
+      <button type="button" class="btn btn-outline-secondary btn-sm" data-action="kv-editor#importJson">Importar JSON</button>
+    </div>
     <%= f.hidden_field :custom_attributes, value: (@product.parsed_custom_attributes || {}).to_json, data: { kv_editor_target: "hidden" } %>
     <small class="text-muted d-block mt-1">Se guardará como JSON. Las claves se normalizan en minúsculas.</small>
   </div>

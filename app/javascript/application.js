@@ -16,6 +16,9 @@ application.register("cart-item", CartItemController)
 import KvEditorController from "./controllers/kv_editor_controller"
 application.register("kv-editor", KvEditorController)
 
+import DropzoneController from "./controllers/dropzone_controller"
+application.register("dropzone", DropzoneController)
+
 import "custom/menu"
 import "custom/toggle_inventory_items"
 import "custom/payment_modal"
