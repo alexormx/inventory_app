@@ -7,8 +7,11 @@ class Api::V1::UsersController < ApplicationController
   def create
     attrs = user_params.to_h.symbolize_keys
     attrs[:role] = (attrs[:role].presence || "customer").to_s
-    # cast boolean created_offline
+    # cast boolean created_offline; por defecto true si role=customer y no envían password
     attrs[:created_offline] = ActiveModel::Type::Boolean.new.cast(attrs[:created_offline])
+    if attrs[:role] == "customer" && attrs[:password].blank? && attrs[:password_confirmation].blank?
+      attrs[:created_offline] = true if attrs[:created_offline].nil?
+    end
 
     # Si no es customer y no mandan password, generamos uno aleatorio
     if attrs[:role] != "customer" && attrs[:password].blank?

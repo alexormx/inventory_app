@@ -51,6 +51,12 @@ class User < ApplicationRecord
     self.email = "offline-#{SecureRandom.hex(6)}@pasatiempos.com" if email.blank?
   end
 
+  # Devise: permitir omitir contraseña para clientes offline creados por API/import
+  def password_required?
+    return false if offline_customer?
+    super
+  end
+
   private
 
     def check_dependencies
