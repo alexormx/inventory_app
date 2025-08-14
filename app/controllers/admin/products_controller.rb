@@ -175,6 +175,7 @@ class Admin::ProductsController < ApplicationController
     params.require(:product).permit(
       :product_sku,
       :barcode,
+  :supplier_product_code,
       :brand,
       :category,
       :description,

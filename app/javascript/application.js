@@ -13,6 +13,9 @@ for (const name in controllers) {
 import CartItemController from "./controllers/cart_item_controller"
 application.register("cart-item", CartItemController)
 
+import KvEditorController from "./controllers/kv_editor_controller"
+application.register("kv-editor", KvEditorController)
+
 import "custom/menu"
 import "custom/toggle_inventory_items"
 import "custom/payment_modal"
