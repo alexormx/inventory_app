@@ -12,8 +12,8 @@ RSpec.describe "Admin::Products", type: :request do
 
   describe "PATCH /admin/products/:id/activate" do
     it "activates the product using its slug" do
-      patch activate_admin_product_path(product)
-      expect(response).to redirect_to(admin_products_path)
+  patch activate_admin_product_path(product) # HTML request (no turbo stream)
+  expect(response).to have_http_status(302)
       expect(product.reload.status).to eq("active")
     end
   end

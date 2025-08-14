@@ -1,0 +1,57 @@
+<div class="card shadow-sm mb-3 h-100 product-card">
+  <div class="card-body">
+    <div class="d-flex align-items-center mb-2">
+      <% if product.product_images.attached? %>
+        <%= image_tag product.product_images.first.variant(resize_to_fill: [64, 64]), class: "img-thumbnail me-2" %>
+      <% else %>
+        <%= image_tag "placeholder.png", class: "img-thumbnail me-2", size: "64x64" %>
+      <% end %>
+      <div>
+        <strong class="product-title line-clamp-1"><%= product.product_name %></strong><br>
+        <span class="text-muted">SKU: <%= product.product_sku %></span>
+        <% if product.supplier_product_code.present? %>
+          <span class="text-muted ms-2">SPC: <%= product.supplier_product_code %></span>
+        <% end %>
+      </div>
+    </div>
+    <div class="mb-1 product-desc line-clamp-3">
+      <%= product.description %>
+    </div>
+  <div class="mb-2 text-muted small">
+      <% purchased = (product.respond_to?(:total_purchase_quantity) && product.total_purchase_quantity).to_i %>
+      <% sold      = (product.respond_to?(:total_units_sold) && product.total_units_sold).to_i.presence || (product.respond_to?(:total_sales_quantity) && product.total_sales_quantity).to_i %>
+      <% stock_on_hand = product.inventories.available.count %>
+      <span>Comprado: <strong><%= purchased %></strong></span>
+      ·
+      <span>Vendido: <strong><%= sold %></strong></span>
+      ·
+      <span>Stock: <strong><%= stock_on_hand %></strong></span>
+    </div>
+    <%= turbo_frame_tag "product_badge_#{product.id}" do %>
+      <%= render partial: 'status_badge', locals: { product: product } %>
+    <% end %>
+    <div class="d-flex justify-content-between align-items-center gap-2">
+      <div>
+        <%= turbo_frame_tag "product_actions_#{product.id}" do %>
+          <%= render partial: 'status_actions', locals: { product: product, current_tab: (local_assigns[:current_tab] || params[:source_tab]) } %>
+        <% end %>
+      </div>
+
+      <%# Acciones CRUD %>
+      <div class="d-flex justify-content-end gap-2">
+      <%= link_to admin_product_path(product), class: "btn btn-sm btn-outline-success", title: "View" do %>
+        <i class="fa-solid fa-eye"></i>
+      <% end %>
+      <%= link_to edit_admin_product_path(product), class: "btn btn-sm btn-outline-primary", title: "Edit" do %>
+        <i class="fas fa-edit"></i>
+      <% end %>
+      <%= link_to admin_product_path(product), data: { turbo_confirm: "Are you sure?", turbo_method: :delete }, class: "btn btn-sm btn-outline-danger", title: "Delete" do %>
+        <i class="fa-solid fa-trash"></i>
+      <% end %>
+      <% if local_assigns[:extra_actions] %>
+        <%= extra_actions %>
+      <% end %>
+      </div>
+    </div>
+  </div>
+</div>

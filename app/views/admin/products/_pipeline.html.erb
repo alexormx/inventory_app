@@ -1,0 +1,10 @@
+<div class="mb-4">
+  <ul class="nav nav-tabs">
+    <% counts = local_assigns[:counts] || {} %>
+    <%= render partial: 'nav_tab', locals: { name: "Drafts (#{counts[:draft] || 0})", path: admin_products_drafts_path, active: (local_assigns[:current_tab].to_s == 'draft'), frame_id: 'products_frame' } %>
+    <%= render partial: 'nav_tab', locals: { name: "Active (#{counts[:active] || 0})", path: admin_products_active_path, active: (local_assigns[:current_tab].to_s == 'active'), frame_id: 'products_frame' } %>
+    <%= render partial: 'nav_tab', locals: { name: "Inactive (#{counts[:inactive] || 0})", path: admin_products_inactive_path, active: (local_assigns[:current_tab].to_s == 'inactive'), frame_id: 'products_frame' } %>
+  </ul>
+</div>
+
+  <%= render partial: 'products_section', locals: { products: local_assigns[:products], current_tab: local_assigns[:current_tab] } %>

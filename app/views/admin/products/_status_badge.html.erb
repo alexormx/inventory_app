@@ -1,0 +1,22 @@
+<%# Muestra badge de estado + precio y medidas/peso %>
+<div class="mb-2 d-flex align-items-center gap-2 flex-wrap">
+  <% status_class = case product.status
+     when 'active' then 'bg-primary'
+     when 'inactive' then 'bg-danger'
+     else 'bg-warning'
+     end %>
+  <span class="badge <%= status_class %>">Status: <%= product.status %></span>
+  <span class="badge bg-info">Price: <%= number_to_currency(product.selling_price, precision: 2) %></span>
+  <% if product.length_cm.present? || product.width_cm.present? || product.height_cm.present? || product.weight_gr.present? %>
+    <span class="badge bg-secondary">
+      <%= [
+            ("#{product.length_cm}cm" if product.length_cm.present?),
+            ("#{product.width_cm}cm" if product.width_cm.present?),
+            ("#{product.height_cm}cm" if product.height_cm.present?)
+          ].compact.join(' x ') %>
+      <% if product.weight_gr.present? %>
+        , <%= product.weight_gr %>g
+      <% end %>
+    </span>
+  <% end %>
+</div>

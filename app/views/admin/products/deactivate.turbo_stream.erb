@@ -1,0 +1,5 @@
+<%= turbo_stream.replace "products_frame" do %>
+	<turbo-frame id="products_frame">
+		<%= render partial: "admin/products/pipeline", locals: { products: @products, current_tab: (params[:source_tab] || 'inactive'), counts: @counts } %>
+	</turbo-frame>
+<% end %>

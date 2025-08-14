@@ -1,0 +1,5 @@
+<li class="nav-item">
+  <%= link_to name, path,
+      class: "nav-link#{active ? ' active' : ''}",
+      data: { turbo: true, turbo_frame: (local_assigns[:frame_id] || 'products_frame') } %>
+</li>

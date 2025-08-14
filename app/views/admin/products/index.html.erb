@@ -1,63 +1,7 @@
-<h1 class="h5 mb-3">Admin - Products</h1>
+<h1 class="h5 mb-3">Admin - Product Pipeline</h1>
 <%= link_to "New Product", new_admin_product_path, class: "btn btn-primary mb-3" %>
 
-<table class="table table-sm table-hover align-middle">
-  <thead class="table-light">
-    <tr>
-      <th>Image</th>
-      <th>SKU</th>
-      <th>Name</th>
-      <th>Price</th>
-      <th>Stock</th>
-      <th>Status</th>
-      <th>Weight (g)</th>
-      <th>Length (cm)</th>
-      <th>Width (cm)</th>
-      <th>Height (cm)</th>
-      <th class="text-end">Actions</th>
-    </tr>
-  </thead>
-  <tbody>
-    <% @products.each do |product| %>
-      <tr>
-        <td style="width: 80px;">
-          <% if product.product_images.attached? %>
-            <%= image_tag product.product_images.first.variant(resize_to_fill: [48, 48]), class: "img-thumbnail" %>
-          <% else %>
-            <%= image_tag "placeholder.png", class: "img-thumbnail", size: "58x58" %>
-          <% end %>
-        </td>
-        <td><%= product.product_sku %></td>
-        <td><%= product.product_name %></td>
-        <td><%= number_to_currency(product.selling_price, precision: 2) %></td>
-        <td><%= product.inventories.available.count %></td>
-        <td>
-          <turbo-frame id="product_toggle_<%= product.id %>">
-            <%= render partial: "toggle", locals: { product: product } %>
-          </turbo-frame>
-        </td>
-        <td><%= product.weight_gr %></td>
-        <td><%= product.length_cm %></td>
-        <td><%= product.width_cm %></td>
-        <td><%= product.height_cm %></td>
-        <td class="text-end">
-          <%= link_to admin_product_path(product), class: "btn btn-sm btn-outline-success me-1", title: "View" do %>
-            <i class="fa-solid fa-eye"></i>
-          <% end %>
-          <%= link_to edit_admin_product_path(product), class: "btn btn-sm btn-outline-primary me-1", title: "Edit" do %>
-            <i class="fas fa-edit"></i>
-          <% end %>
-          <%= link_to admin_product_path(product),
-                      data: { turbo_confirm: "Are you sure?", turbo_method: :delete },
-                      class: "btn btn-sm btn-outline-danger",
-                      title: "Delete" do %>
-            <i class="fa-solid fa-trash"></i>
-          <% end %>
-        </td>
-      </tr>
-    <% end %>
-  </tbody>
-</table>
-<div class="d-flex justify-content-center mt-4">
-  <%= paginate @products %>
-</div>
+<turbo-frame id="products_frame">
+  <%= render partial: 'pipeline', locals: { products: @products, current_tab: 'active', counts: @counts } %>
+  
+</turbo-frame>

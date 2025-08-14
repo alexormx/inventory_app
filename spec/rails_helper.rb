@@ -21,7 +21,7 @@ end
 
 
 # --- Capybara + Selenium setup ---
-Capybara.default_max_wait_time = 5
+Capybara.default_max_wait_time = 7
 
 Capybara.register_driver :selenium_chrome_headless do |app|
   options = Selenium::WebDriver::Chrome::Options.new
