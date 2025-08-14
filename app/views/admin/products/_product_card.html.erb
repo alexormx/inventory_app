@@ -39,13 +39,13 @@
 
       <%# Acciones CRUD %>
       <div class="d-flex justify-content-end gap-2">
-      <%= link_to admin_product_path(product), class: "btn btn-sm btn-outline-success", title: "View" do %>
+  <%= link_to admin_product_path(product), class: "btn btn-sm btn-outline-success", title: "View", data: { turbo_frame: "_top" } do %>
         <i class="fa-solid fa-eye"></i>
       <% end %>
-      <%= link_to edit_admin_product_path(product), class: "btn btn-sm btn-outline-primary", title: "Edit" do %>
+  <%= link_to edit_admin_product_path(product), class: "btn btn-sm btn-outline-primary", title: "Edit", data: { turbo_frame: "_top" } do %>
         <i class="fas fa-edit"></i>
       <% end %>
-      <%= link_to admin_product_path(product), data: { turbo_confirm: "Are you sure?", turbo_method: :delete }, class: "btn btn-sm btn-outline-danger", title: "Delete" do %>
+  <%= link_to admin_product_path(product), data: { turbo_confirm: "Are you sure?", turbo_method: :delete, turbo_frame: "_top" }, class: "btn btn-sm btn-outline-danger", title: "Delete" do %>
         <i class="fa-solid fa-trash"></i>
       <% end %>
       <% if local_assigns[:extra_actions] %>
