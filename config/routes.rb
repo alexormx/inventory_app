@@ -106,6 +106,8 @@ Rails.application.routes.draw do
     namespace :v1 do
       resources :products, only: [:create]
       get 'products/exists', to: 'products#exists'
+      resources :users, only: [:create]
+      get 'users/exists', to: 'users#exists'
     end
   end
 
