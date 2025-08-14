@@ -15,6 +15,11 @@
   </div>
 
   <div class="col-md-3">
+    <%= f.label :supplier_product_code, "Supplier Product Code" %>
+    <%= f.text_field :supplier_product_code, class: "form-control" %>
+  </div>
+
+  <div class="col-md-3">
     <%= f.label :brand %>
     <%= f.text_field :brand, class: "form-control" %>
   </div>
@@ -120,9 +125,24 @@
     </div>
   <% end %>
 
-  <div class="col-md-12">
-    <%= f.label :custom_attributes %>
-    <%= f.text_area :custom_attributes, class: "form-control", rows: 2, placeholder: "JSON or key-value string (for now)" %>
+  <div class="col-md-12" data-controller="kv-editor"
+       data-kv-editor-initial-value-value='<%= (@product.parsed_custom_attributes || {}).to_json %>'>
+    <%= f.label :custom_attributes, "Custom attributes" %>
+    <div class="table-responsive">
+      <table class="table table-sm align-middle mb-2">
+        <thead>
+          <tr>
+            <th style="width: 35%">Key</th>
+            <th>Value</th>
+            <th style="width: 60px"></th>
+          </tr>
+        </thead>
+        <tbody data-kv-editor-target="rows"></tbody>
+      </table>
+    </div>
+    <button type="button" class="btn btn-outline-primary btn-sm" data-action="kv-editor#addRow">Agregar atributo</button>
+    <%= f.hidden_field :custom_attributes, value: (@product.parsed_custom_attributes || {}).to_json, data: { kv_editor_target: "hidden" } %>
+    <small class="text-muted d-block mt-1">Se guardará como JSON. Las claves se normalizan en minúsculas.</small>
   </div>
 
   <div class="col-12">
