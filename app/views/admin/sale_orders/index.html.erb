@@ -1,6 +1,17 @@
-<h1 class="h4 mb-4">Sales Orders</h1>
+<h1 class="h4 mb-2">Sales Orders</h1>
 
-<%= link_to "New Sale Order", new_admin_sale_order_path, class: "btn btn-primary mb-3" %>
+<%= render partial: "admin/shared/status_counters", locals: {
+  counts: @counts,
+  items: [
+    ["Pending",   "Pending",   "bg-warning text-dark"],
+    ["Confirmed", "Confirmed", "bg-info"],
+    ["Shipped",   "Shipped",   "bg-primary"],
+    ["Delivered", "Delivered", "bg-success"],
+    ["Canceled",  "Canceled",  "bg-danger"],
+  ],
+  cta_label: "New Sale Order",
+  cta_path: new_admin_sale_order_path
+} %>
 
 <table class="table table-sm table-hover align-middle">
   <thead class="table-light">
@@ -47,3 +58,7 @@
     <% end %>
   </tbody>
 </table>
+
+<div class="d-flex justify-content-center mt-3">
+  <%= paginate @sale_orders %>
+  </div>

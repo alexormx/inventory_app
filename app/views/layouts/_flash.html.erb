@@ -1,4 +1,4 @@
-<div class="container mt-3" id="flash">
+<div class="px-3 mt-3" id="flash">
   <% flash.each do |key, message| %>
     <div class="alert <%= bootstrap_class_for(key) %> alert-dismissible fade show flash-message" role="alert">
       <%= message %>

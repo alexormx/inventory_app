@@ -1,0 +1,3 @@
+<%= turbo_stream.update 'users_frame' do %>
+  <%= render partial: 'admin/users/pipeline', locals: { users: @users, current_tab: 'admins', counts: @counts, purchase_stats: @purchase_stats, sales_stats: @sales_stats, last_visits: @last_visits } %>
+<% end %>

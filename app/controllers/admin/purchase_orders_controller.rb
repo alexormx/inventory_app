@@ -2,9 +2,12 @@ class Admin::PurchaseOrdersController < ApplicationController
   before_action :authenticate_user!
   before_action :authorize_admin!
   before_action :set_purchase_order, only: [:show, :edit, :update, :confirm_receipt, :destroy]
+  before_action :load_counts, only: [:index]
+
+  PER_PAGE = 20
 
   def index
-    @purchase_orders = PurchaseOrder.all
+    @purchase_orders = PurchaseOrder.order(created_at: :desc).page(params[:page]).per(PER_PAGE)
   end
 
   def show
@@ -78,5 +81,9 @@ class Admin::PurchaseOrdersController < ApplicationController
       :unit_additional_cost, :unit_compose_cost, :unit_compose_cost_in_mxn, :total_line_cost, :total_line_volume,
       :total_line_weight, :total_line_cost_in_mxn, :_destroy]
     )
+  end
+
+  def load_counts
+    @counts = PurchaseOrder.group(:status).count
   end
 end

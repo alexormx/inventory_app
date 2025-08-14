@@ -4,7 +4,17 @@ class Admin::AdminsController < ApplicationController
   before_action :set_admin, only: [:edit, :update]
 
   def index
-    @admins = User.where(role: "admin").order(created_at: :desc)
+    @admins = User.where(role: "admin").order(created_at: :desc).page(params[:page]).per(20)
+    user_ids = @admins.map(&:id)
+    @purchase_stats = PurchaseOrder.where(user_id: user_ids)
+      .group(:user_id)
+      .pluck(:user_id, Arel.sql("SUM(total_cost_mxn) AS total_value"), Arel.sql("MAX(order_date) AS last_date"))
+      .to_h.transform_values { |v| { total_value: v[0], last_date: v[1] } }
+    @sales_stats = SaleOrder.where(user_id: user_ids)
+      .group(:user_id)
+      .pluck(:user_id, Arel.sql("SUM(total_order_value) AS total_value"), Arel.sql("MAX(order_date) AS last_date"))
+      .to_h.transform_values { |v| { total_value: v[0], last_date: v[1] } }
+    @last_visits = VisitorLog.where(user_id: user_ids).group(:user_id).maximum(:last_visited_at)
   end
 
   def new

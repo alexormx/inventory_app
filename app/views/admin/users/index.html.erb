@@ -1,26 +1,14 @@
-<h1 class="h5 mb-3">Admin - Users</h1>
-<table class="table table-sm table-hover align-middle">
-  <thead>
-    <tr>
-      <th>Name</th>
-      <th>Email</th>
-      <th>Role</th>
-      <th>Actions</th>
-    </tr>
-  </thead>
-  <tbody>
-    <% @users.each do |user| %>
-      <tr>
-        <td><%= user.name %></td>
-        <td><%= user.email %></td>
-        <td><%= user.role %></td>
-        <td>
-          <%= link_to admin_user_path(user), class: "small text-success", title: "View" do %>
-            <i class="fa-solid fa-eye"></i>
-            View
-          <% end %>
-        </td>
-      </tr>
-    <% end %>
-  </tbody>
-</table>
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <h1 class="h5 mb-0">Users</h1>
+  <div class="small text-muted">
+    Customers: <strong><%= @counts[:customers] %></strong>
+    • Suppliers: <strong><%= @counts[:suppliers] %></strong>
+    • Admins: <strong><%= @counts[:admins] %></strong>
+  </div>
+  <%= link_to "New User", new_admin_user_path, class: "btn btn-primary btn-sm" %>
+</div>
+
+<turbo-frame id="users_frame">
+  <%= render partial: 'admin/users/pipeline', locals: { users: @users, current_tab: 'customers', counts: @counts, purchase_stats: @purchase_stats, sales_stats: @sales_stats, last_visits: @last_visits } %>
+  
+</turbo-frame>

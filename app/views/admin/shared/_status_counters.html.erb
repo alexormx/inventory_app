@@ -1,0 +1,34 @@
+<%#
+  Reusable status counters bar
+  Locals:
+    - wrapper_id: optional id attribute for the outer div (e.g., "products_counts")
+    - counts: Hash of counts by status (keys can be strings or symbols)
+    - items: Array of items where each item is [key, label, css]
+            key: symbol/string used to look up in counts
+            label: text to display in the badge
+            css: bootstrap badge classes
+    - cta_label: optional string for a button label (e.g., "New ...")
+    - cta_path: optional path helper for the CTA button
+    - extra_class: optional string with extra classes for the wrapper div
+%>
+<% counts ||= {} %>
+<% items ||= [] %>
+<% fetch = ->(k, lbl) do
+     counts[k] || counts[k.to_s] || counts[k.to_sym] ||
+     counts[lbl] || counts[lbl.to_s] || counts[lbl.to_sym] || 0
+   end %>
+
+<% total = items.sum { |k, lbl, _css| fetch.call(k, lbl) } %>
+
+<div<%= " id=\"#{wrapper_id}\"" if local_assigns[:wrapper_id].present? %> class="d-flex flex-wrap align-items-center gap-2 mb-3 <%= local_assigns[:extra_class] %>">
+  <span class="badge bg-dark">Total: <%= total %></span>
+  <% items.each do |k, lbl, css| %>
+    <span class="badge <%= css %>"><%= lbl %>: <%= fetch.call(k, lbl) %></span>
+  <% end %>
+
+  <% if local_assigns[:cta_label].present? && local_assigns[:cta_path].present? %>
+    <div class="ms-auto">
+      <%= link_to cta_label, cta_path, class: "btn btn-primary" %>
+    </div>
+  <% end %>
+</div>

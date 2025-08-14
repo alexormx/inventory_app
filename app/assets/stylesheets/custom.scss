@@ -150,6 +150,14 @@ dialog.modal-dialog-centered {
 }
 
 /* Sidebar */
+
+aside#sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  align-self: flex-start;
+}
 #sidebar.sidebar-collapsed {
   width: 60px !important;
 }

@@ -45,12 +45,10 @@ Rails.application.routes.draw do
       end
     end
 
-    # Customer Management
-    resources :customers
-
-    # Supplier & Admin User Management
-    resources :suppliers, only: [:index, :new, :create, :edit, :update]
-    resources :admins, only: [:index, :new, :create, :edit, :update]
+  # Deprecated standalone User Management (migrated to unified Users tabs)
+  # resources :customers
+  # resources :suppliers, only: [:index, :new, :create, :edit, :update]
+  # resources :admins,   only: [:index, :new, :create, :edit, :update]
 
     # Purchase Orders
     resources :purchase_orders do
@@ -61,8 +59,14 @@ Rails.application.routes.draw do
     resources :reports, only: [:index]
     resources :settings, only: [:index]
 
-    # General user management (admin-facing)
-    resources :users
+    # General user management (admin-facing) con tabs
+  resources :users, only: [:index, :new, :create, :edit, :update] do
+      collection do
+        get :customers
+        get :suppliers
+        get :admins
+      end
+    end
 
     # Payments Management
     resources :payments, only: [:create]

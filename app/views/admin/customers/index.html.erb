@@ -4,7 +4,10 @@
     users: @customers,
     new_path: new_admin_customer_path,
     edit_path: ->(user) { edit_admin_customer_path(user) },
-    include_offline_column: true %>
+    include_offline_column: true,
+    purchase_stats: @purchase_stats,
+    sales_stats: @sales_stats,
+    last_visits: @last_visits %>
 <% else %>
   <p>No customers found.</p>
 <% end %>

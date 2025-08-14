@@ -1,0 +1,4 @@
+<turbo-frame id="users_frame">
+  <%= render partial: 'admin/users/pipeline', locals: { users: @users, current_tab: 'customers', counts: @counts, purchase_stats: @purchase_stats, sales_stats: @sales_stats, last_visits: @last_visits } %>
+  
+</turbo-frame>

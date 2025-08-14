@@ -4,7 +4,16 @@ class Admin::CustomersController < ApplicationController
   before_action :set_customer, only: [:edit, :update]
 
   def index
-    @customers = User.where(role: "customer")
+    @customers = User.where(role: "customer").order(created_at: :desc).page(params[:page]).per(20)
+    @purchase_stats = PurchaseOrder.where(user_id: @customers.map(&:id))
+      .group(:user_id)
+  .pluck(:user_id, Arel.sql("SUM(total_cost_mxn) AS total_value"), Arel.sql("MAX(order_date) AS last_date"))
+      .to_h.transform_values { |v| { total_value: v[0], last_date: v[1] } }
+    @sales_stats = SaleOrder.where(user_id: @customers.map(&:id))
+      .group(:user_id)
+      .pluck(:user_id, Arel.sql("SUM(total_order_value) AS total_value"), Arel.sql("MAX(order_date) AS last_date"))
+      .to_h.transform_values { |v| { total_value: v[0], last_date: v[1] } }
+    @last_visits = VisitorLog.where(user_id: @customers.map(&:id)).group(:user_id).maximum(:last_visited_at)
   end
 
   def new

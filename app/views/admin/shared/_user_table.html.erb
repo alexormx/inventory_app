@@ -1,37 +1,83 @@
-<h1 class="h5 mb-3"><%= title %></h1>
+<%# locals: title:, users:, new_path:, edit_path:, include_offline_column:, purchase_stats: {}, sales_stats: {}, last_visits: {} %>
+<% purchase_stats ||= {} %>
+<% sales_stats ||= {} %>
+<% last_visits ||= {} %>
 
-<%= link_to "Add #{title.singularize}", new_path, class: "btn btn-primary mb-3" %>
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="h5 mb-0"><%= title %></h2>
+  <% if new_path.present? %>
+    <%= link_to "New", new_path, class: "btn btn-primary btn-sm" %>
+  <% end %>
+  
+</div>
 
-<table class="table table-sm table-hover align-middle">
-  <thead>
-    <tr>
-      <th>Name</th>
-      <th>Email</th>
-      <% if include_offline_column %>
-        <th>Offline?</th>
-      <% end %>
-      <th>Created</th>
-      <th></th>
-    </tr>
-  </thead>
-  <tbody>
-    <% users.each do |user| %>
+<div class="table-responsive">
+  <table class="table table-sm table-hover align-middle">
+    <thead>
       <tr>
-        <td><%= user.name %></td>
-        <td><%= user.email.presence || "—" %></td>
-
+        <th>ID</th>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Phone</th>
+        <th>Role</th>
         <% if include_offline_column %>
-          <td><%= user.created_offline? ? "✅" : "❌" %></td>
+          <th>Offline</th>
         <% end %>
-
-        <td><%= l(user.created_at, format: :short) %></td>
-        <td>
-          <%= link_to edit_path.call(user), class: "small text-primary", title: "Edit" do %>
-            <i class="fas fa-edit"></i>
-            Edit
-          <% end %>
-        </td>
+        <th class="text-end">Total Purchases</th>
+        <th class="text-end">Total Sales</th>
+        <th>Last Visit</th>
+        <th>Last Purchase</th>
+        <th>Last Sale</th>
+        <th></th>
       </tr>
-    <% end %>
-  </tbody>
-</table>
+    </thead>
+    <tbody>
+      <% users.each do |u| %>
+        <% pstat = (purchase_stats || {})[u.id] || {} %>
+        <% sstat = (sales_stats || {})[u.id] || {} %>
+        <% last_visit = (last_visits || {})[u.id] %>
+        <tr>
+          <td class="text-muted"><%= u.id %></td>
+          <td><%= u.name %></td>
+          <td><%= u.email %></td>
+          <td><%= u.phone %></td>
+          <td><span class="badge text-bg-secondary"><%= u.role %></span></td>
+          <% if include_offline_column %>
+            <td>
+              <% if u.created_offline? %>
+                <span class="badge text-bg-warning">Yes</span>
+              <% else %>
+                <span class="badge text-bg-light">No</span>
+              <% end %>
+            </td>
+          <% end %>
+          <td class="text-end"><%= number_to_currency(pstat[:total_value] || 0) %></td>
+          <td class="text-end"><%= number_to_currency(sstat[:total_value] || 0) %></td>
+          <td>
+            <% lv = last_visit %>
+            <%= lv.is_a?(String) ? lv : lv&.strftime('%Y-%m-%d %H:%M') %>
+          </td>
+          <td>
+            <% ld = pstat[:last_date] %>
+            <%= ld.is_a?(String) ? ld : ld&.strftime('%Y-%m-%d') %>
+          </td>
+          <td>
+            <% sd = sstat[:last_date] %>
+            <%= sd.is_a?(String) ? sd : sd&.strftime('%Y-%m-%d') %>
+          </td>
+          <td class="text-end">
+            <% if edit_path %>
+              <%= link_to "Edit", edit_path.call(u), class: "btn btn-outline-secondary btn-sm", data: { turbo_frame: "_top" } %>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+
+<div class="d-flex justify-content-center">
+  <%= paginate users if users.respond_to?(:current_page) %>
+  
+</div>
+ 

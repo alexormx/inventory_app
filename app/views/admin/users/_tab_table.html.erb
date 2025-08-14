@@ -1,0 +1,10 @@
+<%# locals: users:, purchase_stats:, sales_stats:, last_visits:, include_offline_column: %>
+<%= render "admin/shared/user_table",
+  title: "",
+  users: users,
+  new_path: nil,
+  edit_path: ->(u) { edit_admin_user_path(u) },
+  include_offline_column: include_offline_column,
+  purchase_stats: purchase_stats,
+  sales_stats: sales_stats,
+  last_visits: last_visits %>

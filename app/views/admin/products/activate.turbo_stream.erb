@@ -3,3 +3,17 @@
     <%= render partial: "admin/products/pipeline", locals: { products: @products, current_tab: (params[:source_tab] || 'active'), counts: @counts } %>
   </turbo-frame>
 <% end %>
+
+<%= turbo_stream.update "products_counts" do %>
+  <%= render partial: "admin/shared/status_counters", locals: {
+    wrapper_id: "products_counts",
+    counts: @counts,
+    items: [
+      [:draft,    "Drafts",   "bg-secondary"],
+      [:active,   "Active",   "bg-success"],
+      [:inactive, "Inactive", "bg-danger"],
+    ],
+    cta_label: "New Product",
+    cta_path: new_admin_product_path
+  } %>
+<% end %>

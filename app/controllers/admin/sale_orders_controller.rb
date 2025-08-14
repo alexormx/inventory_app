@@ -3,9 +3,12 @@ class Admin::SaleOrdersController < ApplicationController
   before_action :authenticate_user!
   before_action :authorize_admin!
   before_action :set_sale_order, only: %i[show edit update destroy]
+  before_action :load_counts, only: [:index]
+
+  PER_PAGE = 20
 
   def index
-    @sale_orders = SaleOrder.includes(:user).order(created_at: :desc)
+    @sale_orders = SaleOrder.includes(:user).order(created_at: :desc).page(params[:page]).per(PER_PAGE)
   end
 
   def new
@@ -64,6 +67,10 @@ class Admin::SaleOrdersController < ApplicationController
         :total_line_weight, :_destroy
       ]
     )
+  end
+
+  def load_counts
+    @counts = SaleOrder.group(:status).count
   end
 end
 

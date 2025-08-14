@@ -1,0 +1,15 @@
+<div class="mb-4">
+  <ul class="nav nav-tabs">
+    <% counts = local_assigns[:counts] || {} %>
+    <%= render partial: 'nav_tab', locals: { name: "Customers (#{counts[:customers] || 0})", path: customers_admin_users_path, active: (local_assigns[:current_tab].to_s == 'customers'), frame_id: 'users_frame' } %>
+    <%= render partial: 'nav_tab', locals: { name: "Suppliers (#{counts[:suppliers] || 0})", path: suppliers_admin_users_path, active: (local_assigns[:current_tab].to_s == 'suppliers'), frame_id: 'users_frame' } %>
+    <%= render partial: 'nav_tab', locals: { name: "Admins (#{counts[:admins] || 0})", path: admins_admin_users_path, active: (local_assigns[:current_tab].to_s == 'admins'), frame_id: 'users_frame' } %>
+  </ul>
+</div>
+
+<%= render 'admin/users/tab_table',
+  users: local_assigns[:users],
+  purchase_stats: local_assigns[:purchase_stats],
+  sales_stats: local_assigns[:sales_stats],
+  last_visits: local_assigns[:last_visits],
+  include_offline_column: (local_assigns[:current_tab].to_s == 'customers') %>

@@ -8,6 +8,8 @@ class Admin::InventoryController < ApplicationController
         .left_outer_joins(:inventories)
         .includes(inventories: :purchase_order)
         .distinct
+        .order(created_at: :desc)
+        .page(params[:page]).per(15)
   end
 
   def items

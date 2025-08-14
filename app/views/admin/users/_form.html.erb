@@ -1,0 +1,45 @@
+<%# Admin::Users form %>
+<%= form_with model: [:admin, @user], local: true do |f| %>
+  <div class="card">
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-6">
+          <%= f.label :name, class: 'form-label' %>
+          <%= f.text_field :name, class: 'form-control' %>
+        </div>
+        <div class="col-md-6">
+          <%= f.label :email, class: 'form-label' %>
+          <%= f.email_field :email, class: 'form-control' %>
+        </div>
+        <div class="col-md-6">
+          <%= f.label :phone, class: 'form-label' %>
+          <%= f.text_field :phone, class: 'form-control' %>
+        </div>
+        <div class="col-md-6">
+          <%= f.label :role, class: 'form-label' %>
+          <%= f.select :role, [['Customer','customer'],['Supplier','supplier'],['Admin','admin']], {}, class: 'form-select' %>
+        </div>
+        <div class="col-md-6">
+          <%= f.label :discount_rate, 'Discount %', class: 'form-label' %>
+          <%= f.number_field :discount_rate, class: 'form-control', step: 0.01, min: 0, max: 100 %>
+        </div>
+        <div class="col-md-6 form-check mt-4">
+          <%= f.check_box :created_offline, class: 'form-check-input', id: 'user_created_offline' %>
+          <%= f.label :created_offline, 'Offline customer', class: 'form-check-label' %>
+        </div>
+        <div class="col-md-6">
+          <%= f.label :password, class: 'form-label' %>
+          <%= f.password_field :password, class: 'form-control', autocomplete: 'new-password' %>
+        </div>
+        <div class="col-md-6">
+          <%= f.label :password_confirmation, class: 'form-label' %>
+          <%= f.password_field :password_confirmation, class: 'form-control', autocomplete: 'new-password' %>
+        </div>
+      </div>
+    </div>
+    <div class="card-footer d-flex justify-content-end gap-2">
+      <%= link_to 'Cancel', admin_users_path, class: 'btn btn-outline-secondary' %>
+      <%= f.submit class: 'btn btn-primary' %>
+    </div>
+  </div>
+<% end %>
