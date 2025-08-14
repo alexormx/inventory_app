@@ -6,7 +6,7 @@ class Admin::ProductsController < ApplicationController
   before_action :fix_custom_attributes_param, only: [:create, :update]
 
   def index
-    @products = Product.all
+    @products = Product.order(created_at: :desc).page(params[:page]).per(10)
   end
 
   def new

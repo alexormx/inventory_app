@@ -29,8 +29,8 @@ class Api::V1::ProductsController < ApplicationController
   end
 
   def exists
-    sku = params[:sku].to_s.strip
-    exists = Product.exists?(product_sku: sku)
+    ws_code = params[:whatsapp_code].to_s.strip
+    exists = Product.exists?(whatsapp_code: ws_code)
     render json: { exists: exists }, status: :ok
   end
 
