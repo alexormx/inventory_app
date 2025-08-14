@@ -9,13 +9,17 @@ export default class extends Controller {
   }
 
   connect() {
-    // Bootstrap rows from initialValue
-    const entries = Object.entries(this.initialValueValue || {})
-    if (entries.length === 0) {
-      this.addRow()
-    } else {
-      entries.forEach(([k, v]) => this._appendRow(k, this._valueToString(v)))
+    // Bootstrap rows from initialValue, con expansión automática si viene un "raw" con JSON-like
+    let data = this.initialValueValue || {}
+    const keys = Object.keys(data)
+    if (keys.length === 1 && keys[0].toLowerCase() === "raw" && typeof data[keys[0]] === "string") {
+      const expanded = this._tryParseLooseObject(data[keys[0]])
+      if (expanded) data = expanded
     }
+
+    const entries = Object.entries(data)
+    if (entries.length === 0) this.addRow()
+    else entries.forEach(([k, v]) => this._appendRow(k, this._valueToString(v)))
     this.sync()
   }
 
@@ -56,7 +60,10 @@ export default class extends Controller {
         <input type="text" name="kv_val[]" class="form-control form-control-sm" placeholder="value" value="${this._escape(value)}" />
       </td>
       <td class="text-end">
-        <button type="button" class="btn btn-outline-danger btn-sm" data-action="kv-editor#removeRow">&times;</button>
+        <div class="btn-group btn-group-sm">
+          <button type="button" class="btn btn-outline-secondary" title="Expandir JSON" data-action="kv-editor#expandRow">⤢</button>
+          <button type="button" class="btn btn-outline-danger" data-action="kv-editor#removeRow">&times;</button>
+        </div>
       </td>
     `
     tr.querySelectorAll("input").forEach((input) => {
@@ -70,14 +77,8 @@ export default class extends Controller {
     event.preventDefault()
     const input = prompt("Pega JSON (objeto) para importar como filas:")
     if (!input) return
-    let obj
-    try {
-      obj = JSON.parse(input)
-    } catch (_e) {
-      alert("JSON inválido")
-      return
-    }
-    if (obj && typeof obj === "object" && !Array.isArray(obj)) {
+    const obj = this._tryParseLooseObject(input)
+    if (obj) {
       // limpiar filas actuales
       this.rowsTarget.innerHTML = ""
       Object.entries(obj).forEach(([k,v]) => this._appendRow(k, this._valueToString(v)))
@@ -85,6 +86,22 @@ export default class extends Controller {
     } else {
       alert("Se esperaba un objeto JSON (clave/valor)")
     }
+  }
+
+  expandRow(event) {
+    event.preventDefault()
+    const tr = event.currentTarget.closest("tr")
+    const keyInput = tr.querySelector('input[name="kv_key[]"]')
+    const valInput = tr.querySelector('input[name="kv_val[]"]')
+    const obj = this._tryParseLooseObject(valInput.value)
+    if (!obj) {
+      alert("El valor no es un objeto JSON válido")
+      return
+    }
+    // Reemplazar la fila por múltiples filas derivadas del objeto
+    tr.remove()
+    Object.entries(obj).forEach(([k, v]) => this._appendRow(k, this._valueToString(v)))
+    this.sync()
   }
 
   _valueToString(v) {
@@ -101,7 +118,13 @@ export default class extends Controller {
     // Try JSON first (object/array/number/bool/null)
     try {
       return JSON.parse(trimmed)
-    } catch (_) {}
+    } catch (_) {
+      // intentar con normalización laxa
+      try {
+        const normalized = this._normalizeLooseJson(trimmed)
+        if (normalized !== trimmed) return JSON.parse(normalized)
+      } catch (_) {}
+    }
 
     // Fallbacks: booleans and numbers
     const lower = trimmed.toLowerCase()
@@ -120,5 +143,46 @@ export default class extends Controller {
     return String(s).replace(/["&'<>]/g, (c) => {
       return ({ '"': '&quot;', "&": "&amp;", "'": "&#39;", "<": "&lt;", ">": "&gt;" })[c]
     })
+  }
+
+  // Helpers de parseo laxo (acepta Ruby-like con nil/=>/comillas simples)
+  _tryParseLooseObject(input) {
+    if (typeof input !== "string") return null
+    const txt = input.trim()
+    if (!this._looksLikeObject(txt)) return null
+    // intento 1: JSON directo
+    try {
+      const parsed = JSON.parse(txt)
+      return this._isPlainObject(parsed) ? parsed : null
+    } catch (_) {}
+    // intento 2: normalizado
+    try {
+      const normalized = this._normalizeLooseJson(txt)
+      const parsed = JSON.parse(normalized)
+      return this._isPlainObject(parsed) ? parsed : null
+    } catch (_) {
+      return null
+    }
+  }
+
+  _normalizeLooseJson(s) {
+    let t = s.trim()
+    // reemplazar => por :
+    t = t.replace(/=>/g, ":")
+    // convertir comillas simples a dobles (aproximado)
+    t = t.replace(/'/g, '"')
+    // nil -> null
+    t = t.replace(/\bnil\b/g, 'null')
+    // símbolos :key => "key" (aproximado)
+    t = t.replace(/:([a-zA-Z0-9_]+)/g, '"$1"')
+    return t
+  }
+
+  _looksLikeObject(s) {
+    return s.startsWith("{") && s.endsWith("}") && s.includes(":")
+  }
+
+  _isPlainObject(o) {
+    return !!o && typeof o === 'object' && !Array.isArray(o)
   }
 }
