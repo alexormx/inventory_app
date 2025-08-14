@@ -26,6 +26,10 @@ Rails.application.routes.draw do
     get 'dashboard', to: 'dashboard#index', as: :dashboard
 
     # Product Management
+    get 'products/drafts', to: 'products#drafts', as: :products_drafts
+    get 'products/active', to: 'products#active', as: :products_active
+    get 'products/inactive', to: 'products#inactive', as: :products_inactive
+
     resources :products do
       # Activar / Desactivar productos
       member do

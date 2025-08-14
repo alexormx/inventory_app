@@ -4,9 +4,13 @@ class Admin::ProductsController < ApplicationController
   before_action :authorize_admin!
   before_action :set_product, only: %i[show edit update destroy purge_image activate deactivate]
   before_action :fix_custom_attributes_param, only: [:create, :update]
+  before_action :load_counts, only: [:index, :drafts, :active, :inactive]
+
+  # Tamaño de página para listados en este controlador (cambiar aquí para afectar todas las vistas)
+  PER_PAGE = 9
 
   def index
-    @products = Product.order(created_at: :desc).page(params[:page]).per(10)
+  @products = Product.where(status: 'active').order(created_at: :desc).page(params[:page]).per(PER_PAGE)
   end
 
   def new
@@ -20,7 +24,6 @@ class Admin::ProductsController < ApplicationController
       redirect_to admin_products_path
     else
       flash.now[:alert] = "Error creating product."
-      puts @product.errors.full_messages.inspect # 👈 Add this line
       render :new
     end
   end
@@ -111,27 +114,57 @@ class Admin::ProductsController < ApplicationController
 
   def activate
 
-    @product.update(status: "active")
-    p @product.errors.inspect if @product.errors.any? # Debugging line
+  @product.update(status: "active")
 
     respond_to do |format|
-      format.turbo_stream
+      format.turbo_stream do
+        source_tab = params[:source_tab].presence || 'active'
+        @products = Product.where(status: source_tab).order(created_at: :desc).page(params[:page]).per(PER_PAGE)
+        load_counts
+      end
       format.html { redirect_to admin_products_path, notice: "Product activated" }
     end
   end
 
+
   def deactivate
-
     @product.update(status: "inactive")
-
     respond_to do |format|
-      format.turbo_stream
+      format.turbo_stream do
+        source_tab = params[:source_tab].presence || 'inactive'
+        @products = Product.where(status: source_tab).order(created_at: :desc).page(params[:page]).per(PER_PAGE)
+        load_counts
+      end
       format.html { redirect_to admin_products_path, notice: "Product deactivated" }
     end
   end
 
+  # --- Vistas por estado ---
+  def drafts
+    @products = Product.where(status: 'draft').order(created_at: :desc).page(params[:page]).per(PER_PAGE)
+  render :drafts, layout: false
+  end
+
+  def active
+    @products = Product.where(status: 'active').order(created_at: :desc).page(params[:page]).per(PER_PAGE)
+  render :active, layout: false
+  end
+
+  def inactive
+    @products = Product.where(status: 'inactive').order(created_at: :desc).page(params[:page]).per(PER_PAGE)
+  render :inactive, layout: false
+  end
+
 
   private
+
+  def load_counts
+    @counts = {
+      draft:   Product.where(status: 'draft').count,
+      active:  Product.where(status: 'active').count,
+      inactive: Product.where(status: 'inactive').count
+    }
+  end
 
   def fix_custom_attributes_param
     return unless params[:product].present?
