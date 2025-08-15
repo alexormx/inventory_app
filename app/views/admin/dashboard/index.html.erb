@@ -11,8 +11,8 @@
               <div class="card-header d-flex justify-content-between align-items-center">
                 <span><i class="fa-solid fa-globe"></i> Geographic Breakdown</span>
                 <div class="btn-group btn-group-sm" role="group" aria-label="map scope">
-                  <button class="btn btn-outline-secondary active" data-map-scope="world">World</button>
-                  <button class="btn btn-outline-secondary" data-map-scope="mexico">Mexico</button>
+                  <button type="button" class="btn btn-outline-secondary" data-map-scope="world">World</button>
+                  <button type="button" class="btn btn-outline-secondary active" data-map-scope="mexico">Mexico</button>
                 </div>
               </div>
               <div class="card-body">
@@ -346,12 +346,17 @@
       };
 
       const render = async (scope) => {
-        const ok = await ensureMap(scope);
-        const mapName = resolveMapName(scope);
+        let ok = await ensureMap(scope);
+        let mapName = resolveMapName(scope);
         if (!ok || !mapName) {
-          console.warn('Map not available; aborting render');
-          geoEl.innerHTML = '<div class="text-muted">Map data unavailable</div>';
-          return;
+          // Fallback to world map to avoid blank panel
+          ok = await ensureMap('world');
+          mapName = resolveMapName('world');
+          if (!ok || !mapName) {
+            console.warn('Map not available; aborting render');
+            geoEl.innerHTML = '<div class="text-muted">Map data unavailable</div>';
+            return;
+          }
         }
         const seriesData = (data.visits || []).map(d => ({ name: d.name, value: d.value }));
         chart.setOption({
@@ -368,11 +373,14 @@
         });
       };
 
-      // initial
-      render('world');
+  // initial: use active button scope, default to 'mexico'
+  const activeBtn = document.querySelector('[data-map-scope].active');
+  const initialScope = activeBtn ? activeBtn.getAttribute('data-map-scope') : 'mexico';
+  render(initialScope);
       // toggle buttons
       document.querySelectorAll('[data-map-scope]').forEach(btn => {
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
           document.querySelectorAll('[data-map-scope]').forEach(b => b.classList.remove('active'));
           btn.classList.add('active');
           render(btn.getAttribute('data-map-scope'));
