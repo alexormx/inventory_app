@@ -1,5 +1,59 @@
-<h1 class="h4 mb-2">Sales Orders</h1>
+<h2 class="mb-3 d-flex align-items-center gap-2"><i class="fa fa-shopping-cart"></i> Sales Orders</h2>
 
+<%= render partial: "admin/shared/status_counters", locals: {
+  counts: @counts_global,
+  items: [
+    ["Pending",   "Pending",   "bg-warning text-dark"],
+    ["Confirmed", "Confirmed", "bg-info"],
+    ["Shipped",   "Shipped",   "bg-primary"],
+    ["Delivered", "Delivered", "bg-success"],
+    ["Canceled",  "Canceled",  "bg-danger"],
+  ],
+  title: "Resumen",
+  cta_label: "New Sale Order",
+  cta_path: new_admin_sale_order_path
+} %>
+
+<%# Barra de búsqueda + filtros por estatus (estilo Inventario) %>
+<div class="card mb-4">
+  <div class="card-body py-2">
+    <%= form_with url: admin_sale_orders_path, method: :get, local: true, class: "row g-2 align-items-center" do %>
+      <div class="col-12 col-md-6">
+        <div class="input-group input-group-sm">
+          <%= text_field_tag :q, @q, class: "form-control", placeholder: "Buscar por ID o cliente…", aria: { label: "Buscar sale orders" } %>
+          <button class="btn btn-outline-secondary btn-clear-search" type="button" title="Limpiar búsqueda">Limpiar</button>
+          <button class="btn btn-primary" type="submit" name="commit" value="search" title="Buscar">Buscar</button>
+        </div>
+      </div>
+      <div class="col-12 col-md-6 text-md-end">
+        <% current_status = @status_filter.presence || "all" %>
+        <% outline_for = ->(s) do
+             case s
+             when "Pending" then "warning text-dark"
+             when "Confirmed" then "info"
+             when "Shipped" then "primary"
+             when "Delivered" then "success"
+             when "Canceled" then "danger"
+             else "secondary"
+             end
+           end %>
+        <% btnc = ->(s, cur) { ["btn", "btn-outline-#{outline_for.call(s)}", (cur == s ? "active" : nil)].compact.join(" ") } %>
+        <div class="btn-group btn-group-sm me-2" role="group" aria-label="Filtro de status">
+          <%= button_tag "Todos", name: :status, value: "all", class: btnc.call("all", current_status) %>
+          <%= button_tag "Pending", name: :status, value: "Pending", class: btnc.call("Pending", current_status) %>
+          <%= button_tag "Confirmed", name: :status, value: "Confirmed", class: btnc.call("Confirmed", current_status) %>
+          <%= button_tag "Shipped", name: :status, value: "Shipped", class: btnc.call("Shipped", current_status) %>
+          <%= button_tag "Delivered", name: :status, value: "Delivered", class: btnc.call("Delivered", current_status) %>
+          <%= button_tag "Canceled", name: :status, value: "Canceled", class: btnc.call("Canceled", current_status) %>
+        </div>
+        <%= hidden_field_tag :current_status, current_status %>
+        <%= link_to "Limpiar filtros", admin_sale_orders_path, class: "btn btn-sm btn-outline-secondary ms-2", title: "Quitar búsqueda y status" %>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<%# Contadores inferiores dependientes de búsqueda+filtro (ocultando ceros) %>
 <%= render partial: "admin/shared/status_counters", locals: {
   counts: @counts,
   items: [
@@ -9,8 +63,9 @@
     ["Delivered", "Delivered", "bg-success"],
     ["Canceled",  "Canceled",  "bg-danger"],
   ],
-  cta_label: "New Sale Order",
-  cta_path: new_admin_sale_order_path
+  hide_zero: true,
+  extra_class: "mb-2",
+  title: "Resultados"
 } %>
 
 <table class="table table-sm table-hover align-middle">
@@ -29,7 +84,7 @@
     <% @sale_orders.each do |so| %>
       <tr>
         <td><%= so.id %></td>
-        <td><%= so.user&.name || "—" %></td>
+  <td><%= so.user&.name || "—" %></td>
         <td><%= l(so.order_date, format: :short) %></td>
         <td>
           <span class="badge <%= status_badge_class(so.status) %>">

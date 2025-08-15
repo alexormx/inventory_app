@@ -9,6 +9,17 @@
   <%= favicon_link_tag 'favicon.svg', type: 'image/svg+xml' %>
   <link rel="apple-touch-icon" href="/favicon.ico">
 
+  <!-- No-flash sidebar state: apply class ASAP based on localStorage -->
+  <script>
+    (function() {
+      try {
+        if (localStorage.getItem('sidebar-collapsed') === 'true') {
+          document.documentElement.classList.add('sidebar-collapsed');
+        }
+      } catch (_) { /* ignore */ }
+    })();
+  </script>
+
   <!-- Styles & Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-d9hj8..." crossorigin="anonymous" referrerpolicy="no-referrer" />
   <%= stylesheet_link_tag "application", media: "all", "data-turbo-track": "reload" %>
@@ -22,7 +33,7 @@
     <div class="row">
 
       <!-- Sidebar -->
-      <aside id="sidebar" class="col-auto col-md-3 col-lg-2 bg-dark text-white p-0 sidebar-expanded transition border-end">
+  <aside id="sidebar" class="col-auto col-md-3 col-lg-2 bg-dark text-white p-0 border-end">
         <%= render "admin/partials/sidebar" %>
       </aside>
 

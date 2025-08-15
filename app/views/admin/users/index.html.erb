@@ -1,14 +1,76 @@
 <div class="d-flex align-items-center justify-content-between mb-3">
-  <h1 class="h5 mb-0">Users</h1>
-  <div class="small text-muted">
-    Customers: <strong><%= @counts[:customers] %></strong>
-    • Suppliers: <strong><%= @counts[:suppliers] %></strong>
-    • Admins: <strong><%= @counts[:admins] %></strong>
-  </div>
+  <h2 class="mb-0 d-flex align-items-center gap-2"><i class="fa fa-users"></i> Users</h2>
   <%= link_to "New User", new_admin_user_path, class: "btn btn-primary btn-sm" %>
+  </div>
+
+<%# Contadores superiores (globales, no cambian con filtros) %>
+<%= render partial: "admin/shared/status_counters", locals: {
+  counts: @role_counts_global,
+  items: [
+    [:customers, "Customers", "bg-success"],
+    [:suppliers, "Suppliers", "bg-primary"],
+    [:admins,    "Admins",    "bg-secondary"],
+  ],
+  extra_class: "mb-2",
+  title: "Resumen"
+} %>
+
+<%# Barra de búsqueda + filtros por rol (estilo similar a Inventario) %>
+<div class="card mb-4">
+  <div class="card-body py-2">
+    <%= form_with url: admin_users_path, method: :get, local: true, class: "row g-2 align-items-center" do %>
+      <div class="col-12 col-md-6">
+        <div class="input-group input-group-sm">
+          <%= text_field_tag :q, @q, class: "form-control", placeholder: "Buscar por nombre…", aria: { label: "Buscar usuarios" } %>
+          <button class="btn btn-outline-secondary btn-clear-search" type="button" title="Limpiar búsqueda">Limpiar</button>
+          <button class="btn btn-primary" type="submit" name="commit" value="search" title="Buscar">Buscar</button>
+        </div>
+      </div>
+      <div class="col-12 col-md-6 text-md-end">
+        <% current_role = @role_filter.presence || "all" %>
+        <% role_outline = ->(role) do
+             case role
+             when "customer" then "success"
+             when "supplier" then "primary"
+             when "admin"    then "secondary"
+             else "secondary"
+             end
+           end %>
+        <% btn_classes = ->(role, current) { ["btn", "btn-outline-#{role_outline.call(role)}", (current == role ? "active" : nil)].compact.join(" ") } %>
+        <div class="btn-group btn-group-sm me-2" role="group" aria-label="Filtro de rol">
+          <%= button_tag "Todos", name: :role, value: "all", class: btn_classes.call("all", current_role) %>
+          <%= button_tag "Customers", name: :role, value: "customer", class: btn_classes.call("customer", current_role) %>
+          <%= button_tag "Suppliers", name: :role, value: "supplier", class: btn_classes.call("supplier", current_role) %>
+          <%= button_tag "Admins", name: :role, value: "admin", class: btn_classes.call("admin", current_role) %>
+        </div>
+        <%= hidden_field_tag :current_role, current_role %>
+        <%= link_to "Limpiar filtros", admin_users_path, class: "btn btn-sm btn-outline-secondary ms-2", title: "Quitar búsqueda y rol" %>
+      </div>
+    <% end %>
+  </div>
 </div>
 
-<turbo-frame id="users_frame">
-  <%= render partial: 'admin/users/pipeline', locals: { users: @users, current_tab: 'customers', counts: @counts, purchase_stats: @purchase_stats, sales_stats: @sales_stats, last_visits: @last_visits } %>
-  
-</turbo-frame>
+<%# Contadores inferiores (dependen de búsqueda + filtro; ocultar cero) %>
+<%= render partial: "admin/shared/status_counters", locals: {
+  counts: @role_counts,
+  items: [
+    [:customers, "Customers", "bg-success"],
+    [:suppliers, "Suppliers", "bg-primary"],
+    [:admins,    "Admins",    "bg-secondary"],
+  ],
+  hide_zero: true,
+  extra_class: "mb-2",
+  title: "Resultados"
+} %>
+
+<div class="table-responsive">
+  <%= render "admin/shared/user_table",
+    title: "",
+    users: @users,
+    new_path: nil,
+    edit_path: ->(u) { edit_admin_user_path(u) },
+    include_offline_column: true,
+    purchase_stats: @purchase_stats,
+    sales_stats: @sales_stats,
+    last_visits: @last_visits %>
+  </div>

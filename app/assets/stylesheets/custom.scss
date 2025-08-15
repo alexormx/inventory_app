@@ -157,19 +157,25 @@ aside#sidebar {
   height: 100vh;
   overflow-y: auto;
   align-self: flex-start;
+  width: 240px; /* ancho base cuando está expandido */
 }
-#sidebar.sidebar-collapsed {
+.sidebar-collapsed aside#sidebar {
   width: 60px !important;
 }
 
-#sidebar.sidebar-collapsed .nav-link {
+.sidebar-collapsed aside#sidebar .nav-link {
   justify-content: center;
   padding-left: 0.5rem;
   padding-right: 0.5rem;
 }
 
-#sidebar.sidebar-collapsed .nav-link i {
+.sidebar-collapsed aside#sidebar .nav-link i {
   margin-right: 0 !important;
+}
+
+/* Ocultar labels del sidebar inmediatamente cuando está colapsado (sin depender de JS) */
+.sidebar-collapsed .sidebar-label {
+  display: none !important;
 }
 
 img.product-order-image {

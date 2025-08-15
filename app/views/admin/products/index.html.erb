@@ -1,18 +1,67 @@
-<h1 class="h5 mb-2">Admin - Product Pipeline</h1>
+<h2 class="mb-3 d-flex align-items-center gap-2"><i class="fa fa-tags"></i> Products</h2>
 
 <%= render partial: "admin/shared/status_counters", locals: {
-  wrapper_id: "products_counts",
+  wrapper_id: "products_counts_global",
+  counts: @counts_global,
+  items: [
+    [:draft,    "Drafts",   "bg-secondary"],
+    [:active,   "Active",   "bg-success"],
+    [:inactive, "Inactive", "bg-danger"],
+  ],
+  title: "Resumen",
+  cta_label: "New Product",
+  cta_path: new_admin_product_path
+} %>
+
+<%# Búsqueda y filtros (estilo Inventario) %>
+<div class="card mb-4">
+  <div class="card-body py-2">
+    <%= form_with url: admin_products_path, method: :get, local: true, class: "row g-2 align-items-center" do %>
+      <div class="col-12 col-md-6">
+        <div class="input-group input-group-sm">
+          <%= text_field_tag :q, params[:q], class: "form-control", placeholder: "Buscar por nombre o SKU…", aria: { label: "Buscar productos" } %>
+          <button class="btn btn-outline-secondary btn-clear-search" type="button" title="Limpiar búsqueda">Limpiar</button>
+          <button class="btn btn-primary" type="submit" name="commit" value="search" title="Buscar">Buscar</button>
+        </div>
+      </div>
+      <div class="col-12 col-md-6 text-md-end">
+        <% current_status = params[:status].presence || "all" %>
+        <% outline_for = ->(st) do
+             case st
+             when "draft" then "secondary"
+             when "active" then "success"
+             when "inactive" then "danger"
+             else "secondary"
+             end
+           end %>
+        <% btnc = ->(st, cur) { ["btn", "btn-outline-#{outline_for.call(st)}", (cur == st ? "active" : nil)].compact.join(" ") } %>
+        <div class="btn-group btn-group-sm me-2" role="group" aria-label="Filtro de status de producto">
+          <%= button_tag "Todos", name: :status, value: "all", class: btnc.call("all", current_status) %>
+          <%= button_tag "Drafts", name: :status, value: "draft", class: btnc.call("draft", current_status) %>
+          <%= button_tag "Active", name: :status, value: "active", class: btnc.call("active", current_status) %>
+          <%= button_tag "Inactive", name: :status, value: "inactive", class: btnc.call("inactive", current_status) %>
+        </div>
+        <%= hidden_field_tag :status, current_status %>
+        <%= link_to "Limpiar filtros", admin_products_path, class: "btn btn-sm btn-outline-secondary ms-2", title: "Quitar búsqueda y status" %>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<%# Contadores inferiores (dependen de búsqueda+status; ocultar cero) %>
+<%= render partial: "admin/shared/status_counters", locals: {
+  wrapper_id: "products_counts_filtered",
   counts: @counts,
   items: [
     [:draft,    "Drafts",   "bg-secondary"],
     [:active,   "Active",   "bg-success"],
     [:inactive, "Inactive", "bg-danger"],
   ],
-  cta_label: "New Product",
-  cta_path: new_admin_product_path
+  hide_zero: true,
+  extra_class: "mb-2",
+  title: "Resultados"
 } %>
 
-<turbo-frame id="products_frame">
-  <%= render partial: 'pipeline', locals: { products: @products, current_tab: 'active', counts: @counts } %>
-  
-</turbo-frame>
+<div id="products_section">
+  <%= render partial: 'products_section', locals: { products: @products, current_tab: (params[:status] || 'all') } %>
+</div>
