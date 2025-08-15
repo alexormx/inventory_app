@@ -206,7 +206,9 @@
 
 <!-- ECharts CDN and world geojson loader -->
   <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
-  <!-- Maps will be registered from GeoJSON (ECharts examples data) -->
+  <!-- Load ECharts map shims (register maps) -->
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5/map/js/world.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5/map/js/countries/mexico.js"></script>
 <script>
     // Mostrar campos de fecha solo si rango == custom
     document.addEventListener('turbo:load', () => {
@@ -300,22 +302,7 @@
       const geoEl = document.getElementById('geo-map');
       if (!geoEl || !(window.echarts)) return;
 
-      Promise.resolve().then(async () => {
-        // Ensure map data is registered (world + Mexico), independent of script load order
-        try {
-          const worldUrl = '/maps/world.json';
-          const mxUrl    = '/maps/mexico.json';
-          const [wr, mr] = await Promise.allSettled([fetch(worldUrl), fetch(mxUrl)]);
-          if (wr.status === 'fulfilled' && wr.value.ok) {
-            const geo = await wr.value.json();
-            if (!echarts.getMap('world')) echarts.registerMap('world', geo);
-          }
-          if (mr.status === 'fulfilled' && mr.value.ok) {
-            const geo = await mr.value.json();
-            if (!echarts.getMap('MEX')) echarts.registerMap('MEX', geo);
-          }
-        } catch (e) { console.warn('Map JSON fetch failed', e); }
-
+  Promise.resolve().then(async () => {
         const res = await fetch('<%= admin_dashboard_geo_path(format: :json) %>');
         if (!res.ok) return;
         const data = await res.json();
@@ -329,26 +316,9 @@
           }
           return !!echarts.getMap(name);
         };
-        const ensureMap = async (name) => {
-          if (echarts.getMap(name)) return true;
-          // Fallback: fetch JSON for Mexico if script not loaded
-          if (name === 'Mexico') {
-            try {
-              const url = 'https://cdn.jsdelivr.net/npm/echarts@5/map/json/countries/mexico.json';
-              const resp = await fetch(url);
-              if (resp.ok) {
-                const json = await resp.json();
-                echarts.registerMap('Mexico', json);
-                return true;
-              }
-            } catch (e) { console.warn('Failed to fetch Mexico map JSON', e); }
-          }
-          return false;
-        };
-
         const resolveMapName = async (scope) => {
           if (scope !== 'mexico') return 'world';
-          if (echarts.getMap('MEX')) return 'MEX';
+          if (echarts.getMap('Mexico')) return 'Mexico';
           return echarts.getMap('world') ? 'world' : null;
         };
 
@@ -356,7 +326,6 @@
           const isMx = scope === 'mexico';
           const mapName = await resolveMapName(scope);
           if (!(await waitForMap(mapName))) {
-            await ensureMap(mapName);
             if (!echarts.getMap(mapName) && !echarts.getMap('world')) {
               console.warn('Map not available; aborting render');
               geoEl.innerHTML = '<div class="text-muted">Map data unavailable</div>';
