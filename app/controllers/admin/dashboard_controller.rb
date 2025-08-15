@@ -4,17 +4,19 @@ class Admin::DashboardController < ApplicationController
   layout "admin"
 
   def index
-    # Timeframe base
-    now         = Time.zone.now
-    year_start  = now.beginning_of_year
-    range_ytd   = year_start..now.end_of_day
+  # Filtros
+  now        = Time.zone.now
+  @range_key = params[:range].presence || 'ytd'
+  @start_date, @end_date = compute_date_range(@range_key, params[:start_date], params[:end_date], now)
+  @exclude_canceled = ActiveModel::Type::Boolean.new.cast(params.fetch(:exclude_canceled, true))
 
-    # Scopes base (excluir canceladas)
-    so_scope = SaleOrder.where.not(status: "Canceled")
-    po_scope = PurchaseOrder.where.not(status: "Canceled")
+  # Scopes base
+  so_scope = @exclude_canceled ? SaleOrder.where.not(status: "Canceled") : SaleOrder.all
+  po_scope = @exclude_canceled ? PurchaseOrder.where.not(status: "Canceled") : PurchaseOrder.all
 
-    so_ytd = so_scope.where(order_date: range_ytd)
-    po_ytd = po_scope.where(order_date: range_ytd)
+  range = @start_date..@end_date
+  so_ytd = so_scope.where(order_date: range)
+  po_ytd = po_scope.where(order_date: range)
 
     # KPIs básicos
     @total_products = Product.active.count rescue Product.count
@@ -229,6 +231,28 @@ class Admin::DashboardController < ApplicationController
       key.to_s[0,4].to_i
     else
       nil
+    end
+  end
+
+  # Date range computation from params
+  def compute_date_range(range_key, start_param, end_param, now)
+    case range_key
+    when 'last_30'
+      [now.to_date - 30, now.end_of_day]
+    when 'last_90'
+      [now.to_date - 90, now.end_of_day]
+    when 'this_year'
+      [now.beginning_of_year.to_date, now.end_of_day]
+    when 'custom'
+      begin
+        s = start_param.present? ? Date.parse(start_param) : now.beginning_of_year.to_date
+        e = end_param.present? ? Time.zone.parse(end_param).end_of_day : now.end_of_day
+        [s, e]
+      rescue ArgumentError
+        [now.beginning_of_year.to_date, now.end_of_day]
+      end
+    else # 'ytd'
+      [now.beginning_of_year.to_date, now.end_of_day]
     end
   end
 end
