@@ -103,77 +103,6 @@
         <!-- KPIs -->
         <div class="row g-3">
           <div class="col-md-2 col-6">
-              // ====== High-impact charts (ECharts) ======
-              const lineEl = document.getElementById('chart-trend-12m');
-              const donutEl = document.getElementById('chart-sales-by-category');
-              const stackedEl = document.getElementById('chart-monthly-stacked');
-              const brandEl = document.getElementById('chart-brand-profit');
-
-              try {
-                if (lineEl && window.echarts) {
-                  const chart = echarts.init(lineEl);
-                  const months = <%= raw(@chart_sales_trend[:months].to_json) %>;
-                  const revenue = <%= raw(@chart_sales_trend[:revenue].map(&:to_f).to_json) %>;
-                  const cogs = <%= raw(@chart_sales_trend[:cogs].map(&:to_f).to_json) %>;
-                  const profit = <%= raw(@chart_sales_trend[:profit].map(&:to_f).to_json) %>;
-                  chart.setOption({
-                    tooltip: { trigger: 'axis' },
-                    legend: { data: ['Revenue','COGS','Profit'] },
-                    xAxis: { type: 'category', data: months },
-                    yAxis: { type: 'value' },
-                    series: [
-                      { name: 'Revenue', type: 'line', data: revenue, smooth: true },
-                      { name: 'COGS', type: 'line', data: cogs, smooth: true },
-                      { name: 'Profit', type: 'line', data: profit, smooth: true }
-                    ]
-                  });
-                  window.addEventListener('resize', () => chart.resize());
-                }
-
-                if (donutEl && window.echarts) {
-                  const chart = echarts.init(donutEl);
-                  const series = <%= raw(@chart_sales_by_category.to_json) %>;
-                  chart.setOption({
-                    tooltip: { trigger: 'item' },
-                    legend: { orient: 'vertical', left: 'left' },
-                    series: [{
-                      name: 'Sales by Category', type: 'pie', radius: ['40%','70%'], avoidLabelOverlap: false,
-                      itemStyle: { borderRadius: 6, borderColor: '#fff', borderWidth: 2 },
-                      label: { show: false }, emphasis: { label: { show: true, fontSize: 14, fontWeight: 'bold' } },
-                      labelLine: { show: false }, data: series
-                    }]
-                  });
-                  window.addEventListener('resize', () => chart.resize());
-                }
-
-                if (stackedEl && window.echarts) {
-                  const chart = echarts.init(stackedEl);
-                  const months = <%= raw(@chart_monthly_by_category[:months].to_json) %>;
-                  const series = <%= raw(@chart_monthly_by_category[:series].to_json) %>;
-                  chart.setOption({
-                    tooltip: { trigger: 'axis' },
-                    legend: {},
-                    xAxis: { type: 'category', data: months },
-                    yAxis: { type: 'value' },
-                    series: series.map(s => ({ ...s, type: 'bar', stack: 'total' }))
-                  });
-                  window.addEventListener('resize', () => chart.resize());
-                }
-
-                if (brandEl && window.echarts) {
-                  const chart = echarts.init(brandEl);
-                  const brands = <%= raw(@chart_brand_profit[:brands].to_json) %>;
-                  const profit = <%= raw(@chart_brand_profit[:profit].map(&:to_f).to_json) %>;
-                  chart.setOption({
-                    tooltip: { trigger: 'axis' },
-                    xAxis: { type: 'value' },
-                    yAxis: { type: 'category', data: brands },
-                    series: [{ type: 'bar', data: profit, itemStyle: { color: '#4caf50' } }]
-                  });
-                  window.addEventListener('resize', () => chart.resize());
-                }
-              } catch (e) { console.error('Charts error', e); }
-
             <div class="card text-bg-light h-100">
               <div class="card-body">
                 <div class="small text-muted">Productos</div>
@@ -278,7 +207,7 @@
 <!-- ECharts CDN and world geojson loader -->
   <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/echarts@5/map/js/world.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/echarts@5/map/js/province/mexico.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5/map/js/country/mexico.js"></script>
 <script>
     // Mostrar campos de fecha solo si rango == custom
     document.addEventListener('turbo:load', () => {
@@ -293,6 +222,80 @@
       }
       sync();
     });
+
+  // High-impact charts (init on Turbo load)
+  document.addEventListener('turbo:load', () => {
+    if (!(window.echarts)) return;
+    try {
+      const lineEl = document.getElementById('chart-trend-12m');
+      const donutEl = document.getElementById('chart-sales-by-category');
+      const stackedEl = document.getElementById('chart-monthly-stacked');
+      const brandEl = document.getElementById('chart-brand-profit');
+
+      if (lineEl) {
+        const chart = echarts.init(lineEl);
+        const months = <%= raw(@chart_sales_trend[:months].to_json) %>;
+        const revenue = <%= raw(@chart_sales_trend[:revenue].map(&:to_f).to_json) %>;
+        const cogs = <%= raw(@chart_sales_trend[:cogs].map(&:to_f).to_json) %>;
+        const profit = <%= raw(@chart_sales_trend[:profit].map(&:to_f).to_json) %>;
+        chart.setOption({
+          tooltip: { trigger: 'axis' },
+          legend: { data: ['Revenue','COGS','Profit'] },
+          xAxis: { type: 'category', data: months },
+          yAxis: { type: 'value' },
+          series: [
+            { name: 'Revenue', type: 'line', data: revenue, smooth: true },
+            { name: 'COGS', type: 'line', data: cogs, smooth: true },
+            { name: 'Profit', type: 'line', data: profit, smooth: true }
+          ]
+        });
+        window.addEventListener('resize', () => chart.resize());
+      }
+
+      if (donutEl) {
+        const chart = echarts.init(donutEl);
+        const series = <%= raw(@chart_sales_by_category.to_json) %>;
+        chart.setOption({
+          tooltip: { trigger: 'item' },
+          legend: { orient: 'vertical', left: 'left' },
+          series: [{
+            name: 'Sales by Category', type: 'pie', radius: ['40%','70%'], avoidLabelOverlap: false,
+            itemStyle: { borderRadius: 6, borderColor: '#fff', borderWidth: 2 },
+            label: { show: false }, emphasis: { label: { show: true, fontSize: 14, fontWeight: 'bold' } },
+            labelLine: { show: false }, data: series
+          }]
+        });
+        window.addEventListener('resize', () => chart.resize());
+      }
+
+      if (stackedEl) {
+        const chart = echarts.init(stackedEl);
+        const months = <%= raw(@chart_monthly_by_category[:months].to_json) %>;
+        const series = <%= raw(@chart_monthly_by_category[:series].to_json) %>;
+        chart.setOption({
+          tooltip: { trigger: 'axis' },
+          legend: {},
+          xAxis: { type: 'category', data: months },
+          yAxis: { type: 'value' },
+          series: series.map(s => ({ ...s, type: 'bar', stack: 'total' }))
+        });
+        window.addEventListener('resize', () => chart.resize());
+      }
+
+      if (brandEl) {
+        const chart = echarts.init(brandEl);
+        const brands = <%= raw(@chart_brand_profit[:brands].to_json) %>;
+        const profit = <%= raw(@chart_brand_profit[:profit].map(&:to_f).to_json) %>;
+        chart.setOption({
+          tooltip: { trigger: 'axis' },
+          xAxis: { type: 'value' },
+          yAxis: { type: 'category', data: brands },
+          series: [{ type: 'bar', data: profit, itemStyle: { color: '#4caf50' } }]
+        });
+        window.addEventListener('resize', () => chart.resize());
+      }
+    } catch (e) { console.error('Charts error', e); }
+  });
 
   document.addEventListener('turbo:load', () => {
       const geoEl = document.getElementById('geo-map');
