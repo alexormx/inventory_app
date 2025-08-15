@@ -206,8 +206,7 @@
 
 <!-- ECharts CDN and world geojson loader -->
   <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/echarts@5/map/js/world.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/echarts@5/map/js/countries/mexico.js"></script>
+  <!-- We'll register map GeoJSONs programmatically -->
 <script>
     // Mostrar campos de fecha solo si rango == custom
     document.addEventListener('turbo:load', () => {
@@ -302,6 +301,21 @@
       if (!geoEl || !(window.echarts)) return;
 
       Promise.resolve().then(async () => {
+        // Ensure map data is registered (world + Mexico), independent of script load order
+        try {
+          const worldUrl = 'https://cdn.jsdelivr.net/npm/echarts@5/map/json/world.json';
+          const mxUrl    = 'https://cdn.jsdelivr.net/npm/echarts@5/map/json/countries/mexico.json';
+          const [wr, mr] = await Promise.allSettled([fetch(worldUrl), fetch(mxUrl)]);
+          if (wr.status === 'fulfilled' && wr.value.ok) {
+            const geo = await wr.value.json();
+            if (!echarts.getMap('world')) echarts.registerMap('world', geo);
+          }
+          if (mr.status === 'fulfilled' && mr.value.ok) {
+            const geo = await mr.value.json();
+            if (!echarts.getMap('Mexico')) echarts.registerMap('Mexico', geo);
+          }
+        } catch (e) { console.warn('Map JSON fetch failed', e); }
+
         const res = await fetch('<%= admin_dashboard_geo_path(format: :json) %>');
         if (!res.ok) return;
         const data = await res.json();
@@ -337,6 +351,10 @@
           const mapName = isMx ? 'Mexico' : 'world';
           if (!(await waitForMap(mapName))) {
             await ensureMap(mapName);
+            if (!echarts.getMap(mapName) && !echarts.getMap('world')) {
+              console.warn('Map not available; aborting render');
+              return;
+            }
             console.warn('Map not available, falling back to world');
           }
           const seriesData = (data.visits || []).map(d => ({ name: d.name, value: d.value }));
