@@ -1,53 +1,102 @@
 <div class="container-fluid">
   <h2 class="mb-3"><i class="fa-solid fa-chart-line"></i> Dashboard</h2>
 
-  <!-- KPIs al tope -->
+  <!-- KPIs al tope (estratégico) -->
   <div class="row g-3 mb-3">
-    <div class="col-md-2 col-6">
-      <div class="card text-bg-light h-100">
-        <div class="card-body">
-          <div class="small text-muted">Productos</div>
-          <div class="fs-4 fw-bold"><%= number_with_delimiter(@total_products) %></div>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-2 col-6">
-      <div class="card text-bg-light h-100">
-        <div class="card-body">
-          <div class="small text-muted">Usuarios</div>
-          <div class="fs-4 fw-bold"><%= number_with_delimiter(@total_users) %></div>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-2 col-6">
+    <div class="col-md-4 col-lg-4">
       <div class="card text-bg-success-subtle h-100">
         <div class="card-body">
-          <div class="small text-muted">Ventas YTD</div>
-          <div class="fs-5 fw-bold">$ <%= number_with_precision(@sales_ytd, precision: 2, delimiter: ',') %></div>
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <div class="small text-muted">Ventas YTD</div>
+              <div class="fs-4 fw-bold">$ <%= number_with_precision(@sales_ytd, precision: 2, delimiter: ',') %></div>
+              <div class="small <%= @kpi_deltas&.dig(:sales).to_f >= 0 ? 'text-success' : 'text-danger' %>">Δ vs LY: <%= @kpi_deltas&.dig(:sales).nil? ? '—' : number_to_percentage(@kpi_deltas[:sales] * 100, precision: 1) %></div>
+            </div>
+            <div style="width:110px;height:46px" id="sparkline-revenue"></div>
+          </div>
         </div>
       </div>
     </div>
-    <div class="col-md-2 col-6">
-      <div class="card text-bg-warning-subtle h-100">
-        <div class="card-body">
-          <div class="small text-muted">Compras YTD</div>
-          <div class="fs-5 fw-bold">$ <%= number_with_precision(@purchases_ytd, precision: 2, delimiter: ',') %></div>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-2 col-6">
+    <div class="col-md-4 col-lg-4">
       <div class="card text-bg-primary-subtle h-100">
         <div class="card-body">
           <div class="small text-muted">Ganancia YTD</div>
-          <div class="fs-5 fw-bold">$ <%= number_with_precision(@profit_ytd, precision: 2, delimiter: ',') %></div>
+          <div class="fs-4 fw-bold">$ <%= number_with_precision(@profit_ytd, precision: 2, delimiter: ',') %></div>
+          <div class="small <%= @kpi_deltas&.dig(:profit).to_f >= 0 ? 'text-success' : 'text-danger' %>">Δ vs LY: <%= @kpi_deltas&.dig(:profit).nil? ? '—' : number_to_percentage(@kpi_deltas[:profit] * 100, precision: 1) %></div>
         </div>
       </div>
     </div>
-    <div class="col-md-2 col-6">
+    <div class="col-md-4 col-lg-4">
       <div class="card text-bg-info-subtle h-100">
         <div class="card-body">
           <div class="small text-muted">Margen YTD</div>
           <div class="fs-4 fw-bold"><%= number_to_percentage(@margin_ytd * 100, precision: 1) %></div>
+          <div class="small <%= (@kpi_deltas&.dig(:margin_pp) || 0).to_f >= 0 ? 'text-success' : 'text-danger' %>">Δ pp vs LY: <%= @kpi_deltas&.dig(:margin_pp).present? ? number_with_precision(@kpi_deltas[:margin_pp] * 100, precision: 1) : '—' %> pp</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="row g-3 mb-3">
+    <div class="col-md-4 col-lg-4">
+      <div class="card text-bg-light h-100">
+        <div class="card-body">
+          <div class="small text-muted">Órdenes YTD</div>
+          <div class="fs-4 fw-bold"><%= number_with_delimiter(@orders_count_ytd) %></div>
+          <div class="small <%= @kpi_deltas&.dig(:orders).to_f >= 0 ? 'text-success' : 'text-danger' %>">Δ vs LY: <%= @kpi_deltas&.dig(:orders).nil? ? '—' : number_to_percentage(@kpi_deltas[:orders] * 100, precision: 1) %></div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4 col-lg-4">
+      <div class="card text-bg-light h-100">
+        <div class="card-body">
+          <div class="small text-muted">Clientes activos</div>
+          <div class="fs-4 fw-bold"><%= number_with_delimiter(@active_customers_ytd) %></div>
+          <div class="small <%= @kpi_deltas&.dig(:customers).to_f >= 0 ? 'text-success' : 'text-danger' %>">Δ vs LY: <%= @kpi_deltas&.dig(:customers).nil? ? '—' : number_to_percentage(@kpi_deltas[:customers] * 100, precision: 1) %></div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4 col-lg-4">
+      <div class="card text-bg-secondary-subtle h-100">
+        <div class="card-body">
+          <div class="small text-muted">Valor total de inventario</div>
+          <div class="fs-4 fw-bold">$ <%= number_with_precision(@inventory_total_value, precision: 2, delimiter: ',') %></div>
+          <div class="small text-muted">Rotación: <%= @inventory_turnover_ytd.nil? ? '—' : number_with_precision(@inventory_turnover_ytd, precision: 2, delimiter: ',') %></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPIs tácticos (rápidos) -->
+  <div class="row g-3 mb-3">
+    <div class="col-md-2 col-6">
+      <div class="card h-100">
+        <div class="card-body py-2">
+          <div class="small text-muted">Ticket promedio</div>
+          <div class="fs-6 fw-bold">$ <%= number_with_precision(@avg_ticket_ytd, precision: 2, delimiter: ',') %></div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-2 col-6">
+      <div class="card h-100">
+        <div class="card-body py-2">
+          <div class="small text-muted">Conversión</div>
+          <div class="fs-6 fw-bold"><%= @conversion_rate_ytd.nil? ? '—' : number_to_percentage(@conversion_rate_ytd * 100, precision: 2) %></div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-2 col-6">
+      <div class="card h-100">
+        <div class="card-body py-2">
+          <div class="small text-muted">Stock crítico</div>
+          <div class="fs-6 fw-bold"><%= @critical_stock_count.nil? ? '—' : number_with_delimiter(@critical_stock_count) %></div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-2 col-6">
+      <div class="card h-100">
+        <div class="card-body py-2">
+          <div class="small text-muted">Recurrentes</div>
+          <div class="fs-6 fw-bold"><%= @recurring_customers_ratio.nil? ? '—' : number_to_percentage(@recurring_customers_ratio * 100, precision: 1) %></div>
         </div>
       </div>
     </div>
@@ -57,157 +106,170 @@
 
   <!-- (Se eliminó la tabla duplicada de Países de la parte superior) -->
 
-  <!-- Top productos -->
+  <!-- Top productos: combinado Sellers/Rentables + Inventario -->
   <div class="row mt-3 g-3">
-    <div class="col-xl-4">
+    <div class="col-xl-8">
       <div class="card h-100">
         <div class="card-header d-flex justify-content-between align-items-center">
-          <span><i class="fa-solid fa-trophy"></i> Top Sellers</span>
-          <ul class="nav nav-tabs nav-tabs-sm card-header-tabs" role="tablist">
-            <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#ts-ytd" type="button" role="tab">YTD</button></li>
-            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#ts-ly" type="button" role="tab">Last Year</button></li>
-            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#ts-all" type="button" role="tab">All Time</button></li>
-          </ul>
-        </div>
-        <div class="card-body p-0">
-          <div class="tab-content">
-            <div class="tab-pane fade show active" id="ts-ytd" role="tabpanel">
-              <div class="table-responsive">
-                <table class="table table-sm mb-0">
-                  <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Unidades</th><th class="text-end">Ingresos</th></tr></thead>
-                  <tbody>
-                    <% @top_sellers_ytd&.each_with_index do |r, idx| %>
-                      <tr>
-                        <td class="text-muted">#<%= idx + 1 %></td>
-                        <td><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></td>
-                        <td class="text-end"><%= number_with_delimiter(r[:units]) %></td>
-                        <td class="text-end">$ <%= number_with_precision(r[:revenue], precision: 2, delimiter: ',') %></td>
-                      </tr>
-                    <% end %>
-                    <% if @top_sellers_ytd.blank? %>
-                      <tr><td colspan="4" class="text-center text-muted py-3">Sin datos</td></tr>
-                    <% end %>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-            <div class="tab-pane fade" id="ts-ly" role="tabpanel">
-              <div class="table-responsive">
-                <table class="table table-sm mb-0">
-                  <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Unidades</th><th class="text-end">Ingresos</th></tr></thead>
-                  <tbody>
-                    <% @top_sellers_last_year&.each_with_index do |r, idx| %>
-                      <tr>
-                        <td class="text-muted">#<%= idx + 1 %></td>
-                        <td><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></td>
-                        <td class="text-end"><%= number_with_delimiter(r[:units]) %></td>
-                        <td class="text-end">$ <%= number_with_precision(r[:revenue], precision: 2, delimiter: ',') %></td>
-                      </tr>
-                    <% end %>
-                    <% if @top_sellers_last_year.blank? %>
-                      <tr><td colspan="4" class="text-center text-muted py-3">Sin datos</td></tr>
-                    <% end %>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-            <div class="tab-pane fade" id="ts-all" role="tabpanel">
-              <div class="table-responsive">
-                <table class="table table-sm mb-0">
-                  <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Unidades</th><th class="text-end">Ingresos</th></tr></thead>
-                  <tbody>
-                    <% @top_products_all&.each_with_index do |r, idx| %>
-                      <tr>
-                        <td class="text-muted">#<%= idx + 1 %></td>
-                        <td><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></td>
-                        <td class="text-end"><%= number_with_delimiter(r[:units]) %></td>
-                        <td class="text-end">$ <%= number_with_precision(r[:revenue], precision: 2, delimiter: ',') %></td>
-                      </tr>
-                    <% end %>
-                    <% if @top_products_all.blank? %>
-                      <tr><td colspan="4" class="text-center text-muted py-3">Sin datos</td></tr>
-                    <% end %>
-                  </tbody>
-                </table>
-              </div>
-            </div>
+          <div>
+            <i class="fa-solid fa-boxes"></i> Productos
+            <ul class="nav nav-tabs nav-tabs-sm card-header-tabs mt-2" role="tablist">
+              <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tp-sellers" type="button" role="tab">Sellers</button></li>
+              <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tp-profit" type="button" role="tab">Rentables</button></li>
+            </ul>
+          </div>
+          <div>
+            <a href="<%= admin_products_path %>" class="btn btn-sm btn-outline-primary">Ver detalle</a>
           </div>
         </div>
-      </div>
-    </div>
-    <div class="col-xl-4">
-      <div class="card h-100">
-        <div class="card-header d-flex justify-content-between align-items-center">
-          <span><i class="fa-solid fa-sack-dollar"></i> Productos más rentables</span>
-          <ul class="nav nav-tabs nav-tabs-sm card-header-tabs" role="tablist">
-            <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#pp-ytd" type="button" role="tab">YTD</button></li>
-            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#pp-ly" type="button" role="tab">Last Year</button></li>
-            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#pp-all" type="button" role="tab">All Time</button></li>
-          </ul>
-        </div>
         <div class="card-body p-0">
           <div class="tab-content">
-            <div class="tab-pane fade show active" id="pp-ytd" role="tabpanel">
-              <div class="table-responsive">
-                <table class="table table-sm mb-0">
-                  <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Ingresos</th><th class="text-end">COGS</th><th class="text-end">Profit</th></tr></thead>
-                  <tbody>
-                    <% @top_products_profit_ytd&.each_with_index do |r, idx| %>
-                      <tr>
-                        <td class="text-muted">#<%= idx + 1 %></td>
-                        <td><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></td>
-                        <td class="text-end">$ <%= number_with_precision(r[:revenue], precision: 2, delimiter: ',') %></td>
-                        <td class="text-end">$ <%= number_with_precision(r[:cogs], precision: 2, delimiter: ',') %></td>
-                        <td class="text-end">$ <%= number_with_precision(r[:profit], precision: 2, delimiter: ',') %></td>
-                      </tr>
-                    <% end %>
-                    <% if @top_products_profit_ytd.blank? %>
-                      <tr><td colspan="5" class="text-center text-muted py-3">Sin datos</td></tr>
-                    <% end %>
-                  </tbody>
-                </table>
+            <!-- Sellers -->
+            <div class="tab-pane fade show active" id="tp-sellers" role="tabpanel">
+              <div class="px-3 pt-3">
+                <ul class="nav nav-tabs nav-tabs-sm" role="tablist">
+                  <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#ts-ytd" type="button" role="tab">YTD</button></li>
+                  <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#ts-ly" type="button" role="tab">Last Year</button></li>
+                  <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#ts-all" type="button" role="tab">All Time</button></li>
+                </ul>
+              </div>
+              <div class="tab-content">
+                <div class="tab-pane fade show active" id="ts-ytd" role="tabpanel">
+                  <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                      <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Unidades</th><th class="text-end">Ingresos</th></tr></thead>
+                      <tbody>
+                        <% @top_sellers_ytd&.each_with_index do |r, idx| %>
+                          <tr>
+                            <td class="text-muted">#<%= idx + 1 %></td>
+                            <td><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></td>
+                            <td class="text-end"><%= number_with_delimiter(r[:units]) %></td>
+                            <td class="text-end">$ <%= number_with_precision(r[:revenue], precision: 2, delimiter: ',') %></td>
+                          </tr>
+                        <% end %>
+                        <% if @top_sellers_ytd.blank? %>
+                          <tr><td colspan="4" class="text-center text-muted py-3">Sin datos</td></tr>
+                        <% end %>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+                <div class="tab-pane fade" id="ts-ly" role="tabpanel">
+                  <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                      <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Unidades</th><th class="text-end">Ingresos</th></tr></thead>
+                      <tbody>
+                        <% @top_sellers_last_year&.each_with_index do |r, idx| %>
+                          <tr>
+                            <td class="text-muted">#<%= idx + 1 %></td>
+                            <td><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></td>
+                            <td class="text-end"><%= number_with_delimiter(r[:units]) %></td>
+                            <td class="text-end">$ <%= number_with_precision(r[:revenue], precision: 2, delimiter: ',') %></td>
+                          </tr>
+                        <% end %>
+                        <% if @top_sellers_last_year.blank? %>
+                          <tr><td colspan="4" class="text-center text-muted py-3">Sin datos</td></tr>
+                        <% end %>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+                <div class="tab-pane fade" id="ts-all" role="tabpanel">
+                  <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                      <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Unidades</th><th class="text-end">Ingresos</th></tr></thead>
+                      <tbody>
+                        <% @top_products_all&.each_with_index do |r, idx| %>
+                          <tr>
+                            <td class="text-muted">#<%= idx + 1 %></td>
+                            <td><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></td>
+                            <td class="text-end"><%= number_with_delimiter(r[:units]) %></td>
+                            <td class="text-end">$ <%= number_with_precision(r[:revenue], precision: 2, delimiter: ',') %></td>
+                          </tr>
+                        <% end %>
+                        <% if @top_products_all.blank? %>
+                          <tr><td colspan="4" class="text-center text-muted py-3">Sin datos</td></tr>
+                        <% end %>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               </div>
             </div>
-            <div class="tab-pane fade" id="pp-ly" role="tabpanel">
-              <div class="table-responsive">
-                <table class="table table-sm mb-0">
-                  <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Ingresos</th><th class="text-end">COGS</th><th class="text-end">Profit</th></tr></thead>
-                  <tbody>
-                    <% @top_products_profit_last_year&.each_with_index do |r, idx| %>
-                      <tr>
-                        <td class="text-muted">#<%= idx + 1 %></td>
-                        <td><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></td>
-                        <td class="text-end">$ <%= number_with_precision(r[:revenue], precision: 2, delimiter: ',') %></td>
-                        <td class="text-end">$ <%= number_with_precision(r[:cogs], precision: 2, delimiter: ',') %></td>
-                        <td class="text-end">$ <%= number_with_precision(r[:profit], precision: 2, delimiter: ',') %></td>
-                      </tr>
-                    <% end %>
-                    <% if @top_products_profit_last_year.blank? %>
-                      <tr><td colspan="5" class="text-center text-muted py-3">Sin datos</td></tr>
-                    <% end %>
-                  </tbody>
-                </table>
+
+            <!-- Rentables -->
+            <div class="tab-pane fade" id="tp-profit" role="tabpanel">
+              <div class="px-3 pt-3">
+                <ul class="nav nav-tabs nav-tabs-sm" role="tablist">
+                  <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#pp-ytd" type="button" role="tab">YTD</button></li>
+                  <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#pp-ly" type="button" role="tab">Last Year</button></li>
+                  <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#pp-all" type="button" role="tab">All Time</button></li>
+                </ul>
               </div>
-            </div>
-            <div class="tab-pane fade" id="pp-all" role="tabpanel">
-              <div class="table-responsive">
-                <table class="table table-sm mb-0">
-                  <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Ingresos</th><th class="text-end">COGS</th><th class="text-end">Profit</th></tr></thead>
-                  <tbody>
-                    <% @top_products_profit_all_time&.each_with_index do |r, idx| %>
-                      <tr>
-                        <td class="text-muted">#<%= idx + 1 %></td>
-                        <td><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></td>
-                        <td class="text-end">$ <%= number_with_precision(r[:revenue], precision: 2, delimiter: ',') %></td>
-                        <td class="text-end">$ <%= number_with_precision(r[:cogs], precision: 2, delimiter: ',') %></td>
-                        <td class="text-end">$ <%= number_with_precision(r[:profit], precision: 2, delimiter: ',') %></td>
-                      </tr>
-                    <% end %>
-                    <% if @top_products_profit_all_time.blank? %>
-                      <tr><td colspan="5" class="text-center text-muted py-3">Sin datos</td></tr>
-                    <% end %>
-                  </tbody>
-                </table>
+              <div class="tab-content">
+                <div class="tab-pane fade show active" id="pp-ytd" role="tabpanel">
+                  <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                      <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Ingresos</th><th class="text-end">COGS</th><th class="text-end">Profit</th></tr></thead>
+                      <tbody>
+                        <% @top_products_profit_ytd&.each_with_index do |r, idx| %>
+                          <tr>
+                            <td class="text-muted">#<%= idx + 1 %></td>
+                            <td><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></td>
+                            <td class="text-end">$ <%= number_with_precision(r[:revenue], precision: 2, delimiter: ',') %></td>
+                            <td class="text-end">$ <%= number_with_precision(r[:cogs], precision: 2, delimiter: ',') %></td>
+                            <td class="text-end">$ <%= number_with_precision(r[:profit], precision: 2, delimiter: ',') %></td>
+                          </tr>
+                        <% end %>
+                        <% if @top_products_profit_ytd.blank? %>
+                          <tr><td colspan="5" class="text-center text-muted py-3">Sin datos</td></tr>
+                        <% end %>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+                <div class="tab-pane fade" id="pp-ly" role="tabpanel">
+                  <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                      <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Ingresos</th><th class="text-end">COGS</th><th class="text-end">Profit</th></tr></thead>
+                      <tbody>
+                        <% @top_products_profit_last_year&.each_with_index do |r, idx| %>
+                          <tr>
+                            <td class="text-muted">#<%= idx + 1 %></td>
+                            <td><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></td>
+                            <td class="text-end">$ <%= number_with_precision(r[:revenue], precision: 2, delimiter: ',') %></td>
+                            <td class="text-end">$ <%= number_with_precision(r[:cogs], precision: 2, delimiter: ',') %></td>
+                            <td class="text-end">$ <%= number_with_precision(r[:profit], precision: 2, delimiter: ',') %></td>
+                          </tr>
+                        <% end %>
+                        <% if @top_products_profit_last_year.blank? %>
+                          <tr><td colspan="5" class="text-center text-muted py-3">Sin datos</td></tr>
+                        <% end %>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+                <div class="tab-pane fade" id="pp-all" role="tabpanel">
+                  <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                      <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Ingresos</th><th class="text-end">COGS</th><th class="text-end">Profit</th></tr></thead>
+                      <tbody>
+                        <% @top_products_profit_all_time&.each_with_index do |r, idx| %>
+                          <tr>
+                            <td class="text-muted">#<%= idx + 1 %></td>
+                            <td><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></td>
+                            <td class="text-end">$ <%= number_with_precision(r[:revenue], precision: 2, delimiter: ',') %></td>
+                            <td class="text-end">$ <%= number_with_precision(r[:cogs], precision: 2, delimiter: ',') %></td>
+                            <td class="text-end">$ <%= number_with_precision(r[:profit], precision: 2, delimiter: ',') %></td>
+                          </tr>
+                        <% end %>
+                        <% if @top_products_profit_all_time.blank? %>
+                          <tr><td colspan="5" class="text-center text-muted py-3">Sin datos</td></tr>
+                        <% end %>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -242,17 +304,13 @@
     </div>
   </div>
 
-  <!-- Top ventas -->
+  <!-- Top categorías + Donut -->
   <div class="row mt-4 g-3">
     <div class="col-xl-6">
       <div class="card h-100">
         <div class="card-header d-flex justify-content-between align-items-center">
           <span><i class="fa-solid fa-layer-group"></i> Top Categorías</span>
-          <ul class="nav nav-tabs nav-tabs-sm card-header-tabs" role="tablist">
-            <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tc-ytd" type="button" role="tab">YTD</button></li>
-            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tc-ly" type="button" role="tab">Last Year</button></li>
-            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tc-all" type="button" role="tab">All Time</button></li>
-          </ul>
+          <div><a class="btn btn-sm btn-outline-primary" href="<%= admin_products_path %>">Ver detalle</a></div>
         </div>
         <div class="card-body p-0">
           <div class="tab-content">
@@ -331,6 +389,7 @@
             <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#rank-ly" type="button" role="tab">Last Year</button></li>
             <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#rank-all" type="button" role="tab">All Time</button></li>
           </ul>
+          <a href="<%= admin_users_path %>" class="btn btn-sm btn-outline-primary ms-2">Ver detalle</a>
         </div>
         <div class="card-body p-0">
           <div class="tab-content">
@@ -431,6 +490,13 @@
           </ul>
         </div>
         <div class="card-body p-0">
+          <div class="px-3 pt-3">
+            <ul class="nav nav-tabs nav-tabs-sm" role="tablist">
+              <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tc-ytd" type="button" role="tab">YTD</button></li>
+              <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tc-ly" type="button" role="tab">Last Year</button></li>
+              <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tc-all" type="button" role="tab">All Time</button></li>
+            </ul>
+          </div>
           <div class="tab-content">
             <div class="tab-pane fade show active" id="mx-ytd" role="tabpanel">
               <div class="table-responsive">
@@ -574,19 +640,14 @@
   <!-- Gráficos -->
   <!-- High-impact charts row 1 -->
   <div class="row mt-4 g-3">
-    <div class="col-lg-8">
+    <div class="col-lg-12">
       <div class="card h-100">
-        <div class="card-header"><i class="fa-solid fa-chart-line"></i> Sales Comparison (12 months)</div>
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span><i class="fa-solid fa-chart-line"></i> Sales Comparison (12 months)</span>
+          <a href="<%= admin_sale_orders_path %>" class="btn btn-sm btn-outline-primary">Ver detalle</a>
+        </div>
         <div class="card-body">
           <div id="chart-trend-12m" style="height: 280px;"></div>
-        </div>
-      </div>
-    </div>
-    <div class="col-lg-4">
-      <div class="card h-100">
-        <div class="card-header"><i class="fa-solid fa-chart-pie"></i> Sales by Product Category</div>
-        <div class="card-body">
-          <div id="chart-sales-by-category" style="height: 280px;"></div>
         </div>
       </div>
     </div>
@@ -594,7 +655,7 @@
 
   <!-- High-impact charts row 2 -->
   <div class="row mt-4 g-3">
-    <div class="col-lg-8">
+    <div class="col-lg-12">
       <div class="card h-100">
         <div class="card-header"><i class="fa-solid fa-chart-column"></i> Sales by Month (stacked by category)</div>
         <div class="card-body">
@@ -602,11 +663,23 @@
         </div>
       </div>
     </div>
-    <div class="col-lg-4">
+  </div>
+
+  <!-- High-impact charts row 3: Category Profitability -->
+  <div class="row mt-4 g-3">
+    <div class="col-lg-6">
       <div class="card h-100">
         <div class="card-header"><i class="fa-solid fa-city"></i> Brand Profitability</div>
         <div class="card-body">
           <div id="chart-brand-profit" style="height: 280px;"></div>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="card h-100">
+        <div class="card-header"><i class="fa-solid fa-tags"></i> Category Profitability</div>
+        <div class="card-body">
+          <div id="chart-category-profit" style="height: 280px;"></div>
         </div>
       </div>
     </div>
@@ -635,10 +708,12 @@
   document.addEventListener('turbo:load', () => {
     if (!(window.echarts)) return;
     try {
-      const lineEl = document.getElementById('chart-trend-12m');
+  const lineEl = document.getElementById('chart-trend-12m');
+  const sparkRevenueEl = document.getElementById('sparkline-revenue');
       const donutEl = document.getElementById('chart-sales-by-category');
-      const stackedEl = document.getElementById('chart-monthly-stacked');
-      const brandEl = document.getElementById('chart-brand-profit');
+  const stackedEl = document.getElementById('chart-monthly-stacked');
+  const brandEl = document.getElementById('chart-brand-profit');
+  const categoryProfitEl = document.getElementById('chart-category-profit');
 
       if (lineEl) {
         const chart = echarts.init(lineEl);
@@ -656,6 +731,19 @@
             { name: 'COGS', type: 'line', data: cogs, smooth: true },
             { name: 'Profit', type: 'line', data: profit, smooth: true }
           ]
+        });
+        window.addEventListener('resize', () => chart.resize());
+      }
+
+      if (sparkRevenueEl) {
+        const chart = echarts.init(sparkRevenueEl);
+        const revenue = <%= raw(@chart_sales_trend[:revenue].map(&:to_f).to_json) %>;
+        chart.setOption({
+          grid: {left: 0, right: 0, top: 2, bottom: 2},
+          xAxis: { type: 'category', show: false, data: revenue.map((_,i)=>i) },
+          yAxis: { type: 'value', show: false },
+          series: [{ type: 'line', data: revenue, smooth: true, symbol: 'none', lineStyle: { width: 2 } }],
+          tooltip: { show: false }
         });
         window.addEventListener('resize', () => chart.resize());
       }
@@ -699,6 +787,20 @@
           xAxis: { type: 'value' },
           yAxis: { type: 'category', data: brands },
           series: [{ type: 'bar', data: profit, itemStyle: { color: '#4caf50' } }]
+        });
+        window.addEventListener('resize', () => chart.resize());
+      }
+
+      if (categoryProfitEl) {
+        const chart = echarts.init(categoryProfitEl);
+        const _catProfit = <%= raw((@chart_category_profit || {categories: [], profit: []}).to_json) %>;
+        const categories = _catProfit.categories || [];
+        const profit = (_catProfit.profit || []).map(parseFloat);
+        chart.setOption({
+          tooltip: { trigger: 'axis' },
+          xAxis: { type: 'value' },
+          yAxis: { type: 'category', data: categories },
+          series: [{ type: 'bar', data: profit, itemStyle: { color: '#3f51b5' } }]
         });
         window.addEventListener('resize', () => chart.resize());
       }
