@@ -207,7 +207,7 @@
 <!-- ECharts CDN and world geojson loader -->
   <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/echarts@5/map/js/world.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/echarts@5/map/js/country/mexico.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5/map/js/countries/mexico.js"></script>
 <script>
     // Mostrar campos de fecha solo si rango == custom
     document.addEventListener('turbo:load', () => {
@@ -307,8 +307,21 @@
         const data = await res.json();
 
         const chart = echarts.init(geoEl);
-        const render = (scope) => {
+        const waitForMap = async (name, attempts = 20) => {
+          // Wait until map is registered by the script tag
+          for (let i = 0; i < attempts; i++) {
+            if (echarts.getMap(name)) return true;
+            await new Promise(r => setTimeout(r, 100));
+          }
+          return !!echarts.getMap(name);
+        };
+
+        const render = async (scope) => {
           const isMx = scope === 'mexico';
+          const mapName = isMx ? 'Mexico' : 'world';
+          if (!(await waitForMap(mapName))) {
+            console.warn('Map not available, falling back to world');
+          }
           const seriesData = (data.visits || []).map(d => ({ name: d.name, value: d.value }));
           chart.setOption({
             tooltip: { trigger: 'item', formatter: ({name, value}) => `${name}: ${value?.toLocaleString?.() || value || 0}` },
@@ -316,7 +329,7 @@
             series: [{
               type: 'map',
               name: 'Visits',
-              map: isMx ? 'mexico' : 'world',
+              map: echarts.getMap(mapName) ? mapName : 'world',
               roam: true,
               emphasis: { label: { show: false } },
               data: seriesData
