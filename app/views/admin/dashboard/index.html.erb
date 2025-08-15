@@ -206,7 +206,9 @@
 
 <!-- ECharts CDN and world geojson loader -->
   <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
-  <!-- We'll register map GeoJSONs programmatically -->
+  <!-- Load ECharts map shims (registers maps when available) -->
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5/map/js/world.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5/map/js/countries/mexico.js"></script>
 <script>
     // Mostrar campos de fecha solo si rango == custom
     document.addEventListener('turbo:load', () => {
@@ -346,13 +348,25 @@
           return false;
         };
 
+        const resolveMapName = async (scope) => {
+          if (scope !== 'mexico') return 'world';
+          const candidates = ['Mexico', 'mexico', 'MX', 'MEX'];
+          for (const name of candidates) {
+            if (echarts.getMap(name)) return name;
+          }
+          await ensureMap('Mexico');
+          if (echarts.getMap('Mexico')) return 'Mexico';
+          return echarts.getMap('world') ? 'world' : null;
+        };
+
         const render = async (scope) => {
           const isMx = scope === 'mexico';
-          const mapName = isMx ? 'Mexico' : 'world';
+          const mapName = await resolveMapName(scope);
           if (!(await waitForMap(mapName))) {
             await ensureMap(mapName);
             if (!echarts.getMap(mapName) && !echarts.getMap('world')) {
               console.warn('Map not available; aborting render');
+              geoEl.innerHTML = '<div class="text-muted">Map data unavailable</div>';
               return;
             }
             console.warn('Map not available, falling back to world');
