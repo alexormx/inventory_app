@@ -178,6 +178,42 @@ img.product-order-image {
   object-fit: cover;
 }
 
+/* Inventory */
+.main-inventory-card .card-header img {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+}
+
+.inventory-card .card-header {
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
+}
+
+.inventory-filter.active {
+  color: #fff;
+}
+
+/* Compact inventory visuals */
+.inventory-card {
+  margin-bottom: 0.5rem;
+}
+
+.inventory-card .card-body {
+  padding-top: 0.4rem;
+  padding-bottom: 0.4rem;
+}
+
+.inventory-card .card-header img {
+  width: 32px;
+  height: 32px;
+}
+
+.inventory-card .badge {
+  font-size: 0.72rem;
+  padding: 0.25em 0.45em;
+}
+
 
 /* Footer */
 @media (max-width: 800px) {

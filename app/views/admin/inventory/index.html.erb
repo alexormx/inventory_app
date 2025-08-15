@@ -1,47 +1,110 @@
-<h2 class="mb-4">📦 Inventory Overview</h2>
+<h2 class="mb-3 d-flex align-items-center gap-2">📦 Inventario</h2>
 
-<% @products_with_inventory.each do |product| %>
-  <div class="card mb-3 shadow-sm main-inventory-card">
-    <div class="card-header d-flex justify-content-between align-items-center bg-light">
-      <div class="d-flex align-items-center">
-        <% if product.product_images.attached? %>
-          <%= image_tag product.product_images.first.variant(resize_to_fill: [40, 40]), class: "rounded me-2" %>
-        <% else %>
-          <%= image_tag "placeholder.png", size: "40x40", class: "rounded me-2" %>
-        <% end %>
-        <strong><%= product.product_name %></strong>
-        <span class="text-muted ms-2 small">SKU: <%= product.product_sku %></span>
+<%= render partial: "admin/shared/status_counters", locals: {
+  wrapper_id: "inventory_counts",
+  counts: @inventory_counts,
+  items: [
+    [:available, "Disponible", "bg-success"],
+    [:reserved,  "Apartado",   "bg-info"],
+    [:in_transit,"En tránsito","bg-primary"],
+    [:sold,      "Vendido",    "bg-secondary"],
+    [:returned,  "Devuelto",   "bg-light text-dark border"],
+    [:damaged,   "Dañado",     "bg-warning text-dark"],
+    [:lost,      "Perdido",    "bg-dark"],
+    [:scrap,     "Scrap",      "bg-danger"]
+  ],
+  extra_class: "mb-2"
+} %>
+
+<div class="card mb-4">
+  <div class="card-body py-2">
+    <%= form_with url: admin_inventory_path, method: :get, local: true, class: "row g-2 align-items-center" do %>
+      <div class="col-12 col-md-6">
+        <div class="input-group input-group-sm">
+          <%= text_field_tag :q, @q, class: "form-control", placeholder: "Buscar por nombre o SKU…", aria: { label: "Buscar en inventario" } %>
+          <button class="btn btn-outline-secondary btn-clear-search" type="button" title="Limpiar búsqueda">Limpiar</button>
+          <button class="btn btn-primary" type="submit" name="commit" value="search" title="Buscar">Buscar</button>
+        </div>
       </div>
-    </div>
+      <div class="col-12 col-md-6 text-md-end">
+  <div class="btn-group btn-group-sm me-2" role="group" aria-label="Filtro de status">
+          <% current_status = @status_filter.presence || "all" %>
+          <% status_btn_classes = ->(value, current) do
+               outline = case value
+                         when "available" then "success"
+                         when "reserved" then "info"
+                         when "in_transit" then "primary"
+                         when "sold" then "secondary"
+                         when "damaged" then "warning"
+                         when "lost" then "dark"
+                         when "scrap" then "danger"
+                         else "secondary"
+                         end
+               ["btn", "btn-outline-#{outline}", (current == value ? "active" : nil)].compact.join(" ")
+             end %>
 
-    <turbo-frame id="inventory-summary-<%= product.id %>">
-      <div class="card-body py-2">
-        <div class="row text-center small">
-          <% {
-            "Available" => product.inventories.available.count,
-            "Reserved" => product.inventories.reserved.count,
-            "In Transit" => product.inventories.in_transit.count,
-            "Sold" => product.inventories.sold.count,
-            "Damaged" => product.inventories.damaged.count,
-            "Lost" => product.inventories.lost.count,
-            "Scrap" => product.inventories.scrap.count,
-            "Total" => product.inventories.count
-          }.each do |label, count| %>
-            <div class="col-6 col-md-3 col-lg-2 mb-2">
-              <strong><%= label %>:</strong> <%= count %>
-            </div>
+          <%= button_tag "Todos", name: :status, value: "all", class: status_btn_classes.call("all", current_status) %>
+          <%= button_tag "Disponible", name: :status, value: "available", class: status_btn_classes.call("available", current_status) %>
+          <%= button_tag "Apartado", name: :status, value: "reserved", class: status_btn_classes.call("reserved", current_status) %>
+          <%= button_tag "En tránsito", name: :status, value: "in_transit", class: status_btn_classes.call("in_transit", current_status) %>
+          <%= button_tag "Vendido", name: :status, value: "sold", class: status_btn_classes.call("sold", current_status) %>
+          <%= button_tag "Dañado", name: :status, value: "damaged", class: status_btn_classes.call("damaged", current_status) %>
+          <%= button_tag "Perdido", name: :status, value: "lost", class: status_btn_classes.call("lost", current_status) %>
+          <%= button_tag "Devuelto", name: :status, value: "returned", class: status_btn_classes.call("returned", current_status) %>
+          <%= button_tag "Scrap", name: :status, value: "scrap", class: status_btn_classes.call("scrap", current_status) %>
+  </div>
+  <%= hidden_field_tag :current_status, current_status %>
+  <%= link_to "Limpiar filtros", admin_inventory_path, class: "btn btn-sm btn-outline-secondary ms-2", title: "Quitar búsqueda y status" %>
+      </div>
+    <% end %>
+  </div>
+  </div>
+
+<div id="inventory-list">
+  <% @products_with_inventory.each do |product| %>
+    <% total_items = product.inventories.size %>
+  <div class="card mb-3 shadow-sm main-inventory-card inventory-card">
+      <div class="card-header d-flex justify-content-between align-items-center bg-light">
+        <div class="d-flex align-items-center">
+          <% if product.product_images.attached? %>
+            <%= image_tag product.product_images.first.variant(resize_to_fill: [40, 40]), class: "rounded me-2" %>
+          <% else %>
+            <%= image_tag "placeholder.png", size: "40x40", class: "rounded me-2" %>
+          <% end %>
+          <div>
+            <div class="fw-semibold lh-sm"><%= product.product_name %></div>
+            <div class="text-muted small lh-1">SKU: <%= product.product_sku %></div>
+          </div>
+        </div>
+        <div>
+          <% if total_items > 0 %>
+            <%= link_to "👁 Ver piezas (#{total_items})", items_admin_inventory_path(product),
+                        data: { turbo_frame: "inventory-items-frame-#{product.id}" },
+                        class: "btn btn-sm btn-outline-primary inventory-toggle",
+                        id: "inventory-toggle-#{product.id}",
+                        role: "button" %>
+          <% else %>
+            <button class="btn btn-sm btn-outline-secondary" disabled>Sin piezas</button>
           <% end %>
         </div>
       </div>
-    </turbo-frame>
-    <turbo-frame id="inventory-items-frame-<%= product.id %>" class="mt-2">
-      <% if product.inventories.count > 0 %>
-        <%= link_to "👁 View Items", items_admin_inventory_path(product), data: { turbo_frame: "inventory-items-frame-#{product.id}" }, class: "btn btn-sm btn-outline-primary" %>
-      <% end %>
-    </turbo-frame>
+
+      <%= render partial: "admin/inventory/summary", locals: { product: product } %>
+
+      <turbo-frame id="inventory-items-frame-<%= product.id %>" class="mt-2">
+        <!-- El contenido de items se carga bajo demanda via Turbo -->
+      </turbo-frame>
+    </div>
+  <% end %>
+</div>
+
+<% if @products_with_inventory.none? %>
+  <div id="inventory-empty" class="text-center text-muted my-4">
+    No hay productos que coincidan con los filtros.
+    <div class="small">Limpia la búsqueda o selecciona “Todos”.</div>
   </div>
 <% end %>
 
 <div class="d-flex justify-content-center mt-3">
   <%= paginate @products_with_inventory %>
-  </div>
+</div>

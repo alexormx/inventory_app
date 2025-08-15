@@ -12,4 +12,18 @@ module Admin::InventoryHelper
     else "secondary"
     end
   end
+
+  def inventory_status_label(status)
+    case status.to_s
+    when "available"  then "Disponible"
+    when "reserved"   then "Apartado"
+    when "in_transit" then "En tránsito"
+    when "sold"       then "Vendido"
+    when "damaged"    then "Dañado"
+    when "lost"       then "Perdido"
+    when "scrap"      then "Scrap"
+    when "returned"   then "Devuelto"
+    else status.to_s.humanize
+    end
+  end
 end
