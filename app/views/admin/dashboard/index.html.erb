@@ -315,11 +315,28 @@
           }
           return !!echarts.getMap(name);
         };
+        const ensureMap = async (name) => {
+          if (echarts.getMap(name)) return true;
+          // Fallback: fetch JSON for Mexico if script not loaded
+          if (name === 'Mexico') {
+            try {
+              const url = 'https://cdn.jsdelivr.net/npm/echarts@5/map/json/countries/mexico.json';
+              const resp = await fetch(url);
+              if (resp.ok) {
+                const json = await resp.json();
+                echarts.registerMap('Mexico', json);
+                return true;
+              }
+            } catch (e) { console.warn('Failed to fetch Mexico map JSON', e); }
+          }
+          return false;
+        };
 
         const render = async (scope) => {
           const isMx = scope === 'mexico';
           const mapName = isMx ? 'Mexico' : 'world';
           if (!(await waitForMap(mapName))) {
+            await ensureMap(mapName);
             console.warn('Map not available, falling back to world');
           }
           const seriesData = (data.visits || []).map(d => ({ name: d.name, value: d.value }));
