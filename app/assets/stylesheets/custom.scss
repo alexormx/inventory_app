@@ -150,6 +150,17 @@ dialog.modal-dialog-centered {
 }
 
 /* Sidebar */
+/* Paleta del sidebar (rojo borgoña) */
+:root {
+  --sidebar-bg: #7A1F1F;         /* base */
+  --sidebar-hover-bg: #992525;   /* hover */
+  --sidebar-active-bg: #B42828;  /* activo */
+  --sidebar-border: #D14B4B;     /* acento/borde activo */
+  --sidebar-text: #FFFFFF;       /* texto principal */
+  --sidebar-muted: #E9CFCF;      /* labels/ayudas */
+  --sidebar-icon: #FFD2D2;       /* iconos/acento suave */
+  --sidebar-divider: rgba(255,255,255,0.12); /* divisores */
+}
 
 aside#sidebar {
   position: sticky;
@@ -158,27 +169,72 @@ aside#sidebar {
   overflow-y: auto;
   align-self: flex-start;
   width: 240px; /* ancho base cuando está expandido */
-  background: #7a1f1f; /* rojo oscuro elegante */
-  color: #fff;
+  background: var(--sidebar-bg);
+  color: var(--sidebar-text);
+}
+
+/* Contenedor interno: dar aire y separar del borde */
+aside#sidebar .sidebar-inner {
+  padding: 16px 14px;
 }
 
 /* Links del sidebar: hover y activo */
 aside#sidebar .nav-link {
-  color: #f8f9fa;
+  color: var(--sidebar-text);
   border-radius: 0.35rem;
-  padding: 0.5rem 0.75rem;
-  margin: 2px 6px;
+  padding: 0.55rem 0.75rem;
+  margin: 4px 6px; /* mayor separación vertical */
   transition: background-color 0.15s ease, color 0.15s ease;
 }
 aside#sidebar .nav-link:hover {
-  background-color: #992525; /* tono hover más claro del rojo */
-  color: #ffffff;
+  /* Hover neutral (gris claro sobre rojo) para menos saturación */
+  background-color: rgba(255, 255, 255, 0.12);
+  color: var(--sidebar-text);
 }
 aside#sidebar .nav-link.active,
 aside#sidebar .nav-link[aria-current="page"] {
-  background-color: #b42828; /* color de selección igual al hover */
-  color: #ffffff;
+  background-color: var(--sidebar-active-bg);
+  color: var(--sidebar-text);
   font-weight: 600;
+  border-left: 4px solid var(--sidebar-border);
+  padding-left: calc(0.75rem - 4px);
+}
+
+aside#sidebar hr { border-color: var(--sidebar-divider); }
+
+/* Encabezados de sección (USERS, INVENTORY, SYSTEM) con mayor contraste */
+aside#sidebar .text-secondary.sidebar-label,
+aside#sidebar .text-secondary {
+  color: var(--sidebar-muted) !important; /* más claro sobre fondo rojo */
+  opacity: 0.95;
+  letter-spacing: 0.06em;
+}
+
+/* Botón hamburguesa: centrado, tamaño consistente y hover neutral */
+aside#sidebar .sidebar-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid var(--sidebar-divider);
+  background: transparent;
+  color: var(--sidebar-text);
+  border-radius: 8px;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+aside#sidebar .sidebar-toggle-btn:hover,
+aside#sidebar .sidebar-toggle-btn:focus {
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--sidebar-text);
+  border-color: var(--sidebar-border);
+  outline: none;
+}
+
+/* Colapsado: mantener algo de padding para que no se pegue a la orilla */
+.sidebar-collapsed aside#sidebar .sidebar-inner {
+  padding: 12px 10px;
 }
 .sidebar-collapsed aside#sidebar {
   width: 60px !important;
