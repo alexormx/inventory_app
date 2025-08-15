@@ -50,12 +50,12 @@
 
   <div class="col-md-3">
     <%= f.label :currency %>
-    <%= f.select :currency, ["JPY", "USD", "MXN", "JPY", "GBP"], {}, class: "form-select" %>
+  <%= f.select :currency, PurchaseOrder::CURRENCIES, {}, class: "form-select" %>
   </div>
 
   <div class="col-md-3">
     <%= f.label :exchange_rate, "Exchange Rate vs MXN" %>
-    <%= f.number_field :exchange_rate, step: 0.0001, class: "form-control", placeholder: "e.g., 17.5000" %>
+    <%= f.number_field :exchange_rate, step: 0.0001, class: "form-control", placeholder: "e.g., 17.5000 (1 USD/EUR -> MXN)" %>
   </div>
 
   <div class="col-md-3">

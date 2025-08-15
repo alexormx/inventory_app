@@ -12,6 +12,9 @@ class PurchaseOrder < ApplicationRecord
 
   accepts_nested_attributes_for :purchase_order_items, allow_destroy: true
 
+  # Allowed currencies for purchase orders
+  CURRENCIES = %w[MXN USD EUR JPY GBP].freeze
+
   validates :order_date, presence: true
   validates :expected_delivery_date, presence: true
   validates :subtotal, presence: true, numericality: { greater_than_or_equal_to: 0 }
@@ -19,6 +22,7 @@ class PurchaseOrder < ApplicationRecord
   validates :shipping_cost, presence: true, numericality: { greater_than_or_equal_to: 0 }
   validates :tax_cost, presence: true, numericality: { greater_than_or_equal_to: 0 }
   validates :other_cost, presence: true, numericality: { greater_than_or_equal_to: 0 }
+  validates :currency, inclusion: { in: CURRENCIES }
   validates :status, presence: true, inclusion: { in: ["Pending", "In Transit", "Delivered", "Canceled"]  }
   validate :expected_delivery_after_order_date
   validate :actual_delivery_after_expected_delivery
