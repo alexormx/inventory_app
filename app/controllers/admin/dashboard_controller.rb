@@ -83,17 +83,20 @@ class Admin::DashboardController < ApplicationController
     @so_avg_ticket_ytd = so_ytd.average(:total_order_value)&.to_d || 0.to_d
     @po_avg_ticket_ytd = po_ytd.average(:total_cost_mxn)&.to_d || po_ytd.average(:total_order_cost)&.to_d || 0.to_d
 
-    # Tabla mensual del año en curso
-    sales_monthly = so_ytd.group("DATE_TRUNC('month', order_date)").sum(:total_order_value)
-    cogs_monthly  = SaleOrderItem.joins(:sale_order)
-                                 .merge(so_ytd)
-                                 .group("DATE_TRUNC('month', sale_orders.order_date)")
-                                 .sum(cogs_sql)
-    purchases_monthly = po_ytd.group("DATE_TRUNC('month', order_date)").sum(:total_cost_mxn)
+  # Tabla mensual del año en curso (adapter-aware)
+  so_month_key = month_group_expr('sale_orders', 'order_date')
+  po_month_key = month_group_expr('purchase_orders', 'order_date')
 
-    sales_m_map     = sales_monthly.transform_keys { |t| t.month }
-    cogs_m_map      = cogs_monthly.transform_keys { |t| t.month }
-    purchases_m_map = purchases_monthly.transform_keys { |t| t.month }
+  sales_monthly = so_ytd.group(Arel.sql(so_month_key)).sum(:total_order_value)
+  cogs_monthly  = SaleOrderItem.joins(:sale_order)
+                 .merge(so_ytd)
+                 .group(Arel.sql(so_month_key))
+                 .sum(cogs_sql)
+  purchases_monthly = po_ytd.group(Arel.sql(po_month_key)).sum(:total_cost_mxn)
+
+  sales_m_map     = sales_monthly.transform_keys { |k| extract_month_index(k) }
+  cogs_m_map      = cogs_monthly.transform_keys { |k| extract_month_index(k) }
+  purchases_m_map = purchases_monthly.transform_keys { |k| extract_month_index(k) }
 
     @monthly_current_year = (1..12).map do |m|
       sales = (sales_m_map[m] || 0).to_d
@@ -111,21 +114,24 @@ class Admin::DashboardController < ApplicationController
       }
     end
 
-    # Tabla anual (últimos 5 años)
+  # Tabla anual (últimos 5 años) (adapter-aware)
     years = ((now.year - 4)..now.year).to_a
     so_5y = so_scope.where(order_date: (now.beginning_of_year - 4.years)..now.end_of_year)
     po_5y = po_scope.where(order_date: (now.beginning_of_year - 4.years)..now.end_of_year)
 
-    sales_yearly = so_5y.group("DATE_TRUNC('year', order_date)").sum(:total_order_value)
-    cogs_yearly  = SaleOrderItem.joins(:sale_order)
-                                .merge(so_5y)
-                                .group("DATE_TRUNC('year', sale_orders.order_date)")
-                                .sum(cogs_sql)
-    purchases_yearly = po_5y.group("DATE_TRUNC('year', order_date)").sum(:total_cost_mxn)
+  so_year_key = year_group_expr('sale_orders', 'order_date')
+  po_year_key = year_group_expr('purchase_orders', 'order_date')
 
-    sales_y_map     = sales_yearly.transform_keys { |t| t.year }
-    cogs_y_map      = cogs_yearly.transform_keys { |t| t.year }
-    purchases_y_map = purchases_yearly.transform_keys { |t| t.year }
+  sales_yearly = so_5y.group(Arel.sql(so_year_key)).sum(:total_order_value)
+  cogs_yearly  = SaleOrderItem.joins(:sale_order)
+                .merge(so_5y)
+                .group(Arel.sql(so_year_key))
+                .sum(cogs_sql)
+  purchases_yearly = po_5y.group(Arel.sql(po_year_key)).sum(:total_cost_mxn)
+
+  sales_y_map     = sales_yearly.transform_keys { |k| extract_year_index(k) }
+  cogs_y_map      = cogs_yearly.transform_keys { |k| extract_year_index(k) }
+  purchases_y_map = purchases_yearly.transform_keys { |k| extract_year_index(k) }
 
     @annual_stats = years.map do |y|
       sales = (sales_y_map[y] || 0).to_d
@@ -168,5 +174,61 @@ class Admin::DashboardController < ApplicationController
   private
   def authorize_admin!
     redirect_to root_path, alert: "Not authorized." unless current_user.admin?
+  end
+
+  # Adapter helpers for grouping by month/year
+  def db_adapter
+    ActiveRecord::Base.connection.adapter_name.to_s.downcase
+  end
+
+  # Returns a SQL expression string for grouping by month
+  # table: e.g., 'sale_orders', column: e.g., 'order_date'
+  def month_group_expr(table, column)
+    col = "#{table}.#{column}"
+    if db_adapter.include?('sqlite')
+      # YYYY-MM-01 string
+      "strftime('%Y-%m-01', #{col})"
+    else
+      # PostgreSQL
+      "DATE_TRUNC('month', #{col})"
+    end
+  end
+
+  # Returns a SQL expression string for grouping by year
+  def year_group_expr(table, column)
+    col = "#{table}.#{column}"
+    if db_adapter.include?('sqlite')
+      # YYYY string
+      "strftime('%Y', #{col})"
+    else
+      # PostgreSQL
+      "DATE_TRUNC('year', #{col})"
+    end
+  end
+
+  # Normalize month key to 1..12 integer
+  def extract_month_index(key)
+    if key.respond_to?(:month)
+      key.month
+    elsif key.is_a?(String)
+      begin
+        Date.parse(key).month
+      rescue ArgumentError
+        nil
+      end
+    else
+      nil
+    end
+  end
+
+  # Normalize year key to integer
+  def extract_year_index(key)
+    if key.respond_to?(:year)
+      key.year
+    elsif key.is_a?(String)
+      key.to_s[0,4].to_i
+    else
+      nil
+    end
   end
 end
