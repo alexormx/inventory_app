@@ -32,4 +32,80 @@
       </div>
     </div>
   </div>
+
+  <div class="row mt-4">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span><i class="fa-solid fa-globe"></i> Mapa mundial: accesos y ventas</span>
+          <small class="text-muted">Fuente: Visitor Logs (accesos); Ventas por enviar (placeholder)</small>
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <h6 class="mb-2">Accesos por país</h6>
+              <div id="world-map-visits" style="height: 360px;"></div>
+            </div>
+            <div class="col-md-6">
+              <h6 class="mb-2">Ventas por país</h6>
+              <div id="world-map-sales" style="height: 360px;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
+
+<!-- ECharts CDN and world geojson loader -->
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/map/js/world.js"></script>
+<script>
+  document.addEventListener('turbo:load', () => {
+    const visitsEl = document.getElementById('world-map-visits');
+    const salesEl  = document.getElementById('world-map-sales');
+    if (!visitsEl || !salesEl || !(window.echarts)) return;
+
+    Promise.resolve().then(async () => {
+      const res = await fetch('<%= admin_dashboard_geo_path(format: :json) %>');
+      if (!res.ok) return;
+      const data = await res.json();
+
+      const visitsChart = echarts.init(visitsEl);
+      const salesChart  = echarts.init(salesEl);
+
+      const commonOpts = (title) => ({
+        tooltip: { trigger: 'item', formatter: ({name, value}) => `${name}: ${value?.toLocaleString?.() || value || 0}` },
+        visualMap: { min: 0, max: 100, left: 'left', top: 'bottom', text: ['Alto','Bajo'], calculable: true },
+        series: [{
+          name: title,
+          type: 'map',
+          map: 'world',
+          roam: true,
+          emphasis: { label: { show: false } },
+          data: []
+        }]
+      });
+
+      const visitsOpts = commonOpts('Accesos');
+      visitsOpts.series[0].data = (data.visits || []).map(d => ({ name: d.name, value: d.value }));
+      // Ajustar el rango visual con base en datos
+      if (visitsOpts.series[0].data.length) {
+        const maxVal = Math.max(...visitsOpts.series[0].data.map(d => d.value));
+        visitsOpts.visualMap.max = Math.max(10, maxVal);
+      }
+      visitsChart.setOption(visitsOpts);
+
+      const salesOpts = commonOpts('Ventas');
+      salesOpts.series[0].data = (data.sales_by_country || []).map(d => ({ name: d.name, value: d.value }));
+      if (salesOpts.series[0].data.length) {
+        const maxVal = Math.max(...salesOpts.series[0].data.map(d => d.value));
+        salesOpts.visualMap.max = Math.max(10, maxVal);
+      }
+      salesChart.setOption(salesOpts);
+
+      // Responsivo
+      window.addEventListener('resize', () => { visitsChart.resize(); salesChart.resize(); });
+    });
+  });
+</script>

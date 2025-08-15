@@ -23,7 +23,9 @@ Rails.application.routes.draw do
     end
 
     # Admin Dashboard
-    get 'dashboard', to: 'dashboard#index', as: :dashboard
+  get 'dashboard', to: 'dashboard#index', as: :dashboard
+  # Geo stats for dashboard (JSON)
+  get 'dashboard/geo', to: 'dashboard#geo', as: :dashboard_geo
 
     # Product Management
     get 'products/drafts', to: 'products#drafts', as: :products_drafts
