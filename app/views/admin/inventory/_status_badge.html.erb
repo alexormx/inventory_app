@@ -1,6 +1,6 @@
 <turbo-frame id="inventory_status_<%= item.id %>">
   <span class="badge bg-<%= inventory_status_color(item.status) %>">
-    <i class="fas fa-tag me-1"></i><%= item.status.humanize %>
+  <i class="fas fa-tag me-1"></i><%= inventory_status_label(item.status) %>
   </span>
 
   <% unless item.status == "sold" %>

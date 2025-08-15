@@ -3,13 +3,60 @@ class Admin::InventoryController < ApplicationController
   before_action :authorize_admin!
 
   def index
-    @products_with_inventory =
-      Product
-        .left_outer_joins(:inventories)
-        .includes(inventories: :purchase_order)
-        .distinct
-        .order(created_at: :desc)
-        .page(params[:page]).per(15)
+  # Si no viene :status (p.ej., Enter en búsqueda), conservar el :current_status oculto
+  params[:status] ||= params[:current_status]
+  @status_filter = params[:status].presence
+    @q = params[:q].to_s.strip
+
+    # Base: productos con conteos por estado mediante subconsultas (usando IDs del enum)
+    sids = Inventory.statuses # {"available"=>0, ...}
+    products = Product
+      .includes(inventories: :purchase_order)
+      .select(
+        "products.*,
+         (SELECT COUNT(*) FROM inventories i WHERE i.product_id = products.id AND i.status = #{sids['available']}) AS available_count,
+         (SELECT COUNT(*) FROM inventories i WHERE i.product_id = products.id AND i.status = #{sids['reserved']}) AS reserved_count,
+         (SELECT COUNT(*) FROM inventories i WHERE i.product_id = products.id AND i.status = #{sids['in_transit']}) AS in_transit_count,
+         (SELECT COUNT(*) FROM inventories i WHERE i.product_id = products.id AND i.status = #{sids['sold']}) AS sold_count,
+         (SELECT COUNT(*) FROM inventories i WHERE i.product_id = products.id) AS total_count"
+      )
+
+    # Filtro por estatus (si se selecciona uno válido)
+    valid_statuses = Inventory.statuses.keys
+    if @status_filter.present? && @status_filter != "all" && valid_statuses.include?(@status_filter)
+      products = products.where(
+        "EXISTS (SELECT 1 FROM inventories fi WHERE fi.product_id = products.id AND fi.status = ?)",
+        Inventory.statuses[@status_filter]
+      )
+    end
+
+    # Búsqueda por nombre o SKU (case-insensitive, abarca todos los productos)
+    if @q.present?
+      term = "%#{@q.downcase}%"
+      products = products.where("LOWER(products.product_name) LIKE ? OR LOWER(products.product_sku) LIKE ?", term, term)
+    end
+
+    # Totales por estado (respetando búsqueda y filtro de status actual)
+    # Deriva los IDs de enum
+    status_ids = Inventory.statuses
+    # Construir un scope de inventories filtrado por los productos actuales
+  product_ids = products.pluck(:id)
+  inventories_scope = Inventory.where(product_id: product_ids)
+    # Si hay filtro de status activo, limitar a ese status
+    if @status_filter.present? && @status_filter != "all" && valid_statuses.include?(@status_filter)
+      inventories_scope = inventories_scope.where(status: status_ids[@status_filter])
+    end
+
+    status_keys = %w[available reserved in_transit sold returned damaged lost scrap]
+    @inventory_counts = {}
+    status_keys.each do |key|
+      @inventory_counts[key.to_sym] = inventories_scope.where(status: status_ids[key]).count
+    end
+
+    # Ordenar por prioridad: disponible desc, reservado desc, en tránsito desc, vendido desc, total desc
+    @products_with_inventory = products
+      .order("available_count DESC, reserved_count DESC, in_transit_count DESC, sold_count DESC, total_count DESC")
+      .page(params[:page]).per(10)
   end
 
   def items

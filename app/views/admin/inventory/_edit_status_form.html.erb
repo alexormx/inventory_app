@@ -2,7 +2,7 @@
   <%= form_with url: update_status_admin_inventory_path(item), method: :patch, local: false do |f| %>
     <div class="d-flex gap-2 align-items-center">
       <%= f.select :status,
-        Inventory.statuses.except("sold").keys.map { |s| [s.humanize, s] },
+        Inventory.statuses.except("sold").keys.map { |s| [inventory_status_label(s), s] },
         { selected: item.status },
         class: "form-select form-select-sm d-inline w-auto" %>
 
