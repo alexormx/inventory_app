@@ -158,6 +158,27 @@ aside#sidebar {
   overflow-y: auto;
   align-self: flex-start;
   width: 240px; /* ancho base cuando está expandido */
+  background: #7a1f1f; /* rojo oscuro elegante */
+  color: #fff;
+}
+
+/* Links del sidebar: hover y activo */
+aside#sidebar .nav-link {
+  color: #f8f9fa;
+  border-radius: 0.35rem;
+  padding: 0.5rem 0.75rem;
+  margin: 2px 6px;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+aside#sidebar .nav-link:hover {
+  background-color: #992525; /* tono hover más claro del rojo */
+  color: #ffffff;
+}
+aside#sidebar .nav-link.active,
+aside#sidebar .nav-link[aria-current="page"] {
+  background-color: #b42828; /* color de selección igual al hover */
+  color: #ffffff;
+  font-weight: 600;
 }
 .sidebar-collapsed aside#sidebar {
   width: 60px !important;
