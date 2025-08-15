@@ -48,6 +48,12 @@ class Admin::InventoryController < ApplicationController
     end
 
     status_keys = %w[available reserved in_transit sold returned damaged lost scrap]
+    # Superiores (globales, no cambian con filtros): conteo global por status
+    @inventory_counts_global = {}
+    status_keys.each do |key|
+      @inventory_counts_global[key.to_sym] = Inventory.where(status: status_ids[key]).count
+    end
+    # Inferiores (filtrados por q + status)
     @inventory_counts = {}
     status_keys.each do |key|
       @inventory_counts[key.to_sym] = inventories_scope.where(status: status_ids[key]).count

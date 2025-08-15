@@ -1,8 +1,8 @@
-<h2 class="mb-3 d-flex align-items-center gap-2">📦 Inventario</h2>
+<h2 class="mb-3 d-flex align-items-center gap-2"><i class="fa fa-archive"></i> Inventario</h2>
 
 <%= render partial: "admin/shared/status_counters", locals: {
-  wrapper_id: "inventory_counts",
-  counts: @inventory_counts,
+  wrapper_id: "inventory_counts_global",
+  counts: @inventory_counts_global,
   items: [
     [:available, "Disponible", "bg-success"],
     [:reserved,  "Apartado",   "bg-info"],
@@ -13,7 +13,8 @@
     [:lost,      "Perdido",    "bg-dark"],
     [:scrap,     "Scrap",      "bg-danger"]
   ],
-  extra_class: "mb-2"
+  extra_class: "mb-2",
+  title: "Resumen"
 } %>
 
 <div class="card mb-4">
@@ -59,6 +60,25 @@
     <% end %>
   </div>
   </div>
+
+<%# Contadores inferiores (dependen de búsqueda + filtro, ocultar cero) %>
+<%= render partial: "admin/shared/status_counters", locals: {
+  wrapper_id: "inventory_counts_filtered",
+  counts: @inventory_counts,
+  items: [
+    [:available, "Disponible", "bg-success"],
+    [:reserved,  "Apartado",   "bg-info"],
+    [:in_transit,"En tránsito","bg-primary"],
+    [:sold,      "Vendido",    "bg-secondary"],
+    [:returned,  "Devuelto",   "bg-light text-dark border"],
+    [:damaged,   "Dañado",     "bg-warning text-dark"],
+    [:lost,      "Perdido",    "bg-dark"],
+    [:scrap,     "Scrap",      "bg-danger"]
+  ],
+  hide_zero: true,
+  extra_class: "mb-2",
+  title: "Resultados"
+} %>
 
 <div id="inventory-list">
   <% @products_with_inventory.each do |product| %>

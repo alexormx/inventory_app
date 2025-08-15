@@ -8,7 +8,33 @@ class Admin::SaleOrdersController < ApplicationController
   PER_PAGE = 20
 
   def index
-    @sale_orders = SaleOrder.includes(:user).order(created_at: :desc).page(params[:page]).per(PER_PAGE)
+    # Filtros y búsqueda similares a inventario
+    params[:status] ||= params[:current_status]
+    @status_filter = params[:status].presence
+    @q = params[:q].to_s.strip
+
+  scope = SaleOrder.joins(:user).includes(:user).order(created_at: :desc)
+    if @status_filter.present? && @status_filter != "all"
+      scope = scope.where(status: @status_filter)
+    end
+    if @q.present?
+      term = "%#{@q.downcase}%"
+      scope = scope.where("CAST(sale_orders.id AS TEXT) LIKE ? OR LOWER(users.name) LIKE ?", term, term)
+    end
+    @sale_orders = scope.page(params[:page]).per(PER_PAGE)
+
+    # Contadores superiores (globales) e inferiores (filtrados)
+    statuses = ["Pending", "Confirmed", "Shipped", "Delivered", "Canceled"]
+    @counts_global = statuses.each_with_object({}) { |s, h| h[s] = SaleOrder.where(status: s).count }
+    counts_scope = SaleOrder.joins(:user)
+    if @q.present?
+      term = "%#{@q.downcase}%"
+      counts_scope = counts_scope.where("CAST(sale_orders.id AS TEXT) LIKE ? OR LOWER(users.name) LIKE ?", term, term)
+    end
+    if @status_filter.present? && @status_filter != "all"
+      counts_scope = counts_scope.where(status: @status_filter)
+    end
+    @counts = statuses.each_with_object({}) { |s, h| h[s] = counts_scope.where(status: s).count }
   end
 
   def new
@@ -70,7 +96,8 @@ class Admin::SaleOrdersController < ApplicationController
   end
 
   def load_counts
-    @counts = SaleOrder.group(:status).count
+    # Mantener método para compatibilidad; @counts se recalcula en index
+    @counts ||= SaleOrder.group(:status).count
   end
 end
 

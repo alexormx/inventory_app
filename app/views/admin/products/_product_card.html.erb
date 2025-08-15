@@ -21,11 +21,14 @@
       <% purchased = (product.respond_to?(:total_purchase_quantity) && product.total_purchase_quantity).to_i %>
       <% sold      = (product.respond_to?(:total_units_sold) && product.total_units_sold).to_i.presence || (product.respond_to?(:total_sales_quantity) && product.total_sales_quantity).to_i %>
       <% stock_on_hand = product.inventories.available.count %>
+  <% reserved = product.inventories.where(status: :reserved).count %>
       <span>Comprado: <strong><%= purchased %></strong></span>
       ·
       <span>Vendido: <strong><%= sold %></strong></span>
       ·
       <span>Stock: <strong><%= stock_on_hand %></strong></span>
+  ·
+  <span>Apartados: <strong><%= reserved %></strong></span>
     </div>
     <%= turbo_frame_tag "product_badge_#{product.id}" do %>
       <%= render partial: 'status_badge', locals: { product: product } %>

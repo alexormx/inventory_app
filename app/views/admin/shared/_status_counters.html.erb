@@ -10,6 +10,8 @@
     - cta_label: optional string for a button label (e.g., "New ...")
     - cta_path: optional path helper for the CTA button
     - extra_class: optional string with extra classes for the wrapper div
+    - hide_zero: optional boolean to hide badges whose count is 0 (default: false)
+    - title: optional small label shown above the counters row (e.g., "Totales" or "Filtrado")
 %>
 <% counts ||= {} %>
 <% items ||= [] %>
@@ -20,10 +22,16 @@
 
 <% total = items.sum { |k, lbl, _css| fetch.call(k, lbl) } %>
 
+<% if local_assigns[:title].present? %>
+  <div class="text-muted small mb-1"><%= local_assigns[:title] %></div>
+<% end %>
+
 <div<%= " id=\"#{wrapper_id}\"" if local_assigns[:wrapper_id].present? %> class="d-flex flex-wrap align-items-center gap-2 mb-3 <%= local_assigns[:extra_class] %>">
   <span class="badge bg-dark">Total: <%= total %></span>
   <% items.each do |k, lbl, css| %>
-    <span class="badge <%= css %>"><%= lbl %>: <%= fetch.call(k, lbl) %></span>
+  <% c = fetch.call(k, lbl) %>
+  <% next if local_assigns[:hide_zero] && c.to_i <= 0 %>
+  <span class="badge <%= css %>"><%= lbl %>: <%= c %></span>
   <% end %>
 
   <% if local_assigns[:cta_label].present? && local_assigns[:cta_path].present? %>

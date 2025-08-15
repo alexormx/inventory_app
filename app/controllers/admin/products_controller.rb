@@ -10,7 +10,18 @@ class Admin::ProductsController < ApplicationController
   PER_PAGE = 9
 
   def index
-  @products = Product.where(status: 'active').order(created_at: :desc).page(params[:page]).per(PER_PAGE)
+    @q = params[:q].to_s.strip
+    current_status = params[:status].presence || 'all'
+    scope = Product.all
+    if current_status != 'all'
+      scope = scope.where(status: current_status)
+    end
+    if @q.present?
+      term = "%#{@q.downcase}%"
+      scope = scope.where("LOWER(product_name) LIKE ? OR LOWER(product_sku) LIKE ?", term, term)
+    end
+  @products = scope.order(created_at: :desc).page(params[:page]).per(PER_PAGE)
+  compute_counts
   end
 
   def new
@@ -141,17 +152,38 @@ class Admin::ProductsController < ApplicationController
 
   # --- Vistas por estado ---
   def drafts
-    @products = Product.where(status: 'draft').order(created_at: :desc).page(params[:page]).per(PER_PAGE)
+    @q = params[:q].to_s.strip
+    scope = Product.where(status: 'draft')
+    if @q.present?
+      term = "%#{@q.downcase}%"
+      scope = scope.where("LOWER(product_name) LIKE ? OR LOWER(product_sku) LIKE ?", term, term)
+    end
+  @products = scope.order(created_at: :desc).page(params[:page]).per(PER_PAGE)
+  compute_counts
   render :drafts, layout: false
   end
 
   def active
-    @products = Product.where(status: 'active').order(created_at: :desc).page(params[:page]).per(PER_PAGE)
+    @q = params[:q].to_s.strip
+    scope = Product.where(status: 'active')
+    if @q.present?
+      term = "%#{@q.downcase}%"
+      scope = scope.where("LOWER(product_name) LIKE ? OR LOWER(product_sku) LIKE ?", term, term)
+    end
+  @products = scope.order(created_at: :desc).page(params[:page]).per(PER_PAGE)
+  compute_counts
   render :active, layout: false
   end
 
   def inactive
-    @products = Product.where(status: 'inactive').order(created_at: :desc).page(params[:page]).per(PER_PAGE)
+    @q = params[:q].to_s.strip
+    scope = Product.where(status: 'inactive')
+    if @q.present?
+      term = "%#{@q.downcase}%"
+      scope = scope.where("LOWER(product_name) LIKE ? OR LOWER(product_sku) LIKE ?", term, term)
+    end
+  @products = scope.order(created_at: :desc).page(params[:page]).per(PER_PAGE)
+  compute_counts
   render :inactive, layout: false
   end
 
@@ -159,10 +191,33 @@ class Admin::ProductsController < ApplicationController
   private
 
   def load_counts
-    @counts = {
+    compute_counts unless defined?(@counts_global)
+  end
+
+  def compute_counts
+    q = params[:q].to_s.strip
+    base = Product.all
+    if q.present?
+      term = "%#{q.downcase}%"
+      base = base.where("LOWER(product_name) LIKE ? OR LOWER(product_sku) LIKE ?", term, term)
+    end
+    # Aplicar también el filtro de status actual para los contadores inferiores
+    current_status = params[:status].presence || 'all'
+    filtered_base = base
+    if current_status != 'all'
+      filtered_base = filtered_base.where(status: current_status)
+    end
+    # Globales (no dependen de q)
+    @counts_global = {
       draft:   Product.where(status: 'draft').count,
       active:  Product.where(status: 'active').count,
       inactive: Product.where(status: 'inactive').count
+    }
+    # Inferiores (dependen de q)
+    @counts = {
+      draft:   filtered_base.where(status: 'draft').count,
+      active:  filtered_base.where(status: 'active').count,
+      inactive: filtered_base.where(status: 'inactive').count
     }
   end
 

@@ -8,29 +8,19 @@ function toggleSidebar() {
     return;
   }
 
-  // ➤ Check if sidebar should start collapsed
-  if (localStorage.getItem("sidebar-collapsed") === "true") {
-    collapseSidebar();
-  }
+  // Estado ya aplicado por script inline para evitar flash; solo sincronizamos labels
+  syncLabels();
 
   // ➤ Toggle sidebar and save state
   toggleBtn.addEventListener("click", () => {
-    if (sidebar.classList.contains("sidebar-collapsed")) {
-      expandSidebar();
-    } else {
-      collapseSidebar();
-    }
+    const collapsed = document.documentElement.classList.toggle("sidebar-collapsed");
+    localStorage.setItem("sidebar-collapsed", collapsed ? "true" : "false");
+    syncLabels();
   });
-  function collapseSidebar() {
-    sidebar.classList.add("sidebar-collapsed");
-    document.querySelectorAll(".sidebar-label").forEach(label => label.classList.add("d-none"));
-    localStorage.setItem("sidebar-collapsed", "true");
-  }
 
-  function expandSidebar() {
-    sidebar.classList.remove("sidebar-collapsed");
-    document.querySelectorAll(".sidebar-label").forEach(label => label.classList.remove("d-none"));
-    localStorage.setItem("sidebar-collapsed", "false");
+  function syncLabels() {
+    const isCollapsed = document.documentElement.classList.contains("sidebar-collapsed");
+    document.querySelectorAll(".sidebar-label").forEach(label => label.classList.toggle("d-none", isCollapsed));
   }
 }
 

@@ -7,7 +7,34 @@ class Admin::PurchaseOrdersController < ApplicationController
   PER_PAGE = 20
 
   def index
-    @purchase_orders = PurchaseOrder.order(created_at: :desc).page(params[:page]).per(PER_PAGE)
+    params[:status] ||= params[:current_status]
+    @status_filter = params[:status].presence
+    @q = params[:q].to_s.strip
+
+  scope = PurchaseOrder.joins(:user).includes(:user).order(created_at: :desc)
+  if @status_filter.present? && @status_filter != "all"
+      scope = scope.where(status: @status_filter)
+    end
+    if @q.present?
+      term = "%#{@q.downcase}%"
+      scope = scope.where("CAST(purchase_orders.id AS TEXT) LIKE ? OR LOWER(users.name) LIKE ?", term, term)
+    end
+    @purchase_orders = scope.page(params[:page]).per(PER_PAGE)
+
+  counts_scope = PurchaseOrder.joins(:user)
+    if @q.present?
+      term = "%#{@q.downcase}%"
+      counts_scope = counts_scope.where("CAST(purchase_orders.id AS TEXT) LIKE ? OR LOWER(users.name) LIKE ?", term, term)
+    end
+    statuses = ["Pending", "In Transit", "Delivered", "Canceled"]
+    # Superiores (globales)
+    @counts_global = statuses.each_with_object({}) { |s, h| h[s] = PurchaseOrder.where(status: s).count }
+    # Inferiores (filtrados por q y status)
+    filtered = counts_scope
+    if @status_filter.present? && @status_filter != "all"
+      filtered = filtered.where(status: @status_filter)
+    end
+    @counts = statuses.each_with_object({}) { |s, h| h[s] = filtered.where(status: s).count }
   end
 
   def show
@@ -84,6 +111,6 @@ class Admin::PurchaseOrdersController < ApplicationController
   end
 
   def load_counts
-    @counts = PurchaseOrder.group(:status).count
+  @counts ||= PurchaseOrder.group(:status).count
   end
 end

@@ -7,8 +7,43 @@ class Admin::UsersController < ApplicationController
   PER_PAGE = 20
 
   def index
-    # Tab por defecto: customers
-    @users = User.where(role: 'customer').order(created_at: :desc).page(params[:page]).per(PER_PAGE)
+    # Búsqueda y filtro por rol (esquema similar a inventario)
+    params[:role] ||= params[:current_role]
+    @role_filter = params[:role].presence
+    @q = params[:q].to_s.strip
+
+    users = User.order(created_at: :desc)
+    if @role_filter.present? && @role_filter != "all"
+      users = users.where(role: @role_filter)
+    end
+    if @q.present?
+      term = "%#{@q.downcase}%"
+      users = users.where("LOWER(name) LIKE ?", term)
+    end
+
+    @users = users.page(params[:page]).per(PER_PAGE)
+
+    # Contadores: globales (no cambian) y filtrados (cambian con búsqueda+filtro)
+    @role_counts_global = {
+      customers: User.where(role: 'customer').count,
+      suppliers: User.where(role: 'supplier').count,
+      admins:    User.where(role: 'admin').count
+    }
+
+    filtered_counts_scope = User.all
+    if @q.present?
+      term = "%#{@q.downcase}%"
+      filtered_counts_scope = filtered_counts_scope.where("LOWER(name) LIKE ?", term)
+    end
+    if @role_filter.present? && @role_filter != "all"
+      filtered_counts_scope = filtered_counts_scope.where(role: @role_filter)
+    end
+    @role_counts = {
+      customers: filtered_counts_scope.where(role: 'customer').count,
+      suppliers: filtered_counts_scope.where(role: 'supplier').count,
+      admins:    filtered_counts_scope.where(role: 'admin').count
+    }
+
     @purchase_stats, @sales_stats, @last_visits = compute_stats(@users.map(&:id))
   end
 
