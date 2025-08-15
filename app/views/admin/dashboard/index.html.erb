@@ -43,7 +43,57 @@
         <div class="card-body">
           <div class="row g-3">
             <div class="col-md-6">
-              <h6 class="mb-2">Accesos por país</h6>
+        <!-- KPIs -->
+        <div class="row g-3">
+          <div class="col-md-2 col-6">
+            <div class="card text-bg-light h-100">
+              <div class="card-body">
+                <div class="small text-muted">Productos</div>
+                <div class="fs-4 fw-bold"><%= number_with_delimiter(@total_products) %></div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-2 col-6">
+            <div class="card text-bg-light h-100">
+              <div class="card-body">
+                <div class="small text-muted">Usuarios</div>
+                <div class="fs-4 fw-bold"><%= number_with_delimiter(@total_users) %></div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-2 col-6">
+            <div class="card text-bg-success-subtle h-100">
+              <div class="card-body">
+                <div class="small text-muted">Ventas YTD</div>
+                <div class="fs-5 fw-bold">$ <%= number_with_precision(@sales_ytd, precision: 2, delimiter: ',') %></div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-2 col-6">
+            <div class="card text-bg-warning-subtle h-100">
+              <div class="card-body">
+                <div class="small text-muted">Compras YTD</div>
+                <div class="fs-5 fw-bold">$ <%= number_with_precision(@purchases_ytd, precision: 2, delimiter: ',') %></div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-2 col-6">
+            <div class="card text-bg-primary-subtle h-100">
+              <div class="card-body">
+                <div class="small text-muted">Ganancia YTD</div>
+                <div class="fs-5 fw-bold">$ <%= number_with_precision(@profit_ytd, precision: 2, delimiter: ',') %></div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-2 col-6">
+            <div class="card text-bg-info-subtle h-100">
+              <div class="card-body">
+                <div class="small text-muted">Margen YTD</div>
+                <div class="fs-4 fw-bold"><%= number_to_percentage(@margin_ytd * 100, precision: 1) %></div>
+              </div>
+            </div>
+          </div>
+        </div>
               <div id="world-map-visits" style="height: 360px;"></div>
             </div>
             <div class="col-md-6">
