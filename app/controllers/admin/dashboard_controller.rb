@@ -22,7 +22,7 @@ class Admin::DashboardController < ApplicationController
     @total_products = Product.active.count rescue Product.count
     @total_users    = User.count
 
-    # Ventas/Compras YTD
+  # Ventas/Compras YTD
     @sales_ytd     = so_ytd.sum(:total_order_value).to_d
     @purchases_ytd = po_ytd.sum(:total_cost_mxn).to_d
     if @purchases_ytd.zero?
@@ -39,14 +39,69 @@ class Admin::DashboardController < ApplicationController
     @profit_ytd = @sales_ytd - @cogs_ytd
     @margin_ytd = @sales_ytd.positive? ? (@profit_ytd / @sales_ytd) : 0.to_d
 
-    # Top 10 productos históricos (por unidades)
+    # KPI adicionales
+    @orders_count_ytd      = so_ytd.count
+    @active_customers_ytd  = so_ytd.select(:user_id).distinct.count
+    @inventory_total_value = Product.sum(:current_inventory_value).to_d
+
+    # Comparativa YTD vs mismo periodo del año anterior
+    range_prev_start = @start_date.prev_year
+    range_prev_end   = @end_date.prev_year
+    so_prev_range = so_scope.where(order_date: range_prev_start..range_prev_end)
+    @sales_prev   = so_prev_range.sum(:total_order_value).to_d
+    @cogs_prev    = SaleOrderItem.joins(:sale_order).merge(so_prev_range).sum(cogs_sql).to_d
+    @profit_prev  = @sales_prev - @cogs_prev
+    @margin_prev  = @sales_prev.positive? ? (@profit_prev / @sales_prev) : 0.to_d
+    @orders_prev  = so_prev_range.count
+    @active_customers_prev = so_prev_range.select(:user_id).distinct.count
+
+    # Deltas (% vs LY) y puntos porcentuales para margen
+    def pct_delta(curr, prev)
+      prev.to_d.positive? ? ((curr.to_d - prev.to_d) / prev.to_d) : nil
+    end
+    @kpi_deltas = {
+      sales:   pct_delta(@sales_ytd, @sales_prev),
+      profit:  pct_delta(@profit_ytd, @profit_prev),
+      orders:  pct_delta(@orders_count_ytd, @orders_prev),
+      customers: pct_delta(@active_customers_ytd, @active_customers_prev),
+      margin_pp: (@margin_ytd - @margin_prev) # diferencia absoluta (puntos)
+    }
+
+    # Ticket promedio y conversión (si hay visitas)
+    @avg_ticket_ytd = @orders_count_ytd.positive? ? (@sales_ytd / @orders_count_ytd) : 0.to_d
+    begin
+      @visits_total = VisitorLog.sum(:visit_count)
+    rescue
+      @visits_total = nil
+    end
+    @conversion_rate_ytd = (@visits_total.to_i > 0) ? (@orders_count_ytd.to_d / @visits_total.to_d) : nil
+
+    # Clientes nuevos vs recurrentes (nuevos = primera orden en el rango YTD)
+    first_order_by_user = so_scope.group(:user_id).minimum(:order_date)
+    @new_customers_ytd = first_order_by_user.values.count { |d| d && d >= @start_date && d <= @end_date }
+    @recurring_customers_ytd = @active_customers_ytd - @new_customers_ytd
+    @recurring_customers_ratio = @active_customers_ytd.positive? ? (@recurring_customers_ytd.to_d / @active_customers_ytd) : nil
+
+    # Stock crítico (productos con inventario libre <= punto de reorden > 0)
+    begin
+      free_counts = Inventory.free.group(:product_id).count
+      rp_map = Product.where("reorder_point IS NOT NULL AND reorder_point > 0").pluck(:id, :reorder_point).to_h
+      @critical_stock_count = rp_map.count { |pid, rp| free_counts.fetch(pid, 0).to_i <= rp.to_i }
+    rescue => _e
+      @critical_stock_count = nil
+    end
+
+    # Rotación de inventario aproximada (COGS YTD / inventario promedio). Sin histórico, usar total actual como aproximación.
+    @inventory_turnover_ytd = @inventory_total_value.positive? ? (@cogs_ytd / @inventory_total_value) : nil
+
+  # Top 10 productos históricos (por unidades)
     rev_sql = "COALESCE(sale_order_items.unit_final_price, 0) * COALESCE(sale_order_items.quantity, 0)"
     top_products = SaleOrderItem.joins(:sale_order, :product)
                                 .merge(so_scope)
                                 .group("products.id", "products.product_name")
                                 .select("products.id, products.product_name, SUM(sale_order_items.quantity) AS units, SUM(#{rev_sql}) AS revenue")
                                 .order("units DESC")
-                                .limit(10)
+                .limit(10)
     @top_products_all = top_products.map { |r| { product_id: r.id, name: r.product_name, units: r.attributes["units"].to_i, revenue: r.attributes["revenue"].to_d } }
 
     # Top 5 productos en las últimas 20 ventas
@@ -63,21 +118,46 @@ class Admin::DashboardController < ApplicationController
       @top_products_last20 = []
     end
 
-    # Top 5 usuarios con mayores compras históricas (por ingresos)
+  # Top 10 usuarios con mayores compras históricas (por ingresos)
     users_top = so_scope.joins(:user)
                         .group("users.id", "users.name")
                         .select("users.id, users.name, COUNT(*) AS orders_count, SUM(total_order_value) AS revenue, AVG(total_order_value) AS avg_ticket")
                         .order("revenue DESC")
-                        .limit(5)
+            .limit(10)
     @top_users_all = users_top.map { |r| { user_id: r.id, name: r.name.presence || r.id, orders_count: r.attributes["orders_count"].to_i, revenue: r.attributes["revenue"].to_d, avg_ticket: r.attributes["avg_ticket"].to_d } }
 
-  # Top 5 users within current range
+  # Top 10 users within current range (YTD por defecto)
   users_top_range = so_ytd.joins(:user)
               .group("users.id", "users.name")
               .select("users.id, users.name, COUNT(*) AS orders_count, SUM(total_order_value) AS revenue, AVG(total_order_value) AS avg_ticket")
               .order("revenue DESC")
-              .limit(5)
+              .limit(10)
   @top_users_range = users_top_range.map { |r| { user_id: r.id, name: r.name.presence || r.id, orders_count: r.attributes["orders_count"].to_i, revenue: r.attributes["revenue"].to_d, avg_ticket: r.attributes["avg_ticket"].to_d } }
+
+  # Top 10 users Last Year (calendario completo)
+  ly_start_users = now.beginning_of_year - 1.year
+  ly_end_users   = ly_start_users.end_of_year
+  so_last_year_users = so_scope.where(order_date: ly_start_users..ly_end_users)
+  users_top_last_year = so_last_year_users.joins(:user)
+                                          .group("users.id", "users.name")
+                                          .select("users.id, users.name, COUNT(*) AS orders_count, SUM(total_order_value) AS revenue, AVG(total_order_value) AS avg_ticket")
+                                          .order("revenue DESC")
+                                          .limit(10)
+  @top_users_last_year = users_top_last_year.map { |r| { user_id: r.id, name: r.name.presence || r.id, orders_count: r.attributes["orders_count"].to_i, revenue: r.attributes["revenue"].to_d, avg_ticket: r.attributes["avg_ticket"].to_d } }
+
+  # Comparativo YTD vs mismo periodo del año pasado para Top Customers (solo para la pestaña YTD)
+  users_prev_rows = so_prev_range.joins(:user)
+                                 .group("users.id")
+                                 .select("users.id, COUNT(*) AS orders_count, SUM(total_order_value) AS revenue")
+  prev_map = {}
+  users_prev_rows.each do |r|
+    prev_map[r.id] = { orders_count: r.attributes["orders_count"].to_i, revenue: r.attributes["revenue"].to_d }
+  end
+  @top_users_ytd_vs_prev = @top_users_range.map do |u|
+    prev = prev_map[u[:user_id]] || { orders_count: 0, revenue: 0.to_d }
+    delta = prev[:revenue].to_d.positive? ? ((u[:revenue] - prev[:revenue]) / prev[:revenue]) : nil
+    u.merge(prev_orders_count: prev[:orders_count], prev_revenue: prev[:revenue], revenue_delta_ratio: delta)
+  end
 
     # Top 5 mayores compras del año actual (órdenes de venta por monto)
     @top_orders_ytd = so_ytd.joins(:user)
@@ -182,6 +262,131 @@ class Admin::DashboardController < ApplicationController
       @chart_sales_trend[:revenue][i] - @chart_sales_trend[:cogs][i]
     end
 
+      # ========= Tablas de apoyo para promociones =========
+    rev_sql_str = "COALESCE(sale_order_items.unit_final_price, 0) * COALESCE(sale_order_items.quantity, 0)"
+    cogs_sql_str = "COALESCE(sale_order_items.unit_cost, 0) * COALESCE(sale_order_items.quantity, 0)"
+      units_sql   = "COALESCE(sale_order_items.quantity, 0)"
+
+      # Top Sellers (por unidades) en el rango YTD seleccionado
+      top_sellers_q = SaleOrderItem.joins(:sale_order, :product)
+                                   .merge(so_ytd)
+                                   .group('products.id','products.product_name')
+                                   .select("products.id, products.product_name, SUM(#{units_sql}) AS units, SUM(#{rev_sql_str}) AS revenue")
+                                   .order('units DESC')
+                                   .limit(10)
+      @top_sellers_ytd = top_sellers_q.map { |r| { product_id: r.id, name: r.product_name, units: r.attributes['units'].to_i, revenue: r.attributes['revenue'].to_d } }
+
+  # Top Sellers (Last Year calendario completo)
+  ly_start = now.beginning_of_year - 1.year
+  ly_end   = ly_start.end_of_year
+  so_last_year = so_scope.where(order_date: ly_start..ly_end)
+  top_sellers_ly_q = SaleOrderItem.joins(:sale_order, :product)
+              .merge(so_last_year)
+              .group('products.id','products.product_name')
+              .select("products.id, products.product_name, SUM(#{units_sql}) AS units, SUM(#{rev_sql_str}) AS revenue")
+              .order('units DESC')
+              .limit(10)
+  @top_sellers_last_year = top_sellers_ly_q.map { |r| { product_id: r.id, name: r.product_name, units: r.attributes['units'].to_i, revenue: r.attributes['revenue'].to_d } }
+
+  # Top Sellers (All Time) por unidades ya existe en @top_products_all
+
+      # Top inventario por valor (costo de compra acumulado actual)
+      @top_inventory_by_value = Product.order(current_inventory_value: :desc).limit(10).map do |p|
+        { product_id: p.id, name: p.product_name, inventory_value: p.current_inventory_value.to_d }
+      end
+
+      # Top ventas por categoría (YTD actual)
+      ytd_by_cat = SaleOrderItem.joins(:sale_order, :product)
+                                .merge(so_ytd)
+                                .group('products.category')
+                                .sum(Arel.sql(rev_sql_str))
+  @top_categories_ytd = ytd_by_cat.to_a.map { |(cat, val)| { category: (cat.presence || 'Uncategorized'), revenue: val.to_d } }
+               .sort_by { |h| -h[:revenue] }
+               .first(10)
+
+      # Top ventas por categoría (año pasado calendario completo)
+      prev_start = now.beginning_of_year - 1.year
+      prev_end   = prev_start.end_of_year
+      so_prev    = so_scope.where(order_date: prev_start..prev_end)
+      prev_by_cat = SaleOrderItem.joins(:sale_order, :product)
+                                 .merge(so_prev)
+                                 .group('products.category')
+                                 .sum(Arel.sql(rev_sql_str))
+  @top_categories_last_year = prev_by_cat.to_a.map { |(cat, val)| { category: (cat.presence || 'Uncategorized'), revenue: val.to_d } }
+              .sort_by { |h| -h[:revenue] }
+              .first(10)
+
+  # Top ventas por categoría (All Time)
+  all_by_cat = SaleOrderItem.joins(:sale_order, :product)
+            .merge(so_scope)
+            .group('products.category')
+            .sum(Arel.sql(rev_sql_str))
+  @top_categories_all_time = all_by_cat.to_a.map { |(cat, val)| { category: (cat.presence || 'Uncategorized'), revenue: val.to_d } }
+            .sort_by { |h| -h[:revenue] }
+            .first(10)
+
+      # Productos más rentables (YTD) y por categoría
+    prod_profit_rows = SaleOrderItem.joins(:sale_order, :product)
+                                      .merge(so_ytd)
+                                      .group('products.id','products.product_name','products.category')
+                    .select("products.id, products.product_name, products.category, SUM(#{rev_sql_str}) AS revenue, SUM(#{cogs_sql_str}) AS cogs")
+
+      prod_profit = prod_profit_rows.map do |r|
+        rev = r.attributes['revenue'].to_d
+        cg  = r.attributes['cogs'].to_d
+        { product_id: r.id, name: r.product_name, category: (r.category.presence || 'Uncategorized'), revenue: rev, cogs: cg, profit: (rev - cg) }
+      end
+
+      @top_products_profit_ytd = prod_profit.sort_by { |h| -h[:profit] }.first(10)
+
+      # Productos más rentables (Last Year)
+      prod_profit_ly_rows = SaleOrderItem.joins(:sale_order, :product)
+                                         .merge(so_last_year)
+                                         .group('products.id','products.product_name','products.category')
+                                         .select("products.id, products.product_name, products.category, SUM(#{rev_sql_str}) AS revenue, SUM(#{cogs_sql_str}) AS cogs")
+      prod_profit_ly = prod_profit_ly_rows.map do |r|
+        rev = r.attributes['revenue'].to_d
+        cg  = r.attributes['cogs'].to_d
+        { product_id: r.id, name: r.product_name, category: (r.category.presence || 'Uncategorized'), revenue: rev, cogs: cg, profit: (rev - cg) }
+      end
+      @top_products_profit_last_year = prod_profit_ly.sort_by { |h| -h[:profit] }.first(10)
+
+      # Productos más rentables (All Time)
+      prod_profit_all_rows = SaleOrderItem.joins(:sale_order, :product)
+                                          .merge(so_scope)
+                                          .group('products.id','products.product_name','products.category')
+                                          .select("products.id, products.product_name, products.category, SUM(#{rev_sql_str}) AS revenue, SUM(#{cogs_sql_str}) AS cogs")
+      prod_profit_all = prod_profit_all_rows.map do |r|
+        rev = r.attributes['revenue'].to_d
+        cg  = r.attributes['cogs'].to_d
+        { product_id: r.id, name: r.product_name, category: (r.category.presence || 'Uncategorized'), revenue: rev, cogs: cg, profit: (rev - cg) }
+      end
+      @top_products_profit_all_time = prod_profit_all.sort_by { |h| -h[:profit] }.first(10)
+
+      # Por categoría: producto más rentable
+      best_by_cat = {}
+      prod_profit.each do |h|
+        cat = h[:category]
+        best_by_cat[cat] = h if best_by_cat[cat].nil? || h[:profit] > best_by_cat[cat][:profit]
+      end
+      @top_product_by_category_profit_ytd = best_by_cat.values.sort_by { |h| -h[:profit] }.first(10)
+
+      # Por categoría: producto más rentable (Last Year)
+      best_by_cat_ly = {}
+      prod_profit_ly.each do |h|
+        cat = h[:category]
+        best_by_cat_ly[cat] = h if best_by_cat_ly[cat].nil? || h[:profit] > best_by_cat_ly[cat][:profit]
+      end
+      @top_product_by_category_profit_last_year = best_by_cat_ly.values.sort_by { |h| -h[:profit] }.first(10)
+
+      # Por categoría: producto más rentable (All Time)
+      best_by_cat_all = {}
+      prod_profit_all.each do |h|
+        cat = h[:category]
+        best_by_cat_all[cat] = h if best_by_cat_all[cat].nil? || h[:profit] > best_by_cat_all[cat][:profit]
+      end
+      @top_product_by_category_profit_all_time = best_by_cat_all.values.sort_by { |h| -h[:profit] }.first(10)
+
     # Sales by Product Category (current selection range)
     by_cat = SaleOrderItem.joins(:sale_order, :product)
                           .merge(so_ytd)
@@ -239,6 +444,42 @@ class Admin::DashboardController < ApplicationController
       brands: top_brands.map(&:first),
       profit: top_brands.map { |(_, p)| p }
     }
+
+    # Category profitability (profit = revenue - cogs) for current selection
+    by_cat_rev = SaleOrderItem.joins(:sale_order, :product)
+                               .merge(so_ytd)
+                               .group('products.category')
+                               .sum(Arel.sql(rev_sql))
+    by_cat_cogs = SaleOrderItem.joins(:sale_order, :product)
+                                .merge(so_ytd)
+                                .group('products.category')
+                                .sum(cogs_sql)
+    cats = (by_cat_rev.keys + by_cat_cogs.keys).uniq
+    cat_profit = cats.map do |c|
+      rev  = by_cat_rev[c].to_d
+      cogs = by_cat_cogs[c].to_d
+      [(c.presence || 'Uncategorized'), rev - cogs]
+    end
+    cat_profit.sort_by! { |(_, p)| -p }
+    top_cats_profit = cat_profit.first(8)
+    @chart_category_profit = {
+      categories: top_cats_profit.map(&:first),
+      profit: top_cats_profit.map { |(_, p)| p }
+    }
+
+  # === Ventas por país y por estado (México) — YTD / Last Year / All Time ===
+  so_ytd_fixed = so_scope.where(order_date: now.beginning_of_year..now.end_of_day)
+  ly_start_geo = now.beginning_of_year - 1.year
+  ly_end_geo   = ly_start_geo.end_of_year
+  so_last_year_geo = so_scope.where(order_date: ly_start_geo..ly_end_geo)
+
+  @sales_by_country_ytd, @sales_by_mexico_states_ytd = geo_totals_for(so_ytd_fixed)
+  @sales_by_country_last_year, @sales_by_mexico_states_last_year = geo_totals_for(so_last_year_geo)
+  @sales_by_country_all_time, @sales_by_mexico_states_all_time = geo_totals_for(so_scope)
+
+  # Compatibilidad con vistas previas
+  @sales_by_country = @sales_by_country_ytd
+  @sales_by_mexico_states = @sales_by_mexico_states_ytd
   end
 
   # Returns JSON with geo aggregates for map visualizations
@@ -375,5 +616,92 @@ class Admin::DashboardController < ApplicationController
       d = d.next_month.beginning_of_month
     end
     months
+  end
+
+  # ================= Utils para geografía por heurística =================
+  def geo_totals_for(scope)
+    country_totals = Hash.new { |h, k| h[k] = { revenue: 0.to_d, orders: 0 } }
+    mx_state_totals = Hash.new { |h, k| h[k] = { revenue: 0.to_d, orders: 0 } }
+    scope.includes(:user).find_each do |so|
+      addr = so.user&.address.to_s
+      next if addr.blank?
+      norm = normalize_text(addr)
+      mx_state = detect_mex_state_in(norm)
+      country = detect_country_in(norm)
+      country ||= (mx_state ? 'Mexico' : nil)
+      country ||= 'Desconocido'
+      country_totals[country][:revenue] += so.total_order_value.to_d
+      country_totals[country][:orders]  += 1
+      if country == 'Mexico' && mx_state
+        mx_state_totals[mx_state][:revenue] += so.total_order_value.to_d
+        mx_state_totals[mx_state][:orders]  += 1
+      end
+    end
+    total_rev_all = country_totals.values.sum { |v| v[:revenue] }
+    by_country = country_totals.map do |name, agg|
+      share = total_rev_all.positive? ? (agg[:revenue] / total_rev_all) : 0.to_d
+      { name: name, orders: agg[:orders], revenue: agg[:revenue], share: share }
+    end.sort_by { |r| -r[:revenue] }
+    by_states = mx_state_totals.map { |state, agg| { state: state, orders: agg[:orders], revenue: agg[:revenue] } }
+                               .sort_by { |r| -r[:revenue] }
+    [by_country, by_states]
+  end
+  def normalize_text(text)
+    I18n.transliterate(text.to_s).downcase
+  end
+
+  def detect_country_in(norm_text)
+    return 'Mexico' if norm_text.include?('mexico') || norm_text.include?('méxico')
+    return 'United States' if norm_text.include?('estados unidos') || norm_text.include?('eeuu') || norm_text.include?('ee. uu') || norm_text.include?('usa') || norm_text.include?('united states')
+    return 'Canada' if norm_text.include?('canada')
+    return 'Guatemala' if norm_text.include?('guatemala')
+    return 'Spain' if norm_text.include?('espana') || norm_text.include?('españa') || norm_text.include?('spain')
+    nil
+  end
+
+  def detect_mex_state_in(norm_text)
+    mexican_states_synonyms.each do |canonical, tokens|
+      return canonical if tokens.any? { |tok| norm_text.include?(tok) }
+    end
+    nil
+  end
+
+  def mexican_states_synonyms
+    @mexican_states_synonyms ||= begin
+      {
+        'Aguascalientes' => %w[aguascalientes ags],
+        'Baja California' => ['baja california', 'bc'],
+        'Baja California Sur' => ['baja california sur', 'bcs'],
+        'Campeche' => %w[campeche camp],
+        'Coahuila' => ['coahuila', 'coah', 'coahuila de zaragoza'],
+        'Colima' => ['colima', 'col.'],
+        'Chiapas' => %w[chiapas chis],
+        'Chihuahua' => %w[chihuahua chih],
+        'Ciudad de México' => ['ciudad de mexico', 'cdmx', 'df', 'd.f.', 'mexico city'],
+        'Durango' => %w[durango dgo],
+        'Guanajuato' => %w[guanajuato gto],
+        'Guerrero' => %w[guerrero gro],
+        'Hidalgo' => %w[hidalgo hgo],
+        'Jalisco' => %w[jalisco jal],
+        'Estado de México' => ['estado de mexico', 'edomex', 'mex.','mexico state'],
+        'Michoacán' => ['michoacan', 'michoacán', 'mich'],
+        'Morelos' => %w[morelos mor],
+        'Nayarit' => %w[nayarit nay],
+        'Nuevo León' => ['nuevo leon', 'nl', 'n.l.'],
+        'Oaxaca' => %w[oaxaca oax],
+        'Puebla' => %w[puebla pue],
+        'Querétaro' => ['queretaro', 'querétaro', 'qro'],
+        'Quintana Roo' => ['quintana roo', 'q roo', 'qroo'],
+        'San Luis Potosí' => ['san luis potosi', 'slp'],
+        'Sinaloa' => %w[sinaloa sin],
+        'Sonora' => %w[sonora son],
+        'Tabasco' => %w[tabasco tab],
+        'Tamaulipas' => ['tamaulipas', 'tmps', 'tamps'],
+        'Tlaxcala' => %w[tlaxcala tlax],
+        'Veracruz' => ['veracruz', 'ver', 'veracruz de ignacio de la llave'],
+        'Yucatán' => ['yucatan', 'yucatan', 'yuc'],
+        'Zacatecas' => %w[zacatecas zac]
+      }
+    end
   end
 end
