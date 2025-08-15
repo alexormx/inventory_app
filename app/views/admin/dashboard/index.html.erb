@@ -206,9 +206,7 @@
 
 <!-- ECharts CDN and world geojson loader -->
   <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
-  <!-- Load ECharts map shims (registers maps when available) -->
-  <script src="https://cdn.jsdelivr.net/npm/echarts@5/map/js/world.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/echarts@5/map/js/countries/mexico.js"></script>
+  <!-- Maps will be registered from GeoJSON (ECharts examples data) -->
 <script>
     // Mostrar campos de fecha solo si rango == custom
     document.addEventListener('turbo:load', () => {
@@ -305,8 +303,8 @@
       Promise.resolve().then(async () => {
         // Ensure map data is registered (world + Mexico), independent of script load order
         try {
-          const worldUrl = 'https://cdn.jsdelivr.net/npm/echarts@5/map/json/world.json';
-          const mxUrl    = 'https://cdn.jsdelivr.net/npm/echarts@5/map/json/countries/mexico.json';
+          const worldUrl = 'https://fastly.jsdelivr.net/npm/echarts@5/examples/data/asset/world.json';
+          const mxUrl    = 'https://fastly.jsdelivr.net/npm/echarts@5/examples/data/asset/geo/MEX.json';
           const [wr, mr] = await Promise.allSettled([fetch(worldUrl), fetch(mxUrl)]);
           if (wr.status === 'fulfilled' && wr.value.ok) {
             const geo = await wr.value.json();
@@ -314,7 +312,7 @@
           }
           if (mr.status === 'fulfilled' && mr.value.ok) {
             const geo = await mr.value.json();
-            if (!echarts.getMap('Mexico')) echarts.registerMap('Mexico', geo);
+            if (!echarts.getMap('MEX')) echarts.registerMap('MEX', geo);
           }
         } catch (e) { console.warn('Map JSON fetch failed', e); }
 
@@ -350,12 +348,12 @@
 
         const resolveMapName = async (scope) => {
           if (scope !== 'mexico') return 'world';
-          const candidates = ['Mexico', 'mexico', 'MX', 'MEX'];
+          const candidates = ['MEX', 'Mexico', 'mexico', 'MX'];
           for (const name of candidates) {
             if (echarts.getMap(name)) return name;
           }
-          await ensureMap('Mexico');
-          if (echarts.getMap('Mexico')) return 'Mexico';
+          await ensureMap('MEX');
+          if (echarts.getMap('MEX')) return 'MEX';
           return echarts.getMap('world') ? 'world' : null;
         };
 
