@@ -143,6 +143,94 @@ class Admin::DashboardController < ApplicationController
       margin = sales.positive? ? (profit / sales) : 0.to_d
       { year: y, sales: sales, purchases: buys, cogs: cogs, profit: profit, margin: margin }
     end
+
+    # ========= High-impact Charts datasets =========
+    # 12-month trend (Revenue, COGS, Profit) ending at @end_date
+    trend_start = (@end_date - 11.months).beginning_of_month
+    trend_range = trend_start..@end_date
+    month_key_expr = month_group_expr('sale_orders', 'order_date')
+
+    rev_sql = "COALESCE(sale_order_items.unit_final_price, 0) * COALESCE(sale_order_items.quantity, 0)"
+
+    trend_rev = SaleOrderItem.joins(:sale_order)
+                              .merge(so_scope.where(order_date: trend_range))
+                              .group(Arel.sql(month_key_expr))
+                              .sum(Arel.sql(rev_sql))
+    trend_cogs = SaleOrderItem.joins(:sale_order)
+                               .merge(so_scope.where(order_date: trend_range))
+                               .group(Arel.sql(month_key_expr))
+                               .sum(cogs_sql)
+
+    # Normalize keys to YYYY-MM for consistent indexing across adapters
+    trend_rev_map  = trend_rev.transform_keys { |k| normalize_month_key(k) }
+    trend_cogs_map = trend_cogs.transform_keys { |k| normalize_month_key(k) }
+    months_keys = (0..11).map { |i| (trend_start + i.months).strftime('%Y-%m') }
+    @chart_sales_trend = {
+      months: months_keys,
+      revenue: months_keys.map { |k| (trend_rev_map[k] || 0).to_d },
+      cogs:    months_keys.map { |k| (trend_cogs_map[k] || 0).to_d },
+    }
+    @chart_sales_trend[:profit] = @chart_sales_trend[:months].each_index.map do |i|
+      @chart_sales_trend[:revenue][i] - @chart_sales_trend[:cogs][i]
+    end
+
+    # Sales by Product Category (current selection range)
+    by_cat = SaleOrderItem.joins(:sale_order, :product)
+                          .merge(so_ytd)
+                          .group('products.category')
+                          .sum(Arel.sql(rev_sql))
+    # Order by value desc and keep top 5 + Others
+    sorted = by_cat.to_a.sort_by { |(_, v)| -v.to_d }
+    top5 = sorted.first(5)
+    others_sum = sorted.drop(5).sum { |(_, v)| v.to_d }
+    @chart_sales_by_category = top5.map { |(name, val)| { name: (name.presence || 'Uncategorized'), value: val.to_d } }
+    @chart_sales_by_category << { name: 'Others', value: others_sum } if others_sum.positive?
+
+    # Monthly stacked by category (YTD selection)
+    by_month_cat = SaleOrderItem.joins(:sale_order, :product)
+                                .merge(so_ytd)
+                                .group(Arel.sql(month_key_expr), 'products.category')
+                                .sum(Arel.sql(rev_sql))
+    by_month_cat_norm = by_month_cat.transform_keys do |(mk, cat)|
+      [normalize_month_key(mk), (cat.presence || 'Uncategorized')]
+    end
+    months_ytd_keys = months_between(@start_date.beginning_of_month, @end_date.end_of_month)
+    # Top categories across YTD
+    cats_totals = Hash.new(0.to_d)
+    by_month_cat_norm.each { |((mk, cat)), val| cats_totals[cat] += val.to_d }
+    top_cats = cats_totals.sort_by { |(_, v)| -v }.first(5).map(&:first)
+    other_cats = cats_totals.keys - top_cats
+    series = []
+    top_cats.each do |cat|
+      series << { name: cat, data: months_ytd_keys.map { |mk| (by_month_cat_norm[[mk, cat]] || 0).to_d } }
+    end
+    # Others collapsed
+    if other_cats.any?
+      series << { name: 'Others', data: months_ytd_keys.map { |mk| other_cats.sum { |c| (by_month_cat_norm[[mk, c]] || 0).to_d } } }
+    end
+    @chart_monthly_by_category = { months: months_ytd_keys, series: series }
+
+    # Brand profitability (profit = revenue - cogs) for current selection
+    by_brand_rev = SaleOrderItem.joins(:sale_order, :product)
+                                .merge(so_ytd)
+                                .group('products.brand')
+                                .sum(Arel.sql(rev_sql))
+    by_brand_cogs = SaleOrderItem.joins(:sale_order, :product)
+                                 .merge(so_ytd)
+                                 .group('products.brand')
+                                 .sum(cogs_sql)
+    brands = (by_brand_rev.keys + by_brand_cogs.keys).uniq
+    brand_profit = brands.map do |b|
+      rev  = by_brand_rev[b].to_d
+      cogs = by_brand_cogs[b].to_d
+      [b.presence || 'Unbranded', rev - cogs]
+    end
+    brand_profit.sort_by! { |(_, p)| -p }
+    top_brands = brand_profit.first(8)
+    @chart_brand_profit = {
+      brands: top_brands.map(&:first),
+      profit: top_brands.map { |(_, p)| p }
+    }
   end
 
   # Returns JSON with geo aggregates for map visualizations
@@ -254,5 +342,30 @@ class Admin::DashboardController < ApplicationController
     else # 'ytd'
       [now.beginning_of_year.to_date, now.end_of_day]
     end
+  end
+
+  # Normalize grouped month key (adapter-agnostic) to 'YYYY-MM'
+  def normalize_month_key(key)
+    if key.is_a?(String)
+      # SQLite strftime('%Y-%m-01') or '%Y-%m'
+      key[0,7]
+    elsif key.respond_to?(:to_date)
+      key.to_date.strftime('%Y-%m')
+    else
+      key.to_s[0,7]
+    end
+  end
+
+  # Generate inclusive month keys from start..end as ['YYYY-MM', ...]
+  def months_between(start_date, end_date)
+    start_d = start_date.to_date.beginning_of_month
+    end_d   = end_date.to_date.end_of_month
+    months = []
+    d = start_d
+    while d <= end_d
+      months << d.strftime('%Y-%m')
+      d = d.next_month.beginning_of_month
+    end
+    months
   end
 end
