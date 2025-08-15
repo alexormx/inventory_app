@@ -1,21 +1,43 @@
-<nav class="navbar navbar-expand-lg navbar-light bg-light">
-  <div class="container">
+<nav class="navbar navbar-expand-lg admin-navbar">
+  <div class="container-fluid">
 
-    <a class="navbar-brand" href="#">Admin Panel</a>
+    <div class="d-flex align-items-center gap-2">
+      <!-- Toggle sidebar (mobile only) -->
+      <button id="sidebarToggle" class="sidebar-toggle-btn d-inline d-lg-none" aria-label="Toggle sidebar">
+        <i class="fa-solid fa-bars"></i>
+      </button>
+      <%= link_to "Admin Panel", admin_dashboard_path, class: "navbar-brand mb-0 h6" %>
+    </div>
 
-    <!-- ✅ Hamburger (only visible on mobile, aligned right) -->
-    <button class="navbar-toggler ms-auto d-lg-none" id="admin-hamburger" type="button" data-bs-toggle="collapse" data-bs-target="#navbarToggleExternalContent" aria-controls="navbarToggleExternalContent" aria-expanded="false" aria-label="Toggle navigation">
+    <!-- Navbar toggler for actions menu (mobile) -->
+    <button class="navbar-toggler ms-auto d-lg-none" id="admin-hamburger" type="button" data-bs-toggle="collapse" data-bs-target="#admin-navbar" aria-controls="admin-navbar" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
     </button>
 
-    <!-- ✅ Collapsible Navbar Menu -->
+    <!-- Collapsible Navbar Menu -->
     <div class="collapse navbar-collapse justify-content-end" id="admin-navbar">
-      <ul class="navbar-nav">
+      <ul class="navbar-nav align-items-center">
+        <% if current_user %>
+          <% user_label = current_user.name.presence || current_user.email %>
+          <% initials = user_label.to_s.split.map { |p| p[0] }.join.upcase[0,2] %>
+          <li class="nav-item me-2">
+            <span class="nav-link user-chip">Welcome
+              <span class="user-initials"><%= initials %></span>
+              <span class="user-name d-none d-md-inline"><%= user_label %>!</span>
+            </span>
+          </li>
+        <% end %>
         <li class="nav-item">
-          <%= link_to "Frontend Store", root_path, class: "nav-link" %>
+          <%= link_to "New Product", new_admin_product_path, class: "nav-link" %>
         </li>
         <li class="nav-item">
-          <a class="nav-link" href="#"><i class="fa-solid fa-user"></i> Admin</a>
+          <%= link_to "New PO", new_admin_purchase_order_path, class: "nav-link" %>
+        </li>
+        <li class="nav-item">
+          <%= link_to "New SO", new_admin_sale_order_path, class: "nav-link" %>
+        </li>
+        <li class="nav-item">
+          <%= link_to "Frontend Store", root_path, class: "nav-link" %>
         </li>
         <li class="nav-item">
           <%= link_to "Logout", destroy_user_session_path, data: { "turbo-method": :delete }, class: "nav-link" %>
@@ -24,4 +46,4 @@
     </div>
 
   </div>
-</nav>
+  </nav>
