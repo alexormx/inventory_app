@@ -290,6 +290,24 @@ img.product-order-image {
   }
 }
 
+// Dashboard tweaks
+.card .card-header {
+  font-weight: 600;
+}
+
+.table-sm th, .table-sm td {
+  vertical-align: middle;
+}
+
+.card.text-bg-light .fs-4,
+.card.text-bg-success-subtle .fs-5,
+.card.text-bg-warning-subtle .fs-5,
+.card.text-bg-primary-subtle .fs-5,
+.card.text-bg-info-subtle .fs-4 {
+  letter-spacing: 0.2px;
+}
+
+.card.text-bg-light .small.text-muted { text-transform: uppercase; }
 .product-image {
   height: 200px;
   width: 100%;
