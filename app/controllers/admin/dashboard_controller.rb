@@ -71,6 +71,14 @@ class Admin::DashboardController < ApplicationController
                         .limit(5)
     @top_users_all = users_top.map { |r| { user_id: r.id, name: r.name.presence || r.id, orders_count: r.attributes["orders_count"].to_i, revenue: r.attributes["revenue"].to_d, avg_ticket: r.attributes["avg_ticket"].to_d } }
 
+  # Top 5 users within current range
+  users_top_range = so_ytd.joins(:user)
+              .group("users.id", "users.name")
+              .select("users.id, users.name, COUNT(*) AS orders_count, SUM(total_order_value) AS revenue, AVG(total_order_value) AS avg_ticket")
+              .order("revenue DESC")
+              .limit(5)
+  @top_users_range = users_top_range.map { |r| { user_id: r.id, name: r.name.presence || r.id, orders_count: r.attributes["orders_count"].to_i, revenue: r.attributes["revenue"].to_d, avg_ticket: r.attributes["avg_ticket"].to_d } }
+
     # Top 5 mayores compras del año actual (órdenes de venta por monto)
     @top_orders_ytd = so_ytd.joins(:user)
                             .select("sale_orders.id, sale_orders.total_order_value, sale_orders.order_date, sale_orders.status, users.name AS user_name")

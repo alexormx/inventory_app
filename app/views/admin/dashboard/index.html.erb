@@ -1,31 +1,82 @@
-<div class="container">
+<div class="container-fluid">
   <h2 class="mb-3"><i class="fa-solid fa-chart-line"></i> Dashboard</h2>
 
   <!-- Filtros globales -->
   <div class="card mb-3">
     <div class="card-body py-2">
       <%= form_with url: admin_dashboard_path, method: :get, local: true, class: "row gy-2 gx-2 align-items-end" do |f| %>
-        <div class="col-auto">
-          <label class="form-label mb-0 small">Rango</label>
-          <%= f.select :range,
-              options_for_select([
-                ['YTD (año en curso)', 'ytd'],
-                ['Últimos 30 días', 'last_30'],
-                ['Últimos 90 días', 'last_90'],
-                ['Este año', 'this_year'],
-                ['Personalizado', 'custom']
-              ], @range_key),
-              {}, class: 'form-select form-select-sm' %>
+        <div class="row mt-4 g-3">
+          <div class="col-xl-8">
+            <div class="card h-100">
+              <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="fa-solid fa-globe"></i> Geographic Breakdown</span>
+                <div class="btn-group btn-group-sm" role="group" aria-label="map scope">
+                  <button class="btn btn-outline-secondary active" data-map-scope="world">World</button>
+                  <button class="btn btn-outline-secondary" data-map-scope="mexico">Mexico</button>
+                </div>
+              </div>
+              <div class="card-body">
+                <div id="geo-map" style="height: 420px;"></div>
+                <small class="text-muted">Source: Visitor Logs (accesses); Sales by region pending shipping addresses</small>
+              </div>
+            </div>
+          </div>
+          <div class="col-xl-4">
+            <div class="card h-100">
+              <div class="card-header"><i class="fa-solid fa-ranking-star"></i> Top Customers</div>
+              <div class="card-body p-0">
+                <ul class="nav nav-tabs nav-tabs-sm px-2 pt-2" role="tablist">
+                  <li class="nav-item" role="presentation">
+                    <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#rank-range" type="button" role="tab">This Range</button>
+                  </li>
+                  <li class="nav-item" role="presentation">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#rank-all" type="button" role="tab">All Time</button>
+                  </li>
+                </ul>
+                <div class="tab-content">
+                  <div class="tab-pane fade show active" id="rank-range" role="tabpanel">
+                    <div class="table-responsive">
+                      <table class="table table-sm mb-0">
+                        <thead><tr><th>Customer</th><th class="text-end">Orders</th><th class="text-end">Revenue</th></tr></thead>
+                        <tbody>
+                          <% @top_users_range.each do |u| %>
+                            <tr>
+                              <td><%= link_to u[:name], edit_admin_user_path(u[:user_id]) %></td>
+                              <td class="text-end"><%= number_with_delimiter(u[:orders_count]) %></td>
+                              <td class="text-end">$ <%= number_with_precision(u[:revenue], precision: 2, delimiter: ',') %></td>
+                            </tr>
+                          <% end %>
+                          <% if @top_users_range.blank? %>
+                            <tr><td colspan="3" class="text-center text-muted py-3">No data</td></tr>
+                          <% end %>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                  <div class="tab-pane fade" id="rank-all" role="tabpanel">
+                    <div class="table-responsive">
+                      <table class="table table-sm mb-0">
+                        <thead><tr><th>Customer</th><th class="text-end">Orders</th><th class="text-end">Revenue</th></tr></thead>
+                        <tbody>
+                          <% @top_users_all.each do |u| %>
+                            <tr>
+                              <td><%= link_to u[:name], edit_admin_user_path(u[:user_id]) %></td>
+                              <td class="text-end"><%= number_with_delimiter(u[:orders_count]) %></td>
+                              <td class="text-end">$ <%= number_with_precision(u[:revenue], precision: 2, delimiter: ',') %></td>
+                            </tr>
+                          <% end %>
+                          <% if @top_users_all.blank? %>
+                            <tr><td colspan="3" class="text-center text-muted py-3">No data</td></tr>
+                          <% end %>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-        <div class="col-auto" data-range-custom>
-          <label class="form-label mb-0 small">Inicio</label>
-          <%= f.date_field :start_date, value: @start_date, class: 'form-control form-control-sm' %>
-        </div>
-        <div class="col-auto" data-range-custom>
-          <label class="form-label mb-0 small">Fin</label>
-          <%= f.date_field :end_date, value: @end_date.to_date, class: 'form-control form-control-sm' %>
-        </div>
-        <div class="col-auto">
           <div class="form-check mt-4">
             <%= f.check_box :exclude_canceled, { checked: @exclude_canceled, class: 'form-check-input' }, 'true', 'false' %>
             <label class="form-check-label">Excluir cancelados</label>
@@ -225,8 +276,9 @@
 </div>
 
 <!-- ECharts CDN and world geojson loader -->
-<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/echarts@5/map/js/world.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5/map/js/world.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5/map/js/province/mexico.js"></script>
 <script>
     // Mostrar campos de fecha solo si rango == custom
     document.addEventListener('turbo:load', () => {
@@ -243,50 +295,42 @@
     });
 
   document.addEventListener('turbo:load', () => {
-    const visitsEl = document.getElementById('world-map-visits');
-    const salesEl  = document.getElementById('world-map-sales');
-    if (!visitsEl || !salesEl || !(window.echarts)) return;
+      const geoEl = document.getElementById('geo-map');
+      if (!geoEl || !(window.echarts)) return;
 
-    Promise.resolve().then(async () => {
-      const res = await fetch('<%= admin_dashboard_geo_path(format: :json) %>');
-      if (!res.ok) return;
-      const data = await res.json();
+      Promise.resolve().then(async () => {
+        const res = await fetch('<%= admin_dashboard_geo_path(format: :json) %>');
+        if (!res.ok) return;
+        const data = await res.json();
 
-      const visitsChart = echarts.init(visitsEl);
-      const salesChart  = echarts.init(salesEl);
-
-      const commonOpts = (title) => ({
-        tooltip: { trigger: 'item', formatter: ({name, value}) => `${name}: ${value?.toLocaleString?.() || value || 0}` },
-        visualMap: { min: 0, max: 100, left: 'left', top: 'bottom', text: ['Alto','Bajo'], calculable: true },
-        series: [{
-          name: title,
-          type: 'map',
-          map: 'world',
-          roam: true,
-          emphasis: { label: { show: false } },
-          data: []
-        }]
+        const chart = echarts.init(geoEl);
+        const render = (scope) => {
+          const isMx = scope === 'mexico';
+          const seriesData = (data.visits || []).map(d => ({ name: d.name, value: d.value }));
+          chart.setOption({
+            tooltip: { trigger: 'item', formatter: ({name, value}) => `${name}: ${value?.toLocaleString?.() || value || 0}` },
+            visualMap: { min: 0, max: Math.max(10, Math.max(...seriesData.map(d => d.value || 0))), left: 'left', bottom: 10, calculable: true },
+            series: [{
+              type: 'map',
+              name: 'Visits',
+              map: isMx ? 'mexico' : 'world',
+              roam: true,
+              emphasis: { label: { show: false } },
+              data: seriesData
+            }]
+          });
+        };
+        // initial
+        render('world');
+        // toggle buttons
+        document.querySelectorAll('[data-map-scope]').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            document.querySelectorAll('[data-map-scope]').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            render(btn.getAttribute('data-map-scope'));
+          });
+        });
+        window.addEventListener('resize', () => chart.resize());
       });
-
-      const visitsOpts = commonOpts('Accesos');
-      visitsOpts.series[0].data = (data.visits || []).map(d => ({ name: d.name, value: d.value }));
-      // Ajustar el rango visual con base en datos
-      if (visitsOpts.series[0].data.length) {
-        const maxVal = Math.max(...visitsOpts.series[0].data.map(d => d.value));
-        visitsOpts.visualMap.max = Math.max(10, maxVal);
-      }
-      visitsChart.setOption(visitsOpts);
-
-      const salesOpts = commonOpts('Ventas');
-      salesOpts.series[0].data = (data.sales_by_country || []).map(d => ({ name: d.name, value: d.value }));
-      if (salesOpts.series[0].data.length) {
-        const maxVal = Math.max(...salesOpts.series[0].data.map(d => d.value));
-        salesOpts.visualMap.max = Math.max(10, maxVal);
-      }
-      salesChart.setOption(salesOpts);
-
-      // Responsivo
-      window.addEventListener('resize', () => { visitsChart.resize(); salesChart.resize(); });
-    });
   });
 </script>
