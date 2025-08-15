@@ -2,6 +2,7 @@ class MapsController < ApplicationController
   require 'net/http'
   require 'uri'
   require 'json'
+  require 'digest'
 
   # Serve map GeoJSON from our domain to avoid CDN/CORS issues
   def world
