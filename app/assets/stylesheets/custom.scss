@@ -399,6 +399,67 @@ img.product-order-image {
   line-height: 1.2;
 }
 
+/* Admin navbar styling to complement sidebar */
+.admin-navbar {
+  background: #6a1b1b; /* un tono más oscuro que el sidebar */
+  border-bottom: 1px solid var(--sidebar-divider);
+  position: sticky;
+  top: 0;
+  z-index: 1020; /* por encima del contenido */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+.admin-navbar .navbar-brand,
+.admin-navbar .nav-link {
+  color: #fff;
+}
+.admin-navbar .nav-link {
+  border: 1px solid var(--sidebar-divider);
+  margin-left: 6px;
+}
+.admin-navbar .nav-link:hover,
+.admin-navbar .nav-link:focus {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 0.35rem;
+  border-color: var(--sidebar-border);
+}
+.admin-navbar .navbar-toggler {
+  border-color: var(--sidebar-divider);
+}
+.admin-navbar .navbar-toggler:hover,
+.admin-navbar .navbar-toggler:focus {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* En móviles, evitar sticky para no consumir altura útil */
+@media (max-width: 767.98px) {
+  .admin-navbar {
+    position: static;
+    box-shadow: none;
+  }
+}
+
+/* User chip */
+.admin-navbar .user-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--sidebar-divider);
+  border-radius: 999px;
+  padding: 4px 10px;
+}
+.admin-navbar .user-chip .user-initials {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+
 .input-group-sm .form-control {
   width: 45px !important;
   padding: 0.2rem 0.4rem;
