@@ -208,7 +208,7 @@
   <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
   <!-- Load ECharts map shims (register maps) -->
   <script src="https://cdn.jsdelivr.net/npm/echarts@5/map/js/world.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/echarts@5/map/js/countries/mexico.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5/map/js/country/mexico.js"></script>
 <script>
     // Mostrar campos de fecha solo si rango == custom
     document.addEventListener('turbo:load', () => {
@@ -318,7 +318,10 @@
         };
         const resolveMapName = async (scope) => {
           if (scope !== 'mexico') return 'world';
-          if (echarts.getMap('Mexico')) return 'Mexico';
+          const candidates = ['mexico', 'Mexico', 'MX', 'MEX'];
+          for (const name of candidates) {
+            if (echarts.getMap(name)) return name;
+          }
           return echarts.getMap('world') ? 'world' : null;
         };
 
