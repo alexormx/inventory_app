@@ -120,24 +120,52 @@ users_for_stats.each do |u|
 		end
 	end
 
-	# SaleOrders (para customers)
-	if u.role == "customer"
-		2.times do
-					begin
-								SaleOrder.create!(
-				user: u,
-				order_date: Faker::Date.between(from: 30.days.ago, to: Date.today),
-				subtotal: rand(500..3000),
-				tax_rate: 16,
-				total_tax: rand(80..500),
-				total_order_value: rand(600..3500),
-									status: "Pending"
-						)
-					rescue ActiveRecord::RecordInvalid => e
-						seed_log "SaleOrder error for user ##{u.id}: #{e.record.errors.full_messages.join(', ')}"
+		# SaleOrders (para customers) con líneas para poblar Sellers/Rentables
+		if u.role == "customer"
+			2.times do
+				begin
+					so = SaleOrder.create!(
+						user: u,
+						order_date: Faker::Date.between(from: 30.days.ago, to: Date.today),
+						subtotal: 0,
+						tax_rate: 16,
+						total_tax: 0,
+						total_order_value: 0,
+						status: "Pending"
+					)
+
+					# Añadir de 1 a 3 líneas aleatorias
+					products = Product.active.order("RANDOM()").limit(rand(1..3))
+					line_total = 0
+					products.each do |p|
+						qty = rand(1..3)
+						unit_price = (p.selling_price.to_d.nonzero? || rand(100..500).to_d)
+						unit_cost  = [unit_price * BigDecimal("0.6"), unit_price - 1].sample # costo aproximado
+						line_total += unit_price * qty
+						begin
+							SaleOrderItem.create!(
+								sale_order: so,
+								product: p,
+								quantity: qty,
+								unit_final_price: unit_price,
+								unit_cost: unit_cost,
+								total_line_cost: unit_cost * qty
+							)
+						rescue ActiveRecord::RecordInvalid => e
+							seed_log "SaleOrderItem error for SO ##{so.id}: #{e.record.errors.full_messages.join(', ')}"
+						end
 					end
+					# Actualizar totales simples
+					so.update_columns(
+						subtotal: line_total,
+						total_tax: (line_total * 0.16).round(2),
+						total_order_value: (line_total * 1.16).round(2)
+					)
+				rescue ActiveRecord::RecordInvalid => e
+					seed_log "SaleOrder error for user ##{u.id}: #{e.record.errors.full_messages.join(', ')}"
+				end
+			end
 		end
-	end
 
 	# Visitas
 		VisitorLog.find_or_create_by!(user_id: u.id, ip_address: Faker::Internet.ip_v4_address, path: "/admin/users") do |v|

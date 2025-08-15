@@ -1,7 +1,4 @@
-// Import and register all your controllers from the importmap via controllers/**/*_controller
-import { Application } from "@hotwired/stimulus"
-const application = Application.start()
-
-// Configure Stimulus development experience
-application.debug = false
-window.Stimulus   = application
+// This file intentionally does not start a Stimulus application.
+// The main application is started and controllers are registered in app/javascript/application.js
+// Keeping this file side-effect free avoids duplicate Application.start() issues.
+export {}

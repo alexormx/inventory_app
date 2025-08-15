@@ -109,13 +109,13 @@
   <!-- Top productos: combinado Sellers/Rentables + Inventario -->
   <div class="row mt-3 g-3">
     <div class="col-xl-8">
-      <div class="card h-100">
+      <div class="card h-100" data-controller="tabs">
         <div class="card-header d-flex justify-content-between align-items-center">
           <div>
             <i class="fa-solid fa-boxes"></i> Productos
             <ul class="nav nav-tabs nav-tabs-sm card-header-tabs mt-2" role="tablist">
-              <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tp-sellers" type="button" role="tab">Sellers</button></li>
-              <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tp-profit" type="button" role="tab">Rentables</button></li>
+              <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-sellers" type="button" role="tab" aria-controls="tp-sellers" aria-selected="true">Sellers</button></li>
+              <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-profit" type="button" role="tab" aria-controls="tp-profit">Rentables</button></li>
             </ul>
           </div>
           <div>
@@ -125,16 +125,16 @@
         <div class="card-body p-0">
           <div class="tab-content">
             <!-- Sellers -->
-            <div class="tab-pane fade show active" id="tp-sellers" role="tabpanel">
+            <div class="tab-pane fade show active" id="tp-sellers" role="tabpanel" data-tabs-target="panel" data-controller="subtabs">
               <div class="px-3 pt-3">
                 <ul class="nav nav-tabs nav-tabs-sm" role="tablist">
-                  <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#ts-ytd" type="button" role="tab">YTD</button></li>
-                  <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#ts-ly" type="button" role="tab">Last Year</button></li>
-                  <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#ts-all" type="button" role="tab">All Time</button></li>
+                  <li class="nav-item"><button class="nav-link active" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#ts-ytd" type="button" role="tab" aria-controls="ts-ytd" aria-selected="true">YTD</button></li>
+                  <li class="nav-item"><button class="nav-link" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#ts-ly" type="button" role="tab" aria-controls="ts-ly">Last Year</button></li>
+                  <li class="nav-item"><button class="nav-link" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#ts-all" type="button" role="tab" aria-controls="ts-all">All Time</button></li>
                 </ul>
               </div>
               <div class="tab-content">
-                <div class="tab-pane fade show active" id="ts-ytd" role="tabpanel">
+                <div class="tab-pane fade show active" id="ts-ytd" role="tabpanel" data-subtabs-target="panel">
                   <div class="table-responsive">
                     <table class="table table-sm mb-0">
                       <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Unidades</th><th class="text-end">Ingresos</th></tr></thead>
@@ -154,7 +154,7 @@
                     </table>
                   </div>
                 </div>
-                <div class="tab-pane fade" id="ts-ly" role="tabpanel">
+                <div class="tab-pane fade" id="ts-ly" role="tabpanel" data-subtabs-target="panel">
                   <div class="table-responsive">
                     <table class="table table-sm mb-0">
                       <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Unidades</th><th class="text-end">Ingresos</th></tr></thead>
@@ -174,7 +174,7 @@
                     </table>
                   </div>
                 </div>
-                <div class="tab-pane fade" id="ts-all" role="tabpanel">
+                <div class="tab-pane fade" id="ts-all" role="tabpanel" data-subtabs-target="panel">
                   <div class="table-responsive">
                     <table class="table table-sm mb-0">
                       <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Unidades</th><th class="text-end">Ingresos</th></tr></thead>
@@ -198,16 +198,16 @@
             </div>
 
             <!-- Rentables -->
-            <div class="tab-pane fade" id="tp-profit" role="tabpanel">
+            <div class="tab-pane fade" id="tp-profit" role="tabpanel" data-tabs-target="panel" data-controller="subtabs">
               <div class="px-3 pt-3">
                 <ul class="nav nav-tabs nav-tabs-sm" role="tablist">
-                  <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#pp-ytd" type="button" role="tab">YTD</button></li>
-                  <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#pp-ly" type="button" role="tab">Last Year</button></li>
-                  <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#pp-all" type="button" role="tab">All Time</button></li>
+                  <li class="nav-item"><button class="nav-link active" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#pp-ytd" type="button" role="tab" aria-controls="pp-ytd" aria-selected="true">YTD</button></li>
+                  <li class="nav-item"><button class="nav-link" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#pp-ly" type="button" role="tab" aria-controls="pp-ly">Last Year</button></li>
+                  <li class="nav-item"><button class="nav-link" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#pp-all" type="button" role="tab" aria-controls="pp-all">All Time</button></li>
                 </ul>
               </div>
               <div class="tab-content">
-                <div class="tab-pane fade show active" id="pp-ytd" role="tabpanel">
+                <div class="tab-pane fade show active" id="pp-ytd" role="tabpanel" data-subtabs-target="panel">
                   <div class="table-responsive">
                     <table class="table table-sm mb-0">
                       <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Ingresos</th><th class="text-end">COGS</th><th class="text-end">Profit</th></tr></thead>
@@ -228,7 +228,7 @@
                     </table>
                   </div>
                 </div>
-                <div class="tab-pane fade" id="pp-ly" role="tabpanel">
+                <div class="tab-pane fade" id="pp-ly" role="tabpanel" data-subtabs-target="panel">
                   <div class="table-responsive">
                     <table class="table table-sm mb-0">
                       <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Ingresos</th><th class="text-end">COGS</th><th class="text-end">Profit</th></tr></thead>
@@ -249,7 +249,7 @@
                     </table>
                   </div>
                 </div>
-                <div class="tab-pane fade" id="pp-all" role="tabpanel">
+                <div class="tab-pane fade" id="pp-all" role="tabpanel" data-subtabs-target="panel">
                   <div class="table-responsive">
                     <table class="table table-sm mb-0">
                       <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Ingresos</th><th class="text-end">COGS</th><th class="text-end">Profit</th></tr></thead>
@@ -304,17 +304,22 @@
     </div>
   </div>
 
-  <!-- Top categorías + Donut -->
+  <!-- Top categorías + Top clientes (lado a lado) -->
   <div class="row mt-4 g-3">
     <div class="col-xl-6">
-      <div class="card h-100">
+      <div class="card h-100" data-controller="tabs">
         <div class="card-header d-flex justify-content-between align-items-center">
           <span><i class="fa-solid fa-layer-group"></i> Top Categorías</span>
+          <ul class="nav nav-tabs nav-tabs-sm card-header-tabs" role="tablist">
+            <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tc-ytd" type="button" role="tab" aria-controls="tc-ytd" aria-selected="true">YTD</button></li>
+            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tc-ly" type="button" role="tab" aria-controls="tc-ly">Last Year</button></li>
+            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tc-all" type="button" role="tab" aria-controls="tc-all">All Time</button></li>
+          </ul>
           <div><a class="btn btn-sm btn-outline-primary" href="<%= admin_products_path %>">Ver detalle</a></div>
         </div>
         <div class="card-body p-0">
           <div class="tab-content">
-            <div class="tab-pane fade show active" id="tc-ytd" role="tabpanel">
+            <div class="tab-pane fade show active" id="tc-ytd" role="tabpanel" data-tabs-target="panel">
               <div class="table-responsive">
                 <table class="table table-sm mb-0">
                   <thead><tr><th>Rank</th><th>Categoría</th><th class="text-end">Ingresos</th></tr></thead>
@@ -333,7 +338,7 @@
                 </table>
               </div>
             </div>
-            <div class="tab-pane fade" id="tc-ly" role="tabpanel">
+            <div class="tab-pane fade" id="tc-ly" role="tabpanel" data-tabs-target="panel">
               <div class="table-responsive">
                 <table class="table table-sm mb-0">
                   <thead><tr><th>Rank</th><th>Categoría</th><th class="text-end">Ingresos</th></tr></thead>
@@ -352,7 +357,7 @@
                 </table>
               </div>
             </div>
-            <div class="tab-pane fade" id="tc-all" role="tabpanel">
+            <div class="tab-pane fade" id="tc-all" role="tabpanel" data-tabs-target="panel">
               <div class="table-responsive">
                 <table class="table table-sm mb-0">
                   <thead><tr><th>Rank</th><th>Categoría</th><th class="text-end">Ingresos</th></tr></thead>
@@ -374,26 +379,21 @@
           </div>
         </div>
       </div>
-    </div>
-    <!-- (Se eliminó la tarjeta duplicada de "Producto top por categoría (Profit)") -->
   </div>
-
-  <!-- Top clientes -->
-  <div class="row mt-4 g-3">
-    <div class="col-xl-6">
-      <div class="card h-100">
+  <div class="col-xl-6">
+      <div class="card h-100" data-controller="tabs">
         <div class="card-header d-flex justify-content-between align-items-center">
           <span><i class="fa-solid fa-ranking-star"></i> Top Customers</span>
           <ul class="nav nav-tabs nav-tabs-sm card-header-tabs" role="tablist">
-            <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#rank-range" type="button" role="tab">YTD</button></li>
-            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#rank-ly" type="button" role="tab">Last Year</button></li>
-            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#rank-all" type="button" role="tab">All Time</button></li>
+            <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#rank-range" type="button" role="tab" aria-controls="rank-range" aria-selected="true">YTD</button></li>
+            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#rank-ly" type="button" role="tab" aria-controls="rank-ly">Last Year</button></li>
+            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#rank-all" type="button" role="tab" aria-controls="rank-all">All Time</button></li>
           </ul>
           <a href="<%= admin_users_path %>" class="btn btn-sm btn-outline-primary ms-2">Ver detalle</a>
         </div>
         <div class="card-body p-0">
           <div class="tab-content">
-            <div class="tab-pane fade show active" id="rank-range" role="tabpanel">
+            <div class="tab-pane fade show active" id="rank-range" role="tabpanel" data-tabs-target="panel">
               <div class="table-responsive">
                 <table class="table table-sm mb-0">
                   <thead>
@@ -430,7 +430,7 @@
                  </table>
               </div>
             </div>
-            <div class="tab-pane fade" id="rank-ly" role="tabpanel">
+            <div class="tab-pane fade" id="rank-ly" role="tabpanel" data-tabs-target="panel">
               <div class="table-responsive">
                 <table class="table table-sm mb-0">
                   <thead><tr><th>Rank</th><th>Customer</th><th class="text-end">Orders</th><th class="text-end">Revenue</th></tr></thead>
@@ -450,7 +450,7 @@
                 </table>
               </div>
             </div>
-            <div class="tab-pane fade" id="rank-all" role="tabpanel">
+            <div class="tab-pane fade" id="rank-all" role="tabpanel" data-tabs-target="panel">
               <div class="table-responsive">
                 <table class="table table-sm mb-0">
                   <thead><tr><th>Rank</th><th>Customer</th><th class="text-end">Orders</th><th class="text-end">Revenue</th></tr></thead>
@@ -480,25 +480,18 @@
   <!-- Otras tablas: Geografía -->
   <div class="row mt-4">
     <div class="col-xl-8">
-      <div class="card h-100">
+      <div class="card h-100" data-controller="tabs">
         <div class="card-header d-flex justify-content-between align-items-center">
           <span><i class="fa-solid fa-flag"></i> Ventas por Estado (México)</span>
           <ul class="nav nav-tabs nav-tabs-sm card-header-tabs" role="tablist">
-            <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#mx-ytd" type="button" role="tab">YTD</button></li>
-            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#mx-ly" type="button" role="tab">Last Year</button></li>
-            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#mx-all" type="button" role="tab">All Time</button></li>
+            <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#mx-ytd" type="button" role="tab" aria-controls="mx-ytd" aria-selected="true">YTD</button></li>
+            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#mx-ly" type="button" role="tab" aria-controls="mx-ly">Last Year</button></li>
+            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#mx-all" type="button" role="tab" aria-controls="mx-all">All Time</button></li>
           </ul>
         </div>
         <div class="card-body p-0">
-          <div class="px-3 pt-3">
-            <ul class="nav nav-tabs nav-tabs-sm" role="tablist">
-              <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tc-ytd" type="button" role="tab">YTD</button></li>
-              <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tc-ly" type="button" role="tab">Last Year</button></li>
-              <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tc-all" type="button" role="tab">All Time</button></li>
-            </ul>
-          </div>
           <div class="tab-content">
-            <div class="tab-pane fade show active" id="mx-ytd" role="tabpanel">
+            <div class="tab-pane fade show active" id="mx-ytd" role="tabpanel" data-tabs-target="panel">
               <div class="table-responsive">
                 <table class="table table-sm mb-0">
                   <thead><tr><th>Estado</th><th class="text-end">Órdenes</th><th class="text-end">Ingresos</th></tr></thead>
@@ -517,7 +510,7 @@
                 </table>
               </div>
             </div>
-            <div class="tab-pane fade" id="mx-ly" role="tabpanel">
+            <div class="tab-pane fade" id="mx-ly" role="tabpanel" data-tabs-target="panel">
               <div class="table-responsive">
                 <table class="table table-sm mb-0">
                   <thead><tr><th>Estado</th><th class="text-end">Órdenes</th><th class="text-end">Ingresos</th></tr></thead>
@@ -536,7 +529,7 @@
                 </table>
               </div>
             </div>
-            <div class="tab-pane fade" id="mx-all" role="tabpanel">
+            <div class="tab-pane fade" id="mx-all" role="tabpanel" data-tabs-target="panel">
               <div class="table-responsive">
                 <table class="table table-sm mb-0">
                   <thead><tr><th>Estado</th><th class="text-end">Órdenes</th><th class="text-end">Ingresos</th></tr></thead>
@@ -560,18 +553,18 @@
       </div>
     </div>
     <div class="col-xl-4">
-      <div class="card h-100">
+      <div class="card h-100" data-controller="tabs">
         <div class="card-header d-flex justify-content-between align-items-center">
           <span><i class="fa-solid fa-table"></i> Distribución de Ventas por País</span>
           <ul class="nav nav-tabs nav-tabs-sm card-header-tabs" role="tablist">
-            <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#cty-ytd" type="button" role="tab">YTD</button></li>
-            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#cty-ly" type="button" role="tab">Last Year</button></li>
-            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#cty-all" type="button" role="tab">All Time</button></li>
+            <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#cty-ytd" type="button" role="tab" aria-controls="cty-ytd" aria-selected="true">YTD</button></li>
+            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#cty-ly" type="button" role="tab" aria-controls="cty-ly">Last Year</button></li>
+            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#cty-all" type="button" role="tab" aria-controls="cty-all">All Time</button></li>
           </ul>
         </div>
         <div class="card-body p-0">
           <div class="tab-content">
-            <div class="tab-pane fade show active" id="cty-ytd" role="tabpanel">
+            <div class="tab-pane fade show active" id="cty-ytd" role="tabpanel" data-tabs-target="panel">
               <div class="table-responsive">
                 <table class="table table-sm mb-0">
                   <thead><tr><th>País</th><th class="text-end">Órdenes</th><th class="text-end">Ingresos</th><th class="text-end">Participación</th></tr></thead>
@@ -591,7 +584,7 @@
                 </table>
               </div>
             </div>
-            <div class="tab-pane fade" id="cty-ly" role="tabpanel">
+            <div class="tab-pane fade" id="cty-ly" role="tabpanel" data-tabs-target="panel">
               <div class="table-responsive">
                 <table class="table table-sm mb-0">
                   <thead><tr><th>País</th><th class="text-end">Órdenes</th><th class="text-end">Ingresos</th><th class="text-end">Participación</th></tr></thead>
@@ -611,7 +604,7 @@
                 </table>
               </div>
             </div>
-            <div class="tab-pane fade" id="cty-all" role="tabpanel">
+            <div class="tab-pane fade" id="cty-all" role="tabpanel" data-tabs-target="panel">
               <div class="table-responsive">
                 <table class="table table-sm mb-0">
                   <thead><tr><th>País</th><th class="text-end">Órdenes</th><th class="text-end">Ingresos</th><th class="text-end">Participación</th></tr></thead>

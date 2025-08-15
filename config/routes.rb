@@ -81,11 +81,6 @@ Rails.application.routes.draw do
     end
 
   end
-  
-  # Local proxy endpoints for map GeoJSON (top-level)
-  get '/maps/world.json', to: 'maps#world'
-  get '/maps/mexico.json', to: 'maps#mexico'
-  get '/maps/mexico_states.json', to: 'maps#mexico_states'
   # Public product views
   get '/catalog', to: 'products#index', as: :catalog
   resources :products, only: [:show]

@@ -4,6 +4,7 @@ import { Application } from "@hotwired/stimulus"
 
 const application = Application.start()
 
+// Nota: Evitamos Bootstrap JS para tabs; usamos Stimulus nativo
 
 import * as controllers from "./controllers"
 for (const name in controllers) {
@@ -18,6 +19,12 @@ application.register("kv-editor", KvEditorController)
 
 import DropzoneController from "./controllers/dropzone_controller"
 application.register("dropzone", DropzoneController)
+
+import TabsController from "./controllers/tabs_controller"
+application.register("tabs", TabsController)
+
+import SubtabsController from "./controllers/subtabs_controller"
+application.register("subtabs", SubtabsController)
 
 import "custom/menu"
 import "custom/toggle_inventory_items"
