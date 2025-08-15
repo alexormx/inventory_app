@@ -26,6 +26,10 @@ Rails.application.routes.draw do
   get 'dashboard', to: 'dashboard#index', as: :dashboard
   # Geo stats for dashboard (JSON)
   get 'dashboard/geo', to: 'dashboard#geo', as: :dashboard_geo
+  
+    # Local proxy endpoints for map GeoJSON
+    get '/maps/world.json', to: 'maps#world'
+    get '/maps/mexico.json', to: 'maps#mexico'
 
     # Product Management
     get 'products/drafts', to: 'products#drafts', as: :products_drafts

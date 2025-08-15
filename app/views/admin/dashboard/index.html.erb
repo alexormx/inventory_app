@@ -303,8 +303,8 @@
       Promise.resolve().then(async () => {
         // Ensure map data is registered (world + Mexico), independent of script load order
         try {
-          const worldUrl = 'https://fastly.jsdelivr.net/npm/echarts@5/examples/data/asset/world.json';
-          const mxUrl    = 'https://fastly.jsdelivr.net/npm/echarts@5/examples/data/asset/geo/MEX.json';
+          const worldUrl = '/maps/world.json';
+          const mxUrl    = '/maps/mexico.json';
           const [wr, mr] = await Promise.allSettled([fetch(worldUrl), fetch(mxUrl)]);
           if (wr.status === 'fulfilled' && wr.value.ok) {
             const geo = await wr.value.json();
@@ -348,11 +348,6 @@
 
         const resolveMapName = async (scope) => {
           if (scope !== 'mexico') return 'world';
-          const candidates = ['MEX', 'Mexico', 'mexico', 'MX'];
-          for (const name of candidates) {
-            if (echarts.getMap(name)) return name;
-          }
-          await ensureMap('MEX');
           if (echarts.getMap('MEX')) return 'MEX';
           return echarts.getMap('world') ? 'world' : null;
         };
