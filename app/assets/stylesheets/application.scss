@@ -12,9 +12,7 @@
 /* Use module system: import Bootstrap and custom styles as modules. We pass a
    default value for $primary to Bootstrap via `with(...)` so the variable is
    set without defining a conflicting global variable in this module. */
-@use "bootstrap/scss/bootstrap" with (
-  $primary: #007bff
-);
+@use "bootstrap/scss/bootstrap" as *;
 @use "custom" as *;
 
 body {

@@ -1,8 +1,12 @@
+@use "sass:color";
+@use "bootstrap/scss/bootstrap" as *;
+
 /* Utilidades para cards de productos */
 .product-card {
   display: flex;
   flex-direction: column;
 }
+
 .product-card .card-body {
   display: flex;
   flex-direction: column;
