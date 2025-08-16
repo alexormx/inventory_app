@@ -109,7 +109,9 @@
         Seleccionar o arrastrar los archivos aquí
       </div>
       <small class="text-muted d-block">Sube máximo 10 fotos JPG, JPEG, PNG o WEBP. Recomendado: > 500px por lado, máximo 10MB.</small>
-      <%= f.file_field :product_images, multiple: true, direct_upload: true, class: "d-none", data: { dropzone_target: "input" }, accept: "image/*" %>
+  <%= f.file_field :product_images, multiple: true, direct_upload: true, class: "d-none", data: { dropzone_target: "input" }, accept: "image/*" %>
+  <!-- Fallback visible button por si Stimulus no se inicializa correctamente -->
+  <button type="button" class="btn btn-outline-secondary btn-sm mt-2" onclick="document.querySelector('input[type=file][name="product[product_images][]"]').click()">Seleccionar fotos</button>
       <ul class="list-group list-group-flush mt-3 text-start" data-dropzone-target="preview"></ul>
     </div>
   </div>
@@ -156,7 +158,7 @@
       <button type="button" class="btn btn-outline-primary btn-sm" data-action="kv-editor#addRow">Agregar atributo</button>
       <button type="button" class="btn btn-outline-secondary btn-sm" data-action="kv-editor#importJson">Importar JSON</button>
     </div>
-    <%= f.hidden_field :custom_attributes, value: (@product.parsed_custom_attributes || {}).to_json, data: { kv_editor_target: "hidden" } %>
+  <%= f.hidden_field :custom_attributes, value: (@product.parsed_custom_attributes || {}).to_json, data: { 'kv-editor-target': "hidden" } %>
     <small class="text-muted d-block mt-1">Se guardará como JSON. Las claves se normalizan en minúsculas.</small>
   </div>
 

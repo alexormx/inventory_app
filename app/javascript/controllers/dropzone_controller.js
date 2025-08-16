@@ -13,10 +13,19 @@ export default class extends Controller {
   }
 
   connect() {
+    // Debug: log targets if debugging enabled
+    if (window.dropzoneDebug) {
+      console.log('[dropzone] connect - hasInputTarget=', this.hasInputTarget, 'hasPreviewTarget=', this.hasPreviewTarget)
+    }
+
     this.element.addEventListener("click", (e) => {
       // avoid clicking the remove buttons in preview
       if (e.target.closest("button[data-action]") || e.target.tagName === "BUTTON") return
-      this.inputTarget?.click()
+      if (!this.inputTarget) {
+        if (window.dropzoneDebug) console.warn('[dropzone] inputTarget not found')
+        return
+      }
+      this.inputTarget.click()
     })
 
     this.element.addEventListener("dragover", (e) => {
