@@ -494,7 +494,6 @@ DEPENDENCIES
   kaminari
   launchy
   letter_opener
-  mini_magick
   overcommit
   pg (~> 1.1)
   propshaft
@@ -507,6 +506,7 @@ DEPENDENCIES
   rubocop-rails
   rubocop-rails-omakase
   rubocop-rspec
+  ruby-vips
   sassc-rails
   selenium-webdriver
   shoulda-matchers (~> 5.0)
@@ -523,7 +523,7 @@ DEPENDENCIES
   web-console
 
 RUBY VERSION
-   ruby 3.2.3p157
+   ruby 3.2.9p265
 
 BUNDLED WITH
    2.4.10
