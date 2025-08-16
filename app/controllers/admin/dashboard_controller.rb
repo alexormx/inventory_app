@@ -44,6 +44,13 @@ class Admin::DashboardController < ApplicationController
     @active_customers_ytd  = so_ytd.select(:user_id).distinct.count
     @inventory_total_value = Product.sum(:current_inventory_value).to_d
 
+    # Compras totales (MXN) all-time (respeta excluir canceladas)
+    @purchases_total_mxn = po_scope.sum(:total_cost_mxn).to_d
+    if @purchases_total_mxn.zero?
+      # Fallback si total_cost_mxn aún no existía/estaba vacío
+      @purchases_total_mxn = po_scope.sum(:total_order_cost).to_d
+    end
+
     # Comparativa YTD vs mismo periodo del año anterior
     range_prev_start = @start_date.prev_year
     range_prev_end   = @end_date.prev_year
