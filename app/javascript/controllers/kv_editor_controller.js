@@ -21,6 +21,12 @@ export default class extends Controller {
     if (entries.length === 0) this.addRow()
     else entries.forEach(([k, v]) => this._appendRow(k, this._valueToString(v)))
     this.sync()
+
+    // Ensure we sync just before the form is submitted so the hidden field is current
+    const form = this.element.closest('form')
+    if (form) {
+      form.addEventListener('submit', (ev) => this.sync())
+    }
   }
 
   addRow() {

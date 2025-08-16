@@ -111,6 +111,20 @@ class Product < ApplicationRecord
   def normalize_custom_attributes
     h = self.custom_attributes
 
+    # If this came from params it might be an ActionController::Parameters
+    # Convert common parameter-like objects to a plain Hash so normalization
+    # logic below works consistently.
+    if defined?(ActionController::Parameters) && h.is_a?(ActionController::Parameters)
+      h = h.to_unsafe_h
+    elsif h.respond_to?(:to_h) && !h.is_a?(Hash)
+      # Try a generic conversion for other hash-like objects
+      begin
+        h = h.to_h
+      rescue StandardError
+        # fall through; will be handled below
+      end
+    end
+
     # 1) Strings -> Hash
     if h.is_a?(String)
       begin
