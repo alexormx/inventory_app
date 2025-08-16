@@ -1,9 +1,9 @@
-class Api::V1::ProductsController < ApplicationController
+class Api::V1::PurchaseOrdersController < ApplicationController
   skip_before_action :verify_authenticity_token
   before_action :authenticate_with_token!
 
+  # POST /api/v1/purchase_orders
   def create
-    # Buscar usuario por email
     user = User.find_by(email: purchase_order_params[:email])
     unless user
       render json: { status: "error", message: "User not found for email #{purchase_order_params[:email]}" }, status: :unprocessable_entity and return
