@@ -41,17 +41,6 @@ class Api::V1::ProductsController < ApplicationController
     coerce_custom_attributes!(params[:product])  # <- del concern
   end
 
-  def authenticate_with_token!
-    token = request.headers["Authorization"].to_s.split(" ").last
-    user = User.find_by(api_token: token)
-
-    if user&.admin?
-      @current_user = user
-    else
-      render json: { error: "Unauthorized" }, status: :unauthorized
-    end
-  end
-
 
   def product_params
     params.require(:product).permit(
