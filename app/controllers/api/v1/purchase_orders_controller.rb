@@ -10,6 +10,25 @@ class Api::V1::PurchaseOrdersController < ApplicationController
     end
 
     po_attrs = purchase_order_params.except(:email).merge(user_id: user.id)
+
+    # Compute and persist total_cost_mxn consistently for reporting/UI
+    begin
+      currency = po_attrs[:currency].to_s
+      total_order_cost = BigDecimal(po_attrs[:total_order_cost].to_s)
+      exchange_rate = BigDecimal((po_attrs[:exchange_rate].presence || 0).to_s)
+
+      total_cost_mxn = if currency == 'MXN'
+        total_order_cost
+      elsif exchange_rate > 0
+        total_order_cost * exchange_rate
+      else
+        0
+      end
+
+      po_attrs[:total_cost_mxn] = total_cost_mxn.round(2)
+    rescue ArgumentError
+      po_attrs[:total_cost_mxn] = 0
+    end
     purchase_order = PurchaseOrder.new(po_attrs)
 
     if purchase_order.save
