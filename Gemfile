@@ -1,7 +1,7 @@
 source "https://rubygems.org"
 
 # ✅ Define Ruby version
-ruby "3.2.3"
+ruby "3.2.9"
 
 # ✅ Core Rails Framework
 gem "rails", "~> 8.0.1"
@@ -33,11 +33,8 @@ gem "solid_cable"  # WebSocket connection for ActionCable
 gem "bootsnap", require: false  # Improves boot times through caching
 
 # ✅ Deployment & Production Enhancements
-gem "kamal", require: false  # Deploy Rails app as a Docker container
+# NOTE: move deploy/test/devel helpers into development/test group below
 gem "thruster", require: false  # HTTP caching/compression with Puma
-
-# ✅ Faker for Testing & Seeding
-gem "faker"
 
 # ✅ Timezone Handling (Windows-specific)
 gem "tzinfo-data", platforms: %i[mingw jruby]
@@ -53,7 +50,9 @@ gem "bootstrap", "~> 5.3.3"
 gem "sassc-rails"
 gem "sprockets-rails"
 gem "image_processing", "~> 1.2"
-gem "mini_magick"
+# Use ruby-vips (smaller runtime and faster transformations than ImageMagick)
+# Remove `mini_magick` to reduce slug size; ruby-vips depends on libvips on the host.
+gem "ruby-vips"
 gem "redis", "~> 4.8" # Redis for caching and background jobs
 gem "sitemap_generator"
 gem "friendly_id", "~> 5.5"
@@ -82,6 +81,9 @@ group :development do
   gem "overcommit" # Git hooks for code quality
   gem "web-console"  # Rails console in browser for debugging
   gem "letter_opener" # Preview email in the browser instead of sending
+  # Development / deploy helpers (not needed in production runtime)
+  gem "kamal", require: false  # Deploy Rails app as a Docker container
+  gem "faker"
 end
 
 # 🔹 **Testing Group**

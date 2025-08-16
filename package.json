@@ -1,4 +1,7 @@
 {
+  "engines": {
+    "node": "20.x"
+  },
   "dependencies": {
     "@hotwired/turbo-rails": "^8.0.13",
     "@popperjs/core": "^2.11.8"
