@@ -9,15 +9,13 @@
  * Consider organizing styles into separate files for maintainability.
  */
 
-/* Define minimal SASS variables that project styles expect. These provide a safe default
-  so the SCSS can compile even when Bootstrap is loaded via CDN instead of npm imports. */
-$primary: #007bff; /* Bootstrap primary blue (fallback) */
-
-/* Import Bootstrap SCSS from node_modules so Bootstrap variables (e.g. $primary)
-  and mixins are available to our custom styles. We keep the fallback above
-  but importing ensures consistent values. */
-@import "bootstrap/scss/bootstrap";
-@import "custom";
+/* Use module system: import Bootstrap and custom styles as modules. We pass a
+   default value for $primary to Bootstrap via `with(...)` so the variable is
+   set without defining a conflicting global variable in this module. */
+@use "bootstrap/scss/bootstrap" with (
+  $primary: #007bff
+);
+@use "custom" as *;
 
 body {
  -webkit-text-size-adjust: auto; /* Disables the Bootstrap default */

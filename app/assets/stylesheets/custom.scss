@@ -619,7 +619,7 @@ input[type="number"] {
   }
 
   &:hover {
-    background-color: darken(#25d366, 5%);
+    background-color: color.adjust(#25d366, $lightness: -5%);
   }
 }
 
