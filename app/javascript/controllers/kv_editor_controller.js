@@ -9,8 +9,14 @@ export default class extends Controller {
   }
 
   connect() {
-    // Bootstrap rows from initialValue, con expansión automática si viene un "raw" con JSON-like
-    let data = this.initialValueValue || {}
+    try {
+      // Debug: report presence of targets if window.kvEditorDebug is set
+      if (window.kvEditorDebug) {
+        console.log('[kv-editor] connect start - hasRowsTarget=', this.hasRowsTarget, 'hasHiddenTarget=', this.hasHiddenTarget)
+      }
+
+      // Bootstrap rows from initialValue, con expansión automática si viene un "raw" con JSON-like
+      let data = this.initialValueValue || {}
     const keys = Object.keys(data)
     if (keys.length === 1 && keys[0].toLowerCase() === "raw" && typeof data[keys[0]] === "string") {
       const expanded = this._tryParseLooseObject(data[keys[0]])
@@ -26,6 +32,10 @@ export default class extends Controller {
     const form = this.element.closest('form')
     if (form) {
       form.addEventListener('submit', (ev) => this.sync())
+    }
+    if (window.kvEditorDebug) console.log('[kv-editor] connect end - rows now=', this.rowsTarget?.children?.length)
+    } catch (err) {
+      console.error('[kv-editor] connect error', err)
     }
   }
 
@@ -191,4 +201,26 @@ export default class extends Controller {
   _isPlainObject(o) {
     return !!o && typeof o === 'object' && !Array.isArray(o)
   }
+}
+
+// Global fallback: allow adding a row from the console if Stimulus hasn't initialized
+window.kvEditorAddRowFallback = function() {
+  const rows = document.querySelector('[data-kv-editor-target="rows"]')
+  if (!rows) return console.warn('kv-editor fallback: rows target not found')
+  const tr = document.createElement('tr')
+  tr.innerHTML = `
+    <td>
+      <input type="text" name="kv_key[]" class="form-control form-control-sm" placeholder="key" value="" />
+    </td>
+    <td>
+      <input type="text" name="kv_val[]" class="form-control form-control-sm" placeholder="value" value="" />
+    </td>
+    <td class="text-end">
+      <div class="btn-group btn-group-sm">
+        <button type="button" class="btn btn-outline-secondary" title="Expandir JSON">⤢</button>
+        <button type="button" class="btn btn-outline-danger">&times;</button>
+      </div>
+    </td>
+  `
+  rows.appendChild(tr)
 }
