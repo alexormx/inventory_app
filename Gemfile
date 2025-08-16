@@ -79,3 +79,4 @@ end
 group :production do
   gem "aws-sdk-s3", "1.114.0", require: false
 end
+gem "cssbundling-rails", "~> 1.4"

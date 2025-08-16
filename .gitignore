@@ -38,3 +38,5 @@
 .env
 # Ignore SQLite database files (main and WAL/SHM companions)
 /db/*.sqlite3*
+
+/node_modules
