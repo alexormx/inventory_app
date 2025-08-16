@@ -114,6 +114,7 @@ Rails.application.routes.draw do
       get 'products/exists', to: 'products#exists'
       resources :users, only: [:create]
       get 'users/exists', to: 'users#exists'
+      resources :purchase_orders, only: [:create]
     end
   end
 
