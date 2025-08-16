@@ -8,9 +8,18 @@
  *
  * Consider organizing styles into separate files for maintainability.
  */
- @import "custom";
 
- body {
-  -webkit-text-size-adjust: auto; /* Disables the Bootstrap default */
-  text-size-adjust: 100%; /* ✅ Standard property supported in modern browsers */
+/* Define minimal SASS variables that project styles expect. These provide a safe default
+  so the SCSS can compile even when Bootstrap is loaded via CDN instead of npm imports. */
+$primary: #007bff; /* Bootstrap primary blue (fallback) */
+
+/* Import Bootstrap SCSS from node_modules so Bootstrap variables (e.g. $primary)
+  and mixins are available to our custom styles. We keep the fallback above
+  but importing ensures consistent values. */
+@import "bootstrap/scss/bootstrap";
+@import "custom";
+
+body {
+ -webkit-text-size-adjust: auto; /* Disables the Bootstrap default */
+ text-size-adjust: 100%; /* ✅ Standard property supported in modern browsers */
 }
