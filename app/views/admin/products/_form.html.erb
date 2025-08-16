@@ -155,8 +155,10 @@
       </table>
     </div>
     <div class="d-flex gap-2">
-      <button type="button" class="btn btn-outline-primary btn-sm" data-action="kv-editor#addRow">Agregar atributo</button>
-      <button type="button" class="btn btn-outline-secondary btn-sm" data-action="kv-editor#importJson">Importar JSON</button>
+  <button type="button" class="btn btn-outline-primary btn-sm" data-action="kv-editor#addRow">Agregar atributo</button>
+  <button type="button" class="btn btn-outline-secondary btn-sm" data-action="kv-editor#importJson">Importar JSON</button>
+  <!-- Fallback: add row if Stimulus didn't initialize -->
+  <button type="button" class="btn btn-outline-secondary btn-sm" onclick="(window.kvEditorAddRowFallback || (() => alert('Fallback no disponible')) )()">Agregar atributo (fallback)</button>
     </div>
   <%= f.hidden_field :custom_attributes, value: (@product.parsed_custom_attributes || {}).to_json, data: { 'kv-editor-target': "hidden" } %>
     <small class="text-muted d-block mt-1">Se guardará como JSON. Las claves se normalizan en minúsculas.</small>
