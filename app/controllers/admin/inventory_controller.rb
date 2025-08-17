@@ -67,7 +67,7 @@ class Admin::InventoryController < ApplicationController
 
   def items
     @product = Product.find_by_identifier!(params[:id])
-    @inventory_items = @product.inventories.includes(:purchase_order)
+  @inventory_items = @product.inventories.includes(:purchase_order).order(id: :asc)
 
   # Turbo Frames: usar el id de frame esperado (enviado por Turbo en el header)
     expected_frame_id = request.headers["Turbo-Frame"]
