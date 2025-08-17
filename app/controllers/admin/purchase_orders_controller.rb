@@ -58,7 +58,15 @@ class Admin::PurchaseOrdersController < ApplicationController
     respond_to do |format|
       format.html
       format.csv  { send_data csv_for_purchase_orders(@export_purchase_orders), filename: "purchase_orders-#{Time.current.strftime('%Y%m%d-%H%M')}.csv" }
-  format.xlsx { render template: "admin/purchase_orders/index", formats: [:xlsx], filename: "purchase_orders-#{Time.current.strftime('%Y%m%d-%H%M')}.xlsx" }
+      # Fallback para formatos no registrados (p.ej., :xlsx en algunos entornos)
+      format.any do
+        if params[:format].to_s == 'xlsx'
+          response.headers['Content-Disposition'] = "attachment; filename=purchase_orders-#{Time.current.strftime('%Y%m%d-%H%M')}.xlsx"
+          render template: "admin/purchase_orders/index", formats: [:xlsx]
+        else
+          head :not_acceptable
+        end
+      end
     end
   end
 

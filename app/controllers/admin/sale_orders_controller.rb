@@ -57,7 +57,14 @@ class Admin::SaleOrdersController < ApplicationController
     respond_to do |format|
       format.html
       format.csv  { send_data csv_for_sale_orders(@export_sale_orders), filename: "sale_orders-#{Time.current.strftime('%Y%m%d-%H%M')}.csv" }
-  format.xlsx { render template: "admin/sale_orders/index", formats: [:xlsx], filename: "sale_orders-#{Time.current.strftime('%Y%m%d-%H%M')}.xlsx" }
+      format.any do
+        if params[:format].to_s == 'xlsx'
+          response.headers['Content-Disposition'] = "attachment; filename=sale_orders-#{Time.current.strftime('%Y%m%d-%H%M')}.xlsx"
+          render template: "admin/sale_orders/index", formats: [:xlsx]
+        else
+          head :not_acceptable
+        end
+      end
     end
   end
 

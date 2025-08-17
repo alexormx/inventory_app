@@ -68,7 +68,14 @@ class Admin::InventoryController < ApplicationController
     respond_to do |format|
       format.html
       format.csv  { send_data csv_for_inventory(@export_products), filename: "inventory-#{Time.current.strftime('%Y%m%d-%H%M')}.csv" }
-  format.xlsx { render template: "admin/inventory/index", formats: [:xlsx], filename: "inventory-#{Time.current.strftime('%Y%m%d-%H%M')}.xlsx" }
+      format.any do
+        if params[:format].to_s == 'xlsx'
+          response.headers['Content-Disposition'] = "attachment; filename=inventory-#{Time.current.strftime('%Y%m%d-%H%M')}.xlsx"
+          render template: "admin/inventory/index", formats: [:xlsx]
+        else
+          head :not_acceptable
+        end
+      end
     end
   end
 
