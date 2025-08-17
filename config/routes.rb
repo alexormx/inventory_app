@@ -77,7 +77,7 @@ Rails.application.routes.draw do
     resources :sale_orders do
       resources :sales_order_items, only: [:create, :update, :destroy]
       resources :payments, only: [:new, :create, :edit, :update, :destroy]
-      resources :shipments, only: [:new, :create, :edit, :update]
+  resources :shipments, only: [:new, :create, :edit, :update, :destroy]
     end
 
   end

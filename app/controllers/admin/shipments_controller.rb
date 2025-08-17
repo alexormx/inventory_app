@@ -1,6 +1,6 @@
 class Admin::ShipmentsController < ApplicationController
   before_action :set_sale_order
-  before_action :set_shipment, only: [ :edit, :update ]
+  before_action :set_shipment, only: [:edit, :update, :destroy]
 
   def new
     @shipment = @sale_order.build_shipment
@@ -51,6 +51,27 @@ class Admin::ShipmentsController < ApplicationController
           flash.now[:alert] = "Error updating shipment"
           render :edit, status: :unprocessable_entity
         end
+      end
+    end
+  end
+
+  def destroy
+    if @shipment.nil?
+      head :not_found and return
+    end
+
+    if @shipment.destroy
+      @sale_order.reload
+      respond_to do |format|
+        format.turbo_stream
+        format.html { redirect_to admin_sale_order_path(@sale_order), notice: "Shipment deleted" }
+      end
+    else
+      respond_to do |format|
+        format.turbo_stream do
+          render partial: "admin/shipments/info", locals: { sale_order: @sale_order }, status: :unprocessable_entity
+        end
+        format.html { redirect_to admin_sale_order_path(@sale_order), alert: "Could not delete shipment" }
       end
     end
   end

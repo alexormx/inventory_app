@@ -1,13 +1,21 @@
 <!-- admin/shipments/_info.html.erb -->
-<div class="card mb-3">
-  <div class="card-body">
-    <h5 class="card-title">🚚 Shipment Info</h5>
-    <div class="row">
-      <div class="col-md-4"><strong>Carrier:</strong> <%= sale_order.shipment.carrier %></div>
-      <div class="col-md-4"><strong>Tracking #:</strong> <%= sale_order.shipment.tracking_number %></div>
-      <div class="col-md-4"><strong>Status:</strong> <%= sale_order.shipment.status&.humanize || "—" %></div>
-      <div class="col-md-4"><strong>Estimated Delivery:</strong> <%= sale_order.shipment.estimated_delivery %></div>
-      <div class="col-md-4"><strong>Actual Delivery:</strong> <%= sale_order.shipment.actual_delivery || "—" %></div>
+<% if sale_order.shipment.present? %>
+  <div class="card mb-3">
+    <div class="card-body">
+      <h5 class="card-title">🚚 Shipment Info</h5>
+      <div class="row">
+        <div class="col-md-4"><strong>Carrier:</strong> <%= sale_order.shipment.carrier %></div>
+        <div class="col-md-4"><strong>Tracking #:</strong> <%= sale_order.shipment.tracking_number %></div>
+        <div class="col-md-4"><strong>Status:</strong> <%= sale_order.shipment.status&.humanize || "—" %></div>
+        <div class="col-md-4"><strong>Estimated Delivery:</strong> <%= sale_order.shipment.estimated_delivery %></div>
+        <div class="col-md-4"><strong>Actual Delivery:</strong> <%= sale_order.shipment.actual_delivery || "—" %></div>
+      </div>
     </div>
   </div>
-</div>
+<% else %>
+  <div class="card mb-3">
+    <div class="card-body">
+      <p class="text-muted">No shipment assigned.</p>
+    </div>
+  </div>
+<% end %>
