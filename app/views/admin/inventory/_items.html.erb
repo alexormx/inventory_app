@@ -1,5 +1,14 @@
 <turbo-frame id="<%= (local_assigns[:frame_id].presence || "inventory-items-frame-#{product.id}") %>" class="mt-3">
-  <div class="mx-3 inventory-items"> <!-- Adds horizontal margin -->
+  <div class="mx-3">
+    <script>
+      // Ocultar loader tan pronto llegue el contenido
+      (function(){
+        var frame = document.currentScript && document.currentScript.closest('turbo-frame');
+        if(frame){ var loader = frame.querySelector('.inventory-loader'); if(loader){ loader.classList.add('d-none'); } }
+      })();
+    </script>
+    <div class="inventory-items">
+  <!-- Adds horizontal margin -->
     <% selected_status = params[:status].presence || 'all' %>
     <div class="d-flex justify-content-between small text-muted mb-2">
       <div>
@@ -55,6 +64,7 @@
         <% end %>
       </tbody>
     </table>
-  <!-- Sin paginación: se renderizan todas las piezas -->
+    <!-- Sin paginación: se renderizan todas las piezas -->
+    </div>
   </div>
 </turbo-frame>

@@ -7,7 +7,7 @@ document.addEventListener("turbo:load", () => {
       const frame = document.getElementById(`inventory-items-frame-${productId}`)
       if (!frame) return
 
-      // Si ya hay contenido en el frame, alternar visibilidad sin recargar
+  // Si ya hay contenido en el frame, alternar visibilidad sin recargar
       if (frame.innerHTML.trim() !== "") {
         const items = frame.querySelector(".inventory-items")
         if (items) {
@@ -15,13 +15,16 @@ document.addEventListener("turbo:load", () => {
           toggle.textContent = isHidden ? toggle.textContent.replace("Ocultar", "Ver") : toggle.textContent.replace("Ver", "Ocultar")
           event.preventDefault()
         } else if (!frame.querySelector("turbo-frame[src]")) {
-          // Si el frame tiene contenido no esperado (p.ej. Content Missing), forzar recarga navegando al href
+      // Si el frame no tiene aún items (p.ej. solo loader), mostrar loader y forzar carga navegando al href
+      const loader = frame.querySelector('.inventory-loader')
+      if (loader) loader.classList.remove('d-none')
           const href = toggle.getAttribute("href")
           if (href) {
             frame.src = href
             const observer = new MutationObserver(() => {
               const ok = frame.querySelector(".inventory-items")
               if (ok) {
+        if (loader) loader.classList.add('d-none')
                 toggle.textContent = toggle.textContent.replace("Ver", "Ocultar")
                 observer.disconnect()
               }
