@@ -73,7 +73,8 @@
   <th scope="col"><%= sort_link('Supplier', :supplier) %></th>
   <th scope="col"><%= sort_link('Order Date', :date) %></th>
   <th scope="col"><%= sort_link('Expected Delivery', :expected) %></th>
-      <th scope="col">Status</th>
+  <th scope="col">Status</th>
+  <th scope="col" class="text-end"><%= sort_link('Items', :items) %></th>
       <th scope="col" class="text-end">Currency</th>
       <th scope="col" class="text-end">Total Cost</th>
   <th scope="col" class="text-end"><%= sort_link('Total Cost MXN', :total_mxn) %></th>
@@ -89,11 +90,12 @@
         <td><%= po.user&.name || "—" %></td>
         <td><%= l(po.order_date, format: :short) %></td>
         <td><%= l(po.expected_delivery_date, format: :short) if po.expected_delivery_date %></td>
-        <td>
+  <td>
           <span class="badge <%= status_badge_class(po.status) %>">
             <%= po.status %>
           </span>
         </td>
+  <td class="text-end"><%= po.attributes["items_count"].to_i %></td>
         <td class="text-end"> <%= po.currency %> (<%= currency_symbol_for(po.currency)%>) </td>
         <td class="text-end">
           <%= number_to_currency(po.total_order_cost, unit: currency_symbol_for(po.currency)) %>

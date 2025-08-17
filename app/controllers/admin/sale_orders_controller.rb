@@ -14,6 +14,8 @@ class Admin::SaleOrdersController < ApplicationController
     @q = params[:q].to_s.strip
 
   scope = SaleOrder.joins(:user).includes(:user)
+  # Units per order (sum of item quantities) as items_count via subquery
+  scope = scope.select("sale_orders.*", "(SELECT COALESCE(SUM(quantity),0) FROM sale_order_items soi WHERE soi.sale_order_id = sale_orders.id) AS items_count")
     # Sorting
     sort = params[:sort].presence
     dir  = params[:dir].to_s.downcase == 'asc' ? 'asc' : 'desc'
@@ -21,7 +23,8 @@ class Admin::SaleOrdersController < ApplicationController
       'date'      => 'sale_orders.order_date',
       'created'   => 'sale_orders.created_at',
       'customer'  => 'users.name',
-      'total_mxn' => 'sale_orders.total_order_value'
+  'total_mxn' => 'sale_orders.total_order_value',
+  'items'     => 'items_count'
     }
     if sort_map.key?(sort)
       scope = scope.order(Arel.sql("#{sort_map[sort]} #{dir.upcase}"))

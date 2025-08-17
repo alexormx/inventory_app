@@ -12,6 +12,8 @@ class Admin::PurchaseOrdersController < ApplicationController
     @q = params[:q].to_s.strip
 
   scope = PurchaseOrder.joins(:user).includes(:user)
+  # Units per order (sum of item quantities) as items_count via subquery
+  scope = scope.select("purchase_orders.*", "(SELECT COALESCE(SUM(quantity),0) FROM purchase_order_items poi WHERE poi.purchase_order_id = purchase_orders.id) AS items_count")
   # Sorting
   sort = params[:sort].presence
   dir  = params[:dir].to_s.downcase == 'asc' ? 'asc' : 'desc'
@@ -19,7 +21,8 @@ class Admin::PurchaseOrdersController < ApplicationController
     'supplier'     => 'users.name',
     'date'         => 'purchase_orders.order_date',
     'expected'     => 'purchase_orders.expected_delivery_date',
-    'total_mxn'    => 'purchase_orders.total_cost_mxn',
+  'total_mxn'    => 'purchase_orders.total_cost_mxn',
+  'items'        => 'items_count',
     'created'      => 'purchase_orders.created_at'
   }
   if sort_map.key?(sort)
