@@ -6,7 +6,6 @@ class Admin::SaleOrdersController < ApplicationController
   before_action :load_counts, only: [:index]
 
   PER_PAGE = 20
-  MAX_UNPAGINATED = 10_000
 
   def index
     # Filtros y búsqueda similares a inventario
@@ -36,13 +35,7 @@ class Admin::SaleOrdersController < ApplicationController
       term = "%#{@q.downcase}%"
       scope = scope.where("CAST(sale_orders.id AS TEXT) LIKE ? OR LOWER(users.name) LIKE ?", term, term)
     end
-  if params[:per].to_s == 'all'
-    @paginated = false
-    @sale_orders = scope.limit(MAX_UNPAGINATED)
-  else
-    @paginated = true
-    @sale_orders = scope.page(params[:page]).per(PER_PAGE)
-  end
+  @sale_orders = scope.page(params[:page]).per(PER_PAGE)
 
     # Contadores superiores (globales) e inferiores (filtrados)
     statuses = ["Pending", "Confirmed", "Shipped", "Delivered", "Canceled"]

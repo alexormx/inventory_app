@@ -11,7 +11,7 @@ module Admin::SortHelper
       icon = 'fa-sort'
     end
 
-    link_to({ sort: key, dir: next_dir, page: nil }.merge(request.query_parameters.except(:sort, :dir, :page))) do
+  link_to({ sort: key, dir: next_dir, page: 1 }.merge(request.query_parameters.except(:sort, :dir, :page))) do
       %Q(<span>#{ERB::Util.html_escape(title)}</span> <i class="fa #{icon} ms-1 text-muted"></i>).html_safe
     end
   end

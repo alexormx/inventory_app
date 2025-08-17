@@ -68,16 +68,6 @@
   title: "Resultados"
 } %>
 
-<div class="d-flex justify-content-end mb-2 small">
-  <% if @paginated %>
-    <%= link_to 'Ver todo (para ordenar globalmente)', request.query_parameters.merge(per: 'all', page: nil), class: 'link-secondary' %>
-  <% else %>
-    <span class="text-muted">Ordenando sobre todos los resultados</span>
-    ·
-    <%= link_to 'Volver a paginar', request.query_parameters.except(:per).merge(page: 1), class: 'link-secondary' %>
-  <% end %>
-</div>
-
 <table class="table table-sm table-hover align-middle">
   <thead class="table-light">
     <tr>

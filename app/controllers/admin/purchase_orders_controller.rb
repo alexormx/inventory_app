@@ -5,7 +5,6 @@ class Admin::PurchaseOrdersController < ApplicationController
   before_action :load_counts, only: [:index]
 
   PER_PAGE = 20
-  MAX_UNPAGINATED = 10_000
 
   def index
     params[:status] ||= params[:current_status]
@@ -35,13 +34,7 @@ class Admin::PurchaseOrdersController < ApplicationController
       term = "%#{@q.downcase}%"
       scope = scope.where("CAST(purchase_orders.id AS TEXT) LIKE ? OR LOWER(users.name) LIKE ?", term, term)
     end
-    if params[:per].to_s == 'all'
-      @paginated = false
-      @purchase_orders = scope.limit(MAX_UNPAGINATED)
-    else
-      @paginated = true
-      @purchase_orders = scope.page(params[:page]).per(PER_PAGE)
-    end
+  @purchase_orders = scope.page(params[:page]).per(PER_PAGE)
 
   counts_scope = PurchaseOrder.joins(:user)
     if @q.present?
