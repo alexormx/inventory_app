@@ -11,6 +11,16 @@
       </div>
       <div>
         Renderizadas: <strong><%= items.size %></strong>
+        <% if product.respond_to?(:inventories) %>
+          · Esperadas (status actual):
+          <strong>
+            <% if selected_status != 'all' %>
+              <%= product.inventories.where(status: selected_status).count %>
+            <% else %>
+              <%= product.inventories.count %>
+            <% end %>
+          </strong>
+        <% end %>
       </div>
     </div>
     <table class="table table-sm  table-hover align-middle">
@@ -45,5 +55,6 @@
         <% end %>
       </tbody>
     </table>
+  <!-- Sin paginación: se renderizan todas las piezas -->
   </div>
 </turbo-frame>
