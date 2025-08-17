@@ -11,7 +11,25 @@ class Admin::PurchaseOrdersController < ApplicationController
     @status_filter = params[:status].presence
     @q = params[:q].to_s.strip
 
-  scope = PurchaseOrder.joins(:user).includes(:user).order(created_at: :desc)
+  scope = PurchaseOrder.joins(:user).includes(:user)
+  # Units per order (sum of item quantities) as items_count via subquery
+  scope = scope.select("purchase_orders.*", "(SELECT COALESCE(SUM(quantity),0) FROM purchase_order_items poi WHERE poi.purchase_order_id = purchase_orders.id) AS items_count")
+  # Sorting
+  sort = params[:sort].presence
+  dir  = params[:dir].to_s.downcase == 'asc' ? 'asc' : 'desc'
+  sort_map = {
+    'supplier'     => 'users.name',
+    'date'         => 'purchase_orders.order_date',
+    'expected'     => 'purchase_orders.expected_delivery_date',
+  'total_mxn'    => 'purchase_orders.total_cost_mxn',
+  'items'        => 'items_count',
+    'created'      => 'purchase_orders.created_at'
+  }
+  if sort_map.key?(sort)
+    scope = scope.order(Arel.sql("#{sort_map[sort]} #{dir.upcase}"))
+  else
+    scope = scope.order(created_at: :desc)
+  end
   if @status_filter.present? && @status_filter != "all"
       scope = scope.where(status: @status_filter)
     end
@@ -19,7 +37,7 @@ class Admin::PurchaseOrdersController < ApplicationController
       term = "%#{@q.downcase}%"
       scope = scope.where("CAST(purchase_orders.id AS TEXT) LIKE ? OR LOWER(users.name) LIKE ?", term, term)
     end
-    @purchase_orders = scope.page(params[:page]).per(PER_PAGE)
+  @purchase_orders = scope.page(params[:page]).per(PER_PAGE)
 
   counts_scope = PurchaseOrder.joins(:user)
     if @q.present?

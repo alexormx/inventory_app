@@ -17,6 +17,8 @@
 <div class="card mb-4">
   <div class="card-body py-2">
     <%= form_with url: admin_purchase_orders_path, method: :get, local: true, class: "row g-2 align-items-center" do %>
+      <%= hidden_field_tag :sort, params[:sort] %>
+      <%= hidden_field_tag :dir, params[:dir] %>
       <div class="col-12 col-md-6">
         <div class="input-group input-group-sm">
           <%= text_field_tag :q, @q, class: "form-control", placeholder: "Buscar por ID o proveedor…", aria: { label: "Buscar purchase orders" } %>
@@ -44,7 +46,7 @@
           <%= button_tag "Canceled", name: :status, value: "Canceled", class: btnc.call("Canceled", current_status) %>
         </div>
         <%= hidden_field_tag :current_status, current_status %>
-        <%= link_to "Limpiar filtros", admin_purchase_orders_path, class: "btn btn-sm btn-outline-secondary ms-2", title: "Quitar búsqueda y status" %>
+  <%= link_to "Limpiar filtros", admin_purchase_orders_path(request.query_parameters.slice(:sort, :dir)), class: "btn btn-sm btn-outline-secondary ms-2", title: "Quitar búsqueda y status" %>
       </div>
     <% end %>
   </div>
@@ -68,13 +70,14 @@
   <thead class="table-light">
     <tr>
       <th scope="col">#</th>
-      <th scope="col">Supplier</th>
-      <th scope="col">Order Date</th>
-      <th scope="col">Expected Delivery</th>
-      <th scope="col">Status</th>
+  <th scope="col"><%= sort_link('Supplier', :supplier) %></th>
+  <th scope="col"><%= sort_link('Order Date', :date) %></th>
+  <th scope="col"><%= sort_link('Expected Delivery', :expected) %></th>
+  <th scope="col">Status</th>
+  <th scope="col" class="text-end"><%= sort_link('Items', :items) %></th>
       <th scope="col" class="text-end">Currency</th>
       <th scope="col" class="text-end">Total Cost</th>
-      <th scope="col" class="text-end">Total Cost MXN</th>
+  <th scope="col" class="text-end"><%= sort_link('Total Cost MXN', :total_mxn) %></th>
       <th scope="col" class="text-end">Total Weight</th>
       <th scope="col" class="text-end">Total Volume</th>
       <th scope="col" class="text-end">Actions</th>
@@ -87,11 +90,12 @@
         <td><%= po.user&.name || "—" %></td>
         <td><%= l(po.order_date, format: :short) %></td>
         <td><%= l(po.expected_delivery_date, format: :short) if po.expected_delivery_date %></td>
-        <td>
+  <td>
           <span class="badge <%= status_badge_class(po.status) %>">
             <%= po.status %>
           </span>
         </td>
+  <td class="text-end"><%= po.attributes["items_count"].to_i %></td>
         <td class="text-end"> <%= po.currency %> (<%= currency_symbol_for(po.currency)%>) </td>
         <td class="text-end">
           <%= number_to_currency(po.total_order_cost, unit: currency_symbol_for(po.currency)) %>

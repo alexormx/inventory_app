@@ -18,6 +18,8 @@
 <div class="card mb-4">
   <div class="card-body py-2">
     <%= form_with url: admin_sale_orders_path, method: :get, local: true, class: "row g-2 align-items-center" do %>
+      <%= hidden_field_tag :sort, params[:sort] %>
+      <%= hidden_field_tag :dir, params[:dir] %>
       <div class="col-12 col-md-6">
         <div class="input-group input-group-sm">
           <%= text_field_tag :q, @q, class: "form-control", placeholder: "Buscar por ID o cliente…", aria: { label: "Buscar sale orders" } %>
@@ -47,7 +49,7 @@
           <%= button_tag "Canceled", name: :status, value: "Canceled", class: btnc.call("Canceled", current_status) %>
         </div>
         <%= hidden_field_tag :current_status, current_status %>
-        <%= link_to "Limpiar filtros", admin_sale_orders_path, class: "btn btn-sm btn-outline-secondary ms-2", title: "Quitar búsqueda y status" %>
+  <%= link_to "Limpiar filtros", admin_sale_orders_path(request.query_parameters.slice(:sort, :dir)), class: "btn btn-sm btn-outline-secondary ms-2", title: "Quitar búsqueda y status" %>
       </div>
     <% end %>
   </div>
@@ -72,10 +74,11 @@
   <thead class="table-light">
     <tr>
       <th scope="col">#</th>
-      <th scope="col">Customer</th>
-      <th scope="col">Order Date</th>
-      <th scope="col">Status</th>
-      <th scope="col" class="text-end">Total MXN</th>
+  <th scope="col"><%= sort_link('Customer', :customer) %></th>
+  <th scope="col"><%= sort_link('Order Date', :date) %></th>
+  <th scope="col">Status</th>
+  <th scope="col" class="text-end"><%= sort_link('Items', :items) %></th>
+  <th scope="col" class="text-end"><%= sort_link('Total MXN', :total_mxn) %></th>
       <th scope="col" class="text-end">Discount</th>
       <th scope="col" class="text-end">Actions</th>
     </tr>
@@ -86,11 +89,12 @@
         <td><%= so.id %></td>
   <td><%= so.user&.name || "—" %></td>
         <td><%= l(so.order_date, format: :short) %></td>
-        <td>
+  <td>
           <span class="badge <%= status_badge_class(so.status) %>">
             <%= so.status %>
           </span>
         </td>
+  <td class="text-end"><%= so.attributes["items_count"].to_i %></td>
         <td class="text-end">
           <%= number_to_currency(so.total_order_value, unit: "$") %>
         </td>
