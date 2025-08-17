@@ -35,12 +35,15 @@ class Admin::SaleOrdersController < ApplicationController
       scope = scope.where(status: @status_filter)
     end
     if @q.present?
-      term = "%#{@q.downcase}%"
+      adapter = ActiveRecord::Base.connection.adapter_name.downcase
+      id_cast = adapter.include?("postgres") ? "sale_orders.id::text" : "CAST(sale_orders.id AS TEXT)"
+      name_cond = adapter.include?("postgres") ? "users.name ILIKE ?" : "LOWER(users.name) LIKE ?"
+      term = adapter.include?("postgres") ? "%#{@q}%" : "%#{@q.downcase}%"
       if (m = @q.match(/\A#?(\d+)\z/))
         exact_id = m[1].to_i
-        scope = scope.where("sale_orders.id = ? OR LOWER(users.name) LIKE ?", exact_id, term)
+        scope = scope.where(["sale_orders.id = ? OR #{name_cond}", exact_id, term])
       else
-        scope = scope.where("CAST(sale_orders.id AS TEXT) LIKE ? OR LOWER(users.name) LIKE ?", term, term)
+        scope = scope.where(["#{id_cast} LIKE ? OR #{name_cond}", term, term])
       end
     end
   # Dataset para exportación (sin paginar)
@@ -52,12 +55,15 @@ class Admin::SaleOrdersController < ApplicationController
     @counts_global = statuses.each_with_object({}) { |s, h| h[s] = SaleOrder.where(status: s).count }
     counts_scope = SaleOrder.joins(:user)
     if @q.present?
-      term = "%#{@q.downcase}%"
+      adapter = ActiveRecord::Base.connection.adapter_name.downcase
+      id_cast = adapter.include?("postgres") ? "sale_orders.id::text" : "CAST(sale_orders.id AS TEXT)"
+      name_cond = adapter.include?("postgres") ? "users.name ILIKE ?" : "LOWER(users.name) LIKE ?"
+      term = adapter.include?("postgres") ? "%#{@q}%" : "%#{@q.downcase}%"
       if (m = @q.match(/\A#?(\d+)\z/))
         exact_id = m[1].to_i
-        counts_scope = counts_scope.where("sale_orders.id = ? OR LOWER(users.name) LIKE ?", exact_id, term)
+        counts_scope = counts_scope.where(["sale_orders.id = ? OR #{name_cond}", exact_id, term])
       else
-        counts_scope = counts_scope.where("CAST(sale_orders.id AS TEXT) LIKE ? OR LOWER(users.name) LIKE ?", term, term)
+        counts_scope = counts_scope.where(["#{id_cast} LIKE ? OR #{name_cond}", term, term])
       end
     end
     if @status_filter.present? && @status_filter != "all"

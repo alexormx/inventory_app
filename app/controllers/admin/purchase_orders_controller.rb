@@ -34,13 +34,16 @@ class Admin::PurchaseOrdersController < ApplicationController
       scope = scope.where(status: @status_filter)
     end
     if @q.present?
-      term = "%#{@q.downcase}%"
+      adapter = ActiveRecord::Base.connection.adapter_name.downcase
+      id_cast = adapter.include?("postgres") ? "purchase_orders.id::text" : "CAST(purchase_orders.id AS TEXT)"
+      name_cond = adapter.include?("postgres") ? "users.name ILIKE ?" : "LOWER(users.name) LIKE ?"
+      term = adapter.include?("postgres") ? "%#{@q}%" : "%#{@q.downcase}%"
       if (m = @q.match(/\A#?(\d+)\z/))
         # Búsqueda directa por ID exacto (permite prefijo opcional #)
         exact_id = m[1].to_i
-        scope = scope.where("purchase_orders.id = ? OR LOWER(users.name) LIKE ?", exact_id, term)
+        scope = scope.where(["purchase_orders.id = ? OR #{name_cond}", exact_id, term])
       else
-        scope = scope.where("CAST(purchase_orders.id AS TEXT) LIKE ? OR LOWER(users.name) LIKE ?", term, term)
+        scope = scope.where(["#{id_cast} LIKE ? OR #{name_cond}", term, term])
       end
     end
   # Dataset para exportación (sin paginar)
@@ -49,12 +52,15 @@ class Admin::PurchaseOrdersController < ApplicationController
 
   counts_scope = PurchaseOrder.joins(:user)
     if @q.present?
-      term = "%#{@q.downcase}%"
+      adapter = ActiveRecord::Base.connection.adapter_name.downcase
+      id_cast = adapter.include?("postgres") ? "purchase_orders.id::text" : "CAST(purchase_orders.id AS TEXT)"
+      name_cond = adapter.include?("postgres") ? "users.name ILIKE ?" : "LOWER(users.name) LIKE ?"
+      term = adapter.include?("postgres") ? "%#{@q}%" : "%#{@q.downcase}%"
       if (m = @q.match(/\A#?(\d+)\z/))
         exact_id = m[1].to_i
-        counts_scope = counts_scope.where("purchase_orders.id = ? OR LOWER(users.name) LIKE ?", exact_id, term)
+        counts_scope = counts_scope.where(["purchase_orders.id = ? OR #{name_cond}", exact_id, term])
       else
-        counts_scope = counts_scope.where("CAST(purchase_orders.id AS TEXT) LIKE ? OR LOWER(users.name) LIKE ?", term, term)
+        counts_scope = counts_scope.where(["#{id_cast} LIKE ? OR #{name_cond}", term, term])
       end
     end
     statuses = ["Pending", "In Transit", "Delivered", "Canceled"]
