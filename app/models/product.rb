@@ -58,12 +58,21 @@ class Product < ApplicationRecord
   end
 
   def self.find_by_identifier!(identifier)
-    find_by(id: identifier) ||
-      find_by(product_sku: identifier) ||
-      (column_names.include?("slug") && find_by(slug: identifier)) ||
-      find_by(whatsapp_code: identifier) ||
-      where("LOWER(REPLACE(product_name, ' ', '-')) = ?", identifier.to_s.downcase).first ||
-      (raise ActiveRecord::RecordNotFound)
+    ident = identifier.to_s.strip
+    # Preferir slug/SKU/whatsapp antes que ID para evitar colisiones cuando el slug inicia con números
+    record = nil
+    if column_names.include?("slug")
+      record = find_by(slug: ident)
+    end
+    record ||= find_by(product_sku: ident)
+    record ||= find_by(whatsapp_code: ident)
+    # Fallback: nombre normalizado a slug simple
+    record ||= where("LOWER(REPLACE(product_name, ' ', '-')) = ?", ident.downcase).first
+    # Solo usar ID si el identificador es estrictamente numérico
+    if record.nil? && ident.match?(/\A\d+\z/)
+      record = find_by(id: ident.to_i)
+    end
+    record || (raise ActiveRecord::RecordNotFound)
   end
 
   private

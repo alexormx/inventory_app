@@ -73,9 +73,15 @@ class Admin::InventoryController < ApplicationController
   end
 
   def items
+  # Buscar producto por slug/SKU antes que ID para evitar colisiones cuando el slug inicia con números
   @product = Product.find_by_identifier!(params[:id])
-  # Consulta directa (evita efectos colaterales del proxy de asociación)
-  base_scope = Inventory.where(product_id: @product.id)
+  # Consulta directa (evita efectos colaterales del proxy de asociación) y quitar límites ocultos
+  status_filter = params[:status].to_s
+  valid_statuses = Inventory.statuses.keys
+  base_scope = Inventory.where(product_id: @product.id).unscope(:limit, :offset)
+  if status_filter.present? && status_filter != "all" && valid_statuses.include?(status_filter)
+    base_scope = base_scope.where(status: Inventory.statuses[status_filter])
+  end
   @inventory_items = base_scope.order(id: :asc)
 
 
