@@ -43,7 +43,8 @@ class Admin::DashboardController < ApplicationController
     @margin_ytd = @sales_ytd.positive? ? (@profit_ytd / @sales_ytd) : 0.to_d
 
     # KPI adicionales
-    @orders_count_ytd      = so_ytd.count
+  @orders_count_ytd      = so_ytd.count
+  @po_count_ytd          = po_ytd.count
     @active_customers_ytd  = so_ytd.select(:user_id).distinct.count
     @inventory_total_value = Product.sum(:current_inventory_value).to_d
 
@@ -57,14 +58,16 @@ class Admin::DashboardController < ApplicationController
     # Comparativa YTD vs mismo periodo del año anterior
   range_prev_start = @start_date.prev_year
     range_prev_end   = @end_date.prev_year
-    so_prev_range = so_scope.where(order_date: range_prev_start..range_prev_end)
+  so_prev_range = so_scope.where(order_date: range_prev_start..range_prev_end)
+  po_prev_range = po_scope.where(order_date: range_prev_start..range_prev_end)
   @sales_prev   = SaleOrderItem.joins(:sale_order)
                  .merge(so_prev_range)
                  .sum(rev_sql_arel).to_d
     @cogs_prev    = SaleOrderItem.joins(:sale_order).merge(so_prev_range).sum(cogs_sql).to_d
     @profit_prev  = @sales_prev - @cogs_prev
     @margin_prev  = @sales_prev.positive? ? (@profit_prev / @sales_prev) : 0.to_d
-    @orders_prev  = so_prev_range.count
+  @orders_prev  = so_prev_range.count
+  @po_count_prev = po_prev_range.count
     @active_customers_prev = so_prev_range.select(:user_id).distinct.count
 
     # Deltas (% vs LY) y puntos porcentuales para margen
@@ -110,6 +113,10 @@ class Admin::DashboardController < ApplicationController
   @sales_total_mxn = SaleOrderItem.joins(:sale_order)
                    .merge(so_scope)
                    .sum(rev_sql_arel).to_d
+
+  # Totales all-time de conteo (respeta excluir canceladas)
+  @so_total_all_time = so_scope.count
+  @po_total_all_time = po_scope.count
 
   # Top 10 productos históricos (por unidades)
     rev_sql = "COALESCE(sale_order_items.unit_final_price, 0) * COALESCE(sale_order_items.quantity, 0)"
