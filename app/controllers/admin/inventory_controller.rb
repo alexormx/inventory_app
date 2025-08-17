@@ -68,14 +68,8 @@ class Admin::InventoryController < ApplicationController
     respond_to do |format|
       format.html
       format.csv  { send_data csv_for_inventory(@export_products), filename: "inventory-#{Time.current.strftime('%Y%m%d-%H%M')}.csv" }
-      format.any do
-        if params[:format].to_s == 'xlsx'
-          response.headers['Content-Disposition'] = "attachment; filename=inventory-#{Time.current.strftime('%Y%m%d-%H%M')}.xlsx"
-          render template: "admin/inventory/index", formats: [:xlsx]
-        else
-          head :not_acceptable
-        end
-      end
+      format.xlsx { send_data xlsx_for_inventory(@export_products), filename: "inventory-#{Time.current.strftime('%Y%m%d-%H%M')}.xlsx", type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }
+      format.any  { head :not_acceptable }
     end
   end
 
@@ -151,5 +145,27 @@ class Admin::InventoryController < ApplicationController
         ]
       end
     end
+  end
+
+  def xlsx_for_inventory(relation)
+    require 'caxlsx'
+    pkg = Axlsx::Package.new
+    wb  = pkg.workbook
+    wb.add_worksheet(name: "Inventory") do |sheet|
+      sheet.add_row ["Product ID", "SKU", "Name", "Available", "Reserved", "In Transit", "Sold", "Total"]
+      relation.find_each do |p|
+        sheet.add_row [
+          p.id,
+          p.product_sku,
+          p.product_name,
+          p.attributes["available_count"].to_i,
+          p.attributes["reserved_count"].to_i,
+          p.attributes["in_transit_count"].to_i,
+          p.attributes["sold_count"].to_i,
+          p.attributes["total_count"].to_i
+        ]
+      end
+    end
+    pkg.to_stream.read
   end
 end

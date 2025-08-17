@@ -57,14 +57,8 @@ class Admin::SaleOrdersController < ApplicationController
     respond_to do |format|
       format.html
       format.csv  { send_data csv_for_sale_orders(@export_sale_orders), filename: "sale_orders-#{Time.current.strftime('%Y%m%d-%H%M')}.csv" }
-      format.any do
-        if params[:format].to_s == 'xlsx'
-          response.headers['Content-Disposition'] = "attachment; filename=sale_orders-#{Time.current.strftime('%Y%m%d-%H%M')}.xlsx"
-          render template: "admin/sale_orders/index", formats: [:xlsx]
-        else
-          head :not_acceptable
-        end
-      end
+      format.xlsx { send_data xlsx_for_sale_orders(@export_sale_orders), filename: "sale_orders-#{Time.current.strftime('%Y%m%d-%H%M')}.xlsx", type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }
+      format.any  { head :not_acceptable }
     end
   end
 
@@ -149,6 +143,27 @@ class Admin::SaleOrdersController < ApplicationController
         ]
       end
     end
+  end
+
+  def xlsx_for_sale_orders(relation)
+    require 'caxlsx'
+    pkg = Axlsx::Package.new
+    wb  = pkg.workbook
+    wb.add_worksheet(name: "Sales Orders") do |sheet|
+      sheet.add_row ["ID", "Customer", "Order Date", "Status", "Items", "Total MXN", "Discount"]
+      relation.find_each do |so|
+        sheet.add_row [
+          so.id,
+          so.user&.name,
+          so.order_date,
+          so.status,
+          so.attributes["items_count"].to_i,
+          so.total_order_value,
+          so.discount
+        ]
+      end
+    end
+    pkg.to_stream.read
   end
 end
 
