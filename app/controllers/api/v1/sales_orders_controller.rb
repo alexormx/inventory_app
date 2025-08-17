@@ -52,48 +52,51 @@ class Api::V1::SalesOrdersController < ApplicationController
     response_extra = {}
 
     if sales_order.save
-      # Si la orden llega como 'Delivered', crear shipment y un payment "Completed"
-      if sales_order.status == "Delivered"
-        # Parsear fechas pasadas en params (opcionales)
-        expected = begin
-          if params.dig(:sales_order, :expected_delivery_date).present?
-            Date.parse(params.dig(:sales_order, :expected_delivery_date))
-          else
+      # Crear payment si la orden está Confirmed o Delivered
+      if %w[Confirmed Delivered].include?(sales_order.status)
+        # Si la orden es Delivered, además crear el shipment
+        if sales_order.status == "Delivered"
+          # Parsear fechas pasadas en params (opcionales)
+          expected = begin
+            if params.dig(:sales_order, :expected_delivery_date).present?
+              Date.parse(params.dig(:sales_order, :expected_delivery_date))
+            else
+              nil
+            end
+          rescue StandardError
             nil
           end
-        rescue StandardError
-          nil
-        end
 
-        actual = begin
-          if params.dig(:sales_order, :actual_delivery_date).present?
-            Date.parse(params.dig(:sales_order, :actual_delivery_date))
-          else
+          actual = begin
+            if params.dig(:sales_order, :actual_delivery_date).present?
+              Date.parse(params.dig(:sales_order, :actual_delivery_date))
+            else
+              nil
+            end
+          rescue StandardError
             nil
           end
-        rescue StandardError
-          nil
+
+          expected ||= (sales_order.order_date + 20)
+          actual ||= expected
+
+          tracking = params.dig(:sales_order, :tracking_number).presence || "A00000000MX"
+          carrier = params.dig(:sales_order, :carrier).presence || "Local"
+
+          shipment = Shipment.new(
+            sale_order_id: sales_order.id,
+            tracking_number: tracking,
+            carrier: carrier,
+            estimated_delivery: expected,
+            actual_delivery: actual,
+            status: Shipment.statuses[:delivered]
+          )
+
+          shipment_saved = shipment.save
+          response_extra[:shipment] = shipment_saved ? shipment : { errors: shipment.errors.full_messages }
         end
 
-        expected ||= (sales_order.order_date + 20)
-        actual ||= expected
-
-        tracking = params.dig(:sales_order, :tracking_number).presence || "A00000000MX"
-        carrier = params.dig(:sales_order, :carrier).presence || "Local"
-
-        shipment = Shipment.new(
-          sale_order_id: sales_order.id,
-          tracking_number: tracking,
-          carrier: carrier,
-          estimated_delivery: expected,
-          actual_delivery: actual,
-          status: Shipment.statuses[:delivered]
-        )
-
-        shipment_saved = shipment.save
-        response_extra[:shipment] = shipment_saved ? shipment : { errors: shipment.errors.full_messages }
-
-        # Crear payment completado por el valor total de la orden
+        # Crear payment completado por el valor total de la orden (Confirmed o Delivered)
         payment_method = params.dig(:sales_order, :payment_method).presence || "transferencia_bancaria"
         payment = Payment.new(
           sale_order_id: sales_order.id,
