@@ -8,7 +8,7 @@ module CustomIdGenerator
 
     year  = date.year
     month = date.month
-    prefix_str = "#{prefix}-#{year}-#{format('%02d', month)}"
+    prefix_str = "#{prefix}-#{year}#{format('%02d', month)}"
     sequence = 1
 
     loop do
