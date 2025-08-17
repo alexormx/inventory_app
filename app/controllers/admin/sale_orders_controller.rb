@@ -36,7 +36,12 @@ class Admin::SaleOrdersController < ApplicationController
     end
     if @q.present?
       term = "%#{@q.downcase}%"
-      scope = scope.where("CAST(sale_orders.id AS TEXT) LIKE ? OR LOWER(users.name) LIKE ?", term, term)
+      if (m = @q.match(/\A#?(\d+)\z/))
+        exact_id = m[1].to_i
+        scope = scope.where("sale_orders.id = ? OR LOWER(users.name) LIKE ?", exact_id, term)
+      else
+        scope = scope.where("CAST(sale_orders.id AS TEXT) LIKE ? OR LOWER(users.name) LIKE ?", term, term)
+      end
     end
   # Dataset para exportación (sin paginar)
   @export_sale_orders = scope
@@ -48,7 +53,12 @@ class Admin::SaleOrdersController < ApplicationController
     counts_scope = SaleOrder.joins(:user)
     if @q.present?
       term = "%#{@q.downcase}%"
-      counts_scope = counts_scope.where("CAST(sale_orders.id AS TEXT) LIKE ? OR LOWER(users.name) LIKE ?", term, term)
+      if (m = @q.match(/\A#?(\d+)\z/))
+        exact_id = m[1].to_i
+        counts_scope = counts_scope.where("sale_orders.id = ? OR LOWER(users.name) LIKE ?", exact_id, term)
+      else
+        counts_scope = counts_scope.where("CAST(sale_orders.id AS TEXT) LIKE ? OR LOWER(users.name) LIKE ?", term, term)
+      end
     end
     if @status_filter.present? && @status_filter != "all"
       counts_scope = counts_scope.where(status: @status_filter)
