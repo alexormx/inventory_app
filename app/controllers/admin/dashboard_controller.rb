@@ -356,41 +356,107 @@ class Admin::DashboardController < ApplicationController
             .sort_by { |h| -h[:revenue] }
             .first(10)
 
-      # Productos más rentables (YTD) y por categoría
-    prod_profit_rows = SaleOrderItem.joins(:sale_order, :product)
-                                      .merge(so_ytd)
-                                      .group('products.id','products.product_name','products.category')
-                    .select("products.id, products.product_name, products.category, SUM(#{rev_sql_str}) AS revenue, SUM(#{cogs_sql_str}) AS cogs")
+      # Productos más rentables (YTD): Compra (inversión en compras), Ventas (ingresos), Utilidad (Ventas - Compra)
+      purchase_sql_str = "COALESCE(purchase_order_items.total_line_cost_in_mxn, purchase_order_items.total_line_cost, COALESCE(purchase_order_items.unit_compose_cost_in_mxn, purchase_order_items.unit_compose_cost, purchase_order_items.unit_cost) * COALESCE(purchase_order_items.quantity, 0))"
 
-      prod_profit = prod_profit_rows.map do |r|
-        rev = r.attributes['revenue'].to_d
-        cg  = r.attributes['cogs'].to_d
-        { product_id: r.id, name: r.product_name, category: (r.category.presence || 'Uncategorized'), revenue: rev, cogs: cg, profit: (rev - cg) }
+      sales_rows_ytd = SaleOrderItem.joins(:sale_order, :product)
+                                    .merge(so_ytd)
+                                    .group('products.id','products.product_name','products.category')
+                                    .select("products.id AS product_id, products.product_name AS product_name, products.category AS category, SUM(#{rev_sql_str}) AS sales_total")
+
+      purchase_rows_ytd = PurchaseOrderItem.joins(:purchase_order, :product)
+                                           .merge(po_ytd)
+                                           .group('products.id','products.product_name','products.category')
+                                           .select("products.id AS product_id, products.product_name AS product_name, products.category AS category, SUM(#{purchase_sql_str}) AS purchase_total")
+
+      sales_map_ytd    = sales_rows_ytd.index_by { |r| r.attributes['product_id'].to_i }
+      purchase_map_ytd = purchase_rows_ytd.index_by { |r| r.attributes['product_id'].to_i }
+      all_ids_ytd = (sales_map_ytd.keys + purchase_map_ytd.keys).uniq
+
+      prod_profit = all_ids_ytd.map do |pid|
+        srow = sales_map_ytd[pid]
+        prow = purchase_map_ytd[pid]
+        name = (srow&.attributes&.dig('product_name') || prow&.attributes&.dig('product_name'))
+        cat  = (srow&.attributes&.dig('category') || prow&.attributes&.dig('category'))
+        sales    = srow&.attributes&.dig('sales_total').to_d
+        purchases = prow&.attributes&.dig('purchase_total').to_d
+        {
+          product_id: pid,
+          name: name,
+          category: (cat.presence || 'Uncategorized'),
+          revenue: sales,      # Ventas
+          cogs: purchases,     # Compra (inversión)
+          profit: sales - purchases # Utilidad
+        }
       end
 
       @top_products_profit_ytd = prod_profit.sort_by { |h| -h[:profit] }.first(10)
 
-      # Productos más rentables (Last Year)
-      prod_profit_ly_rows = SaleOrderItem.joins(:sale_order, :product)
-                                         .merge(so_last_year)
-                                         .group('products.id','products.product_name','products.category')
-                                         .select("products.id, products.product_name, products.category, SUM(#{rev_sql_str}) AS revenue, SUM(#{cogs_sql_str}) AS cogs")
-      prod_profit_ly = prod_profit_ly_rows.map do |r|
-        rev = r.attributes['revenue'].to_d
-        cg  = r.attributes['cogs'].to_d
-        { product_id: r.id, name: r.product_name, category: (r.category.presence || 'Uncategorized'), revenue: rev, cogs: cg, profit: (rev - cg) }
+      # Productos más rentables (Last Year calendario completo)
+      po_last_year = po_scope.where(order_date: ly_start..ly_end)
+
+      sales_rows_ly = SaleOrderItem.joins(:sale_order, :product)
+                                   .merge(so_last_year)
+                                   .group('products.id','products.product_name','products.category')
+                                   .select("products.id AS product_id, products.product_name AS product_name, products.category AS category, SUM(#{rev_sql_str}) AS sales_total")
+
+      purchase_rows_ly = PurchaseOrderItem.joins(:purchase_order, :product)
+                                          .merge(po_last_year)
+                                          .group('products.id','products.product_name','products.category')
+                                          .select("products.id AS product_id, products.product_name AS product_name, products.category AS category, SUM(#{purchase_sql_str}) AS purchase_total")
+
+      sales_map_ly    = sales_rows_ly.index_by { |r| r.attributes['product_id'].to_i }
+      purchase_map_ly = purchase_rows_ly.index_by { |r| r.attributes['product_id'].to_i }
+      all_ids_ly = (sales_map_ly.keys + purchase_map_ly.keys).uniq
+
+      prod_profit_ly = all_ids_ly.map do |pid|
+        srow = sales_map_ly[pid]
+        prow = purchase_map_ly[pid]
+        name = (srow&.attributes&.dig('product_name') || prow&.attributes&.dig('product_name'))
+        cat  = (srow&.attributes&.dig('category') || prow&.attributes&.dig('category'))
+        sales    = srow&.attributes&.dig('sales_total').to_d
+        purchases = prow&.attributes&.dig('purchase_total').to_d
+        {
+          product_id: pid,
+          name: name,
+          category: (cat.presence || 'Uncategorized'),
+          revenue: sales,
+          cogs: purchases,
+          profit: sales - purchases
+        }
       end
       @top_products_profit_last_year = prod_profit_ly.sort_by { |h| -h[:profit] }.first(10)
 
       # Productos más rentables (All Time)
-      prod_profit_all_rows = SaleOrderItem.joins(:sale_order, :product)
-                                          .merge(so_scope)
-                                          .group('products.id','products.product_name','products.category')
-                                          .select("products.id, products.product_name, products.category, SUM(#{rev_sql_str}) AS revenue, SUM(#{cogs_sql_str}) AS cogs")
-      prod_profit_all = prod_profit_all_rows.map do |r|
-        rev = r.attributes['revenue'].to_d
-        cg  = r.attributes['cogs'].to_d
-        { product_id: r.id, name: r.product_name, category: (r.category.presence || 'Uncategorized'), revenue: rev, cogs: cg, profit: (rev - cg) }
+      sales_rows_all = SaleOrderItem.joins(:sale_order, :product)
+                                    .merge(so_scope)
+                                    .group('products.id','products.product_name','products.category')
+                                    .select("products.id AS product_id, products.product_name AS product_name, products.category AS category, SUM(#{rev_sql_str}) AS sales_total")
+
+      purchase_rows_all = PurchaseOrderItem.joins(:purchase_order, :product)
+                                           .merge(po_scope)
+                                           .group('products.id','products.product_name','products.category')
+                                           .select("products.id AS product_id, products.product_name AS product_name, products.category AS category, SUM(#{purchase_sql_str}) AS purchase_total")
+
+      sales_map_all    = sales_rows_all.index_by { |r| r.attributes['product_id'].to_i }
+      purchase_map_all = purchase_rows_all.index_by { |r| r.attributes['product_id'].to_i }
+      all_ids_all = (sales_map_all.keys + purchase_map_all.keys).uniq
+
+      prod_profit_all = all_ids_all.map do |pid|
+        srow = sales_map_all[pid]
+        prow = purchase_map_all[pid]
+        name = (srow&.attributes&.dig('product_name') || prow&.attributes&.dig('product_name'))
+        cat  = (srow&.attributes&.dig('category') || prow&.attributes&.dig('category'))
+        sales    = srow&.attributes&.dig('sales_total').to_d
+        purchases = prow&.attributes&.dig('purchase_total').to_d
+        {
+          product_id: pid,
+          name: name,
+          category: (cat.presence || 'Uncategorized'),
+          revenue: sales,
+          cogs: purchases,
+          profit: sales - purchases
+        }
       end
       @top_products_profit_all_time = prod_profit_all.sort_by { |h| -h[:profit] }.first(10)
 

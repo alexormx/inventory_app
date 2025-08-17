@@ -241,14 +241,14 @@
                 <div class="tab-pane fade show active" id="pp-ytd" role="tabpanel" data-subtabs-target="panel">
                   <div class="table-responsive">
                     <table class="table table-sm mb-0">
-                      <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Ingresos</th><th class="text-end">COGS</th><th class="text-end">Profit</th></tr></thead>
+                      <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Compra</th><th class="text-end">Ventas</th><th class="text-end">Utilidad</th></tr></thead>
                       <tbody>
                         <% @top_products_profit_ytd&.each_with_index do |r, idx| %>
                           <tr>
                             <td class="text-muted">#<%= idx + 1 %></td>
                             <td><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></td>
-                            <td class="text-end">$ <%= number_with_precision(r[:revenue], precision: 2, delimiter: ',') %></td>
                             <td class="text-end">$ <%= number_with_precision(r[:cogs], precision: 2, delimiter: ',') %></td>
+                            <td class="text-end">$ <%= number_with_precision(r[:revenue], precision: 2, delimiter: ',') %></td>
                             <td class="text-end">$ <%= number_with_precision(r[:profit], precision: 2, delimiter: ',') %></td>
                           </tr>
                         <% end %>
@@ -262,14 +262,14 @@
                 <div class="tab-pane fade" id="pp-ly" role="tabpanel" data-subtabs-target="panel">
                   <div class="table-responsive">
                     <table class="table table-sm mb-0">
-                      <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Ingresos</th><th class="text-end">COGS</th><th class="text-end">Profit</th></tr></thead>
+                      <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Compra</th><th class="text-end">Ventas</th><th class="text-end">Utilidad</th></tr></thead>
                       <tbody>
                         <% @top_products_profit_last_year&.each_with_index do |r, idx| %>
                           <tr>
                             <td class="text-muted">#<%= idx + 1 %></td>
                             <td><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></td>
-                            <td class="text-end">$ <%= number_with_precision(r[:revenue], precision: 2, delimiter: ',') %></td>
                             <td class="text-end">$ <%= number_with_precision(r[:cogs], precision: 2, delimiter: ',') %></td>
+                            <td class="text-end">$ <%= number_with_precision(r[:revenue], precision: 2, delimiter: ',') %></td>
                             <td class="text-end">$ <%= number_with_precision(r[:profit], precision: 2, delimiter: ',') %></td>
                           </tr>
                         <% end %>
@@ -283,14 +283,14 @@
                 <div class="tab-pane fade" id="pp-all" role="tabpanel" data-subtabs-target="panel">
                   <div class="table-responsive">
                     <table class="table table-sm mb-0">
-                      <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Ingresos</th><th class="text-end">COGS</th><th class="text-end">Profit</th></tr></thead>
+                      <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Compra</th><th class="text-end">Ventas</th><th class="text-end">Utilidad</th></tr></thead>
                       <tbody>
                         <% @top_products_profit_all_time&.each_with_index do |r, idx| %>
                           <tr>
                             <td class="text-muted">#<%= idx + 1 %></td>
                             <td><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></td>
-                            <td class="text-end">$ <%= number_with_precision(r[:revenue], precision: 2, delimiter: ',') %></td>
                             <td class="text-end">$ <%= number_with_precision(r[:cogs], precision: 2, delimiter: ',') %></td>
+                            <td class="text-end">$ <%= number_with_precision(r[:revenue], precision: 2, delimiter: ',') %></td>
                             <td class="text-end">$ <%= number_with_precision(r[:profit], precision: 2, delimiter: ',') %></td>
                           </tr>
                         <% end %>
