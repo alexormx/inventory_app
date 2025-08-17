@@ -16,19 +16,23 @@ class Api::V1::SalesOrdersController < ApplicationController
       subtotal = BigDecimal((so_attrs[:subtotal].presence || 0).to_s)
       tax_rate = BigDecimal((so_attrs[:tax_rate].presence || 0).to_s)
       discount = BigDecimal((so_attrs[:discount].presence || 0).to_s)
+      shipping_cost = BigDecimal((so_attrs[:shipping_cost].presence || 0).to_s)
 
       total_tax = (subtotal * (tax_rate / 100)).round(2)
-      total_order_value = (subtotal + total_tax - discount).round(2)
+      # Include shipping_cost into total (legacy data sometimes only set shipping)
+      total_order_value = (subtotal + total_tax + shipping_cost - discount).round(2)
 
       so_attrs[:total_tax] = total_tax
       so_attrs[:total_order_value] = total_order_value
       so_attrs[:subtotal] = subtotal.round(2)
       so_attrs[:discount] = discount.round(2)
+      # shipping_cost is not a column on SaleOrder; it's only used to compute totals
     rescue ArgumentError
       so_attrs[:total_tax] = 0
       so_attrs[:total_order_value] = 0
       so_attrs[:subtotal] = 0
       so_attrs[:discount] = 0
+      # ignore shipping_cost on parse errors
     end
 
     # Normalizar estado deseado (el que viene en el payload)
