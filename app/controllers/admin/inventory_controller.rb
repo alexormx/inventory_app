@@ -78,29 +78,9 @@ class Admin::InventoryController < ApplicationController
   base_scope = Inventory.where(product_id: @product.id).unscope(:limit, :offset)
   @inventory_items = base_scope.order(id: :asc)
 
-    # Respetar filtro de status si viene en la URL (p. ej. desde la vista index)
-    status_filter = params[:status].to_s
-    valid_statuses = Inventory.statuses.keys
-    if status_filter.present? && status_filter != "all" && valid_statuses.include?(status_filter)
-      @inventory_items = @inventory_items.where(status: Inventory.statuses[status_filter])
-    end
-    # Debug opcional: si se pasa ?per=N, limitar por seguridad a N (sin paginar)
-    if params[:per].present?
-      n = params[:per].to_i
-      n = 1000 if n <= 0 || n > 10_000
-      @inventory_items = @inventory_items.limit(n)
-    end
 
-    # Debug: log sizes to catch truncation on production (sin paginación)
-    total_all = @product.inventories.count
-    total_filtered = if status_filter.present? && status_filter != "all" && valid_statuses.include?(status_filter)
-                       @product.inventories.where(status: Inventory.statuses[status_filter]).count
-                     else
-                       total_all
-                     end
   # Forzar carga completa a Array antes del render
   @inventory_items = @inventory_items.to_a
-  Rails.logger.info("[InventoryItems] product=#{@product.id} loaded=#{@inventory_items.length} total_all=#{total_all} total_filtered=#{total_filtered} status=#{status_filter.presence || 'all'}")
 
   # Turbo Frames: usar el id de frame esperado (enviado por Turbo en el header)
     expected_frame_id = request.headers["Turbo-Frame"]
