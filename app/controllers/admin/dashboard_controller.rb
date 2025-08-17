@@ -149,37 +149,41 @@ class Admin::DashboardController < ApplicationController
       @top_products_last20 = []
     end
 
-  # Top 10 usuarios con mayores compras históricas (por ingresos)
-    users_top = so_scope.joins(:user)
-                        .group("users.id", "users.name")
-                        .select("users.id, users.name, COUNT(*) AS orders_count, SUM(total_order_value) AS revenue, AVG(total_order_value) AS avg_ticket")
-                        .order("revenue DESC")
-            .limit(10)
-    @top_users_all = users_top.map { |r| { user_id: r.id, name: r.name.presence || r.id, orders_count: r.attributes["orders_count"].to_i, revenue: r.attributes["revenue"].to_d, avg_ticket: r.attributes["avg_ticket"].to_d } }
+  # Top 10 usuarios con mayores compras históricas (por ingresos en MXN a partir de items)
+    users_top = SaleOrderItem.joins(sale_order: :user)
+                             .merge(so_scope)
+                             .group("users.id", "users.name")
+                             .select("users.id, users.name, COUNT(DISTINCT sale_orders.id) AS orders_count, SUM(#{rev_sql}) AS revenue")
+                             .order("revenue DESC")
+                             .limit(10)
+    @top_users_all = users_top.map { |r| { user_id: r.id, name: r.name.presence || r.id, orders_count: r.attributes["orders_count"].to_i, revenue: r.attributes["revenue"].to_d } }
 
-  # Top 10 users within current range (YTD por defecto)
-  users_top_range = so_ytd.joins(:user)
-              .group("users.id", "users.name")
-              .select("users.id, users.name, COUNT(*) AS orders_count, SUM(total_order_value) AS revenue, AVG(total_order_value) AS avg_ticket")
-              .order("revenue DESC")
-              .limit(10)
-  @top_users_range = users_top_range.map { |r| { user_id: r.id, name: r.name.presence || r.id, orders_count: r.attributes["orders_count"].to_i, revenue: r.attributes["revenue"].to_d, avg_ticket: r.attributes["avg_ticket"].to_d } }
+  # Top 10 users within current range (YTD por defecto) usando items en MXN
+  users_top_range = SaleOrderItem.joins(sale_order: :user)
+                                 .merge(so_ytd)
+                                 .group("users.id", "users.name")
+                                 .select("users.id, users.name, COUNT(DISTINCT sale_orders.id) AS orders_count, SUM(#{rev_sql}) AS revenue")
+                                 .order("revenue DESC")
+                                 .limit(10)
+  @top_users_range = users_top_range.map { |r| { user_id: r.id, name: r.name.presence || r.id, orders_count: r.attributes["orders_count"].to_i, revenue: r.attributes["revenue"].to_d } }
 
   # Top 10 users Last Year (calendario completo)
   ly_start_users = now.beginning_of_year - 1.year
   ly_end_users   = ly_start_users.end_of_year
   so_last_year_users = so_scope.where(order_date: ly_start_users..ly_end_users)
-  users_top_last_year = so_last_year_users.joins(:user)
-                                          .group("users.id", "users.name")
-                                          .select("users.id, users.name, COUNT(*) AS orders_count, SUM(total_order_value) AS revenue, AVG(total_order_value) AS avg_ticket")
-                                          .order("revenue DESC")
-                                          .limit(10)
-  @top_users_last_year = users_top_last_year.map { |r| { user_id: r.id, name: r.name.presence || r.id, orders_count: r.attributes["orders_count"].to_i, revenue: r.attributes["revenue"].to_d, avg_ticket: r.attributes["avg_ticket"].to_d } }
+  users_top_last_year = SaleOrderItem.joins(sale_order: :user)
+                                     .merge(so_last_year_users)
+                                     .group("users.id", "users.name")
+                                     .select("users.id, users.name, COUNT(DISTINCT sale_orders.id) AS orders_count, SUM(#{rev_sql}) AS revenue")
+                                     .order("revenue DESC")
+                                     .limit(10)
+  @top_users_last_year = users_top_last_year.map { |r| { user_id: r.id, name: r.name.presence || r.id, orders_count: r.attributes["orders_count"].to_i, revenue: r.attributes["revenue"].to_d } }
 
-  # Comparativo YTD vs mismo periodo del año pasado para Top Customers (solo para la pestaña YTD)
-  users_prev_rows = so_prev_range.joins(:user)
+  # Comparativo YTD vs mismo periodo del año pasado para Top Customers (solo para la pestaña YTD) usando items en MXN
+  users_prev_rows = SaleOrderItem.joins(sale_order: :user)
+                                 .merge(so_prev_range)
                                  .group("users.id")
-                                 .select("users.id, COUNT(*) AS orders_count, SUM(total_order_value) AS revenue")
+                                 .select("users.id, COUNT(DISTINCT sale_orders.id) AS orders_count, SUM(#{rev_sql}) AS revenue")
   prev_map = {}
   users_prev_rows.each do |r|
     prev_map[r.id] = { orders_count: r.attributes["orders_count"].to_i, revenue: r.attributes["revenue"].to_d }
