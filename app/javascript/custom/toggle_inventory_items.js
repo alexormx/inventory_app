@@ -14,6 +14,20 @@ document.addEventListener("turbo:load", () => {
           const isHidden = items.classList.toggle("d-none")
           toggle.textContent = isHidden ? toggle.textContent.replace("Ocultar", "Ver") : toggle.textContent.replace("Ver", "Ocultar")
           event.preventDefault()
+        } else if (!frame.querySelector("turbo-frame[src]")) {
+          // Si el frame tiene contenido no esperado (p.ej. Content Missing), forzar recarga navegando al href
+          const href = toggle.getAttribute("href")
+          if (href) {
+            frame.src = href
+            const observer = new MutationObserver(() => {
+              const ok = frame.querySelector(".inventory-items")
+              if (ok) {
+                toggle.textContent = toggle.textContent.replace("Ver", "Ocultar")
+                observer.disconnect()
+              }
+            })
+            observer.observe(frame, { childList: true, subtree: true })
+          }
         }
       } else {
         // Dejar que Turbo cargue el contenido; luego cambiaremos el texto
