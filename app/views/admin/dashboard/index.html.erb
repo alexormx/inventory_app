@@ -8,8 +8,8 @@
         <div class="card-body">
           <div class="d-flex justify-content-between align-items-start">
             <div>
-              <div class="small text-muted">Ventas YTD</div>
-              <div class="fs-4 fw-bold">$ <%= number_with_precision(@sales_ytd, precision: 2, delimiter: ',') %></div>
+              <div class="small text-muted">Ventas YTD (MXN)</div>
+              <div class="fs-4 fw-bold">$ <%= number_with_precision(@sales_ytd, precision: 2, delimiter: ',') %> <span class="small text-muted">(LY: $ <%= number_with_precision(@sales_prev, precision: 2, delimiter: ',') %>)</span></div>
               <div class="small <%= @kpi_deltas&.dig(:sales).to_f >= 0 ? 'text-success' : 'text-danger' %>">Δ vs LY: <%= @kpi_deltas&.dig(:sales).nil? ? '—' : number_to_percentage(@kpi_deltas[:sales] * 100, precision: 1) %></div>
             </div>
             <div style="width:110px;height:46px" id="sparkline-revenue"></div>
@@ -21,7 +21,7 @@
       <div class="card text-bg-primary-subtle h-100">
         <div class="card-body">
           <div class="small text-muted">Ganancia YTD</div>
-          <div class="fs-4 fw-bold">$ <%= number_with_precision(@profit_ytd, precision: 2, delimiter: ',') %></div>
+          <div class="fs-4 fw-bold">$ <%= number_with_precision(@profit_ytd, precision: 2, delimiter: ',') %> <span class="small text-muted">(LY: $ <%= number_with_precision(@profit_prev, precision: 2, delimiter: ',') %>)</span></div>
           <div class="small <%= @kpi_deltas&.dig(:profit).to_f >= 0 ? 'text-success' : 'text-danger' %>">Δ vs LY: <%= @kpi_deltas&.dig(:profit).nil? ? '—' : number_to_percentage(@kpi_deltas[:profit] * 100, precision: 1) %></div>
         </div>
       </div>
@@ -30,7 +30,7 @@
       <div class="card text-bg-info-subtle h-100">
         <div class="card-body">
           <div class="small text-muted">Margen YTD</div>
-          <div class="fs-4 fw-bold"><%= number_to_percentage(@margin_ytd * 100, precision: 1) %></div>
+          <div class="fs-4 fw-bold"><%= number_to_percentage(@margin_ytd * 100, precision: 1) %> <span class="small text-muted">(LY: <%= number_to_percentage(@margin_prev * 100, precision: 1) %>)</span></div>
           <div class="small <%= (@kpi_deltas&.dig(:margin_pp) || 0).to_f >= 0 ? 'text-success' : 'text-danger' %>">Δ pp vs LY: <%= @kpi_deltas&.dig(:margin_pp).present? ? number_with_precision(@kpi_deltas[:margin_pp] * 100, precision: 1) : '—' %> pp</div>
         </div>
       </div>
@@ -43,14 +43,37 @@
         </div>
       </div>
     </div>
+    <div class="col-md-4 col-lg-3">
+      <div class="card text-bg-light h-100">
+        <div class="card-body">
+          <div class="small text-muted">PO en el año</div>
+          <div class="fs-4 fw-bold"><%= number_with_delimiter(@po_count_ytd) %> <span class="small text-muted">(LY: <%= number_with_delimiter(@po_count_prev) %>)</span></div>
+          <div class="small text-muted">Artículos comprados (YTD): <%= number_with_delimiter(@po_items_qty_ytd) %></div>
+          <div class="small text-muted">All Time: <%= number_with_delimiter(@po_items_qty_all_time) %></div>
+          <div class="small <%= @kpi_deltas&.dig(:po_count).to_f >= 0 ? 'text-success' : 'text-danger' %>">Δ vs LY: <%= @kpi_deltas&.dig(:po_count).nil? ? '—' : number_to_percentage(@kpi_deltas[:po_count] * 100, precision: 1) %></div>
+          <div class="small text-muted">Total All Time: <%= number_with_delimiter(@po_total_all_time) %></div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4 col-lg-3">
+      <div class="card text-bg-light h-100">
+        <div class="card-body">
+          <div class="small text-muted">SO en el año</div>
+          <div class="fs-4 fw-bold"><%= number_with_delimiter(@orders_count_ytd) %> <span class="small text-muted">(LY: <%= number_with_delimiter(@orders_prev) %>)</span></div>
+          <div class="small text-muted">Artículos vendidos (YTD): <%= number_with_delimiter(@so_items_qty_ytd) %></div>
+          <div class="small text-muted">All Time: <%= number_with_delimiter(@so_items_qty_all_time) %></div>
+          <div class="small <%= @kpi_deltas&.dig(:orders).to_f >= 0 ? 'text-success' : 'text-danger' %>">Δ vs LY: <%= @kpi_deltas&.dig(:orders).nil? ? '—' : number_to_percentage(@kpi_deltas[:orders] * 100, precision: 1) %></div>
+          <div class="small text-muted">Total All Time: <%= number_with_delimiter(@so_total_all_time) %></div>
+        </div>
+      </div>
+    </div>
   </div>
   <div class="row g-3 mb-3">
     <div class="col-md-4 col-lg-4">
       <div class="card text-bg-light h-100">
         <div class="card-body">
-          <div class="small text-muted">Órdenes YTD</div>
-          <div class="fs-4 fw-bold"><%= number_with_delimiter(@orders_count_ytd) %></div>
-          <div class="small <%= @kpi_deltas&.dig(:orders).to_f >= 0 ? 'text-success' : 'text-danger' %>">Δ vs LY: <%= @kpi_deltas&.dig(:orders).nil? ? '—' : number_to_percentage(@kpi_deltas[:orders] * 100, precision: 1) %></div>
+          <div class="small text-muted">Ventas totales en MXN (All Time)</div>
+          <div class="fs-4 fw-bold">$ <%= number_with_precision(@sales_total_mxn, precision: 2, delimiter: ',') %></div>
         </div>
       </div>
     </div>
@@ -58,7 +81,7 @@
       <div class="card text-bg-light h-100">
         <div class="card-body">
           <div class="small text-muted">Clientes activos</div>
-          <div class="fs-4 fw-bold"><%= number_with_delimiter(@active_customers_ytd) %></div>
+          <div class="fs-4 fw-bold"><%= number_with_delimiter(@active_customers_ytd) %> <span class="small text-muted">(LY: <%= number_with_delimiter(@active_customers_prev) %>)</span></div>
           <div class="small <%= @kpi_deltas&.dig(:customers).to_f >= 0 ? 'text-success' : 'text-danger' %>">Δ vs LY: <%= @kpi_deltas&.dig(:customers).nil? ? '—' : number_to_percentage(@kpi_deltas[:customers] * 100, precision: 1) %></div>
         </div>
       </div>
@@ -66,7 +89,7 @@
     <div class="col-md-4 col-lg-4">
       <div class="card text-bg-secondary-subtle h-100">
         <div class="card-body">
-          <div class="small text-muted">Valor total de inventario</div>
+          <div class="small text-muted">Valor total de inventario (MXN)</div>
           <div class="fs-4 fw-bold">$ <%= number_with_precision(@inventory_total_value, precision: 2, delimiter: ',') %></div>
           <div class="small text-muted">Rotación: <%= @inventory_turnover_ytd.nil? ? '—' : number_with_precision(@inventory_turnover_ytd, precision: 2, delimiter: ',') %></div>
         </div>
@@ -218,14 +241,14 @@
                 <div class="tab-pane fade show active" id="pp-ytd" role="tabpanel" data-subtabs-target="panel">
                   <div class="table-responsive">
                     <table class="table table-sm mb-0">
-                      <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Ingresos</th><th class="text-end">COGS</th><th class="text-end">Profit</th></tr></thead>
+                      <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Compra</th><th class="text-end">Ventas</th><th class="text-end">Utilidad</th></tr></thead>
                       <tbody>
                         <% @top_products_profit_ytd&.each_with_index do |r, idx| %>
                           <tr>
                             <td class="text-muted">#<%= idx + 1 %></td>
                             <td><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></td>
-                            <td class="text-end">$ <%= number_with_precision(r[:revenue], precision: 2, delimiter: ',') %></td>
                             <td class="text-end">$ <%= number_with_precision(r[:cogs], precision: 2, delimiter: ',') %></td>
+                            <td class="text-end">$ <%= number_with_precision(r[:revenue], precision: 2, delimiter: ',') %></td>
                             <td class="text-end">$ <%= number_with_precision(r[:profit], precision: 2, delimiter: ',') %></td>
                           </tr>
                         <% end %>
@@ -239,14 +262,14 @@
                 <div class="tab-pane fade" id="pp-ly" role="tabpanel" data-subtabs-target="panel">
                   <div class="table-responsive">
                     <table class="table table-sm mb-0">
-                      <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Ingresos</th><th class="text-end">COGS</th><th class="text-end">Profit</th></tr></thead>
+                      <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Compra</th><th class="text-end">Ventas</th><th class="text-end">Utilidad</th></tr></thead>
                       <tbody>
                         <% @top_products_profit_last_year&.each_with_index do |r, idx| %>
                           <tr>
                             <td class="text-muted">#<%= idx + 1 %></td>
                             <td><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></td>
-                            <td class="text-end">$ <%= number_with_precision(r[:revenue], precision: 2, delimiter: ',') %></td>
                             <td class="text-end">$ <%= number_with_precision(r[:cogs], precision: 2, delimiter: ',') %></td>
+                            <td class="text-end">$ <%= number_with_precision(r[:revenue], precision: 2, delimiter: ',') %></td>
                             <td class="text-end">$ <%= number_with_precision(r[:profit], precision: 2, delimiter: ',') %></td>
                           </tr>
                         <% end %>
@@ -260,14 +283,14 @@
                 <div class="tab-pane fade" id="pp-all" role="tabpanel" data-subtabs-target="panel">
                   <div class="table-responsive">
                     <table class="table table-sm mb-0">
-                      <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Ingresos</th><th class="text-end">COGS</th><th class="text-end">Profit</th></tr></thead>
+                      <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Compra</th><th class="text-end">Ventas</th><th class="text-end">Utilidad</th></tr></thead>
                       <tbody>
                         <% @top_products_profit_all_time&.each_with_index do |r, idx| %>
                           <tr>
                             <td class="text-muted">#<%= idx + 1 %></td>
                             <td><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></td>
-                            <td class="text-end">$ <%= number_with_precision(r[:revenue], precision: 2, delimiter: ',') %></td>
                             <td class="text-end">$ <%= number_with_precision(r[:cogs], precision: 2, delimiter: ',') %></td>
+                            <td class="text-end">$ <%= number_with_precision(r[:revenue], precision: 2, delimiter: ',') %></td>
                             <td class="text-end">$ <%= number_with_precision(r[:profit], precision: 2, delimiter: ',') %></td>
                           </tr>
                         <% end %>
@@ -441,7 +464,7 @@
             <div class="tab-pane fade" id="rank-ly" role="tabpanel" data-tabs-target="panel">
               <div class="table-responsive">
                 <table class="table table-sm mb-0">
-                  <thead><tr><th>Rank</th><th>Customer</th><th class="text-end">Orders</th><th class="text-end">Revenue</th></tr></thead>
+                  <thead><tr><th>Rank</th><th>Cliente</th><th class="text-end">Órdenes</th><th class="text-end">Ingresos</th></tr></thead>
                   <tbody>
                     <% @top_users_last_year.each_with_index do |u, idx| %>
                       <tr>
@@ -461,7 +484,7 @@
             <div class="tab-pane fade" id="rank-all" role="tabpanel" data-tabs-target="panel">
               <div class="table-responsive">
                 <table class="table table-sm mb-0">
-                  <thead><tr><th>Rank</th><th>Customer</th><th class="text-end">Orders</th><th class="text-end">Revenue</th></tr></thead>
+                  <thead><tr><th>Rank</th><th>Cliente</th><th class="text-end">Órdenes</th><th class="text-end">Ingresos</th></tr></thead>
                   <tbody>
                     <% @top_users_all.each_with_index do |u, idx| %>
                       <tr>
