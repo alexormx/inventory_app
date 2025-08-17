@@ -78,6 +78,7 @@ class Admin::DashboardController < ApplicationController
       sales:   pct_delta(@sales_ytd, @sales_prev),
       profit:  pct_delta(@profit_ytd, @profit_prev),
       orders:  pct_delta(@orders_count_ytd, @orders_prev),
+      po_count: pct_delta(@po_count_ytd, @po_count_prev),
       customers: pct_delta(@active_customers_ytd, @active_customers_prev),
       margin_pp: (@margin_ytd - @margin_prev) # diferencia absoluta (puntos)
     }
