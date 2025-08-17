@@ -11,8 +11,7 @@ class Api::V1::SalesOrdersController < ApplicationController
 
     so_attrs = sales_order_params.except(:email).merge(user_id: user.id)
 
-    # SaleOrder schema: subtotal, tax_rate (percentage), total_tax, total_order_value, discount
-    # Compute total_tax and total_order_value if not provided
+    # Compute totals
     begin
       subtotal = BigDecimal((so_attrs[:subtotal].presence || 0).to_s)
       tax_rate = BigDecimal((so_attrs[:tax_rate].presence || 0).to_s)
@@ -25,21 +24,6 @@ class Api::V1::SalesOrdersController < ApplicationController
       so_attrs[:total_order_value] = total_order_value
       so_attrs[:subtotal] = subtotal.round(2)
       so_attrs[:discount] = discount.round(2)
-
-      # Normalizar status para cumplir con la validación (Pending, Confirmed, Shipped, Delivered, Canceled)
-      if so_attrs[:status].present?
-        mapping = {
-          "pending" => "Pending",
-          "confirmed" => "Confirmed",
-          "shipped" => "Shipped",
-          "delivered" => "Delivered",
-          "canceled" => "Canceled",
-          "cancelled" => "Canceled"
-        }
-        so_attrs[:status] = mapping[so_attrs[:status].to_s.strip.downcase] || so_attrs[:status].to_s.strip.capitalize
-      else
-        so_attrs[:status] = "Pending"
-      end
     rescue ArgumentError
       so_attrs[:total_tax] = 0
       so_attrs[:total_order_value] = 0
@@ -47,16 +31,48 @@ class Api::V1::SalesOrdersController < ApplicationController
       so_attrs[:discount] = 0
     end
 
-    sales_order = SaleOrder.new(so_attrs)
+    # Normalizar estado deseado (el que viene en el payload)
+    mapping = {
+      "pending" => "Pending",
+      "confirmed" => "Confirmed",
+      "shipped" => "Shipped",
+      "delivered" => "Delivered",
+      "canceled" => "Canceled",
+      "cancelled" => "Canceled"
+    }
+
+    desired_status = if so_attrs[:status].present?
+                       mapping[so_attrs[:status].to_s.strip.downcase] || so_attrs[:status].to_s.strip.capitalize
+                     else
+                       "Pending"
+                     end
 
     response_extra = {}
 
-    if sales_order.save
-      # Crear payment si la orden está Confirmed o Delivered
-      if %w[Confirmed Delivered].include?(sales_order.status)
-        # Si la orden es Delivered, además crear el shipment
-        if sales_order.status == "Delivered"
-          # Parsear fechas pasadas en params (opcionales)
+    begin
+      ActiveRecord::Base.transaction do
+        sales_order = SaleOrder.create!(so_attrs)
+
+        # Crear payment si el estado deseado es Confirmed o Delivered
+        if %w[Confirmed Delivered].include?(desired_status)
+          pm_param = params.dig(:sales_order, :payment_method).presence
+          pm_mapped = if pm_param && Payment.payment_methods.keys.include?(pm_param.to_s)
+                        pm_param.to_s
+                      else
+                        "transferencia_bancaria"
+                      end
+
+          payment = sales_order.payments.create!(
+            amount: sales_order.total_order_value,
+            status: "Completed",
+            payment_method: pm_mapped
+          )
+
+          response_extra[:payment] = payment
+        end
+
+        # Crear shipment si el estado deseado es Delivered
+        if desired_status == "Delivered"
           expected = begin
             if params.dig(:sales_order, :expected_delivery_date).present?
               Date.parse(params.dig(:sales_order, :expected_delivery_date))
@@ -83,8 +99,7 @@ class Api::V1::SalesOrdersController < ApplicationController
           tracking = params.dig(:sales_order, :tracking_number).presence || "A00000000MX"
           carrier = params.dig(:sales_order, :carrier).presence || "Local"
 
-          shipment = Shipment.new(
-            sale_order_id: sales_order.id,
+          shipment = sales_order.create_shipment!(
             tracking_number: tracking,
             carrier: carrier,
             estimated_delivery: expected,
@@ -92,26 +107,20 @@ class Api::V1::SalesOrdersController < ApplicationController
             status: Shipment.statuses[:delivered]
           )
 
-          shipment_saved = shipment.save
-          response_extra[:shipment] = shipment_saved ? shipment : { errors: shipment.errors.full_messages }
+          response_extra[:shipment] = shipment
         end
 
-        # Crear payment completado por el valor total de la orden (Confirmed o Delivered)
-        payment_method = params.dig(:sales_order, :payment_method).presence || "transferencia_bancaria"
-        payment = Payment.new(
-          sale_order_id: sales_order.id,
-          amount: sales_order.total_order_value,
-          status: "Completed",
-          payment_method: payment_method
-        )
+        # Ahora actualizamos el estado al deseado (ya existen payment/shipment si se requieren)
+        if desired_status != "Pending"
+          sales_order.update!(status: desired_status)
+        end
 
-        payment_saved = payment.save
-        response_extra[:payment] = payment_saved ? payment : { errors: payment.errors.full_messages }
+        render json: { status: "success", sales_order: sales_order, extra: response_extra }, status: :created and return
       end
-
-      render json: { status: "success", sales_order: sales_order, extra: response_extra }, status: :created
-    else
-      render json: { status: "error", errors: sales_order.errors.full_messages }, status: :unprocessable_entity
+    rescue ActiveRecord::RecordInvalid => e
+      render json: { status: "error", errors: e.record.errors.full_messages }, status: :unprocessable_entity and return
+    rescue StandardError => e
+      render json: { status: "error", message: e.message }, status: :internal_server_error and return
     end
   end
 

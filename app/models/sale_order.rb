@@ -34,7 +34,10 @@ class SaleOrder < ApplicationRecord
   end
 
   def update_status_if_fully_paid!
-    if fully_paid? && status != "Confirmed"
+    # Solo promover de Pending -> Confirmed cuando esté fully_paid.
+    # No cambiar otros estados (por ejemplo Delivered) para evitar
+    # sobrescribir un estado final con Confirmed.
+    if fully_paid? && status == "Pending"
       update!(status: "Confirmed")
     elsif !fully_paid? && status == "Confirmed"
       update!(status: "Pending")
