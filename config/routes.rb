@@ -58,7 +58,11 @@ Rails.application.routes.draw do
     end
 
     # Reports & Settings
-    resources :reports, only: [:index]
+    resources :reports, only: [:index] do
+      collection do
+        get :inventory_items
+      end
+    end
     resources :settings, only: [:index]
 
     # General user management (admin-facing) con tabs

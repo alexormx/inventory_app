@@ -67,8 +67,7 @@ class Admin::InventoryController < ApplicationController
 
     respond_to do |format|
       format.html
-      format.csv  { send_data csv_for_inventory(@export_products), filename: "inventory-#{Time.current.strftime('%Y%m%d-%H%M')}.csv" }
-      format.xlsx { send_data xlsx_for_inventory(@export_products), filename: "inventory-#{Time.current.strftime('%Y%m%d-%H%M')}.xlsx", type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }
+      format.csv { send_data csv_for_inventory(@export_products), filename: "inventory-#{Time.current.strftime('%Y%m%d-%H%M')}.csv" }
       format.any  { head :not_acceptable }
     end
   end
@@ -77,16 +76,23 @@ class Admin::InventoryController < ApplicationController
     @product = Product.find_by_identifier!(params[:id])
   @inventory_items = @product.inventories.includes(:purchase_order).order(id: :asc)
 
+    # Respetar filtro de status si viene en la URL (p. ej. desde la vista index)
+    status_filter = params[:status].to_s
+    valid_statuses = Inventory.statuses.keys
+    if status_filter.present? && status_filter != "all" && valid_statuses.include?(status_filter)
+      @inventory_items = @inventory_items.where(status: Inventory.statuses[status_filter])
+    end
+
   # Turbo Frames: usar el id de frame esperado (enviado por Turbo en el header)
     expected_frame_id = request.headers["Turbo-Frame"]
     respond_to do |format|
       format.turbo_stream do
         # Responder con el frame correcto si Turbo lo espera
-        render partial: "admin/inventory/items", locals: { product: @product, items: @inventory_items, frame_id: expected_frame_id }
+  render partial: "admin/inventory/items", locals: { product: @product, items: @inventory_items, frame_id: expected_frame_id }
       end
       format.html do
         # Fallback: renderizar la misma partial dentro del layout normal
-        render partial: "admin/inventory/items", locals: { product: @product, items: @inventory_items, frame_id: expected_frame_id }
+  render partial: "admin/inventory/items", locals: { product: @product, items: @inventory_items, frame_id: expected_frame_id }
       end
     end
   end
@@ -147,25 +153,5 @@ class Admin::InventoryController < ApplicationController
     end
   end
 
-  def xlsx_for_inventory(relation)
-    require 'caxlsx'
-    pkg = Axlsx::Package.new
-    wb  = pkg.workbook
-    wb.add_worksheet(name: "Inventory") do |sheet|
-      sheet.add_row ["Product ID", "SKU", "Name", "Available", "Reserved", "In Transit", "Sold", "Total"]
-      relation.find_each do |p|
-        sheet.add_row [
-          p.id,
-          p.product_sku,
-          p.product_name,
-          p.attributes["available_count"].to_i,
-          p.attributes["reserved_count"].to_i,
-          p.attributes["in_transit_count"].to_i,
-          p.attributes["sold_count"].to_i,
-          p.attributes["total_count"].to_i
-        ]
-      end
-    end
-    pkg.to_stream.read
-  end
+  # XLSX export removed
 end

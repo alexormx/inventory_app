@@ -57,8 +57,7 @@ class Admin::PurchaseOrdersController < ApplicationController
     @counts = statuses.each_with_object({}) { |s, h| h[s] = filtered.where(status: s).count }
     respond_to do |format|
       format.html
-      format.csv  { send_data csv_for_purchase_orders(@export_purchase_orders), filename: "purchase_orders-#{Time.current.strftime('%Y%m%d-%H%M')}.csv" }
-      format.xlsx { send_data xlsx_for_purchase_orders(@export_purchase_orders), filename: "purchase_orders-#{Time.current.strftime('%Y%m%d-%H%M')}.xlsx", type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }
+      format.csv { send_data csv_for_purchase_orders(@export_purchase_orders), filename: "purchase_orders-#{Time.current.strftime('%Y%m%d-%H%M')}.csv" }
       format.any  { head :not_acceptable }
     end
   end
@@ -165,28 +164,5 @@ class Admin::PurchaseOrdersController < ApplicationController
     end
   end
 
-  def xlsx_for_purchase_orders(relation)
-    require 'caxlsx'
-    pkg = Axlsx::Package.new
-    wb  = pkg.workbook
-    wb.add_worksheet(name: "Purchase Orders") do |sheet|
-      sheet.add_row ["ID", "Supplier", "Order Date", "Expected Delivery", "Status", "Items", "Currency", "Total Cost", "Total Cost MXN", "Total Weight", "Total Volume"], types: [:string]*11
-      relation.find_each do |po|
-        sheet.add_row [
-          po.id,
-          po.user&.name,
-          po.order_date,
-          po.expected_delivery_date,
-          po.status,
-          po.attributes["items_count"].to_i,
-          po.currency,
-          po.total_order_cost,
-          po.total_cost_mxn,
-          po.total_weight,
-          po.total_volume
-        ]
-      end
-    end
-    pkg.to_stream.read
-  end
+  # XLSX export removed
 end
