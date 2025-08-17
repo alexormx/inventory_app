@@ -48,6 +48,7 @@
         <div class="card-body">
           <div class="small text-muted">PO en el año</div>
           <div class="fs-4 fw-bold"><%= number_with_delimiter(@po_count_ytd) %> <span class="small text-muted">(LY: <%= number_with_delimiter(@po_count_prev) %>)</span></div>
+          <div class="small text-muted">Artículos comprados (YTD): <%= number_with_delimiter(@po_items_qty_ytd) %></div>
           <div class="small <%= @kpi_deltas&.dig(:po_count).to_f >= 0 ? 'text-success' : 'text-danger' %>">Δ vs LY: <%= @kpi_deltas&.dig(:po_count).nil? ? '—' : number_to_percentage(@kpi_deltas[:po_count] * 100, precision: 1) %></div>
           <div class="small text-muted">Total All Time: <%= number_with_delimiter(@po_total_all_time) %></div>
         </div>
@@ -58,6 +59,7 @@
         <div class="card-body">
           <div class="small text-muted">SO en el año</div>
           <div class="fs-4 fw-bold"><%= number_with_delimiter(@orders_count_ytd) %> <span class="small text-muted">(LY: <%= number_with_delimiter(@orders_prev) %>)</span></div>
+          <div class="small text-muted">Artículos vendidos (YTD): <%= number_with_delimiter(@so_items_qty_ytd) %></div>
           <div class="small <%= @kpi_deltas&.dig(:orders).to_f >= 0 ? 'text-success' : 'text-danger' %>">Δ vs LY: <%= @kpi_deltas&.dig(:orders).nil? ? '—' : number_to_percentage(@kpi_deltas[:orders] * 100, precision: 1) %></div>
           <div class="small text-muted">Total All Time: <%= number_with_delimiter(@so_total_all_time) %></div>
         </div>

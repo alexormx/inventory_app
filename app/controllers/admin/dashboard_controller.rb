@@ -47,6 +47,9 @@ class Admin::DashboardController < ApplicationController
   @po_count_ytd          = po_ytd.count
     @active_customers_ytd  = so_ytd.select(:user_id).distinct.count
     @inventory_total_value = Product.sum(:current_inventory_value).to_d
+  # Cantidades de artículos en el rango
+  @po_items_qty_ytd = PurchaseOrderItem.joins(:purchase_order).merge(po_ytd).sum(:quantity).to_i
+  @so_items_qty_ytd = SaleOrderItem.joins(:sale_order).merge(so_ytd).sum(:quantity).to_i
 
     # Compras totales (MXN) all-time (respeta excluir canceladas)
     @purchases_total_mxn = po_scope.sum(:total_cost_mxn).to_d
