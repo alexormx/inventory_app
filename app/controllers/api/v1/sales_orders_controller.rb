@@ -51,7 +51,11 @@ class Api::V1::SalesOrdersController < ApplicationController
 
     begin
       ActiveRecord::Base.transaction do
-        sales_order = SaleOrder.create!(so_attrs)
+        # Solo pasar atributos que pertenecen realmente al modelo SaleOrder
+        allowed = SaleOrder.attribute_names.map(&:to_sym)
+        sale_order_attrs = so_attrs.slice(*allowed)
+
+        sales_order = SaleOrder.create!(sale_order_attrs)
 
         # Crear payment si el estado deseado es Confirmed o Delivered
         if %w[Confirmed Delivered].include?(desired_status)
