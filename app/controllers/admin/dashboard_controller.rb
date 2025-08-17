@@ -23,7 +23,10 @@ class Admin::DashboardController < ApplicationController
     @total_users    = User.count
 
   # Ventas/Compras YTD
-    @sales_ytd     = so_ytd.sum(:total_order_value).to_d
+    rev_sql_arel = Arel.sql("COALESCE(sale_order_items.unit_final_price, 0) * COALESCE(sale_order_items.quantity, 0)")
+    @sales_ytd     = SaleOrderItem.joins(:sale_order)
+                                  .merge(so_ytd)
+                                  .sum(rev_sql_arel).to_d
     @purchases_ytd = po_ytd.sum(:total_cost_mxn).to_d
     if @purchases_ytd.zero?
       # Fallback si total_cost_mxn no se usa
@@ -52,10 +55,12 @@ class Admin::DashboardController < ApplicationController
     end
 
     # Comparativa YTD vs mismo periodo del año anterior
-    range_prev_start = @start_date.prev_year
+  range_prev_start = @start_date.prev_year
     range_prev_end   = @end_date.prev_year
     so_prev_range = so_scope.where(order_date: range_prev_start..range_prev_end)
-    @sales_prev   = so_prev_range.sum(:total_order_value).to_d
+  @sales_prev   = SaleOrderItem.joins(:sale_order)
+                 .merge(so_prev_range)
+                 .sum(rev_sql_arel).to_d
     @cogs_prev    = SaleOrderItem.joins(:sale_order).merge(so_prev_range).sum(cogs_sql).to_d
     @profit_prev  = @sales_prev - @cogs_prev
     @margin_prev  = @sales_prev.positive? ? (@profit_prev / @sales_prev) : 0.to_d
@@ -100,6 +105,11 @@ class Admin::DashboardController < ApplicationController
 
     # Rotación de inventario aproximada (COGS YTD / inventario promedio). Sin histórico, usar total actual como aproximación.
     @inventory_turnover_ytd = @inventory_total_value.positive? ? (@cogs_ytd / @inventory_total_value) : nil
+
+  # Ventas totales (MXN) All Time (respeta excluir canceladas)
+  @sales_total_mxn = SaleOrderItem.joins(:sale_order)
+                   .merge(so_scope)
+                   .sum(rev_sql_arel).to_d
 
   # Top 10 productos históricos (por unidades)
     rev_sql = "COALESCE(sale_order_items.unit_final_price, 0) * COALESCE(sale_order_items.quantity, 0)"
