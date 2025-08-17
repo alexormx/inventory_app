@@ -121,6 +121,9 @@ class Admin::DashboardController < ApplicationController
   # Totales all-time de conteo (respeta excluir canceladas)
   @so_total_all_time = so_scope.count
   @po_total_all_time = po_scope.count
+  # Totales all-time de artículos comprados/vendidos (respeta excluir canceladas)
+  @po_items_qty_all_time = PurchaseOrderItem.joins(:purchase_order).merge(po_scope).sum(:quantity).to_i
+  @so_items_qty_all_time = SaleOrderItem.joins(:sale_order).merge(so_scope).sum(:quantity).to_i
 
   # Top 10 productos históricos (por unidades)
     rev_sql = "COALESCE(sale_order_items.unit_final_price, 0) * COALESCE(sale_order_items.quantity, 0)"
