@@ -38,6 +38,8 @@ class Admin::SaleOrdersController < ApplicationController
       term = "%#{@q.downcase}%"
       scope = scope.where("CAST(sale_orders.id AS TEXT) LIKE ? OR LOWER(users.name) LIKE ?", term, term)
     end
+  # Dataset para exportación (sin paginar)
+  @export_sale_orders = scope
   @sale_orders = scope.page(params[:page]).per(PER_PAGE)
 
     # Contadores superiores (globales) e inferiores (filtrados)
@@ -52,6 +54,11 @@ class Admin::SaleOrdersController < ApplicationController
       counts_scope = counts_scope.where(status: @status_filter)
     end
     @counts = statuses.each_with_object({}) { |s, h| h[s] = counts_scope.where(status: s).count }
+    respond_to do |format|
+      format.html
+      format.csv { send_data csv_for_sale_orders(@export_sale_orders), filename: "sale_orders-#{Time.current.strftime('%Y%m%d-%H%M')}.csv" }
+      format.any  { head :not_acceptable }
+    end
   end
 
   def new
@@ -116,5 +123,27 @@ class Admin::SaleOrdersController < ApplicationController
     # Mantener método para compatibilidad; @counts se recalcula en index
     @counts ||= SaleOrder.group(:status).count
   end
+
+  def csv_for_sale_orders(relation)
+    require 'csv'
+    CSV.generate(headers: true) do |csv|
+      csv << [
+        "ID", "Customer", "Order Date", "Status", "Items", "Total MXN", "Discount"
+      ]
+      relation.each do |so|
+        csv << [
+          so.id,
+          so.user&.name,
+          so.order_date,
+          so.status,
+          so.attributes["items_count"].to_i,
+          so.total_order_value,
+          so.discount
+        ]
+      end
+    end
+  end
+
+  # XLSX export removed
 end
 

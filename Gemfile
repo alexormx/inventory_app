@@ -64,6 +64,8 @@ gem "kaminari"
 # ✅ Additional Gems for geolocalization
 gem 'geocoder'
 
+# (Removed XLSX export gems; CSV remains via stdlib)
+
 
 # 🔹 **Development & Testing Group**
 group :development, :test do
