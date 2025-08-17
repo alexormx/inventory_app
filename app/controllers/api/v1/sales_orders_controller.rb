@@ -59,20 +59,25 @@ class Api::V1::SalesOrdersController < ApplicationController
 
         # Crear payment si el estado deseado es Confirmed o Delivered
         if %w[Confirmed Delivered].include?(desired_status)
-          pm_param = params.dig(:sales_order, :payment_method).presence
-          pm_mapped = if pm_param && Payment.payment_methods.keys.include?(pm_param.to_s)
-                        pm_param.to_s
-                      else
-                        "transferencia_bancaria"
-                      end
+          # Solo crear pago si el total de la orden es mayor a 0
+          if sales_order.total_order_value.to_f > 0.0
+            pm_param = params.dig(:sales_order, :payment_method).presence
+            pm_mapped = if pm_param && Payment.payment_methods.keys.include?(pm_param.to_s)
+                          pm_param.to_s
+                        else
+                          "transferencia_bancaria"
+                        end
 
-          payment = sales_order.payments.create!(
-            amount: sales_order.total_order_value,
-            status: "Completed",
-            payment_method: pm_mapped
-          )
+            payment = sales_order.payments.create!(
+              amount: sales_order.total_order_value,
+              status: "Completed",
+              payment_method: pm_mapped
+            )
 
-          response_extra[:payment] = payment
+            response_extra[:payment] = payment
+          else
+            response_extra[:payment] = { skipped_for_zero_amount: true }
+          end
         end
 
         # Crear shipment si el estado deseado es Delivered
@@ -97,7 +102,8 @@ class Api::V1::SalesOrdersController < ApplicationController
             nil
           end
 
-          expected ||= (sales_order.order_date + 20)
+          order_base_date = sales_order.order_date || Date.today
+          expected ||= (order_base_date + 20)
           actual ||= expected
 
           tracking = params.dig(:sales_order, :tracking_number).presence || "A00000000MX"
