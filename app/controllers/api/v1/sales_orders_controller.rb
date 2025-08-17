@@ -116,7 +116,9 @@ class Api::V1::SalesOrdersController < ApplicationController
 
         # Ahora actualizamos el estado al deseado (ya existen payment/shipment si se requieren)
         if desired_status != "Pending"
-          sales_order.update!(status: desired_status)
+          # Recargar para asegurar que asociaciones persistan, y actualizar columna
+          sales_order.reload
+          sales_order.update_columns(status: desired_status)
         end
 
         render json: { status: "success", sales_order: sales_order, extra: response_extra }, status: :created and return

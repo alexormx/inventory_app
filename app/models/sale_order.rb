@@ -49,13 +49,13 @@ class SaleOrder < ApplicationRecord
   def ensure_payment_and_shipment_present
     case status
     when "Confirmed"
-      errors.add(:payment, "must exist to confirm the order") unless payments.any?
+  errors.add(:payment, "must exist to confirm the order") unless total_order_value.to_f == 0.0 || payments.any?
     when "Shipped"
-      errors.add(:payment, "must exist to ship the order") unless payments.any?
-      errors.add(:shipment, "must exist to ship the order") unless shipment.present?
+  errors.add(:payment, "must exist to ship the order") unless total_order_value.to_f == 0.0 || payments.any?
+  errors.add(:shipment, "must exist to ship the order") unless shipment.present?
     when "Delivered"
-      errors.add(:payment, "must exist to deliver the order") unless payments.any?
-      errors.add(:shipment, "must exist to deliver the order") unless shipment.present?
+  errors.add(:payment, "must exist to deliver the order") unless total_order_value.to_f == 0.0 || payments.any?
+  errors.add(:shipment, "must exist to deliver the order") unless shipment.present?
 
     end
   end
