@@ -75,7 +75,7 @@ class Admin::InventoryController < ApplicationController
   def items
   @product = Product.find_by_identifier!(params[:id])
   # Consulta directa (evita efectos colaterales del proxy de asociación)
-  base_scope = Inventory.where(product_id: @product.id).unscope(:limit, :offset)
+  base_scope = Inventory.where(product_id: @product.id)
   @inventory_items = base_scope.order(id: :asc)
 
 
