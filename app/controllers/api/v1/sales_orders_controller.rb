@@ -11,23 +11,25 @@ class Api::V1::SalesOrdersController < ApplicationController
 
     so_attrs = sales_order_params.except(:email).merge(user_id: user.id)
 
-    # Compute and persist total_cost_mxn consistently for reporting/UI
+    # SaleOrder schema: subtotal, tax_rate (percentage), total_tax, total_order_value, discount
+    # Compute total_tax and total_order_value if not provided
     begin
-      currency = so_attrs[:currency].to_s
-      total_order_cost = BigDecimal(so_attrs[:total_order_cost].to_s)
-      exchange_rate = BigDecimal((so_attrs[:exchange_rate].presence || 0).to_s)
+      subtotal = BigDecimal((so_attrs[:subtotal].presence || 0).to_s)
+      tax_rate = BigDecimal((so_attrs[:tax_rate].presence || 0).to_s)
+      discount = BigDecimal((so_attrs[:discount].presence || 0).to_s)
 
-      total_cost_mxn = if currency == 'MXN'
-        total_order_cost
-      elsif exchange_rate > 0
-        total_order_cost * exchange_rate
-      else
-        0
-      end
+      total_tax = (subtotal * (tax_rate / 100)).round(2)
+      total_order_value = (subtotal + total_tax - discount).round(2)
 
-      so_attrs[:total_cost_mxn] = total_cost_mxn.round(2)
+      so_attrs[:total_tax] = total_tax
+      so_attrs[:total_order_value] = total_order_value
+      so_attrs[:subtotal] = subtotal.round(2)
+      so_attrs[:discount] = discount.round(2)
     rescue ArgumentError
-      so_attrs[:total_cost_mxn] = 0
+      so_attrs[:total_tax] = 0
+      so_attrs[:total_order_value] = 0
+      so_attrs[:subtotal] = 0
+      so_attrs[:discount] = 0
     end
 
     sales_order = SaleOrder.new(so_attrs)
@@ -42,6 +44,6 @@ class Api::V1::SalesOrdersController < ApplicationController
   private
 
   def sales_order_params
-    params.require(:sales_order).permit(:id, :order_date, :currency, :exchange_rate, :tax_cost, :shipping_cost, :other_cost, :subtotal, :total_order_cost, :status, :email, :expected_delivery_date, :actual_delivery_date)
+    params.require(:sales_order).permit(:id, :order_date, :subtotal, :tax_rate, :total_tax, :discount, :total_order_value, :status, :email, :notes)
   end
 end
