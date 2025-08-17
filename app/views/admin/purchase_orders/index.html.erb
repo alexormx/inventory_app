@@ -17,6 +17,8 @@
 <div class="card mb-4">
   <div class="card-body py-2">
     <%= form_with url: admin_purchase_orders_path, method: :get, local: true, class: "row g-2 align-items-center" do %>
+      <%= hidden_field_tag :sort, params[:sort] %>
+      <%= hidden_field_tag :dir, params[:dir] %>
       <div class="col-12 col-md-6">
         <div class="input-group input-group-sm">
           <%= text_field_tag :q, @q, class: "form-control", placeholder: "Buscar por ID o proveedor…", aria: { label: "Buscar purchase orders" } %>
@@ -44,7 +46,7 @@
           <%= button_tag "Canceled", name: :status, value: "Canceled", class: btnc.call("Canceled", current_status) %>
         </div>
         <%= hidden_field_tag :current_status, current_status %>
-        <%= link_to "Limpiar filtros", admin_purchase_orders_path, class: "btn btn-sm btn-outline-secondary ms-2", title: "Quitar búsqueda y status" %>
+  <%= link_to "Limpiar filtros", admin_purchase_orders_path(request.query_parameters.slice(:sort, :dir)), class: "btn btn-sm btn-outline-secondary ms-2", title: "Quitar búsqueda y status" %>
       </div>
     <% end %>
   </div>
