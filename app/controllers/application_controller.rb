@@ -5,6 +5,7 @@ class ApplicationController < ActionController::Base
   layout :set_layout
   before_action :track_visitor
   before_action :ensure_confirmed_user!
+    helper Admin::SortHelper if defined?(Admin::SortHelper)
 
   protected
   def after_sign_in_path_for(resource)

@@ -64,17 +64,27 @@
   title: "Resultados"
 } %>
 
+<div class="d-flex justify-content-end mb-2 small">
+  <% if @paginated %>
+    <%= link_to 'Ver todo (para ordenar globalmente)', request.query_parameters.merge(per: 'all', page: nil), class: 'link-secondary' %>
+  <% else %>
+    <span class="text-muted">Ordenando sobre todos los resultados</span>
+    ·
+    <%= link_to 'Volver a paginar', request.query_parameters.except(:per).merge(page: 1), class: 'link-secondary' %>
+  <% end %>
+</div>
+
 <table class="table table-sm table-hover align-middle">
   <thead class="table-light">
     <tr>
       <th scope="col">#</th>
-      <th scope="col">Supplier</th>
-      <th scope="col">Order Date</th>
-      <th scope="col">Expected Delivery</th>
+  <th scope="col"><%= sort_link('Supplier', :supplier) %></th>
+  <th scope="col"><%= sort_link('Order Date', :date) %></th>
+  <th scope="col"><%= sort_link('Expected Delivery', :expected) %></th>
       <th scope="col">Status</th>
       <th scope="col" class="text-end">Currency</th>
       <th scope="col" class="text-end">Total Cost</th>
-      <th scope="col" class="text-end">Total Cost MXN</th>
+  <th scope="col" class="text-end"><%= sort_link('Total Cost MXN', :total_mxn) %></th>
       <th scope="col" class="text-end">Total Weight</th>
       <th scope="col" class="text-end">Total Volume</th>
       <th scope="col" class="text-end">Actions</th>
