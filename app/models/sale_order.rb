@@ -24,6 +24,8 @@ class SaleOrder < ApplicationRecord
 
   # Opcional: si cambias status a 'Canceled', libera lo reservado
   after_update :release_reserved_if_canceled, if: :saved_change_to_status?
+  # Sincronizar estado del shipment cuando la orden pase a Delivered
+  after_update :ensure_shipment_status_matches, if: :saved_change_to_status?
 
   def total_paid
     payments.where(status: "Completed").sum(:amount)
@@ -94,6 +96,35 @@ class SaleOrder < ApplicationRecord
       status_changed_at: Time.current,
       updated_at: Time.current
     )
+  end
+
+  def ensure_shipment_status_matches
+    return unless status == "Delivered"
+
+    # Si existe shipment, forzamos su estado a delivered (usa el enum como símbolo)
+    if shipment.present?
+      begin
+        shipment.update!(status: :delivered)
+      rescue StandardError
+        # no queremos que un fallo en el shipment impida otras actualizaciones
+        Rails.logger.error("Failed to sync shipment status for SaleOrder ");
+      end
+    else
+      # Crear un shipment por defecto si no existe, usando valores seguros
+      begin
+        order_base = order_date || Date.today
+        est = order_base + 20
+        create_shipment!(
+          tracking_number: "A00000000MX",
+          carrier: "Local",
+          estimated_delivery: est,
+          actual_delivery: est,
+          status: Shipment.statuses[:delivered]
+        )
+      rescue StandardError => e
+        Rails.logger.error("Failed to create default shipment for SaleOrder ")
+      end
+    end
   end
 end
 
