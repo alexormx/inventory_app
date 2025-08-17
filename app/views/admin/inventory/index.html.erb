@@ -123,6 +123,10 @@
       <%= render partial: "admin/inventory/summary", locals: { product: product } %>
 
       <turbo-frame id="inventory-items-frame-<%= product.id %>" class="mt-2">
+        <div class="inventory-loader d-none text-center text-muted py-3">
+          <div class="spinner-border spinner-border-sm text-primary" role="status" aria-hidden="true"></div>
+          <span class="ms-2">Cargando piezas…</span>
+        </div>
         <!-- El contenido de items se carga bajo demanda via Turbo -->
       </turbo-frame>
     </div>
