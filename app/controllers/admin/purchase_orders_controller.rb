@@ -58,7 +58,7 @@ class Admin::PurchaseOrdersController < ApplicationController
     respond_to do |format|
       format.html
       format.csv  { send_data csv_for_purchase_orders(@export_purchase_orders), filename: "purchase_orders-#{Time.current.strftime('%Y%m%d-%H%M')}.csv" }
-      format.xlsx { render xlsx: "index", filename: "purchase_orders-#{Time.current.strftime('%Y%m%d-%H%M')}.xlsx" }
+  format.xlsx { render template: "admin/purchase_orders/index", formats: [:xlsx], filename: "purchase_orders-#{Time.current.strftime('%Y%m%d-%H%M')}.xlsx" }
     end
   end
 

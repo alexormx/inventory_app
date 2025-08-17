@@ -1,2 +1,28 @@
-<h2>Admin - Reports</h2>
-<p>Generate and download reports.</p>
+<h2 class="mb-3 d-flex align-items-center gap-2"><i class="fa fa-file-excel-o"></i> Reports</h2>
+
+<div class="card mb-3">
+	<div class="card-header">Purchase Orders</div>
+	<div class="card-body d-flex gap-2 flex-wrap">
+		<%= link_to "Download CSV", admin_purchase_orders_path(request.query_parameters.merge(format: :csv)), class: "btn btn-outline-secondary btn-sm" %>
+		<%= link_to "Download XLSX", admin_purchase_orders_path(request.query_parameters.merge(format: :xlsx)), class: "btn btn-outline-success btn-sm" %>
+	</div>
+	<div class="card-footer text-muted small">Respects current filters if you navigate from PO list (status, q, sort).</div>
+	</div>
+
+<div class="card mb-3">
+	<div class="card-header">Sales Orders</div>
+	<div class="card-body d-flex gap-2 flex-wrap">
+		<%= link_to "Download CSV", admin_sale_orders_path(request.query_parameters.merge(format: :csv)), class: "btn btn-outline-secondary btn-sm" %>
+		<%= link_to "Download XLSX", admin_sale_orders_path(request.query_parameters.merge(format: :xlsx)), class: "btn btn-outline-success btn-sm" %>
+	</div>
+	<div class="card-footer text-muted small">Respects current filters if you navigate from SO list (status, q, sort).</div>
+</div>
+
+<div class="card mb-3">
+	<div class="card-header">Inventory</div>
+	<div class="card-body d-flex gap-2 flex-wrap">
+		<%= link_to "Download CSV", admin_inventory_path(request.query_parameters.merge(format: :csv)), class: "btn btn-outline-secondary btn-sm" %>
+		<%= link_to "Download XLSX", admin_inventory_path(request.query_parameters.merge(format: :xlsx)), class: "btn btn-outline-success btn-sm" %>
+	</div>
+	<div class="card-footer text-muted small">Respects current filters if you navigate from Inventory (status, q).</div>
+</div>

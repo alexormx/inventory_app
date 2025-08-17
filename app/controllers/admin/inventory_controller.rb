@@ -68,7 +68,7 @@ class Admin::InventoryController < ApplicationController
     respond_to do |format|
       format.html
       format.csv  { send_data csv_for_inventory(@export_products), filename: "inventory-#{Time.current.strftime('%Y%m%d-%H%M')}.csv" }
-      format.xlsx { render xlsx: "index", filename: "inventory-#{Time.current.strftime('%Y%m%d-%H%M')}.xlsx" }
+  format.xlsx { render template: "admin/inventory/index", formats: [:xlsx], filename: "inventory-#{Time.current.strftime('%Y%m%d-%H%M')}.xlsx" }
     end
   end
 
