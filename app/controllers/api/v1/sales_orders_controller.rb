@@ -25,6 +25,21 @@ class Api::V1::SalesOrdersController < ApplicationController
       so_attrs[:total_order_value] = total_order_value
       so_attrs[:subtotal] = subtotal.round(2)
       so_attrs[:discount] = discount.round(2)
+
+      # Normalizar status para cumplir con la validación (Pending, Confirmed, Shipped, Delivered, Canceled)
+      if so_attrs[:status].present?
+        mapping = {
+          "pending" => "Pending",
+          "confirmed" => "Confirmed",
+          "shipped" => "Shipped",
+          "delivered" => "Delivered",
+          "canceled" => "Canceled",
+          "cancelled" => "Canceled"
+        }
+        so_attrs[:status] = mapping[so_attrs[:status].to_s.strip.downcase] || so_attrs[:status].to_s.strip.capitalize
+      else
+        so_attrs[:status] = "Pending"
+      end
     rescue ArgumentError
       so_attrs[:total_tax] = 0
       so_attrs[:total_order_value] = 0
