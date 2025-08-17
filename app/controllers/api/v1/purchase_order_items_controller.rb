@@ -20,7 +20,8 @@ class Api::V1::PurchaseOrderItemsController < ApplicationController
     errors = []
 
     items.each_with_index do |raw, idx|
-      raw = raw.symbolize_keys
+      # Ensure we work with a plain Hash for nested params arrays
+      raw = raw.respond_to?(:to_unsafe_h) ? raw.to_unsafe_h.symbolize_keys : raw.to_h.symbolize_keys
       product = find_product(raw)
       if product.nil?
         errors << { index: idx, error: 'Product not found', item: raw }
