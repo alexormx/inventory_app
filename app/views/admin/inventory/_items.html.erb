@@ -1,4 +1,4 @@
-<turbo-frame id="inventory-items-frame-<%= product.id %>" class="mt-3">
+<turbo-frame id="<%= (local_assigns[:frame_id].presence || "inventory-items-frame-#{product.id}") %>" class="mt-3">
   <div class="mx-3 inventory-items"> <!-- Adds horizontal margin -->
     <table class="table table-sm  table-hover align-middle">
       <thead class="table-light">
