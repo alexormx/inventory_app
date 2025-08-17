@@ -1,0 +1,16 @@
+wb = xlsx_package.workbook
+wb.add_worksheet(name: "Inventory") do |sheet|
+  sheet.add_row ["Product ID", "SKU", "Name", "Available", "Reserved", "In Transit", "Sold", "Total"]
+  @export_products.find_each do |p|
+    sheet.add_row [
+      p.id,
+      p.product_sku,
+      p.product_name,
+      p.attributes["available_count"].to_i,
+      p.attributes["reserved_count"].to_i,
+      p.attributes["in_transit_count"].to_i,
+      p.attributes["sold_count"].to_i,
+      p.attributes["total_count"].to_i
+    ]
+  end
+end

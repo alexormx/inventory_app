@@ -37,6 +37,8 @@ class Admin::PurchaseOrdersController < ApplicationController
       term = "%#{@q.downcase}%"
       scope = scope.where("CAST(purchase_orders.id AS TEXT) LIKE ? OR LOWER(users.name) LIKE ?", term, term)
     end
+  # Dataset para exportación (sin paginar)
+  @export_purchase_orders = scope
   @purchase_orders = scope.page(params[:page]).per(PER_PAGE)
 
   counts_scope = PurchaseOrder.joins(:user)
@@ -53,6 +55,11 @@ class Admin::PurchaseOrdersController < ApplicationController
       filtered = filtered.where(status: @status_filter)
     end
     @counts = statuses.each_with_object({}) { |s, h| h[s] = filtered.where(status: s).count }
+    respond_to do |format|
+      format.html
+      format.csv  { send_data csv_for_purchase_orders(@export_purchase_orders), filename: "purchase_orders-#{Time.current.strftime('%Y%m%d-%H%M')}.csv" }
+      format.xlsx { render xlsx: "index", filename: "purchase_orders-#{Time.current.strftime('%Y%m%d-%H%M')}.xlsx" }
+    end
   end
 
   def show
@@ -130,5 +137,30 @@ class Admin::PurchaseOrdersController < ApplicationController
 
   def load_counts
   @counts ||= PurchaseOrder.group(:status).count
+  end
+
+  def csv_for_purchase_orders(relation)
+    require 'csv'
+    CSV.generate(headers: true) do |csv|
+      csv << [
+        "ID", "Supplier", "Order Date", "Expected Delivery", "Status",
+        "Items", "Currency", "Total Cost", "Total Cost MXN", "Total Weight", "Total Volume"
+      ]
+      relation.each do |po|
+        csv << [
+          po.id,
+          po.user&.name,
+          po.order_date,
+          po.expected_delivery_date,
+          po.status,
+          po.attributes["items_count"].to_i,
+          po.currency,
+          po.total_order_cost,
+          po.total_cost_mxn,
+          po.total_weight,
+          po.total_volume
+        ]
+      end
+    end
   end
 end

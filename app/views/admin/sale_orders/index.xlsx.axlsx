@@ -1,0 +1,15 @@
+wb = xlsx_package.workbook
+wb.add_worksheet(name: "Sales Orders") do |sheet|
+  sheet.add_row ["ID", "Customer", "Order Date", "Status", "Items", "Total MXN", "Discount"]
+  @export_sale_orders.each do |so|
+    sheet.add_row [
+      so.id,
+      so.user&.name,
+      so.order_date,
+      so.status,
+      so.attributes["items_count"].to_i,
+      so.total_order_value,
+      so.discount
+    ]
+  end
+end

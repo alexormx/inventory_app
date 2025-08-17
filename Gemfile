@@ -64,6 +64,10 @@ gem "kaminari"
 # ✅ Additional Gems for geolocalization
 gem 'geocoder'
 
+# ✅ Exportación a XLSX
+gem "caxlsx", "~> 4.0"
+gem "caxlsx_rails", "~> 0.6.3"
+
 
 # 🔹 **Development & Testing Group**
 group :development, :test do

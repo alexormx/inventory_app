@@ -60,9 +60,16 @@ class Admin::InventoryController < ApplicationController
     end
 
     # Ordenar por prioridad: disponible desc, reservado desc, en tránsito desc, vendido desc, total desc
+    @export_products = products
     @products_with_inventory = products
       .order("available_count DESC, reserved_count DESC, in_transit_count DESC, sold_count DESC, total_count DESC")
       .page(params[:page]).per(10)
+
+    respond_to do |format|
+      format.html
+      format.csv  { send_data csv_for_inventory(@export_products), filename: "inventory-#{Time.current.strftime('%Y%m%d-%H%M')}.csv" }
+      format.xlsx { render xlsx: "index", filename: "inventory-#{Time.current.strftime('%Y%m%d-%H%M')}.xlsx" }
+    end
   end
 
   def items
@@ -120,5 +127,22 @@ class Admin::InventoryController < ApplicationController
   private
   def inventory_params
     params.require(:inventory).permit(:status, :status_changed_at)
+  end
+
+  def csv_for_inventory(relation)
+    require 'csv'
+    CSV.generate(headers: true) do |csv|
+      csv << ["Product ID", "SKU", "Name", "Available", "Reserved", "In Transit", "Sold", "Total"]
+      relation.find_each do |p|
+        csv << [
+          p.id, p.product_sku, p.product_name,
+          p.attributes["available_count"].to_i,
+          p.attributes["reserved_count"].to_i,
+          p.attributes["in_transit_count"].to_i,
+          p.attributes["sold_count"].to_i,
+          p.attributes["total_count"].to_i
+        ]
+      end
+    end
   end
 end

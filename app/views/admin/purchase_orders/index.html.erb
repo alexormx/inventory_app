@@ -1,4 +1,9 @@
-<h2 class="mb-3 d-flex align-items-center gap-2"><i class="fa fa-truck"></i> Purchase Orders</h2>
+<h2 class="mb-3 d-flex align-items-center gap-2"><i class="fa fa-truck"></i> Purchase Orders
+  <span class="ms-auto d-inline-flex gap-2">
+    <%= link_to "Export CSV", admin_purchase_orders_path(request.query_parameters.merge(format: :csv)), class: "btn btn-sm btn-outline-secondary" %>
+    <%= link_to "Export XLSX", admin_purchase_orders_path(request.query_parameters.merge(format: :xlsx)), class: "btn btn-sm btn-outline-success" %>
+  </span>
+</h2>
 
 <%= render partial: "admin/shared/status_counters", locals: {
   counts: @counts_global,
