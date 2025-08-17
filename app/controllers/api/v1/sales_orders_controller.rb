@@ -51,11 +51,16 @@ class Api::V1::SalesOrdersController < ApplicationController
 
     begin
       ActiveRecord::Base.transaction do
-        # Solo pasar atributos que pertenecen realmente al modelo SaleOrder
-        allowed = SaleOrder.attribute_names.map(&:to_sym)
-        sale_order_attrs = so_attrs.slice(*allowed)
+  # Solo pasar atributos que pertenecen realmente al modelo SaleOrder
+  allowed = SaleOrder.attribute_names.map(&:to_sym)
+  sale_order_attrs = so_attrs.slice(*allowed)
 
-        sales_order = SaleOrder.create!(sale_order_attrs)
+  # Crear inicialmente la orden en Pending para evitar validaciones que
+  # requieran payment/shipment antes de que existan. Luego actualizamos
+  # el estado final (see below).
+  sale_order_attrs[:status] = "Pending"
+
+  sales_order = SaleOrder.create!(sale_order_attrs)
 
         # Crear payment si el estado deseado es Confirmed o Delivered
         if %w[Confirmed Delivered].include?(desired_status)
