@@ -30,10 +30,14 @@ document.addEventListener("turbo:load", () => {
           }
         }
       } else {
-        // Dejar que Turbo cargue el contenido; luego cambiaremos el texto
+        // Mostrar loader y dejar que Turbo cargue el contenido; luego cambiaremos el texto
+        const loader = frame.querySelector('.inventory-loader')
+        if (loader) loader.classList.remove('d-none')
+
         const observer = new MutationObserver(() => {
           const items = frame.querySelector(".inventory-items")
           if (items) {
+            if (loader) loader.classList.add('d-none')
             toggle.textContent = toggle.textContent.replace("Ver", "Ocultar")
             observer.disconnect()
           }
