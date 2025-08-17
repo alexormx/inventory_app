@@ -83,9 +83,14 @@ class Admin::InventoryController < ApplicationController
       @inventory_items = @inventory_items.where(status: Inventory.statuses[status_filter])
     end
 
+  # Debug: log sizes to catch truncation on production
+  total_all = @product.inventories.count
+  total_filtered = @inventory_items.except(:includes, :order).count
+  Rails.logger.info("[InventoryItems] product=#{@product.id} total_all=#{total_all} total_filtered=#{total_filtered} status=#{status_filter.presence || 'all'}")
+
   # Turbo Frames: usar el id de frame esperado (enviado por Turbo en el header)
     expected_frame_id = request.headers["Turbo-Frame"]
-    respond_to do |format|
+  respond_to do |format|
       format.turbo_stream do
         # Responder con el frame correcto si Turbo lo espera
   render partial: "admin/inventory/items", locals: { product: @product, items: @inventory_items, frame_id: expected_frame_id }

@@ -108,7 +108,8 @@
         </div>
         <div>
           <% if total_items > 0 %>
-              <%= link_to "👁 Ver piezas (#{total_items})", items_admin_inventory_path(product, status: filtered_status),
+              <% cache_buster = product.updated_at&.to_i || Time.now.to_i %>
+              <%= link_to "👁 Ver piezas (#{total_items})", items_admin_inventory_path(product, status: filtered_status, _ts: cache_buster),
                         data: { turbo_frame: "inventory-items-frame-#{product.id}" },
                         class: "btn btn-sm btn-outline-primary inventory-toggle",
                         id: "inventory-toggle-#{product.id}",
