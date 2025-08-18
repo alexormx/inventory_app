@@ -1,10 +1,10 @@
 class InventoryStatusSyncRun < ApplicationRecord
-  enum status: {
-    queued: "queued",
-    running: "running",
-    completed: "completed",
-    failed: "failed"
-  }, _default: :queued
+  enum status: [
+    queued:,
+    running:,
+    completed:,
+    failed:
+  ], default: :queued
 
   # Guardar estadísticas del servicio como JSON serializado en texto
   serialize :stats, JSON
