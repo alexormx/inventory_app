@@ -35,7 +35,8 @@ class Products::UpdateStatsService
     @product.average_purchase_cost = total_qty.to_i.zero? ? 0 : (total_value_mxn / total_qty)
 
     # Last purchase info based on composed MXN unit cost when available
-    last_item = items.order(Arel.sql("purchase_order_items.updated_at NULLS LAST, purchase_order_items.id"))&.last
+  # Safe cross-DB ordering (SQLite/Postgres): prefer updated_at then id; take the last one
+  last_item = items.order(:updated_at, :id)&.last
     @product.last_purchase_cost = (last_item&.unit_compose_cost_in_mxn || last_item&.unit_cost || 0)
     @product.last_purchase_date = last_item&.purchase_order&.order_date
 
