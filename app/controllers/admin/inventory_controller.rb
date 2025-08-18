@@ -144,15 +144,30 @@ class Admin::InventoryController < ApplicationController
   def csv_for_inventory(relation)
     require 'csv'
     CSV.generate(headers: true) do |csv|
-      csv << ["Product ID", "SKU", "Name", "Available", "Reserved", "In Transit", "Sold", "Total"]
+      csv << [
+        "Product ID",
+        "SKU",
+        "Name",
+        "Available",
+        "Reserved",
+        "In Transit",
+        "Sold",
+        "Total",
+        "Average Purchase Cost",
+        "Inventory Value (MXN)"
+      ]
       relation.find_each do |p|
         csv << [
-          p.id, p.product_sku, p.product_name,
+          p.id,
+          p.product_sku,
+          p.product_name,
           p.attributes["available_count"].to_i,
           p.attributes["reserved_count"].to_i,
           p.attributes["in_transit_count"].to_i,
           p.attributes["sold_count"].to_i,
-          p.attributes["total_count"].to_i
+          p.attributes["total_count"].to_i,
+          (p.average_purchase_cost || 0),
+          (p.current_inventory_value || 0)
         ]
       end
     end
