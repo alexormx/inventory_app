@@ -35,7 +35,7 @@
         </div>
       </div>
     <div class="col-12 col-md-8 col-lg-9 text-md-end">
-  <div class="inventory-status-filters d-flex flex-wrap gap-1 justify-content-md-end me-2" aria-label="Filtro de status">
+  <div class="btn-group btn-group-sm me-2" role="group" aria-label="Filtro de status">
           <% current_status = @status_filter.presence || "all" %>
       <% status_btn_classes = ->(value, current) do
                outline = case value
@@ -51,7 +51,7 @@
                          when "scrap" then "danger"
                          else "secondary"
                          end
-         ["btn", "btn-sm", "btn-outline-#{outline}", "inventory-status-btn", (current == value ? "active" : nil)].compact.join(" ")
+         ["btn", "btn-outline-#{outline}", (current == value ? "active" : nil)].compact.join(" ")
              end %>
 
           <%= button_tag "Todos", name: :status, value: "all", class: status_btn_classes.call("all", current_status) %>
@@ -67,8 +67,8 @@
           <%= button_tag "Devuelto", name: :status, value: "returned", class: status_btn_classes.call("returned", current_status) %>
           <%= button_tag "Scrap", name: :status, value: "scrap", class: status_btn_classes.call("scrap", current_status) %>
   </div>
-  <%= hidden_field_tag :current_status, current_status %>
-  <%= link_to "Limpiar filtros", admin_inventory_path, class: "btn btn-sm btn-outline-secondary ms-2", title: "Quitar búsqueda y status" %>
+          <%= hidden_field_tag :current_status, current_status %>
+          <%= link_to "Limpiar filtros", admin_inventory_path, class: "btn btn-sm btn-outline-secondary ms-2", title: "Quitar búsqueda y status" %>
       </div>
     <% end %>
   </div>
