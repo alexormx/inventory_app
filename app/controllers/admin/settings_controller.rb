@@ -9,7 +9,7 @@ class Admin::SettingsController < ApplicationController
 
   # Temporal: sincronización de estados de inventario (stub)
   def sync_inventory_statuses
-  run = InventoryStatusSyncRun.create!(status: :queued)
+  run = InventoryStatusSyncRun.create!(status: "queued")
   Inventories::ReevaluateStatusesJob.perform_later(run.id)
   flash[:notice] = "Reevaluación de estatus encolada (##{run.id}). Revisa abajo el progreso."
   redirect_to admin_settings_path
