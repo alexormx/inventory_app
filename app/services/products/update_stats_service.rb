@@ -21,23 +21,17 @@ class Products::UpdateStatsService
     @product.total_purchase_quantity = total_qty
 
     # Value in MXN using composed unit cost (includes shipping/tax/other prorated)
-    # Prefer exact MXN fields if present; fall back defensively to computed expressions.
+    # Strictly use MXN-based fields; do NOT fall back to origin-currency unit_cost.
     total_value_mxn =
-      items.sum("COALESCE(total_line_cost_in_mxn, quantity * unit_compose_cost_in_mxn)")
-
-    # If both fields are null for legacy rows, fall back to original unit_cost (may be non-MXN)
-    if total_value_mxn.to_d.zero? && items.where.not(unit_cost: nil).exists?
-      # Note: this fallback ignores FX; it's only a safety net for legacy data without composed MXN.
-      total_value_mxn = items.sum("quantity * unit_cost")
-    end
+      items.sum("COALESCE(total_line_cost_in_mxn, quantity * unit_compose_cost_in_mxn, 0)")
 
     @product.total_purchase_value = total_value_mxn
     @product.average_purchase_cost = total_qty.to_i.zero? ? 0 : (total_value_mxn / total_qty)
 
-    # Last purchase info based on composed MXN unit cost when available
+  # Last purchase info based on composed MXN unit cost when available
   # Safe cross-DB ordering (SQLite/Postgres): prefer updated_at then id; take the last one
   last_item = items.order(:updated_at, :id)&.last
-    @product.last_purchase_cost = (last_item&.unit_compose_cost_in_mxn || last_item&.unit_cost || 0)
+  @product.last_purchase_cost = (last_item&.unit_compose_cost_in_mxn || 0)
     @product.last_purchase_date = last_item&.purchase_order&.order_date
 
     @product.total_purchase_order = items.distinct.count(:purchase_order_id)
