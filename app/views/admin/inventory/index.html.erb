@@ -12,6 +12,9 @@
     [:reserved,  "Apartado",   "bg-info"],
     [:in_transit,"En tránsito","bg-primary"],
     [:sold,      "Vendido",    "bg-secondary"],
+  [:pre_reserved, "Pre apartado", "bg-info"],
+  [:pre_sold,     "Pre vendido",  "bg-secondary"],
+  [:marketing,    "Marketing",     "bg-secondary"],
     [:returned,  "Devuelto",   "bg-light text-dark border"],
     [:damaged,   "Dañado",     "bg-warning text-dark"],
     [:lost,      "Perdido",    "bg-dark"],
@@ -40,6 +43,9 @@
                          when "reserved" then "info"
                          when "in_transit" then "primary"
                          when "sold" then "secondary"
+                         when "pre_reserved" then "info"
+                         when "pre_sold" then "secondary"
+                         when "marketing" then "secondary"
                          when "damaged" then "warning"
                          when "lost" then "dark"
                          when "scrap" then "danger"
@@ -53,6 +59,9 @@
           <%= button_tag "Apartado", name: :status, value: "reserved", class: status_btn_classes.call("reserved", current_status) %>
           <%= button_tag "En tránsito", name: :status, value: "in_transit", class: status_btn_classes.call("in_transit", current_status) %>
           <%= button_tag "Vendido", name: :status, value: "sold", class: status_btn_classes.call("sold", current_status) %>
+          <%= button_tag "Pre apartado", name: :status, value: "pre_reserved", class: status_btn_classes.call("pre_reserved", current_status) %>
+          <%= button_tag "Pre vendido", name: :status, value: "pre_sold", class: status_btn_classes.call("pre_sold", current_status) %>
+          <%= button_tag "Marketing", name: :status, value: "marketing", class: status_btn_classes.call("marketing", current_status) %>
           <%= button_tag "Dañado", name: :status, value: "damaged", class: status_btn_classes.call("damaged", current_status) %>
           <%= button_tag "Perdido", name: :status, value: "lost", class: status_btn_classes.call("lost", current_status) %>
           <%= button_tag "Devuelto", name: :status, value: "returned", class: status_btn_classes.call("returned", current_status) %>
@@ -74,6 +83,9 @@
     [:reserved,  "Apartado",   "bg-info"],
     [:in_transit,"En tránsito","bg-primary"],
     [:sold,      "Vendido",    "bg-secondary"],
+  [:pre_reserved, "Pre apartado", "bg-info"],
+  [:pre_sold,     "Pre vendido",  "bg-secondary"],
+  [:marketing,    "Marketing",     "bg-secondary"],
     [:returned,  "Devuelto",   "bg-light text-dark border"],
     [:damaged,   "Dañado",     "bg-warning text-dark"],
     [:lost,      "Perdido",    "bg-dark"],

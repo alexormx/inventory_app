@@ -47,7 +47,7 @@ class Admin::InventoryController < ApplicationController
       inventories_scope = inventories_scope.where(status: status_ids[@status_filter])
     end
 
-    status_keys = %w[available reserved in_transit sold returned damaged lost scrap]
+  status_keys = %w[available reserved in_transit sold returned damaged lost scrap pre_reserved pre_sold marketing]
     # Superiores (globales, no cambian con filtros): conteo global por status
     @inventory_counts_global = {}
     status_keys.each do |key|

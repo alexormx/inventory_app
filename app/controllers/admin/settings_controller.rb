@@ -8,8 +8,9 @@ class Admin::SettingsController < ApplicationController
 
   # Temporal: sincronización de estados de inventario (stub)
   def sync_inventory_statuses
-    # Por ahora solo stub: no hace cambios hasta recibir detalles
-    flash[:notice] = "Sincronización de inventario encolada (temporal). Detalla los criterios para continuar."
-    redirect_to admin_settings_path
+  # Encolar una reevaluación de estatus en background
+  Inventories::ReevaluateStatusesJob.perform_later
+  flash[:notice] = "Reevaluación de estatus de inventario encolada. Puedes continuar usando el sistema."
+  redirect_to admin_settings_path
   end
 end

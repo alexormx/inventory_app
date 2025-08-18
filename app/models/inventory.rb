@@ -3,6 +3,7 @@ class Inventory < ApplicationRecord
   belongs_to :sale_order, optional: true
   belongs_to :product
 
+  # Nota: agregar nuevos estatus siempre al final para no cambiar los IDs existentes
   enum :status, [
     :available,
     :reserved,
@@ -11,7 +12,11 @@ class Inventory < ApplicationRecord
     :damaged,
     :lost,
     :returned,
-    :scrap],
+    :scrap,
+    :pre_reserved, # inventario en tránsito asignado a SO no pagada
+    :pre_sold,     # inventario en tránsito asignado a SO pagada/confirmada
+    :marketing     # piezas apartadas para marketing (manual)
+  ],
     default: :available
 
 
