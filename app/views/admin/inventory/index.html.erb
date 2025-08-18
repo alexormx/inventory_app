@@ -27,17 +27,17 @@
 <div class="card mb-4">
   <div class="card-body py-2">
     <%= form_with url: admin_inventory_path, method: :get, local: true, class: "row g-2 align-items-center" do %>
-      <div class="col-12 col-md-6">
+    <div class="col-12 col-md-4 col-lg-3">
         <div class="input-group input-group-sm">
-          <%= text_field_tag :q, @q, class: "form-control", placeholder: "Buscar por nombre o SKU…", aria: { label: "Buscar en inventario" } %>
+      <%= text_field_tag :q, @q, class: "form-control inventory-search-input", placeholder: "Buscar por nombre o SKU…", aria: { label: "Buscar en inventario" } %>
           <button class="btn btn-outline-secondary btn-clear-search" type="button" title="Limpiar búsqueda">Limpiar</button>
           <button class="btn btn-primary" type="submit" name="commit" value="search" title="Buscar">Buscar</button>
         </div>
       </div>
-      <div class="col-12 col-md-6 text-md-end">
-  <div class="btn-group btn-group-sm me-2" role="group" aria-label="Filtro de status">
+    <div class="col-12 col-md-8 col-lg-9 text-md-end">
+  <div class="inventory-status-filters d-flex flex-wrap gap-1 justify-content-md-end me-2" aria-label="Filtro de status">
           <% current_status = @status_filter.presence || "all" %>
-          <% status_btn_classes = ->(value, current) do
+      <% status_btn_classes = ->(value, current) do
                outline = case value
                          when "available" then "success"
                          when "reserved" then "info"
@@ -51,7 +51,7 @@
                          when "scrap" then "danger"
                          else "secondary"
                          end
-               ["btn", "btn-outline-#{outline}", (current == value ? "active" : nil)].compact.join(" ")
+         ["btn", "btn-sm", "btn-outline-#{outline}", "inventory-status-btn", (current == value ? "active" : nil)].compact.join(" ")
              end %>
 
           <%= button_tag "Todos", name: :status, value: "all", class: status_btn_classes.call("all", current_status) %>

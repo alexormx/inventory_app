@@ -16,8 +16,7 @@ class Inventory < ApplicationRecord
     :pre_reserved, # inventario en tránsito asignado a SO no pagada
     :pre_sold,     # inventario en tránsito asignado a SO pagada/confirmada
     :marketing     # piezas apartadas para marketing (manual)
-  ],
-    default: :available
+    ], default: :available
 
 
   validates :purchase_cost, presence: true, numericality: { greater_than_or_equal_to: 0 }

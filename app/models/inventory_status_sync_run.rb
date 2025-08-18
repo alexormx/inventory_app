@@ -1,5 +1,5 @@
 class InventoryStatusSyncRun < ApplicationRecord
-  enum status: [
+  enum status:, [
     queued:,
     running:,
     completed:,
