@@ -72,14 +72,14 @@ class SaleOrder < ApplicationRecord
 
     # Bloquea si hay vendidos; si todo está reservado, libera y permite borrar.
   def ensure_inventories_safe_or_release
-    sold = inventories.where(status: %w[sold])
+  sold = inventories.where(status: %w[sold])
     if sold.exists?
       errors.add(:base, "No se puede eliminar: hay #{sold.count} artículo(s) vendidos en esta orden.")
       throw :abort
     end
 
     # Libera las reservadas
-    inventories.where(status: %w[reserved]).update_all(
+  inventories.where(status: %w[reserved pre_reserved pre_sold]).update_all(
       status: Inventory.statuses[:available],
       sale_order_id: nil,
       status_changed_at: Time.current,
@@ -90,7 +90,7 @@ class SaleOrder < ApplicationRecord
   def release_reserved_if_canceled
     return unless status == "Canceled"
 
-    inventories.where(status: %w[reserved]).update_all(
+  inventories.where(status: %w[reserved pre_reserved pre_sold]).update_all(
       status: Inventory.statuses[:available],
       sale_order_id: nil,
       status_changed_at: Time.current,

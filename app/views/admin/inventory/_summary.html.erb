@@ -3,7 +3,19 @@
     <%# Calcula los conteos por status usando los registros ya cargados para evitar consultas extra %>
     <% counts = product.inventories.group_by(&:status).transform_values(&:size) %>
 
-  <% statuses = ["available", "reserved", "in_transit", "sold", "damaged", "lost", "returned", "scrap"] %>
+  <% statuses = [
+    "available",
+    "reserved",
+    "in_transit",
+    "sold",
+    "damaged",
+    "lost",
+    "returned",
+    "scrap",
+    "pre_reserved",
+    "pre_sold",
+    "marketing"
+  ] %>
 
     <div class="d-flex flex-wrap gap-2 small">
       <% statuses.each do |key| %>

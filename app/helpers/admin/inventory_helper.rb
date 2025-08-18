@@ -9,6 +9,9 @@ module Admin::InventoryHelper
     when "lost"       then "dark"
     when "scrap"      then "danger"
     when "returned"   then "light"
+  when "pre_reserved" then "info"
+  when "pre_sold"     then "secondary"
+  when "marketing"    then "secondary"
     else "secondary"
     end
   end
@@ -23,6 +26,9 @@ module Admin::InventoryHelper
     when "lost"       then "Perdido"
     when "scrap"      then "Scrap"
     when "returned"   then "Devuelto"
+  when "pre_reserved" then "Pre apartado"
+  when "pre_sold"     then "Pre vendido"
+  when "marketing"    then "Marketing"
     else status.to_s.humanize
     end
   end

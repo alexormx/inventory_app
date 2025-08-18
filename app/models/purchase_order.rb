@@ -57,21 +57,31 @@ class PurchaseOrder < ApplicationRecord
   def update_inventory_status_based_on_order_status
     return unless saved_change_to_status?
 
-    new_status = case status
-                 when "Delivered" then :available
-                 when "Canceled" then :scrap
-                 when "Pending", "In Transit" then :in_transit
-                 end
-    return unless new_status
+    # No sobreescribir estados terminales ni manuales
+    terminal = %i[sold reserved damaged lost returned scrap marketing pre_reserved pre_sold]
 
-    # Use a plain query to avoid association cache
-    Inventory.where(purchase_order_id: self.id)
-             .where.not(status: [:sold, :reserved])
-             .update_all(
-               status: Inventory.statuses[new_status],
-               status_changed_at: Time.current,
-               updated_at: Time.current
-             )
+    scope = Inventory.where(purchase_order_id: self.id)
+    case status
+    when "Delivered"
+      # Solo mover a available aquellos que están en tránsito o available
+      scope.where(status: [:in_transit, :available]).update_all(
+        status: Inventory.statuses[:available],
+        status_changed_at: Time.current,
+        updated_at: Time.current
+      )
+    when "Pending", "In Transit"
+      scope.where(status: [:available, :in_transit]).update_all(
+        status: Inventory.statuses[:in_transit],
+        status_changed_at: Time.current,
+        updated_at: Time.current
+      )
+    when "Canceled"
+      scope.where.not(status: terminal).update_all(
+        status: Inventory.statuses[:scrap],
+        status_changed_at: Time.current,
+        updated_at: Time.current
+      )
+    end
   end
 
   # Block if any locked; otherwise delete only free and allow destroy
