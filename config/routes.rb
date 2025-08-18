@@ -63,7 +63,11 @@ Rails.application.routes.draw do
         get :inventory_items
       end
     end
-    resources :settings, only: [:index]
+    resources :settings, only: [:index] do
+      collection do
+        post :sync_inventory_statuses
+      end
+    end
 
     # General user management (admin-facing) con tabs
   resources :users, only: [:index, :new, :create, :edit, :update] do

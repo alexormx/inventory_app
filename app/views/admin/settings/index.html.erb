@@ -1,2 +1,19 @@
-<h2>Admin - Settings</h2>
-<p>Modify application settings.</p>
+<h2 class="mb-3 d-flex align-items-center gap-2"><i class="fa fa-cog"></i> Admin - Settings</h2>
+<p class="text-muted">Modify application settings.</p>
+
+<div class="card mb-4">
+	<div class="card-header d-flex align-items-center gap-2">
+		<i class="fa fa-sync"></i>
+		<span>Sincronización temporal de estados de inventario</span>
+	</div>
+	<div class="card-body">
+		<p class="mb-3">
+			Usa esta herramienta temporal para ajustar los estados de inventario por producto.
+			Aún no ejecuta cambios: quedará lista para los criterios específicos que nos compartas.
+		</p>
+		<%= button_to "Iniciar sincronización (temporal)", sync_inventory_statuses_admin_settings_path,
+									method: :post,
+									class: "btn btn-primary",
+									data: { turbo_confirm: "¿Confirmas iniciar la sincronización temporal?" } %>
+	</div>
+</div>
