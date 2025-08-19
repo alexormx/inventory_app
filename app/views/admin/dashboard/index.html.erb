@@ -350,9 +350,9 @@
           </div>
         </div>
         <div class="card-body p-0">
-          <div class="tab-content" data-controller="subtabs">
+          <div class="tab-content">
             <!-- Inventario (available + in_transit) -->
-            <div class="tab-pane fade show active" id="ti-inv" role="tabpanel" data-tabs-target="panel">
+            <div class="tab-pane fade show active" id="ti-inv" role="tabpanel" data-tabs-target="panel" data-controller="subtabs">
               <div class="px-3 pt-3">
                 <ul class="nav nav-tabs nav-tabs-sm" role="tablist">
                   <li class="nav-item"><button class="nav-link active" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#ti-inv-val" type="button" role="tab" aria-controls="ti-inv-val" aria-selected="true">Por valor</button></li>
@@ -369,9 +369,9 @@
                           <tr>
                             <td class="text-muted">#<%= idx + 1 %></td>
                             <td>
-                              <%= link_to r[:name], edit_admin_product_path(r[:product_id]) %>
+                              <div class="small fw-semibold"><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></div>
                               <% if r[:brand].present? || r[:category].present? %>
-                                <div class="small text-muted">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
+                                <div class="text-muted" style="font-size: .75rem;">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
                               <% end %>
                             </td>
                             <td class="text-end">$ <%= number_with_precision(r[:inventory_value], precision: 2, delimiter: ',') %></td>
@@ -393,9 +393,9 @@
                           <tr>
                             <td class="text-muted">#<%= idx + 1 %></td>
                             <td>
-                              <%= link_to r[:name], edit_admin_product_path(r[:product_id]) %>
+                              <div class="small fw-semibold"><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></div>
                               <% if r[:brand].present? || r[:category].present? %>
-                                <div class="small text-muted">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
+                                <div class="text-muted" style="font-size: .75rem;">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
                               <% end %>
                             </td>
                             <td class="text-end"><%= number_with_delimiter(r[:units_count]) %></td>
@@ -413,7 +413,7 @@
             </div>
 
             <!-- Apartados (reserved + pre_reserved + pre_sold) -->
-            <div class="tab-pane fade" id="ti-res" role="tabpanel" data-tabs-target="panel">
+            <div class="tab-pane fade" id="ti-res" role="tabpanel" data-tabs-target="panel" data-controller="subtabs">
               <div class="px-3 pt-3">
                 <ul class="nav nav-tabs nav-tabs-sm" role="tablist">
                   <li class="nav-item"><button class="nav-link active" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#ti-res-val" type="button" role="tab" aria-controls="ti-res-val" aria-selected="true">Por valor</button></li>
@@ -430,9 +430,9 @@
                           <tr>
                             <td class="text-muted">#<%= idx + 1 %></td>
                             <td>
-                              <%= link_to r[:name], edit_admin_product_path(r[:product_id]) %>
+                              <div class="small fw-semibold"><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></div>
                               <% if r[:brand].present? || r[:category].present? %>
-                                <div class="small text-muted">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
+                                <div class="text-muted" style="font-size: .75rem;">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
                               <% end %>
                             </td>
                             <td class="text-end">$ <%= number_with_precision(r[:inventory_value], precision: 2, delimiter: ',') %></td>
@@ -454,9 +454,9 @@
                           <tr>
                             <td class="text-muted">#<%= idx + 1 %></td>
                             <td>
-                              <%= link_to r[:name], edit_admin_product_path(r[:product_id]) %>
+                              <div class="small fw-semibold"><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></div>
                               <% if r[:brand].present? || r[:category].present? %>
-                                <div class="small text-muted">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
+                                <div class="text-muted" style="font-size: .75rem;">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
                               <% end %>
                             </td>
                             <td class="text-end"><%= number_with_delimiter(r[:units_count]) %></td>
@@ -474,7 +474,7 @@
             </div>
 
             <!-- Inv + Apartados (todos) -->
-            <div class="tab-pane fade" id="ti-all" role="tabpanel" data-tabs-target="panel">
+            <div class="tab-pane fade" id="ti-all" role="tabpanel" data-tabs-target="panel" data-controller="subtabs">
               <div class="px-3 pt-3">
                 <ul class="nav nav-tabs nav-tabs-sm" role="tablist">
                   <li class="nav-item"><button class="nav-link active" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#ti-all-val" type="button" role="tab" aria-controls="ti-all-val" aria-selected="true">Por valor</button></li>
@@ -491,9 +491,9 @@
                           <tr>
                             <td class="text-muted">#<%= idx + 1 %></td>
                             <td>
-                              <%= link_to r[:name], edit_admin_product_path(r[:product_id]) %>
+                              <div class="small fw-semibold"><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></div>
                               <% if r[:brand].present? || r[:category].present? %>
-                                <div class="small text-muted">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
+                                <div class="text-muted" style="font-size: .75rem;">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
                               <% end %>
                             </td>
                             <td class="text-end">$ <%= number_with_precision(r[:inventory_value], precision: 2, delimiter: ',') %></td>
@@ -515,9 +515,9 @@
                           <tr>
                             <td class="text-muted">#<%= idx + 1 %></td>
                             <td>
-                              <%= link_to r[:name], edit_admin_product_path(r[:product_id]) %>
+                              <div class="small fw-semibold"><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></div>
                               <% if r[:brand].present? || r[:category].present? %>
-                                <div class="small text-muted">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
+                                <div class="text-muted" style="font-size: .75rem;">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
                               <% end %>
                             </td>
                             <td class="text-end"><%= number_with_delimiter(r[:units_count]) %></td>
