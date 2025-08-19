@@ -8,15 +8,15 @@
 			Best Sellers (YTD/LY/All Time) cuentan solo órdenes <em>pagadas/confirmadas</em>:
 			<code>Confirmed</code>, <code>Shipped</code>, <code>Delivered</code>. Se excluyen pendientes/canceladas.
 		</li>
-		<li>
-			Rentables (profit por producto) usa:
-			<ul>
-				<li>Ingresos: suma de <code>unit_final_price * quantity</code> de órdenes pagadas.</li>
-				<li>COGS (compras): suma de costos compuestos MXN de POs en el rango.</li>
-				<li>Mermas: resta costo de inventario con estatus <code>marketing, damaged, lost, scrap</code> según <code>status_changed_at</code>.</li>
-			</ul>
-			Utilidad = Ingresos - COGS - Mermas.
-		</li>
+			<li>
+				Rentables (profit por producto) usa:
+				<ul>
+					<li>Ingresos: suma de <code>unit_final_price * quantity</code> de órdenes pagadas.</li>
+					<li>COGS: costo de las unidades vendidas en el periodo (<code>unit_cost * quantity</code> de los SaleOrderItems), independiente de cuándo se compraron.</li>
+					<li>Mermas: resta costo de inventario con estatus <code>marketing, damaged, lost, scrap</code> según <code>status_changed_at</code>.</li>
+				</ul>
+				Utilidad = Ingresos - COGS - Mermas.
+			</li>
 		<li>
 			Inventario: el <em>Average Purchase Cost</em> y <em>Inventory Value (MXN)</em> se calculan con costos compuestos en MXN
 			(<code>total_line_cost_in_mxn</code> o <code>unit_compose_cost_in_mxn</code>), sin usar moneda origen.
