@@ -437,6 +437,27 @@ class Admin::DashboardController < ApplicationController
   @top_users_reserved_last_year = build_top_reserved.call(so_last_year_users)
   @top_users_reserved_all = build_top_reserved.call(so_scope)
 
+  # Combine Sales + Reserved per user and rank by (revenue + reserved_value)
+  combine_sales_reserved = lambda do |sales_rows, reserved_rows|
+    s_map = (sales_rows || []).index_by { |r| r[:user_id] }
+    r_map = (reserved_rows || []).index_by { |r| r[:user_id] }
+    (s_map.keys + r_map.keys).uniq.map do |uid|
+      s = s_map[uid]
+      r = r_map[uid]
+      name = (s && s[:name]).presence || (r && r[:name]).presence || uid
+      orders = s ? s[:orders_count].to_i : 0
+      revenue = s ? s[:revenue].to_d : 0.to_d
+      units_reserved = r ? r[:units_reserved].to_i : 0
+      reserved_value = r ? r[:reserved_value].to_d : 0.to_d
+      total = revenue + reserved_value
+      { user_id: uid, name: name, orders_count: orders, revenue: revenue, units_reserved: units_reserved, reserved_value: reserved_value, total: total }
+    end.sort_by { |h| -h[:total] }.first(10)
+  end
+
+  @top_users_sales_reserved_ytd = combine_sales_reserved.call(@top_users_range, @top_users_reserved_ytd)
+  @top_users_sales_reserved_last_year = combine_sales_reserved.call(@top_users_last_year, @top_users_reserved_last_year)
+  @top_users_sales_reserved_all = combine_sales_reserved.call(@top_users_all, @top_users_reserved_all)
+
     # Productos más rentables (YTD): Ventas (ingresos), COGS (costo de unidades vendidas en el periodo), Utilidad = Ventas - COGS - Mermas
   sales_rows_ytd = SaleOrderItem.joins(:sale_order, :product)
       .merge(so_ytd_paid)
