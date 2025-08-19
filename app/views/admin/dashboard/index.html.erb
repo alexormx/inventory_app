@@ -245,84 +245,54 @@
 
             <!-- Rentables YTD -->
             <div class="tab-pane fade" id="tp-profit-ytd" role="tabpanel" data-tabs-target="panel">
-                  <div class="table-responsive">
-                    <table class="table table-sm mb-0">
-                      <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Compra</th><th class="text-end">Ventas</th><th class="text-end">Utilidad</th></tr></thead>
-                      <tbody>
-                        <% @top_products_profit_ytd&.each_with_index do |r, idx| %>
-                          <tr>
-                            <td class="text-muted">#<%= idx + 1 %></td>
-                            <td>
-                              <div class="small fw-semibold"><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></div>
-                              <% if r[:brand].present? || r[:category].present? %>
-                                <div class="text-muted" style="font-size: .75rem;">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
-                              <% end %>
-                            </td>
-                            <td class="text-end">$ <%= number_with_precision(r[:cogs], precision: 2, delimiter: ',') %></td>
-                            <td class="text-end">$ <%= number_with_precision(r[:revenue], precision: 2, delimiter: ',') %></td>
-                            <td class="text-end">$ <%= number_with_precision(r[:profit], precision: 2, delimiter: ',') %></td>
-                          </tr>
-                        <% end %>
-                        <% if @top_products_profit_ytd.blank? %>
-                          <tr><td colspan="5" class="text-center text-muted py-3">Sin datos</td></tr>
-                        <% end %>
-                      </tbody>
-                    </table>
-                  </div>
+              <turbo-frame id="frame-profit-ytd" src="<%= admin_dashboard_profitable_path(period: 'ytd') %>">
+                <div class="table-responsive">
+                  <table class="table table-sm mb-0">
+                    <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Ingresos</th><th class="text-end">COGS</th><th class="text-end">Utilidad</th></tr></thead>
+                    <tbody>
+                      <% 3.times do %>
+                        <tr class="placeholder-row">
+                          <td colspan="5" class="placeholder-glow"><span class="placeholder col-12"></span></td>
+                        </tr>
+                      <% end %>
+                    </tbody>
+                  </table>
+                </div>
+              </turbo-frame>
             </div>
             <!-- Rentables LY -->
             <div class="tab-pane fade" id="tp-profit-ly" role="tabpanel" data-tabs-target="panel">
-                  <div class="table-responsive">
-                    <table class="table table-sm mb-0">
-                      <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Compra</th><th class="text-end">Ventas</th><th class="text-end">Utilidad</th></tr></thead>
-                      <tbody>
-                        <% @top_products_profit_last_year&.each_with_index do |r, idx| %>
-                          <tr>
-                            <td class="text-muted">#<%= idx + 1 %></td>
-                            <td>
-                              <div class="small fw-semibold"><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></div>
-                              <% if r[:brand].present? || r[:category].present? %>
-                                <div class="text-muted" style="font-size: .75rem;">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
-                              <% end %>
-                            </td>
-                            <td class="text-end">$ <%= number_with_precision(r[:cogs], precision: 2, delimiter: ',') %></td>
-                            <td class="text-end">$ <%= number_with_precision(r[:revenue], precision: 2, delimiter: ',') %></td>
-                            <td class="text-end">$ <%= number_with_precision(r[:profit], precision: 2, delimiter: ',') %></td>
-                          </tr>
-                        <% end %>
-                        <% if @top_products_profit_last_year.blank? %>
-                          <tr><td colspan="5" class="text-center text-muted py-3">Sin datos</td></tr>
-                        <% end %>
-                      </tbody>
-                    </table>
-                  </div>
+              <turbo-frame id="frame-profit-ly" src="<%= admin_dashboard_profitable_path(period: 'ly') %>">
+                <div class="table-responsive">
+                  <table class="table table-sm mb-0">
+                    <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Ingresos</th><th class="text-end">COGS</th><th class="text-end">Utilidad</th></tr></thead>
+                    <tbody>
+                      <% 3.times do %>
+                        <tr class="placeholder-row">
+                          <td colspan="5" class="placeholder-glow"><span class="placeholder col-12"></span></td>
+                        </tr>
+                      <% end %>
+                    </tbody>
+                  </table>
+                </div>
+              </turbo-frame>
             </div>
             <!-- Rentables All -->
             <div class="tab-pane fade" id="tp-profit-all" role="tabpanel" data-tabs-target="panel">
-                  <div class="table-responsive">
-                    <table class="table table-sm mb-0">
-                      <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Compra</th><th class="text-end">Ventas</th><th class="text-end">Utilidad</th></tr></thead>
-                      <tbody>
-                        <% @top_products_profit_all_time&.each_with_index do |r, idx| %>
-                          <tr>
-                            <td class="text-muted">#<%= idx + 1 %></td>
-                            <td>
-                              <div class="small fw-semibold"><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></div>
-                              <% if r[:brand].present? || r[:category].present? %>
-                                <div class="text-muted" style="font-size: .75rem;">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
-                              <% end %>
-                            </td>
-                            <td class="text-end">$ <%= number_with_precision(r[:cogs], precision: 2, delimiter: ',') %></td>
-                            <td class="text-end">$ <%= number_with_precision(r[:revenue], precision: 2, delimiter: ',') %></td>
-                            <td class="text-end">$ <%= number_with_precision(r[:profit], precision: 2, delimiter: ',') %></td>
-                          </tr>
-                        <% end %>
-                        <% if @top_products_profit_all_time.blank? %>
-                          <tr><td colspan="5" class="text-center text-muted py-3">Sin datos</td></tr>
-                        <% end %>
-                      </tbody>
-                    </table>
-                  </div>
+              <turbo-frame id="frame-profit-all" src="<%= admin_dashboard_profitable_path(period: 'all') %>">
+                <div class="table-responsive">
+                  <table class="table table-sm mb-0">
+                    <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Ingresos</th><th class="text-end">COGS</th><th class="text-end">Utilidad</th></tr></thead>
+                    <tbody>
+                      <% 3.times do %>
+                        <tr class="placeholder-row">
+                          <td colspan="5" class="placeholder-glow"><span class="placeholder col-12"></span></td>
+                        </tr>
+                      <% end %>
+                    </tbody>
+                  </table>
+                </div>
+              </turbo-frame>
             </div>
           </div>
         </div>
@@ -355,156 +325,105 @@
           <div class="tab-content">
             <!-- Inv · Valor -->
             <div class="tab-pane fade show active" id="ti-inv-val" role="tabpanel" data-tabs-target="panel">
-                  <div class="table-responsive">
-                    <table class="table table-sm mb-0">
-                      <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Valor de Inventario</th></tr></thead>
-                      <tbody>
-                        <% @top_inventory_by_value_inventory&.each_with_index do |r, idx| %>
-                          <tr>
-                            <td class="text-muted">#<%= idx + 1 %></td>
-                            <td>
-                              <div class="small fw-semibold"><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></div>
-                              <% if r[:brand].present? || r[:category].present? %>
-                                <div class="text-muted" style="font-size: .75rem;">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
-                              <% end %>
-                            </td>
-                            <td class="text-end">$ <%= number_with_precision(r[:inventory_value], precision: 2, delimiter: ',') %></td>
-                          </tr>
-                        <% end %>
-                        <% if @top_inventory_by_value_inventory.blank? %>
-                          <tr><td colspan="3" class="text-center text-muted py-3">Sin datos</td></tr>
-                        <% end %>
-                      </tbody>
-                    </table>
-                  </div>
+              <turbo-frame id="frame-inventory-inv-value" src="<%= admin_dashboard_inventory_top_path(scope: 'inv', metric: 'value') %>">
+                <div class="table-responsive">
+                  <table class="table table-sm mb-0">
+                    <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Valor de Inventario</th></tr></thead>
+                    <tbody>
+                      <% 3.times do %>
+                        <tr class="placeholder-row">
+                          <td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td>
+                        </tr>
+                      <% end %>
+                    </tbody>
+                  </table>
+                </div>
+              </turbo-frame>
             </div>
             <!-- Inv · Unidades -->
             <div class="tab-pane fade" id="ti-inv-qty" role="tabpanel" data-tabs-target="panel">
-                  <div class="table-responsive">
-                    <table class="table table-sm mb-0">
-                      <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Unidades</th><th class="text-end">Valor (MXN)</th></tr></thead>
-                      <tbody>
-                        <% @top_inventory_by_quantity_inventory&.each_with_index do |r, idx| %>
-                          <tr>
-                            <td class="text-muted">#<%= idx + 1 %></td>
-                            <td>
-                              <div class="small fw-semibold"><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></div>
-                              <% if r[:brand].present? || r[:category].present? %>
-                                <div class="text-muted" style="font-size: .75rem;">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
-                              <% end %>
-                            </td>
-                            <td class="text-end"><%= number_with_delimiter(r[:units_count]) %></td>
-                            <td class="text-end">$ <%= number_with_precision(r[:inventory_value], precision: 2, delimiter: ',') %></td>
-                          </tr>
-                        <% end %>
-                        <% if @top_inventory_by_quantity_inventory.blank? %>
-                          <tr><td colspan="4" class="text-center text-muted py-3">Sin datos</td></tr>
-                        <% end %>
-                      </tbody>
-                    </table>
-                  </div>
+              <turbo-frame id="frame-inventory-inv-qty" src="<%= admin_dashboard_inventory_top_path(scope: 'inv', metric: 'qty') %>">
+                <div class="table-responsive">
+                  <table class="table table-sm mb-0">
+                    <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Unidades</th><th class="text-end">Valor (MXN)</th></tr></thead>
+                    <tbody>
+                      <% 3.times do %>
+                        <tr class="placeholder-row">
+                          <td colspan="4" class="placeholder-glow"><span class="placeholder col-12"></span></td>
+                        </tr>
+                      <% end %>
+                    </tbody>
+                  </table>
+                </div>
+              </turbo-frame>
             </div>
             <!-- Apartados · Valor -->
             <div class="tab-pane fade" id="ti-res-val" role="tabpanel" data-tabs-target="panel">
-                  <div class="table-responsive">
-                    <table class="table table-sm mb-0">
-                      <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Valor de Apartados</th></tr></thead>
-                      <tbody>
-                        <% @top_inventory_by_value_reserved&.each_with_index do |r, idx| %>
-                          <tr>
-                            <td class="text-muted">#<%= idx + 1 %></td>
-                            <td>
-                              <div class="small fw-semibold"><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></div>
-                              <% if r[:brand].present? || r[:category].present? %>
-                                <div class="text-muted" style="font-size: .75rem;">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
-                              <% end %>
-                            </td>
-                            <td class="text-end">$ <%= number_with_precision(r[:inventory_value], precision: 2, delimiter: ',') %></td>
-                          </tr>
-                        <% end %>
-                        <% if @top_inventory_by_value_reserved.blank? %>
-                          <tr><td colspan="3" class="text-center text-muted py-3">Sin datos</td></tr>
-                        <% end %>
-                      </tbody>
-                    </table>
-                  </div>
+              <turbo-frame id="frame-inventory-res-value" src="<%= admin_dashboard_inventory_top_path(scope: 'res', metric: 'value') %>">
+                <div class="table-responsive">
+                  <table class="table table-sm mb-0">
+                    <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Valor de Apartados</th></tr></thead>
+                    <tbody>
+                      <% 3.times do %>
+                        <tr class="placeholder-row">
+                          <td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td>
+                        </tr>
+                      <% end %>
+                    </tbody>
+                  </table>
+                </div>
+              </turbo-frame>
             </div>
             <!-- Apartados · Unidades -->
             <div class="tab-pane fade" id="ti-res-qty" role="tabpanel" data-tabs-target="panel">
-                  <div class="table-responsive">
-                    <table class="table table-sm mb-0">
-                      <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Unidades</th><th class="text-end">Valor (MXN)</th></tr></thead>
-                      <tbody>
-                        <% @top_inventory_by_quantity_reserved&.each_with_index do |r, idx| %>
-                          <tr>
-                            <td class="text-muted">#<%= idx + 1 %></td>
-                            <td>
-                              <div class="small fw-semibold"><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></div>
-                              <% if r[:brand].present? || r[:category].present? %>
-                                <div class="text-muted" style="font-size: .75rem;">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
-                              <% end %>
-                            </td>
-                            <td class="text-end"><%= number_with_delimiter(r[:units_count]) %></td>
-                            <td class="text-end">$ <%= number_with_precision(r[:inventory_value], precision: 2, delimiter: ',') %></td>
-                          </tr>
-                        <% end %>
-                        <% if @top_inventory_by_quantity_reserved.blank? %>
-                          <tr><td colspan="4" class="text-center text-muted py-3">Sin datos</td></tr>
-                        <% end %>
-                      </tbody>
-                    </table>
-                  </div>
+              <turbo-frame id="frame-inventory-res-qty" src="<%= admin_dashboard_inventory_top_path(scope: 'res', metric: 'qty') %>">
+                <div class="table-responsive">
+                  <table class="table table-sm mb-0">
+                    <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Unidades</th><th class="text-end">Valor (MXN)</th></tr></thead>
+                    <tbody>
+                      <% 3.times do %>
+                        <tr class="placeholder-row">
+                          <td colspan="4" class="placeholder-glow"><span class="placeholder col-12"></span></td>
+                        </tr>
+                      <% end %>
+                    </tbody>
+                  </table>
+                </div>
+              </turbo-frame>
             </div>
             <!-- Todos · Valor -->
             <div class="tab-pane fade" id="ti-all-val" role="tabpanel" data-tabs-target="panel">
-                  <div class="table-responsive">
-                    <table class="table table-sm mb-0">
-                      <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Valor (MXN)</th></tr></thead>
-                      <tbody>
-                        <% @top_inventory_by_value_all&.each_with_index do |r, idx| %>
-                          <tr>
-                            <td class="text-muted">#<%= idx + 1 %></td>
-                            <td>
-                              <div class="small fw-semibold"><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></div>
-                              <% if r[:brand].present? || r[:category].present? %>
-                                <div class="text-muted" style="font-size: .75rem;">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
-                              <% end %>
-                            </td>
-                            <td class="text-end">$ <%= number_with_precision(r[:inventory_value], precision: 2, delimiter: ',') %></td>
-                          </tr>
-                        <% end %>
-                        <% if @top_inventory_by_value_all.blank? %>
-                          <tr><td colspan="3" class="text-center text-muted py-3">Sin datos</td></tr>
-                        <% end %>
-                      </tbody>
-                    </table>
-                  </div>
+              <turbo-frame id="frame-inventory-all-value" src="<%= admin_dashboard_inventory_top_path(scope: 'all', metric: 'value') %>">
+                <div class="table-responsive">
+                  <table class="table table-sm mb-0">
+                    <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Valor (MXN)</th></tr></thead>
+                    <tbody>
+                      <% 3.times do %>
+                        <tr class="placeholder-row">
+                          <td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td>
+                        </tr>
+                      <% end %>
+                    </tbody>
+                  </table>
+                </div>
+              </turbo-frame>
             </div>
             <!-- Todos · Unidades -->
             <div class="tab-pane fade" id="ti-all-qty" role="tabpanel" data-tabs-target="panel">
-                  <div class="table-responsive">
-                    <table class="table table-sm mb-0">
-                      <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Unidades</th><th class="text-end">Valor (MXN)</th></tr></thead>
-                      <tbody>
-                        <% @top_inventory_by_quantity_all&.each_with_index do |r, idx| %>
-                          <tr>
-                            <td class="text-muted">#<%= idx + 1 %></td>
-                            <td>
-                              <div class="small fw-semibold"><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></div>
-                              <% if r[:brand].present? || r[:category].present? %>
-                                <div class="text-muted" style="font-size: .75rem;">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
-                              <% end %>
-                            </td>
-                            <td class="text-end"><%= number_with_delimiter(r[:units_count]) %></td>
-                            <td class="text-end">$ <%= number_with_precision(r[:inventory_value], precision: 2, delimiter: ',') %></td>
-                          </tr>
-                        <% end %>
-                        <% if @top_inventory_by_quantity_all.blank? %>
-                          <tr><td colspan="4" class="text-center text-muted py-3">Sin datos</td></tr>
-                        <% end %>
-                      </tbody>
-                    </table>
-                  </div>
+              <turbo-frame id="frame-inventory-all-qty" src="<%= admin_dashboard_inventory_top_path(scope: 'all', metric: 'qty') %>">
+                <div class="table-responsive">
+                  <table class="table table-sm mb-0">
+                    <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Unidades</th><th class="text-end">Valor (MXN)</th></tr></thead>
+                    <tbody>
+                      <% 3.times do %>
+                        <tr class="placeholder-row">
+                          <td colspan="4" class="placeholder-glow"><span class="placeholder col-12"></span></td>
+                        </tr>
+                      <% end %>
+                    </tbody>
+                  </table>
+                </div>
+              </turbo-frame>
             </div>
           </div>
         </div>

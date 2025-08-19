@@ -228,8 +228,106 @@ class Admin::DashboardController < ApplicationController
     @period = period
 
     respond_to do |format|
-      format.turbo_stream { render partial: 'admin/dashboard/sellers_table', locals: { rows: @rows, period: @period, rel: rel } }
-      format.html { redirect_to admin_dashboard_path }
+      format.html { render :sellers, locals: { rows: @rows, period: @period, rel: rel }, layout: false }
+    end
+  end
+
+  # Turbo Frame: productos rentables (profit) por periodo
+  def profitable
+    authorize_admin!
+    now = Time.zone.now
+    period = params[:period].presence || 'ytd'
+    page = params[:page].presence || 1
+    per  = (params[:per].presence || 10).to_i.clamp(5, 50)
+
+    so_scope = SaleOrder.where.not(status: 'Canceled')
+    paid_statuses = %w[Confirmed Shipped Delivered]
+    scope = case period
+            when 'ly'
+              ly_start = now.beginning_of_year - 1.year
+              ly_end   = ly_start.end_of_year
+              so_scope.where(order_date: ly_start..ly_end).where(status: paid_statuses)
+            when 'all'
+              so_scope.where(status: paid_statuses)
+            else
+              so_scope.where(order_date: (now.beginning_of_year..now.end_of_day)).where(status: paid_statuses)
+            end
+
+    rev_sql   = "COALESCE(sale_order_items.unit_final_price, 0) * COALESCE(sale_order_items.quantity, 0)"
+    cogs_sql  = "COALESCE(sale_order_items.unit_cost, 0) * COALESCE(sale_order_items.quantity, 0)"
+
+    sales = SaleOrderItem.joins(:sale_order, :product)
+                         .merge(scope)
+                         .group('products.id','products.product_name','products.brand','products.category')
+                         .select("products.id AS product_id, products.product_name AS product_name, products.brand AS brand, products.category AS category, SUM(#{rev_sql}) AS revenue")
+    cogs  = SaleOrderItem.joins(:sale_order, :product)
+                         .merge(scope)
+                         .group('products.id')
+                         .select("products.id AS product_id, SUM(#{cogs_sql}) AS cogs")
+
+    cogs_map = cogs.index_by { |r| r.attributes['product_id'].to_i }
+
+    rel = sales.select('SUM('+rev_sql+') - COALESCE(SUM('+cogs_sql+'),0) AS profit').order('profit DESC')
+    rel = rel.page(page).per(per)
+    @rows = rel.map do |r|
+      pid = r.attributes['product_id'].to_i
+      {
+        product_id: pid,
+        name: r.attributes['product_name'],
+        brand: r.attributes['brand'],
+        category: r.attributes['category'],
+        revenue: r.attributes['revenue'].to_d,
+        cogs: cogs_map[pid]&.attributes&.dig('cogs').to_d,
+        profit: r.attributes['profit'].to_d
+      }
+    end
+    @period = period
+    respond_to do |format|
+      format.html { render :profitable, locals: { rows: @rows, period: @period, rel: rel }, layout: false }
+    end
+  end
+
+  # Turbo Frame: Top Inventario (por valor/unidades y scope inv/res/all)
+  def inventory_top
+    authorize_admin!
+    scope = params[:scope].presence || 'inv'  # inv | res | all
+    metric = params[:metric].presence || 'value' # value | qty
+    page = params[:page].presence || 1
+    per  = (params[:per].presence || 10).to_i.clamp(5, 50)
+
+    statuses = case scope
+               when 'res' then [:reserved, :pre_reserved, :pre_sold]
+               when 'all' then [:available, :in_transit, :reserved, :pre_reserved, :pre_sold]
+               else [:available, :in_transit]
+               end
+
+    base = Inventory.joins(:product)
+                    .where(status: statuses)
+                    .group('products.id','products.product_name','products.brand','products.category')
+
+    rel = if metric == 'qty'
+            base.select('products.id, products.product_name, products.brand, products.category, COUNT(inventories.id) AS units_count, SUM(inventories.purchase_cost) AS inventory_value')
+                .order('units_count DESC')
+          else
+            base.select('products.id, products.product_name, products.brand, products.category, SUM(inventories.purchase_cost) AS inventory_value')
+                .order('inventory_value DESC')
+          end
+
+    rel = rel.page(page).per(per)
+    @rows = rel.map do |r|
+      {
+        product_id: r.id,
+        name: r.product_name,
+        brand: r.brand,
+        category: r.category,
+        units_count: r.try(:attributes).try(:[], 'units_count').to_i,
+        inventory_value: r.try(:attributes).try(:[], 'inventory_value').to_d
+      }
+    end
+    @scope = scope
+    @metric = metric
+    respond_to do |format|
+      format.html { render :inventory_top, locals: { rows: @rows, scope: @scope, metric: @metric, rel: rel }, layout: false }
     end
   end
   @top_users_ytd_vs_prev = @top_users_range.map do |u|

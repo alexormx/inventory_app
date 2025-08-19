@@ -40,10 +40,10 @@
       <% prev_params = request.query_parameters.merge(page: rel.prev_page, period: period, per: rel.limit_value) %>
       <% next_params = request.query_parameters.merge(page: rel.next_page, period: period, per: rel.limit_value) %>
       <li class="page-item <%= 'disabled' unless rel.prev_page %>">
-        <%= link_to 'Anterior', admin_dashboard_sellers_path(prev_params), data: { turbo_frame: dom_id(self, :frame) }, class: 'page-link' %>
+        <%= link_to 'Anterior', admin_dashboard_sellers_path(prev_params), data: { turbo_frame: "frame-sellers-#{period}" }, class: 'page-link' %>
       </li>
       <li class="page-item <%= 'disabled' unless rel.next_page %>">
-        <%= link_to 'Siguiente', admin_dashboard_sellers_path(next_params), data: { turbo_frame: dom_id(self, :frame) }, class: 'page-link' %>
+        <%= link_to 'Siguiente', admin_dashboard_sellers_path(next_params), data: { turbo_frame: "frame-sellers-#{period}" }, class: 'page-link' %>
       </li>
     </ul>
   </nav>
