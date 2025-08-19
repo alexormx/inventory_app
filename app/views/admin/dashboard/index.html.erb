@@ -129,12 +129,16 @@
     <div class="col-xl-8">
       <div class="card h-100" data-controller="tabs">
         <div class="card-header d-flex justify-content-between align-items-center">
-          <div>
+          <div class="d-flex flex-column flex-md-row w-100 justify-content-between align-items-md-center gap-2">
             <i class="fa-solid fa-boxes"></i> Productos
-            <ul class="nav nav-tabs nav-tabs-sm card-header-tabs mt-2" role="tablist">
+            <ul class="nav nav-tabs nav-tabs-sm card-header-tabs mt-2 d-none d-md-flex" role="tablist">
               <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-sellers" type="button" role="tab" aria-controls="tp-sellers" aria-selected="true">Sellers</button></li>
               <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-profit" type="button" role="tab" aria-controls="tp-profit">Rentables</button></li>
             </ul>
+            <select class="form-select form-select-sm d-md-none w-auto" aria-label="Seleccionar pestaña" data-action="change->tabs#select">
+              <option value="#tp-sellers" selected>Sellers</option>
+              <option value="#tp-profit">Rentables</option>
+            </select>
           </div>
           <div>
             <a href="<%= admin_products_path %>" class="btn btn-sm btn-outline-primary">Ver detalle</a>
@@ -153,29 +157,43 @@
               </div>
               <div class="tab-content">
                 <div class="tab-pane fade show active" id="ts-ytd" role="tabpanel" data-subtabs-target="panel">
-                  <div class="table-responsive">
-                    <table class="table table-sm mb-0">
-                      <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Unidades</th><th class="text-end">Ingresos</th></tr></thead>
-                      <tbody>
-                        <% @top_sellers_ytd&.each_with_index do |r, idx| %>
+                  <turbo-frame id="tp-sellers-ytd">
+                    <div class="table-responsive dashboard-scroll">
+                      <table class="table table-sm mb-0">
+                        <thead>
                           <tr>
-                            <td class="text-muted">#<%= idx + 1 %></td>
-                            <td>
-                              <div class="small fw-semibold"><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></div>
-                              <% if r[:brand].present? || r[:category].present? %>
-                                <div class="text-muted" style="font-size: .75rem;">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
-                              <% end %>
-                            </td>
-                            <td class="text-end"><%= number_with_delimiter(r[:units]) %></td>
-                            <td class="text-end">$ <%= number_with_precision(r[:revenue], precision: 2, delimiter: ',') %></td>
+                            <th scope="col">Rank</th>
+                            <th scope="col">Producto</th>
+                            <th scope="col" class="text-end">Unidades</th>
+                            <th scope="col" class="text-end">Ingresos</th>
                           </tr>
-                        <% end %>
-                        <% if @top_sellers_ytd.blank? %>
-                          <tr><td colspan="4" class="text-center text-muted py-3">Sin datos</td></tr>
-                        <% end %>
-                      </tbody>
-                    </table>
-                  </div>
+                        </thead>
+                        <tbody>
+                          <% if @top_sellers_ytd.present? %>
+                            <% @top_sellers_ytd.each_with_index do |r, idx| %>
+                              <tr>
+                                <td class="text-muted">#<%= idx + 1 %></td>
+                                <td>
+                                  <div class="small fw-semibold"><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></div>
+                                  <% if r[:brand].present? || r[:category].present? %>
+                                    <div class="text-muted" style="font-size: .75rem;">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
+                                  <% end %>
+                                </td>
+                                <td class="text-end"><%= number_with_delimiter(r[:units]) %></td>
+                                <td class="text-end">$ <%= number_with_precision(r[:revenue], precision: 2, delimiter: ',') %></td>
+                              </tr>
+                            <% end %>
+                          <% else %>
+                            <% 3.times do %>
+                              <tr class="placeholder-row">
+                                <td colspan="4" class="placeholder-glow"><span class="placeholder col-12"></span></td>
+                              </tr>
+                            <% end %>
+                          <% end %>
+                        </tbody>
+                      </table>
+                    </div>
+                  </turbo-frame>
                 </div>
                 <div class="tab-pane fade" id="ts-ly" role="tabpanel" data-subtabs-target="panel">
                   <div class="table-responsive">
@@ -328,12 +346,17 @@
       <div class="card h-100" data-controller="tabs">
         <div class="card-header d-flex justify-content-between align-items-center">
           <span><i class="fa-solid fa-boxes-stacked"></i> Top Inventario</span>
-          <div class="d-flex align-items-center gap-2">
-            <ul class="nav nav-tabs nav-tabs-sm card-header-tabs" role="tablist">
+          <div class="d-flex align-items-center gap-2 w-50 justify-content-end">
+            <ul class="nav nav-tabs nav-tabs-sm card-header-tabs d-none d-md-flex" role="tablist">
               <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#ti-inv" type="button" role="tab" aria-controls="ti-inv" aria-selected="true">Inventario</button></li>
               <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#ti-res" type="button" role="tab" aria-controls="ti-res">Apartados</button></li>
               <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#ti-all" type="button" role="tab" aria-controls="ti-all">Inv + Apart</button></li>
             </ul>
+            <select class="form-select form-select-sm d-md-none w-auto" aria-label="Seleccionar pestaña" data-action="change->tabs#select">
+              <option value="#ti-inv" selected>Inventario</option>
+              <option value="#ti-res">Apartados</option>
+              <option value="#ti-all">Inv + Apart</option>
+            </select>
           </div>
         </div>
         <div class="card-body p-0">
@@ -532,11 +555,16 @@
       <div class="card h-100" data-controller="tabs">
         <div class="card-header d-flex justify-content-between align-items-center">
           <span><i class="fa-solid fa-layer-group"></i> Top Categorías</span>
-          <ul class="nav nav-tabs nav-tabs-sm card-header-tabs" role="tablist">
+          <ul class="nav nav-tabs nav-tabs-sm card-header-tabs d-none d-md-flex" role="tablist">
             <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tc-ytd" type="button" role="tab" aria-controls="tc-ytd" aria-selected="true">YTD</button></li>
             <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tc-ly" type="button" role="tab" aria-controls="tc-ly">Last Year</button></li>
             <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tc-all" type="button" role="tab" aria-controls="tc-all">All Time</button></li>
           </ul>
+          <select class="form-select form-select-sm d-md-none w-auto" aria-label="Seleccionar periodo" data-action="change->tabs#select">
+            <option value="#tc-ytd" selected>YTD</option>
+            <option value="#tc-ly">Last Year</option>
+            <option value="#tc-all">All Time</option>
+          </select>
           <div><a class="btn btn-sm btn-outline-primary" href="<%= admin_products_path %>">Ver detalle</a></div>
         </div>
         <div class="card-body p-0">
@@ -693,11 +721,16 @@
       <div class="card h-100" data-controller="tabs">
         <div class="card-header d-flex justify-content-between align-items-center">
           <span><i class="fa-solid fa-ranking-star"></i> Top Customers</span>
-          <ul class="nav nav-tabs nav-tabs-sm card-header-tabs" role="tablist">
+          <ul class="nav nav-tabs nav-tabs-sm card-header-tabs d-none d-md-flex" role="tablist">
             <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#rank-range" type="button" role="tab" aria-controls="rank-range" aria-selected="true">YTD</button></li>
             <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#rank-ly" type="button" role="tab" aria-controls="rank-ly">Last Year</button></li>
             <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#rank-all" type="button" role="tab" aria-controls="rank-all">All Time</button></li>
           </ul>
+          <select class="form-select form-select-sm d-md-none w-auto" aria-label="Seleccionar periodo" data-action="change->tabs#select">
+            <option value="#rank-range" selected>YTD</option>
+            <option value="#rank-ly">Last Year</option>
+            <option value="#rank-all">All Time</option>
+          </select>
           <a href="<%= admin_users_path %>" class="btn btn-sm btn-outline-primary ms-2">Ver detalle</a>
         </div>
         <div class="card-body p-0">
@@ -967,11 +1000,16 @@
       <div class="card h-100" data-controller="tabs">
         <div class="card-header d-flex justify-content-between align-items-center">
           <span><i class="fa-solid fa-flag"></i> Ventas por Estado (México)</span>
-          <ul class="nav nav-tabs nav-tabs-sm card-header-tabs" role="tablist">
+          <ul class="nav nav-tabs nav-tabs-sm card-header-tabs d-none d-md-flex" role="tablist">
             <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#mx-ytd" type="button" role="tab" aria-controls="mx-ytd" aria-selected="true">YTD</button></li>
             <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#mx-ly" type="button" role="tab" aria-controls="mx-ly">Last Year</button></li>
             <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#mx-all" type="button" role="tab" aria-controls="mx-all">All Time</button></li>
           </ul>
+          <select class="form-select form-select-sm d-md-none w-auto" aria-label="Seleccionar periodo" data-action="change->tabs#select">
+            <option value="#mx-ytd" selected>YTD</option>
+            <option value="#mx-ly">Last Year</option>
+            <option value="#mx-all">All Time</option>
+          </select>
         </div>
         <div class="card-body p-0">
           <div class="tab-content">
@@ -1040,11 +1078,16 @@
       <div class="card h-100" data-controller="tabs">
         <div class="card-header d-flex justify-content-between align-items-center">
           <span><i class="fa-solid fa-table"></i> Distribución de Ventas por País</span>
-          <ul class="nav nav-tabs nav-tabs-sm card-header-tabs" role="tablist">
+          <ul class="nav nav-tabs nav-tabs-sm card-header-tabs d-none d-md-flex" role="tablist">
             <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#cty-ytd" type="button" role="tab" aria-controls="cty-ytd" aria-selected="true">YTD</button></li>
             <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#cty-ly" type="button" role="tab" aria-controls="cty-ly">Last Year</button></li>
             <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#cty-all" type="button" role="tab" aria-controls="cty-all">All Time</button></li>
           </ul>
+          <select class="form-select form-select-sm d-md-none w-auto" aria-label="Seleccionar periodo" data-action="change->tabs#select">
+            <option value="#cty-ytd" selected>YTD</option>
+            <option value="#cty-ly">Last Year</option>
+            <option value="#cty-all">All Time</option>
+          </select>
         </div>
         <div class="card-body p-0">
           <div class="tab-content">
