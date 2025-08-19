@@ -40,4 +40,10 @@ import "components/password_validation"
 import "components/show_password_requirements"
 import "components/total_cost_calculation"
 import "components/order_items"
+// Dashboard controllers
+import ChartController from "./controllers/chart_controller"
+application.register("chart", ChartController)
+
+// Ensure charts helpers are importable (side-effect import ok)
+import "./dashboard/charts"
 

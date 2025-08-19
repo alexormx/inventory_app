@@ -4,96 +4,83 @@
   <!-- KPIs al tope (estratégico) -->
   <div class="row g-3 mb-3">
     <div class="col-md-4 col-lg-3">
-      <div class="card text-bg-success-subtle h-100">
-        <div class="card-body">
-          <div class="d-flex justify-content-between align-items-start">
-            <div>
-              <div class="small text-muted">Ventas YTD (MXN)</div>
-              <div class="fs-4 fw-bold">$ <%= number_with_precision(@sales_ytd, precision: 2, delimiter: ',') %> <span class="small text-muted">(LY: $ <%= number_with_precision(@sales_prev, precision: 2, delimiter: ',') %>)</span></div>
-              <div class="small <%= @kpi_deltas&.dig(:sales).to_f >= 0 ? 'text-success' : 'text-danger' %>">Δ vs LY: <%= @kpi_deltas&.dig(:sales).nil? ? '—' : number_to_percentage(@kpi_deltas[:sales] * 100, precision: 1) %></div>
-            </div>
-            <div style="width:110px;height:46px" id="sparkline-revenue"></div>
-          </div>
-        </div>
-      </div>
+      <%= render "kpi_card",
+        title: "Ventas YTD (MXN)",
+        value: "$ #{number_with_precision(@sales_ytd, precision: 2, delimiter: ',')}",
+        ly: "$ #{number_with_precision(@sales_prev, precision: 2, delimiter: ',')}",
+        delta: @kpi_deltas&.dig(:sales),
+        spark_id: "sparkline-revenue",
+        variant: "text-bg-success-subtle"
+      %>
     </div>
     <div class="col-md-4 col-lg-3">
-      <div class="card text-bg-primary-subtle h-100">
-        <div class="card-body">
-          <div class="small text-muted">Ganancia YTD</div>
-          <div class="fs-4 fw-bold">$ <%= number_with_precision(@profit_ytd, precision: 2, delimiter: ',') %> <span class="small text-muted">(LY: $ <%= number_with_precision(@profit_prev, precision: 2, delimiter: ',') %>)</span></div>
-          <div class="small <%= @kpi_deltas&.dig(:profit).to_f >= 0 ? 'text-success' : 'text-danger' %>">Δ vs LY: <%= @kpi_deltas&.dig(:profit).nil? ? '—' : number_to_percentage(@kpi_deltas[:profit] * 100, precision: 1) %></div>
-        </div>
-      </div>
+      <%= render "kpi_card",
+        title: "Ganancia YTD",
+        value: "$ #{number_with_precision(@profit_ytd, precision: 2, delimiter: ',')}",
+        ly: "$ #{number_with_precision(@profit_prev, precision: 2, delimiter: ',')}",
+        delta: @kpi_deltas&.dig(:profit),
+        variant: "text-bg-primary-subtle"
+      %>
     </div>
     <div class="col-md-4 col-lg-3">
-      <div class="card text-bg-info-subtle h-100">
-        <div class="card-body">
-          <div class="small text-muted">Margen YTD</div>
-          <div class="fs-4 fw-bold"><%= number_to_percentage(@margin_ytd * 100, precision: 1) %> <span class="small text-muted">(LY: <%= number_to_percentage(@margin_prev * 100, precision: 1) %>)</span></div>
-          <div class="small <%= (@kpi_deltas&.dig(:margin_pp) || 0).to_f >= 0 ? 'text-success' : 'text-danger' %>">Δ pp vs LY: <%= @kpi_deltas&.dig(:margin_pp).present? ? number_with_precision(@kpi_deltas[:margin_pp] * 100, precision: 1) : '—' %> pp</div>
-        </div>
-      </div>
+      <%= render "kpi_card",
+        title: "Margen YTD",
+        value: number_to_percentage(@margin_ytd * 100, precision: 1),
+        ly: number_to_percentage(@margin_prev * 100, precision: 1),
+        delta: @kpi_deltas&.dig(:margin_pp),
+        variant: "text-bg-warning-subtle"
+      %>
     </div>
     <div class="col-md-4 col-lg-3">
-      <div class="card text-bg-warning-subtle h-100">
-        <div class="card-body">
-          <div class="small text-muted">Compras totales en MXN (All Time)</div>
-          <div class="fs-4 fw-bold">$ <%= number_with_precision(@purchases_total_mxn, precision: 2, delimiter: ',') %></div>
-        </div>
-      </div>
+      <%= render "kpi_card",
+        title: "Compras totales en MXN (All Time)",
+        value: "$ #{number_with_precision(@purchases_total_mxn, precision: 2, delimiter: ',')}",
+        variant: "text-bg-warning-subtle"
+      %>
     </div>
     <div class="col-md-4 col-lg-3">
-      <div class="card text-bg-light h-100">
-        <div class="card-body">
-          <div class="small text-muted">PO en el año</div>
-          <div class="fs-4 fw-bold"><%= number_with_delimiter(@po_count_ytd) %> <span class="small text-muted">(LY: <%= number_with_delimiter(@po_count_prev) %>)</span></div>
-          <div class="small text-muted">Artículos comprados (YTD): <%= number_with_delimiter(@po_items_qty_ytd) %></div>
-          <div class="small text-muted">All Time: <%= number_with_delimiter(@po_items_qty_all_time) %></div>
-          <div class="small <%= @kpi_deltas&.dig(:po_count).to_f >= 0 ? 'text-success' : 'text-danger' %>">Δ vs LY: <%= @kpi_deltas&.dig(:po_count).nil? ? '—' : number_to_percentage(@kpi_deltas[:po_count] * 100, precision: 1) %></div>
-          <div class="small text-muted">Total All Time: <%= number_with_delimiter(@po_total_all_time) %></div>
-        </div>
-      </div>
+      <%= render "kpi_card",
+        title: "PO en el año",
+        value: number_with_delimiter(@po_count_ytd),
+        ly: number_with_delimiter(@po_count_prev),
+        delta: @kpi_deltas&.dig(:po_count),
+        variant: "text-bg-primary-subtle"
+      %>
     </div>
     <div class="col-md-4 col-lg-3">
-      <div class="card text-bg-light h-100">
-        <div class="card-body">
-          <div class="small text-muted">SO en el año</div>
-          <div class="fs-4 fw-bold"><%= number_with_delimiter(@orders_count_ytd) %> <span class="small text-muted">(LY: <%= number_with_delimiter(@orders_prev) %>)</span></div>
-          <div class="small text-muted">Artículos vendidos (YTD): <%= number_with_delimiter(@so_items_qty_ytd) %></div>
-          <div class="small text-muted">All Time: <%= number_with_delimiter(@so_items_qty_all_time) %></div>
-          <div class="small <%= @kpi_deltas&.dig(:orders).to_f >= 0 ? 'text-success' : 'text-danger' %>">Δ vs LY: <%= @kpi_deltas&.dig(:orders).nil? ? '—' : number_to_percentage(@kpi_deltas[:orders] * 100, precision: 1) %></div>
-          <div class="small text-muted">Total All Time: <%= number_with_delimiter(@so_total_all_time) %></div>
-        </div>
-      </div>
+      <%= render "kpi_card",
+        title: "SO en el año",
+        value: number_with_delimiter(@orders_count_ytd),
+        ly: number_with_delimiter(@orders_prev),
+        delta: @kpi_deltas&.dig(:orders),
+        variant: "text-bg-primary-subtle"
+      %>
     </div>
   </div>
   <div class="row g-3 mb-3">
     <div class="col-md-4 col-lg-4">
-      <div class="card text-bg-light h-100">
-        <div class="card-body">
-          <div class="small text-muted">Ventas totales en MXN (All Time)</div>
-          <div class="fs-4 fw-bold">$ <%= number_with_precision(@sales_total_mxn, precision: 2, delimiter: ',') %></div>
-        </div>
-      </div>
+      <%= render "kpi_card",
+        title: "Ventas totales en MXN (All Time)",
+        value: "$ #{number_with_precision(@sales_total_mxn, precision: 2, delimiter: ',')}",
+        variant: "text-bg-success-subtle"
+      %>
     </div>
     <div class="col-md-4 col-lg-4">
-      <div class="card text-bg-light h-100">
-        <div class="card-body">
-          <div class="small text-muted">Clientes activos</div>
-          <div class="fs-4 fw-bold"><%= number_with_delimiter(@active_customers_ytd) %> <span class="small text-muted">(LY: <%= number_with_delimiter(@active_customers_prev) %>)</span></div>
-          <div class="small <%= @kpi_deltas&.dig(:customers).to_f >= 0 ? 'text-success' : 'text-danger' %>">Δ vs LY: <%= @kpi_deltas&.dig(:customers).nil? ? '—' : number_to_percentage(@kpi_deltas[:customers] * 100, precision: 1) %></div>
-        </div>
-      </div>
+      <%= render "kpi_card",
+        title: "Clientes activos",
+        value: number_with_delimiter(@active_customers_ytd),
+        ly: number_with_delimiter(@active_customers_prev),
+        delta: @kpi_deltas&.dig(:customers),
+        variant: "text-bg-primary-subtle"
+      %>
     </div>
     <div class="col-md-4 col-lg-4">
-      <div class="card text-bg-secondary-subtle h-100">
-        <div class="card-body">
-          <div class="small text-muted">Valor total de inventario (MXN)</div>
-          <div class="fs-4 fw-bold">$ <%= number_with_precision(@inventory_total_value, precision: 2, delimiter: ',') %></div>
-          <div class="small text-muted">Rotación: <%= @inventory_turnover_ytd.nil? ? '—' : number_with_precision(@inventory_turnover_ytd, precision: 2, delimiter: ',') %></div>
-        </div>
-      </div>
+      <%= render "kpi_card",
+        title: "Valor total de inventario (MXN)",
+        value: "$ #{number_with_precision(@inventory_total_value, precision: 2, delimiter: ',')}",
+        ly: (@inventory_turnover_ytd.nil? ? nil : "Rotación: #{number_with_precision(@inventory_turnover_ytd, precision: 2, delimiter: ',')}") ,
+        variant: "text-bg-warning-subtle"
+      %>
     </div>
   </div>
 
@@ -1285,7 +1272,17 @@
           <a href="<%= admin_sale_orders_path %>" class="btn btn-sm btn-outline-primary">Ver detalle</a>
         </div>
         <div class="card-body">
-          <div id="chart-trend-12m" style="height: 280px;"></div>
+          <div
+            data-controller="chart"
+            data-chart-type="line"
+            data-chart-x="<%= raw(@chart_sales_trend[:months].to_json) %>"
+            data-chart-series="<%= raw([
+              { name: 'Revenue', data: @chart_sales_trend[:revenue].map(&:to_f) },
+              { name: 'COGS',    data: @chart_sales_trend[:cogs].map(&:to_f) },
+              { name: 'Profit',  data: @chart_sales_trend[:profit].map(&:to_f) }
+            ].to_json) %>"
+            style="height:280px"
+          ></div>
         </div>
       </div>
     </div>
@@ -1297,7 +1294,13 @@
       <div class="card h-100">
         <div class="card-header"><i class="fa-solid fa-chart-column"></i> Sales by Month (stacked by category)</div>
         <div class="card-body">
-          <div id="chart-monthly-stacked" style="height: 280px;"></div>
+          <div
+            data-controller="chart"
+            data-chart-type="bar"
+            data-chart-x="<%= raw(@chart_monthly_by_category[:months].to_json) %>"
+            data-chart-series="<%= raw((@chart_monthly_by_category[:series] || []).map { |s| s.merge(type: 'bar') }.to_json) %>"
+            style="height:280px"
+          ></div>
         </div>
       </div>
     </div>
@@ -1309,7 +1312,13 @@
       <div class="card h-100">
         <div class="card-header"><i class="fa-solid fa-city"></i> Brand Profitability</div>
         <div class="card-body">
-          <div id="chart-brand-profit" style="height: 280px;"></div>
+          <div
+            data-controller="chart"
+            data-chart-type="bar"
+            data-chart-x="<%= raw(@chart_brand_profit[:brands].to_json) %>"
+            data-chart-series='[{"name":"Utilidad","data":<%= raw(@chart_brand_profit[:profit].map(&:to_f).to_json) %>}]'
+            style="height:280px"
+          ></div>
         </div>
       </div>
     </div>
@@ -1317,7 +1326,13 @@
       <div class="card h-100">
         <div class="card-header"><i class="fa-solid fa-tags"></i> Category Profitability</div>
         <div class="card-body">
-          <div id="chart-category-profit" style="height: 280px;"></div>
+          <div
+            data-controller="chart"
+            data-chart-type="bar"
+            data-chart-x="<%= raw((@chart_category_profit[:categories] || []).to_json) %>"
+            data-chart-series='[{"name":"Utilidad","data":<%= raw((@chart_category_profit[:profit] || []).map(&:to_f).to_json) %>}]'
+            style="height:280px"
+          ></div>
         </div>
       </div>
     </div>
@@ -1325,125 +1340,4 @@
   <!-- (Se eliminó el bloque final de "Producto top por categoría (Profit)") -->
 </div>
 
-<!-- ECharts para charts (no mapas) -->
-  <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
-<script>
-    // Mostrar campos de fecha solo si rango == custom
-    document.addEventListener('turbo:load', () => {
-      const rangeSel = document.querySelector('select[name="range"]');
-      const customFields = document.querySelectorAll('[data-range-custom]');
-      const sync = () => {
-        const isCustom = rangeSel && rangeSel.value === 'custom';
-        customFields.forEach(el => el.style.display = isCustom ? '' : 'none');
-      };
-      if (rangeSel) {
-        rangeSel.addEventListener('change', sync);
-      }
-      sync();
-    });
-
-  // High-impact charts (init on Turbo load)
-  document.addEventListener('turbo:load', () => {
-    if (!(window.echarts)) return;
-    try {
-  const lineEl = document.getElementById('chart-trend-12m');
-  const sparkRevenueEl = document.getElementById('sparkline-revenue');
-      const donutEl = document.getElementById('chart-sales-by-category');
-  const stackedEl = document.getElementById('chart-monthly-stacked');
-  const brandEl = document.getElementById('chart-brand-profit');
-  const categoryProfitEl = document.getElementById('chart-category-profit');
-
-      if (lineEl) {
-        const chart = echarts.init(lineEl);
-        const months = <%= raw(@chart_sales_trend[:months].to_json) %>;
-        const revenue = <%= raw(@chart_sales_trend[:revenue].map(&:to_f).to_json) %>;
-        const cogs = <%= raw(@chart_sales_trend[:cogs].map(&:to_f).to_json) %>;
-        const profit = <%= raw(@chart_sales_trend[:profit].map(&:to_f).to_json) %>;
-        chart.setOption({
-          tooltip: { trigger: 'axis' },
-          legend: { data: ['Revenue','COGS','Profit'] },
-          xAxis: { type: 'category', data: months },
-          yAxis: { type: 'value' },
-          series: [
-            { name: 'Revenue', type: 'line', data: revenue, smooth: true },
-            { name: 'COGS', type: 'line', data: cogs, smooth: true },
-            { name: 'Profit', type: 'line', data: profit, smooth: true }
-          ]
-        });
-        window.addEventListener('resize', () => chart.resize());
-      }
-
-      if (sparkRevenueEl) {
-        const chart = echarts.init(sparkRevenueEl);
-        const revenue = <%= raw(@chart_sales_trend[:revenue].map(&:to_f).to_json) %>;
-        chart.setOption({
-          grid: {left: 0, right: 0, top: 2, bottom: 2},
-          xAxis: { type: 'category', show: false, data: revenue.map((_,i)=>i) },
-          yAxis: { type: 'value', show: false },
-          series: [{ type: 'line', data: revenue, smooth: true, symbol: 'none', lineStyle: { width: 2 } }],
-          tooltip: { show: false }
-        });
-        window.addEventListener('resize', () => chart.resize());
-      }
-
-      if (donutEl) {
-        const chart = echarts.init(donutEl);
-        const series = <%= raw(@chart_sales_by_category.to_json) %>;
-        chart.setOption({
-          tooltip: { trigger: 'item' },
-          legend: { orient: 'vertical', left: 'left' },
-          series: [{
-            name: 'Sales by Category', type: 'pie', radius: ['40%','70%'], avoidLabelOverlap: false,
-            itemStyle: { borderRadius: 6, borderColor: '#fff', borderWidth: 2 },
-            label: { show: false }, emphasis: { label: { show: true, fontSize: 14, fontWeight: 'bold' } },
-            labelLine: { show: false }, data: series
-          }]
-        });
-        window.addEventListener('resize', () => chart.resize());
-      }
-
-      if (stackedEl) {
-        const chart = echarts.init(stackedEl);
-        const months = <%= raw(@chart_monthly_by_category[:months].to_json) %>;
-        const series = <%= raw(@chart_monthly_by_category[:series].to_json) %>;
-        chart.setOption({
-          tooltip: { trigger: 'axis' },
-          legend: {},
-          xAxis: { type: 'category', data: months },
-          yAxis: { type: 'value' },
-          series: series.map(s => ({ ...s, type: 'bar', stack: 'total' }))
-        });
-        window.addEventListener('resize', () => chart.resize());
-      }
-
-      if (brandEl) {
-        const chart = echarts.init(brandEl);
-        const brands = <%= raw(@chart_brand_profit[:brands].to_json) %>;
-        const profit = <%= raw(@chart_brand_profit[:profit].map(&:to_f).to_json) %>;
-        chart.setOption({
-          tooltip: { trigger: 'axis' },
-          xAxis: { type: 'value' },
-          yAxis: { type: 'category', data: brands },
-          series: [{ type: 'bar', data: profit, itemStyle: { color: '#4caf50' } }]
-        });
-        window.addEventListener('resize', () => chart.resize());
-      }
-
-      if (categoryProfitEl) {
-        const chart = echarts.init(categoryProfitEl);
-        const _catProfit = <%= raw((@chart_category_profit || {categories: [], profit: []}).to_json) %>;
-        const categories = _catProfit.categories || [];
-        const profit = (_catProfit.profit || []).map(parseFloat);
-        chart.setOption({
-          tooltip: { trigger: 'axis' },
-          xAxis: { type: 'value' },
-          yAxis: { type: 'category', data: categories },
-          series: [{ type: 'bar', data: profit, itemStyle: { color: '#3f51b5' } }]
-        });
-        window.addEventListener('resize', () => chart.resize());
-      }
-    } catch (e) { console.error('Charts error', e); }
-  });
-
-  // (Se removió el mapa; no hay inicialización de mapas.)
-</script>
+<!-- Sin scripts inline: todos los charts usan Stimulus chart_controller -->

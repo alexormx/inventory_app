@@ -1,0 +1,31 @@
+// Dashboard specific tweaks
+.table-responsive.dashboard-scroll {
+  max-height: 360px;
+  overflow: auto;
+}
+
+thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--bs-body-bg, #fff);
+}
+
+// Numeric utilities
+.text-end-numeric {
+  text-align: right !important;
+}
+
+.text-negative {
+  color: var(--bs-danger, #dc3545) !important;
+}
+
+// Subtitles
+.small-subtitle {
+  font-weight: 600; // fw-semibold equivalent
+}
+
+// Skeleton rows during Turbo load
+.table .placeholder-row td {
+  height: 36px;
+}

@@ -1,0 +1,33 @@
+<%#
+  Parcial KPI Card
+  Props:
+    - title: String (etiqueta superior)
+    - value: String (valor principal ya formateado)
+    - ly: String opcional (texto LY u otro comparativo)
+    - delta: Numeric opcional (ratio -1..1); colorea verde/rojo
+    - variant: String (Bootstrap card variant e.g. text-bg-success-subtle)
+    - spark_id: String opcional (id para sparkline)
+%>
+<div class="card <%= variant.presence || 'text-bg-light' %> h-100">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-start gap-2">
+      <div>
+        <div class="small text-muted"><%= title %></div>
+        <div class="fs-4 fw-bold">
+          <%= value %>
+          <% if ly.present? %>
+            <span class="small text-muted">(LY: <%= ly %>)</span>
+          <% end %>
+        </div>
+        <% if defined?(delta) && !delta.nil? %>
+          <div class="small <%= delta.to_f >= 0 ? 'text-success' : 'text-danger' %>">Δ vs LY: <%= number_to_percentage(delta.to_f * 100, precision: 1) %></div>
+        <% else %>
+          <div class="small text-muted">Δ vs LY: —</div>
+        <% end %>
+      </div>
+      <% if spark_id.present? %>
+        <div style="width:110px;height:46px" id="<%= spark_id %>" data-controller="chart" data-chart-type="spark" data-chart-data='<%= raw(@chart_sales_trend[:revenue].map(&:to_f).to_json) if defined?(@chart_sales_trend) %>'></div>
+      <% end %>
+    </div>
+  </div>
+</div>
