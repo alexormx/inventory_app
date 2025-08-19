@@ -155,8 +155,8 @@
         <div class="card-body p-0">
           <div class="tab-content">
             <!-- Sellers YTD -->
-            <div class="tab-pane fade show active" id="tp-sellers-ytd" role="tabpanel" data-tabs-target="panel">
-                  <turbo-frame id="frame-sellers-ytd">
+    <div class="tab-pane fade show active" id="tp-sellers-ytd" role="tabpanel" data-tabs-target="panel">
+      <turbo-frame id="frame-sellers-ytd" src="<%= admin_dashboard_sellers_path(period: 'ytd') %>">
                     <div class="table-responsive dashboard-scroll">
                       <table class="table table-sm mb-0">
                         <thead>
@@ -191,60 +191,56 @@
                           <% end %>
                         </tbody>
                       </table>
-                    </div>
-                  </turbo-frame>
+              </div>
+            </turbo-frame>
             </div>
             <!-- Sellers LY -->
             <div class="tab-pane fade" id="tp-sellers-ly" role="tabpanel" data-tabs-target="panel">
-                  <div class="table-responsive">
-                    <table class="table table-sm mb-0">
-                      <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Unidades</th><th class="text-end">Ingresos</th></tr></thead>
-                      <tbody>
-                        <% @top_sellers_last_year&.each_with_index do |r, idx| %>
+                  <turbo-frame id="frame-sellers-ly" src="<%= admin_dashboard_sellers_path(period: 'ly') %>">
+                    <div class="table-responsive dashboard-scroll">
+                      <table class="table table-sm mb-0">
+                        <thead>
                           <tr>
-                            <td class="text-muted">#<%= idx + 1 %></td>
-                            <td>
-                              <div class="small fw-semibold"><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></div>
-                              <% if r[:brand].present? || r[:category].present? %>
-                                <div class="text-muted" style="font-size: .75rem;">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
-                              <% end %>
-                            </td>
-                            <td class="text-end"><%= number_with_delimiter(r[:units]) %></td>
-                            <td class="text-end">$ <%= number_with_precision(r[:revenue], precision: 2, delimiter: ',') %></td>
+                            <th scope="col">Rank</th>
+                            <th scope="col">Producto</th>
+                            <th scope="col" class="text-end">Unidades</th>
+                            <th scope="col" class="text-end">Ingresos</th>
                           </tr>
-                        <% end %>
-                        <% if @top_sellers_last_year.blank? %>
-                          <tr><td colspan="4" class="text-center text-muted py-3">Sin datos</td></tr>
-                        <% end %>
-                      </tbody>
-                    </table>
-                  </div>
+                        </thead>
+                        <tbody>
+                          <% 3.times do %>
+                            <tr class="placeholder-row">
+                              <td colspan="4" class="placeholder-glow"><span class="placeholder col-12"></span></td>
+                            </tr>
+                          <% end %>
+                        </tbody>
+                      </table>
+                    </div>
+                  </turbo-frame>
             </div>
             <!-- Sellers All -->
             <div class="tab-pane fade" id="tp-sellers-all" role="tabpanel" data-tabs-target="panel">
-                  <div class="table-responsive">
-                    <table class="table table-sm mb-0">
-                      <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Unidades</th><th class="text-end">Ingresos</th></tr></thead>
-                      <tbody>
-                        <% @top_products_all&.each_with_index do |r, idx| %>
+                  <turbo-frame id="frame-sellers-all" src="<%= admin_dashboard_sellers_path(period: 'all') %>">
+                    <div class="table-responsive dashboard-scroll">
+                      <table class="table table-sm mb-0">
+                        <thead>
                           <tr>
-                            <td class="text-muted">#<%= idx + 1 %></td>
-                            <td>
-                              <div class="small fw-semibold"><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></div>
-                              <% if r[:brand].present? || r[:category].present? %>
-                                <div class="text-muted" style="font-size: .75rem;">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
-                              <% end %>
-                            </td>
-                            <td class="text-end"><%= number_with_delimiter(r[:units]) %></td>
-                            <td class="text-end">$ <%= number_with_precision(r[:revenue], precision: 2, delimiter: ',') %></td>
+                            <th scope="col">Rank</th>
+                            <th scope="col">Producto</th>
+                            <th scope="col" class="text-end">Unidades</th>
+                            <th scope="col" class="text-end">Ingresos</th>
                           </tr>
-                        <% end %>
-                        <% if @top_products_all.blank? %>
-                          <tr><td colspan="4" class="text-center text-muted py-3">Sin datos</td></tr>
-                        <% end %>
-                      </tbody>
-                    </table>
-                  </div>
+                        </thead>
+                        <tbody>
+                          <% 3.times do %>
+                            <tr class="placeholder-row">
+                              <td colspan="4" class="placeholder-glow"><span class="placeholder col-12"></span></td>
+                            </tr>
+                          <% end %>
+                        </tbody>
+                      </table>
+                    </div>
+                  </turbo-frame>
             </div>
 
             <!-- Rentables YTD -->

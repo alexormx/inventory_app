@@ -190,6 +190,48 @@ class Admin::DashboardController < ApplicationController
   users_prev_rows.each do |r|
     prev_map[r.id] = { orders_count: r.attributes["orders_count"].to_i, revenue: r.attributes["revenue"].to_d }
   end
+
+  # Turbo Frame: lista de Top Sellers por periodo
+  def sellers
+    authorize_admin!
+    now = Time.zone.now
+    period = params[:period].presence || 'ytd' # ytd | ly | all
+    page = params[:page].presence || 1
+    per  = (params[:per].presence || 10).to_i.clamp(5, 50)
+
+    so_scope = SaleOrder.where.not(status: 'Canceled')
+    paid_statuses = %w[Confirmed Shipped Delivered]
+    scope = case period
+            when 'ly'
+              ly_start = now.beginning_of_year - 1.year
+              ly_end   = ly_start.end_of_year
+              so_scope.where(order_date: ly_start..ly_end).where(status: paid_statuses)
+            when 'all'
+              so_scope.where(status: paid_statuses)
+            else # 'ytd'
+              so_scope.where(order_date: (now.beginning_of_year..now.end_of_day)).where(status: paid_statuses)
+            end
+
+    rev_sql  = "COALESCE(sale_order_items.unit_final_price, 0) * COALESCE(sale_order_items.quantity, 0)"
+    units_sql = "COALESCE(sale_order_items.quantity, 0)"
+
+    rel = SaleOrderItem.joins(:sale_order, :product)
+                       .merge(scope)
+                       .group('products.id','products.product_name','products.brand','products.category')
+                       .select("products.id, products.product_name, products.brand, products.category, SUM(#{units_sql}) AS units, SUM(#{rev_sql}) AS revenue")
+                       .order('units DESC')
+
+    # kaminari pagination
+    rel = rel.page(page).per(per)
+
+    @rows = rel.map { |r| { product_id: r.id, name: r.product_name, brand: r.brand, category: r.category, units: r.attributes['units'].to_i, revenue: r.attributes['revenue'].to_d } }
+    @period = period
+
+    respond_to do |format|
+      format.turbo_stream { render partial: 'admin/dashboard/sellers_table', locals: { rows: @rows, period: @period, rel: rel } }
+      format.html { redirect_to admin_dashboard_path }
+    end
+  end
   @top_users_ytd_vs_prev = @top_users_range.map do |u|
     prev = prev_map[u[:user_id]] || { orders_count: 0, revenue: 0.to_d }
     delta = prev[:revenue].to_d.positive? ? ((u[:revenue] - prev[:revenue]) / prev[:revenue]) : nil
