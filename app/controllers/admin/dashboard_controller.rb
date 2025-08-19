@@ -16,6 +16,8 @@ class Admin::DashboardController < ApplicationController
 
   range = @start_date..@end_date
   so_ytd = so_scope.where(order_date: range)
+  paid_statuses = %w[Confirmed Shipped Delivered]
+  so_ytd_paid = so_ytd.where(status: paid_statuses)
   po_ytd = po_scope.where(order_date: range)
 
     # KPIs básicos
@@ -127,13 +129,13 @@ class Admin::DashboardController < ApplicationController
 
   # Top 10 productos históricos (por unidades)
     rev_sql = "COALESCE(sale_order_items.unit_final_price, 0) * COALESCE(sale_order_items.quantity, 0)"
-    top_products = SaleOrderItem.joins(:sale_order, :product)
-                                .merge(so_scope)
-                                .group("products.id", "products.product_name")
-                                .select("products.id, products.product_name, SUM(sale_order_items.quantity) AS units, SUM(#{rev_sql}) AS revenue")
+  top_products = SaleOrderItem.joins(:sale_order, :product)
+                .merge(so_scope.where(status: paid_statuses))
+                .group("products.id", "products.product_name", "products.brand", "products.category")
+                .select("products.id, products.product_name, products.brand, products.category, SUM(sale_order_items.quantity) AS units, SUM(#{rev_sql}) AS revenue")
                                 .order("units DESC")
                 .limit(10)
-    @top_products_all = top_products.map { |r| { product_id: r.id, name: r.product_name, units: r.attributes["units"].to_i, revenue: r.attributes["revenue"].to_d } }
+  @top_products_all = top_products.map { |r| { product_id: r.id, name: r.product_name, brand: r.brand, category: r.category, units: r.attributes["units"].to_i, revenue: r.attributes["revenue"].to_d } }
 
     # Top 5 productos en las últimas 20 ventas
     last20_ids = so_scope.order(order_date: :desc, created_at: :desc).limit(20).pluck(:id)
@@ -303,32 +305,57 @@ class Admin::DashboardController < ApplicationController
       units_sql   = "COALESCE(sale_order_items.quantity, 0)"
 
       # Top Sellers (por unidades) en el rango YTD seleccionado
-      top_sellers_q = SaleOrderItem.joins(:sale_order, :product)
-                                   .merge(so_ytd)
-                                   .group('products.id','products.product_name')
-                                   .select("products.id, products.product_name, SUM(#{units_sql}) AS units, SUM(#{rev_sql_str}) AS revenue")
+  top_sellers_q = SaleOrderItem.joins(:sale_order, :product)
+               .merge(so_ytd_paid)
+                                   .group('products.id','products.product_name','products.brand','products.category')
+                                   .select("products.id, products.product_name, products.brand, products.category, SUM(#{units_sql}) AS units, SUM(#{rev_sql_str}) AS revenue")
                                    .order('units DESC')
                                    .limit(10)
-      @top_sellers_ytd = top_sellers_q.map { |r| { product_id: r.id, name: r.product_name, units: r.attributes['units'].to_i, revenue: r.attributes['revenue'].to_d } }
+      @top_sellers_ytd = top_sellers_q.map { |r| { product_id: r.id, name: r.product_name, brand: r.brand, category: r.category, units: r.attributes['units'].to_i, revenue: r.attributes['revenue'].to_d } }
 
   # Top Sellers (Last Year calendario completo)
   ly_start = now.beginning_of_year - 1.year
   ly_end   = ly_start.end_of_year
   so_last_year = so_scope.where(order_date: ly_start..ly_end)
+  so_last_year_paid = so_last_year.where(status: paid_statuses)
   top_sellers_ly_q = SaleOrderItem.joins(:sale_order, :product)
-              .merge(so_last_year)
-              .group('products.id','products.product_name')
-              .select("products.id, products.product_name, SUM(#{units_sql}) AS units, SUM(#{rev_sql_str}) AS revenue")
+              .merge(so_last_year_paid)
+              .group('products.id','products.product_name','products.brand','products.category')
+              .select("products.id, products.product_name, products.brand, products.category, SUM(#{units_sql}) AS units, SUM(#{rev_sql_str}) AS revenue")
               .order('units DESC')
               .limit(10)
-  @top_sellers_last_year = top_sellers_ly_q.map { |r| { product_id: r.id, name: r.product_name, units: r.attributes['units'].to_i, revenue: r.attributes['revenue'].to_d } }
+  @top_sellers_last_year = top_sellers_ly_q.map { |r| { product_id: r.id, name: r.product_name, brand: r.brand, category: r.category, units: r.attributes['units'].to_i, revenue: r.attributes['revenue'].to_d } }
 
   # Top Sellers (All Time) por unidades ya existe en @top_products_all
 
-      # Top inventario por valor (costo de compra acumulado actual)
-      @top_inventory_by_value = Product.order(current_inventory_value: :desc).limit(10).map do |p|
-        { product_id: p.id, name: p.product_name, inventory_value: p.current_inventory_value.to_d }
+      # Top inventario (por valor y por unidades) con filtros: Inventario, Apartados, Todo
+      inv_only_statuses   = [:available, :in_transit]
+      reserved_statuses   = [:reserved, :pre_reserved, :pre_sold]
+      inv_all_statuses    = inv_only_statuses + reserved_statuses
+
+      build_top_inv = lambda do |statuses, order_by|
+        base = Inventory.joins(:product)
+                         .where(status: statuses)
+                         .group('products.id', 'products.product_name', 'products.brand', 'products.category')
+        rows_v = base.select('products.id, products.product_name, products.brand, products.category, SUM(inventories.purchase_cost) AS inventory_value')
+                     .order('inventory_value DESC')
+                     .limit(10)
+        by_value = rows_v.map { |r| { product_id: r.id, name: r.product_name, brand: r.brand, category: r.category, inventory_value: r.attributes['inventory_value'].to_d } }
+
+        rows_q = base.select('products.id, products.product_name, products.brand, products.category, COUNT(inventories.id) AS units_count, SUM(inventories.purchase_cost) AS inventory_value')
+                     .order('units_count DESC')
+                     .limit(10)
+        by_qty = rows_q.map { |r| { product_id: r.id, name: r.product_name, brand: r.brand, category: r.category, units_count: r.attributes['units_count'].to_i, inventory_value: r.attributes['inventory_value'].to_d } }
+        [by_value, by_qty]
       end
+
+      @top_inventory_by_value_inventory, @top_inventory_by_quantity_inventory = build_top_inv.call(inv_only_statuses, 'value')
+      @top_inventory_by_value_reserved,  @top_inventory_by_quantity_reserved  = build_top_inv.call(reserved_statuses, 'value')
+      @top_inventory_by_value_all,       @top_inventory_by_quantity_all       = build_top_inv.call(inv_all_statuses, 'value')
+
+      # Back-compat variables used by the view previously (point to "all")
+      @top_inventory_by_value    = @top_inventory_by_value_all
+      @top_inventory_by_quantity = @top_inventory_by_quantity_all
 
       # Top ventas por categoría (YTD actual)
       ytd_by_cat = SaleOrderItem.joins(:sale_order, :product)
@@ -338,6 +365,17 @@ class Admin::DashboardController < ApplicationController
   @top_categories_ytd = ytd_by_cat.to_a.map { |(cat, val)| { category: (cat.presence || 'Uncategorized'), revenue: val.to_d } }
                .sort_by { |h| -h[:revenue] }
                .first(10)
+      # Utilidad por categoría (YTD): revenue - cogs
+      ytd_cogs_by_cat = SaleOrderItem.joins(:sale_order, :product)
+                                     .merge(so_ytd)
+                                     .group('products.category')
+                                     .sum(Arel.sql(cogs_sql_str))
+      cats_ytd = (ytd_by_cat.keys + ytd_cogs_by_cat.keys).uniq
+      @top_categories_profit_ytd = cats_ytd.map do |cat|
+        rev  = ytd_by_cat[cat].to_d
+        cogs = ytd_cogs_by_cat[cat].to_d
+        { category: (cat.presence || 'Uncategorized'), profit: (rev - cogs) }
+      end.sort_by { |h| -h[:profit] }.first(10)
 
       # Top ventas por categoría (año pasado calendario completo)
       prev_start = now.beginning_of_year - 1.year
@@ -350,6 +388,17 @@ class Admin::DashboardController < ApplicationController
   @top_categories_last_year = prev_by_cat.to_a.map { |(cat, val)| { category: (cat.presence || 'Uncategorized'), revenue: val.to_d } }
               .sort_by { |h| -h[:revenue] }
               .first(10)
+      # Utilidad por categoría (Last Year)
+      prev_cogs_by_cat = SaleOrderItem.joins(:sale_order, :product)
+                                      .merge(so_prev)
+                                      .group('products.category')
+                                      .sum(Arel.sql(cogs_sql_str))
+      cats_prev = (prev_by_cat.keys + prev_cogs_by_cat.keys).uniq
+      @top_categories_profit_last_year = cats_prev.map do |cat|
+        rev  = prev_by_cat[cat].to_d
+        cogs = prev_cogs_by_cat[cat].to_d
+        { category: (cat.presence || 'Uncategorized'), profit: (rev - cogs) }
+      end.sort_by { |h| -h[:profit] }.first(10)
 
   # Top ventas por categoría (All Time)
   all_by_cat = SaleOrderItem.joins(:sale_order, :product)
@@ -359,107 +408,204 @@ class Admin::DashboardController < ApplicationController
   @top_categories_all_time = all_by_cat.to_a.map { |(cat, val)| { category: (cat.presence || 'Uncategorized'), revenue: val.to_d } }
             .sort_by { |h| -h[:revenue] }
             .first(10)
+  # Utilidad por categoría (All Time)
+  all_cogs_by_cat = SaleOrderItem.joins(:sale_order, :product)
+                                 .merge(so_scope)
+                                 .group('products.category')
+                                 .sum(Arel.sql(cogs_sql_str))
+  cats_all = (all_by_cat.keys + all_cogs_by_cat.keys).uniq
+  @top_categories_profit_all_time = cats_all.map do |cat|
+    rev  = all_by_cat[cat].to_d
+    cogs = all_cogs_by_cat[cat].to_d
+    { category: (cat.presence || 'Uncategorized'), profit: (rev - cogs) }
+  end.sort_by { |h| -h[:profit] }.first(10)
 
-      # Productos más rentables (YTD): Compra (inversión en compras), Ventas (ingresos), Utilidad (Ventas - Compra)
-      purchase_sql_str = "COALESCE(purchase_order_items.total_line_cost_in_mxn, purchase_order_items.total_line_cost, COALESCE(purchase_order_items.unit_compose_cost_in_mxn, purchase_order_items.unit_compose_cost, purchase_order_items.unit_cost) * COALESCE(purchase_order_items.quantity, 0))"
+  # ============== Top Customers: Apartados (reserved/pre_reserved/pre_sold) ==============
+  reserved_statuses = [:reserved, :pre_reserved, :pre_sold]
+  build_top_reserved = lambda do |scope|
+    rows = Inventory.joins(sale_order: :user)
+                    .merge(scope)
+                    .where(status: reserved_statuses)
+                    .group('users.id','users.name')
+                    .select("users.id, users.name, COUNT(inventories.id) AS units_reserved, SUM(inventories.purchase_cost) AS reserved_value")
+                    .order('reserved_value DESC')
+                    .limit(10)
+    rows.map { |r| { user_id: r.id, name: (r.name.presence || r.id), units_reserved: r.attributes['units_reserved'].to_i, reserved_value: r.attributes['reserved_value'].to_d } }
+  end
 
-      sales_rows_ytd = SaleOrderItem.joins(:sale_order, :product)
-                                    .merge(so_ytd)
-                                    .group('products.id','products.product_name','products.category')
-                                    .select("products.id AS product_id, products.product_name AS product_name, products.category AS category, SUM(#{rev_sql_str}) AS sales_total")
+  @top_users_reserved_ytd = build_top_reserved.call(so_ytd)
+  @top_users_reserved_last_year = build_top_reserved.call(so_last_year_users)
+  @top_users_reserved_all = build_top_reserved.call(so_scope)
 
-      purchase_rows_ytd = PurchaseOrderItem.joins(:purchase_order, :product)
-                                           .merge(po_ytd)
-                                           .group('products.id','products.product_name','products.category')
-                                           .select("products.id AS product_id, products.product_name AS product_name, products.category AS category, SUM(#{purchase_sql_str}) AS purchase_total")
+  # Combine Sales + Reserved per user and rank by (revenue + reserved_value)
+  combine_sales_reserved = lambda do |sales_rows, reserved_rows|
+    s_map = (sales_rows || []).index_by { |r| r[:user_id] }
+    r_map = (reserved_rows || []).index_by { |r| r[:user_id] }
+    (s_map.keys + r_map.keys).uniq.map do |uid|
+      s = s_map[uid]
+      r = r_map[uid]
+      name = (s && s[:name]).presence || (r && r[:name]).presence || uid
+      orders = s ? s[:orders_count].to_i : 0
+      revenue = s ? s[:revenue].to_d : 0.to_d
+      units_reserved = r ? r[:units_reserved].to_i : 0
+      reserved_value = r ? r[:reserved_value].to_d : 0.to_d
+      total = revenue + reserved_value
+      { user_id: uid, name: name, orders_count: orders, revenue: revenue, units_reserved: units_reserved, reserved_value: reserved_value, total: total }
+    end.sort_by { |h| -h[:total] }.first(10)
+  end
 
-      sales_map_ytd    = sales_rows_ytd.index_by { |r| r.attributes['product_id'].to_i }
-      purchase_map_ytd = purchase_rows_ytd.index_by { |r| r.attributes['product_id'].to_i }
-      all_ids_ytd = (sales_map_ytd.keys + purchase_map_ytd.keys).uniq
+  @top_users_sales_reserved_ytd = combine_sales_reserved.call(@top_users_range, @top_users_reserved_ytd)
+  @top_users_sales_reserved_last_year = combine_sales_reserved.call(@top_users_last_year, @top_users_reserved_last_year)
+  @top_users_sales_reserved_all = combine_sales_reserved.call(@top_users_all, @top_users_reserved_all)
+
+    # Productos más rentables (YTD): Ventas (ingresos), COGS (costo de unidades vendidas en el periodo), Utilidad = Ventas - COGS - Mermas
+  sales_rows_ytd = SaleOrderItem.joins(:sale_order, :product)
+      .merge(so_ytd_paid)
+                  .group('products.id','products.product_name','products.brand','products.category')
+                  .select("products.id AS product_id, products.product_name AS product_name, products.brand AS brand, products.category AS category, SUM(#{rev_sql_str}) AS sales_total")
+  # Merma (marketing, damaged, lost, scrap) costo por producto en el rango
+  waste_rows_ytd = Inventory.joins(:product)
+            .where(status: [:marketing, :damaged, :lost, :scrap], status_changed_at: range)
+            .group('products.id','products.product_name','products.brand','products.category')
+            .select('products.id AS product_id, products.product_name AS product_name, products.brand AS brand, products.category AS category, SUM(inventories.purchase_cost) AS waste_total')
+
+  waste_map_ytd = waste_rows_ytd.index_by { |r| r.attributes['product_id'].to_i }
+
+  # Prefer COGS from Inventory purchase_cost for sold items (paid orders) in period; fallback to SOI.unit_cost
+  cogs_rows_ytd_inv = Inventory.joins(:product, :sale_order)
+                               .merge(so_ytd_paid)
+                               .where(status: :sold)
+                               .group('products.id','products.product_name','products.brand','products.category')
+                               .select('products.id AS product_id, products.product_name AS product_name, products.brand AS brand, products.category AS category, SUM(inventories.purchase_cost) AS cogs_total')
+  if cogs_rows_ytd_inv.any?
+    cogs_rows_ytd = cogs_rows_ytd_inv
+  else
+    cogs_rows_ytd = SaleOrderItem.joins(:sale_order, :product)
+                   .merge(so_ytd_paid)
+                   .group('products.id','products.product_name','products.brand','products.category')
+                   .select("products.id AS product_id, products.product_name AS product_name, products.brand AS brand, products.category AS category, SUM(#{cogs_sql_str}) AS cogs_total")
+  end
+
+  sales_map_ytd = sales_rows_ytd.index_by { |r| r.attributes['product_id'].to_i }
+  cogs_map_ytd  = cogs_rows_ytd.index_by { |r| r.attributes['product_id'].to_i }
+  all_ids_ytd   = (sales_map_ytd.keys + cogs_map_ytd.keys + waste_map_ytd.keys).uniq
 
       prod_profit = all_ids_ytd.map do |pid|
         srow = sales_map_ytd[pid]
-        prow = purchase_map_ytd[pid]
-        name = (srow&.attributes&.dig('product_name') || prow&.attributes&.dig('product_name'))
-        cat  = (srow&.attributes&.dig('category') || prow&.attributes&.dig('category'))
-        sales    = srow&.attributes&.dig('sales_total').to_d
-        purchases = prow&.attributes&.dig('purchase_total').to_d
+  name = srow&.attributes&.dig('product_name')
+  brand = srow&.attributes&.dig('brand')
+  cat  = srow&.attributes&.dig('category')
+        sales     = srow&.attributes&.dig('sales_total').to_d
+  purchases = cogs_map_ytd[pid]&.attributes&.dig('cogs_total').to_d
+        waste     = waste_map_ytd[pid]&.attributes&.dig('waste_total').to_d
         {
           product_id: pid,
           name: name,
+          brand: brand,
           category: (cat.presence || 'Uncategorized'),
           revenue: sales,      # Ventas
           cogs: purchases,     # Compra (inversión)
-          profit: sales - purchases # Utilidad
+          profit: sales - purchases - waste # Utilidad neta tras mermas
         }
       end
 
       @top_products_profit_ytd = prod_profit.sort_by { |h| -h[:profit] }.first(10)
 
-      # Productos más rentables (Last Year calendario completo)
-      po_last_year = po_scope.where(order_date: ly_start..ly_end)
+  # Productos más rentables (Last Year calendario completo)
 
-      sales_rows_ly = SaleOrderItem.joins(:sale_order, :product)
-                                   .merge(so_last_year)
-                                   .group('products.id','products.product_name','products.category')
-                                   .select("products.id AS product_id, products.product_name AS product_name, products.category AS category, SUM(#{rev_sql_str}) AS sales_total")
+  sales_rows_ly = SaleOrderItem.joins(:sale_order, :product)
+               .merge(so_last_year_paid)
+                                   .group('products.id','products.product_name','products.brand','products.category')
+                                   .select("products.id AS product_id, products.product_name AS product_name, products.brand AS brand, products.category AS category, SUM(#{rev_sql_str}) AS sales_total")
+  waste_rows_ly = Inventory.joins(:product)
+           .where(status: [:marketing, :damaged, :lost, :scrap], status_changed_at: ly_start..ly_end)
+           .group('products.id','products.product_name','products.brand','products.category')
+           .select('products.id AS product_id, products.product_name AS product_name, products.brand AS brand, products.category AS category, SUM(inventories.purchase_cost) AS waste_total')
+  waste_map_ly = waste_rows_ly.index_by { |r| r.attributes['product_id'].to_i }
 
-      purchase_rows_ly = PurchaseOrderItem.joins(:purchase_order, :product)
-                                          .merge(po_last_year)
-                                          .group('products.id','products.product_name','products.category')
-                                          .select("products.id AS product_id, products.product_name AS product_name, products.category AS category, SUM(#{purchase_sql_str}) AS purchase_total")
+  cogs_rows_ly_inv = Inventory.joins(:product, :sale_order)
+                             .merge(so_last_year_paid)
+                             .where(status: :sold)
+                             .group('products.id','products.product_name','products.brand','products.category')
+                             .select('products.id AS product_id, products.product_name AS product_name, products.brand AS brand, products.category AS category, SUM(inventories.purchase_cost) AS cogs_total')
+  if cogs_rows_ly_inv.any?
+    cogs_rows_ly = cogs_rows_ly_inv
+  else
+    cogs_rows_ly = SaleOrderItem.joins(:sale_order, :product)
+                .merge(so_last_year_paid)
+                .group('products.id','products.product_name','products.brand','products.category')
+                .select("products.id AS product_id, products.product_name AS product_name, products.brand AS brand, products.category AS category, SUM(#{cogs_sql_str}) AS cogs_total")
+  end
 
-      sales_map_ly    = sales_rows_ly.index_by { |r| r.attributes['product_id'].to_i }
-      purchase_map_ly = purchase_rows_ly.index_by { |r| r.attributes['product_id'].to_i }
-      all_ids_ly = (sales_map_ly.keys + purchase_map_ly.keys).uniq
+  sales_map_ly = sales_rows_ly.index_by { |r| r.attributes['product_id'].to_i }
+  cogs_map_ly  = cogs_rows_ly.index_by { |r| r.attributes['product_id'].to_i }
+  all_ids_ly   = (sales_map_ly.keys + cogs_map_ly.keys + waste_map_ly.keys).uniq
 
       prod_profit_ly = all_ids_ly.map do |pid|
         srow = sales_map_ly[pid]
-        prow = purchase_map_ly[pid]
-        name = (srow&.attributes&.dig('product_name') || prow&.attributes&.dig('product_name'))
-        cat  = (srow&.attributes&.dig('category') || prow&.attributes&.dig('category'))
-        sales    = srow&.attributes&.dig('sales_total').to_d
-        purchases = prow&.attributes&.dig('purchase_total').to_d
+  name = srow&.attributes&.dig('product_name')
+  brand = srow&.attributes&.dig('brand')
+  cat  = srow&.attributes&.dig('category')
+        sales     = srow&.attributes&.dig('sales_total').to_d
+  purchases = cogs_map_ly[pid]&.attributes&.dig('cogs_total').to_d
+        waste     = waste_map_ly[pid]&.attributes&.dig('waste_total').to_d
         {
           product_id: pid,
           name: name,
+          brand: brand,
           category: (cat.presence || 'Uncategorized'),
           revenue: sales,
           cogs: purchases,
-          profit: sales - purchases
+          profit: sales - purchases - waste
         }
       end
       @top_products_profit_last_year = prod_profit_ly.sort_by { |h| -h[:profit] }.first(10)
 
-      # Productos más rentables (All Time)
-      sales_rows_all = SaleOrderItem.joins(:sale_order, :product)
-                                    .merge(so_scope)
-                                    .group('products.id','products.product_name','products.category')
-                                    .select("products.id AS product_id, products.product_name AS product_name, products.category AS category, SUM(#{rev_sql_str}) AS sales_total")
+    # Productos más rentables (All Time)
+  sales_rows_all = SaleOrderItem.joins(:sale_order, :product)
+      .merge(so_scope.where(status: paid_statuses))
+                  .group('products.id','products.product_name','products.brand','products.category')
+                  .select("products.id AS product_id, products.product_name AS product_name, products.brand AS brand, products.category AS category, SUM(#{rev_sql_str}) AS sales_total")
+  waste_rows_all = Inventory.joins(:product)
+           .where(status: [:marketing, :damaged, :lost, :scrap])
+           .group('products.id','products.product_name','products.brand','products.category')
+           .select('products.id AS product_id, products.product_name AS product_name, products.brand AS brand, products.category AS category, SUM(inventories.purchase_cost) AS waste_total')
+  waste_map_all = waste_rows_all.index_by { |r| r.attributes['product_id'].to_i }
 
-      purchase_rows_all = PurchaseOrderItem.joins(:purchase_order, :product)
-                                           .merge(po_scope)
-                                           .group('products.id','products.product_name','products.category')
-                                           .select("products.id AS product_id, products.product_name AS product_name, products.category AS category, SUM(#{purchase_sql_str}) AS purchase_total")
+  cogs_rows_all_inv = Inventory.joins(:product, :sale_order)
+                               .merge(so_scope.where(status: paid_statuses))
+                               .where(status: :sold)
+                               .group('products.id','products.product_name','products.brand','products.category')
+                               .select('products.id AS product_id, products.product_name AS product_name, products.brand AS brand, products.category AS category, SUM(inventories.purchase_cost) AS cogs_total')
+  if cogs_rows_all_inv.any?
+    cogs_rows_all = cogs_rows_all_inv
+  else
+    cogs_rows_all = SaleOrderItem.joins(:sale_order, :product)
+                 .merge(so_scope.where(status: paid_statuses))
+                 .group('products.id','products.product_name','products.brand','products.category')
+                 .select("products.id AS product_id, products.product_name AS product_name, products.brand AS brand, products.category AS category, SUM(#{cogs_sql_str}) AS cogs_total")
+  end
 
-      sales_map_all    = sales_rows_all.index_by { |r| r.attributes['product_id'].to_i }
-      purchase_map_all = purchase_rows_all.index_by { |r| r.attributes['product_id'].to_i }
-      all_ids_all = (sales_map_all.keys + purchase_map_all.keys).uniq
+  sales_map_all = sales_rows_all.index_by { |r| r.attributes['product_id'].to_i }
+  cogs_map_all  = cogs_rows_all.index_by { |r| r.attributes['product_id'].to_i }
+  all_ids_all   = (sales_map_all.keys + cogs_map_all.keys + waste_map_all.keys).uniq
 
       prod_profit_all = all_ids_all.map do |pid|
         srow = sales_map_all[pid]
-        prow = purchase_map_all[pid]
-        name = (srow&.attributes&.dig('product_name') || prow&.attributes&.dig('product_name'))
-        cat  = (srow&.attributes&.dig('category') || prow&.attributes&.dig('category'))
-        sales    = srow&.attributes&.dig('sales_total').to_d
-        purchases = prow&.attributes&.dig('purchase_total').to_d
+  name = srow&.attributes&.dig('product_name')
+  brand = srow&.attributes&.dig('brand')
+  cat  = srow&.attributes&.dig('category')
+        sales     = srow&.attributes&.dig('sales_total').to_d
+  purchases = cogs_map_all[pid]&.attributes&.dig('cogs_total').to_d
+        waste     = waste_map_all[pid]&.attributes&.dig('waste_total').to_d
         {
           product_id: pid,
           name: name,
+          brand: brand,
           category: (cat.presence || 'Uncategorized'),
           revenue: sales,
           cogs: purchases,
-          profit: sales - purchases
+          profit: sales - purchases - waste
         }
       end
       @top_products_profit_all_time = prod_profit_all.sort_by { |h| -h[:profit] }.first(10)
@@ -567,6 +713,115 @@ class Admin::DashboardController < ApplicationController
       categories: top_cats_profit.map(&:first),
       profit: top_cats_profit.map { |(_, p)| p }
     }
+
+    # ============== Worst Products KPIs ==================
+    # Inputs per product
+    inv_stock_map    = Inventory.where(status: [:available, :in_transit]).group(:product_id).count
+    inv_reserved_map = Inventory.where(status: [:reserved, :pre_reserved, :pre_sold]).group(:product_id).count
+    units_sold_map   = SaleOrderItem.joins(:sale_order)
+                                    .merge(so_ytd_paid)
+                                    .group(:product_id)
+                                    .sum(:quantity)
+    product_ids = (inv_stock_map.keys + inv_reserved_map.keys + units_sold_map.keys).uniq
+    products_info = Product.where(id: product_ids)
+                           .pluck(:id, :product_name, :brand, :category, :selling_price, :average_purchase_cost)
+                           .map { |id, name, brand, category, sp, apc| [id, { name:, brand:, category:, sp: sp.to_d, apc: apc.to_d }] }
+                           .to_h
+
+    months_in_range = months_between(@start_date, @end_date).length
+    months_in_range = 1 if months_in_range <= 0
+
+    per_product = []
+    product_ids.each do |pid|
+      info = products_info[pid] || { name: pid, brand: nil, category: nil, sp: 0.to_d, apc: 0.to_d }
+      stock_q = inv_stock_map[pid].to_i
+      res_q   = inv_reserved_map[pid].to_i
+      sold_q  = units_sold_map[pid].to_i
+      revenue = info[:sp].to_d * sold_q
+      cogs    = info[:apc].to_d * sold_q
+      margin_pct = revenue.positive? ? ((revenue - cogs) / revenue) : nil
+      avg_inv_proxy = ((stock_q + res_q + sold_q).to_f / 2.0)
+      rotation = avg_inv_proxy.positive? ? (sold_q.to_f / avg_inv_proxy) : nil
+      avg_monthly_sales = sold_q.to_f / months_in_range
+      doh = avg_monthly_sales.positive? ? ((stock_q.to_f * 30.0) / avg_monthly_sales) : (stock_q > 0 ? 1.0/0 : 0.0) # Infinity if stock>0 and no sales
+      immobilized_capital = info[:apc].to_d * stock_q
+      per_product << {
+        product_id: pid,
+        name: info[:name],
+        brand: info[:brand],
+        category: (info[:category].presence || 'Uncategorized'),
+        stock_quantity: stock_q,
+        reserved_quantity: res_q,
+        units_sold: sold_q,
+        revenue: revenue,
+        cogs: cogs,
+        margin_pct: margin_pct,
+        rotation: rotation,
+        doh: doh,
+        avg_monthly_sales: avg_monthly_sales,
+        immobilized_capital: immobilized_capital,
+        avg_purchase_cost: info[:apc]
+      }
+    end
+
+    # Global metrics (exclude nils/infinity as applicable)
+    @worst_global_total_immobilized_capital = per_product.sum { |h| h[:immobilized_capital] }
+    margin_vals = per_product.map { |h| h[:margin_pct] }.compact
+    rot_vals    = per_product.map { |h| h[:rotation] }.compact
+    doh_vals    = per_product.map { |h| h[:doh] }.select { |v| v.finite? }
+    @worst_global_avg_margin_pct = margin_vals.any? ? (margin_vals.sum / margin_vals.size) : nil
+    @worst_global_avg_rotation   = rot_vals.any? ? (rot_vals.sum / rot_vals.size) : nil
+    @worst_global_avg_doh        = doh_vals.any? ? (doh_vals.sum / doh_vals.size) : nil
+
+    # Helper: min-max normalization
+    normalize = lambda do |values, value|
+      vals = values.compact.map { |v| v.infinite? ? nil : v }.compact
+      return 0.5 if value.nil?
+      return 1.0 if value.infinite?
+      return 0.5 if vals.empty?
+      min = vals.min
+      max = vals.max
+      range = max - min
+      return 0.5 if range <= 0
+      [[(value - min) / range, 0.0].max, 1.0].min
+    end
+
+    margins  = per_product.map { |h| h[:margin_pct] }
+    rotations = per_product.map { |h| h[:rotation] }
+    dohs     = per_product.map { |h| h[:doh] }
+    caps     = per_product.map { |h| h[:immobilized_capital].to_f }
+
+    # Worst lists
+    @worst_margin_products = per_product.select { |h| h[:units_sold].to_i > 0 && h[:margin_pct].present? }
+                                        .sort_by { |h| h[:margin_pct] }
+                                        .first(10)
+
+    @worst_rotation_products = per_product.select { |h| h[:rotation].present? }
+                                          .sort_by { |h| h[:rotation] }
+                                          .first(10)
+
+    @top_doh_products = per_product.sort_by do |h|
+                          v = h[:doh]
+                          v.infinite? ? Float::MAX : v
+                        end.reverse.first(10)
+
+    @top_immobilized_products = per_product.sort_by { |h| -h[:immobilized_capital].to_f }
+                                           .first(10)
+
+    # Worst score with default weights
+    w1 = (params[:w1] || 0.4).to_f
+    w2 = (params[:w2] || 0.2).to_f
+    w3 = (params[:w3] || 0.2).to_f
+    w4 = (params[:w4] || 0.2).to_f
+    scored = per_product.map do |h|
+      nm = normalize.call(margins, h[:margin_pct])
+      nr = normalize.call(rotations, h[:rotation])
+      nd = normalize.call(dohs, h[:doh])
+      nc = normalize.call(caps, h[:immobilized_capital].to_f)
+      worst_score = w1 * (1 - nm) + w2 * (1 - nr) + w3 * (nd) + w4 * (nc)
+      h.merge(worst_score: worst_score, norm_components: { margin: nm, rotation: nr, doh: nd, capital: nc })
+    end
+    @worst_score_products = scored.sort_by { |h| -h[:worst_score] }.first(10)
 
   # === Ventas por país y por estado (México) — YTD / Last Year / All Time ===
   so_ytd_fixed = so_scope.where(order_date: now.beginning_of_year..now.end_of_day)

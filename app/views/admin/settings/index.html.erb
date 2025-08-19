@@ -1,6 +1,33 @@
 <h2 class="mb-3 d-flex align-items-center gap-2"><i class="fa fa-cog"></i> Admin - Settings</h2>
 <p class="text-muted">Modify application settings.</p>
 
+<div class="alert alert-info" role="alert">
+	<strong>Documentation</strong>
+	<ul class="mb-0">
+		<li>
+			Best Sellers (YTD/LY/All Time) cuentan solo órdenes <em>pagadas/confirmadas</em>:
+			<code>Confirmed</code>, <code>Shipped</code>, <code>Delivered</code>. Se excluyen pendientes/canceladas.
+		</li>
+		<li>
+			COGS significa <strong>Cost of Goods Sold</strong> (costo de lo vendido).
+		</li>
+			<li>
+				Rentables (profit por producto) usa:
+				<ul>
+					<li>Ingresos: suma de <code>unit_final_price * quantity</code> de órdenes pagadas.</li>
+					<li>COGS: costo de las unidades vendidas en el periodo (<code>unit_cost * quantity</code> de los SaleOrderItems), independiente de cuándo se compraron.</li>
+					<li>Mermas: resta costo de inventario con estatus <code>marketing, damaged, lost, scrap</code> según <code>status_changed_at</code>.</li>
+				</ul>
+				Utilidad = Ingresos - COGS - Mermas.
+			</li>
+		<li>
+			Inventario: el <em>Average Purchase Cost</em> y <em>Inventory Value (MXN)</em> se calculan con costos compuestos en MXN
+			(<code>total_line_cost_in_mxn</code> o <code>unit_compose_cost_in_mxn</code>), sin usar moneda origen.
+		</li>
+	</ul>
+	<small class="text-muted">Última actualización: ajustes a cálculos y documentación.</small>
+	</div>
+
 <div class="card mb-4">
 	<div class="card-header d-flex align-items-center gap-2">
 		<i class="fa fa-sync"></i>
