@@ -174,9 +174,9 @@
                           <tr>
                             <td class="text-muted">#<%= idx + 1 %></td>
                             <td>
-                              <%= link_to r[:name], edit_admin_product_path(r[:product_id]) %>
+                              <div class="small fw-semibold"><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></div>
                               <% if r[:brand].present? || r[:category].present? %>
-                                <div class="small text-muted">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
+                                <div class="text-muted" style="font-size: .75rem;">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
                               <% end %>
                             </td>
                             <td class="text-end"><%= number_with_delimiter(r[:units]) %></td>
@@ -199,9 +199,9 @@
                           <tr>
                             <td class="text-muted">#<%= idx + 1 %></td>
                             <td>
-                              <%= link_to r[:name], edit_admin_product_path(r[:product_id]) %>
+                              <div class="small fw-semibold"><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></div>
                               <% if r[:brand].present? || r[:category].present? %>
-                                <div class="small text-muted">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
+                                <div class="text-muted" style="font-size: .75rem;">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
                               <% end %>
                             </td>
                             <td class="text-end"><%= number_with_delimiter(r[:units]) %></td>
@@ -224,9 +224,9 @@
                           <tr>
                             <td class="text-muted">#<%= idx + 1 %></td>
                             <td>
-                              <%= link_to r[:name], edit_admin_product_path(r[:product_id]) %>
+                              <div class="small fw-semibold"><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></div>
                               <% if r[:brand].present? || r[:category].present? %>
-                                <div class="small text-muted">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
+                                <div class="text-muted" style="font-size: .75rem;">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
                               <% end %>
                             </td>
                             <td class="text-end"><%= number_with_delimiter(r[:units]) %></td>
@@ -262,9 +262,9 @@
                           <tr>
                             <td class="text-muted">#<%= idx + 1 %></td>
                             <td>
-                              <%= link_to r[:name], edit_admin_product_path(r[:product_id]) %>
+                              <div class="small fw-semibold"><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></div>
                               <% if r[:brand].present? || r[:category].present? %>
-                                <div class="small text-muted">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
+                                <div class="text-muted" style="font-size: .75rem;">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
                               <% end %>
                             </td>
                             <td class="text-end">$ <%= number_with_precision(r[:cogs], precision: 2, delimiter: ',') %></td>
@@ -288,9 +288,9 @@
                           <tr>
                             <td class="text-muted">#<%= idx + 1 %></td>
                             <td>
-                              <%= link_to r[:name], edit_admin_product_path(r[:product_id]) %>
+                              <div class="small fw-semibold"><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></div>
                               <% if r[:brand].present? || r[:category].present? %>
-                                <div class="small text-muted">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
+                                <div class="text-muted" style="font-size: .75rem;">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
                               <% end %>
                             </td>
                             <td class="text-end">$ <%= number_with_precision(r[:cogs], precision: 2, delimiter: ',') %></td>
@@ -314,9 +314,9 @@
                           <tr>
                             <td class="text-muted">#<%= idx + 1 %></td>
                             <td>
-                              <%= link_to r[:name], edit_admin_product_path(r[:product_id]) %>
+                              <div class="small fw-semibold"><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></div>
                               <% if r[:brand].present? || r[:category].present? %>
-                                <div class="small text-muted">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
+                                <div class="text-muted" style="font-size: .75rem;">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
                               <% end %>
                             </td>
                             <td class="text-end">$ <%= number_with_precision(r[:cogs], precision: 2, delimiter: ',') %></td>
