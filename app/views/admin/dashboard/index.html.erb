@@ -553,62 +553,149 @@
           <div><a class="btn btn-sm btn-outline-primary" href="<%= admin_products_path %>">Ver detalle</a></div>
         </div>
         <div class="card-body p-0">
-          <div class="tab-content">
+          <div class="tab-content" data-controller="subtabs">
             <div class="tab-pane fade show active" id="tc-ytd" role="tabpanel" data-tabs-target="panel">
-              <div class="table-responsive">
-                <table class="table table-sm mb-0">
-                  <thead><tr><th>Rank</th><th>Categoría</th><th class="text-end">Ingresos</th></tr></thead>
-                  <tbody>
-                    <% @top_categories_ytd&.each_with_index do |r, idx| %>
-                      <tr>
-                        <td class="text-muted">#<%= idx + 1 %></td>
-                        <td><%= r[:category] %></td>
-                        <td class="text-end">$ <%= number_with_precision(r[:revenue], precision: 2, delimiter: ',') %></td>
-                      </tr>
-                    <% end %>
-                    <% if @top_categories_ytd.blank? %>
-                      <tr><td colspan="3" class="text-center text-muted py-3">Sin datos</td></tr>
-                    <% end %>
-                  </tbody>
-                </table>
+              <div class="px-3 pt-3">
+                <ul class="nav nav-tabs nav-tabs-sm" role="tablist">
+                  <li class="nav-item"><button class="nav-link active" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#tc-ytd-rev" type="button" role="tab" aria-controls="tc-ytd-rev" aria-selected="true">Ingresos</button></li>
+                  <li class="nav-item"><button class="nav-link" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#tc-ytd-prof" type="button" role="tab" aria-controls="tc-ytd-prof">Utilidad</button></li>
+                </ul>
+              </div>
+              <div class="tab-content">
+                <div class="tab-pane fade show active" id="tc-ytd-rev" role="tabpanel" data-subtabs-target="panel">
+                  <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                      <thead><tr><th>Rank</th><th>Categoría</th><th class="text-end">Ingresos</th></tr></thead>
+                      <tbody>
+                        <% @top_categories_ytd&.each_with_index do |r, idx| %>
+                          <tr>
+                            <td class="text-muted">#<%= idx + 1 %></td>
+                            <td><%= r[:category] %></td>
+                            <td class="text-end">$ <%= number_with_precision(r[:revenue], precision: 2, delimiter: ',') %></td>
+                          </tr>
+                        <% end %>
+                        <% if @top_categories_ytd.blank? %>
+                          <tr><td colspan="3" class="text-center text-muted py-3">Sin datos</td></tr>
+                        <% end %>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+                <div class="tab-pane fade" id="tc-ytd-prof" role="tabpanel" data-subtabs-target="panel">
+                  <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                      <thead><tr><th>Rank</th><th>Categoría</th><th class="text-end">Utilidad</th></tr></thead>
+                      <tbody>
+                        <% @top_categories_profit_ytd&.each_with_index do |r, idx| %>
+                          <tr>
+                            <td class="text-muted">#<%= idx + 1 %></td>
+                            <td><%= r[:category] %></td>
+                            <td class="text-end">$ <%= number_with_precision(r[:profit], precision: 2, delimiter: ',') %></td>
+                          </tr>
+                        <% end %>
+                        <% if @top_categories_profit_ytd.blank? %>
+                          <tr><td colspan="3" class="text-center text-muted py-3">Sin datos</td></tr>
+                        <% end %>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               </div>
             </div>
             <div class="tab-pane fade" id="tc-ly" role="tabpanel" data-tabs-target="panel">
-              <div class="table-responsive">
-                <table class="table table-sm mb-0">
-                  <thead><tr><th>Rank</th><th>Categoría</th><th class="text-end">Ingresos</th></tr></thead>
-                  <tbody>
-                    <% @top_categories_last_year&.each_with_index do |r, idx| %>
-                      <tr>
-                        <td class="text-muted">#<%= idx + 1 %></td>
-                        <td><%= r[:category] %></td>
-                        <td class="text-end">$ <%= number_with_precision(r[:revenue], precision: 2, delimiter: ',') %></td>
-                      </tr>
-                    <% end %>
-                    <% if @top_categories_last_year.blank? %>
-                      <tr><td colspan="3" class="text-center text-muted py-3">Sin datos</td></tr>
-                    <% end %>
-                  </tbody>
-                </table>
+              <div class="px-3 pt-3">
+                <ul class="nav nav-tabs nav-tabs-sm" role="tablist">
+                  <li class="nav-item"><button class="nav-link active" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#tc-ly-rev" type="button" role="tab" aria-controls="tc-ly-rev" aria-selected="true">Ingresos</button></li>
+                  <li class="nav-item"><button class="nav-link" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#tc-ly-prof" type="button" role="tab" aria-controls="tc-ly-prof">Utilidad</button></li>
+                </ul>
+              </div>
+              <div class="tab-content">
+                <div class="tab-pane fade show active" id="tc-ly-rev" role="tabpanel" data-subtabs-target="panel">
+                  <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                      <thead><tr><th>Rank</th><th>Categoría</th><th class="text-end">Ingresos</th></tr></thead>
+                      <tbody>
+                        <% @top_categories_last_year&.each_with_index do |r, idx| %>
+                          <tr>
+                            <td class="text-muted">#<%= idx + 1 %></td>
+                            <td><%= r[:category] %></td>
+                            <td class="text-end">$ <%= number_with_precision(r[:revenue], precision: 2, delimiter: ',') %></td>
+                          </tr>
+                        <% end %>
+                        <% if @top_categories_last_year.blank? %>
+                          <tr><td colspan="3" class="text-center text-muted py-3">Sin datos</td></tr>
+                        <% end %>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+                <div class="tab-pane fade" id="tc-ly-prof" role="tabpanel" data-subtabs-target="panel">
+                  <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                      <thead><tr><th>Rank</th><th>Categoría</th><th class="text-end">Utilidad</th></tr></thead>
+                      <tbody>
+                        <% @top_categories_profit_last_year&.each_with_index do |r, idx| %>
+                          <tr>
+                            <td class="text-muted">#<%= idx + 1 %></td>
+                            <td><%= r[:category] %></td>
+                            <td class="text-end">$ <%= number_with_precision(r[:profit], precision: 2, delimiter: ',') %></td>
+                          </tr>
+                        <% end %>
+                        <% if @top_categories_profit_last_year.blank? %>
+                          <tr><td colspan="3" class="text-center text-muted py-3">Sin datos</td></tr>
+                        <% end %>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               </div>
             </div>
             <div class="tab-pane fade" id="tc-all" role="tabpanel" data-tabs-target="panel">
-              <div class="table-responsive">
-                <table class="table table-sm mb-0">
-                  <thead><tr><th>Rank</th><th>Categoría</th><th class="text-end">Ingresos</th></tr></thead>
-                  <tbody>
-                    <% @top_categories_all_time&.each_with_index do |r, idx| %>
-                      <tr>
-                        <td class="text-muted">#<%= idx + 1 %></td>
-                        <td><%= r[:category] %></td>
-                        <td class="text-end">$ <%= number_with_precision(r[:revenue], precision: 2, delimiter: ',') %></td>
-                      </tr>
-                    <% end %>
-                    <% if @top_categories_all_time.blank? %>
-                      <tr><td colspan="3" class="text-center text-muted py-3">Sin datos</td></tr>
-                    <% end %>
-                  </tbody>
-                </table>
+              <div class="px-3 pt-3">
+                <ul class="nav nav-tabs nav-tabs-sm" role="tablist">
+                  <li class="nav-item"><button class="nav-link active" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#tc-all-rev" type="button" role="tab" aria-controls="tc-all-rev" aria-selected="true">Ingresos</button></li>
+                  <li class="nav-item"><button class="nav-link" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#tc-all-prof" type="button" role="tab" aria-controls="tc-all-prof">Utilidad</button></li>
+                </ul>
+              </div>
+              <div class="tab-content">
+                <div class="tab-pane fade show active" id="tc-all-rev" role="tabpanel" data-subtabs-target="panel">
+                  <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                      <thead><tr><th>Rank</th><th>Categoría</th><th class="text-end">Ingresos</th></tr></thead>
+                      <tbody>
+                        <% @top_categories_all_time&.each_with_index do |r, idx| %>
+                          <tr>
+                            <td class="text-muted">#<%= idx + 1 %></td>
+                            <td><%= r[:category] %></td>
+                            <td class="text-end">$ <%= number_with_precision(r[:revenue], precision: 2, delimiter: ',') %></td>
+                          </tr>
+                        <% end %>
+                        <% if @top_categories_all_time.blank? %>
+                          <tr><td colspan="3" class="text-center text-muted py-3">Sin datos</td></tr>
+                        <% end %>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+                <div class="tab-pane fade" id="tc-all-prof" role="tabpanel" data-subtabs-target="panel">
+                  <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                      <thead><tr><th>Rank</th><th>Categoría</th><th class="text-end">Utilidad</th></tr></thead>
+                      <tbody>
+                        <% @top_categories_profit_all_time&.each_with_index do |r, idx| %>
+                          <tr>
+                            <td class="text-muted">#<%= idx + 1 %></td>
+                            <td><%= r[:category] %></td>
+                            <td class="text-end">$ <%= number_with_precision(r[:profit], precision: 2, delimiter: ',') %></td>
+                          </tr>
+                        <% end %>
+                        <% if @top_categories_profit_all_time.blank? %>
+                          <tr><td colspan="3" class="text-center text-muted py-3">Sin datos</td></tr>
+                        <% end %>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -628,82 +715,179 @@
         </div>
         <div class="card-body p-0">
           <div class="tab-content">
-            <div class="tab-pane fade show active" id="rank-range" role="tabpanel" data-tabs-target="panel">
-              <div class="table-responsive">
-                <table class="table table-sm mb-0">
-                  <thead>
-                    <tr>
-                      <th>Rank</th>
-                      <th>Cliente</th>
-                      <th class="text-end">Órdenes</th>
-                      <th class="text-end">Ingresos YTD</th>
-                      <th class="text-end">Ingresos LY</th>
-                      <th class="text-end">Δ vs LY</th>
-                    </tr>
-                   </thead>
-                   <tbody>
-                     <% (@top_users_ytd_vs_prev.presence || @top_users_range).each_with_index do |u, idx| %>
-                       <tr>
-                         <td class="text-muted">#<%= idx + 1 %></td>
-                         <td><%= link_to u[:name], edit_admin_user_path(u[:user_id]) %></td>
-                         <td class="text-end"><%= number_with_delimiter(u[:orders_count]) %></td>
-                         <td class="text-end">$ <%= number_with_precision(u[:revenue], precision: 2, delimiter: ',') %></td>
-                         <td class="text-end">$ <%= number_with_precision((u[:prev_revenue] || 0), precision: 2, delimiter: ',') %></td>
-                         <td class="text-end">
-                           <% if u[:revenue_delta_ratio].nil? %>
-                             <span class="text-muted">—</span>
-                           <% else %>
-                             <%= number_to_percentage(u[:revenue_delta_ratio] * 100, precision: 1) %>
-                           <% end %>
-                         </td>
-                       </tr>
-                     <% end %>
-                     <% if @top_users_range.blank? %>
-                       <tr><td colspan="6" class="text-center text-muted py-3">No data</td></tr>
-                     <% end %>
-                   </tbody>
-                 </table>
+            <div class="tab-pane fade show active" id="rank-range" role="tabpanel" data-tabs-target="panel" data-controller="subtabs">
+              <div class="px-3 pt-3">
+                <ul class="nav nav-tabs nav-tabs-sm" role="tablist">
+                  <li class="nav-item"><button class="nav-link active" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#rank-range-sales" type="button" role="tab" aria-controls="rank-range-sales" aria-selected="true">Ventas</button></li>
+                  <li class="nav-item"><button class="nav-link" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#rank-range-reserved" type="button" role="tab" aria-controls="rank-range-reserved">Apartados</button></li>
+                </ul>
+              </div>
+              <div class="tab-content">
+                <div class="tab-pane fade show active" id="rank-range-sales" role="tabpanel" data-subtabs-target="panel">
+                  <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                      <thead>
+                        <tr>
+                          <th>Rank</th>
+                          <th>Cliente</th>
+                          <th class="text-end">Órdenes</th>
+                          <th class="text-end">Ingresos YTD</th>
+                          <th class="text-end">Ingresos LY</th>
+                          <th class="text-end">Δ vs LY</th>
+                        </tr>
+                       </thead>
+                       <tbody>
+                         <% (@top_users_ytd_vs_prev.presence || @top_users_range).each_with_index do |u, idx| %>
+                           <tr>
+                             <td class="text-muted">#<%= idx + 1 %></td>
+                             <td><%= link_to u[:name], edit_admin_user_path(u[:user_id]) %></td>
+                             <td class="text-end"><%= number_with_delimiter(u[:orders_count]) %></td>
+                             <td class="text-end">$ <%= number_with_precision(u[:revenue], precision: 2, delimiter: ',') %></td>
+                             <td class="text-end">$ <%= number_with_precision((u[:prev_revenue] || 0), precision: 2, delimiter: ',') %></td>
+                             <td class="text-end">
+                               <% if u[:revenue_delta_ratio].nil? %>
+                                 <span class="text-muted">—</span>
+                               <% else %>
+                                 <%= number_to_percentage(u[:revenue_delta_ratio] * 100, precision: 1) %>
+                               <% end %>
+                             </td>
+                           </tr>
+                         <% end %>
+                         <% if @top_users_range.blank? %>
+                           <tr><td colspan="6" class="text-center text-muted py-3">No data</td></tr>
+                         <% end %>
+                       </tbody>
+                     </table>
+                  </div>
+                </div>
+                <div class="tab-pane fade" id="rank-range-reserved" role="tabpanel" data-subtabs-target="panel">
+                  <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                      <thead>
+                        <tr>
+                          <th>Rank</th>
+                          <th>Cliente</th>
+                          <th class="text-end">Unidades apartadas</th>
+                          <th class="text-end">Valor apartados (MXN)</th>
+                        </tr>
+                       </thead>
+                       <tbody>
+                         <% @top_users_reserved_ytd&.each_with_index do |u, idx| %>
+                           <tr>
+                             <td class="text-muted">#<%= idx + 1 %></td>
+                             <td><%= link_to u[:name], edit_admin_user_path(u[:user_id]) %></td>
+                             <td class="text-end"><%= number_with_delimiter(u[:units_reserved]) %></td>
+                             <td class="text-end">$ <%= number_with_precision(u[:reserved_value], precision: 2, delimiter: ',') %></td>
+                           </tr>
+                         <% end %>
+                         <% if @top_users_reserved_ytd.blank? %>
+                           <tr><td colspan="4" class="text-center text-muted py-3">No data</td></tr>
+                         <% end %>
+                       </tbody>
+                     </table>
+                  </div>
+                </div>
               </div>
             </div>
-            <div class="tab-pane fade" id="rank-ly" role="tabpanel" data-tabs-target="panel">
-              <div class="table-responsive">
-                <table class="table table-sm mb-0">
-                  <thead><tr><th>Rank</th><th>Cliente</th><th class="text-end">Órdenes</th><th class="text-end">Ingresos</th></tr></thead>
-                  <tbody>
-                    <% @top_users_last_year.each_with_index do |u, idx| %>
-                      <tr>
-                        <td class="text-muted">#<%= idx + 1 %></td>
-                        <td><%= link_to u[:name], edit_admin_user_path(u[:user_id]) %></td>
-                        <td class="text-end"><%= number_with_delimiter(u[:orders_count]) %></td>
-                        <td class="text-end">$ <%= number_with_precision(u[:revenue], precision: 2, delimiter: ',') %></td>
-                      </tr>
-                    <% end %>
-                    <% if @top_users_last_year.blank? %>
-                      <tr><td colspan="4" class="text-center text-muted py-3">No data</td></tr>
-                    <% end %>
-                  </tbody>
-                </table>
+            <div class="tab-pane fade" id="rank-ly" role="tabpanel" data-tabs-target="panel" data-controller="subtabs">
+              <div class="px-3 pt-3">
+                <ul class="nav nav-tabs nav-tabs-sm" role="tablist">
+                  <li class="nav-item"><button class="nav-link active" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#rank-ly-sales" type="button" role="tab" aria-controls="rank-ly-sales" aria-selected="true">Ventas</button></li>
+                  <li class="nav-item"><button class="nav-link" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#rank-ly-reserved" type="button" role="tab" aria-controls="rank-ly-reserved">Apartados</button></li>
+                </ul>
+              </div>
+              <div class="tab-content">
+                <div class="tab-pane fade show active" id="rank-ly-sales" role="tabpanel" data-subtabs-target="panel">
+                  <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                      <thead><tr><th>Rank</th><th>Cliente</th><th class="text-end">Órdenes</th><th class="text-end">Ingresos</th></tr></thead>
+                      <tbody>
+                        <% @top_users_last_year.each_with_index do |u, idx| %>
+                          <tr>
+                            <td class="text-muted">#<%= idx + 1 %></td>
+                            <td><%= link_to u[:name], edit_admin_user_path(u[:user_id]) %></td>
+                            <td class="text-end"><%= number_with_delimiter(u[:orders_count]) %></td>
+                            <td class="text-end">$ <%= number_with_precision(u[:revenue], precision: 2, delimiter: ',') %></td>
+                          </tr>
+                        <% end %>
+                        <% if @top_users_last_year.blank? %>
+                          <tr><td colspan="4" class="text-center text-muted py-3">No data</td></tr>
+                        <% end %>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+                <div class="tab-pane fade" id="rank-ly-reserved" role="tabpanel" data-subtabs-target="panel">
+                  <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                      <thead><tr><th>Rank</th><th>Cliente</th><th class="text-end">Unidades apartadas</th><th class="text-end">Valor apartados (MXN)</th></tr></thead>
+                      <tbody>
+                        <% @top_users_reserved_last_year&.each_with_index do |u, idx| %>
+                          <tr>
+                            <td class="text-muted">#<%= idx + 1 %></td>
+                            <td><%= link_to u[:name], edit_admin_user_path(u[:user_id]) %></td>
+                            <td class="text-end"><%= number_with_delimiter(u[:units_reserved]) %></td>
+                            <td class="text-end">$ <%= number_with_precision(u[:reserved_value], precision: 2, delimiter: ',') %></td>
+                          </tr>
+                        <% end %>
+                        <% if @top_users_reserved_last_year.blank? %>
+                          <tr><td colspan="4" class="text-center text-muted py-3">No data</td></tr>
+                        <% end %>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               </div>
             </div>
-            <div class="tab-pane fade" id="rank-all" role="tabpanel" data-tabs-target="panel">
-              <div class="table-responsive">
-                <table class="table table-sm mb-0">
-                  <thead><tr><th>Rank</th><th>Cliente</th><th class="text-end">Órdenes</th><th class="text-end">Ingresos</th></tr></thead>
-                  <tbody>
-                    <% @top_users_all.each_with_index do |u, idx| %>
-                      <tr>
-                        <td class="text-muted">#<%= idx + 1 %></td>
-                        <td><%= link_to u[:name], edit_admin_user_path(u[:user_id]) %></td>
-                        <td class="text-end"><%= number_with_delimiter(u[:orders_count]) %></td>
-                        <td class="text-end">$ <%= number_with_precision(u[:revenue], precision: 2, delimiter: ',') %></td>
-                      </tr>
-                    <% end %>
-                    <% if @top_users_all.blank? %>
-                      <tr><td colspan="4" class="text-center text-muted py-3">No data</td></tr>
-                    <% end %>
-                  </tbody>
-                </table>
-                <div class="px-3 py-2 small text-muted">Nota: en All Time no se muestra comparativo vs años anteriores.</div>
+            <div class="tab-pane fade" id="rank-all" role="tabpanel" data-tabs-target="panel" data-controller="subtabs">
+              <div class="px-3 pt-3">
+                <ul class="nav nav-tabs nav-tabs-sm" role="tablist">
+                  <li class="nav-item"><button class="nav-link active" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#rank-all-sales" type="button" role="tab" aria-controls="rank-all-sales" aria-selected="true">Ventas</button></li>
+                  <li class="nav-item"><button class="nav-link" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#rank-all-reserved" type="button" role="tab" aria-controls="rank-all-reserved">Apartados</button></li>
+                </ul>
+              </div>
+              <div class="tab-content">
+                <div class="tab-pane fade show active" id="rank-all-sales" role="tabpanel" data-subtabs-target="panel">
+                  <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                      <thead><tr><th>Rank</th><th>Cliente</th><th class="text-end">Órdenes</th><th class="text-end">Ingresos</th></tr></thead>
+                      <tbody>
+                        <% @top_users_all.each_with_index do |u, idx| %>
+                          <tr>
+                            <td class="text-muted">#<%= idx + 1 %></td>
+                            <td><%= link_to u[:name], edit_admin_user_path(u[:user_id]) %></td>
+                            <td class="text-end"><%= number_with_delimiter(u[:orders_count]) %></td>
+                            <td class="text-end">$ <%= number_with_precision(u[:revenue], precision: 2, delimiter: ',') %></td>
+                          </tr>
+                        <% end %>
+                        <% if @top_users_all.blank? %>
+                          <tr><td colspan="4" class="text-center text-muted py-3">No data</td></tr>
+                        <% end %>
+                      </tbody>
+                    </table>
+                    <div class="px-3 py-2 small text-muted">Nota: en All Time no se muestra comparativo vs años anteriores.</div>
+                  </div>
+                </div>
+                <div class="tab-pane fade" id="rank-all-reserved" role="tabpanel" data-subtabs-target="panel">
+                  <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                      <thead><tr><th>Rank</th><th>Cliente</th><th class="text-end">Unidades apartadas</th><th class="text-end">Valor apartados (MXN)</th></tr></thead>
+                      <tbody>
+                        <% @top_users_reserved_all&.each_with_index do |u, idx| %>
+                          <tr>
+                            <td class="text-muted">#<%= idx + 1 %></td>
+                            <td><%= link_to u[:name], edit_admin_user_path(u[:user_id]) %></td>
+                            <td class="text-end"><%= number_with_delimiter(u[:units_reserved]) %></td>
+                            <td class="text-end">$ <%= number_with_precision(u[:reserved_value], precision: 2, delimiter: ',') %></td>
+                          </tr>
+                        <% end %>
+                        <% if @top_users_reserved_all.blank? %>
+                          <tr><td colspan="4" class="text-center text-muted py-3">No data</td></tr>
+                        <% end %>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

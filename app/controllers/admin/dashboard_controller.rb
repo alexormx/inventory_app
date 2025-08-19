@@ -130,7 +130,7 @@ class Admin::DashboardController < ApplicationController
   # Top 10 productos históricos (por unidades)
     rev_sql = "COALESCE(sale_order_items.unit_final_price, 0) * COALESCE(sale_order_items.quantity, 0)"
   top_products = SaleOrderItem.joins(:sale_order, :product)
-                .merge(so_scope)
+                .merge(so_scope.where(status: paid_statuses))
                 .group("products.id", "products.product_name", "products.brand", "products.category")
                 .select("products.id, products.product_name, products.brand, products.category, SUM(sale_order_items.quantity) AS units, SUM(#{rev_sql}) AS revenue")
                                 .order("units DESC")
@@ -365,6 +365,17 @@ class Admin::DashboardController < ApplicationController
   @top_categories_ytd = ytd_by_cat.to_a.map { |(cat, val)| { category: (cat.presence || 'Uncategorized'), revenue: val.to_d } }
                .sort_by { |h| -h[:revenue] }
                .first(10)
+      # Utilidad por categoría (YTD): revenue - cogs
+      ytd_cogs_by_cat = SaleOrderItem.joins(:sale_order, :product)
+                                     .merge(so_ytd)
+                                     .group('products.category')
+                                     .sum(Arel.sql(cogs_sql_str))
+      cats_ytd = (ytd_by_cat.keys + ytd_cogs_by_cat.keys).uniq
+      @top_categories_profit_ytd = cats_ytd.map do |cat|
+        rev  = ytd_by_cat[cat].to_d
+        cogs = ytd_cogs_by_cat[cat].to_d
+        { category: (cat.presence || 'Uncategorized'), profit: (rev - cogs) }
+      end.sort_by { |h| -h[:profit] }.first(10)
 
       # Top ventas por categoría (año pasado calendario completo)
       prev_start = now.beginning_of_year - 1.year
@@ -377,6 +388,17 @@ class Admin::DashboardController < ApplicationController
   @top_categories_last_year = prev_by_cat.to_a.map { |(cat, val)| { category: (cat.presence || 'Uncategorized'), revenue: val.to_d } }
               .sort_by { |h| -h[:revenue] }
               .first(10)
+      # Utilidad por categoría (Last Year)
+      prev_cogs_by_cat = SaleOrderItem.joins(:sale_order, :product)
+                                      .merge(so_prev)
+                                      .group('products.category')
+                                      .sum(Arel.sql(cogs_sql_str))
+      cats_prev = (prev_by_cat.keys + prev_cogs_by_cat.keys).uniq
+      @top_categories_profit_last_year = cats_prev.map do |cat|
+        rev  = prev_by_cat[cat].to_d
+        cogs = prev_cogs_by_cat[cat].to_d
+        { category: (cat.presence || 'Uncategorized'), profit: (rev - cogs) }
+      end.sort_by { |h| -h[:profit] }.first(10)
 
   # Top ventas por categoría (All Time)
   all_by_cat = SaleOrderItem.joins(:sale_order, :product)
@@ -386,6 +408,34 @@ class Admin::DashboardController < ApplicationController
   @top_categories_all_time = all_by_cat.to_a.map { |(cat, val)| { category: (cat.presence || 'Uncategorized'), revenue: val.to_d } }
             .sort_by { |h| -h[:revenue] }
             .first(10)
+  # Utilidad por categoría (All Time)
+  all_cogs_by_cat = SaleOrderItem.joins(:sale_order, :product)
+                                 .merge(so_scope)
+                                 .group('products.category')
+                                 .sum(Arel.sql(cogs_sql_str))
+  cats_all = (all_by_cat.keys + all_cogs_by_cat.keys).uniq
+  @top_categories_profit_all_time = cats_all.map do |cat|
+    rev  = all_by_cat[cat].to_d
+    cogs = all_cogs_by_cat[cat].to_d
+    { category: (cat.presence || 'Uncategorized'), profit: (rev - cogs) }
+  end.sort_by { |h| -h[:profit] }.first(10)
+
+  # ============== Top Customers: Apartados (reserved/pre_reserved/pre_sold) ==============
+  reserved_statuses = [:reserved, :pre_reserved, :pre_sold]
+  build_top_reserved = lambda do |scope|
+    rows = Inventory.joins(sale_order: :user)
+                    .merge(scope)
+                    .where(status: reserved_statuses)
+                    .group('users.id','users.name')
+                    .select("users.id, users.name, COUNT(inventories.id) AS units_reserved, SUM(inventories.purchase_cost) AS reserved_value")
+                    .order('reserved_value DESC')
+                    .limit(10)
+    rows.map { |r| { user_id: r.id, name: (r.name.presence || r.id), units_reserved: r.attributes['units_reserved'].to_i, reserved_value: r.attributes['reserved_value'].to_d } }
+  end
+
+  @top_users_reserved_ytd = build_top_reserved.call(so_ytd)
+  @top_users_reserved_last_year = build_top_reserved.call(so_last_year_users)
+  @top_users_reserved_all = build_top_reserved.call(so_scope)
 
     # Productos más rentables (YTD): Ventas (ingresos), COGS (costo de unidades vendidas en el periodo), Utilidad = Ventas - COGS - Mermas
   sales_rows_ytd = SaleOrderItem.joins(:sale_order, :product)
