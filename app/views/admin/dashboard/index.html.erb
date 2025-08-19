@@ -459,123 +459,51 @@
           <div class="tab-content">
             <!-- YTD · Ingresos -->
             <div class="tab-pane fade show active" id="tc-ytd-rev" role="tabpanel" data-tabs-target="panel">
-                  <div class="table-responsive">
-                    <table class="table table-sm mb-0">
-                      <thead><tr><th>Rank</th><th>Categoría</th><th class="text-end">Ingresos</th></tr></thead>
-                      <tbody>
-                        <% @top_categories_ytd&.each_with_index do |r, idx| %>
-                          <tr>
-                            <td class="text-muted">#<%= idx + 1 %></td>
-                            <td><%= r[:category] %></td>
-                            <td class="text-end">$ <%= number_with_precision(r[:revenue], precision: 2, delimiter: ',') %></td>
-                          </tr>
-                        <% end %>
-                        <% if @top_categories_ytd.blank? %>
-                          <tr><td colspan="3" class="text-center text-muted py-3">Sin datos</td></tr>
-                        <% end %>
-                      </tbody>
-                    </table>
-                  </div>
+              <turbo-frame id="frame-cats-ytd-rev" src="<%= admin_dashboard_categories_rank_path(period: 'ytd', metric: 'rev') %>">
+                <div class="table-responsive"><table class="table table-sm mb-0"><tbody>
+                  <% 3.times do %><tr class="placeholder-row"><td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
+                </tbody></table></div>
+              </turbo-frame>
             </div>
             <!-- YTD · Utilidad -->
             <div class="tab-pane fade" id="tc-ytd-prof" role="tabpanel" data-tabs-target="panel">
-                  <div class="table-responsive">
-                    <table class="table table-sm mb-0">
-                      <thead><tr><th>Rank</th><th>Categoría</th><th class="text-end">Utilidad</th></tr></thead>
-                      <tbody>
-                        <% @top_categories_profit_ytd&.each_with_index do |r, idx| %>
-                          <tr>
-                            <td class="text-muted">#<%= idx + 1 %></td>
-                            <td><%= r[:category] %></td>
-                            <td class="text-end">$ <%= number_with_precision(r[:profit], precision: 2, delimiter: ',') %></td>
-                          </tr>
-                        <% end %>
-                        <% if @top_categories_profit_ytd.blank? %>
-                          <tr><td colspan="3" class="text-center text-muted py-3">Sin datos</td></tr>
-                        <% end %>
-                      </tbody>
-                    </table>
-                  </div>
+              <turbo-frame id="frame-cats-ytd-profit" src="<%= admin_dashboard_categories_rank_path(period: 'ytd', metric: 'profit') %>">
+                <div class="table-responsive"><table class="table table-sm mb-0"><tbody>
+                  <% 3.times do %><tr class="placeholder-row"><td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
+                </tbody></table></div>
+              </turbo-frame>
             </div>
             <!-- LY · Ingresos -->
             <div class="tab-pane fade" id="tc-ly-rev" role="tabpanel" data-tabs-target="panel">
-                  <div class="table-responsive">
-                    <table class="table table-sm mb-0">
-                      <thead><tr><th>Rank</th><th>Categoría</th><th class="text-end">Ingresos</th></tr></thead>
-                      <tbody>
-                        <% @top_categories_last_year&.each_with_index do |r, idx| %>
-                          <tr>
-                            <td class="text-muted">#<%= idx + 1 %></td>
-                            <td><%= r[:category] %></td>
-                            <td class="text-end">$ <%= number_with_precision(r[:revenue], precision: 2, delimiter: ',') %></td>
-                          </tr>
-                        <% end %>
-                        <% if @top_categories_last_year.blank? %>
-                          <tr><td colspan="3" class="text-center text-muted py-3">Sin datos</td></tr>
-                        <% end %>
-                      </tbody>
-                    </table>
-                  </div>
+              <turbo-frame id="frame-cats-ly-rev" src="<%= admin_dashboard_categories_rank_path(period: 'ly', metric: 'rev') %>">
+                <div class="table-responsive"><table class="table table-sm mb-0"><tbody>
+                  <% 3.times do %><tr class="placeholder-row"><td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
+                </tbody></table></div>
+              </turbo-frame>
             </div>
             <!-- LY · Utilidad -->
             <div class="tab-pane fade" id="tc-ly-prof" role="tabpanel" data-tabs-target="panel">
-                  <div class="table-responsive">
-                    <table class="table table-sm mb-0">
-                      <thead><tr><th>Rank</th><th>Categoría</th><th class="text-end">Utilidad</th></tr></thead>
-                      <tbody>
-                        <% @top_categories_profit_last_year&.each_with_index do |r, idx| %>
-                          <tr>
-                            <td class="text-muted">#<%= idx + 1 %></td>
-                            <td><%= r[:category] %></td>
-                            <td class="text-end">$ <%= number_with_precision(r[:profit], precision: 2, delimiter: ',') %></td>
-                          </tr>
-                        <% end %>
-                        <% if @top_categories_profit_last_year.blank? %>
-                          <tr><td colspan="3" class="text-center text-muted py-3">Sin datos</td></tr>
-                        <% end %>
-                      </tbody>
-                    </table>
-                  </div>
+              <turbo-frame id="frame-cats-ly-profit" src="<%= admin_dashboard_categories_rank_path(period: 'ly', metric: 'profit') %>">
+                <div class="table-responsive"><table class="table table-sm mb-0"><tbody>
+                  <% 3.times do %><tr class="placeholder-row"><td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
+                </tbody></table></div>
+              </turbo-frame>
             </div>
             <!-- All · Ingresos -->
             <div class="tab-pane fade" id="tc-all-rev" role="tabpanel" data-tabs-target="panel">
-                  <div class="table-responsive">
-                    <table class="table table-sm mb-0">
-                      <thead><tr><th>Rank</th><th>Categoría</th><th class="text-end">Ingresos</th></tr></thead>
-                      <tbody>
-                        <% @top_categories_all_time&.each_with_index do |r, idx| %>
-                          <tr>
-                            <td class="text-muted">#<%= idx + 1 %></td>
-                            <td><%= r[:category] %></td>
-                            <td class="text-end">$ <%= number_with_precision(r[:revenue], precision: 2, delimiter: ',') %></td>
-                          </tr>
-                        <% end %>
-                        <% if @top_categories_all_time.blank? %>
-                          <tr><td colspan="3" class="text-center text-muted py-3">Sin datos</td></tr>
-                        <% end %>
-                      </tbody>
-                    </table>
-                  </div>
+              <turbo-frame id="frame-cats-all-rev" src="<%= admin_dashboard_categories_rank_path(period: 'all', metric: 'rev') %>">
+                <div class="table-responsive"><table class="table table-sm mb-0"><tbody>
+                  <% 3.times do %><tr class="placeholder-row"><td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
+                </tbody></table></div>
+              </turbo-frame>
             </div>
             <!-- All · Utilidad -->
             <div class="tab-pane fade" id="tc-all-prof" role="tabpanel" data-tabs-target="panel">
-                  <div class="table-responsive">
-                    <table class="table table-sm mb-0">
-                      <thead><tr><th>Rank</th><th>Categoría</th><th class="text-end">Utilidad</th></tr></thead>
-                      <tbody>
-                        <% @top_categories_profit_all_time&.each_with_index do |r, idx| %>
-                          <tr>
-                            <td class="text-muted">#<%= idx + 1 %></td>
-                            <td><%= r[:category] %></td>
-                            <td class="text-end">$ <%= number_with_precision(r[:profit], precision: 2, delimiter: ',') %></td>
-                          </tr>
-                        <% end %>
-                        <% if @top_categories_profit_all_time.blank? %>
-                          <tr><td colspan="3" class="text-center text-muted py-3">Sin datos</td></tr>
-                        <% end %>
-                      </tbody>
-                    </table>
-                  </div>
+              <turbo-frame id="frame-cats-all-profit" src="<%= admin_dashboard_categories_rank_path(period: 'all', metric: 'profit') %>">
+                <div class="table-responsive"><table class="table table-sm mb-0"><tbody>
+                  <% 3.times do %><tr class="placeholder-row"><td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
+                </tbody></table></div>
+              </turbo-frame>
             </div>
           </div>
         </div>
@@ -613,232 +541,75 @@
           <div class="tab-content">
             <!-- YTD · Ventas -->
             <div class="tab-pane fade show active" id="rank-range-sales" role="tabpanel" data-tabs-target="panel">
-                  <div class="table-responsive">
-                    <table class="table table-sm mb-0">
-                      <thead>
-                        <tr>
-                          <th>Rank</th>
-                          <th>Cliente</th>
-                          <th class="text-end">Órdenes</th>
-                          <th class="text-end">Ingresos YTD</th>
-                          <th class="text-end">Ingresos LY</th>
-                          <th class="text-end">Δ vs LY</th>
-                        </tr>
-                       </thead>
-                       <tbody>
-                         <% (@top_users_ytd_vs_prev.presence || @top_users_range).each_with_index do |u, idx| %>
-                           <tr>
-                             <td class="text-muted">#<%= idx + 1 %></td>
-                             <td><%= link_to u[:name], edit_admin_user_path(u[:user_id]) %></td>
-                             <td class="text-end"><%= number_with_delimiter(u[:orders_count]) %></td>
-                             <td class="text-end">$ <%= number_with_precision(u[:revenue], precision: 2, delimiter: ',') %></td>
-                             <td class="text-end">$ <%= number_with_precision((u[:prev_revenue] || 0), precision: 2, delimiter: ',') %></td>
-                             <td class="text-end">
-                               <% if u[:revenue_delta_ratio].nil? %>
-                                 <span class="text-muted">—</span>
-                               <% else %>
-                                 <%= number_to_percentage(u[:revenue_delta_ratio] * 100, precision: 1) %>
-                               <% end %>
-                             </td>
-                           </tr>
-                         <% end %>
-                         <% if @top_users_range.blank? %>
-                           <tr><td colspan="6" class="text-center text-muted py-3">No data</td></tr>
-                         <% end %>
-                       </tbody>
-                     </table>
-                  </div>
+              <turbo-frame id="frame-cust-ytd-sales" src="<%= admin_dashboard_customers_rank_path(period: 'ytd', metric: 'sales') %>">
+                <div class="table-responsive"><table class="table table-sm mb-0"><tbody>
+                  <% 3.times do %><tr class="placeholder-row"><td colspan="6" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
+                </tbody></table></div>
+              </turbo-frame>
             </div>
             <!-- YTD · Apartados -->
             <div class="tab-pane fade" id="rank-range-reserved" role="tabpanel" data-tabs-target="panel">
-                  <div class="table-responsive">
-                    <table class="table table-sm mb-0">
-                      <thead>
-                        <tr>
-                          <th>Rank</th>
-                          <th>Cliente</th>
-                          <th class="text-end">Unidades apartadas</th>
-                          <th class="text-end">Valor apartados (MXN)</th>
-                        </tr>
-                       </thead>
-                       <tbody>
-                         <% @top_users_reserved_ytd&.each_with_index do |u, idx| %>
-                           <tr>
-                             <td class="text-muted">#<%= idx + 1 %></td>
-                             <td><%= link_to u[:name], edit_admin_user_path(u[:user_id]) %></td>
-                             <td class="text-end"><%= number_with_delimiter(u[:units_reserved]) %></td>
-                             <td class="text-end">$ <%= number_with_precision(u[:reserved_value], precision: 2, delimiter: ',') %></td>
-                           </tr>
-                         <% end %>
-                         <% if @top_users_reserved_ytd.blank? %>
-                           <tr><td colspan="4" class="text-center text-muted py-3">No data</td></tr>
-                         <% end %>
-                       </tbody>
-                     </table>
-                  </div>
+              <turbo-frame id="frame-cust-ytd-reserved" src="<%= admin_dashboard_customers_rank_path(period: 'ytd', metric: 'reserved') %>">
+                <div class="table-responsive"><table class="table table-sm mb-0"><tbody>
+                  <% 3.times do %><tr class="placeholder-row"><td colspan="4" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
+                </tbody></table></div>
+              </turbo-frame>
             </div>
             <!-- YTD · Combinado -->
             <div class="tab-pane fade" id="rank-range-combined" role="tabpanel" data-tabs-target="panel">
-                  <div class="table-responsive">
-                    <table class="table table-sm mb-0">
-                      <thead>
-                        <tr>
-                          <th>Rank</th>
-                          <th>Cliente</th>
-                          <th class="text-end">Órdenes</th>
-                          <th class="text-end">Ingresos</th>
-                          <th class="text-end">Valor apartados</th>
-                          <th class="text-end">Total</th>
-                        </tr>
-                       </thead>
-                       <tbody>
-                         <% @top_users_sales_reserved_ytd&.each_with_index do |u, idx| %>
-                           <tr>
-                             <td class="text-muted">#<%= idx + 1 %></td>
-                             <td><%= link_to u[:name], edit_admin_user_path(u[:user_id]) %></td>
-                             <td class="text-end"><%= number_with_delimiter(u[:orders_count]) %></td>
-                             <td class="text-end">$ <%= number_with_precision(u[:revenue], precision: 2, delimiter: ',') %></td>
-                             <td class="text-end">$ <%= number_with_precision(u[:reserved_value], precision: 2, delimiter: ',') %></td>
-                             <td class="text-end">$ <%= number_with_precision(u[:total], precision: 2, delimiter: ',') %></td>
-                           </tr>
-                         <% end %>
-                         <% if @top_users_sales_reserved_ytd.blank? %>
-                           <tr><td colspan="6" class="text-center text-muted py-3">No data</td></tr>
-                         <% end %>
-                       </tbody>
-                     </table>
-                  </div>
+              <turbo-frame id="frame-cust-ytd-combined" src="<%= admin_dashboard_customers_rank_path(period: 'ytd', metric: 'combined') %>">
+                <div class="table-responsive"><table class="table table-sm mb-0"><tbody>
+                  <% 3.times do %><tr class="placeholder-row"><td colspan="6" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
+                </tbody></table></div>
+              </turbo-frame>
             </div>
             <!-- LY · Ventas -->
             <div class="tab-pane fade" id="rank-ly-sales" role="tabpanel" data-tabs-target="panel">
-                  <div class="table-responsive">
-                    <table class="table table-sm mb-0">
-                      <thead><tr><th>Rank</th><th>Cliente</th><th class="text-end">Órdenes</th><th class="text-end">Ingresos</th></tr></thead>
-                      <tbody>
-                        <% @top_users_last_year.each_with_index do |u, idx| %>
-                          <tr>
-                            <td class="text-muted">#<%= idx + 1 %></td>
-                            <td><%= link_to u[:name], edit_admin_user_path(u[:user_id]) %></td>
-                            <td class="text-end"><%= number_with_delimiter(u[:orders_count]) %></td>
-                            <td class="text-end">$ <%= number_with_precision(u[:revenue], precision: 2, delimiter: ',') %></td>
-                          </tr>
-                        <% end %>
-                        <% if @top_users_last_year.blank? %>
-                          <tr><td colspan="4" class="text-center text-muted py-3">No data</td></tr>
-                        <% end %>
-                      </tbody>
-                    </table>
-                  </div>
+              <turbo-frame id="frame-cust-ly-sales" src="<%= admin_dashboard_customers_rank_path(period: 'ly', metric: 'sales') %>">
+                <div class="table-responsive"><table class="table table-sm mb-0"><tbody>
+                  <% 3.times do %><tr class="placeholder-row"><td colspan="4" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
+                </tbody></table></div>
+              </turbo-frame>
             </div>
             <!-- LY · Apartados -->
             <div class="tab-pane fade" id="rank-ly-reserved" role="tabpanel" data-tabs-target="panel">
-                  <div class="table-responsive">
-                    <table class="table table-sm mb-0">
-                      <thead><tr><th>Rank</th><th>Cliente</th><th class="text-end">Unidades apartadas</th><th class="text-end">Valor apartados (MXN)</th></tr></thead>
-                      <tbody>
-                        <% @top_users_reserved_last_year&.each_with_index do |u, idx| %>
-                          <tr>
-                            <td class="text-muted">#<%= idx + 1 %></td>
-                            <td><%= link_to u[:name], edit_admin_user_path(u[:user_id]) %></td>
-                            <td class="text-end"><%= number_with_delimiter(u[:units_reserved]) %></td>
-                            <td class="text-end">$ <%= number_with_precision(u[:reserved_value], precision: 2, delimiter: ',') %></td>
-                          </tr>
-                        <% end %>
-                        <% if @top_users_reserved_last_year.blank? %>
-                          <tr><td colspan="4" class="text-center text-muted py-3">No data</td></tr>
-                        <% end %>
-                      </tbody>
-                    </table>
-                  </div>
+              <turbo-frame id="frame-cust-ly-reserved" src="<%= admin_dashboard_customers_rank_path(period: 'ly', metric: 'reserved') %>">
+                <div class="table-responsive"><table class="table table-sm mb-0"><tbody>
+                  <% 3.times do %><tr class="placeholder-row"><td colspan="4" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
+                </tbody></table></div>
+              </turbo-frame>
             </div>
             <!-- LY · Combinado -->
             <div class="tab-pane fade" id="rank-ly-combined" role="tabpanel" data-tabs-target="panel">
-                  <div class="table-responsive">
-                    <table class="table table-sm mb-0">
-                      <thead><tr><th>Rank</th><th>Cliente</th><th class="text-end">Órdenes</th><th class="text-end">Ingresos</th><th class="text-end">Valor apartados</th><th class="text-end">Total</th></tr></thead>
-                      <tbody>
-                        <% @top_users_sales_reserved_last_year&.each_with_index do |u, idx| %>
-                          <tr>
-                            <td class="text-muted">#<%= idx + 1 %></td>
-                            <td><%= link_to u[:name], edit_admin_user_path(u[:user_id]) %></td>
-                            <td class="text-end"><%= number_with_delimiter(u[:orders_count]) %></td>
-                            <td class="text-end">$ <%= number_with_precision(u[:revenue], precision: 2, delimiter: ',') %></td>
-                            <td class="text-end">$ <%= number_with_precision(u[:reserved_value], precision: 2, delimiter: ',') %></td>
-                            <td class="text-end">$ <%= number_with_precision(u[:total], precision: 2, delimiter: ',') %></td>
-                          </tr>
-                        <% end %>
-                        <% if @top_users_sales_reserved_last_year.blank? %>
-                          <tr><td colspan="6" class="text-center text-muted py-3">No data</td></tr>
-                        <% end %>
-                      </tbody>
-                    </table>
-                  </div>
+              <turbo-frame id="frame-cust-ly-combined" src="<%= admin_dashboard_customers_rank_path(period: 'ly', metric: 'combined') %>">
+                <div class="table-responsive"><table class="table table-sm mb-0"><tbody>
+                  <% 3.times do %><tr class="placeholder-row"><td colspan="6" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
+                </tbody></table></div>
+              </turbo-frame>
             </div>
             <!-- All · Ventas -->
             <div class="tab-pane fade" id="rank-all-sales" role="tabpanel" data-tabs-target="panel">
-                  <div class="table-responsive">
-                    <table class="table table-sm mb-0">
-                      <thead><tr><th>Rank</th><th>Cliente</th><th class="text-end">Órdenes</th><th class="text-end">Ingresos</th></tr></thead>
-                      <tbody>
-                        <% @top_users_all.each_with_index do |u, idx| %>
-                          <tr>
-                            <td class="text-muted">#<%= idx + 1 %></td>
-                            <td><%= link_to u[:name], edit_admin_user_path(u[:user_id]) %></td>
-                            <td class="text-end"><%= number_with_delimiter(u[:orders_count]) %></td>
-                            <td class="text-end">$ <%= number_with_precision(u[:revenue], precision: 2, delimiter: ',') %></td>
-                          </tr>
-                        <% end %>
-                        <% if @top_users_all.blank? %>
-                          <tr><td colspan="4" class="text-center text-muted py-3">No data</td></tr>
-                        <% end %>
-                      </tbody>
-                    </table>
-                    <div class="px-3 py-2 small text-muted">Nota: en All Time no se muestra comparativo vs años anteriores.</div>
-                  </div>
+              <turbo-frame id="frame-cust-all-sales" src="<%= admin_dashboard_customers_rank_path(period: 'all', metric: 'sales') %>">
+                <div class="table-responsive"><table class="table table-sm mb-0"><tbody>
+                  <% 3.times do %><tr class="placeholder-row"><td colspan="4" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
+                </tbody></table></div>
+              </turbo-frame>
             </div>
             <!-- All · Apartados -->
             <div class="tab-pane fade" id="rank-all-reserved" role="tabpanel" data-tabs-target="panel">
-                  <div class="table-responsive">
-                    <table class="table table-sm mb-0">
-                      <thead><tr><th>Rank</th><th>Cliente</th><th class="text-end">Unidades apartadas</th><th class="text-end">Valor apartados (MXN)</th></tr></thead>
-                      <tbody>
-                        <% @top_users_reserved_all&.each_with_index do |u, idx| %>
-                          <tr>
-                            <td class="text-muted">#<%= idx + 1 %></td>
-                            <td><%= link_to u[:name], edit_admin_user_path(u[:user_id]) %></td>
-                            <td class="text-end"><%= number_with_delimiter(u[:units_reserved]) %></td>
-                            <td class="text-end">$ <%= number_with_precision(u[:reserved_value], precision: 2, delimiter: ',') %></td>
-                          </tr>
-                        <% end %>
-                        <% if @top_users_reserved_all.blank? %>
-                          <tr><td colspan="4" class="text-center text-muted py-3">No data</td></tr>
-                        <% end %>
-                      </tbody>
-                    </table>
-                  </div>
+              <turbo-frame id="frame-cust-all-reserved" src="<%= admin_dashboard_customers_rank_path(period: 'all', metric: 'reserved') %>">
+                <div class="table-responsive"><table class="table table-sm mb-0"><tbody>
+                  <% 3.times do %><tr class="placeholder-row"><td colspan="4" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
+                </tbody></table></div>
+              </turbo-frame>
             </div>
             <!-- All · Combinado -->
             <div class="tab-pane fade" id="rank-all-combined" role="tabpanel" data-tabs-target="panel">
-                  <div class="table-responsive">
-                    <table class="table table-sm mb-0">
-                      <thead><tr><th>Rank</th><th>Cliente</th><th class="text-end">Órdenes</th><th class="text-end">Ingresos</th><th class="text-end">Valor apartados</th><th class="text-end">Total</th></tr></thead>
-                      <tbody>
-                        <% @top_users_sales_reserved_all&.each_with_index do |u, idx| %>
-                          <tr>
-                            <td class="text-muted">#<%= idx + 1 %></td>
-                            <td><%= link_to u[:name], edit_admin_user_path(u[:user_id]) %></td>
-                            <td class="text-end"><%= number_with_delimiter(u[:orders_count]) %></td>
-                            <td class="text-end">$ <%= number_with_precision(u[:revenue], precision: 2, delimiter: ',') %></td>
-                            <td class="text-end">$ <%= number_with_precision(u[:reserved_value], precision: 2, delimiter: ',') %></td>
-                            <td class="text-end">$ <%= number_with_precision(u[:total], precision: 2, delimiter: ',') %></td>
-                          </tr>
-                        <% end %>
-                        <% if @top_users_sales_reserved_all.blank? %>
-                          <tr><td colspan="6" class="text-center text-muted py-3">No data</td></tr>
-                        <% end %>
-                      </tbody>
-                    </table>
-                  </div>
+              <turbo-frame id="frame-cust-all-combined" src="<%= admin_dashboard_customers_rank_path(period: 'all', metric: 'combined') %>">
+                <div class="table-responsive"><table class="table table-sm mb-0"><tbody>
+                  <% 3.times do %><tr class="placeholder-row"><td colspan="6" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
+                </tbody></table></div>
+              </turbo-frame>
             </div>
           </div>
         </div>
