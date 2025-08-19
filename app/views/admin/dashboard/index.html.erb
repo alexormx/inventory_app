@@ -1128,6 +1128,154 @@
   </div>
 
   <!-- Gráficos -->
+  <!-- Worst Products KPIs -->
+  <div class="row mt-4 g-3">
+    <div class="col-lg-12">
+      <div class="card h-100">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span><i class="fa-solid fa-triangle-exclamation"></i> Worst Products</span>
+          <div class="small text-muted">w1=0.4, w2=0.2, w3=0.2, w4=0.2 (ajustables por query params)</div>
+        </div>
+        <div class="card-body">
+          <div class="row text-center mb-3">
+            <div class="col-md-3">
+              <div class="small text-muted">Capital inmovilizado</div>
+              <div class="fs-5 fw-bold">$ <%= number_with_precision(@worst_global_total_immobilized_capital, precision: 2, delimiter: ',') %></div>
+            </div>
+            <div class="col-md-3">
+              <div class="small text-muted">Margen promedio</div>
+              <div class="fs-5 fw-bold"><%= @worst_global_avg_margin_pct.nil? ? '—' : number_to_percentage(@worst_global_avg_margin_pct * 100, precision: 1) %></div>
+            </div>
+            <div class="col-md-3">
+              <div class="small text-muted">Rotación promedio</div>
+              <div class="fs-5 fw-bold"><%= @worst_global_avg_rotation.nil? ? '—' : number_with_precision(@worst_global_avg_rotation, precision: 2, delimiter: ',') %></div>
+            </div>
+            <div class="col-md-3">
+              <div class="small text-muted">DOH promedio</div>
+              <div class="fs-5 fw-bold"><%= @worst_global_avg_doh.nil? ? '—' : number_with_precision(@worst_global_avg_doh, precision: 1, delimiter: ',') %></div>
+            </div>
+          </div>
+          <div class="row g-3">
+            <div class="col-xl-6">
+              <div class="table-responsive">
+                <table class="table table-sm mb-0">
+                  <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Margen</th></tr></thead>
+                  <tbody>
+                    <% @worst_margin_products&.each_with_index do |r, idx| %>
+                      <tr>
+                        <td class="text-muted">#<%= idx + 1 %></td>
+                        <td>
+                          <div class="small fw-semibold"><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></div>
+                          <div class="text-muted" style="font-size: .75rem;">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
+                        </td>
+                        <td class="text-end"><%= r[:margin_pct].nil? ? '—' : number_to_percentage(r[:margin_pct] * 100, precision: 1) %></td>
+                      </tr>
+                    <% end %>
+                    <% if @worst_margin_products.blank? %>
+                      <tr><td colspan="3" class="text-center text-muted py-3">Sin datos</td></tr>
+                    <% end %>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="col-xl-6">
+              <div class="table-responsive">
+                <table class="table table-sm mb-0">
+                  <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Rotación</th></tr></thead>
+                  <tbody>
+                    <% @worst_rotation_products&.each_with_index do |r, idx| %>
+                      <tr>
+                        <td class="text-muted">#<%= idx + 1 %></td>
+                        <td>
+                          <div class="small fw-semibold"><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></div>
+                          <div class="text-muted" style="font-size: .75rem;">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
+                        </td>
+                        <td class="text-end"><%= r[:rotation].nil? ? '—' : number_with_precision(r[:rotation], precision: 2, delimiter: ',') %></td>
+                      </tr>
+                    <% end %>
+                    <% if @worst_rotation_products.blank? %>
+                      <tr><td colspan="3" class="text-center text-muted py-3">Sin datos</td></tr>
+                    <% end %>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="col-xl-6">
+              <div class="table-responsive">
+                <table class="table table-sm mb-0">
+                  <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">DOH</th></tr></thead>
+                  <tbody>
+                    <% @top_doh_products&.each_with_index do |r, idx| %>
+                      <tr>
+                        <td class="text-muted">#<%= idx + 1 %></td>
+                        <td>
+                          <div class="small fw-semibold"><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></div>
+                          <div class="text-muted" style="font-size: .75rem;">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
+                        </td>
+                        <td class="text-end"><%= r[:doh].infinite? ? '∞' : number_with_precision(r[:doh], precision: 1, delimiter: ',') %></td>
+                      </tr>
+                    <% end %>
+                    <% if @top_doh_products.blank? %>
+                      <tr><td colspan="3" class="text-center text-muted py-3">Sin datos</td></tr>
+                    <% end %>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="col-xl-6">
+              <div class="table-responsive">
+                <table class="table table-sm mb-0">
+                  <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Capital inmovilizado</th></tr></thead>
+                  <tbody>
+                    <% @top_immobilized_products&.each_with_index do |r, idx| %>
+                      <tr>
+                        <td class="text-muted">#<%= idx + 1 %></td>
+                        <td>
+                          <div class="small fw-semibold"><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></div>
+                          <div class="text-muted" style="font-size: .75rem;">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
+                        </td>
+                        <td class="text-end">$ <%= number_with_precision(r[:immobilized_capital], precision: 2, delimiter: ',') %></td>
+                      </tr>
+                    <% end %>
+                    <% if @top_immobilized_products.blank? %>
+                      <tr><td colspan="3" class="text-center text-muted py-3">Sin datos</td></tr>
+                    <% end %>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="col-xl-12">
+              <div class="table-responsive">
+                <table class="table table-sm mb-0">
+                  <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Worst Score</th><th class="text-end">Margen</th><th class="text-end">Rotación</th><th class="text-end">DOH</th><th class="text-end">Capital</th></tr></thead>
+                  <tbody>
+                    <% @worst_score_products&.each_with_index do |r, idx| %>
+                      <tr>
+                        <td class="text-muted">#<%= idx + 1 %></td>
+                        <td>
+                          <div class="small fw-semibold"><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></div>
+                          <div class="text-muted" style="font-size: .75rem;">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
+                        </td>
+                        <td class="text-end"><%= number_with_precision(r[:worst_score], precision: 3, delimiter: ',') %></td>
+                        <td class="text-end"><%= r[:margin_pct].nil? ? '—' : number_to_percentage(r[:margin_pct] * 100, precision: 1) %></td>
+                        <td class="text-end"><%= r[:rotation].nil? ? '—' : number_with_precision(r[:rotation], precision: 2, delimiter: ',') %></td>
+                        <td class="text-end"><%= r[:doh].infinite? ? '∞' : number_with_precision(r[:doh], precision: 1, delimiter: ',') %></td>
+                        <td class="text-end">$ <%= number_with_precision(r[:immobilized_capital], precision: 2, delimiter: ',') %></td>
+                      </tr>
+                    <% end %>
+                    <% if @worst_score_products.blank? %>
+                      <tr><td colspan="7" class="text-center text-muted py-3">Sin datos</td></tr>
+                    <% end %>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- High-impact charts row 1 -->
   <div class="row mt-4 g-3">
     <div class="col-lg-12">

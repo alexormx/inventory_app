@@ -714,6 +714,115 @@ class Admin::DashboardController < ApplicationController
       profit: top_cats_profit.map { |(_, p)| p }
     }
 
+    # ============== Worst Products KPIs ==================
+    # Inputs per product
+    inv_stock_map    = Inventory.where(status: [:available, :in_transit]).group(:product_id).count
+    inv_reserved_map = Inventory.where(status: [:reserved, :pre_reserved, :pre_sold]).group(:product_id).count
+    units_sold_map   = SaleOrderItem.joins(:sale_order)
+                                    .merge(so_ytd_paid)
+                                    .group(:product_id)
+                                    .sum(:quantity)
+    product_ids = (inv_stock_map.keys + inv_reserved_map.keys + units_sold_map.keys).uniq
+    products_info = Product.where(id: product_ids)
+                           .pluck(:id, :product_name, :brand, :category, :selling_price, :average_purchase_cost)
+                           .map { |id, name, brand, category, sp, apc| [id, { name:, brand:, category:, sp: sp.to_d, apc: apc.to_d }] }
+                           .to_h
+
+    months_in_range = months_between(@start_date, @end_date).length
+    months_in_range = 1 if months_in_range <= 0
+
+    per_product = []
+    product_ids.each do |pid|
+      info = products_info[pid] || { name: pid, brand: nil, category: nil, sp: 0.to_d, apc: 0.to_d }
+      stock_q = inv_stock_map[pid].to_i
+      res_q   = inv_reserved_map[pid].to_i
+      sold_q  = units_sold_map[pid].to_i
+      revenue = info[:sp].to_d * sold_q
+      cogs    = info[:apc].to_d * sold_q
+      margin_pct = revenue.positive? ? ((revenue - cogs) / revenue) : nil
+      avg_inv_proxy = ((stock_q + res_q + sold_q).to_f / 2.0)
+      rotation = avg_inv_proxy.positive? ? (sold_q.to_f / avg_inv_proxy) : nil
+      avg_monthly_sales = sold_q.to_f / months_in_range
+      doh = avg_monthly_sales.positive? ? ((stock_q.to_f * 30.0) / avg_monthly_sales) : (stock_q > 0 ? 1.0/0 : 0.0) # Infinity if stock>0 and no sales
+      immobilized_capital = info[:apc].to_d * stock_q
+      per_product << {
+        product_id: pid,
+        name: info[:name],
+        brand: info[:brand],
+        category: (info[:category].presence || 'Uncategorized'),
+        stock_quantity: stock_q,
+        reserved_quantity: res_q,
+        units_sold: sold_q,
+        revenue: revenue,
+        cogs: cogs,
+        margin_pct: margin_pct,
+        rotation: rotation,
+        doh: doh,
+        avg_monthly_sales: avg_monthly_sales,
+        immobilized_capital: immobilized_capital,
+        avg_purchase_cost: info[:apc]
+      }
+    end
+
+    # Global metrics (exclude nils/infinity as applicable)
+    @worst_global_total_immobilized_capital = per_product.sum { |h| h[:immobilized_capital] }
+    margin_vals = per_product.map { |h| h[:margin_pct] }.compact
+    rot_vals    = per_product.map { |h| h[:rotation] }.compact
+    doh_vals    = per_product.map { |h| h[:doh] }.select { |v| v.finite? }
+    @worst_global_avg_margin_pct = margin_vals.any? ? (margin_vals.sum / margin_vals.size) : nil
+    @worst_global_avg_rotation   = rot_vals.any? ? (rot_vals.sum / rot_vals.size) : nil
+    @worst_global_avg_doh        = doh_vals.any? ? (doh_vals.sum / doh_vals.size) : nil
+
+    # Helper: min-max normalization
+    normalize = lambda do |values, value|
+      vals = values.compact.map { |v| v.infinite? ? nil : v }.compact
+      return 0.5 if value.nil?
+      return 1.0 if value.infinite?
+      return 0.5 if vals.empty?
+      min = vals.min
+      max = vals.max
+      range = max - min
+      return 0.5 if range <= 0
+      [[(value - min) / range, 0.0].max, 1.0].min
+    end
+
+    margins  = per_product.map { |h| h[:margin_pct] }
+    rotations = per_product.map { |h| h[:rotation] }
+    dohs     = per_product.map { |h| h[:doh] }
+    caps     = per_product.map { |h| h[:immobilized_capital].to_f }
+
+    # Worst lists
+    @worst_margin_products = per_product.select { |h| h[:units_sold].to_i > 0 && h[:margin_pct].present? }
+                                        .sort_by { |h| h[:margin_pct] }
+                                        .first(10)
+
+    @worst_rotation_products = per_product.select { |h| h[:rotation].present? }
+                                          .sort_by { |h| h[:rotation] }
+                                          .first(10)
+
+    @top_doh_products = per_product.sort_by do |h|
+                          v = h[:doh]
+                          v.infinite? ? Float::MAX : v
+                        end.reverse.first(10)
+
+    @top_immobilized_products = per_product.sort_by { |h| -h[:immobilized_capital].to_f }
+                                           .first(10)
+
+    # Worst score with default weights
+    w1 = (params[:w1] || 0.4).to_f
+    w2 = (params[:w2] || 0.2).to_f
+    w3 = (params[:w3] || 0.2).to_f
+    w4 = (params[:w4] || 0.2).to_f
+    scored = per_product.map do |h|
+      nm = normalize.call(margins, h[:margin_pct])
+      nr = normalize.call(rotations, h[:rotation])
+      nd = normalize.call(dohs, h[:doh])
+      nc = normalize.call(caps, h[:immobilized_capital].to_f)
+      worst_score = w1 * (1 - nm) + w2 * (1 - nr) + w3 * (nd) + w4 * (nc)
+      h.merge(worst_score: worst_score, norm_components: { margin: nm, rotation: nr, doh: nd, capital: nc })
+    end
+    @worst_score_products = scored.sort_by { |h| -h[:worst_score] }.first(10)
+
   # === Ventas por país y por estado (México) — YTD / Last Year / All Time ===
   so_ytd_fixed = so_scope.where(order_date: now.beginning_of_year..now.end_of_day)
   ly_start_geo = now.beginning_of_year - 1.year
