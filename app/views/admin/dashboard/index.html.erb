@@ -308,27 +308,55 @@
       </div>
     </div>
     <div class="col-xl-4">
-      <div class="card h-100">
+      <div class="card h-100" data-controller="tabs">
         <div class="card-header d-flex justify-content-between align-items-center">
-          <span><i class="fa-solid fa-boxes-stacked"></i> Top Inventario por Valor</span>
+          <span><i class="fa-solid fa-boxes-stacked"></i> Top Inventario</span>
+          <ul class="nav nav-tabs nav-tabs-sm card-header-tabs" role="tablist">
+            <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#ti-value" type="button" role="tab" aria-controls="ti-value" aria-selected="true">Por valor</button></li>
+            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#ti-qty" type="button" role="tab" aria-controls="ti-qty">Por unidades</button></li>
+          </ul>
         </div>
         <div class="card-body p-0">
-          <div class="table-responsive">
-            <table class="table table-sm mb-0">
-              <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Valor de Inventario</th></tr></thead>
-              <tbody>
-                <% @top_inventory_by_value&.each_with_index do |r, idx| %>
-                  <tr>
-                    <td class="text-muted">#<%= idx + 1 %></td>
-                    <td><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></td>
-                    <td class="text-end">$ <%= number_with_precision(r[:inventory_value], precision: 2, delimiter: ',') %></td>
-                  </tr>
-                <% end %>
-                <% if @top_inventory_by_value.blank? %>
-                  <tr><td colspan="3" class="text-center text-muted py-3">Sin datos</td></tr>
-                <% end %>
-              </tbody>
-            </table>
+          <div class="tab-content">
+            <div class="tab-pane fade show active" id="ti-value" role="tabpanel" data-tabs-target="panel">
+              <div class="table-responsive">
+                <table class="table table-sm mb-0">
+                  <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Valor de Inventario</th></tr></thead>
+                  <tbody>
+                    <% @top_inventory_by_value&.each_with_index do |r, idx| %>
+                      <tr>
+                        <td class="text-muted">#<%= idx + 1 %></td>
+                        <td><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></td>
+                        <td class="text-end">$ <%= number_with_precision(r[:inventory_value], precision: 2, delimiter: ',') %></td>
+                      </tr>
+                    <% end %>
+                    <% if @top_inventory_by_value.blank? %>
+                      <tr><td colspan="3" class="text-center text-muted py-3">Sin datos</td></tr>
+                    <% end %>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="tab-pane fade" id="ti-qty" role="tabpanel" data-tabs-target="panel">
+              <div class="table-responsive">
+                <table class="table table-sm mb-0">
+                  <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Unidades</th><th class="text-end">Valor (MXN)</th></tr></thead>
+                  <tbody>
+                    <% @top_inventory_by_quantity&.each_with_index do |r, idx| %>
+                      <tr>
+                        <td class="text-muted">#<%= idx + 1 %></td>
+                        <td><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></td>
+                        <td class="text-end"><%= number_with_delimiter(r[:units_count]) %></td>
+                        <td class="text-end">$ <%= number_with_precision(r[:inventory_value], precision: 2, delimiter: ',') %></td>
+                      </tr>
+                    <% end %>
+                    <% if @top_inventory_by_quantity.blank? %>
+                      <tr><td colspan="4" class="text-center text-muted py-3">Sin datos</td></tr>
+                    <% end %>
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         </div>
       </div>

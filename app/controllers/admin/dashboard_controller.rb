@@ -328,9 +328,27 @@ class Admin::DashboardController < ApplicationController
 
   # Top Sellers (All Time) por unidades ya existe en @top_products_all
 
-      # Top inventario por valor (costo de compra acumulado actual)
-      @top_inventory_by_value = Product.order(current_inventory_value: :desc).limit(10).map do |p|
-        { product_id: p.id, name: p.product_name, inventory_value: p.current_inventory_value.to_d }
+      # Top inventario (por valor y por unidades) considerando estatus específicos
+      inv_statuses = [:available, :reserved, :in_transit, :pre_reserved, :pre_sold]
+
+      rows_val = Inventory.joins(:product)
+                          .where(status: inv_statuses)
+                          .group('products.id', 'products.product_name')
+                          .select('products.id, products.product_name, SUM(inventories.purchase_cost) AS inventory_value')
+                          .order('inventory_value DESC')
+                          .limit(10)
+      @top_inventory_by_value = rows_val.map do |r|
+        { product_id: r.id, name: r.product_name, inventory_value: r.attributes['inventory_value'].to_d }
+      end
+
+      rows_qty = Inventory.joins(:product)
+                          .where(status: inv_statuses)
+                          .group('products.id', 'products.product_name')
+                          .select('products.id, products.product_name, COUNT(inventories.id) AS units_count, SUM(inventories.purchase_cost) AS inventory_value')
+                          .order('units_count DESC')
+                          .limit(10)
+      @top_inventory_by_quantity = rows_qty.map do |r|
+        { product_id: r.id, name: r.product_name, units_count: r.attributes['units_count'].to_i, inventory_value: r.attributes['inventory_value'].to_d }
       end
 
       # Top ventas por categoría (YTD actual)
