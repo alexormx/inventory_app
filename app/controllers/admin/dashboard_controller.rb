@@ -224,11 +224,12 @@ class Admin::DashboardController < ApplicationController
     # kaminari pagination
     rel = rel.page(page).per(per)
 
-    @rows = rel.map { |r| { product_id: r.id, name: r.product_name, brand: r.brand, category: r.category, units: r.attributes['units'].to_i, revenue: r.attributes['revenue'].to_d } }
-    @period = period
+  @rows = rel.map { |r| { product_id: r.id, name: r.product_name, brand: r.brand, category: r.category, units: r.attributes['units'].to_i, revenue: r.attributes['revenue'].to_d } }
+  @period = period
+  @rel = rel
 
     respond_to do |format|
-      format.html { render :sellers, locals: { rows: @rows, period: @period, rel: rel }, layout: false }
+      format.html { render :sellers, layout: false }
     end
   end
 
@@ -256,10 +257,10 @@ class Admin::DashboardController < ApplicationController
     rev_sql   = "COALESCE(sale_order_items.unit_final_price, 0) * COALESCE(sale_order_items.quantity, 0)"
     cogs_sql  = "COALESCE(sale_order_items.unit_cost, 0) * COALESCE(sale_order_items.quantity, 0)"
 
-    sales = SaleOrderItem.joins(:sale_order, :product)
-                         .merge(scope)
-                         .group('products.id','products.product_name','products.brand','products.category')
-                         .select("products.id AS product_id, products.product_name AS product_name, products.brand AS brand, products.category AS category, SUM(#{rev_sql}) AS revenue")
+  sales = SaleOrderItem.joins(:sale_order, :product)
+             .merge(scope)
+             .group('products.id','products.product_name','products.brand','products.category')
+             .select("products.id AS product_id, products.product_name AS product_name, products.brand AS brand, products.category AS category, SUM(#{rev_sql}) AS revenue")
     cogs  = SaleOrderItem.joins(:sale_order, :product)
                          .merge(scope)
                          .group('products.id')
@@ -267,23 +268,25 @@ class Admin::DashboardController < ApplicationController
 
     cogs_map = cogs.index_by { |r| r.attributes['product_id'].to_i }
 
-    rel = sales.select('SUM('+rev_sql+') - COALESCE(SUM('+cogs_sql+'),0) AS profit').order('profit DESC')
+  rel = sales.select('SUM('+rev_sql+') - COALESCE(SUM('+cogs_sql+'),0) AS profit')
+         .order('profit DESC')
     rel = rel.page(page).per(per)
-    @rows = rel.map do |r|
+  @rows = rel.map do |r|
       pid = r.attributes['product_id'].to_i
       {
         product_id: pid,
         name: r.attributes['product_name'],
         brand: r.attributes['brand'],
         category: r.attributes['category'],
-        revenue: r.attributes['revenue'].to_d,
-        cogs: cogs_map[pid]&.attributes&.dig('cogs').to_d,
+  revenue: (r.attributes['revenue'] || 0).to_d,
+  cogs: (cogs_map[pid]&.attributes&.dig('cogs') || 0).to_d,
         profit: r.attributes['profit'].to_d
       }
     end
-    @period = period
+  @period = period
+  @rel = rel
     respond_to do |format|
-      format.html { render :profitable, locals: { rows: @rows, period: @period, rel: rel }, layout: false }
+      format.html { render :profitable, layout: false }
     end
   end
 
@@ -314,7 +317,7 @@ class Admin::DashboardController < ApplicationController
           end
 
     rel = rel.page(page).per(per)
-    @rows = rel.map do |r|
+  @rows = rel.map do |r|
       {
         product_id: r.id,
         name: r.product_name,
@@ -324,10 +327,11 @@ class Admin::DashboardController < ApplicationController
         inventory_value: r.try(:attributes).try(:[], 'inventory_value').to_d
       }
     end
-    @scope = scope
-    @metric = metric
+  @scope = scope
+  @metric = metric
+  @rel = rel
     respond_to do |format|
-      format.html { render :inventory_top, locals: { rows: @rows, scope: @scope, metric: @metric, rel: rel }, layout: false }
+      format.html { render :inventory_top, layout: false }
     end
   end
   @top_users_ytd_vs_prev = @top_users_range.map do |u|
