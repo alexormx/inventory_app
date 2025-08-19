@@ -173,7 +173,12 @@
                         <% @top_sellers_ytd&.each_with_index do |r, idx| %>
                           <tr>
                             <td class="text-muted">#<%= idx + 1 %></td>
-                            <td><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></td>
+                            <td>
+                              <%= link_to r[:name], edit_admin_product_path(r[:product_id]) %>
+                              <% if r[:brand].present? || r[:category].present? %>
+                                <div class="small text-muted">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
+                              <% end %>
+                            </td>
                             <td class="text-end"><%= number_with_delimiter(r[:units]) %></td>
                             <td class="text-end">$ <%= number_with_precision(r[:revenue], precision: 2, delimiter: ',') %></td>
                           </tr>
@@ -193,7 +198,12 @@
                         <% @top_sellers_last_year&.each_with_index do |r, idx| %>
                           <tr>
                             <td class="text-muted">#<%= idx + 1 %></td>
-                            <td><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></td>
+                            <td>
+                              <%= link_to r[:name], edit_admin_product_path(r[:product_id]) %>
+                              <% if r[:brand].present? || r[:category].present? %>
+                                <div class="small text-muted">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
+                              <% end %>
+                            </td>
                             <td class="text-end"><%= number_with_delimiter(r[:units]) %></td>
                             <td class="text-end">$ <%= number_with_precision(r[:revenue], precision: 2, delimiter: ',') %></td>
                           </tr>
@@ -213,7 +223,12 @@
                         <% @top_products_all&.each_with_index do |r, idx| %>
                           <tr>
                             <td class="text-muted">#<%= idx + 1 %></td>
-                            <td><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></td>
+                            <td>
+                              <%= link_to r[:name], edit_admin_product_path(r[:product_id]) %>
+                              <% if r[:brand].present? || r[:category].present? %>
+                                <div class="small text-muted">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
+                              <% end %>
+                            </td>
                             <td class="text-end"><%= number_with_delimiter(r[:units]) %></td>
                             <td class="text-end">$ <%= number_with_precision(r[:revenue], precision: 2, delimiter: ',') %></td>
                           </tr>
@@ -246,7 +261,12 @@
                         <% @top_products_profit_ytd&.each_with_index do |r, idx| %>
                           <tr>
                             <td class="text-muted">#<%= idx + 1 %></td>
-                            <td><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></td>
+                            <td>
+                              <%= link_to r[:name], edit_admin_product_path(r[:product_id]) %>
+                              <% if r[:brand].present? || r[:category].present? %>
+                                <div class="small text-muted">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
+                              <% end %>
+                            </td>
                             <td class="text-end">$ <%= number_with_precision(r[:cogs], precision: 2, delimiter: ',') %></td>
                             <td class="text-end">$ <%= number_with_precision(r[:revenue], precision: 2, delimiter: ',') %></td>
                             <td class="text-end">$ <%= number_with_precision(r[:profit], precision: 2, delimiter: ',') %></td>
@@ -267,7 +287,12 @@
                         <% @top_products_profit_last_year&.each_with_index do |r, idx| %>
                           <tr>
                             <td class="text-muted">#<%= idx + 1 %></td>
-                            <td><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></td>
+                            <td>
+                              <%= link_to r[:name], edit_admin_product_path(r[:product_id]) %>
+                              <% if r[:brand].present? || r[:category].present? %>
+                                <div class="small text-muted">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
+                              <% end %>
+                            </td>
                             <td class="text-end">$ <%= number_with_precision(r[:cogs], precision: 2, delimiter: ',') %></td>
                             <td class="text-end">$ <%= number_with_precision(r[:revenue], precision: 2, delimiter: ',') %></td>
                             <td class="text-end">$ <%= number_with_precision(r[:profit], precision: 2, delimiter: ',') %></td>
@@ -288,7 +313,12 @@
                         <% @top_products_profit_all_time&.each_with_index do |r, idx| %>
                           <tr>
                             <td class="text-muted">#<%= idx + 1 %></td>
-                            <td><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></td>
+                            <td>
+                              <%= link_to r[:name], edit_admin_product_path(r[:product_id]) %>
+                              <% if r[:brand].present? || r[:category].present? %>
+                                <div class="small text-muted">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
+                              <% end %>
+                            </td>
                             <td class="text-end">$ <%= number_with_precision(r[:cogs], precision: 2, delimiter: ',') %></td>
                             <td class="text-end">$ <%= number_with_precision(r[:revenue], precision: 2, delimiter: ',') %></td>
                             <td class="text-end">$ <%= number_with_precision(r[:profit], precision: 2, delimiter: ',') %></td>
@@ -311,50 +341,196 @@
       <div class="card h-100" data-controller="tabs">
         <div class="card-header d-flex justify-content-between align-items-center">
           <span><i class="fa-solid fa-boxes-stacked"></i> Top Inventario</span>
-          <ul class="nav nav-tabs nav-tabs-sm card-header-tabs" role="tablist">
-            <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#ti-value" type="button" role="tab" aria-controls="ti-value" aria-selected="true">Por valor</button></li>
-            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#ti-qty" type="button" role="tab" aria-controls="ti-qty">Por unidades</button></li>
-          </ul>
+          <div class="d-flex align-items-center gap-2">
+            <ul class="nav nav-tabs nav-tabs-sm card-header-tabs" role="tablist">
+              <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#ti-inv" type="button" role="tab" aria-controls="ti-inv" aria-selected="true">Inventario</button></li>
+              <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#ti-res" type="button" role="tab" aria-controls="ti-res">Apartados</button></li>
+              <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#ti-all" type="button" role="tab" aria-controls="ti-all">Inv + Apart</button></li>
+            </ul>
+          </div>
         </div>
         <div class="card-body p-0">
-          <div class="tab-content">
-            <div class="tab-pane fade show active" id="ti-value" role="tabpanel" data-tabs-target="panel">
-              <div class="table-responsive">
-                <table class="table table-sm mb-0">
-                  <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Valor de Inventario</th></tr></thead>
-                  <tbody>
-                    <% @top_inventory_by_value&.each_with_index do |r, idx| %>
-                      <tr>
-                        <td class="text-muted">#<%= idx + 1 %></td>
-                        <td><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></td>
-                        <td class="text-end">$ <%= number_with_precision(r[:inventory_value], precision: 2, delimiter: ',') %></td>
-                      </tr>
-                    <% end %>
-                    <% if @top_inventory_by_value.blank? %>
-                      <tr><td colspan="3" class="text-center text-muted py-3">Sin datos</td></tr>
-                    <% end %>
-                  </tbody>
-                </table>
+          <div class="tab-content" data-controller="subtabs">
+            <!-- Inventario (available + in_transit) -->
+            <div class="tab-pane fade show active" id="ti-inv" role="tabpanel" data-tabs-target="panel">
+              <div class="px-3 pt-3">
+                <ul class="nav nav-tabs nav-tabs-sm" role="tablist">
+                  <li class="nav-item"><button class="nav-link active" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#ti-inv-val" type="button" role="tab" aria-controls="ti-inv-val" aria-selected="true">Por valor</button></li>
+                  <li class="nav-item"><button class="nav-link" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#ti-inv-qty" type="button" role="tab" aria-controls="ti-inv-qty">Por unidades</button></li>
+                </ul>
+              </div>
+              <div class="tab-content">
+                <div class="tab-pane fade show active" id="ti-inv-val" role="tabpanel" data-subtabs-target="panel">
+                  <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                      <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Valor de Inventario</th></tr></thead>
+                      <tbody>
+                        <% @top_inventory_by_value_inventory&.each_with_index do |r, idx| %>
+                          <tr>
+                            <td class="text-muted">#<%= idx + 1 %></td>
+                            <td>
+                              <%= link_to r[:name], edit_admin_product_path(r[:product_id]) %>
+                              <% if r[:brand].present? || r[:category].present? %>
+                                <div class="small text-muted">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
+                              <% end %>
+                            </td>
+                            <td class="text-end">$ <%= number_with_precision(r[:inventory_value], precision: 2, delimiter: ',') %></td>
+                          </tr>
+                        <% end %>
+                        <% if @top_inventory_by_value_inventory.blank? %>
+                          <tr><td colspan="3" class="text-center text-muted py-3">Sin datos</td></tr>
+                        <% end %>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+                <div class="tab-pane fade" id="ti-inv-qty" role="tabpanel" data-subtabs-target="panel">
+                  <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                      <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Unidades</th><th class="text-end">Valor (MXN)</th></tr></thead>
+                      <tbody>
+                        <% @top_inventory_by_quantity_inventory&.each_with_index do |r, idx| %>
+                          <tr>
+                            <td class="text-muted">#<%= idx + 1 %></td>
+                            <td>
+                              <%= link_to r[:name], edit_admin_product_path(r[:product_id]) %>
+                              <% if r[:brand].present? || r[:category].present? %>
+                                <div class="small text-muted">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
+                              <% end %>
+                            </td>
+                            <td class="text-end"><%= number_with_delimiter(r[:units_count]) %></td>
+                            <td class="text-end">$ <%= number_with_precision(r[:inventory_value], precision: 2, delimiter: ',') %></td>
+                          </tr>
+                        <% end %>
+                        <% if @top_inventory_by_quantity_inventory.blank? %>
+                          <tr><td colspan="4" class="text-center text-muted py-3">Sin datos</td></tr>
+                        <% end %>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               </div>
             </div>
-            <div class="tab-pane fade" id="ti-qty" role="tabpanel" data-tabs-target="panel">
-              <div class="table-responsive">
-                <table class="table table-sm mb-0">
-                  <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Unidades</th><th class="text-end">Valor (MXN)</th></tr></thead>
-                  <tbody>
-                    <% @top_inventory_by_quantity&.each_with_index do |r, idx| %>
-                      <tr>
-                        <td class="text-muted">#<%= idx + 1 %></td>
-                        <td><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></td>
-                        <td class="text-end"><%= number_with_delimiter(r[:units_count]) %></td>
-                        <td class="text-end">$ <%= number_with_precision(r[:inventory_value], precision: 2, delimiter: ',') %></td>
-                      </tr>
-                    <% end %>
-                    <% if @top_inventory_by_quantity.blank? %>
-                      <tr><td colspan="4" class="text-center text-muted py-3">Sin datos</td></tr>
-                    <% end %>
-                  </tbody>
-                </table>
+
+            <!-- Apartados (reserved + pre_reserved + pre_sold) -->
+            <div class="tab-pane fade" id="ti-res" role="tabpanel" data-tabs-target="panel">
+              <div class="px-3 pt-3">
+                <ul class="nav nav-tabs nav-tabs-sm" role="tablist">
+                  <li class="nav-item"><button class="nav-link active" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#ti-res-val" type="button" role="tab" aria-controls="ti-res-val" aria-selected="true">Por valor</button></li>
+                  <li class="nav-item"><button class="nav-link" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#ti-res-qty" type="button" role="tab" aria-controls="ti-res-qty">Por unidades</button></li>
+                </ul>
+              </div>
+              <div class="tab-content">
+                <div class="tab-pane fade show active" id="ti-res-val" role="tabpanel" data-subtabs-target="panel">
+                  <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                      <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Valor de Apartados</th></tr></thead>
+                      <tbody>
+                        <% @top_inventory_by_value_reserved&.each_with_index do |r, idx| %>
+                          <tr>
+                            <td class="text-muted">#<%= idx + 1 %></td>
+                            <td>
+                              <%= link_to r[:name], edit_admin_product_path(r[:product_id]) %>
+                              <% if r[:brand].present? || r[:category].present? %>
+                                <div class="small text-muted">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
+                              <% end %>
+                            </td>
+                            <td class="text-end">$ <%= number_with_precision(r[:inventory_value], precision: 2, delimiter: ',') %></td>
+                          </tr>
+                        <% end %>
+                        <% if @top_inventory_by_value_reserved.blank? %>
+                          <tr><td colspan="3" class="text-center text-muted py-3">Sin datos</td></tr>
+                        <% end %>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+                <div class="tab-pane fade" id="ti-res-qty" role="tabpanel" data-subtabs-target="panel">
+                  <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                      <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Unidades</th><th class="text-end">Valor (MXN)</th></tr></thead>
+                      <tbody>
+                        <% @top_inventory_by_quantity_reserved&.each_with_index do |r, idx| %>
+                          <tr>
+                            <td class="text-muted">#<%= idx + 1 %></td>
+                            <td>
+                              <%= link_to r[:name], edit_admin_product_path(r[:product_id]) %>
+                              <% if r[:brand].present? || r[:category].present? %>
+                                <div class="small text-muted">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
+                              <% end %>
+                            </td>
+                            <td class="text-end"><%= number_with_delimiter(r[:units_count]) %></td>
+                            <td class="text-end">$ <%= number_with_precision(r[:inventory_value], precision: 2, delimiter: ',') %></td>
+                          </tr>
+                        <% end %>
+                        <% if @top_inventory_by_quantity_reserved.blank? %>
+                          <tr><td colspan="4" class="text-center text-muted py-3">Sin datos</td></tr>
+                        <% end %>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Inv + Apartados (todos) -->
+            <div class="tab-pane fade" id="ti-all" role="tabpanel" data-tabs-target="panel">
+              <div class="px-3 pt-3">
+                <ul class="nav nav-tabs nav-tabs-sm" role="tablist">
+                  <li class="nav-item"><button class="nav-link active" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#ti-all-val" type="button" role="tab" aria-controls="ti-all-val" aria-selected="true">Por valor</button></li>
+                  <li class="nav-item"><button class="nav-link" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#ti-all-qty" type="button" role="tab" aria-controls="ti-all-qty">Por unidades</button></li>
+                </ul>
+              </div>
+              <div class="tab-content">
+                <div class="tab-pane fade show active" id="ti-all-val" role="tabpanel" data-subtabs-target="panel">
+                  <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                      <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Valor (MXN)</th></tr></thead>
+                      <tbody>
+                        <% @top_inventory_by_value_all&.each_with_index do |r, idx| %>
+                          <tr>
+                            <td class="text-muted">#<%= idx + 1 %></td>
+                            <td>
+                              <%= link_to r[:name], edit_admin_product_path(r[:product_id]) %>
+                              <% if r[:brand].present? || r[:category].present? %>
+                                <div class="small text-muted">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
+                              <% end %>
+                            </td>
+                            <td class="text-end">$ <%= number_with_precision(r[:inventory_value], precision: 2, delimiter: ',') %></td>
+                          </tr>
+                        <% end %>
+                        <% if @top_inventory_by_value_all.blank? %>
+                          <tr><td colspan="3" class="text-center text-muted py-3">Sin datos</td></tr>
+                        <% end %>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+                <div class="tab-pane fade" id="ti-all-qty" role="tabpanel" data-subtabs-target="panel">
+                  <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                      <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Unidades</th><th class="text-end">Valor (MXN)</th></tr></thead>
+                      <tbody>
+                        <% @top_inventory_by_quantity_all&.each_with_index do |r, idx| %>
+                          <tr>
+                            <td class="text-muted">#<%= idx + 1 %></td>
+                            <td>
+                              <%= link_to r[:name], edit_admin_product_path(r[:product_id]) %>
+                              <% if r[:brand].present? || r[:category].present? %>
+                                <div class="small text-muted">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
+                              <% end %>
+                            </td>
+                            <td class="text-end"><%= number_with_delimiter(r[:units_count]) %></td>
+                            <td class="text-end">$ <%= number_with_precision(r[:inventory_value], precision: 2, delimiter: ',') %></td>
+                          </tr>
+                        <% end %>
+                        <% if @top_inventory_by_quantity_all.blank? %>
+                          <tr><td colspan="4" class="text-center text-muted py-3">Sin datos</td></tr>
+                        <% end %>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

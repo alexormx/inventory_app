@@ -129,13 +129,13 @@ class Admin::DashboardController < ApplicationController
 
   # Top 10 productos históricos (por unidades)
     rev_sql = "COALESCE(sale_order_items.unit_final_price, 0) * COALESCE(sale_order_items.quantity, 0)"
-    top_products = SaleOrderItem.joins(:sale_order, :product)
-                                .merge(so_scope)
-                                .group("products.id", "products.product_name")
-                                .select("products.id, products.product_name, SUM(sale_order_items.quantity) AS units, SUM(#{rev_sql}) AS revenue")
+  top_products = SaleOrderItem.joins(:sale_order, :product)
+                .merge(so_scope)
+                .group("products.id", "products.product_name", "products.brand", "products.category")
+                .select("products.id, products.product_name, products.brand, products.category, SUM(sale_order_items.quantity) AS units, SUM(#{rev_sql}) AS revenue")
                                 .order("units DESC")
                 .limit(10)
-    @top_products_all = top_products.map { |r| { product_id: r.id, name: r.product_name, units: r.attributes["units"].to_i, revenue: r.attributes["revenue"].to_d } }
+  @top_products_all = top_products.map { |r| { product_id: r.id, name: r.product_name, brand: r.brand, category: r.category, units: r.attributes["units"].to_i, revenue: r.attributes["revenue"].to_d } }
 
     # Top 5 productos en las últimas 20 ventas
     last20_ids = so_scope.order(order_date: :desc, created_at: :desc).limit(20).pluck(:id)
@@ -307,11 +307,11 @@ class Admin::DashboardController < ApplicationController
       # Top Sellers (por unidades) en el rango YTD seleccionado
   top_sellers_q = SaleOrderItem.joins(:sale_order, :product)
                .merge(so_ytd_paid)
-                                   .group('products.id','products.product_name')
-                                   .select("products.id, products.product_name, SUM(#{units_sql}) AS units, SUM(#{rev_sql_str}) AS revenue")
+                                   .group('products.id','products.product_name','products.brand','products.category')
+                                   .select("products.id, products.product_name, products.brand, products.category, SUM(#{units_sql}) AS units, SUM(#{rev_sql_str}) AS revenue")
                                    .order('units DESC')
                                    .limit(10)
-      @top_sellers_ytd = top_sellers_q.map { |r| { product_id: r.id, name: r.product_name, units: r.attributes['units'].to_i, revenue: r.attributes['revenue'].to_d } }
+      @top_sellers_ytd = top_sellers_q.map { |r| { product_id: r.id, name: r.product_name, brand: r.brand, category: r.category, units: r.attributes['units'].to_i, revenue: r.attributes['revenue'].to_d } }
 
   # Top Sellers (Last Year calendario completo)
   ly_start = now.beginning_of_year - 1.year
@@ -320,36 +320,42 @@ class Admin::DashboardController < ApplicationController
   so_last_year_paid = so_last_year.where(status: paid_statuses)
   top_sellers_ly_q = SaleOrderItem.joins(:sale_order, :product)
               .merge(so_last_year_paid)
-              .group('products.id','products.product_name')
-              .select("products.id, products.product_name, SUM(#{units_sql}) AS units, SUM(#{rev_sql_str}) AS revenue")
+              .group('products.id','products.product_name','products.brand','products.category')
+              .select("products.id, products.product_name, products.brand, products.category, SUM(#{units_sql}) AS units, SUM(#{rev_sql_str}) AS revenue")
               .order('units DESC')
               .limit(10)
-  @top_sellers_last_year = top_sellers_ly_q.map { |r| { product_id: r.id, name: r.product_name, units: r.attributes['units'].to_i, revenue: r.attributes['revenue'].to_d } }
+  @top_sellers_last_year = top_sellers_ly_q.map { |r| { product_id: r.id, name: r.product_name, brand: r.brand, category: r.category, units: r.attributes['units'].to_i, revenue: r.attributes['revenue'].to_d } }
 
   # Top Sellers (All Time) por unidades ya existe en @top_products_all
 
-      # Top inventario (por valor y por unidades) considerando estatus específicos
-      inv_statuses = [:available, :reserved, :in_transit, :pre_reserved, :pre_sold]
+      # Top inventario (por valor y por unidades) con filtros: Inventario, Apartados, Todo
+      inv_only_statuses   = [:available, :in_transit]
+      reserved_statuses   = [:reserved, :pre_reserved, :pre_sold]
+      inv_all_statuses    = inv_only_statuses + reserved_statuses
 
-      rows_val = Inventory.joins(:product)
-                          .where(status: inv_statuses)
-                          .group('products.id', 'products.product_name')
-                          .select('products.id, products.product_name, SUM(inventories.purchase_cost) AS inventory_value')
-                          .order('inventory_value DESC')
-                          .limit(10)
-      @top_inventory_by_value = rows_val.map do |r|
-        { product_id: r.id, name: r.product_name, inventory_value: r.attributes['inventory_value'].to_d }
+      build_top_inv = lambda do |statuses, order_by|
+        base = Inventory.joins(:product)
+                         .where(status: statuses)
+                         .group('products.id', 'products.product_name', 'products.brand', 'products.category')
+        rows_v = base.select('products.id, products.product_name, products.brand, products.category, SUM(inventories.purchase_cost) AS inventory_value')
+                     .order('inventory_value DESC')
+                     .limit(10)
+        by_value = rows_v.map { |r| { product_id: r.id, name: r.product_name, brand: r.brand, category: r.category, inventory_value: r.attributes['inventory_value'].to_d } }
+
+        rows_q = base.select('products.id, products.product_name, products.brand, products.category, COUNT(inventories.id) AS units_count, SUM(inventories.purchase_cost) AS inventory_value')
+                     .order('units_count DESC')
+                     .limit(10)
+        by_qty = rows_q.map { |r| { product_id: r.id, name: r.product_name, brand: r.brand, category: r.category, units_count: r.attributes['units_count'].to_i, inventory_value: r.attributes['inventory_value'].to_d } }
+        [by_value, by_qty]
       end
 
-      rows_qty = Inventory.joins(:product)
-                          .where(status: inv_statuses)
-                          .group('products.id', 'products.product_name')
-                          .select('products.id, products.product_name, COUNT(inventories.id) AS units_count, SUM(inventories.purchase_cost) AS inventory_value')
-                          .order('units_count DESC')
-                          .limit(10)
-      @top_inventory_by_quantity = rows_qty.map do |r|
-        { product_id: r.id, name: r.product_name, units_count: r.attributes['units_count'].to_i, inventory_value: r.attributes['inventory_value'].to_d }
-      end
+      @top_inventory_by_value_inventory, @top_inventory_by_quantity_inventory = build_top_inv.call(inv_only_statuses, 'value')
+      @top_inventory_by_value_reserved,  @top_inventory_by_quantity_reserved  = build_top_inv.call(reserved_statuses, 'value')
+      @top_inventory_by_value_all,       @top_inventory_by_quantity_all       = build_top_inv.call(inv_all_statuses, 'value')
+
+      # Back-compat variables used by the view previously (point to "all")
+      @top_inventory_by_value    = @top_inventory_by_value_all
+      @top_inventory_by_quantity = @top_inventory_by_quantity_all
 
       # Top ventas por categoría (YTD actual)
       ytd_by_cat = SaleOrderItem.joins(:sale_order, :product)
@@ -384,20 +390,20 @@ class Admin::DashboardController < ApplicationController
     # Productos más rentables (YTD): Ventas (ingresos), COGS (costo de unidades vendidas en el periodo), Utilidad = Ventas - COGS - Mermas
   sales_rows_ytd = SaleOrderItem.joins(:sale_order, :product)
       .merge(so_ytd_paid)
-                  .group('products.id','products.product_name','products.category')
-                  .select("products.id AS product_id, products.product_name AS product_name, products.category AS category, SUM(#{rev_sql_str}) AS sales_total")
+                  .group('products.id','products.product_name','products.brand','products.category')
+                  .select("products.id AS product_id, products.product_name AS product_name, products.brand AS brand, products.category AS category, SUM(#{rev_sql_str}) AS sales_total")
   # Merma (marketing, damaged, lost, scrap) costo por producto en el rango
   waste_rows_ytd = Inventory.joins(:product)
             .where(status: [:marketing, :damaged, :lost, :scrap], status_changed_at: range)
-            .group('products.id','products.product_name','products.category')
-            .select('products.id AS product_id, products.product_name AS product_name, products.category AS category, SUM(inventories.purchase_cost) AS waste_total')
+            .group('products.id','products.product_name','products.brand','products.category')
+            .select('products.id AS product_id, products.product_name AS product_name, products.brand AS brand, products.category AS category, SUM(inventories.purchase_cost) AS waste_total')
 
   waste_map_ytd = waste_rows_ytd.index_by { |r| r.attributes['product_id'].to_i }
 
   cogs_rows_ytd = SaleOrderItem.joins(:sale_order, :product)
                .merge(so_ytd_paid)
-               .group('products.id','products.product_name','products.category')
-               .select("products.id AS product_id, products.product_name AS product_name, products.category AS category, SUM(#{cogs_sql_str}) AS cogs_total")
+               .group('products.id','products.product_name','products.brand','products.category')
+               .select("products.id AS product_id, products.product_name AS product_name, products.brand AS brand, products.category AS category, SUM(#{cogs_sql_str}) AS cogs_total")
 
   sales_map_ytd = sales_rows_ytd.index_by { |r| r.attributes['product_id'].to_i }
   cogs_map_ytd  = cogs_rows_ytd.index_by { |r| r.attributes['product_id'].to_i }
@@ -406,6 +412,7 @@ class Admin::DashboardController < ApplicationController
       prod_profit = all_ids_ytd.map do |pid|
         srow = sales_map_ytd[pid]
   name = srow&.attributes&.dig('product_name')
+  brand = srow&.attributes&.dig('brand')
   cat  = srow&.attributes&.dig('category')
         sales     = srow&.attributes&.dig('sales_total').to_d
   purchases = cogs_map_ytd[pid]&.attributes&.dig('cogs_total').to_d
@@ -413,6 +420,7 @@ class Admin::DashboardController < ApplicationController
         {
           product_id: pid,
           name: name,
+          brand: brand,
           category: (cat.presence || 'Uncategorized'),
           revenue: sales,      # Ventas
           cogs: purchases,     # Compra (inversión)
@@ -426,18 +434,18 @@ class Admin::DashboardController < ApplicationController
 
   sales_rows_ly = SaleOrderItem.joins(:sale_order, :product)
                .merge(so_last_year_paid)
-                                   .group('products.id','products.product_name','products.category')
-                                   .select("products.id AS product_id, products.product_name AS product_name, products.category AS category, SUM(#{rev_sql_str}) AS sales_total")
+                                   .group('products.id','products.product_name','products.brand','products.category')
+                                   .select("products.id AS product_id, products.product_name AS product_name, products.brand AS brand, products.category AS category, SUM(#{rev_sql_str}) AS sales_total")
   waste_rows_ly = Inventory.joins(:product)
            .where(status: [:marketing, :damaged, :lost, :scrap], status_changed_at: ly_start..ly_end)
-           .group('products.id','products.product_name','products.category')
-           .select('products.id AS product_id, products.product_name AS product_name, products.category AS category, SUM(inventories.purchase_cost) AS waste_total')
+           .group('products.id','products.product_name','products.brand','products.category')
+           .select('products.id AS product_id, products.product_name AS product_name, products.brand AS brand, products.category AS category, SUM(inventories.purchase_cost) AS waste_total')
   waste_map_ly = waste_rows_ly.index_by { |r| r.attributes['product_id'].to_i }
 
   cogs_rows_ly = SaleOrderItem.joins(:sale_order, :product)
               .merge(so_last_year_paid)
-              .group('products.id','products.product_name','products.category')
-              .select("products.id AS product_id, products.product_name AS product_name, products.category AS category, SUM(#{cogs_sql_str}) AS cogs_total")
+              .group('products.id','products.product_name','products.brand','products.category')
+              .select("products.id AS product_id, products.product_name AS product_name, products.brand AS brand, products.category AS category, SUM(#{cogs_sql_str}) AS cogs_total")
 
   sales_map_ly = sales_rows_ly.index_by { |r| r.attributes['product_id'].to_i }
   cogs_map_ly  = cogs_rows_ly.index_by { |r| r.attributes['product_id'].to_i }
@@ -446,6 +454,7 @@ class Admin::DashboardController < ApplicationController
       prod_profit_ly = all_ids_ly.map do |pid|
         srow = sales_map_ly[pid]
   name = srow&.attributes&.dig('product_name')
+  brand = srow&.attributes&.dig('brand')
   cat  = srow&.attributes&.dig('category')
         sales     = srow&.attributes&.dig('sales_total').to_d
   purchases = cogs_map_ly[pid]&.attributes&.dig('cogs_total').to_d
@@ -453,6 +462,7 @@ class Admin::DashboardController < ApplicationController
         {
           product_id: pid,
           name: name,
+          brand: brand,
           category: (cat.presence || 'Uncategorized'),
           revenue: sales,
           cogs: purchases,
@@ -464,18 +474,18 @@ class Admin::DashboardController < ApplicationController
     # Productos más rentables (All Time)
   sales_rows_all = SaleOrderItem.joins(:sale_order, :product)
       .merge(so_scope.where(status: paid_statuses))
-                  .group('products.id','products.product_name','products.category')
-                  .select("products.id AS product_id, products.product_name AS product_name, products.category AS category, SUM(#{rev_sql_str}) AS sales_total")
+                  .group('products.id','products.product_name','products.brand','products.category')
+                  .select("products.id AS product_id, products.product_name AS product_name, products.brand AS brand, products.category AS category, SUM(#{rev_sql_str}) AS sales_total")
   waste_rows_all = Inventory.joins(:product)
            .where(status: [:marketing, :damaged, :lost, :scrap])
-           .group('products.id','products.product_name','products.category')
-           .select('products.id AS product_id, products.product_name AS product_name, products.category AS category, SUM(inventories.purchase_cost) AS waste_total')
+           .group('products.id','products.product_name','products.brand','products.category')
+           .select('products.id AS product_id, products.product_name AS product_name, products.brand AS brand, products.category AS category, SUM(inventories.purchase_cost) AS waste_total')
   waste_map_all = waste_rows_all.index_by { |r| r.attributes['product_id'].to_i }
 
   cogs_rows_all = SaleOrderItem.joins(:sale_order, :product)
                .merge(so_scope.where(status: paid_statuses))
-               .group('products.id','products.product_name','products.category')
-               .select("products.id AS product_id, products.product_name AS product_name, products.category AS category, SUM(#{cogs_sql_str}) AS cogs_total")
+               .group('products.id','products.product_name','products.brand','products.category')
+               .select("products.id AS product_id, products.product_name AS product_name, products.brand AS brand, products.category AS category, SUM(#{cogs_sql_str}) AS cogs_total")
 
   sales_map_all = sales_rows_all.index_by { |r| r.attributes['product_id'].to_i }
   cogs_map_all  = cogs_rows_all.index_by { |r| r.attributes['product_id'].to_i }
@@ -484,6 +494,7 @@ class Admin::DashboardController < ApplicationController
       prod_profit_all = all_ids_all.map do |pid|
         srow = sales_map_all[pid]
   name = srow&.attributes&.dig('product_name')
+  brand = srow&.attributes&.dig('brand')
   cat  = srow&.attributes&.dig('category')
         sales     = srow&.attributes&.dig('sales_total').to_d
   purchases = cogs_map_all[pid]&.attributes&.dig('cogs_total').to_d
@@ -491,6 +502,7 @@ class Admin::DashboardController < ApplicationController
         {
           product_id: pid,
           name: name,
+          brand: brand,
           category: (cat.presence || 'Uncategorized'),
           revenue: sales,
           cogs: purchases,
