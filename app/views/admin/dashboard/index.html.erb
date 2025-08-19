@@ -132,12 +132,20 @@
           <div class="d-flex flex-column flex-md-row w-100 justify-content-between align-items-md-center gap-2">
             <i class="fa-solid fa-boxes"></i> Productos
             <ul class="nav nav-tabs nav-tabs-sm card-header-tabs mt-2 d-none d-md-flex" role="tablist">
-              <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-sellers" type="button" role="tab" aria-controls="tp-sellers" aria-selected="true">Sellers</button></li>
-              <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-profit" type="button" role="tab" aria-controls="tp-profit">Rentables</button></li>
+              <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-sellers-ytd" type="button" role="tab" aria-controls="tp-sellers-ytd" aria-selected="true">Sellers · YTD</button></li>
+              <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-sellers-ly" type="button" role="tab" aria-controls="tp-sellers-ly">Sellers · LY</button></li>
+              <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-sellers-all" type="button" role="tab" aria-controls="tp-sellers-all">Sellers · All</button></li>
+              <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-profit-ytd" type="button" role="tab" aria-controls="tp-profit-ytd">Rentables · YTD</button></li>
+              <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-profit-ly" type="button" role="tab" aria-controls="tp-profit-ly">Rentables · LY</button></li>
+              <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-profit-all" type="button" role="tab" aria-controls="tp-profit-all">Rentables · All</button></li>
             </ul>
             <select class="form-select form-select-sm d-md-none w-auto" aria-label="Seleccionar pestaña" data-action="change->tabs#select">
-              <option value="#tp-sellers" selected>Sellers</option>
-              <option value="#tp-profit">Rentables</option>
+              <option value="#tp-sellers-ytd" selected>Sellers · YTD</option>
+              <option value="#tp-sellers-ly">Sellers · LY</option>
+              <option value="#tp-sellers-all">Sellers · All</option>
+              <option value="#tp-profit-ytd">Rentables · YTD</option>
+              <option value="#tp-profit-ly">Rentables · LY</option>
+              <option value="#tp-profit-all">Rentables · All</option>
             </select>
           </div>
           <div>
@@ -146,18 +154,9 @@
         </div>
         <div class="card-body p-0">
           <div class="tab-content">
-            <!-- Sellers -->
-            <div class="tab-pane fade show active" id="tp-sellers" role="tabpanel" data-tabs-target="panel" data-controller="subtabs">
-              <div class="px-3 pt-3">
-                <ul class="nav nav-tabs nav-tabs-sm" role="tablist">
-                  <li class="nav-item"><button class="nav-link active" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#ts-ytd" type="button" role="tab" aria-controls="ts-ytd" aria-selected="true">YTD</button></li>
-                  <li class="nav-item"><button class="nav-link" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#ts-ly" type="button" role="tab" aria-controls="ts-ly">Last Year</button></li>
-                  <li class="nav-item"><button class="nav-link" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#ts-all" type="button" role="tab" aria-controls="ts-all">All Time</button></li>
-                </ul>
-              </div>
-              <div class="tab-content">
-                <div class="tab-pane fade show active" id="ts-ytd" role="tabpanel" data-subtabs-target="panel">
-                  <turbo-frame id="tp-sellers-ytd">
+            <!-- Sellers YTD -->
+            <div class="tab-pane fade show active" id="tp-sellers-ytd" role="tabpanel" data-tabs-target="panel">
+                  <turbo-frame id="frame-sellers-ytd">
                     <div class="table-responsive dashboard-scroll">
                       <table class="table table-sm mb-0">
                         <thead>
@@ -194,8 +193,9 @@
                       </table>
                     </div>
                   </turbo-frame>
-                </div>
-                <div class="tab-pane fade" id="ts-ly" role="tabpanel" data-subtabs-target="panel">
+            </div>
+            <!-- Sellers LY -->
+            <div class="tab-pane fade" id="tp-sellers-ly" role="tabpanel" data-tabs-target="panel">
                   <div class="table-responsive">
                     <table class="table table-sm mb-0">
                       <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Unidades</th><th class="text-end">Ingresos</th></tr></thead>
@@ -219,8 +219,9 @@
                       </tbody>
                     </table>
                   </div>
-                </div>
-                <div class="tab-pane fade" id="ts-all" role="tabpanel" data-subtabs-target="panel">
+            </div>
+            <!-- Sellers All -->
+            <div class="tab-pane fade" id="tp-sellers-all" role="tabpanel" data-tabs-target="panel">
                   <div class="table-responsive">
                     <table class="table table-sm mb-0">
                       <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Unidades</th><th class="text-end">Ingresos</th></tr></thead>
@@ -244,21 +245,10 @@
                       </tbody>
                     </table>
                   </div>
-                </div>
-              </div>
             </div>
 
-            <!-- Rentables -->
-            <div class="tab-pane fade" id="tp-profit" role="tabpanel" data-tabs-target="panel" data-controller="subtabs">
-              <div class="px-3 pt-3">
-                <ul class="nav nav-tabs nav-tabs-sm" role="tablist">
-                  <li class="nav-item"><button class="nav-link active" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#pp-ytd" type="button" role="tab" aria-controls="pp-ytd" aria-selected="true">YTD</button></li>
-                  <li class="nav-item"><button class="nav-link" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#pp-ly" type="button" role="tab" aria-controls="pp-ly">Last Year</button></li>
-                  <li class="nav-item"><button class="nav-link" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#pp-all" type="button" role="tab" aria-controls="pp-all">All Time</button></li>
-                </ul>
-              </div>
-              <div class="tab-content">
-                <div class="tab-pane fade show active" id="pp-ytd" role="tabpanel" data-subtabs-target="panel">
+            <!-- Rentables YTD -->
+            <div class="tab-pane fade" id="tp-profit-ytd" role="tabpanel" data-tabs-target="panel">
                   <div class="table-responsive">
                     <table class="table table-sm mb-0">
                       <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Compra</th><th class="text-end">Ventas</th><th class="text-end">Utilidad</th></tr></thead>
@@ -283,8 +273,9 @@
                       </tbody>
                     </table>
                   </div>
-                </div>
-                <div class="tab-pane fade" id="pp-ly" role="tabpanel" data-subtabs-target="panel">
+            </div>
+            <!-- Rentables LY -->
+            <div class="tab-pane fade" id="tp-profit-ly" role="tabpanel" data-tabs-target="panel">
                   <div class="table-responsive">
                     <table class="table table-sm mb-0">
                       <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Compra</th><th class="text-end">Ventas</th><th class="text-end">Utilidad</th></tr></thead>
@@ -309,8 +300,9 @@
                       </tbody>
                     </table>
                   </div>
-                </div>
-                <div class="tab-pane fade" id="pp-all" role="tabpanel" data-subtabs-target="panel">
+            </div>
+            <!-- Rentables All -->
+            <div class="tab-pane fade" id="tp-profit-all" role="tabpanel" data-tabs-target="panel">
                   <div class="table-responsive">
                     <table class="table table-sm mb-0">
                       <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Compra</th><th class="text-end">Ventas</th><th class="text-end">Utilidad</th></tr></thead>
@@ -335,8 +327,6 @@
                       </tbody>
                     </table>
                   </div>
-                </div>
-              </div>
             </div>
           </div>
         </div>
@@ -348,29 +338,27 @@
           <span><i class="fa-solid fa-boxes-stacked"></i> Top Inventario</span>
           <div class="d-flex align-items-center gap-2 w-50 justify-content-end">
             <ul class="nav nav-tabs nav-tabs-sm card-header-tabs d-none d-md-flex" role="tablist">
-              <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#ti-inv" type="button" role="tab" aria-controls="ti-inv" aria-selected="true">Inventario</button></li>
-              <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#ti-res" type="button" role="tab" aria-controls="ti-res">Apartados</button></li>
-              <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#ti-all" type="button" role="tab" aria-controls="ti-all">Inv + Apart</button></li>
+              <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#ti-inv-val" type="button" role="tab" aria-controls="ti-inv-val" aria-selected="true">Inv · Valor</button></li>
+              <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#ti-inv-qty" type="button" role="tab" aria-controls="ti-inv-qty">Inv · Unidades</button></li>
+              <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#ti-res-val" type="button" role="tab" aria-controls="ti-res-val">Apart · Valor</button></li>
+              <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#ti-res-qty" type="button" role="tab" aria-controls="ti-res-qty">Apart · Unidades</button></li>
+              <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#ti-all-val" type="button" role="tab" aria-controls="ti-all-val">Todos · Valor</button></li>
+              <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#ti-all-qty" type="button" role="tab" aria-controls="ti-all-qty">Todos · Unidades</button></li>
             </ul>
             <select class="form-select form-select-sm d-md-none w-auto" aria-label="Seleccionar pestaña" data-action="change->tabs#select">
-              <option value="#ti-inv" selected>Inventario</option>
-              <option value="#ti-res">Apartados</option>
-              <option value="#ti-all">Inv + Apart</option>
+              <option value="#ti-inv-val" selected>Inv · Valor</option>
+              <option value="#ti-inv-qty">Inv · Unidades</option>
+              <option value="#ti-res-val">Apart · Valor</option>
+              <option value="#ti-res-qty">Apart · Unidades</option>
+              <option value="#ti-all-val">Todos · Valor</option>
+              <option value="#ti-all-qty">Todos · Unidades</option>
             </select>
           </div>
         </div>
         <div class="card-body p-0">
           <div class="tab-content">
-            <!-- Inventario (available + in_transit) -->
-            <div class="tab-pane fade show active" id="ti-inv" role="tabpanel" data-tabs-target="panel" data-controller="subtabs">
-              <div class="px-3 pt-3">
-                <ul class="nav nav-tabs nav-tabs-sm" role="tablist">
-                  <li class="nav-item"><button class="nav-link active" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#ti-inv-val" type="button" role="tab" aria-controls="ti-inv-val" aria-selected="true">Por valor</button></li>
-                  <li class="nav-item"><button class="nav-link" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#ti-inv-qty" type="button" role="tab" aria-controls="ti-inv-qty">Por unidades</button></li>
-                </ul>
-              </div>
-              <div class="tab-content">
-                <div class="tab-pane fade show active" id="ti-inv-val" role="tabpanel" data-subtabs-target="panel">
+            <!-- Inv · Valor -->
+            <div class="tab-pane fade show active" id="ti-inv-val" role="tabpanel" data-tabs-target="panel">
                   <div class="table-responsive">
                     <table class="table table-sm mb-0">
                       <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Valor de Inventario</th></tr></thead>
@@ -393,8 +381,9 @@
                       </tbody>
                     </table>
                   </div>
-                </div>
-                <div class="tab-pane fade" id="ti-inv-qty" role="tabpanel" data-subtabs-target="panel">
+            </div>
+            <!-- Inv · Unidades -->
+            <div class="tab-pane fade" id="ti-inv-qty" role="tabpanel" data-tabs-target="panel">
                   <div class="table-responsive">
                     <table class="table table-sm mb-0">
                       <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Unidades</th><th class="text-end">Valor (MXN)</th></tr></thead>
@@ -418,20 +407,9 @@
                       </tbody>
                     </table>
                   </div>
-                </div>
-              </div>
             </div>
-
-            <!-- Apartados (reserved + pre_reserved + pre_sold) -->
-            <div class="tab-pane fade" id="ti-res" role="tabpanel" data-tabs-target="panel" data-controller="subtabs">
-              <div class="px-3 pt-3">
-                <ul class="nav nav-tabs nav-tabs-sm" role="tablist">
-                  <li class="nav-item"><button class="nav-link active" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#ti-res-val" type="button" role="tab" aria-controls="ti-res-val" aria-selected="true">Por valor</button></li>
-                  <li class="nav-item"><button class="nav-link" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#ti-res-qty" type="button" role="tab" aria-controls="ti-res-qty">Por unidades</button></li>
-                </ul>
-              </div>
-              <div class="tab-content">
-                <div class="tab-pane fade show active" id="ti-res-val" role="tabpanel" data-subtabs-target="panel">
+            <!-- Apartados · Valor -->
+            <div class="tab-pane fade" id="ti-res-val" role="tabpanel" data-tabs-target="panel">
                   <div class="table-responsive">
                     <table class="table table-sm mb-0">
                       <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Valor de Apartados</th></tr></thead>
@@ -454,8 +432,9 @@
                       </tbody>
                     </table>
                   </div>
-                </div>
-                <div class="tab-pane fade" id="ti-res-qty" role="tabpanel" data-subtabs-target="panel">
+            </div>
+            <!-- Apartados · Unidades -->
+            <div class="tab-pane fade" id="ti-res-qty" role="tabpanel" data-tabs-target="panel">
                   <div class="table-responsive">
                     <table class="table table-sm mb-0">
                       <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Unidades</th><th class="text-end">Valor (MXN)</th></tr></thead>
@@ -479,20 +458,9 @@
                       </tbody>
                     </table>
                   </div>
-                </div>
-              </div>
             </div>
-
-            <!-- Inv + Apartados (todos) -->
-            <div class="tab-pane fade" id="ti-all" role="tabpanel" data-tabs-target="panel" data-controller="subtabs">
-              <div class="px-3 pt-3">
-                <ul class="nav nav-tabs nav-tabs-sm" role="tablist">
-                  <li class="nav-item"><button class="nav-link active" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#ti-all-val" type="button" role="tab" aria-controls="ti-all-val" aria-selected="true">Por valor</button></li>
-                  <li class="nav-item"><button class="nav-link" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#ti-all-qty" type="button" role="tab" aria-controls="ti-all-qty">Por unidades</button></li>
-                </ul>
-              </div>
-              <div class="tab-content">
-                <div class="tab-pane fade show active" id="ti-all-val" role="tabpanel" data-subtabs-target="panel">
+            <!-- Todos · Valor -->
+            <div class="tab-pane fade" id="ti-all-val" role="tabpanel" data-tabs-target="panel">
                   <div class="table-responsive">
                     <table class="table table-sm mb-0">
                       <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Valor (MXN)</th></tr></thead>
@@ -515,8 +483,9 @@
                       </tbody>
                     </table>
                   </div>
-                </div>
-                <div class="tab-pane fade" id="ti-all-qty" role="tabpanel" data-subtabs-target="panel">
+            </div>
+            <!-- Todos · Unidades -->
+            <div class="tab-pane fade" id="ti-all-qty" role="tabpanel" data-tabs-target="panel">
                   <div class="table-responsive">
                     <table class="table table-sm mb-0">
                       <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Unidades</th><th class="text-end">Valor (MXN)</th></tr></thead>
@@ -540,8 +509,6 @@
                       </tbody>
                     </table>
                   </div>
-                </div>
-              </div>
             </div>
           </div>
         </div>
@@ -556,28 +523,27 @@
         <div class="card-header d-flex justify-content-between align-items-center">
           <span><i class="fa-solid fa-layer-group"></i> Top Categorías</span>
           <ul class="nav nav-tabs nav-tabs-sm card-header-tabs d-none d-md-flex" role="tablist">
-            <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tc-ytd" type="button" role="tab" aria-controls="tc-ytd" aria-selected="true">YTD</button></li>
-            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tc-ly" type="button" role="tab" aria-controls="tc-ly">Last Year</button></li>
-            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tc-all" type="button" role="tab" aria-controls="tc-all">All Time</button></li>
+            <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tc-ytd-rev" type="button" role="tab" aria-controls="tc-ytd-rev" aria-selected="true">YTD · Ingresos</button></li>
+            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tc-ytd-prof" type="button" role="tab" aria-controls="tc-ytd-prof">YTD · Utilidad</button></li>
+            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tc-ly-rev" type="button" role="tab" aria-controls="tc-ly-rev">LY · Ingresos</button></li>
+            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tc-ly-prof" type="button" role="tab" aria-controls="tc-ly-prof">LY · Utilidad</button></li>
+            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tc-all-rev" type="button" role="tab" aria-controls="tc-all-rev">All · Ingresos</button></li>
+            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tc-all-prof" type="button" role="tab" aria-controls="tc-all-prof">All · Utilidad</button></li>
           </ul>
           <select class="form-select form-select-sm d-md-none w-auto" aria-label="Seleccionar periodo" data-action="change->tabs#select">
-            <option value="#tc-ytd" selected>YTD</option>
-            <option value="#tc-ly">Last Year</option>
-            <option value="#tc-all">All Time</option>
+            <option value="#tc-ytd-rev" selected>YTD · Ingresos</option>
+            <option value="#tc-ytd-prof">YTD · Utilidad</option>
+            <option value="#tc-ly-rev">LY · Ingresos</option>
+            <option value="#tc-ly-prof">LY · Utilidad</option>
+            <option value="#tc-all-rev">All · Ingresos</option>
+            <option value="#tc-all-prof">All · Utilidad</option>
           </select>
           <div><a class="btn btn-sm btn-outline-primary" href="<%= admin_products_path %>">Ver detalle</a></div>
         </div>
         <div class="card-body p-0">
-          <div class="tab-content" data-controller="subtabs">
-            <div class="tab-pane fade show active" id="tc-ytd" role="tabpanel" data-tabs-target="panel">
-              <div class="px-3 pt-3">
-                <ul class="nav nav-tabs nav-tabs-sm" role="tablist">
-                  <li class="nav-item"><button class="nav-link active" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#tc-ytd-rev" type="button" role="tab" aria-controls="tc-ytd-rev" aria-selected="true">Ingresos</button></li>
-                  <li class="nav-item"><button class="nav-link" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#tc-ytd-prof" type="button" role="tab" aria-controls="tc-ytd-prof">Utilidad</button></li>
-                </ul>
-              </div>
-              <div class="tab-content">
-                <div class="tab-pane fade show active" id="tc-ytd-rev" role="tabpanel" data-subtabs-target="panel">
+          <div class="tab-content">
+            <!-- YTD · Ingresos -->
+            <div class="tab-pane fade show active" id="tc-ytd-rev" role="tabpanel" data-tabs-target="panel">
                   <div class="table-responsive">
                     <table class="table table-sm mb-0">
                       <thead><tr><th>Rank</th><th>Categoría</th><th class="text-end">Ingresos</th></tr></thead>
@@ -595,8 +561,9 @@
                       </tbody>
                     </table>
                   </div>
-                </div>
-                <div class="tab-pane fade" id="tc-ytd-prof" role="tabpanel" data-subtabs-target="panel">
+            </div>
+            <!-- YTD · Utilidad -->
+            <div class="tab-pane fade" id="tc-ytd-prof" role="tabpanel" data-tabs-target="panel">
                   <div class="table-responsive">
                     <table class="table table-sm mb-0">
                       <thead><tr><th>Rank</th><th>Categoría</th><th class="text-end">Utilidad</th></tr></thead>
@@ -614,18 +581,9 @@
                       </tbody>
                     </table>
                   </div>
-                </div>
-              </div>
             </div>
-            <div class="tab-pane fade" id="tc-ly" role="tabpanel" data-tabs-target="panel">
-              <div class="px-3 pt-3">
-                <ul class="nav nav-tabs nav-tabs-sm" role="tablist">
-                  <li class="nav-item"><button class="nav-link active" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#tc-ly-rev" type="button" role="tab" aria-controls="tc-ly-rev" aria-selected="true">Ingresos</button></li>
-                  <li class="nav-item"><button class="nav-link" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#tc-ly-prof" type="button" role="tab" aria-controls="tc-ly-prof">Utilidad</button></li>
-                </ul>
-              </div>
-              <div class="tab-content">
-                <div class="tab-pane fade show active" id="tc-ly-rev" role="tabpanel" data-subtabs-target="panel">
+            <!-- LY · Ingresos -->
+            <div class="tab-pane fade" id="tc-ly-rev" role="tabpanel" data-tabs-target="panel">
                   <div class="table-responsive">
                     <table class="table table-sm mb-0">
                       <thead><tr><th>Rank</th><th>Categoría</th><th class="text-end">Ingresos</th></tr></thead>
@@ -643,8 +601,9 @@
                       </tbody>
                     </table>
                   </div>
-                </div>
-                <div class="tab-pane fade" id="tc-ly-prof" role="tabpanel" data-subtabs-target="panel">
+            </div>
+            <!-- LY · Utilidad -->
+            <div class="tab-pane fade" id="tc-ly-prof" role="tabpanel" data-tabs-target="panel">
                   <div class="table-responsive">
                     <table class="table table-sm mb-0">
                       <thead><tr><th>Rank</th><th>Categoría</th><th class="text-end">Utilidad</th></tr></thead>
@@ -662,18 +621,9 @@
                       </tbody>
                     </table>
                   </div>
-                </div>
-              </div>
             </div>
-            <div class="tab-pane fade" id="tc-all" role="tabpanel" data-tabs-target="panel">
-              <div class="px-3 pt-3">
-                <ul class="nav nav-tabs nav-tabs-sm" role="tablist">
-                  <li class="nav-item"><button class="nav-link active" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#tc-all-rev" type="button" role="tab" aria-controls="tc-all-rev" aria-selected="true">Ingresos</button></li>
-                  <li class="nav-item"><button class="nav-link" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#tc-all-prof" type="button" role="tab" aria-controls="tc-all-prof">Utilidad</button></li>
-                </ul>
-              </div>
-              <div class="tab-content">
-                <div class="tab-pane fade show active" id="tc-all-rev" role="tabpanel" data-subtabs-target="panel">
+            <!-- All · Ingresos -->
+            <div class="tab-pane fade" id="tc-all-rev" role="tabpanel" data-tabs-target="panel">
                   <div class="table-responsive">
                     <table class="table table-sm mb-0">
                       <thead><tr><th>Rank</th><th>Categoría</th><th class="text-end">Ingresos</th></tr></thead>
@@ -691,8 +641,9 @@
                       </tbody>
                     </table>
                   </div>
-                </div>
-                <div class="tab-pane fade" id="tc-all-prof" role="tabpanel" data-subtabs-target="panel">
+            </div>
+            <!-- All · Utilidad -->
+            <div class="tab-pane fade" id="tc-all-prof" role="tabpanel" data-tabs-target="panel">
                   <div class="table-responsive">
                     <table class="table table-sm mb-0">
                       <thead><tr><th>Rank</th><th>Categoría</th><th class="text-end">Utilidad</th></tr></thead>
@@ -710,8 +661,6 @@
                       </tbody>
                     </table>
                   </div>
-                </div>
-              </div>
             </div>
           </div>
         </div>
@@ -722,29 +671,33 @@
         <div class="card-header d-flex justify-content-between align-items-center">
           <span><i class="fa-solid fa-ranking-star"></i> Top Customers</span>
           <ul class="nav nav-tabs nav-tabs-sm card-header-tabs d-none d-md-flex" role="tablist">
-            <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#rank-range" type="button" role="tab" aria-controls="rank-range" aria-selected="true">YTD</button></li>
-            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#rank-ly" type="button" role="tab" aria-controls="rank-ly">Last Year</button></li>
-            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#rank-all" type="button" role="tab" aria-controls="rank-all">All Time</button></li>
+            <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#rank-range-sales" type="button" role="tab" aria-controls="rank-range-sales" aria-selected="true">YTD · Ventas</button></li>
+            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#rank-range-reserved" type="button" role="tab" aria-controls="rank-range-reserved">YTD · Apartados</button></li>
+            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#rank-range-combined" type="button" role="tab" aria-controls="rank-range-combined">YTD · Combinado</button></li>
+            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#rank-ly-sales" type="button" role="tab" aria-controls="rank-ly-sales">LY · Ventas</button></li>
+            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#rank-ly-reserved" type="button" role="tab" aria-controls="rank-ly-reserved">LY · Apartados</button></li>
+            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#rank-ly-combined" type="button" role="tab" aria-controls="rank-ly-combined">LY · Combinado</button></li>
+            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#rank-all-sales" type="button" role="tab" aria-controls="rank-all-sales">All · Ventas</button></li>
+            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#rank-all-reserved" type="button" role="tab" aria-controls="rank-all-reserved">All · Apartados</button></li>
+            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#rank-all-combined" type="button" role="tab" aria-controls="rank-all-combined">All · Combinado</button></li>
           </ul>
           <select class="form-select form-select-sm d-md-none w-auto" aria-label="Seleccionar periodo" data-action="change->tabs#select">
-            <option value="#rank-range" selected>YTD</option>
-            <option value="#rank-ly">Last Year</option>
-            <option value="#rank-all">All Time</option>
+            <option value="#rank-range-sales" selected>YTD · Ventas</option>
+            <option value="#rank-range-reserved">YTD · Apartados</option>
+            <option value="#rank-range-combined">YTD · Combinado</option>
+            <option value="#rank-ly-sales">LY · Ventas</option>
+            <option value="#rank-ly-reserved">LY · Apartados</option>
+            <option value="#rank-ly-combined">LY · Combinado</option>
+            <option value="#rank-all-sales">All · Ventas</option>
+            <option value="#rank-all-reserved">All · Apartados</option>
+            <option value="#rank-all-combined">All · Combinado</option>
           </select>
           <a href="<%= admin_users_path %>" class="btn btn-sm btn-outline-primary ms-2">Ver detalle</a>
         </div>
         <div class="card-body p-0">
           <div class="tab-content">
-            <div class="tab-pane fade show active" id="rank-range" role="tabpanel" data-tabs-target="panel" data-controller="subtabs">
-              <div class="px-3 pt-3">
-                <ul class="nav nav-tabs nav-tabs-sm" role="tablist">
-                  <li class="nav-item"><button class="nav-link active" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#rank-range-sales" type="button" role="tab" aria-controls="rank-range-sales" aria-selected="true">Ventas</button></li>
-                  <li class="nav-item"><button class="nav-link" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#rank-range-reserved" type="button" role="tab" aria-controls="rank-range-reserved">Apartados</button></li>
-                  <li class="nav-item"><button class="nav-link" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#rank-range-combined" type="button" role="tab" aria-controls="rank-range-combined">Ventas + Apartados</button></li>
-                </ul>
-              </div>
-              <div class="tab-content">
-                <div class="tab-pane fade show active" id="rank-range-sales" role="tabpanel" data-subtabs-target="panel">
+            <!-- YTD · Ventas -->
+            <div class="tab-pane fade show active" id="rank-range-sales" role="tabpanel" data-tabs-target="panel">
                   <div class="table-responsive">
                     <table class="table table-sm mb-0">
                       <thead>
@@ -780,8 +733,9 @@
                        </tbody>
                      </table>
                   </div>
-                </div>
-                <div class="tab-pane fade" id="rank-range-reserved" role="tabpanel" data-subtabs-target="panel">
+            </div>
+            <!-- YTD · Apartados -->
+            <div class="tab-pane fade" id="rank-range-reserved" role="tabpanel" data-tabs-target="panel">
                   <div class="table-responsive">
                     <table class="table table-sm mb-0">
                       <thead>
@@ -807,8 +761,9 @@
                        </tbody>
                      </table>
                   </div>
-                </div>
-                <div class="tab-pane fade" id="rank-range-combined" role="tabpanel" data-subtabs-target="panel">
+            </div>
+            <!-- YTD · Combinado -->
+            <div class="tab-pane fade" id="rank-range-combined" role="tabpanel" data-tabs-target="panel">
                   <div class="table-responsive">
                     <table class="table table-sm mb-0">
                       <thead>
@@ -838,19 +793,9 @@
                        </tbody>
                      </table>
                   </div>
-                </div>
-              </div>
             </div>
-            <div class="tab-pane fade" id="rank-ly" role="tabpanel" data-tabs-target="panel" data-controller="subtabs">
-              <div class="px-3 pt-3">
-                <ul class="nav nav-tabs nav-tabs-sm" role="tablist">
-                  <li class="nav-item"><button class="nav-link active" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#rank-ly-sales" type="button" role="tab" aria-controls="rank-ly-sales" aria-selected="true">Ventas</button></li>
-                  <li class="nav-item"><button class="nav-link" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#rank-ly-reserved" type="button" role="tab" aria-controls="rank-ly-reserved">Apartados</button></li>
-                  <li class="nav-item"><button class="nav-link" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#rank-ly-combined" type="button" role="tab" aria-controls="rank-ly-combined">Ventas + Apartados</button></li>
-                </ul>
-              </div>
-              <div class="tab-content">
-                <div class="tab-pane fade show active" id="rank-ly-sales" role="tabpanel" data-subtabs-target="panel">
+            <!-- LY · Ventas -->
+            <div class="tab-pane fade" id="rank-ly-sales" role="tabpanel" data-tabs-target="panel">
                   <div class="table-responsive">
                     <table class="table table-sm mb-0">
                       <thead><tr><th>Rank</th><th>Cliente</th><th class="text-end">Órdenes</th><th class="text-end">Ingresos</th></tr></thead>
@@ -869,8 +814,9 @@
                       </tbody>
                     </table>
                   </div>
-                </div>
-                <div class="tab-pane fade" id="rank-ly-reserved" role="tabpanel" data-subtabs-target="panel">
+            </div>
+            <!-- LY · Apartados -->
+            <div class="tab-pane fade" id="rank-ly-reserved" role="tabpanel" data-tabs-target="panel">
                   <div class="table-responsive">
                     <table class="table table-sm mb-0">
                       <thead><tr><th>Rank</th><th>Cliente</th><th class="text-end">Unidades apartadas</th><th class="text-end">Valor apartados (MXN)</th></tr></thead>
@@ -889,8 +835,9 @@
                       </tbody>
                     </table>
                   </div>
-                </div>
-                <div class="tab-pane fade" id="rank-ly-combined" role="tabpanel" data-subtabs-target="panel">
+            </div>
+            <!-- LY · Combinado -->
+            <div class="tab-pane fade" id="rank-ly-combined" role="tabpanel" data-tabs-target="panel">
                   <div class="table-responsive">
                     <table class="table table-sm mb-0">
                       <thead><tr><th>Rank</th><th>Cliente</th><th class="text-end">Órdenes</th><th class="text-end">Ingresos</th><th class="text-end">Valor apartados</th><th class="text-end">Total</th></tr></thead>
@@ -911,19 +858,9 @@
                       </tbody>
                     </table>
                   </div>
-                </div>
-              </div>
             </div>
-            <div class="tab-pane fade" id="rank-all" role="tabpanel" data-tabs-target="panel" data-controller="subtabs">
-              <div class="px-3 pt-3">
-                <ul class="nav nav-tabs nav-tabs-sm" role="tablist">
-                  <li class="nav-item"><button class="nav-link active" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#rank-all-sales" type="button" role="tab" aria-controls="rank-all-sales" aria-selected="true">Ventas</button></li>
-                  <li class="nav-item"><button class="nav-link" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#rank-all-reserved" type="button" role="tab" aria-controls="rank-all-reserved">Apartados</button></li>
-                  <li class="nav-item"><button class="nav-link" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#rank-all-combined" type="button" role="tab" aria-controls="rank-all-combined">Ventas + Apartados</button></li>
-                </ul>
-              </div>
-              <div class="tab-content">
-                <div class="tab-pane fade show active" id="rank-all-sales" role="tabpanel" data-subtabs-target="panel">
+            <!-- All · Ventas -->
+            <div class="tab-pane fade" id="rank-all-sales" role="tabpanel" data-tabs-target="panel">
                   <div class="table-responsive">
                     <table class="table table-sm mb-0">
                       <thead><tr><th>Rank</th><th>Cliente</th><th class="text-end">Órdenes</th><th class="text-end">Ingresos</th></tr></thead>
@@ -943,8 +880,9 @@
                     </table>
                     <div class="px-3 py-2 small text-muted">Nota: en All Time no se muestra comparativo vs años anteriores.</div>
                   </div>
-                </div>
-                <div class="tab-pane fade" id="rank-all-reserved" role="tabpanel" data-subtabs-target="panel">
+            </div>
+            <!-- All · Apartados -->
+            <div class="tab-pane fade" id="rank-all-reserved" role="tabpanel" data-tabs-target="panel">
                   <div class="table-responsive">
                     <table class="table table-sm mb-0">
                       <thead><tr><th>Rank</th><th>Cliente</th><th class="text-end">Unidades apartadas</th><th class="text-end">Valor apartados (MXN)</th></tr></thead>
@@ -963,8 +901,9 @@
                       </tbody>
                     </table>
                   </div>
-                </div>
-                <div class="tab-pane fade" id="rank-all-combined" role="tabpanel" data-subtabs-target="panel">
+            </div>
+            <!-- All · Combinado -->
+            <div class="tab-pane fade" id="rank-all-combined" role="tabpanel" data-tabs-target="panel">
                   <div class="table-responsive">
                     <table class="table table-sm mb-0">
                       <thead><tr><th>Rank</th><th>Cliente</th><th class="text-end">Órdenes</th><th class="text-end">Ingresos</th><th class="text-end">Valor apartados</th><th class="text-end">Total</th></tr></thead>
@@ -985,8 +924,6 @@
                       </tbody>
                     </table>
                   </div>
-                </div>
-              </div>
             </div>
           </div>
         </div>

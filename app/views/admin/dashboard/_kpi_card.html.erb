@@ -15,8 +15,8 @@
         <div class="small text-muted"><%= title %></div>
         <div class="fs-4 fw-bold">
           <%= value %>
-          <% if ly.present? %>
-            <span class="small text-muted">(LY: <%= ly %>)</span>
+          <% if local_assigns[:ly].present? %>
+            <span class="small text-muted">(LY: <%= local_assigns[:ly] %>)</span>
           <% end %>
         </div>
         <% if defined?(delta) && !delta.nil? %>
