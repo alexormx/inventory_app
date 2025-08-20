@@ -8,8 +8,6 @@
       <tr>
         <th scope="col">Rank</th>
         <th scope="col">Producto</th>
-        <th scope="col">Marca</th>
-        <th scope="col">Categoría</th>
         <th scope="col" class="text-end">Unidades</th>
         <th scope="col" class="text-end">Valor</th>
       </tr>
@@ -19,16 +17,19 @@
         <% rows.each_with_index do |r, idx| %>
           <tr>
             <td class="text-muted">#<%= idx + 1 %></td>
-            <td><%= r[:name] %></td>
-            <td><%= r[:brand] %></td>
-            <td><%= r[:category] %></td>
+            <td>
+              <div class="small fw-semibold"><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></div>
+              <% if r[:brand].present? || r[:category].present? %>
+                <div class="text-muted" style="font-size: .75rem;">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
+              <% end %>
+            </td>
             <td class="text-end"><%= number_with_delimiter(r[:units_count]) %></td>
             <td class="text-end"><%= number_to_currency(r[:inventory_value]) %></td>
           </tr>
         <% end %>
       <% else %>
         <tr>
-          <td colspan="6" class="text-center text-muted py-3">Sin datos</td>
+          <td colspan="4" class="text-center text-muted py-3">Sin datos</td>
         </tr>
       <% end %>
     </tbody>

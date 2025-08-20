@@ -226,7 +226,7 @@ class Admin::DashboardController < ApplicationController
     end
 
     rel = build_rel.call(primary_scope).limit(10)
-    if rel.count.to_i == 0
+    unless SaleOrderItem.joins(:sale_order).merge(primary_scope).exists?
       rel = build_rel.call(fallback_scope).limit(10)
     end
 
@@ -279,8 +279,8 @@ class Admin::DashboardController < ApplicationController
     sales = build_sales.call(primary_scope)
     cogs  = cogs_for.call(primary_scope)
     cogs_map = cogs.index_by { |r| r.attributes['product_id'].to_i }
-    rel = sales.select('SUM('+rev_sql+') - COALESCE(SUM('+cogs_sql+'),0) AS profit').order('profit DESC').limit(10)
-    if rel.count.to_i == 0
+  rel = sales.select('SUM('+rev_sql+') - COALESCE(SUM('+cogs_sql+'),0) AS profit').order('profit DESC').limit(10)
+  unless SaleOrderItem.joins(:sale_order).merge(primary_scope).exists?
       sales = build_sales.call(fallback_scope)
       cogs  = cogs_for.call(fallback_scope)
       cogs_map = cogs.index_by { |r| r.attributes['product_id'].to_i }
