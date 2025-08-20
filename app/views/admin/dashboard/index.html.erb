@@ -140,9 +140,7 @@
               <option value="#tp-profit">Rentables</option>
             </select>
           </div>
-          <div>
-            <a href="<%= admin_products_path %>" class="btn btn-sm btn-outline-primary">Ver detalle</a>
-          </div>
+          <!-- Botón "Ver detalle" removido a solicitud -->
         </div>
         <div class="card-body p-0">
           <div class="tab-content">
@@ -157,7 +155,7 @@
                 <div class="tab-content">
                   <div class="tab-pane fade show active" id="tp-sellers-ytd" role="tabpanel" data-tabs-target="panel">
                     <turbo-frame id="frame-sellers-ytd" src="<%= admin_dashboard_sellers_path(period: 'ytd') %>">
-                      <div class="table-responsive dashboard-scroll">
+                      <div class="table-responsive p-2">
                         <table class="table table-sm mb-0">
                           <thead>
                             <tr>
@@ -188,7 +186,7 @@
                   </div>
                   <div class="tab-pane fade" id="tp-sellers-ly" role="tabpanel" data-tabs-target="panel">
                     <turbo-frame id="frame-sellers-ly" src="<%= admin_dashboard_sellers_path(period: 'ly') %>">
-                      <div class="table-responsive dashboard-scroll">
+                      <div class="table-responsive p-2">
                         <table class="table table-sm mb-0">
                           <thead>
                             <tr>
@@ -219,7 +217,7 @@
                   </div>
                   <div class="tab-pane fade" id="tp-sellers-all" role="tabpanel" data-tabs-target="panel">
                     <turbo-frame id="frame-sellers-all" src="<%= admin_dashboard_sellers_path(period: 'all') %>">
-                      <div class="table-responsive dashboard-scroll">
+                      <div class="table-responsive p-2">
                         <table class="table table-sm mb-0">
                           <thead>
                             <tr>
@@ -262,7 +260,7 @@
                 <div class="tab-content">
                   <div class="tab-pane fade show active" id="tp-profit-ytd" role="tabpanel" data-tabs-target="panel">
                     <turbo-frame id="frame-profit-ytd" src="<%= admin_dashboard_profitable_path(period: 'ytd') %>">
-                      <div class="table-responsive">
+                      <div class="table-responsive p-2">
                         <table class="table table-sm mb-0">
                           <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Ingresos</th><th class="text-end">COGS</th><th class="text-end">Utilidad</th></tr></thead>
                           <tbody>
@@ -286,7 +284,7 @@
                   </div>
                   <div class="tab-pane fade" id="tp-profit-ly" role="tabpanel" data-tabs-target="panel">
                     <turbo-frame id="frame-profit-ly" src="<%= admin_dashboard_profitable_path(period: 'ly') %>">
-                      <div class="table-responsive">
+                      <div class="table-responsive p-2">
                         <table class="table table-sm mb-0">
                           <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Ingresos</th><th class="text-end">COGS</th><th class="text-end">Utilidad</th></tr></thead>
                           <tbody>
@@ -310,7 +308,7 @@
                   </div>
                   <div class="tab-pane fade" id="tp-profit-all" role="tabpanel" data-tabs-target="panel">
                     <turbo-frame id="frame-profit-all" src="<%= admin_dashboard_profitable_path(period: 'all') %>">
-                      <div class="table-responsive">
+                      <div class="table-responsive p-2">
                         <table class="table table-sm mb-0">
                           <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Ingresos</th><th class="text-end">COGS</th><th class="text-end">Utilidad</th></tr></thead>
                           <tbody>
@@ -542,7 +540,7 @@
             <option value="#tc-all-rev">All · Ingresos</option>
             <option value="#tc-all-prof">All · Utilidad</option>
           </select>
-          <div><a class="btn btn-sm btn-outline-primary" href="<%= admin_products_path %>">Ver detalle</a></div>
+          <!-- Botón "Ver detalle" removido a solicitud -->
         </div>
         <div class="card-body p-0">
           <div class="tab-content">
@@ -630,7 +628,7 @@
             <option value="#rank-all-reserved">All · Apartados</option>
             <option value="#rank-all-combined">All · Combinado</option>
           </select>
-          <a href="<%= admin_users_path %>" class="btn btn-sm btn-outline-primary ms-2">Ver detalle</a>
+          <!-- Botón "Ver detalle" removido a solicitud -->
         </div>
         <div class="card-body p-0">
           <div class="tab-content">
@@ -1039,7 +1037,7 @@
       <div class="card h-100">
         <div class="card-header d-flex justify-content-between align-items-center">
           <span><i class="fa-solid fa-chart-line"></i> Sales Comparison (12 months)</span>
-          <a href="<%= admin_sale_orders_path %>" class="btn btn-sm btn-outline-primary">Ver detalle</a>
+          <!-- Botón "Ver detalle" removido a solicitud -->
         </div>
         <div class="card-body">
           <div

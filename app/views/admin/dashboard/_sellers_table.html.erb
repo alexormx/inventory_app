@@ -3,7 +3,7 @@
 <% period ||= @period %>
 <% page_num = 1 %>
 <% per_page = (rows&.size || 10).to_i %>
-<div class="table-responsive dashboard-scroll">
+<div class="table-responsive p-2">
   <table class="table table-sm align-middle mb-0">
     <thead class="table-light sticky-top">
       <tr>
@@ -19,7 +19,7 @@
           <tr>
       <td class="text-muted">#<%= idx + 1 %></td>
             <td>
-              <div class="small fw-semibold"><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></div>
+              <div class="small fw-semibold"><i class="fa-solid fa-box-open text-muted me-1"></i> <%= r[:name] %></div>
               <% if r[:brand].present? || r[:category].present? %>
                 <div class="text-muted" style="font-size: .75rem;">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
               <% end %>
