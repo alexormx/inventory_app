@@ -4,96 +4,417 @@
   <!-- KPIs al tope (estratégico) -->
   <div class="row g-3 mb-3">
     <div class="col-md-4 col-lg-3">
-      <div class="card text-bg-success-subtle h-100">
-        <div class="card-body">
-          <div class="d-flex justify-content-between align-items-start">
-            <div>
-              <div class="small text-muted">Ventas YTD (MXN)</div>
-              <div class="fs-4 fw-bold">$ <%= number_with_precision(@sales_ytd, precision: 2, delimiter: ',') %> <span class="small text-muted">(LY: $ <%= number_with_precision(@sales_prev, precision: 2, delimiter: ',') %>)</span></div>
-              <div class="small <%= @kpi_deltas&.dig(:sales).to_f >= 0 ? 'text-success' : 'text-danger' %>">Δ vs LY: <%= @kpi_deltas&.dig(:sales).nil? ? '—' : number_to_percentage(@kpi_deltas[:sales] * 100, precision: 1) %></div>
+      <%= render "kpi_card",
+        title: "Ventas YTD (MXN)",
+        value: "$ #{number_with_precision(@sales_ytd, precision: 2, delimiter: ',')}",
+        ly: "$ #{number_with_precision(@sales_prev, precision: 2, delimiter: ',')}",
+        delta: @kpi_deltas&.dig(:sales),
+        spark_id: "sparkline-revenue",
+        variant: "text-bg-success-subtle"
+      %>
+    </div>
+    <div class="col-md-4 col-lg-3">
+      <%= render "kpi_card",
+        title: "Ganancia YTD",
+        value: "$ #{number_with_precision(@profit_ytd, precision: 2, delimiter: ',')}",
+        ly: "$ #{number_with_precision(@profit_prev, precision: 2, delimiter: ',')}",
+        delta: @kpi_deltas&.dig(:profit),
+        variant: "text-bg-primary-subtle"
+      %>
+    </div>
+    <div class="col-md-4 col-lg-3">
+      <%= render "kpi_card",
+        title: "Margen YTD",
+        value: number_to_percentage(@margin_ytd * 100, precision: 1),
+        ly: number_to_percentage(@margin_prev * 100, precision: 1),
+        delta: @kpi_deltas&.dig(:margin_pp),
+        variant: "text-bg-warning-subtle"
+      %>
+    </div>
+    <div class="col-md-4 col-lg-3">
+      <%= render "kpi_card",
+        title: "Compras totales en MXN (All Time)",
+        value: "$ #{number_with_precision(@purchases_total_mxn, precision: 2, delimiter: ',')}",
+        variant: "text-bg-warning-subtle"
+      %>
+    </div>
+    <div class="col-md-4 col-lg-3">
+      <%= render "kpi_card",
+        title: "PO en el año",
+        value: number_with_delimiter(@po_count_ytd),
+        ly: number_with_delimiter(@po_count_prev),
+        delta: @kpi_deltas&.dig(:po_count),
+        variant: "text-bg-primary-subtle"
+      %>
+    </div>
+    <div class="col-md-4 col-lg-3">
+      <%= render "kpi_card",
+        title: "SO en el año",
+        value: number_with_delimiter(@orders_count_ytd),
+        ly: number_with_delimiter(@orders_prev),
+        delta: @kpi_deltas&.dig(:orders),
+        variant: "text-bg-primary-subtle"
+      %>
+    </div>
+  </div>
+
+  <!-- Top productos + Top inventario (lado a lado) -->
+  <div class="row g-3 mt-2">
+    <div class="col-xl-8">
+      <div class="card h-100" data-controller="tabs">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span><i class="fa-solid fa-box"></i> Top Productos</span>
+          <ul class="nav nav-tabs nav-tabs-sm card-header-tabs d-none d-md-flex" role="tablist">
+            <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-sellers" type="button" role="tab" aria-controls="tp-sellers" aria-selected="true">Vendedores</button></li>
+            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-profit" type="button" role="tab" aria-controls="tp-profit">Rentables</button></li>
+          </ul>
+          <select class="form-select form-select-sm d-md-none w-auto" aria-label="Seleccionar grupo" data-action="change->tabs#select">
+            <option value="#tp-sellers" selected>Vendedores</option>
+            <option value="#tp-profit">Rentables</option>
+          </select>
+        </div>
+        <div class="card-body p-0">
+          <div class="tab-content">
+            <!-- Vendedores main tab with subtabs -->
+            <div class="tab-pane fade show active" id="tp-sellers" role="tabpanel" data-tabs-target="panel">
+              <div data-controller="tabs">
+                <ul class="nav nav-tabs nav-tabs-sm px-3 pt-3 d-none d-md-flex" role="tablist">
+                  <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-sellers-ytd" type="button" role="tab" aria-controls="tp-sellers-ytd" aria-selected="true">YTD</button></li>
+                  <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-sellers-ly" type="button" role="tab" aria-controls="tp-sellers-ly">LY</button></li>
+                  <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-sellers-all" type="button" role="tab" aria-controls="tp-sellers-all">All</button></li>
+                </ul>
+                <div class="tab-content">
+                  <div class="tab-pane fade show active" id="tp-sellers-ytd" role="tabpanel" data-tabs-target="panel">
+                    <turbo-frame id="frame-sellers-ytd" src="<%= admin_dashboard_sellers_path(period: 'ytd') %>">
+                      <div class="table-responsive p-2 px-3">
+                        <table class="table table-sm mb-0">
+                          <thead>
+                            <tr>
+                              <th scope="col">Rank</th>
+                              <th scope="col">Producto</th>
+                              <th scope="col" class="text-end">Unidades</th>
+                              <th scope="col" class="text-end">Ingresos</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr>
+                              <td colspan="4" class="text-center py-3">
+                                <div class="d-inline-flex align-items-center gap-2">
+                                  <div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div>
+                                  <span class="text-muted">Cargando…</span>
+                                </div>
+                              </td>
+                            </tr>
+                            <% 3.times do %>
+                              <tr class="placeholder-row">
+                                <td colspan="4" class="placeholder-glow"><span class="placeholder col-12"></span></td>
+                              </tr>
+                            <% end %>
+                          </tbody>
+                        </table>
+                      </div>
+                    </turbo-frame>
+                  </div>
+                  <div class="tab-pane fade" id="tp-sellers-ly" role="tabpanel" data-tabs-target="panel">
+                    <turbo-frame id="frame-sellers-ly" src="<%= admin_dashboard_sellers_path(period: 'ly') %>">
+                      <div class="table-responsive p-2 px-3">
+                        <table class="table table-sm mb-0">
+                          <thead>
+                            <tr>
+                              <th scope="col">Rank</th>
+                              <th scope="col">Producto</th>
+                              <th scope="col" class="text-end">Unidades</th>
+                              <th scope="col" class="text-end">Ingresos</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr>
+                              <td colspan="4" class="text-center py-3">
+                                <div class="d-inline-flex align-items-center gap-2">
+                                  <div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div>
+                                  <span class="text-muted">Cargando…</span>
+                                </div>
+                              </td>
+                            </tr>
+                            <% 3.times do %>
+                              <tr class="placeholder-row">
+                                <td colspan="4" class="placeholder-glow"><span class="placeholder col-12"></span></td>
+                              </tr>
+                            <% end %>
+                          </tbody>
+                        </table>
+                      </div>
+                    </turbo-frame>
+                  </div>
+                  <div class="tab-pane fade" id="tp-sellers-all" role="tabpanel" data-tabs-target="panel">
+                    <turbo-frame id="frame-sellers-all" src="<%= admin_dashboard_sellers_path(period: 'all') %>">
+                      <div class="table-responsive p-2 px-3">
+                        <table class="table table-sm mb-0">
+                          <thead>
+                            <tr>
+                              <th scope="col">Rank</th>
+                              <th scope="col">Producto</th>
+                              <th scope="col" class="text-end">Unidades</th>
+                              <th scope="col" class="text-end">Ingresos</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr>
+                              <td colspan="4" class="text-center py-3">
+                                <div class="d-inline-flex align-items-center gap-2">
+                                  <div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div>
+                                  <span class="text-muted">Cargando…</span>
+                                </div>
+                              </td>
+                            </tr>
+                            <% 3.times do %>
+                              <tr class="placeholder-row">
+                                <td colspan="4" class="placeholder-glow"><span class="placeholder col-12"></span></td>
+                              </tr>
+                            <% end %>
+                          </tbody>
+                        </table>
+                      </div>
+                    </turbo-frame>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div style="width:110px;height:46px" id="sparkline-revenue"></div>
+            <!-- Rentables main tab with subtabs -->
+            <div class="tab-pane fade" id="tp-profit" role="tabpanel" data-tabs-target="panel">
+              <div data-controller="tabs">
+                <ul class="nav nav-tabs nav-tabs-sm px-3 pt-3 d-none d-md-flex" role="tablist">
+                  <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-profit-ytd" type="button" role="tab" aria-controls="tp-profit-ytd" aria-selected="true">YTD</button></li>
+                  <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-profit-ly" type="button" role="tab" aria-controls="tp-profit-ly">LY</button></li>
+                  <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-profit-all" type="button" role="tab" aria-controls="tp-profit-all">All</button></li>
+                </ul>
+                <div class="tab-content">
+                  <div class="tab-pane fade show active" id="tp-profit-ytd" role="tabpanel" data-tabs-target="panel">
+                    <turbo-frame id="frame-profit-ytd" src="<%= admin_dashboard_profitable_path(period: 'ytd') %>">
+                      <div class="table-responsive p-2 px-3">
+                        <table class="table table-sm mb-0">
+                          <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Ingresos</th><th class="text-end">COGS</th><th class="text-end">Utilidad</th></tr></thead>
+                          <tbody>
+                            <tr>
+                              <td colspan="5" class="text-center py-3">
+                                <div class="d-inline-flex align-items-center gap-2">
+                                  <div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div>
+                                  <span class="text-muted">Cargando…</span>
+                                </div>
+                              </td>
+                            </tr>
+                            <% 3.times do %>
+                              <tr class="placeholder-row">
+                                <td colspan="5" class="placeholder-glow"><span class="placeholder col-12"></span></td>
+                              </tr>
+                            <% end %>
+                          </tbody>
+                        </table>
+                      </div>
+                    </turbo-frame>
+                  </div>
+                  <div class="tab-pane fade" id="tp-profit-ly" role="tabpanel" data-tabs-target="panel">
+                    <turbo-frame id="frame-profit-ly" src="<%= admin_dashboard_profitable_path(period: 'ly') %>">
+                      <div class="table-responsive p-2 px-3">
+                        <table class="table table-sm mb-0">
+                          <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Ingresos</th><th class="text-end">COGS</th><th class="text-end">Utilidad</th></tr></thead>
+                          <tbody>
+                            <tr>
+                              <td colspan="5" class="text-center py-3">
+                                <div class="d-inline-flex align-items-center gap-2">
+                                  <div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div>
+                                  <span class="text-muted">Cargando…</span>
+                                </div>
+                              </td>
+                            </tr>
+                            <% 3.times do %>
+                              <tr class="placeholder-row">
+                                <td colspan="5" class="placeholder-glow"><span class="placeholder col-12"></span></td>
+                              </tr>
+                            <% end %>
+                          </tbody>
+                        </table>
+                      </div>
+                    </turbo-frame>
+                  </div>
+                  <div class="tab-pane fade" id="tp-profit-all" role="tabpanel" data-tabs-target="panel">
+                    <turbo-frame id="frame-profit-all" src="<%= admin_dashboard_profitable_path(period: 'all') %>">
+                      <div class="table-responsive p-2 px-3">
+                        <table class="table table-sm mb-0">
+                          <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Ingresos</th><th class="text-end">COGS</th><th class="text-end">Utilidad</th></tr></thead>
+                          <tbody>
+                            <tr>
+                              <td colspan="5" class="text-center py-3">
+                                <div class="d-inline-flex align-items-center gap-2">
+                                  <div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div>
+                                  <span class="text-muted">Cargando…</span>
+                                </div>
+                              </td>
+                            </tr>
+                            <% 3.times do %>
+                              <tr class="placeholder-row">
+                                <td colspan="5" class="placeholder-glow"><span class="placeholder col-12"></span></td>
+                              </tr>
+                            <% end %>
+                          </tbody>
+                        </table>
+                      </div>
+                    </turbo-frame>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </div>
-    <div class="col-md-4 col-lg-3">
-      <div class="card text-bg-primary-subtle h-100">
-        <div class="card-body">
-          <div class="small text-muted">Ganancia YTD</div>
-          <div class="fs-4 fw-bold">$ <%= number_with_precision(@profit_ytd, precision: 2, delimiter: ',') %> <span class="small text-muted">(LY: $ <%= number_with_precision(@profit_prev, precision: 2, delimiter: ',') %>)</span></div>
-          <div class="small <%= @kpi_deltas&.dig(:profit).to_f >= 0 ? 'text-success' : 'text-danger' %>">Δ vs LY: <%= @kpi_deltas&.dig(:profit).nil? ? '—' : number_to_percentage(@kpi_deltas[:profit] * 100, precision: 1) %></div>
+    <div class="col-xl-4">
+      <div class="card h-100" data-controller="tabs">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span><i class="fa-solid fa-boxes-stacked"></i> Top Inventario</span>
+          <div class="d-flex align-items-center gap-2 justify-content-end">
+            <ul class="nav nav-tabs nav-tabs-sm card-header-tabs d-none d-md-flex" role="tablist">
+              <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#ti-inv" type="button" role="tab" aria-controls="ti-inv" aria-selected="true">Inventario</button></li>
+              <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#ti-res" type="button" role="tab" aria-controls="ti-res">Apartados</button></li>
+              <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#ti-all" type="button" role="tab" aria-controls="ti-all">Todos</button></li>
+            </ul>
+            <select class="form-select form-select-sm d-md-none w-auto" aria-label="Seleccionar grupo" data-action="change->tabs#select">
+              <option value="#ti-inv" selected>Inventario</option>
+              <option value="#ti-res">Apartados</option>
+              <option value="#ti-all">Todos</option>
+            </select>
+          </div>
         </div>
-      </div>
-    </div>
-    <div class="col-md-4 col-lg-3">
-      <div class="card text-bg-info-subtle h-100">
-        <div class="card-body">
-          <div class="small text-muted">Margen YTD</div>
-          <div class="fs-4 fw-bold"><%= number_to_percentage(@margin_ytd * 100, precision: 1) %> <span class="small text-muted">(LY: <%= number_to_percentage(@margin_prev * 100, precision: 1) %>)</span></div>
-          <div class="small <%= (@kpi_deltas&.dig(:margin_pp) || 0).to_f >= 0 ? 'text-success' : 'text-danger' %>">Δ pp vs LY: <%= @kpi_deltas&.dig(:margin_pp).present? ? number_with_precision(@kpi_deltas[:margin_pp] * 100, precision: 1) : '—' %> pp</div>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-4 col-lg-3">
-      <div class="card text-bg-warning-subtle h-100">
-        <div class="card-body">
-          <div class="small text-muted">Compras totales en MXN (All Time)</div>
-          <div class="fs-4 fw-bold">$ <%= number_with_precision(@purchases_total_mxn, precision: 2, delimiter: ',') %></div>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-4 col-lg-3">
-      <div class="card text-bg-light h-100">
-        <div class="card-body">
-          <div class="small text-muted">PO en el año</div>
-          <div class="fs-4 fw-bold"><%= number_with_delimiter(@po_count_ytd) %> <span class="small text-muted">(LY: <%= number_with_delimiter(@po_count_prev) %>)</span></div>
-          <div class="small text-muted">Artículos comprados (YTD): <%= number_with_delimiter(@po_items_qty_ytd) %></div>
-          <div class="small text-muted">All Time: <%= number_with_delimiter(@po_items_qty_all_time) %></div>
-          <div class="small <%= @kpi_deltas&.dig(:po_count).to_f >= 0 ? 'text-success' : 'text-danger' %>">Δ vs LY: <%= @kpi_deltas&.dig(:po_count).nil? ? '—' : number_to_percentage(@kpi_deltas[:po_count] * 100, precision: 1) %></div>
-          <div class="small text-muted">Total All Time: <%= number_with_delimiter(@po_total_all_time) %></div>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-4 col-lg-3">
-      <div class="card text-bg-light h-100">
-        <div class="card-body">
-          <div class="small text-muted">SO en el año</div>
-          <div class="fs-4 fw-bold"><%= number_with_delimiter(@orders_count_ytd) %> <span class="small text-muted">(LY: <%= number_with_delimiter(@orders_prev) %>)</span></div>
-          <div class="small text-muted">Artículos vendidos (YTD): <%= number_with_delimiter(@so_items_qty_ytd) %></div>
-          <div class="small text-muted">All Time: <%= number_with_delimiter(@so_items_qty_all_time) %></div>
-          <div class="small <%= @kpi_deltas&.dig(:orders).to_f >= 0 ? 'text-success' : 'text-danger' %>">Δ vs LY: <%= @kpi_deltas&.dig(:orders).nil? ? '—' : number_to_percentage(@kpi_deltas[:orders] * 100, precision: 1) %></div>
-          <div class="small text-muted">Total All Time: <%= number_with_delimiter(@so_total_all_time) %></div>
+        <div class="card-body p-0">
+          <div class="tab-content">
+            <!-- Grupo: Inventario -->
+            <div class="tab-pane fade show active" id="ti-inv" role="tabpanel" data-tabs-target="panel">
+              <div data-controller="tabs">
+                <ul class="nav nav-tabs nav-tabs-sm px-3 pt-3 d-none d-md-flex" role="tablist">
+                  <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#ti-inv-value" type="button" role="tab" aria-controls="ti-inv-value" aria-selected="true">Valor</button></li>
+                  <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#ti-inv-qty" type="button" role="tab" aria-controls="ti-inv-qty">Unidades</button></li>
+                </ul>
+                <div class="tab-content">
+                  <div class="tab-pane fade show active" id="ti-inv-value" role="tabpanel" data-tabs-target="panel">
+                    <turbo-frame id="frame-inventory-inv-value" src="<%= admin_dashboard_inventory_top_path(scope: 'inv', metric: 'value') %>">
+                      <div class="table-responsive p-2 px-3">
+                        <table class="table table-sm mb-0">
+                          <tbody>
+                            <tr>
+                              <td colspan="3" class="text-center py-3">
+                                <div class="d-inline-flex align-items-center gap-2">
+                                  <div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div>
+                                  <span class="text-muted">Cargando…</span>
+                                </div>
+                              </td>
+                            </tr>
+                            <% 3.times do %>
+                              <tr class="placeholder-row">
+                                <td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td>
+                              </tr>
+                            <% end %>
+                          </tbody>
+                        </table>
+                      </div>
+                    </turbo-frame>
+                  </div>
+                  <div class="tab-pane fade" id="ti-inv-qty" role="tabpanel" data-tabs-target="panel">
+                    <turbo-frame id="frame-inventory-inv-qty" src="<%= admin_dashboard_inventory_top_path(scope: 'inv', metric: 'qty') %>">
+                      <div class="table-responsive p-2 px-3">
+                        <table class="table table-sm mb-0"><tbody>
+                          <tr><td colspan="4" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
+                          <% 3.times do %><tr class="placeholder-row"><td colspan="4" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
+                        </tbody></table>
+                      </div>
+                    </turbo-frame>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- Grupo: Apartados -->
+            <div class="tab-pane fade" id="ti-res" role="tabpanel" data-tabs-target="panel">
+              <div data-controller="tabs">
+                <ul class="nav nav-tabs nav-tabs-sm px-3 pt-3 d-none d-md-flex" role="tablist">
+                  <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#ti-res-value" type="button" role="tab" aria-controls="ti-res-value" aria-selected="true">Valor</button></li>
+                  <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#ti-res-qty" type="button" role="tab" aria-controls="ti-res-qty">Unidades</button></li>
+                </ul>
+                <div class="tab-content">
+                  <div class="tab-pane fade show active" id="ti-res-value" role="tabpanel" data-tabs-target="panel">
+                    <turbo-frame id="frame-inventory-res-value" src="<%= admin_dashboard_inventory_top_path(scope: 'res', metric: 'value') %>">
+                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0"><tbody>
+                        <tr><td colspan="3" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
+                        <% 3.times do %><tr class="placeholder-row"><td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
+                      </tbody></table></div>
+                    </turbo-frame>
+                  </div>
+                  <div class="tab-pane fade" id="ti-res-qty" role="tabpanel" data-tabs-target="panel">
+                    <turbo-frame id="frame-inventory-res-qty" src="<%= admin_dashboard_inventory_top_path(scope: 'res', metric: 'qty') %>">
+                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0"><tbody>
+                        <tr><td colspan="4" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
+                        <% 3.times do %><tr class="placeholder-row"><td colspan="4" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
+                      </tbody></table></div>
+                    </turbo-frame>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- Grupo: Todos -->
+            <div class="tab-pane fade" id="ti-all" role="tabpanel" data-tabs-target="panel">
+              <div data-controller="tabs">
+                <ul class="nav nav-tabs nav-tabs-sm px-3 pt-3 d-none d-md-flex" role="tablist">
+                  <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#ti-all-value" type="button" role="tab" aria-controls="ti-all-value" aria-selected="true">Valor</button></li>
+                  <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#ti-all-qty" type="button" role="tab" aria-controls="ti-all-qty">Unidades</button></li>
+                </ul>
+                <div class="tab-content">
+                  <div class="tab-pane fade show active" id="ti-all-value" role="tabpanel" data-tabs-target="panel">
+                    <turbo-frame id="frame-inventory-all-value" src="<%= admin_dashboard_inventory_top_path(scope: 'all', metric: 'value') %>">
+                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0"><tbody>
+                        <tr><td colspan="3" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
+                        <% 3.times do %><tr class="placeholder-row"><td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
+                      </tbody></table></div>
+                    </turbo-frame>
+                  </div>
+                  <div class="tab-pane fade" id="ti-all-qty" role="tabpanel" data-tabs-target="panel">
+                    <turbo-frame id="frame-inventory-all-qty" src="<%= admin_dashboard_inventory_top_path(scope: 'all', metric: 'qty') %>">
+                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0"><tbody>
+                        <tr><td colspan="4" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
+                        <% 3.times do %><tr class="placeholder-row"><td colspan="4" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
+                      </tbody></table></div>
+                    </turbo-frame>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   </div>
+
   <div class="row g-3 mb-3">
     <div class="col-md-4 col-lg-4">
-      <div class="card text-bg-light h-100">
-        <div class="card-body">
-          <div class="small text-muted">Ventas totales en MXN (All Time)</div>
-          <div class="fs-4 fw-bold">$ <%= number_with_precision(@sales_total_mxn, precision: 2, delimiter: ',') %></div>
-        </div>
-      </div>
+      <%= render "kpi_card",
+        title: "Ventas totales en MXN (All Time)",
+        value: "$ #{number_with_precision(@sales_total_mxn, precision: 2, delimiter: ',')}",
+        variant: "text-bg-success-subtle"
+      %>
     </div>
     <div class="col-md-4 col-lg-4">
-      <div class="card text-bg-light h-100">
-        <div class="card-body">
-          <div class="small text-muted">Clientes activos</div>
-          <div class="fs-4 fw-bold"><%= number_with_delimiter(@active_customers_ytd) %> <span class="small text-muted">(LY: <%= number_with_delimiter(@active_customers_prev) %>)</span></div>
-          <div class="small <%= @kpi_deltas&.dig(:customers).to_f >= 0 ? 'text-success' : 'text-danger' %>">Δ vs LY: <%= @kpi_deltas&.dig(:customers).nil? ? '—' : number_to_percentage(@kpi_deltas[:customers] * 100, precision: 1) %></div>
-        </div>
-      </div>
+      <%= render "kpi_card",
+        title: "Clientes activos",
+        value: number_with_delimiter(@active_customers_ytd),
+        ly: number_with_delimiter(@active_customers_prev),
+        delta: @kpi_deltas&.dig(:customers),
+        variant: "text-bg-primary-subtle"
+      %>
     </div>
     <div class="col-md-4 col-lg-4">
-      <div class="card text-bg-secondary-subtle h-100">
-        <div class="card-body">
-          <div class="small text-muted">Valor total de inventario (MXN)</div>
-          <div class="fs-4 fw-bold">$ <%= number_with_precision(@inventory_total_value, precision: 2, delimiter: ',') %></div>
-          <div class="small text-muted">Rotación: <%= @inventory_turnover_ytd.nil? ? '—' : number_with_precision(@inventory_turnover_ytd, precision: 2, delimiter: ',') %></div>
-        </div>
-      </div>
+      <%= render "kpi_card",
+        title: "Valor total de inventario (MXN)",
+        value: "$ #{number_with_precision(@inventory_total_value, precision: 2, delimiter: ',')}",
+        ly: (@inventory_turnover_ytd.nil? ? nil : "Rotación: #{number_with_precision(@inventory_turnover_ytd, precision: 2, delimiter: ',')}") ,
+        variant: "text-bg-warning-subtle"
+      %>
     </div>
   </div>
 
@@ -133,567 +454,102 @@
     </div>
   </div>
 
-  <!-- (Se removió el bloque de filtros globales a solicitud) -->
-
-  <!-- (Se eliminó la tabla duplicada de Países de la parte superior) -->
-
-  <!-- Top productos: combinado Sellers/Rentables + Inventario -->
-  <div class="row mt-3 g-3">
-    <div class="col-xl-8">
-      <div class="card h-100" data-controller="tabs">
-        <div class="card-header d-flex justify-content-between align-items-center">
-          <div>
-            <i class="fa-solid fa-boxes"></i> Productos
-            <ul class="nav nav-tabs nav-tabs-sm card-header-tabs mt-2" role="tablist">
-              <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-sellers" type="button" role="tab" aria-controls="tp-sellers" aria-selected="true">Sellers</button></li>
-              <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-profit" type="button" role="tab" aria-controls="tp-profit">Rentables</button></li>
-            </ul>
-          </div>
-          <div>
-            <a href="<%= admin_products_path %>" class="btn btn-sm btn-outline-primary">Ver detalle</a>
-          </div>
-        </div>
-        <div class="card-body p-0">
-          <div class="tab-content">
-            <!-- Sellers -->
-            <div class="tab-pane fade show active" id="tp-sellers" role="tabpanel" data-tabs-target="panel" data-controller="subtabs">
-              <div class="px-3 pt-3">
-                <ul class="nav nav-tabs nav-tabs-sm" role="tablist">
-                  <li class="nav-item"><button class="nav-link active" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#ts-ytd" type="button" role="tab" aria-controls="ts-ytd" aria-selected="true">YTD</button></li>
-                  <li class="nav-item"><button class="nav-link" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#ts-ly" type="button" role="tab" aria-controls="ts-ly">Last Year</button></li>
-                  <li class="nav-item"><button class="nav-link" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#ts-all" type="button" role="tab" aria-controls="ts-all">All Time</button></li>
-                </ul>
-              </div>
-              <div class="tab-content">
-                <div class="tab-pane fade show active" id="ts-ytd" role="tabpanel" data-subtabs-target="panel">
-                  <div class="table-responsive">
-                    <table class="table table-sm mb-0">
-                      <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Unidades</th><th class="text-end">Ingresos</th></tr></thead>
-                      <tbody>
-                        <% @top_sellers_ytd&.each_with_index do |r, idx| %>
-                          <tr>
-                            <td class="text-muted">#<%= idx + 1 %></td>
-                            <td>
-                              <div class="small fw-semibold"><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></div>
-                              <% if r[:brand].present? || r[:category].present? %>
-                                <div class="text-muted" style="font-size: .75rem;">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
-                              <% end %>
-                            </td>
-                            <td class="text-end"><%= number_with_delimiter(r[:units]) %></td>
-                            <td class="text-end">$ <%= number_with_precision(r[:revenue], precision: 2, delimiter: ',') %></td>
-                          </tr>
-                        <% end %>
-                        <% if @top_sellers_ytd.blank? %>
-                          <tr><td colspan="4" class="text-center text-muted py-3">Sin datos</td></tr>
-                        <% end %>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-                <div class="tab-pane fade" id="ts-ly" role="tabpanel" data-subtabs-target="panel">
-                  <div class="table-responsive">
-                    <table class="table table-sm mb-0">
-                      <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Unidades</th><th class="text-end">Ingresos</th></tr></thead>
-                      <tbody>
-                        <% @top_sellers_last_year&.each_with_index do |r, idx| %>
-                          <tr>
-                            <td class="text-muted">#<%= idx + 1 %></td>
-                            <td>
-                              <div class="small fw-semibold"><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></div>
-                              <% if r[:brand].present? || r[:category].present? %>
-                                <div class="text-muted" style="font-size: .75rem;">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
-                              <% end %>
-                            </td>
-                            <td class="text-end"><%= number_with_delimiter(r[:units]) %></td>
-                            <td class="text-end">$ <%= number_with_precision(r[:revenue], precision: 2, delimiter: ',') %></td>
-                          </tr>
-                        <% end %>
-                        <% if @top_sellers_last_year.blank? %>
-                          <tr><td colspan="4" class="text-center text-muted py-3">Sin datos</td></tr>
-                        <% end %>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-                <div class="tab-pane fade" id="ts-all" role="tabpanel" data-subtabs-target="panel">
-                  <div class="table-responsive">
-                    <table class="table table-sm mb-0">
-                      <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Unidades</th><th class="text-end">Ingresos</th></tr></thead>
-                      <tbody>
-                        <% @top_products_all&.each_with_index do |r, idx| %>
-                          <tr>
-                            <td class="text-muted">#<%= idx + 1 %></td>
-                            <td>
-                              <div class="small fw-semibold"><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></div>
-                              <% if r[:brand].present? || r[:category].present? %>
-                                <div class="text-muted" style="font-size: .75rem;">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
-                              <% end %>
-                            </td>
-                            <td class="text-end"><%= number_with_delimiter(r[:units]) %></td>
-                            <td class="text-end">$ <%= number_with_precision(r[:revenue], precision: 2, delimiter: ',') %></td>
-                          </tr>
-                        <% end %>
-                        <% if @top_products_all.blank? %>
-                          <tr><td colspan="4" class="text-center text-muted py-3">Sin datos</td></tr>
-                        <% end %>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Rentables -->
-            <div class="tab-pane fade" id="tp-profit" role="tabpanel" data-tabs-target="panel" data-controller="subtabs">
-              <div class="px-3 pt-3">
-                <ul class="nav nav-tabs nav-tabs-sm" role="tablist">
-                  <li class="nav-item"><button class="nav-link active" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#pp-ytd" type="button" role="tab" aria-controls="pp-ytd" aria-selected="true">YTD</button></li>
-                  <li class="nav-item"><button class="nav-link" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#pp-ly" type="button" role="tab" aria-controls="pp-ly">Last Year</button></li>
-                  <li class="nav-item"><button class="nav-link" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#pp-all" type="button" role="tab" aria-controls="pp-all">All Time</button></li>
-                </ul>
-              </div>
-              <div class="tab-content">
-                <div class="tab-pane fade show active" id="pp-ytd" role="tabpanel" data-subtabs-target="panel">
-                  <div class="table-responsive">
-                    <table class="table table-sm mb-0">
-                      <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Compra</th><th class="text-end">Ventas</th><th class="text-end">Utilidad</th></tr></thead>
-                      <tbody>
-                        <% @top_products_profit_ytd&.each_with_index do |r, idx| %>
-                          <tr>
-                            <td class="text-muted">#<%= idx + 1 %></td>
-                            <td>
-                              <div class="small fw-semibold"><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></div>
-                              <% if r[:brand].present? || r[:category].present? %>
-                                <div class="text-muted" style="font-size: .75rem;">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
-                              <% end %>
-                            </td>
-                            <td class="text-end">$ <%= number_with_precision(r[:cogs], precision: 2, delimiter: ',') %></td>
-                            <td class="text-end">$ <%= number_with_precision(r[:revenue], precision: 2, delimiter: ',') %></td>
-                            <td class="text-end">$ <%= number_with_precision(r[:profit], precision: 2, delimiter: ',') %></td>
-                          </tr>
-                        <% end %>
-                        <% if @top_products_profit_ytd.blank? %>
-                          <tr><td colspan="5" class="text-center text-muted py-3">Sin datos</td></tr>
-                        <% end %>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-                <div class="tab-pane fade" id="pp-ly" role="tabpanel" data-subtabs-target="panel">
-                  <div class="table-responsive">
-                    <table class="table table-sm mb-0">
-                      <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Compra</th><th class="text-end">Ventas</th><th class="text-end">Utilidad</th></tr></thead>
-                      <tbody>
-                        <% @top_products_profit_last_year&.each_with_index do |r, idx| %>
-                          <tr>
-                            <td class="text-muted">#<%= idx + 1 %></td>
-                            <td>
-                              <div class="small fw-semibold"><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></div>
-                              <% if r[:brand].present? || r[:category].present? %>
-                                <div class="text-muted" style="font-size: .75rem;">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
-                              <% end %>
-                            </td>
-                            <td class="text-end">$ <%= number_with_precision(r[:cogs], precision: 2, delimiter: ',') %></td>
-                            <td class="text-end">$ <%= number_with_precision(r[:revenue], precision: 2, delimiter: ',') %></td>
-                            <td class="text-end">$ <%= number_with_precision(r[:profit], precision: 2, delimiter: ',') %></td>
-                          </tr>
-                        <% end %>
-                        <% if @top_products_profit_last_year.blank? %>
-                          <tr><td colspan="5" class="text-center text-muted py-3">Sin datos</td></tr>
-                        <% end %>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-                <div class="tab-pane fade" id="pp-all" role="tabpanel" data-subtabs-target="panel">
-                  <div class="table-responsive">
-                    <table class="table table-sm mb-0">
-                      <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Compra</th><th class="text-end">Ventas</th><th class="text-end">Utilidad</th></tr></thead>
-                      <tbody>
-                        <% @top_products_profit_all_time&.each_with_index do |r, idx| %>
-                          <tr>
-                            <td class="text-muted">#<%= idx + 1 %></td>
-                            <td>
-                              <div class="small fw-semibold"><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></div>
-                              <% if r[:brand].present? || r[:category].present? %>
-                                <div class="text-muted" style="font-size: .75rem;">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
-                              <% end %>
-                            </td>
-                            <td class="text-end">$ <%= number_with_precision(r[:cogs], precision: 2, delimiter: ',') %></td>
-                            <td class="text-end">$ <%= number_with_precision(r[:revenue], precision: 2, delimiter: ',') %></td>
-                            <td class="text-end">$ <%= number_with_precision(r[:profit], precision: 2, delimiter: ',') %></td>
-                          </tr>
-                        <% end %>
-                        <% if @top_products_profit_all_time.blank? %>
-                          <tr><td colspan="5" class="text-center text-muted py-3">Sin datos</td></tr>
-                        <% end %>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="col-xl-4">
-      <div class="card h-100" data-controller="tabs">
-        <div class="card-header d-flex justify-content-between align-items-center">
-          <span><i class="fa-solid fa-boxes-stacked"></i> Top Inventario</span>
-          <div class="d-flex align-items-center gap-2">
-            <ul class="nav nav-tabs nav-tabs-sm card-header-tabs" role="tablist">
-              <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#ti-inv" type="button" role="tab" aria-controls="ti-inv" aria-selected="true">Inventario</button></li>
-              <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#ti-res" type="button" role="tab" aria-controls="ti-res">Apartados</button></li>
-              <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#ti-all" type="button" role="tab" aria-controls="ti-all">Inv + Apart</button></li>
-            </ul>
-          </div>
-        </div>
-        <div class="card-body p-0">
-          <div class="tab-content">
-            <!-- Inventario (available + in_transit) -->
-            <div class="tab-pane fade show active" id="ti-inv" role="tabpanel" data-tabs-target="panel" data-controller="subtabs">
-              <div class="px-3 pt-3">
-                <ul class="nav nav-tabs nav-tabs-sm" role="tablist">
-                  <li class="nav-item"><button class="nav-link active" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#ti-inv-val" type="button" role="tab" aria-controls="ti-inv-val" aria-selected="true">Por valor</button></li>
-                  <li class="nav-item"><button class="nav-link" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#ti-inv-qty" type="button" role="tab" aria-controls="ti-inv-qty">Por unidades</button></li>
-                </ul>
-              </div>
-              <div class="tab-content">
-                <div class="tab-pane fade show active" id="ti-inv-val" role="tabpanel" data-subtabs-target="panel">
-                  <div class="table-responsive">
-                    <table class="table table-sm mb-0">
-                      <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Valor de Inventario</th></tr></thead>
-                      <tbody>
-                        <% @top_inventory_by_value_inventory&.each_with_index do |r, idx| %>
-                          <tr>
-                            <td class="text-muted">#<%= idx + 1 %></td>
-                            <td>
-                              <div class="small fw-semibold"><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></div>
-                              <% if r[:brand].present? || r[:category].present? %>
-                                <div class="text-muted" style="font-size: .75rem;">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
-                              <% end %>
-                            </td>
-                            <td class="text-end">$ <%= number_with_precision(r[:inventory_value], precision: 2, delimiter: ',') %></td>
-                          </tr>
-                        <% end %>
-                        <% if @top_inventory_by_value_inventory.blank? %>
-                          <tr><td colspan="3" class="text-center text-muted py-3">Sin datos</td></tr>
-                        <% end %>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-                <div class="tab-pane fade" id="ti-inv-qty" role="tabpanel" data-subtabs-target="panel">
-                  <div class="table-responsive">
-                    <table class="table table-sm mb-0">
-                      <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Unidades</th><th class="text-end">Valor (MXN)</th></tr></thead>
-                      <tbody>
-                        <% @top_inventory_by_quantity_inventory&.each_with_index do |r, idx| %>
-                          <tr>
-                            <td class="text-muted">#<%= idx + 1 %></td>
-                            <td>
-                              <div class="small fw-semibold"><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></div>
-                              <% if r[:brand].present? || r[:category].present? %>
-                                <div class="text-muted" style="font-size: .75rem;">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
-                              <% end %>
-                            </td>
-                            <td class="text-end"><%= number_with_delimiter(r[:units_count]) %></td>
-                            <td class="text-end">$ <%= number_with_precision(r[:inventory_value], precision: 2, delimiter: ',') %></td>
-                          </tr>
-                        <% end %>
-                        <% if @top_inventory_by_quantity_inventory.blank? %>
-                          <tr><td colspan="4" class="text-center text-muted py-3">Sin datos</td></tr>
-                        <% end %>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Apartados (reserved + pre_reserved + pre_sold) -->
-            <div class="tab-pane fade" id="ti-res" role="tabpanel" data-tabs-target="panel" data-controller="subtabs">
-              <div class="px-3 pt-3">
-                <ul class="nav nav-tabs nav-tabs-sm" role="tablist">
-                  <li class="nav-item"><button class="nav-link active" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#ti-res-val" type="button" role="tab" aria-controls="ti-res-val" aria-selected="true">Por valor</button></li>
-                  <li class="nav-item"><button class="nav-link" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#ti-res-qty" type="button" role="tab" aria-controls="ti-res-qty">Por unidades</button></li>
-                </ul>
-              </div>
-              <div class="tab-content">
-                <div class="tab-pane fade show active" id="ti-res-val" role="tabpanel" data-subtabs-target="panel">
-                  <div class="table-responsive">
-                    <table class="table table-sm mb-0">
-                      <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Valor de Apartados</th></tr></thead>
-                      <tbody>
-                        <% @top_inventory_by_value_reserved&.each_with_index do |r, idx| %>
-                          <tr>
-                            <td class="text-muted">#<%= idx + 1 %></td>
-                            <td>
-                              <div class="small fw-semibold"><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></div>
-                              <% if r[:brand].present? || r[:category].present? %>
-                                <div class="text-muted" style="font-size: .75rem;">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
-                              <% end %>
-                            </td>
-                            <td class="text-end">$ <%= number_with_precision(r[:inventory_value], precision: 2, delimiter: ',') %></td>
-                          </tr>
-                        <% end %>
-                        <% if @top_inventory_by_value_reserved.blank? %>
-                          <tr><td colspan="3" class="text-center text-muted py-3">Sin datos</td></tr>
-                        <% end %>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-                <div class="tab-pane fade" id="ti-res-qty" role="tabpanel" data-subtabs-target="panel">
-                  <div class="table-responsive">
-                    <table class="table table-sm mb-0">
-                      <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Unidades</th><th class="text-end">Valor (MXN)</th></tr></thead>
-                      <tbody>
-                        <% @top_inventory_by_quantity_reserved&.each_with_index do |r, idx| %>
-                          <tr>
-                            <td class="text-muted">#<%= idx + 1 %></td>
-                            <td>
-                              <div class="small fw-semibold"><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></div>
-                              <% if r[:brand].present? || r[:category].present? %>
-                                <div class="text-muted" style="font-size: .75rem;">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
-                              <% end %>
-                            </td>
-                            <td class="text-end"><%= number_with_delimiter(r[:units_count]) %></td>
-                            <td class="text-end">$ <%= number_with_precision(r[:inventory_value], precision: 2, delimiter: ',') %></td>
-                          </tr>
-                        <% end %>
-                        <% if @top_inventory_by_quantity_reserved.blank? %>
-                          <tr><td colspan="4" class="text-center text-muted py-3">Sin datos</td></tr>
-                        <% end %>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Inv + Apartados (todos) -->
-            <div class="tab-pane fade" id="ti-all" role="tabpanel" data-tabs-target="panel" data-controller="subtabs">
-              <div class="px-3 pt-3">
-                <ul class="nav nav-tabs nav-tabs-sm" role="tablist">
-                  <li class="nav-item"><button class="nav-link active" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#ti-all-val" type="button" role="tab" aria-controls="ti-all-val" aria-selected="true">Por valor</button></li>
-                  <li class="nav-item"><button class="nav-link" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#ti-all-qty" type="button" role="tab" aria-controls="ti-all-qty">Por unidades</button></li>
-                </ul>
-              </div>
-              <div class="tab-content">
-                <div class="tab-pane fade show active" id="ti-all-val" role="tabpanel" data-subtabs-target="panel">
-                  <div class="table-responsive">
-                    <table class="table table-sm mb-0">
-                      <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Valor (MXN)</th></tr></thead>
-                      <tbody>
-                        <% @top_inventory_by_value_all&.each_with_index do |r, idx| %>
-                          <tr>
-                            <td class="text-muted">#<%= idx + 1 %></td>
-                            <td>
-                              <div class="small fw-semibold"><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></div>
-                              <% if r[:brand].present? || r[:category].present? %>
-                                <div class="text-muted" style="font-size: .75rem;">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
-                              <% end %>
-                            </td>
-                            <td class="text-end">$ <%= number_with_precision(r[:inventory_value], precision: 2, delimiter: ',') %></td>
-                          </tr>
-                        <% end %>
-                        <% if @top_inventory_by_value_all.blank? %>
-                          <tr><td colspan="3" class="text-center text-muted py-3">Sin datos</td></tr>
-                        <% end %>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-                <div class="tab-pane fade" id="ti-all-qty" role="tabpanel" data-subtabs-target="panel">
-                  <div class="table-responsive">
-                    <table class="table table-sm mb-0">
-                      <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Unidades</th><th class="text-end">Valor (MXN)</th></tr></thead>
-                      <tbody>
-                        <% @top_inventory_by_quantity_all&.each_with_index do |r, idx| %>
-                          <tr>
-                            <td class="text-muted">#<%= idx + 1 %></td>
-                            <td>
-                              <div class="small fw-semibold"><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></div>
-                              <% if r[:brand].present? || r[:category].present? %>
-                                <div class="text-muted" style="font-size: .75rem;">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
-                              <% end %>
-                            </td>
-                            <td class="text-end"><%= number_with_delimiter(r[:units_count]) %></td>
-                            <td class="text-end">$ <%= number_with_precision(r[:inventory_value], precision: 2, delimiter: ',') %></td>
-                          </tr>
-                        <% end %>
-                        <% if @top_inventory_by_quantity_all.blank? %>
-                          <tr><td colspan="4" class="text-center text-muted py-3">Sin datos</td></tr>
-                        <% end %>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <!-- Top categorías + Top clientes (lado a lado) -->
   <div class="row mt-4 g-3">
     <div class="col-xl-6">
       <div class="card h-100" data-controller="tabs">
         <div class="card-header d-flex justify-content-between align-items-center">
           <span><i class="fa-solid fa-layer-group"></i> Top Categorías</span>
-          <ul class="nav nav-tabs nav-tabs-sm card-header-tabs" role="tablist">
+          <ul class="nav nav-tabs nav-tabs-sm card-header-tabs d-none d-md-flex" role="tablist">
             <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tc-ytd" type="button" role="tab" aria-controls="tc-ytd" aria-selected="true">YTD</button></li>
-            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tc-ly" type="button" role="tab" aria-controls="tc-ly">Last Year</button></li>
-            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tc-all" type="button" role="tab" aria-controls="tc-all">All Time</button></li>
+            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tc-ly" type="button" role="tab" aria-controls="tc-ly">LY</button></li>
+            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tc-all" type="button" role="tab" aria-controls="tc-all">All</button></li>
           </ul>
-          <div><a class="btn btn-sm btn-outline-primary" href="<%= admin_products_path %>">Ver detalle</a></div>
+          <select class="form-select form-select-sm d-md-none w-auto" aria-label="Seleccionar periodo" data-action="change->tabs#select">
+            <option value="#tc-ytd" selected>YTD</option>
+            <option value="#tc-ly">LY</option>
+            <option value="#tc-all">All</option>
+          </select>
         </div>
         <div class="card-body p-0">
-          <div class="tab-content" data-controller="subtabs">
+          <div class="tab-content">
+            <!-- Grupo: YTD -->
             <div class="tab-pane fade show active" id="tc-ytd" role="tabpanel" data-tabs-target="panel">
-              <div class="px-3 pt-3">
-                <ul class="nav nav-tabs nav-tabs-sm" role="tablist">
-                  <li class="nav-item"><button class="nav-link active" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#tc-ytd-rev" type="button" role="tab" aria-controls="tc-ytd-rev" aria-selected="true">Ingresos</button></li>
-                  <li class="nav-item"><button class="nav-link" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#tc-ytd-prof" type="button" role="tab" aria-controls="tc-ytd-prof">Utilidad</button></li>
+              <div data-controller="tabs">
+                <ul class="nav nav-tabs nav-tabs-sm px-3 pt-3 d-none d-md-flex" role="tablist">
+                  <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tc-ytd-rev" type="button" role="tab" aria-controls="tc-ytd-rev" aria-selected="true">Ingresos</button></li>
+                  <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tc-ytd-prof" type="button" role="tab" aria-controls="tc-ytd-prof">Utilidad</button></li>
                 </ul>
-              </div>
-              <div class="tab-content">
-                <div class="tab-pane fade show active" id="tc-ytd-rev" role="tabpanel" data-subtabs-target="panel">
-                  <div class="table-responsive">
-                    <table class="table table-sm mb-0">
-                      <thead><tr><th>Rank</th><th>Categoría</th><th class="text-end">Ingresos</th></tr></thead>
-                      <tbody>
-                        <% @top_categories_ytd&.each_with_index do |r, idx| %>
-                          <tr>
-                            <td class="text-muted">#<%= idx + 1 %></td>
-                            <td><%= r[:category] %></td>
-                            <td class="text-end">$ <%= number_with_precision(r[:revenue], precision: 2, delimiter: ',') %></td>
-                          </tr>
-                        <% end %>
-                        <% if @top_categories_ytd.blank? %>
-                          <tr><td colspan="3" class="text-center text-muted py-3">Sin datos</td></tr>
-                        <% end %>
-                      </tbody>
-                    </table>
+                <div class="tab-content">
+                  <div class="tab-pane fade show active" id="tc-ytd-rev" role="tabpanel" data-tabs-target="panel">
+                    <turbo-frame id="frame-cats-ytd-rev" src="<%= admin_dashboard_categories_rank_path(period: 'ytd', metric: 'rev') %>">
+                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0"><tbody>
+                        <tr><td colspan="3" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
+                        <% 3.times do %><tr class="placeholder-row"><td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
+                      </tbody></table></div>
+                    </turbo-frame>
                   </div>
-                </div>
-                <div class="tab-pane fade" id="tc-ytd-prof" role="tabpanel" data-subtabs-target="panel">
-                  <div class="table-responsive">
-                    <table class="table table-sm mb-0">
-                      <thead><tr><th>Rank</th><th>Categoría</th><th class="text-end">Utilidad</th></tr></thead>
-                      <tbody>
-                        <% @top_categories_profit_ytd&.each_with_index do |r, idx| %>
-                          <tr>
-                            <td class="text-muted">#<%= idx + 1 %></td>
-                            <td><%= r[:category] %></td>
-                            <td class="text-end">$ <%= number_with_precision(r[:profit], precision: 2, delimiter: ',') %></td>
-                          </tr>
-                        <% end %>
-                        <% if @top_categories_profit_ytd.blank? %>
-                          <tr><td colspan="3" class="text-center text-muted py-3">Sin datos</td></tr>
-                        <% end %>
-                      </tbody>
-                    </table>
+                  <div class="tab-pane fade" id="tc-ytd-prof" role="tabpanel" data-tabs-target="panel">
+                    <turbo-frame id="frame-cats-ytd-profit" src="<%= admin_dashboard_categories_rank_path(period: 'ytd', metric: 'profit') %>">
+                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0"><tbody>
+                        <tr><td colspan="3" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
+                        <% 3.times do %><tr class="placeholder-row"><td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
+                      </tbody></table></div>
+                    </turbo-frame>
                   </div>
                 </div>
               </div>
             </div>
+            <!-- Grupo: LY -->
             <div class="tab-pane fade" id="tc-ly" role="tabpanel" data-tabs-target="panel">
-              <div class="px-3 pt-3">
-                <ul class="nav nav-tabs nav-tabs-sm" role="tablist">
-                  <li class="nav-item"><button class="nav-link active" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#tc-ly-rev" type="button" role="tab" aria-controls="tc-ly-rev" aria-selected="true">Ingresos</button></li>
-                  <li class="nav-item"><button class="nav-link" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#tc-ly-prof" type="button" role="tab" aria-controls="tc-ly-prof">Utilidad</button></li>
+              <div data-controller="tabs">
+                <ul class="nav nav-tabs nav-tabs-sm px-3 pt-3 d-none d-md-flex" role="tablist">
+                  <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tc-ly-rev" type="button" role="tab" aria-controls="tc-ly-rev" aria-selected="true">Ingresos</button></li>
+                  <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tc-ly-prof" type="button" role="tab" aria-controls="tc-ly-prof">Utilidad</button></li>
                 </ul>
-              </div>
-              <div class="tab-content">
-                <div class="tab-pane fade show active" id="tc-ly-rev" role="tabpanel" data-subtabs-target="panel">
-                  <div class="table-responsive">
-                    <table class="table table-sm mb-0">
-                      <thead><tr><th>Rank</th><th>Categoría</th><th class="text-end">Ingresos</th></tr></thead>
-                      <tbody>
-                        <% @top_categories_last_year&.each_with_index do |r, idx| %>
-                          <tr>
-                            <td class="text-muted">#<%= idx + 1 %></td>
-                            <td><%= r[:category] %></td>
-                            <td class="text-end">$ <%= number_with_precision(r[:revenue], precision: 2, delimiter: ',') %></td>
-                          </tr>
-                        <% end %>
-                        <% if @top_categories_last_year.blank? %>
-                          <tr><td colspan="3" class="text-center text-muted py-3">Sin datos</td></tr>
-                        <% end %>
-                      </tbody>
-                    </table>
+                <div class="tab-content">
+                  <div class="tab-pane fade show active" id="tc-ly-rev" role="tabpanel" data-tabs-target="panel">
+                    <turbo-frame id="frame-cats-ly-rev" src="<%= admin_dashboard_categories_rank_path(period: 'ly', metric: 'rev') %>">
+                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0"><tbody>
+                        <tr><td colspan="3" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
+                        <% 3.times do %><tr class="placeholder-row"><td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
+                      </tbody></table></div>
+                    </turbo-frame>
                   </div>
-                </div>
-                <div class="tab-pane fade" id="tc-ly-prof" role="tabpanel" data-subtabs-target="panel">
-                  <div class="table-responsive">
-                    <table class="table table-sm mb-0">
-                      <thead><tr><th>Rank</th><th>Categoría</th><th class="text-end">Utilidad</th></tr></thead>
-                      <tbody>
-                        <% @top_categories_profit_last_year&.each_with_index do |r, idx| %>
-                          <tr>
-                            <td class="text-muted">#<%= idx + 1 %></td>
-                            <td><%= r[:category] %></td>
-                            <td class="text-end">$ <%= number_with_precision(r[:profit], precision: 2, delimiter: ',') %></td>
-                          </tr>
-                        <% end %>
-                        <% if @top_categories_profit_last_year.blank? %>
-                          <tr><td colspan="3" class="text-center text-muted py-3">Sin datos</td></tr>
-                        <% end %>
-                      </tbody>
-                    </table>
+                  <div class="tab-pane fade" id="tc-ly-prof" role="tabpanel" data-tabs-target="panel">
+                    <turbo-frame id="frame-cats-ly-profit" src="<%= admin_dashboard_categories_rank_path(period: 'ly', metric: 'profit') %>">
+                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0"><tbody>
+                        <tr><td colspan="3" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
+                        <% 3.times do %><tr class="placeholder-row"><td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
+                      </tbody></table></div>
+                    </turbo-frame>
                   </div>
                 </div>
               </div>
             </div>
+            <!-- Grupo: All -->
             <div class="tab-pane fade" id="tc-all" role="tabpanel" data-tabs-target="panel">
-              <div class="px-3 pt-3">
-                <ul class="nav nav-tabs nav-tabs-sm" role="tablist">
-                  <li class="nav-item"><button class="nav-link active" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#tc-all-rev" type="button" role="tab" aria-controls="tc-all-rev" aria-selected="true">Ingresos</button></li>
-                  <li class="nav-item"><button class="nav-link" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#tc-all-prof" type="button" role="tab" aria-controls="tc-all-prof">Utilidad</button></li>
+              <div data-controller="tabs">
+                <ul class="nav nav-tabs nav-tabs-sm px-3 pt-3 d-none d-md-flex" role="tablist">
+                  <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tc-all-rev" type="button" role="tab" aria-controls="tc-all-rev" aria-selected="true">Ingresos</button></li>
+                  <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tc-all-prof" type="button" role="tab" aria-controls="tc-all-prof">Utilidad</button></li>
                 </ul>
-              </div>
-              <div class="tab-content">
-                <div class="tab-pane fade show active" id="tc-all-rev" role="tabpanel" data-subtabs-target="panel">
-                  <div class="table-responsive">
-                    <table class="table table-sm mb-0">
-                      <thead><tr><th>Rank</th><th>Categoría</th><th class="text-end">Ingresos</th></tr></thead>
-                      <tbody>
-                        <% @top_categories_all_time&.each_with_index do |r, idx| %>
-                          <tr>
-                            <td class="text-muted">#<%= idx + 1 %></td>
-                            <td><%= r[:category] %></td>
-                            <td class="text-end">$ <%= number_with_precision(r[:revenue], precision: 2, delimiter: ',') %></td>
-                          </tr>
-                        <% end %>
-                        <% if @top_categories_all_time.blank? %>
-                          <tr><td colspan="3" class="text-center text-muted py-3">Sin datos</td></tr>
-                        <% end %>
-                      </tbody>
-                    </table>
+                <div class="tab-content">
+                  <div class="tab-pane fade show active" id="tc-all-rev" role="tabpanel" data-tabs-target="panel">
+                    <turbo-frame id="frame-cats-all-rev" src="<%= admin_dashboard_categories_rank_path(period: 'all', metric: 'rev') %>">
+                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0"><tbody>
+                        <tr><td colspan="3" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
+                        <% 3.times do %><tr class="placeholder-row"><td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
+                      </tbody></table></div>
+                    </turbo-frame>
                   </div>
-                </div>
-                <div class="tab-pane fade" id="tc-all-prof" role="tabpanel" data-subtabs-target="panel">
-                  <div class="table-responsive">
-                    <table class="table table-sm mb-0">
-                      <thead><tr><th>Rank</th><th>Categoría</th><th class="text-end">Utilidad</th></tr></thead>
-                      <tbody>
-                        <% @top_categories_profit_all_time&.each_with_index do |r, idx| %>
-                          <tr>
-                            <td class="text-muted">#<%= idx + 1 %></td>
-                            <td><%= r[:category] %></td>
-                            <td class="text-end">$ <%= number_with_precision(r[:profit], precision: 2, delimiter: ',') %></td>
-                          </tr>
-                        <% end %>
-                        <% if @top_categories_profit_all_time.blank? %>
-                          <tr><td colspan="3" class="text-center text-muted py-3">Sin datos</td></tr>
-                        <% end %>
-                      </tbody>
-                    </table>
+                  <div class="tab-pane fade" id="tc-all-prof" role="tabpanel" data-tabs-target="panel">
+                    <turbo-frame id="frame-cats-all-profit" src="<%= admin_dashboard_categories_rank_path(period: 'all', metric: 'profit') %>">
+                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0"><tbody>
+                        <tr><td colspan="3" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
+                        <% 3.times do %><tr class="placeholder-row"><td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
+                      </tbody></table></div>
+                    </turbo-frame>
                   </div>
                 </div>
               </div>
@@ -705,265 +561,124 @@
   <div class="col-xl-6">
       <div class="card h-100" data-controller="tabs">
         <div class="card-header d-flex justify-content-between align-items-center">
-          <span><i class="fa-solid fa-ranking-star"></i> Top Customers</span>
-          <ul class="nav nav-tabs nav-tabs-sm card-header-tabs" role="tablist">
-            <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#rank-range" type="button" role="tab" aria-controls="rank-range" aria-selected="true">YTD</button></li>
-            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#rank-ly" type="button" role="tab" aria-controls="rank-ly">Last Year</button></li>
-            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#rank-all" type="button" role="tab" aria-controls="rank-all">All Time</button></li>
+          <span><i class="fa-solid fa-user-group"></i> Top Clientes</span>
+          <ul class="nav nav-tabs nav-tabs-sm card-header-tabs d-none d-md-flex" role="tablist">
+            <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tcu-ytd" type="button" role="tab" aria-controls="tcu-ytd" aria-selected="true">YTD</button></li>
+            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tcu-ly" type="button" role="tab" aria-controls="tcu-ly">LY</button></li>
+            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tcu-all" type="button" role="tab" aria-controls="tcu-all">All</button></li>
           </ul>
-          <a href="<%= admin_users_path %>" class="btn btn-sm btn-outline-primary ms-2">Ver detalle</a>
+          <select class="form-select form-select-sm d-md-none w-auto" aria-label="Seleccionar periodo" data-action="change->tabs#select">
+            <option value="#tcu-ytd" selected>YTD</option>
+            <option value="#tcu-ly">LY</option>
+            <option value="#tcu-all">All</option>
+          </select>
         </div>
         <div class="card-body p-0">
           <div class="tab-content">
-            <div class="tab-pane fade show active" id="rank-range" role="tabpanel" data-tabs-target="panel" data-controller="subtabs">
-              <div class="px-3 pt-3">
-                <ul class="nav nav-tabs nav-tabs-sm" role="tablist">
-                  <li class="nav-item"><button class="nav-link active" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#rank-range-sales" type="button" role="tab" aria-controls="rank-range-sales" aria-selected="true">Ventas</button></li>
-                  <li class="nav-item"><button class="nav-link" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#rank-range-reserved" type="button" role="tab" aria-controls="rank-range-reserved">Apartados</button></li>
-                  <li class="nav-item"><button class="nav-link" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#rank-range-combined" type="button" role="tab" aria-controls="rank-range-combined">Ventas + Apartados</button></li>
+            <!-- Grupo: YTD -->
+            <div class="tab-pane fade show active" id="tcu-ytd" role="tabpanel" data-tabs-target="panel">
+              <div data-controller="tabs">
+                <ul class="nav nav-tabs nav-tabs-sm px-3 pt-3 d-none d-md-flex" role="tablist">
+                  <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tcu-ytd-sales" type="button" role="tab" aria-controls="tcu-ytd-sales" aria-selected="true">Ventas</button></li>
+                  <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tcu-ytd-res" type="button" role="tab" aria-controls="tcu-ytd-res">Apartados</button></li>
+                  <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tcu-ytd-comb" type="button" role="tab" aria-controls="tcu-ytd-comb">Combinado</button></li>
                 </ul>
-              </div>
-              <div class="tab-content">
-                <div class="tab-pane fade show active" id="rank-range-sales" role="tabpanel" data-subtabs-target="panel">
-                  <div class="table-responsive">
-                    <table class="table table-sm mb-0">
-                      <thead>
-                        <tr>
-                          <th>Rank</th>
-                          <th>Cliente</th>
-                          <th class="text-end">Órdenes</th>
-                          <th class="text-end">Ingresos YTD</th>
-                          <th class="text-end">Ingresos LY</th>
-                          <th class="text-end">Δ vs LY</th>
-                        </tr>
-                       </thead>
-                       <tbody>
-                         <% (@top_users_ytd_vs_prev.presence || @top_users_range).each_with_index do |u, idx| %>
-                           <tr>
-                             <td class="text-muted">#<%= idx + 1 %></td>
-                             <td><%= link_to u[:name], edit_admin_user_path(u[:user_id]) %></td>
-                             <td class="text-end"><%= number_with_delimiter(u[:orders_count]) %></td>
-                             <td class="text-end">$ <%= number_with_precision(u[:revenue], precision: 2, delimiter: ',') %></td>
-                             <td class="text-end">$ <%= number_with_precision((u[:prev_revenue] || 0), precision: 2, delimiter: ',') %></td>
-                             <td class="text-end">
-                               <% if u[:revenue_delta_ratio].nil? %>
-                                 <span class="text-muted">—</span>
-                               <% else %>
-                                 <%= number_to_percentage(u[:revenue_delta_ratio] * 100, precision: 1) %>
-                               <% end %>
-                             </td>
-                           </tr>
-                         <% end %>
-                         <% if @top_users_range.blank? %>
-                           <tr><td colspan="6" class="text-center text-muted py-3">No data</td></tr>
-                         <% end %>
-                       </tbody>
-                     </table>
+                <div class="tab-content">
+                  <div class="tab-pane fade show active" id="tcu-ytd-sales" role="tabpanel" data-tabs-target="panel">
+                    <turbo-frame id="frame-cust-ytd-sales" src="<%= admin_dashboard_customers_rank_path(period: 'ytd', metric: 'sales') %>">
+                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0"><tbody>
+                        <tr><td colspan="3" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
+                        <% 3.times do %><tr class="placeholder-row"><td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
+                      </tbody></table></div>
+                    </turbo-frame>
                   </div>
-                </div>
-                <div class="tab-pane fade" id="rank-range-reserved" role="tabpanel" data-subtabs-target="panel">
-                  <div class="table-responsive">
-                    <table class="table table-sm mb-0">
-                      <thead>
-                        <tr>
-                          <th>Rank</th>
-                          <th>Cliente</th>
-                          <th class="text-end">Unidades apartadas</th>
-                          <th class="text-end">Valor apartados (MXN)</th>
-                        </tr>
-                       </thead>
-                       <tbody>
-                         <% @top_users_reserved_ytd&.each_with_index do |u, idx| %>
-                           <tr>
-                             <td class="text-muted">#<%= idx + 1 %></td>
-                             <td><%= link_to u[:name], edit_admin_user_path(u[:user_id]) %></td>
-                             <td class="text-end"><%= number_with_delimiter(u[:units_reserved]) %></td>
-                             <td class="text-end">$ <%= number_with_precision(u[:reserved_value], precision: 2, delimiter: ',') %></td>
-                           </tr>
-                         <% end %>
-                         <% if @top_users_reserved_ytd.blank? %>
-                           <tr><td colspan="4" class="text-center text-muted py-3">No data</td></tr>
-                         <% end %>
-                       </tbody>
-                     </table>
+                  <div class="tab-pane fade" id="tcu-ytd-res" role="tabpanel" data-tabs-target="panel">
+                    <turbo-frame id="frame-cust-ytd-reserved" src="<%= admin_dashboard_customers_rank_path(period: 'ytd', metric: 'reserved') %>">
+                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0"><tbody>
+                        <tr><td colspan="3" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
+                        <% 3.times do %><tr class="placeholder-row"><td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
+                      </tbody></table></div>
+                    </turbo-frame>
                   </div>
-                </div>
-                <div class="tab-pane fade" id="rank-range-combined" role="tabpanel" data-subtabs-target="panel">
-                  <div class="table-responsive">
-                    <table class="table table-sm mb-0">
-                      <thead>
-                        <tr>
-                          <th>Rank</th>
-                          <th>Cliente</th>
-                          <th class="text-end">Órdenes</th>
-                          <th class="text-end">Ingresos</th>
-                          <th class="text-end">Valor apartados</th>
-                          <th class="text-end">Total</th>
-                        </tr>
-                       </thead>
-                       <tbody>
-                         <% @top_users_sales_reserved_ytd&.each_with_index do |u, idx| %>
-                           <tr>
-                             <td class="text-muted">#<%= idx + 1 %></td>
-                             <td><%= link_to u[:name], edit_admin_user_path(u[:user_id]) %></td>
-                             <td class="text-end"><%= number_with_delimiter(u[:orders_count]) %></td>
-                             <td class="text-end">$ <%= number_with_precision(u[:revenue], precision: 2, delimiter: ',') %></td>
-                             <td class="text-end">$ <%= number_with_precision(u[:reserved_value], precision: 2, delimiter: ',') %></td>
-                             <td class="text-end">$ <%= number_with_precision(u[:total], precision: 2, delimiter: ',') %></td>
-                           </tr>
-                         <% end %>
-                         <% if @top_users_sales_reserved_ytd.blank? %>
-                           <tr><td colspan="6" class="text-center text-muted py-3">No data</td></tr>
-                         <% end %>
-                       </tbody>
-                     </table>
+                  <div class="tab-pane fade" id="tcu-ytd-comb" role="tabpanel" data-tabs-target="panel">
+                    <turbo-frame id="frame-cust-ytd-combined" src="<%= admin_dashboard_customers_rank_path(period: 'ytd', metric: 'combined') %>">
+                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0"><tbody>
+                        <tr><td colspan="3" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
+                        <% 3.times do %><tr class="placeholder-row"><td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
+                      </tbody></table></div>
+                    </turbo-frame>
                   </div>
                 </div>
               </div>
             </div>
-            <div class="tab-pane fade" id="rank-ly" role="tabpanel" data-tabs-target="panel" data-controller="subtabs">
-              <div class="px-3 pt-3">
-                <ul class="nav nav-tabs nav-tabs-sm" role="tablist">
-                  <li class="nav-item"><button class="nav-link active" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#rank-ly-sales" type="button" role="tab" aria-controls="rank-ly-sales" aria-selected="true">Ventas</button></li>
-                  <li class="nav-item"><button class="nav-link" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#rank-ly-reserved" type="button" role="tab" aria-controls="rank-ly-reserved">Apartados</button></li>
-                  <li class="nav-item"><button class="nav-link" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#rank-ly-combined" type="button" role="tab" aria-controls="rank-ly-combined">Ventas + Apartados</button></li>
+            <!-- Grupo: LY -->
+            <div class="tab-pane fade" id="tcu-ly" role="tabpanel" data-tabs-target="panel">
+              <div data-controller="tabs">
+                <ul class="nav nav-tabs nav-tabs-sm px-3 pt-3 d-none d-md-flex" role="tablist">
+                  <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tcu-ly-sales" type="button" role="tab" aria-controls="tcu-ly-sales" aria-selected="true">Ventas</button></li>
+                  <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tcu-ly-res" type="button" role="tab" aria-controls="tcu-ly-res">Apartados</button></li>
+                  <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tcu-ly-comb" type="button" role="tab" aria-controls="tcu-ly-comb">Combinado</button></li>
                 </ul>
-              </div>
-              <div class="tab-content">
-                <div class="tab-pane fade show active" id="rank-ly-sales" role="tabpanel" data-subtabs-target="panel">
-                  <div class="table-responsive">
-                    <table class="table table-sm mb-0">
-                      <thead><tr><th>Rank</th><th>Cliente</th><th class="text-end">Órdenes</th><th class="text-end">Ingresos</th></tr></thead>
-                      <tbody>
-                        <% @top_users_last_year.each_with_index do |u, idx| %>
-                          <tr>
-                            <td class="text-muted">#<%= idx + 1 %></td>
-                            <td><%= link_to u[:name], edit_admin_user_path(u[:user_id]) %></td>
-                            <td class="text-end"><%= number_with_delimiter(u[:orders_count]) %></td>
-                            <td class="text-end">$ <%= number_with_precision(u[:revenue], precision: 2, delimiter: ',') %></td>
-                          </tr>
-                        <% end %>
-                        <% if @top_users_last_year.blank? %>
-                          <tr><td colspan="4" class="text-center text-muted py-3">No data</td></tr>
-                        <% end %>
-                      </tbody>
-                    </table>
+                <div class="tab-content">
+                  <div class="tab-pane fade show active" id="tcu-ly-sales" role="tabpanel" data-tabs-target="panel">
+                    <turbo-frame id="frame-cust-ly-sales" src="<%= admin_dashboard_customers_rank_path(period: 'ly', metric: 'sales') %>">
+                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0"><tbody>
+                        <tr><td colspan="3" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
+                        <% 3.times do %><tr class="placeholder-row"><td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
+                      </tbody></table></div>
+                    </turbo-frame>
                   </div>
-                </div>
-                <div class="tab-pane fade" id="rank-ly-reserved" role="tabpanel" data-subtabs-target="panel">
-                  <div class="table-responsive">
-                    <table class="table table-sm mb-0">
-                      <thead><tr><th>Rank</th><th>Cliente</th><th class="text-end">Unidades apartadas</th><th class="text-end">Valor apartados (MXN)</th></tr></thead>
-                      <tbody>
-                        <% @top_users_reserved_last_year&.each_with_index do |u, idx| %>
-                          <tr>
-                            <td class="text-muted">#<%= idx + 1 %></td>
-                            <td><%= link_to u[:name], edit_admin_user_path(u[:user_id]) %></td>
-                            <td class="text-end"><%= number_with_delimiter(u[:units_reserved]) %></td>
-                            <td class="text-end">$ <%= number_with_precision(u[:reserved_value], precision: 2, delimiter: ',') %></td>
-                          </tr>
-                        <% end %>
-                        <% if @top_users_reserved_last_year.blank? %>
-                          <tr><td colspan="4" class="text-center text-muted py-3">No data</td></tr>
-                        <% end %>
-                      </tbody>
-                    </table>
+                  <div class="tab-pane fade" id="tcu-ly-res" role="tabpanel" data-tabs-target="panel">
+                    <turbo-frame id="frame-cust-ly-reserved" src="<%= admin_dashboard_customers_rank_path(period: 'ly', metric: 'reserved') %>">
+                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0"><tbody>
+                        <tr><td colspan="3" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
+                        <% 3.times do %><tr class="placeholder-row"><td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
+                      </tbody></table></div>
+                    </turbo-frame>
                   </div>
-                </div>
-                <div class="tab-pane fade" id="rank-ly-combined" role="tabpanel" data-subtabs-target="panel">
-                  <div class="table-responsive">
-                    <table class="table table-sm mb-0">
-                      <thead><tr><th>Rank</th><th>Cliente</th><th class="text-end">Órdenes</th><th class="text-end">Ingresos</th><th class="text-end">Valor apartados</th><th class="text-end">Total</th></tr></thead>
-                      <tbody>
-                        <% @top_users_sales_reserved_last_year&.each_with_index do |u, idx| %>
-                          <tr>
-                            <td class="text-muted">#<%= idx + 1 %></td>
-                            <td><%= link_to u[:name], edit_admin_user_path(u[:user_id]) %></td>
-                            <td class="text-end"><%= number_with_delimiter(u[:orders_count]) %></td>
-                            <td class="text-end">$ <%= number_with_precision(u[:revenue], precision: 2, delimiter: ',') %></td>
-                            <td class="text-end">$ <%= number_with_precision(u[:reserved_value], precision: 2, delimiter: ',') %></td>
-                            <td class="text-end">$ <%= number_with_precision(u[:total], precision: 2, delimiter: ',') %></td>
-                          </tr>
-                        <% end %>
-                        <% if @top_users_sales_reserved_last_year.blank? %>
-                          <tr><td colspan="6" class="text-center text-muted py-3">No data</td></tr>
-                        <% end %>
-                      </tbody>
-                    </table>
+                  <div class="tab-pane fade" id="tcu-ly-comb" role="tabpanel" data-tabs-target="panel">
+                    <turbo-frame id="frame-cust-ly-combined" src="<%= admin_dashboard_customers_rank_path(period: 'ly', metric: 'combined') %>">
+                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0"><tbody>
+                        <tr><td colspan="3" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
+                        <% 3.times do %><tr class="placeholder-row"><td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
+                      </tbody></table></div>
+                    </turbo-frame>
                   </div>
                 </div>
               </div>
             </div>
-            <div class="tab-pane fade" id="rank-all" role="tabpanel" data-tabs-target="panel" data-controller="subtabs">
-              <div class="px-3 pt-3">
-                <ul class="nav nav-tabs nav-tabs-sm" role="tablist">
-                  <li class="nav-item"><button class="nav-link active" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#rank-all-sales" type="button" role="tab" aria-controls="rank-all-sales" aria-selected="true">Ventas</button></li>
-                  <li class="nav-item"><button class="nav-link" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#rank-all-reserved" type="button" role="tab" aria-controls="rank-all-reserved">Apartados</button></li>
-                  <li class="nav-item"><button class="nav-link" data-action="click->subtabs#activate" data-subtabs-target="tab" data-target="#rank-all-combined" type="button" role="tab" aria-controls="rank-all-combined">Ventas + Apartados</button></li>
+            <!-- Grupo: All -->
+            <div class="tab-pane fade" id="tcu-all" role="tabpanel" data-tabs-target="panel">
+              <div data-controller="tabs">
+                <ul class="nav nav-tabs nav-tabs-sm px-3 pt-3 d-none d-md-flex" role="tablist">
+                  <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tcu-all-sales" type="button" role="tab" aria-controls="tcu-all-sales" aria-selected="true">Ventas</button></li>
+                  <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tcu-all-res" type="button" role="tab" aria-controls="tcu-all-res">Apartados</button></li>
+                  <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tcu-all-comb" type="button" role="tab" aria-controls="tcu-all-comb">Combinado</button></li>
                 </ul>
-              </div>
-              <div class="tab-content">
-                <div class="tab-pane fade show active" id="rank-all-sales" role="tabpanel" data-subtabs-target="panel">
-                  <div class="table-responsive">
-                    <table class="table table-sm mb-0">
-                      <thead><tr><th>Rank</th><th>Cliente</th><th class="text-end">Órdenes</th><th class="text-end">Ingresos</th></tr></thead>
-                      <tbody>
-                        <% @top_users_all.each_with_index do |u, idx| %>
-                          <tr>
-                            <td class="text-muted">#<%= idx + 1 %></td>
-                            <td><%= link_to u[:name], edit_admin_user_path(u[:user_id]) %></td>
-                            <td class="text-end"><%= number_with_delimiter(u[:orders_count]) %></td>
-                            <td class="text-end">$ <%= number_with_precision(u[:revenue], precision: 2, delimiter: ',') %></td>
-                          </tr>
-                        <% end %>
-                        <% if @top_users_all.blank? %>
-                          <tr><td colspan="4" class="text-center text-muted py-3">No data</td></tr>
-                        <% end %>
-                      </tbody>
-                    </table>
-                    <div class="px-3 py-2 small text-muted">Nota: en All Time no se muestra comparativo vs años anteriores.</div>
+                <div class="tab-content">
+                  <div class="tab-pane fade show active" id="tcu-all-sales" role="tabpanel" data-tabs-target="panel">
+                    <turbo-frame id="frame-cust-all-sales" src="<%= admin_dashboard_customers_rank_path(period: 'all', metric: 'sales') %>">
+                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0"><tbody>
+                        <tr><td colspan="3" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
+                        <% 3.times do %><tr class="placeholder-row"><td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
+                      </tbody></table></div>
+                    </turbo-frame>
                   </div>
-                </div>
-                <div class="tab-pane fade" id="rank-all-reserved" role="tabpanel" data-subtabs-target="panel">
-                  <div class="table-responsive">
-                    <table class="table table-sm mb-0">
-                      <thead><tr><th>Rank</th><th>Cliente</th><th class="text-end">Unidades apartadas</th><th class="text-end">Valor apartados (MXN)</th></tr></thead>
-                      <tbody>
-                        <% @top_users_reserved_all&.each_with_index do |u, idx| %>
-                          <tr>
-                            <td class="text-muted">#<%= idx + 1 %></td>
-                            <td><%= link_to u[:name], edit_admin_user_path(u[:user_id]) %></td>
-                            <td class="text-end"><%= number_with_delimiter(u[:units_reserved]) %></td>
-                            <td class="text-end">$ <%= number_with_precision(u[:reserved_value], precision: 2, delimiter: ',') %></td>
-                          </tr>
-                        <% end %>
-                        <% if @top_users_reserved_all.blank? %>
-                          <tr><td colspan="4" class="text-center text-muted py-3">No data</td></tr>
-                        <% end %>
-                      </tbody>
-                    </table>
+                  <div class="tab-pane fade" id="tcu-all-res" role="tabpanel" data-tabs-target="panel">
+                    <turbo-frame id="frame-cust-all-reserved" src="<%= admin_dashboard_customers_rank_path(period: 'all', metric: 'reserved') %>">
+                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0"><tbody>
+                        <tr><td colspan="3" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
+                        <% 3.times do %><tr class="placeholder-row"><td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
+                      </tbody></table></div>
+                    </turbo-frame>
                   </div>
-                </div>
-                <div class="tab-pane fade" id="rank-all-combined" role="tabpanel" data-subtabs-target="panel">
-                  <div class="table-responsive">
-                    <table class="table table-sm mb-0">
-                      <thead><tr><th>Rank</th><th>Cliente</th><th class="text-end">Órdenes</th><th class="text-end">Ingresos</th><th class="text-end">Valor apartados</th><th class="text-end">Total</th></tr></thead>
-                      <tbody>
-                        <% @top_users_sales_reserved_all&.each_with_index do |u, idx| %>
-                          <tr>
-                            <td class="text-muted">#<%= idx + 1 %></td>
-                            <td><%= link_to u[:name], edit_admin_user_path(u[:user_id]) %></td>
-                            <td class="text-end"><%= number_with_delimiter(u[:orders_count]) %></td>
-                            <td class="text-end">$ <%= number_with_precision(u[:revenue], precision: 2, delimiter: ',') %></td>
-                            <td class="text-end">$ <%= number_with_precision(u[:reserved_value], precision: 2, delimiter: ',') %></td>
-                            <td class="text-end">$ <%= number_with_precision(u[:total], precision: 2, delimiter: ',') %></td>
-                          </tr>
-                        <% end %>
-                        <% if @top_users_sales_reserved_all.blank? %>
-                          <tr><td colspan="6" class="text-center text-muted py-3">No data</td></tr>
-                        <% end %>
-                      </tbody>
-                    </table>
+                  <div class="tab-pane fade" id="tcu-all-comb" role="tabpanel" data-tabs-target="panel">
+                    <turbo-frame id="frame-cust-all-combined" src="<%= admin_dashboard_customers_rank_path(period: 'all', metric: 'combined') %>">
+                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0"><tbody>
+                        <tr><td colspan="3" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
+                        <% 3.times do %><tr class="placeholder-row"><td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
+                      </tbody></table></div>
+                    </turbo-frame>
                   </div>
                 </div>
               </div>
@@ -980,11 +695,16 @@
       <div class="card h-100" data-controller="tabs">
         <div class="card-header d-flex justify-content-between align-items-center">
           <span><i class="fa-solid fa-flag"></i> Ventas por Estado (México)</span>
-          <ul class="nav nav-tabs nav-tabs-sm card-header-tabs" role="tablist">
+          <ul class="nav nav-tabs nav-tabs-sm card-header-tabs d-none d-md-flex" role="tablist">
             <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#mx-ytd" type="button" role="tab" aria-controls="mx-ytd" aria-selected="true">YTD</button></li>
             <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#mx-ly" type="button" role="tab" aria-controls="mx-ly">Last Year</button></li>
             <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#mx-all" type="button" role="tab" aria-controls="mx-all">All Time</button></li>
           </ul>
+          <select class="form-select form-select-sm d-md-none w-auto" aria-label="Seleccionar periodo" data-action="change->tabs#select">
+            <option value="#mx-ytd" selected>YTD</option>
+            <option value="#mx-ly">Last Year</option>
+            <option value="#mx-all">All Time</option>
+          </select>
         </div>
         <div class="card-body p-0">
           <div class="tab-content">
@@ -1053,11 +773,16 @@
       <div class="card h-100" data-controller="tabs">
         <div class="card-header d-flex justify-content-between align-items-center">
           <span><i class="fa-solid fa-table"></i> Distribución de Ventas por País</span>
-          <ul class="nav nav-tabs nav-tabs-sm card-header-tabs" role="tablist">
+          <ul class="nav nav-tabs nav-tabs-sm card-header-tabs d-none d-md-flex" role="tablist">
             <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#cty-ytd" type="button" role="tab" aria-controls="cty-ytd" aria-selected="true">YTD</button></li>
             <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#cty-ly" type="button" role="tab" aria-controls="cty-ly">Last Year</button></li>
             <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#cty-all" type="button" role="tab" aria-controls="cty-all">All Time</button></li>
           </ul>
+          <select class="form-select form-select-sm d-md-none w-auto" aria-label="Seleccionar periodo" data-action="change->tabs#select">
+            <option value="#cty-ytd" selected>YTD</option>
+            <option value="#cty-ly">Last Year</option>
+            <option value="#cty-all">All Time</option>
+          </select>
         </div>
         <div class="card-body p-0">
           <div class="tab-content">
@@ -1282,10 +1007,20 @@
       <div class="card h-100">
         <div class="card-header d-flex justify-content-between align-items-center">
           <span><i class="fa-solid fa-chart-line"></i> Sales Comparison (12 months)</span>
-          <a href="<%= admin_sale_orders_path %>" class="btn btn-sm btn-outline-primary">Ver detalle</a>
+          <!-- Botón "Ver detalle" removido a solicitud -->
         </div>
         <div class="card-body">
-          <div id="chart-trend-12m" style="height: 280px;"></div>
+          <div
+            data-controller="chart"
+            data-chart-type="line"
+            data-chart-x="<%= raw(@chart_sales_trend[:months].to_json) %>"
+            data-chart-series="<%= raw([
+              { name: 'Revenue', data: @chart_sales_trend[:revenue].map(&:to_f) },
+              { name: 'COGS',    data: @chart_sales_trend[:cogs].map(&:to_f) },
+              { name: 'Profit',  data: @chart_sales_trend[:profit].map(&:to_f) }
+            ].to_json) %>"
+            style="height:280px"
+          ></div>
         </div>
       </div>
     </div>
@@ -1297,7 +1032,13 @@
       <div class="card h-100">
         <div class="card-header"><i class="fa-solid fa-chart-column"></i> Sales by Month (stacked by category)</div>
         <div class="card-body">
-          <div id="chart-monthly-stacked" style="height: 280px;"></div>
+          <div
+            data-controller="chart"
+            data-chart-type="bar"
+            data-chart-x="<%= raw(@chart_monthly_by_category[:months].to_json) %>"
+            data-chart-series="<%= raw((@chart_monthly_by_category[:series] || []).map { |s| s.merge(type: 'bar') }.to_json) %>"
+            style="height:280px"
+          ></div>
         </div>
       </div>
     </div>
@@ -1309,7 +1050,13 @@
       <div class="card h-100">
         <div class="card-header"><i class="fa-solid fa-city"></i> Brand Profitability</div>
         <div class="card-body">
-          <div id="chart-brand-profit" style="height: 280px;"></div>
+          <div
+            data-controller="chart"
+            data-chart-type="bar"
+            data-chart-x="<%= raw(@chart_brand_profit[:brands].to_json) %>"
+            data-chart-series='[{"name":"Utilidad","data":<%= raw(@chart_brand_profit[:profit].map(&:to_f).to_json) %>}]'
+            style="height:280px"
+          ></div>
         </div>
       </div>
     </div>
@@ -1317,7 +1064,13 @@
       <div class="card h-100">
         <div class="card-header"><i class="fa-solid fa-tags"></i> Category Profitability</div>
         <div class="card-body">
-          <div id="chart-category-profit" style="height: 280px;"></div>
+          <div
+            data-controller="chart"
+            data-chart-type="bar"
+            data-chart-x="<%= raw((@chart_category_profit[:categories] || []).to_json) %>"
+            data-chart-series='[{"name":"Utilidad","data":<%= raw((@chart_category_profit[:profit] || []).map(&:to_f).to_json) %>}]'
+            style="height:280px"
+          ></div>
         </div>
       </div>
     </div>
@@ -1325,125 +1078,4 @@
   <!-- (Se eliminó el bloque final de "Producto top por categoría (Profit)") -->
 </div>
 
-<!-- ECharts para charts (no mapas) -->
-  <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
-<script>
-    // Mostrar campos de fecha solo si rango == custom
-    document.addEventListener('turbo:load', () => {
-      const rangeSel = document.querySelector('select[name="range"]');
-      const customFields = document.querySelectorAll('[data-range-custom]');
-      const sync = () => {
-        const isCustom = rangeSel && rangeSel.value === 'custom';
-        customFields.forEach(el => el.style.display = isCustom ? '' : 'none');
-      };
-      if (rangeSel) {
-        rangeSel.addEventListener('change', sync);
-      }
-      sync();
-    });
-
-  // High-impact charts (init on Turbo load)
-  document.addEventListener('turbo:load', () => {
-    if (!(window.echarts)) return;
-    try {
-  const lineEl = document.getElementById('chart-trend-12m');
-  const sparkRevenueEl = document.getElementById('sparkline-revenue');
-      const donutEl = document.getElementById('chart-sales-by-category');
-  const stackedEl = document.getElementById('chart-monthly-stacked');
-  const brandEl = document.getElementById('chart-brand-profit');
-  const categoryProfitEl = document.getElementById('chart-category-profit');
-
-      if (lineEl) {
-        const chart = echarts.init(lineEl);
-        const months = <%= raw(@chart_sales_trend[:months].to_json) %>;
-        const revenue = <%= raw(@chart_sales_trend[:revenue].map(&:to_f).to_json) %>;
-        const cogs = <%= raw(@chart_sales_trend[:cogs].map(&:to_f).to_json) %>;
-        const profit = <%= raw(@chart_sales_trend[:profit].map(&:to_f).to_json) %>;
-        chart.setOption({
-          tooltip: { trigger: 'axis' },
-          legend: { data: ['Revenue','COGS','Profit'] },
-          xAxis: { type: 'category', data: months },
-          yAxis: { type: 'value' },
-          series: [
-            { name: 'Revenue', type: 'line', data: revenue, smooth: true },
-            { name: 'COGS', type: 'line', data: cogs, smooth: true },
-            { name: 'Profit', type: 'line', data: profit, smooth: true }
-          ]
-        });
-        window.addEventListener('resize', () => chart.resize());
-      }
-
-      if (sparkRevenueEl) {
-        const chart = echarts.init(sparkRevenueEl);
-        const revenue = <%= raw(@chart_sales_trend[:revenue].map(&:to_f).to_json) %>;
-        chart.setOption({
-          grid: {left: 0, right: 0, top: 2, bottom: 2},
-          xAxis: { type: 'category', show: false, data: revenue.map((_,i)=>i) },
-          yAxis: { type: 'value', show: false },
-          series: [{ type: 'line', data: revenue, smooth: true, symbol: 'none', lineStyle: { width: 2 } }],
-          tooltip: { show: false }
-        });
-        window.addEventListener('resize', () => chart.resize());
-      }
-
-      if (donutEl) {
-        const chart = echarts.init(donutEl);
-        const series = <%= raw(@chart_sales_by_category.to_json) %>;
-        chart.setOption({
-          tooltip: { trigger: 'item' },
-          legend: { orient: 'vertical', left: 'left' },
-          series: [{
-            name: 'Sales by Category', type: 'pie', radius: ['40%','70%'], avoidLabelOverlap: false,
-            itemStyle: { borderRadius: 6, borderColor: '#fff', borderWidth: 2 },
-            label: { show: false }, emphasis: { label: { show: true, fontSize: 14, fontWeight: 'bold' } },
-            labelLine: { show: false }, data: series
-          }]
-        });
-        window.addEventListener('resize', () => chart.resize());
-      }
-
-      if (stackedEl) {
-        const chart = echarts.init(stackedEl);
-        const months = <%= raw(@chart_monthly_by_category[:months].to_json) %>;
-        const series = <%= raw(@chart_monthly_by_category[:series].to_json) %>;
-        chart.setOption({
-          tooltip: { trigger: 'axis' },
-          legend: {},
-          xAxis: { type: 'category', data: months },
-          yAxis: { type: 'value' },
-          series: series.map(s => ({ ...s, type: 'bar', stack: 'total' }))
-        });
-        window.addEventListener('resize', () => chart.resize());
-      }
-
-      if (brandEl) {
-        const chart = echarts.init(brandEl);
-        const brands = <%= raw(@chart_brand_profit[:brands].to_json) %>;
-        const profit = <%= raw(@chart_brand_profit[:profit].map(&:to_f).to_json) %>;
-        chart.setOption({
-          tooltip: { trigger: 'axis' },
-          xAxis: { type: 'value' },
-          yAxis: { type: 'category', data: brands },
-          series: [{ type: 'bar', data: profit, itemStyle: { color: '#4caf50' } }]
-        });
-        window.addEventListener('resize', () => chart.resize());
-      }
-
-      if (categoryProfitEl) {
-        const chart = echarts.init(categoryProfitEl);
-        const _catProfit = <%= raw((@chart_category_profit || {categories: [], profit: []}).to_json) %>;
-        const categories = _catProfit.categories || [];
-        const profit = (_catProfit.profit || []).map(parseFloat);
-        chart.setOption({
-          tooltip: { trigger: 'axis' },
-          xAxis: { type: 'value' },
-          yAxis: { type: 'category', data: categories },
-          series: [{ type: 'bar', data: profit, itemStyle: { color: '#3f51b5' } }]
-        });
-        window.addEventListener('resize', () => chart.resize());
-      }
-    } catch (e) { console.error('Charts error', e); }
-  });
-
-  // (Se removió el mapa; no hay inicialización de mapas.)
-</script>
+<!-- Sin scripts inline: todos los charts usan Stimulus chart_controller -->

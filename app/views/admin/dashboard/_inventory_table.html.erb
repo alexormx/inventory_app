@@ -1,0 +1,38 @@
+<% rel ||= @rel %>
+<% rows ||= @rows %>
+<% scope ||= @scope %>
+<% metric ||= @metric %>
+<div class="table-responsive p-2 px-3">
+  <table class="table table-sm table-striped align-middle">
+    <thead class="table-light sticky-top">
+      <tr>
+  <th scope="col" class="d-none d-sm-table-cell">Rank</th>
+        <th scope="col">Producto</th>
+        <th scope="col" class="text-end">Unidades</th>
+        <th scope="col" class="text-end">Valor</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% if rows.present? %>
+        <% rows.each_with_index do |r, idx| %>
+          <tr>
+            <td class="text-muted d-none d-sm-table-cell">#<%= idx + 1 %></td>
+            <td>
+              <div class="small fw-semibold"><i class="fa-solid fa-box-open text-muted me-1"></i> <%= r[:name] %></div>
+              <% if r[:brand].present? || r[:category].present? %>
+                <div class="text-muted" style="font-size: .75rem;">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
+              <% end %>
+            </td>
+            <td class="text-end"><%= number_with_delimiter(r[:units_count]) %></td>
+            <td class="text-end"><%= number_to_currency(r[:inventory_value]) %></td>
+          </tr>
+        <% end %>
+      <% else %>
+        <tr>
+          <td colspan="4" class="text-center text-muted py-3">Sin datos</td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+<!-- Sin paginación -->

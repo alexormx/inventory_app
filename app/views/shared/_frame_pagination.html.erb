@@ -1,0 +1,17 @@
+<div class="px-3 py-2 d-flex justify-content-between align-items-center">
+  <div class="small text-muted">
+    <%= page_entries_info rel if defined?(page_entries_info) && rel.respond_to?(:current_page) %>
+  </div>
+  <nav aria-label="Paginación">
+    <ul class="pagination pagination-sm mb-0">
+      <% prev_params = request.query_parameters.merge(page: rel.prev_page, per: rel.limit_value) %>
+      <% next_params = request.query_parameters.merge(page: rel.next_page, per: rel.limit_value) %>
+      <li class="page-item <%= 'disabled' unless rel.prev_page %>">
+        <%= link_to 'Anterior', prev_path, data: { turbo_frame: frame_id }, class: 'page-link' %>
+      </li>
+      <li class="page-item <%= 'disabled' unless rel.next_page %>">
+        <%= link_to 'Siguiente', next_path, data: { turbo_frame: frame_id }, class: 'page-link' %>
+      </li>
+    </ul>
+  </nav>
+</div>

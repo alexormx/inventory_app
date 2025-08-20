@@ -23,12 +23,36 @@ export default class extends Controller {
       const byId = this.defaultTabValue && this.tabTargets.find(t => this._panelFor(t)?.id === this.defaultTabValue)
       this._showFor(byId || this.tabTargets[0])
     }
+
+    // Sincronizar <select> móvil inicial si existe
+    const select = this._selectEl()
+    if (select) {
+      const active = this.panelTargets.find(p => p.classList.contains('active')) || this.panelTargets[0]
+      if (active) select.value = `#${active.id}`
+    }
   }
 
   activate(event) {
     event.preventDefault()
     const btn = event.currentTarget
     this._showFor(btn)
+  }
+
+  // Modo móvil: <select> con opciones value="#pane-id"
+  select(event) {
+    const value = event.target.value
+    if (!value) return
+    const paneId = value.startsWith('#') ? value.slice(1) : value
+    const pane = this.panelTargets.find(p => p.id === paneId)
+    if (!pane) return
+    // Buscar el tab asociado por aria-controls/target
+    const tabBtn = this.tabTargets.find(t => {
+      const direct = t.dataset.target || t.getAttribute('data-bs-target') || t.getAttribute('data-target')
+      const id = direct && direct.startsWith('#') ? direct.slice(1) : direct
+      const aria = t.getAttribute('aria-controls')
+      return id === paneId || aria === paneId
+    })
+    this._showFor(tabBtn)
   }
 
   _showFor(tabBtn) {

@@ -9,6 +9,7 @@
  * Consider organizing styles into separate files for maintainability.
  */
  @import "custom";
+ @import "dashboard";
 
  body {
   -webkit-text-size-adjust: auto; /* Disables the Bootstrap default */

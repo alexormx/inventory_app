@@ -1,0 +1,56 @@
+<% rows ||= @rows %>
+<% period ||= @period %>
+<% metric ||= @metric %>
+<turbo-frame id="frame-cust-<%= period %>-<%= metric %>">
+  <div class="table-responsive p-2 px-3">
+    <table class="table table-sm table-striped mb-0 align-middle">
+      <thead>
+        <tr>
+          <th class="d-none d-sm-table-cell">Rank</th>
+          <th>Cliente</th>
+          <% if metric == 'reserved' %>
+            <th class="text-end">Unidades apartadas</th>
+            <th class="text-end">Valor apartados</th>
+          <% elsif metric == 'combined' %>
+            <th class="text-end">Órdenes</th>
+            <th class="text-end">Ingresos</th>
+            <th class="text-end">Valor apartados</th>
+            <th class="text-end">Total</th>
+          <% else %>
+            <th class="text-end">Órdenes</th>
+            <th class="text-end">Ingresos</th>
+          <% end %>
+        </tr>
+      </thead>
+      <tbody>
+        <% if rows.present? %>
+          <% rows.each_with_index do |u, idx| %>
+            <tr>
+              <td class="text-muted d-none d-sm-table-cell">#<%= idx + 1 %></td>
+              <td>
+                <div class="small fw-semibold"><i class="fa-solid fa-user text-muted me-1"></i> <%= (u[:name] || u[:user_id]) %></div>
+              </td>
+              <% if metric == 'reserved' %>
+                <td class="text-end"><%= number_with_delimiter(u[:units_reserved]) %></td>
+                <td class="text-end"><%= number_to_currency(u[:reserved_value]) %></td>
+              <% elsif metric == 'combined' %>
+                <td class="text-end"><%= number_with_delimiter(u[:orders_count]) %></td>
+                <td class="text-end"><%= number_to_currency(u[:revenue]) %></td>
+                <td class="text-end"><%= number_to_currency(u[:reserved_value]) %></td>
+                <td class="text-end"><%= number_to_currency(u[:total]) %></td>
+              <% else %>
+                <td class="text-end"><%= number_with_delimiter(u[:orders_count]) %></td>
+                <td class="text-end"><%= number_to_currency(u[:revenue]) %></td>
+              <% end %>
+            </tr>
+          <% end %>
+        <% else %>
+          <tr>
+            <td colspan="7" class="text-center text-muted py-3">Sin datos</td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+  <!-- Sin paginación -->
+</turbo-frame>

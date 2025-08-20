@@ -24,8 +24,14 @@ Rails.application.routes.draw do
 
     # Admin Dashboard
   get 'dashboard', to: 'dashboard#index', as: :dashboard
+    get 'dashboard/profitable', to: 'dashboard#profitable', as: :dashboard_profitable
+    get 'dashboard/inventory_top', to: 'dashboard#inventory_top', as: :dashboard_inventory_top
+  get 'dashboard/categories_rank', to: 'dashboard#categories_rank', as: :dashboard_categories_rank
+  get 'dashboard/customers_rank', to: 'dashboard#customers_rank', as: :dashboard_customers_rank
   # Geo stats for dashboard (JSON)
   get 'dashboard/geo', to: 'dashboard#geo', as: :dashboard_geo
+    # Tablas/frames del dashboard (Turbo)
+    get 'dashboard/sellers', to: 'dashboard#sellers', as: :dashboard_sellers
 
     # Product Management
     get 'products/drafts', to: 'products#drafts', as: :products_drafts

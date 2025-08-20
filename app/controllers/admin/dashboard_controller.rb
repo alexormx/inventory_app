@@ -190,6 +190,308 @@ class Admin::DashboardController < ApplicationController
   users_prev_rows.each do |r|
     prev_map[r.id] = { orders_count: r.attributes["orders_count"].to_i, revenue: r.attributes["revenue"].to_d }
   end
+
+  # Turbo Frame: lista de Top Sellers por periodo
+  def sellers
+    authorize_admin!
+    now = Time.zone.now
+    period = params[:period].presence || 'ytd' # ytd | ly | all
+  # Top 10 sin paginación
+
+    so_scope = SaleOrder.where.not(status: 'Canceled')
+    paid_statuses = %w[Confirmed Shipped Delivered]
+    # Rango temporal base (sin filtrar por estatus aún)
+    base_scope = case period
+                 when 'ly'
+                   ly_start = now.beginning_of_year - 1.year
+                   ly_end   = ly_start.end_of_year
+                   so_scope.where(order_date: ly_start..ly_end)
+                 when 'all'
+                   so_scope
+                 else # 'ytd'
+                   so_scope.where(order_date: (now.beginning_of_year..now.end_of_day))
+                 end
+    # Preferimos órdenes “pagadas”; si no hay resultados, caemos a "todas excepto canceladas" para evitar tablero vacío en dev
+    primary_scope   = base_scope.where(status: paid_statuses)
+    fallback_scope  = base_scope
+
+    rev_sql  = "COALESCE(sale_order_items.unit_final_price, 0) * COALESCE(sale_order_items.quantity, 0)"
+    units_sql = "COALESCE(sale_order_items.quantity, 0)"
+    build_rel = lambda do |scope|
+      SaleOrderItem.joins(:sale_order, :product)
+                   .merge(scope)
+                   .group('products.id','products.product_name','products.brand','products.category')
+                   .select("products.id, products.product_name, products.brand, products.category, SUM(#{units_sql}) AS units, SUM(#{rev_sql}) AS revenue")
+                   .order('units DESC')
+    end
+
+    rel = build_rel.call(primary_scope).limit(10)
+    unless SaleOrderItem.joins(:sale_order).merge(primary_scope).exists?
+      rel = build_rel.call(fallback_scope).limit(10)
+    end
+
+  @rows = rel.map { |r| { product_id: r.id, name: r.product_name, brand: r.brand, category: r.category, units: r.attributes['units'].to_i, revenue: r.attributes['revenue'].to_d } }
+  @period = period
+  # Sin paginación
+
+    respond_to do |format|
+      format.html { render :sellers, layout: false }
+    end
+  end
+
+  # Turbo Frame: productos rentables (profit) por periodo
+  def profitable
+    authorize_admin!
+    now = Time.zone.now
+    period = params[:period].presence || 'ytd'
+  # Top 10 sin paginación
+
+    so_scope = SaleOrder.where.not(status: 'Canceled')
+    paid_statuses = %w[Confirmed Shipped Delivered]
+    base_scope = case period
+                 when 'ly'
+                   ly_start = now.beginning_of_year - 1.year
+                   ly_end   = ly_start.end_of_year
+                   so_scope.where(order_date: ly_start..ly_end)
+                 when 'all'
+                   so_scope
+                 else
+                   so_scope.where(order_date: (now.beginning_of_year..now.end_of_day))
+                 end
+    primary_scope  = base_scope.where(status: paid_statuses)
+    fallback_scope = base_scope
+
+    rev_sql   = "COALESCE(sale_order_items.unit_final_price, 0) * COALESCE(sale_order_items.quantity, 0)"
+    cogs_sql  = "COALESCE(sale_order_items.unit_cost, 0) * COALESCE(sale_order_items.quantity, 0)"
+
+  build_sales = lambda do |scope|
+    SaleOrderItem.joins(:sale_order, :product)
+             .merge(scope)
+             .group('products.id','products.product_name','products.brand','products.category')
+             .select("products.id AS product_id, products.product_name AS product_name, products.brand AS brand, products.category AS category, SUM(#{rev_sql}) AS revenue")
+  end
+    cogs_for = lambda do |scope|
+      SaleOrderItem.joins(:sale_order, :product)
+                         .merge(scope)
+                         .group('products.id')
+                         .select("products.id AS product_id, SUM(#{cogs_sql}) AS cogs")
+    end
+    sales = build_sales.call(primary_scope)
+    cogs  = cogs_for.call(primary_scope)
+    cogs_map = cogs.index_by { |r| r.attributes['product_id'].to_i }
+  rel = sales.select('SUM('+rev_sql+') - COALESCE(SUM('+cogs_sql+'),0) AS profit').order('profit DESC').limit(10)
+  unless SaleOrderItem.joins(:sale_order).merge(primary_scope).exists?
+      sales = build_sales.call(fallback_scope)
+      cogs  = cogs_for.call(fallback_scope)
+      cogs_map = cogs.index_by { |r| r.attributes['product_id'].to_i }
+      rel = sales.select('SUM('+rev_sql+') - COALESCE(SUM('+cogs_sql+'),0) AS profit').order('profit DESC').limit(10)
+    end
+  @rows = rel.map do |r|
+      pid = r.attributes['product_id'].to_i
+      {
+        product_id: pid,
+        name: r.attributes['product_name'],
+        brand: r.attributes['brand'],
+        category: r.attributes['category'],
+  revenue: (r.attributes['revenue'] || 0).to_d,
+  cogs: (cogs_map[pid]&.attributes&.dig('cogs') || 0).to_d,
+        profit: r.attributes['profit'].to_d
+      }
+    end
+  @period = period
+  # Sin paginación
+    respond_to do |format|
+      format.html { render :profitable, layout: false }
+    end
+  end
+
+  # Turbo Frame: Top Inventario (por valor/unidades y scope inv/res/all)
+  def inventory_top
+    authorize_admin!
+    scope = params[:scope].presence || 'inv'  # inv | res | all
+    metric = params[:metric].presence || 'value' # value | qty
+  # Top 10 sin paginación
+
+    statuses = case scope
+               when 'res' then [:reserved, :pre_reserved, :pre_sold]
+               when 'all' then [:available, :in_transit, :reserved, :pre_reserved, :pre_sold]
+               else [:available, :in_transit]
+               end
+
+    base = Inventory.joins(:product)
+                    .where(status: statuses)
+                    .group('products.id','products.product_name','products.brand','products.category')
+
+    rel = if metric == 'qty'
+            base.select('products.id, products.product_name, products.brand, products.category, COUNT(inventories.id) AS units_count, SUM(inventories.purchase_cost) AS inventory_value')
+                .order('units_count DESC')
+          else
+            base.select('products.id, products.product_name, products.brand, products.category, SUM(inventories.purchase_cost) AS inventory_value')
+                .order('inventory_value DESC')
+          end
+
+  rel = rel.limit(10)
+  @rows = rel.map do |r|
+      {
+        product_id: r.id,
+        name: r.product_name,
+        brand: r.brand,
+        category: r.category,
+        units_count: r.try(:attributes).try(:[], 'units_count').to_i,
+        inventory_value: r.try(:attributes).try(:[], 'inventory_value').to_d
+      }
+    end
+  @scope = scope
+  @metric = metric
+  # Sin paginación
+    respond_to do |format|
+      format.html { render :inventory_top, layout: false }
+    end
+  end
+
+  # Turbo Frame: Top Categorías por periodo y métrica (rev|profit)
+  def categories_rank
+    authorize_admin!
+    now = Time.zone.now
+    period = params[:period].presence || 'ytd'
+    metric = params[:metric].presence || 'rev' # rev | profit
+  # Top 10 sin paginación
+
+    so_scope = SaleOrder.where.not(status: 'Canceled')
+    range_scope = case period
+                  when 'ly'
+                    ly_start = now.beginning_of_year - 1.year
+                    so_scope.where(order_date: ly_start..ly_start.end_of_year)
+                  when 'all'
+                    so_scope
+                  else
+                    so_scope.where(order_date: now.beginning_of_year..now.end_of_day)
+                  end
+
+    rev_sql = Arel.sql("COALESCE(sale_order_items.unit_final_price, 0) * COALESCE(sale_order_items.quantity, 0)")
+    cogs_sql = Arel.sql("COALESCE(sale_order_items.unit_cost, 0) * COALESCE(sale_order_items.quantity, 0)")
+
+    by_cat_rev = SaleOrderItem.joins(:sale_order, :product)
+                               .merge(range_scope)
+                               .group('products.category')
+                               .sum(rev_sql)
+    rows = if metric == 'profit'
+             by_cat_cogs = SaleOrderItem.joins(:sale_order, :product)
+                                        .merge(range_scope)
+                                        .group('products.category')
+                                        .sum(cogs_sql)
+             cats = (by_cat_rev.keys + by_cat_cogs.keys).uniq
+             cats.map do |cat|
+               rev = by_cat_rev[cat].to_d
+               cogs = by_cat_cogs[cat].to_d
+               { category: (cat.presence || 'Uncategorized'), value: (rev - cogs) }
+             end
+           else
+             by_cat_rev.map { |cat, val| { category: (cat.presence || 'Uncategorized'), value: val.to_d } }
+           end
+    rows.sort_by! { |h| -h[:value].to_d }
+  @rows = rows.first(10)
+    @period = period
+    @metric = metric
+  # Sin paginación
+    respond_to do |format|
+      format.html { render :categories_rank, layout: false }
+    end
+  end
+
+  # Turbo Frame: Top Customers por periodo y métrica (sales|reserved|combined)
+  def customers_rank
+    authorize_admin!
+    now = Time.zone.now
+    period = params[:period].presence || 'ytd'
+    metric = params[:metric].presence || 'sales' # sales | reserved | combined
+  # Top 10 sin paginación
+
+    so_scope = SaleOrder.where.not(status: 'Canceled')
+    paid_statuses = %w[Confirmed Shipped Delivered]
+    range_scope = case period
+                  when 'ly'
+                    ly_start = now.beginning_of_year - 1.year
+                    so_scope.where(order_date: ly_start..ly_start.end_of_year)
+                  when 'all'
+                    so_scope
+                  else
+                    so_scope.where(order_date: now.beginning_of_year..now.end_of_day)
+                  end
+
+  # Sales per user within range (paid-first, with fallback)
+  rev_sql = "COALESCE(sale_order_items.unit_final_price, 0) * COALESCE(sale_order_items.quantity, 0)"
+  sales_rows_paid = SaleOrderItem.joins(sale_order: :user)
+                   .merge(range_scope.where(status: paid_statuses))
+                   .group('users.id','users.name')
+                   .select("users.id AS user_id, users.name AS name, COUNT(DISTINCT sale_orders.id) AS orders_count, SUM(#{rev_sql}) AS revenue")
+  sales_rows_any = SaleOrderItem.joins(sale_order: :user)
+                  .merge(range_scope)
+                  .group('users.id','users.name')
+                  .select("users.id AS user_id, users.name AS name, COUNT(DISTINCT sale_orders.id) AS orders_count, SUM(#{rev_sql}) AS revenue")
+
+    # Reserved per user within range
+    reserved_statuses = [:reserved, :pre_reserved, :pre_sold]
+    reserved_rows = Inventory.joins(sale_order: :user)
+                             .merge(range_scope)
+                             .where(status: reserved_statuses)
+                             .group('users.id','users.name')
+                             .select('users.id AS user_id, users.name AS name, COUNT(inventories.id) AS units_reserved, SUM(inventories.purchase_cost) AS reserved_value')
+
+    rows = case metric
+           when 'reserved'
+             reserved_rows.map { |r| { user_id: r.attributes['user_id'].to_i, name: (r.attributes['name'].presence || r.attributes['user_id']), units_reserved: r.attributes['units_reserved'].to_i, reserved_value: r.attributes['reserved_value'].to_d } }
+                       .sort_by { |h| -h[:reserved_value] }
+           when 'combined'
+             s_map = sales_rows_paid.index_by { |r| r.attributes['user_id'].to_i }
+             r_map = reserved_rows.index_by { |r| r.attributes['user_id'].to_i }
+             (s_map.keys + r_map.keys).uniq.map do |uid|
+               s = s_map[uid]
+               r = r_map[uid]
+               name = (s&.attributes&.dig('name').presence || r&.attributes&.dig('name').presence || uid)
+               orders = s&.attributes&.dig('orders_count').to_i
+               revenue = s&.attributes&.dig('revenue').to_d
+               units_reserved = r&.attributes&.dig('units_reserved').to_i
+               reserved_value = r&.attributes&.dig('reserved_value').to_d
+               total = revenue + reserved_value
+               { user_id: uid, name:, orders_count: orders, revenue:, units_reserved:, reserved_value:, total: total }
+            end.sort_by { |h| -h[:total] }
+           else # 'sales'
+             sales_rows_paid.map { |r| { user_id: r.attributes['user_id'].to_i, name: (r.attributes['name'].presence || r.attributes['user_id']), orders_count: r.attributes['orders_count'].to_i, revenue: r.attributes['revenue'].to_d } }
+                       .sort_by { |h| -h[:revenue] }
+           end
+
+    # Fallback: si 'sales' o 'combined' quedaron vacíos, usar ventas sin filtrar por estatus (excepto Cancelado)
+    if rows.blank?
+      case metric
+      when 'combined'
+        s_map = sales_rows_any.index_by { |r| r.attributes['user_id'].to_i }
+        r_map = reserved_rows.index_by { |r| r.attributes['user_id'].to_i }
+        rows = (s_map.keys + r_map.keys).uniq.map do |uid|
+          s = s_map[uid]
+          r = r_map[uid]
+          name = (s&.attributes&.dig('name').presence || r&.attributes&.dig('name').presence || uid)
+          orders = s&.attributes&.dig('orders_count').to_i
+          revenue = s&.attributes&.dig('revenue').to_d
+          units_reserved = r&.attributes&.dig('units_reserved').to_i
+          reserved_value = r&.attributes&.dig('reserved_value').to_d
+          total = revenue + reserved_value
+          { user_id: uid, name:, orders_count: orders, revenue:, units_reserved:, reserved_value:, total: total }
+        end.sort_by { |h| -h[:total] }
+      when 'sales'
+        rows = sales_rows_any.map { |r| { user_id: r.attributes['user_id'].to_i, name: (r.attributes['name'].presence || r.attributes['user_id']), orders_count: r.attributes['orders_count'].to_i, revenue: r.attributes['revenue'].to_d } }
+                              .sort_by { |h| -h[:revenue] }
+      end
+    end
+
+  @rows = rows.first(10)
+    @period = period
+    @metric = metric
+  # Sin paginación
+    respond_to do |format|
+      format.html { render :customers_rank, layout: false }
+    end
+  end
   @top_users_ytd_vs_prev = @top_users_range.map do |u|
     prev = prev_map[u[:user_id]] || { orders_count: 0, revenue: 0.to_d }
     delta = prev[:revenue].to_d.positive? ? ((u[:revenue] - prev[:revenue]) / prev[:revenue]) : nil
