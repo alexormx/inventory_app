@@ -29,3 +29,9 @@ thead th {
 .table .placeholder-row td {
   height: 36px;
 }
+
+.spinner-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+}

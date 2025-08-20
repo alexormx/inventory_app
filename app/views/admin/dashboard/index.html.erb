@@ -132,20 +132,12 @@
           <div class="d-flex flex-column flex-md-row w-100 justify-content-between align-items-md-center gap-2">
             <i class="fa-solid fa-boxes"></i> Productos
             <ul class="nav nav-tabs nav-tabs-sm card-header-tabs mt-2 d-none d-md-flex" role="tablist">
-              <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-sellers-ytd" type="button" role="tab" aria-controls="tp-sellers-ytd" aria-selected="true">Sellers · YTD</button></li>
-              <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-sellers-ly" type="button" role="tab" aria-controls="tp-sellers-ly">Sellers · LY</button></li>
-              <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-sellers-all" type="button" role="tab" aria-controls="tp-sellers-all">Sellers · All</button></li>
-              <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-profit-ytd" type="button" role="tab" aria-controls="tp-profit-ytd">Rentables · YTD</button></li>
-              <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-profit-ly" type="button" role="tab" aria-controls="tp-profit-ly">Rentables · LY</button></li>
-              <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-profit-all" type="button" role="tab" aria-controls="tp-profit-all">Rentables · All</button></li>
+              <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-sellers" type="button" role="tab" aria-controls="tp-sellers" aria-selected="true">Sellers</button></li>
+              <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-profit" type="button" role="tab" aria-controls="tp-profit">Rentables</button></li>
             </ul>
             <select class="form-select form-select-sm d-md-none w-auto" aria-label="Seleccionar pestaña" data-action="change->tabs#select">
-              <option value="#tp-sellers-ytd" selected>Sellers · YTD</option>
-              <option value="#tp-sellers-ly">Sellers · LY</option>
-              <option value="#tp-sellers-all">Sellers · All</option>
-              <option value="#tp-profit-ytd">Rentables · YTD</option>
-              <option value="#tp-profit-ly">Rentables · LY</option>
-              <option value="#tp-profit-all">Rentables · All</option>
+              <option value="#tp-sellers" selected>Sellers</option>
+              <option value="#tp-profit">Rentables</option>
             </select>
           </div>
           <div>
@@ -154,145 +146,194 @@
         </div>
         <div class="card-body p-0">
           <div class="tab-content">
-            <!-- Sellers YTD -->
-    <div class="tab-pane fade show active" id="tp-sellers-ytd" role="tabpanel" data-tabs-target="panel">
-      <turbo-frame id="frame-sellers-ytd" src="<%= admin_dashboard_sellers_path(period: 'ytd') %>">
-                    <div class="table-responsive dashboard-scroll">
-                      <table class="table table-sm mb-0">
-                        <thead>
-                          <tr>
-                            <th scope="col">Rank</th>
-                            <th scope="col">Producto</th>
-                            <th scope="col" class="text-end">Unidades</th>
-                            <th scope="col" class="text-end">Ingresos</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <% if @top_sellers_ytd.present? %>
-                            <% @top_sellers_ytd.each_with_index do |r, idx| %>
-                              <tr>
-                                <td class="text-muted">#<%= idx + 1 %></td>
-                                <td>
-                                  <div class="small fw-semibold"><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></div>
-                                  <% if r[:brand].present? || r[:category].present? %>
-                                    <div class="text-muted" style="font-size: .75rem;">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
-                                  <% end %>
-                                </td>
-                                <td class="text-end"><%= number_with_delimiter(r[:units]) %></td>
-                                <td class="text-end">$ <%= number_with_precision(r[:revenue], precision: 2, delimiter: ',') %></td>
-                              </tr>
-                            <% end %>
-                          <% else %>
+            <!-- Sellers main tab with subtabs -->
+            <div class="tab-pane fade show active" id="tp-sellers" role="tabpanel" data-tabs-target="panel">
+              <div data-controller="tabs">
+                <ul class="nav nav-tabs nav-tabs-sm px-3 pt-3 d-none d-md-flex" role="tablist">
+                  <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-sellers-ytd" type="button" role="tab" aria-controls="tp-sellers-ytd" aria-selected="true">YTD</button></li>
+                  <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-sellers-ly" type="button" role="tab" aria-controls="tp-sellers-ly">LY</button></li>
+                  <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-sellers-all" type="button" role="tab" aria-controls="tp-sellers-all">All</button></li>
+                </ul>
+                <div class="tab-content">
+                  <div class="tab-pane fade show active" id="tp-sellers-ytd" role="tabpanel" data-tabs-target="panel">
+                    <turbo-frame id="frame-sellers-ytd" src="<%= admin_dashboard_sellers_path(period: 'ytd') %>">
+                      <div class="table-responsive dashboard-scroll">
+                        <table class="table table-sm mb-0">
+                          <thead>
+                            <tr>
+                              <th scope="col">Rank</th>
+                              <th scope="col">Producto</th>
+                              <th scope="col" class="text-end">Unidades</th>
+                              <th scope="col" class="text-end">Ingresos</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr>
+                              <td colspan="4" class="text-center py-3">
+                                <div class="d-inline-flex align-items-center gap-2">
+                                  <div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div>
+                                  <span class="text-muted">Cargando…</span>
+                                </div>
+                              </td>
+                            </tr>
                             <% 3.times do %>
                               <tr class="placeholder-row">
                                 <td colspan="4" class="placeholder-glow"><span class="placeholder col-12"></span></td>
                               </tr>
                             <% end %>
-                          <% end %>
-                        </tbody>
-                      </table>
+                          </tbody>
+                        </table>
+                      </div>
+                    </turbo-frame>
+                  </div>
+                  <div class="tab-pane fade" id="tp-sellers-ly" role="tabpanel" data-tabs-target="panel">
+                    <turbo-frame id="frame-sellers-ly" src="<%= admin_dashboard_sellers_path(period: 'ly') %>">
+                      <div class="table-responsive dashboard-scroll">
+                        <table class="table table-sm mb-0">
+                          <thead>
+                            <tr>
+                              <th scope="col">Rank</th>
+                              <th scope="col">Producto</th>
+                              <th scope="col" class="text-end">Unidades</th>
+                              <th scope="col" class="text-end">Ingresos</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr>
+                              <td colspan="4" class="text-center py-3">
+                                <div class="d-inline-flex align-items-center gap-2">
+                                  <div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div>
+                                  <span class="text-muted">Cargando…</span>
+                                </div>
+                              </td>
+                            </tr>
+                            <% 3.times do %>
+                              <tr class="placeholder-row">
+                                <td colspan="4" class="placeholder-glow"><span class="placeholder col-12"></span></td>
+                              </tr>
+                            <% end %>
+                          </tbody>
+                        </table>
+                      </div>
+                    </turbo-frame>
+                  </div>
+                  <div class="tab-pane fade" id="tp-sellers-all" role="tabpanel" data-tabs-target="panel">
+                    <turbo-frame id="frame-sellers-all" src="<%= admin_dashboard_sellers_path(period: 'all') %>">
+                      <div class="table-responsive dashboard-scroll">
+                        <table class="table table-sm mb-0">
+                          <thead>
+                            <tr>
+                              <th scope="col">Rank</th>
+                              <th scope="col">Producto</th>
+                              <th scope="col" class="text-end">Unidades</th>
+                              <th scope="col" class="text-end">Ingresos</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr>
+                              <td colspan="4" class="text-center py-3">
+                                <div class="d-inline-flex align-items-center gap-2">
+                                  <div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div>
+                                  <span class="text-muted">Cargando…</span>
+                                </div>
+                              </td>
+                            </tr>
+                            <% 3.times do %>
+                              <tr class="placeholder-row">
+                                <td colspan="4" class="placeholder-glow"><span class="placeholder col-12"></span></td>
+                              </tr>
+                            <% end %>
+                          </tbody>
+                        </table>
+                      </div>
+                    </turbo-frame>
+                  </div>
+                </div>
               </div>
-            </turbo-frame>
             </div>
-            <!-- Sellers LY -->
-            <div class="tab-pane fade" id="tp-sellers-ly" role="tabpanel" data-tabs-target="panel">
-                  <turbo-frame id="frame-sellers-ly" src="<%= admin_dashboard_sellers_path(period: 'ly') %>">
-                    <div class="table-responsive dashboard-scroll">
-                      <table class="table table-sm mb-0">
-                        <thead>
-                          <tr>
-                            <th scope="col">Rank</th>
-                            <th scope="col">Producto</th>
-                            <th scope="col" class="text-end">Unidades</th>
-                            <th scope="col" class="text-end">Ingresos</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <% 3.times do %>
-                            <tr class="placeholder-row">
-                              <td colspan="4" class="placeholder-glow"><span class="placeholder col-12"></span></td>
+            <!-- Rentables main tab with subtabs -->
+            <div class="tab-pane fade" id="tp-profit" role="tabpanel" data-tabs-target="panel">
+              <div data-controller="tabs">
+                <ul class="nav nav-tabs nav-tabs-sm px-3 pt-3 d-none d-md-flex" role="tablist">
+                  <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-profit-ytd" type="button" role="tab" aria-controls="tp-profit-ytd" aria-selected="true">YTD</button></li>
+                  <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-profit-ly" type="button" role="tab" aria-controls="tp-profit-ly">LY</button></li>
+                  <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-profit-all" type="button" role="tab" aria-controls="tp-profit-all">All</button></li>
+                </ul>
+                <div class="tab-content">
+                  <div class="tab-pane fade show active" id="tp-profit-ytd" role="tabpanel" data-tabs-target="panel">
+                    <turbo-frame id="frame-profit-ytd" src="<%= admin_dashboard_profitable_path(period: 'ytd') %>">
+                      <div class="table-responsive">
+                        <table class="table table-sm mb-0">
+                          <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Ingresos</th><th class="text-end">COGS</th><th class="text-end">Utilidad</th></tr></thead>
+                          <tbody>
+                            <tr>
+                              <td colspan="5" class="text-center py-3">
+                                <div class="d-inline-flex align-items-center gap-2">
+                                  <div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div>
+                                  <span class="text-muted">Cargando…</span>
+                                </div>
+                              </td>
                             </tr>
-                          <% end %>
-                        </tbody>
-                      </table>
-                    </div>
-                  </turbo-frame>
-            </div>
-            <!-- Sellers All -->
-            <div class="tab-pane fade" id="tp-sellers-all" role="tabpanel" data-tabs-target="panel">
-                  <turbo-frame id="frame-sellers-all" src="<%= admin_dashboard_sellers_path(period: 'all') %>">
-                    <div class="table-responsive dashboard-scroll">
-                      <table class="table table-sm mb-0">
-                        <thead>
-                          <tr>
-                            <th scope="col">Rank</th>
-                            <th scope="col">Producto</th>
-                            <th scope="col" class="text-end">Unidades</th>
-                            <th scope="col" class="text-end">Ingresos</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <% 3.times do %>
-                            <tr class="placeholder-row">
-                              <td colspan="4" class="placeholder-glow"><span class="placeholder col-12"></span></td>
+                            <% 3.times do %>
+                              <tr class="placeholder-row">
+                                <td colspan="5" class="placeholder-glow"><span class="placeholder col-12"></span></td>
+                              </tr>
+                            <% end %>
+                          </tbody>
+                        </table>
+                      </div>
+                    </turbo-frame>
+                  </div>
+                  <div class="tab-pane fade" id="tp-profit-ly" role="tabpanel" data-tabs-target="panel">
+                    <turbo-frame id="frame-profit-ly" src="<%= admin_dashboard_profitable_path(period: 'ly') %>">
+                      <div class="table-responsive">
+                        <table class="table table-sm mb-0">
+                          <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Ingresos</th><th class="text-end">COGS</th><th class="text-end">Utilidad</th></tr></thead>
+                          <tbody>
+                            <tr>
+                              <td colspan="5" class="text-center py-3">
+                                <div class="d-inline-flex align-items-center gap-2">
+                                  <div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div>
+                                  <span class="text-muted">Cargando…</span>
+                                </div>
+                              </td>
                             </tr>
-                          <% end %>
-                        </tbody>
-                      </table>
-                    </div>
-                  </turbo-frame>
-            </div>
-
-            <!-- Rentables YTD -->
-            <div class="tab-pane fade" id="tp-profit-ytd" role="tabpanel" data-tabs-target="panel">
-              <turbo-frame id="frame-profit-ytd" src="<%= admin_dashboard_profitable_path(period: 'ytd') %>">
-                <div class="table-responsive">
-                  <table class="table table-sm mb-0">
-                    <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Ingresos</th><th class="text-end">COGS</th><th class="text-end">Utilidad</th></tr></thead>
-                    <tbody>
-                      <% 3.times do %>
-                        <tr class="placeholder-row">
-                          <td colspan="5" class="placeholder-glow"><span class="placeholder col-12"></span></td>
-                        </tr>
-                      <% end %>
-                    </tbody>
-                  </table>
+                            <% 3.times do %>
+                              <tr class="placeholder-row">
+                                <td colspan="5" class="placeholder-glow"><span class="placeholder col-12"></span></td>
+                              </tr>
+                            <% end %>
+                          </tbody>
+                        </table>
+                      </div>
+                    </turbo-frame>
+                  </div>
+                  <div class="tab-pane fade" id="tp-profit-all" role="tabpanel" data-tabs-target="panel">
+                    <turbo-frame id="frame-profit-all" src="<%= admin_dashboard_profitable_path(period: 'all') %>">
+                      <div class="table-responsive">
+                        <table class="table table-sm mb-0">
+                          <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Ingresos</th><th class="text-end">COGS</th><th class="text-end">Utilidad</th></tr></thead>
+                          <tbody>
+                            <tr>
+                              <td colspan="5" class="text-center py-3">
+                                <div class="d-inline-flex align-items-center gap-2">
+                                  <div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div>
+                                  <span class="text-muted">Cargando…</span>
+                                </div>
+                              </td>
+                            </tr>
+                            <% 3.times do %>
+                              <tr class="placeholder-row">
+                                <td colspan="5" class="placeholder-glow"><span class="placeholder col-12"></span></td>
+                              </tr>
+                            <% end %>
+                          </tbody>
+                        </table>
+                      </div>
+                    </turbo-frame>
+                  </div>
                 </div>
-              </turbo-frame>
-            </div>
-            <!-- Rentables LY -->
-            <div class="tab-pane fade" id="tp-profit-ly" role="tabpanel" data-tabs-target="panel">
-              <turbo-frame id="frame-profit-ly" src="<%= admin_dashboard_profitable_path(period: 'ly') %>">
-                <div class="table-responsive">
-                  <table class="table table-sm mb-0">
-                    <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Ingresos</th><th class="text-end">COGS</th><th class="text-end">Utilidad</th></tr></thead>
-                    <tbody>
-                      <% 3.times do %>
-                        <tr class="placeholder-row">
-                          <td colspan="5" class="placeholder-glow"><span class="placeholder col-12"></span></td>
-                        </tr>
-                      <% end %>
-                    </tbody>
-                  </table>
-                </div>
-              </turbo-frame>
-            </div>
-            <!-- Rentables All -->
-            <div class="tab-pane fade" id="tp-profit-all" role="tabpanel" data-tabs-target="panel">
-              <turbo-frame id="frame-profit-all" src="<%= admin_dashboard_profitable_path(period: 'all') %>">
-                <div class="table-responsive">
-                  <table class="table table-sm mb-0">
-                    <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Ingresos</th><th class="text-end">COGS</th><th class="text-end">Utilidad</th></tr></thead>
-                    <tbody>
-                      <% 3.times do %>
-                        <tr class="placeholder-row">
-                          <td colspan="5" class="placeholder-glow"><span class="placeholder col-12"></span></td>
-                        </tr>
-                      <% end %>
-                    </tbody>
-                  </table>
-                </div>
-              </turbo-frame>
+              </div>
             </div>
           </div>
         </div>
@@ -330,6 +371,14 @@
                   <table class="table table-sm mb-0">
                     <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Valor de Inventario</th></tr></thead>
                     <tbody>
+                      <tr>
+                        <td colspan="3" class="text-center py-3">
+                          <div class="d-inline-flex align-items-center gap-2">
+                            <div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div>
+                            <span class="text-muted">Cargando…</span>
+                          </div>
+                        </td>
+                      </tr>
                       <% 3.times do %>
                         <tr class="placeholder-row">
                           <td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td>
@@ -347,6 +396,14 @@
                   <table class="table table-sm mb-0">
                     <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Unidades</th><th class="text-end">Valor (MXN)</th></tr></thead>
                     <tbody>
+                      <tr>
+                        <td colspan="4" class="text-center py-3">
+                          <div class="d-inline-flex align-items-center gap-2">
+                            <div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div>
+                            <span class="text-muted">Cargando…</span>
+                          </div>
+                        </td>
+                      </tr>
                       <% 3.times do %>
                         <tr class="placeholder-row">
                           <td colspan="4" class="placeholder-glow"><span class="placeholder col-12"></span></td>
@@ -364,6 +421,14 @@
                   <table class="table table-sm mb-0">
                     <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Valor de Apartados</th></tr></thead>
                     <tbody>
+                      <tr>
+                        <td colspan="3" class="text-center py-3">
+                          <div class="d-inline-flex align-items-center gap-2">
+                            <div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div>
+                            <span class="text-muted">Cargando…</span>
+                          </div>
+                        </td>
+                      </tr>
                       <% 3.times do %>
                         <tr class="placeholder-row">
                           <td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td>
@@ -381,6 +446,14 @@
                   <table class="table table-sm mb-0">
                     <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Unidades</th><th class="text-end">Valor (MXN)</th></tr></thead>
                     <tbody>
+                      <tr>
+                        <td colspan="4" class="text-center py-3">
+                          <div class="d-inline-flex align-items-center gap-2">
+                            <div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div>
+                            <span class="text-muted">Cargando…</span>
+                          </div>
+                        </td>
+                      </tr>
                       <% 3.times do %>
                         <tr class="placeholder-row">
                           <td colspan="4" class="placeholder-glow"><span class="placeholder col-12"></span></td>
@@ -398,6 +471,14 @@
                   <table class="table table-sm mb-0">
                     <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Valor (MXN)</th></tr></thead>
                     <tbody>
+                      <tr>
+                        <td colspan="3" class="text-center py-3">
+                          <div class="d-inline-flex align-items-center gap-2">
+                            <div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div>
+                            <span class="text-muted">Cargando…</span>
+                          </div>
+                        </td>
+                      </tr>
                       <% 3.times do %>
                         <tr class="placeholder-row">
                           <td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td>
@@ -415,6 +496,14 @@
                   <table class="table table-sm mb-0">
                     <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Unidades</th><th class="text-end">Valor (MXN)</th></tr></thead>
                     <tbody>
+                      <tr>
+                        <td colspan="4" class="text-center py-3">
+                          <div class="d-inline-flex align-items-center gap-2">
+                            <div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div>
+                            <span class="text-muted">Cargando…</span>
+                          </div>
+                        </td>
+                      </tr>
                       <% 3.times do %>
                         <tr class="placeholder-row">
                           <td colspan="4" class="placeholder-glow"><span class="placeholder col-12"></span></td>
@@ -461,6 +550,7 @@
             <div class="tab-pane fade show active" id="tc-ytd-rev" role="tabpanel" data-tabs-target="panel">
               <turbo-frame id="frame-cats-ytd-rev" src="<%= admin_dashboard_categories_rank_path(period: 'ytd', metric: 'rev') %>">
                 <div class="table-responsive"><table class="table table-sm mb-0"><tbody>
+                  <tr><td colspan="3" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
                   <% 3.times do %><tr class="placeholder-row"><td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
                 </tbody></table></div>
               </turbo-frame>
@@ -469,6 +559,7 @@
             <div class="tab-pane fade" id="tc-ytd-prof" role="tabpanel" data-tabs-target="panel">
               <turbo-frame id="frame-cats-ytd-profit" src="<%= admin_dashboard_categories_rank_path(period: 'ytd', metric: 'profit') %>">
                 <div class="table-responsive"><table class="table table-sm mb-0"><tbody>
+                  <tr><td colspan="3" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
                   <% 3.times do %><tr class="placeholder-row"><td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
                 </tbody></table></div>
               </turbo-frame>
@@ -477,6 +568,7 @@
             <div class="tab-pane fade" id="tc-ly-rev" role="tabpanel" data-tabs-target="panel">
               <turbo-frame id="frame-cats-ly-rev" src="<%= admin_dashboard_categories_rank_path(period: 'ly', metric: 'rev') %>">
                 <div class="table-responsive"><table class="table table-sm mb-0"><tbody>
+                  <tr><td colspan="3" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
                   <% 3.times do %><tr class="placeholder-row"><td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
                 </tbody></table></div>
               </turbo-frame>
@@ -485,6 +577,7 @@
             <div class="tab-pane fade" id="tc-ly-prof" role="tabpanel" data-tabs-target="panel">
               <turbo-frame id="frame-cats-ly-profit" src="<%= admin_dashboard_categories_rank_path(period: 'ly', metric: 'profit') %>">
                 <div class="table-responsive"><table class="table table-sm mb-0"><tbody>
+                  <tr><td colspan="3" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
                   <% 3.times do %><tr class="placeholder-row"><td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
                 </tbody></table></div>
               </turbo-frame>
@@ -493,6 +586,7 @@
             <div class="tab-pane fade" id="tc-all-rev" role="tabpanel" data-tabs-target="panel">
               <turbo-frame id="frame-cats-all-rev" src="<%= admin_dashboard_categories_rank_path(period: 'all', metric: 'rev') %>">
                 <div class="table-responsive"><table class="table table-sm mb-0"><tbody>
+                  <tr><td colspan="3" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
                   <% 3.times do %><tr class="placeholder-row"><td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
                 </tbody></table></div>
               </turbo-frame>
@@ -501,6 +595,7 @@
             <div class="tab-pane fade" id="tc-all-prof" role="tabpanel" data-tabs-target="panel">
               <turbo-frame id="frame-cats-all-profit" src="<%= admin_dashboard_categories_rank_path(period: 'all', metric: 'profit') %>">
                 <div class="table-responsive"><table class="table table-sm mb-0"><tbody>
+                  <tr><td colspan="3" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
                   <% 3.times do %><tr class="placeholder-row"><td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
                 </tbody></table></div>
               </turbo-frame>
@@ -543,6 +638,7 @@
             <div class="tab-pane fade show active" id="rank-range-sales" role="tabpanel" data-tabs-target="panel">
               <turbo-frame id="frame-cust-ytd-sales" src="<%= admin_dashboard_customers_rank_path(period: 'ytd', metric: 'sales') %>">
                 <div class="table-responsive"><table class="table table-sm mb-0"><tbody>
+                  <tr><td colspan="6" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
                   <% 3.times do %><tr class="placeholder-row"><td colspan="6" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
                 </tbody></table></div>
               </turbo-frame>
@@ -551,6 +647,7 @@
             <div class="tab-pane fade" id="rank-range-reserved" role="tabpanel" data-tabs-target="panel">
               <turbo-frame id="frame-cust-ytd-reserved" src="<%= admin_dashboard_customers_rank_path(period: 'ytd', metric: 'reserved') %>">
                 <div class="table-responsive"><table class="table table-sm mb-0"><tbody>
+                  <tr><td colspan="4" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
                   <% 3.times do %><tr class="placeholder-row"><td colspan="4" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
                 </tbody></table></div>
               </turbo-frame>
@@ -559,6 +656,7 @@
             <div class="tab-pane fade" id="rank-range-combined" role="tabpanel" data-tabs-target="panel">
               <turbo-frame id="frame-cust-ytd-combined" src="<%= admin_dashboard_customers_rank_path(period: 'ytd', metric: 'combined') %>">
                 <div class="table-responsive"><table class="table table-sm mb-0"><tbody>
+                  <tr><td colspan="6" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
                   <% 3.times do %><tr class="placeholder-row"><td colspan="6" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
                 </tbody></table></div>
               </turbo-frame>
@@ -567,6 +665,7 @@
             <div class="tab-pane fade" id="rank-ly-sales" role="tabpanel" data-tabs-target="panel">
               <turbo-frame id="frame-cust-ly-sales" src="<%= admin_dashboard_customers_rank_path(period: 'ly', metric: 'sales') %>">
                 <div class="table-responsive"><table class="table table-sm mb-0"><tbody>
+                  <tr><td colspan="4" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
                   <% 3.times do %><tr class="placeholder-row"><td colspan="4" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
                 </tbody></table></div>
               </turbo-frame>
@@ -575,6 +674,7 @@
             <div class="tab-pane fade" id="rank-ly-reserved" role="tabpanel" data-tabs-target="panel">
               <turbo-frame id="frame-cust-ly-reserved" src="<%= admin_dashboard_customers_rank_path(period: 'ly', metric: 'reserved') %>">
                 <div class="table-responsive"><table class="table table-sm mb-0"><tbody>
+                  <tr><td colspan="4" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
                   <% 3.times do %><tr class="placeholder-row"><td colspan="4" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
                 </tbody></table></div>
               </turbo-frame>
@@ -583,6 +683,7 @@
             <div class="tab-pane fade" id="rank-ly-combined" role="tabpanel" data-tabs-target="panel">
               <turbo-frame id="frame-cust-ly-combined" src="<%= admin_dashboard_customers_rank_path(period: 'ly', metric: 'combined') %>">
                 <div class="table-responsive"><table class="table table-sm mb-0"><tbody>
+                  <tr><td colspan="6" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
                   <% 3.times do %><tr class="placeholder-row"><td colspan="6" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
                 </tbody></table></div>
               </turbo-frame>
@@ -591,6 +692,7 @@
             <div class="tab-pane fade" id="rank-all-sales" role="tabpanel" data-tabs-target="panel">
               <turbo-frame id="frame-cust-all-sales" src="<%= admin_dashboard_customers_rank_path(period: 'all', metric: 'sales') %>">
                 <div class="table-responsive"><table class="table table-sm mb-0"><tbody>
+                  <tr><td colspan="4" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
                   <% 3.times do %><tr class="placeholder-row"><td colspan="4" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
                 </tbody></table></div>
               </turbo-frame>
@@ -599,6 +701,7 @@
             <div class="tab-pane fade" id="rank-all-reserved" role="tabpanel" data-tabs-target="panel">
               <turbo-frame id="frame-cust-all-reserved" src="<%= admin_dashboard_customers_rank_path(period: 'all', metric: 'reserved') %>">
                 <div class="table-responsive"><table class="table table-sm mb-0"><tbody>
+                  <tr><td colspan="4" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
                   <% 3.times do %><tr class="placeholder-row"><td colspan="4" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
                 </tbody></table></div>
               </turbo-frame>
@@ -607,6 +710,7 @@
             <div class="tab-pane fade" id="rank-all-combined" role="tabpanel" data-tabs-target="panel">
               <turbo-frame id="frame-cust-all-combined" src="<%= admin_dashboard_customers_rank_path(period: 'all', metric: 'combined') %>">
                 <div class="table-responsive"><table class="table table-sm mb-0"><tbody>
+                  <tr><td colspan="6" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
                   <% 3.times do %><tr class="placeholder-row"><td colspan="6" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
                 </tbody></table></div>
               </turbo-frame>

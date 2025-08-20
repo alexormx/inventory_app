@@ -1,4 +1,3 @@
-<% rel ||= @rel %>
 <% rows ||= @rows %>
 <% period ||= @period %>
 <% metric ||= @metric %>
@@ -27,7 +26,7 @@
         <% if rows.present? %>
           <% rows.each_with_index do |u, idx| %>
             <tr>
-              <td class="text-muted">#<%= ((rel.current_page - 1) * rel.limit_value) + idx + 1 %></td>
+              <td class="text-muted">#<%= idx + 1 %></td>
               <td><%= link_to (u[:name] || u[:user_id]), edit_admin_user_path(u[:user_id]) %></td>
               <% if metric == 'reserved' %>
                 <td class="text-end"><%= number_with_delimiter(u[:units_reserved]) %></td>
@@ -44,26 +43,12 @@
             </tr>
           <% end %>
         <% else %>
-          <% 3.times do %>
-            <tr class="placeholder-row"><td colspan="7" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr>
-          <% end %>
+          <tr>
+            <td colspan="7" class="text-center text-muted py-3">Sin datos</td>
+          </tr>
         <% end %>
       </tbody>
     </table>
   </div>
-  <div class="px-3 py-2 d-flex justify-content-between align-items-center">
-    <div class="small text-muted"><%= page_entries_info rel if defined?(page_entries_info) && rel.respond_to?(:current_page) %></div>
-    <nav aria-label="Paginación clientes">
-      <ul class="pagination pagination-sm mb-0">
-        <% prev_params = request.query_parameters.merge(page: rel.prev_page, period: period, metric: metric, per: rel.limit_value) %>
-        <% next_params = request.query_parameters.merge(page: rel.next_page, period: period, metric: metric, per: rel.limit_value) %>
-        <li class="page-item <%= 'disabled' unless rel.prev_page %>">
-          <%= link_to 'Anterior', admin_dashboard_customers_rank_path(prev_params), data: { turbo_frame: "frame-cust-#{period}-#{metric}" }, class: 'page-link' %>
-        </li>
-        <li class="page-item <%= 'disabled' unless rel.next_page %>">
-          <%= link_to 'Siguiente', admin_dashboard_customers_rank_path(next_params), data: { turbo_frame: "frame-cust-#{period}-#{metric}" }, class: 'page-link' %>
-        </li>
-      </ul>
-    </nav>
-  </div>
+  <!-- Sin paginación -->
 </turbo-frame>

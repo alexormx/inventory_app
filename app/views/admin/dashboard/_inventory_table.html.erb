@@ -6,6 +6,7 @@
   <table class="table table-sm align-middle">
     <thead class="table-light sticky-top">
       <tr>
+        <th scope="col">Rank</th>
         <th scope="col">Producto</th>
         <th scope="col">Marca</th>
         <th scope="col">Categoría</th>
@@ -15,8 +16,9 @@
     </thead>
     <tbody>
       <% if rows.present? %>
-        <% rows.each do |r| %>
+        <% rows.each_with_index do |r, idx| %>
           <tr>
+            <td class="text-muted">#<%= idx + 1 %></td>
             <td><%= r[:name] %></td>
             <td><%= r[:brand] %></td>
             <td><%= r[:category] %></td>
@@ -26,30 +28,10 @@
         <% end %>
       <% else %>
         <tr>
-          <td colspan="5">
-            <div class="placeholder-glow py-3">
-              <span class="placeholder col-12"></span>
-            </div>
-          </td>
+          <td colspan="6" class="text-center text-muted py-3">Sin datos</td>
         </tr>
       <% end %>
     </tbody>
   </table>
 </div>
-<div class="px-3 py-2 d-flex justify-content-between align-items-center">
-  <div class="small text-muted">
-    <%= page_entries_info rel if defined?(page_entries_info) && rel.respond_to?(:current_page) %>
-  </div>
-  <nav aria-label="Paginación inventario">
-    <ul class="pagination pagination-sm mb-0">
-      <% prev_params = request.query_parameters.merge(page: rel.prev_page, scope: scope, metric: metric, per: rel.limit_value) %>
-      <% next_params = request.query_parameters.merge(page: rel.next_page, scope: scope, metric: metric, per: rel.limit_value) %>
-      <li class="page-item <%= 'disabled' unless rel.prev_page %>">
-        <%= link_to 'Anterior', admin_dashboard_inventory_top_path(prev_params), data: { turbo_frame: "frame-inventory-#{scope}-#{metric}" }, class: 'page-link' %>
-      </li>
-      <li class="page-item <%= 'disabled' unless rel.next_page %>">
-        <%= link_to 'Siguiente', admin_dashboard_inventory_top_path(next_params), data: { turbo_frame: "frame-inventory-#{scope}-#{metric}" }, class: 'page-link' %>
-      </li>
-    </ul>
-  </nav>
-</div>
+<!-- Sin paginación -->
