@@ -57,6 +57,340 @@
       %>
     </div>
   </div>
+
+  <!-- Top productos + Top inventario (lado a lado) -->
+  <div class="row g-3 mt-2">
+    <div class="col-xl-8">
+      <div class="card h-100" data-controller="tabs">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span><i class="fa-solid fa-box"></i> Top Productos</span>
+          <ul class="nav nav-tabs nav-tabs-sm card-header-tabs d-none d-md-flex" role="tablist">
+            <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-sellers" type="button" role="tab" aria-controls="tp-sellers" aria-selected="true">Vendedores</button></li>
+            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-profit" type="button" role="tab" aria-controls="tp-profit">Rentables</button></li>
+          </ul>
+          <select class="form-select form-select-sm d-md-none w-auto" aria-label="Seleccionar grupo" data-action="change->tabs#select">
+            <option value="#tp-sellers" selected>Vendedores</option>
+            <option value="#tp-profit">Rentables</option>
+          </select>
+        </div>
+        <div class="card-body p-0">
+          <div class="tab-content">
+            <!-- Vendedores main tab with subtabs -->
+            <div class="tab-pane fade show active" id="tp-sellers" role="tabpanel" data-tabs-target="panel">
+              <div data-controller="tabs">
+                <ul class="nav nav-tabs nav-tabs-sm px-3 pt-3 d-none d-md-flex" role="tablist">
+                  <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-sellers-ytd" type="button" role="tab" aria-controls="tp-sellers-ytd" aria-selected="true">YTD</button></li>
+                  <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-sellers-ly" type="button" role="tab" aria-controls="tp-sellers-ly">LY</button></li>
+                  <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-sellers-all" type="button" role="tab" aria-controls="tp-sellers-all">All</button></li>
+                </ul>
+                <div class="tab-content">
+                  <div class="tab-pane fade show active" id="tp-sellers-ytd" role="tabpanel" data-tabs-target="panel">
+                    <turbo-frame id="frame-sellers-ytd" src="<%= admin_dashboard_sellers_path(period: 'ytd') %>">
+                      <div class="table-responsive p-2 px-3">
+                        <table class="table table-sm mb-0">
+                          <thead>
+                            <tr>
+                              <th scope="col">Rank</th>
+                              <th scope="col">Producto</th>
+                              <th scope="col" class="text-end">Unidades</th>
+                              <th scope="col" class="text-end">Ingresos</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr>
+                              <td colspan="4" class="text-center py-3">
+                                <div class="d-inline-flex align-items-center gap-2">
+                                  <div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div>
+                                  <span class="text-muted">Cargando…</span>
+                                </div>
+                              </td>
+                            </tr>
+                            <% 3.times do %>
+                              <tr class="placeholder-row">
+                                <td colspan="4" class="placeholder-glow"><span class="placeholder col-12"></span></td>
+                              </tr>
+                            <% end %>
+                          </tbody>
+                        </table>
+                      </div>
+                    </turbo-frame>
+                  </div>
+                  <div class="tab-pane fade" id="tp-sellers-ly" role="tabpanel" data-tabs-target="panel">
+                    <turbo-frame id="frame-sellers-ly" src="<%= admin_dashboard_sellers_path(period: 'ly') %>">
+                      <div class="table-responsive p-2 px-3">
+                        <table class="table table-sm mb-0">
+                          <thead>
+                            <tr>
+                              <th scope="col">Rank</th>
+                              <th scope="col">Producto</th>
+                              <th scope="col" class="text-end">Unidades</th>
+                              <th scope="col" class="text-end">Ingresos</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr>
+                              <td colspan="4" class="text-center py-3">
+                                <div class="d-inline-flex align-items-center gap-2">
+                                  <div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div>
+                                  <span class="text-muted">Cargando…</span>
+                                </div>
+                              </td>
+                            </tr>
+                            <% 3.times do %>
+                              <tr class="placeholder-row">
+                                <td colspan="4" class="placeholder-glow"><span class="placeholder col-12"></span></td>
+                              </tr>
+                            <% end %>
+                          </tbody>
+                        </table>
+                      </div>
+                    </turbo-frame>
+                  </div>
+                  <div class="tab-pane fade" id="tp-sellers-all" role="tabpanel" data-tabs-target="panel">
+                    <turbo-frame id="frame-sellers-all" src="<%= admin_dashboard_sellers_path(period: 'all') %>">
+                      <div class="table-responsive p-2 px-3">
+                        <table class="table table-sm mb-0">
+                          <thead>
+                            <tr>
+                              <th scope="col">Rank</th>
+                              <th scope="col">Producto</th>
+                              <th scope="col" class="text-end">Unidades</th>
+                              <th scope="col" class="text-end">Ingresos</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr>
+                              <td colspan="4" class="text-center py-3">
+                                <div class="d-inline-flex align-items-center gap-2">
+                                  <div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div>
+                                  <span class="text-muted">Cargando…</span>
+                                </div>
+                              </td>
+                            </tr>
+                            <% 3.times do %>
+                              <tr class="placeholder-row">
+                                <td colspan="4" class="placeholder-glow"><span class="placeholder col-12"></span></td>
+                              </tr>
+                            <% end %>
+                          </tbody>
+                        </table>
+                      </div>
+                    </turbo-frame>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- Rentables main tab with subtabs -->
+            <div class="tab-pane fade" id="tp-profit" role="tabpanel" data-tabs-target="panel">
+              <div data-controller="tabs">
+                <ul class="nav nav-tabs nav-tabs-sm px-3 pt-3 d-none d-md-flex" role="tablist">
+                  <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-profit-ytd" type="button" role="tab" aria-controls="tp-profit-ytd" aria-selected="true">YTD</button></li>
+                  <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-profit-ly" type="button" role="tab" aria-controls="tp-profit-ly">LY</button></li>
+                  <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-profit-all" type="button" role="tab" aria-controls="tp-profit-all">All</button></li>
+                </ul>
+                <div class="tab-content">
+                  <div class="tab-pane fade show active" id="tp-profit-ytd" role="tabpanel" data-tabs-target="panel">
+                    <turbo-frame id="frame-profit-ytd" src="<%= admin_dashboard_profitable_path(period: 'ytd') %>">
+                      <div class="table-responsive p-2 px-3">
+                        <table class="table table-sm mb-0">
+                          <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Ingresos</th><th class="text-end">COGS</th><th class="text-end">Utilidad</th></tr></thead>
+                          <tbody>
+                            <tr>
+                              <td colspan="5" class="text-center py-3">
+                                <div class="d-inline-flex align-items-center gap-2">
+                                  <div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div>
+                                  <span class="text-muted">Cargando…</span>
+                                </div>
+                              </td>
+                            </tr>
+                            <% 3.times do %>
+                              <tr class="placeholder-row">
+                                <td colspan="5" class="placeholder-glow"><span class="placeholder col-12"></span></td>
+                              </tr>
+                            <% end %>
+                          </tbody>
+                        </table>
+                      </div>
+                    </turbo-frame>
+                  </div>
+                  <div class="tab-pane fade" id="tp-profit-ly" role="tabpanel" data-tabs-target="panel">
+                    <turbo-frame id="frame-profit-ly" src="<%= admin_dashboard_profitable_path(period: 'ly') %>">
+                      <div class="table-responsive p-2 px-3">
+                        <table class="table table-sm mb-0">
+                          <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Ingresos</th><th class="text-end">COGS</th><th class="text-end">Utilidad</th></tr></thead>
+                          <tbody>
+                            <tr>
+                              <td colspan="5" class="text-center py-3">
+                                <div class="d-inline-flex align-items-center gap-2">
+                                  <div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div>
+                                  <span class="text-muted">Cargando…</span>
+                                </div>
+                              </td>
+                            </tr>
+                            <% 3.times do %>
+                              <tr class="placeholder-row">
+                                <td colspan="5" class="placeholder-glow"><span class="placeholder col-12"></span></td>
+                              </tr>
+                            <% end %>
+                          </tbody>
+                        </table>
+                      </div>
+                    </turbo-frame>
+                  </div>
+                  <div class="tab-pane fade" id="tp-profit-all" role="tabpanel" data-tabs-target="panel">
+                    <turbo-frame id="frame-profit-all" src="<%= admin_dashboard_profitable_path(period: 'all') %>">
+                      <div class="table-responsive p-2 px-3">
+                        <table class="table table-sm mb-0">
+                          <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Ingresos</th><th class="text-end">COGS</th><th class="text-end">Utilidad</th></tr></thead>
+                          <tbody>
+                            <tr>
+                              <td colspan="5" class="text-center py-3">
+                                <div class="d-inline-flex align-items-center gap-2">
+                                  <div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div>
+                                  <span class="text-muted">Cargando…</span>
+                                </div>
+                              </td>
+                            </tr>
+                            <% 3.times do %>
+                              <tr class="placeholder-row">
+                                <td colspan="5" class="placeholder-glow"><span class="placeholder col-12"></span></td>
+                              </tr>
+                            <% end %>
+                          </tbody>
+                        </table>
+                      </div>
+                    </turbo-frame>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-xl-4">
+      <div class="card h-100" data-controller="tabs">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span><i class="fa-solid fa-boxes-stacked"></i> Top Inventario</span>
+          <div class="d-flex align-items-center gap-2 justify-content-end">
+            <ul class="nav nav-tabs nav-tabs-sm card-header-tabs d-none d-md-flex" role="tablist">
+              <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#ti-inv" type="button" role="tab" aria-controls="ti-inv" aria-selected="true">Inventario</button></li>
+              <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#ti-res" type="button" role="tab" aria-controls="ti-res">Apartados</button></li>
+              <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#ti-all" type="button" role="tab" aria-controls="ti-all">Todos</button></li>
+            </ul>
+            <select class="form-select form-select-sm d-md-none w-auto" aria-label="Seleccionar grupo" data-action="change->tabs#select">
+              <option value="#ti-inv" selected>Inventario</option>
+              <option value="#ti-res">Apartados</option>
+              <option value="#ti-all">Todos</option>
+            </select>
+          </div>
+        </div>
+        <div class="card-body p-0">
+          <div class="tab-content">
+            <!-- Grupo: Inventario -->
+            <div class="tab-pane fade show active" id="ti-inv" role="tabpanel" data-tabs-target="panel">
+              <div data-controller="tabs">
+                <ul class="nav nav-tabs nav-tabs-sm px-3 pt-3 d-none d-md-flex" role="tablist">
+                  <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#ti-inv-value" type="button" role="tab" aria-controls="ti-inv-value" aria-selected="true">Valor</button></li>
+                  <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#ti-inv-qty" type="button" role="tab" aria-controls="ti-inv-qty">Unidades</button></li>
+                </ul>
+                <div class="tab-content">
+                  <div class="tab-pane fade show active" id="ti-inv-value" role="tabpanel" data-tabs-target="panel">
+                    <turbo-frame id="frame-inventory-inv-value" src="<%= admin_dashboard_inventory_top_path(scope: 'inv', metric: 'value') %>">
+                      <div class="table-responsive p-2 px-3">
+                        <table class="table table-sm mb-0">
+                          <tbody>
+                            <tr>
+                              <td colspan="3" class="text-center py-3">
+                                <div class="d-inline-flex align-items-center gap-2">
+                                  <div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div>
+                                  <span class="text-muted">Cargando…</span>
+                                </div>
+                              </td>
+                            </tr>
+                            <% 3.times do %>
+                              <tr class="placeholder-row">
+                                <td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td>
+                              </tr>
+                            <% end %>
+                          </tbody>
+                        </table>
+                      </div>
+                    </turbo-frame>
+                  </div>
+                  <div class="tab-pane fade" id="ti-inv-qty" role="tabpanel" data-tabs-target="panel">
+                    <turbo-frame id="frame-inventory-inv-qty" src="<%= admin_dashboard_inventory_top_path(scope: 'inv', metric: 'qty') %>">
+                      <div class="table-responsive p-2 px-3">
+                        <table class="table table-sm mb-0"><tbody>
+                          <tr><td colspan="4" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
+                          <% 3.times do %><tr class="placeholder-row"><td colspan="4" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
+                        </tbody></table>
+                      </div>
+                    </turbo-frame>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- Grupo: Apartados -->
+            <div class="tab-pane fade" id="ti-res" role="tabpanel" data-tabs-target="panel">
+              <div data-controller="tabs">
+                <ul class="nav nav-tabs nav-tabs-sm px-3 pt-3 d-none d-md-flex" role="tablist">
+                  <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#ti-res-value" type="button" role="tab" aria-controls="ti-res-value" aria-selected="true">Valor</button></li>
+                  <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#ti-res-qty" type="button" role="tab" aria-controls="ti-res-qty">Unidades</button></li>
+                </ul>
+                <div class="tab-content">
+                  <div class="tab-pane fade show active" id="ti-res-value" role="tabpanel" data-tabs-target="panel">
+                    <turbo-frame id="frame-inventory-res-value" src="<%= admin_dashboard_inventory_top_path(scope: 'res', metric: 'value') %>">
+                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0"><tbody>
+                        <tr><td colspan="3" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
+                        <% 3.times do %><tr class="placeholder-row"><td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
+                      </tbody></table></div>
+                    </turbo-frame>
+                  </div>
+                  <div class="tab-pane fade" id="ti-res-qty" role="tabpanel" data-tabs-target="panel">
+                    <turbo-frame id="frame-inventory-res-qty" src="<%= admin_dashboard_inventory_top_path(scope: 'res', metric: 'qty') %>">
+                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0"><tbody>
+                        <tr><td colspan="4" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
+                        <% 3.times do %><tr class="placeholder-row"><td colspan="4" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
+                      </tbody></table></div>
+                    </turbo-frame>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- Grupo: Todos -->
+            <div class="tab-pane fade" id="ti-all" role="tabpanel" data-tabs-target="panel">
+              <div data-controller="tabs">
+                <ul class="nav nav-tabs nav-tabs-sm px-3 pt-3 d-none d-md-flex" role="tablist">
+                  <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#ti-all-value" type="button" role="tab" aria-controls="ti-all-value" aria-selected="true">Valor</button></li>
+                  <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#ti-all-qty" type="button" role="tab" aria-controls="ti-all-qty">Unidades</button></li>
+                </ul>
+                <div class="tab-content">
+                  <div class="tab-pane fade show active" id="ti-all-value" role="tabpanel" data-tabs-target="panel">
+                    <turbo-frame id="frame-inventory-all-value" src="<%= admin_dashboard_inventory_top_path(scope: 'all', metric: 'value') %>">
+                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0"><tbody>
+                        <tr><td colspan="3" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
+                        <% 3.times do %><tr class="placeholder-row"><td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
+                      </tbody></table></div>
+                    </turbo-frame>
+                  </div>
+                  <div class="tab-pane fade" id="ti-all-qty" role="tabpanel" data-tabs-target="panel">
+                    <turbo-frame id="frame-inventory-all-qty" src="<%= admin_dashboard_inventory_top_path(scope: 'all', metric: 'qty') %>">
+                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0"><tbody>
+                        <tr><td colspan="4" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
+                        <% 3.times do %><tr class="placeholder-row"><td colspan="4" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
+                      </tbody></table></div>
+                    </turbo-frame>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="row g-3 mb-3">
     <div class="col-md-4 col-lg-4">
       <%= render "kpi_card",
@@ -120,404 +454,6 @@
     </div>
   </div>
 
-  <!-- (Se removió el bloque de filtros globales a solicitud) -->
-
-  <!-- (Se eliminó la tabla duplicada de Países de la parte superior) -->
-
-  <!-- Top productos: combinado Sellers/Rentables + Inventario -->
-  <div class="row mt-3 g-3">
-    <div class="col-xl-8">
-      <div class="card h-100" data-controller="tabs">
-        <div class="card-header d-flex justify-content-between align-items-center">
-          <div class="d-flex flex-column flex-md-row w-100 justify-content-between align-items-md-center gap-2">
-            <i class="fa-solid fa-boxes"></i> Productos
-            <ul class="nav nav-tabs nav-tabs-sm card-header-tabs mt-2 d-none d-md-flex" role="tablist">
-              <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-sellers" type="button" role="tab" aria-controls="tp-sellers" aria-selected="true">Sellers</button></li>
-              <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-profit" type="button" role="tab" aria-controls="tp-profit">Rentables</button></li>
-            </ul>
-            <select class="form-select form-select-sm d-md-none w-auto" aria-label="Seleccionar pestaña" data-action="change->tabs#select">
-              <option value="#tp-sellers" selected>Sellers</option>
-              <option value="#tp-profit">Rentables</option>
-            </select>
-          </div>
-          <!-- Botón "Ver detalle" removido a solicitud -->
-        </div>
-        <div class="card-body p-0">
-          <div class="tab-content">
-            <!-- Sellers main tab with subtabs -->
-            <div class="tab-pane fade show active" id="tp-sellers" role="tabpanel" data-tabs-target="panel">
-              <div data-controller="tabs">
-                <ul class="nav nav-tabs nav-tabs-sm px-3 pt-3 d-none d-md-flex" role="tablist">
-                  <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-sellers-ytd" type="button" role="tab" aria-controls="tp-sellers-ytd" aria-selected="true">YTD</button></li>
-                  <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-sellers-ly" type="button" role="tab" aria-controls="tp-sellers-ly">LY</button></li>
-                  <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-sellers-all" type="button" role="tab" aria-controls="tp-sellers-all">All</button></li>
-                </ul>
-                <div class="tab-content">
-                  <div class="tab-pane fade show active" id="tp-sellers-ytd" role="tabpanel" data-tabs-target="panel">
-                    <turbo-frame id="frame-sellers-ytd" src="<%= admin_dashboard_sellers_path(period: 'ytd') %>">
-                      <div class="table-responsive p-2">
-                        <table class="table table-sm mb-0">
-                          <thead>
-                            <tr>
-                              <th scope="col">Rank</th>
-                              <th scope="col">Producto</th>
-                              <th scope="col" class="text-end">Unidades</th>
-                              <th scope="col" class="text-end">Ingresos</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            <tr>
-                              <td colspan="4" class="text-center py-3">
-                                <div class="d-inline-flex align-items-center gap-2">
-                                  <div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div>
-                                  <span class="text-muted">Cargando…</span>
-                                </div>
-                              </td>
-                            </tr>
-                            <% 3.times do %>
-                              <tr class="placeholder-row">
-                                <td colspan="4" class="placeholder-glow"><span class="placeholder col-12"></span></td>
-                              </tr>
-                            <% end %>
-                          </tbody>
-                        </table>
-                      </div>
-                    </turbo-frame>
-                  </div>
-                  <div class="tab-pane fade" id="tp-sellers-ly" role="tabpanel" data-tabs-target="panel">
-                    <turbo-frame id="frame-sellers-ly" src="<%= admin_dashboard_sellers_path(period: 'ly') %>">
-                      <div class="table-responsive p-2">
-                        <table class="table table-sm mb-0">
-                          <thead>
-                            <tr>
-                              <th scope="col">Rank</th>
-                              <th scope="col">Producto</th>
-                              <th scope="col" class="text-end">Unidades</th>
-                              <th scope="col" class="text-end">Ingresos</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            <tr>
-                              <td colspan="4" class="text-center py-3">
-                                <div class="d-inline-flex align-items-center gap-2">
-                                  <div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div>
-                                  <span class="text-muted">Cargando…</span>
-                                </div>
-                              </td>
-                            </tr>
-                            <% 3.times do %>
-                              <tr class="placeholder-row">
-                                <td colspan="4" class="placeholder-glow"><span class="placeholder col-12"></span></td>
-                              </tr>
-                            <% end %>
-                          </tbody>
-                        </table>
-                      </div>
-                    </turbo-frame>
-                  </div>
-                  <div class="tab-pane fade" id="tp-sellers-all" role="tabpanel" data-tabs-target="panel">
-                    <turbo-frame id="frame-sellers-all" src="<%= admin_dashboard_sellers_path(period: 'all') %>">
-                      <div class="table-responsive p-2">
-                        <table class="table table-sm mb-0">
-                          <thead>
-                            <tr>
-                              <th scope="col">Rank</th>
-                              <th scope="col">Producto</th>
-                              <th scope="col" class="text-end">Unidades</th>
-                              <th scope="col" class="text-end">Ingresos</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            <tr>
-                              <td colspan="4" class="text-center py-3">
-                                <div class="d-inline-flex align-items-center gap-2">
-                                  <div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div>
-                                  <span class="text-muted">Cargando…</span>
-                                </div>
-                              </td>
-                            </tr>
-                            <% 3.times do %>
-                              <tr class="placeholder-row">
-                                <td colspan="4" class="placeholder-glow"><span class="placeholder col-12"></span></td>
-                              </tr>
-                            <% end %>
-                          </tbody>
-                        </table>
-                      </div>
-                    </turbo-frame>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <!-- Rentables main tab with subtabs -->
-            <div class="tab-pane fade" id="tp-profit" role="tabpanel" data-tabs-target="panel">
-              <div data-controller="tabs">
-                <ul class="nav nav-tabs nav-tabs-sm px-3 pt-3 d-none d-md-flex" role="tablist">
-                  <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-profit-ytd" type="button" role="tab" aria-controls="tp-profit-ytd" aria-selected="true">YTD</button></li>
-                  <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-profit-ly" type="button" role="tab" aria-controls="tp-profit-ly">LY</button></li>
-                  <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-profit-all" type="button" role="tab" aria-controls="tp-profit-all">All</button></li>
-                </ul>
-                <div class="tab-content">
-                  <div class="tab-pane fade show active" id="tp-profit-ytd" role="tabpanel" data-tabs-target="panel">
-                    <turbo-frame id="frame-profit-ytd" src="<%= admin_dashboard_profitable_path(period: 'ytd') %>">
-                      <div class="table-responsive p-2">
-                        <table class="table table-sm mb-0">
-                          <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Ingresos</th><th class="text-end">COGS</th><th class="text-end">Utilidad</th></tr></thead>
-                          <tbody>
-                            <tr>
-                              <td colspan="5" class="text-center py-3">
-                                <div class="d-inline-flex align-items-center gap-2">
-                                  <div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div>
-                                  <span class="text-muted">Cargando…</span>
-                                </div>
-                              </td>
-                            </tr>
-                            <% 3.times do %>
-                              <tr class="placeholder-row">
-                                <td colspan="5" class="placeholder-glow"><span class="placeholder col-12"></span></td>
-                              </tr>
-                            <% end %>
-                          </tbody>
-                        </table>
-                      </div>
-                    </turbo-frame>
-                  </div>
-                  <div class="tab-pane fade" id="tp-profit-ly" role="tabpanel" data-tabs-target="panel">
-                    <turbo-frame id="frame-profit-ly" src="<%= admin_dashboard_profitable_path(period: 'ly') %>">
-                      <div class="table-responsive p-2">
-                        <table class="table table-sm mb-0">
-                          <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Ingresos</th><th class="text-end">COGS</th><th class="text-end">Utilidad</th></tr></thead>
-                          <tbody>
-                            <tr>
-                              <td colspan="5" class="text-center py-3">
-                                <div class="d-inline-flex align-items-center gap-2">
-                                  <div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div>
-                                  <span class="text-muted">Cargando…</span>
-                                </div>
-                              </td>
-                            </tr>
-                            <% 3.times do %>
-                              <tr class="placeholder-row">
-                                <td colspan="5" class="placeholder-glow"><span class="placeholder col-12"></span></td>
-                              </tr>
-                            <% end %>
-                          </tbody>
-                        </table>
-                      </div>
-                    </turbo-frame>
-                  </div>
-                  <div class="tab-pane fade" id="tp-profit-all" role="tabpanel" data-tabs-target="panel">
-                    <turbo-frame id="frame-profit-all" src="<%= admin_dashboard_profitable_path(period: 'all') %>">
-                      <div class="table-responsive p-2">
-                        <table class="table table-sm mb-0">
-                          <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Ingresos</th><th class="text-end">COGS</th><th class="text-end">Utilidad</th></tr></thead>
-                          <tbody>
-                            <tr>
-                              <td colspan="5" class="text-center py-3">
-                                <div class="d-inline-flex align-items-center gap-2">
-                                  <div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div>
-                                  <span class="text-muted">Cargando…</span>
-                                </div>
-                              </td>
-                            </tr>
-                            <% 3.times do %>
-                              <tr class="placeholder-row">
-                                <td colspan="5" class="placeholder-glow"><span class="placeholder col-12"></span></td>
-                              </tr>
-                            <% end %>
-                          </tbody>
-                        </table>
-                      </div>
-                    </turbo-frame>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="col-xl-4">
-      <div class="card h-100" data-controller="tabs">
-        <div class="card-header d-flex justify-content-between align-items-center">
-          <span><i class="fa-solid fa-boxes-stacked"></i> Top Inventario</span>
-          <div class="d-flex align-items-center gap-2 w-50 justify-content-end">
-            <ul class="nav nav-tabs nav-tabs-sm card-header-tabs d-none d-md-flex" role="tablist">
-              <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#ti-inv-val" type="button" role="tab" aria-controls="ti-inv-val" aria-selected="true">Inv · Valor</button></li>
-              <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#ti-inv-qty" type="button" role="tab" aria-controls="ti-inv-qty">Inv · Unidades</button></li>
-              <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#ti-res-val" type="button" role="tab" aria-controls="ti-res-val">Apart · Valor</button></li>
-              <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#ti-res-qty" type="button" role="tab" aria-controls="ti-res-qty">Apart · Unidades</button></li>
-              <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#ti-all-val" type="button" role="tab" aria-controls="ti-all-val">Todos · Valor</button></li>
-              <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#ti-all-qty" type="button" role="tab" aria-controls="ti-all-qty">Todos · Unidades</button></li>
-            </ul>
-            <select class="form-select form-select-sm d-md-none w-auto" aria-label="Seleccionar pestaña" data-action="change->tabs#select">
-              <option value="#ti-inv-val" selected>Inv · Valor</option>
-              <option value="#ti-inv-qty">Inv · Unidades</option>
-              <option value="#ti-res-val">Apart · Valor</option>
-              <option value="#ti-res-qty">Apart · Unidades</option>
-              <option value="#ti-all-val">Todos · Valor</option>
-              <option value="#ti-all-qty">Todos · Unidades</option>
-            </select>
-          </div>
-        </div>
-        <div class="card-body p-0">
-          <div class="tab-content">
-            <!-- Inv · Valor -->
-            <div class="tab-pane fade show active" id="ti-inv-val" role="tabpanel" data-tabs-target="panel">
-              <turbo-frame id="frame-inventory-inv-value" src="<%= admin_dashboard_inventory_top_path(scope: 'inv', metric: 'value') %>">
-                <div class="table-responsive">
-                  <table class="table table-sm mb-0">
-                    <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Valor de Inventario</th></tr></thead>
-                    <tbody>
-                      <tr>
-                        <td colspan="3" class="text-center py-3">
-                          <div class="d-inline-flex align-items-center gap-2">
-                            <div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div>
-                            <span class="text-muted">Cargando…</span>
-                          </div>
-                        </td>
-                      </tr>
-                      <% 3.times do %>
-                        <tr class="placeholder-row">
-                          <td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td>
-                        </tr>
-                      <% end %>
-                    </tbody>
-                  </table>
-                </div>
-              </turbo-frame>
-            </div>
-            <!-- Inv · Unidades -->
-            <div class="tab-pane fade" id="ti-inv-qty" role="tabpanel" data-tabs-target="panel">
-              <turbo-frame id="frame-inventory-inv-qty" src="<%= admin_dashboard_inventory_top_path(scope: 'inv', metric: 'qty') %>">
-                <div class="table-responsive">
-                  <table class="table table-sm mb-0">
-                    <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Unidades</th><th class="text-end">Valor (MXN)</th></tr></thead>
-                    <tbody>
-                      <tr>
-                        <td colspan="4" class="text-center py-3">
-                          <div class="d-inline-flex align-items-center gap-2">
-                            <div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div>
-                            <span class="text-muted">Cargando…</span>
-                          </div>
-                        </td>
-                      </tr>
-                      <% 3.times do %>
-                        <tr class="placeholder-row">
-                          <td colspan="4" class="placeholder-glow"><span class="placeholder col-12"></span></td>
-                        </tr>
-                      <% end %>
-                    </tbody>
-                  </table>
-                </div>
-              </turbo-frame>
-            </div>
-            <!-- Apartados · Valor -->
-            <div class="tab-pane fade" id="ti-res-val" role="tabpanel" data-tabs-target="panel">
-              <turbo-frame id="frame-inventory-res-value" src="<%= admin_dashboard_inventory_top_path(scope: 'res', metric: 'value') %>">
-                <div class="table-responsive">
-                  <table class="table table-sm mb-0">
-                    <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Valor de Apartados</th></tr></thead>
-                    <tbody>
-                      <tr>
-                        <td colspan="3" class="text-center py-3">
-                          <div class="d-inline-flex align-items-center gap-2">
-                            <div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div>
-                            <span class="text-muted">Cargando…</span>
-                          </div>
-                        </td>
-                      </tr>
-                      <% 3.times do %>
-                        <tr class="placeholder-row">
-                          <td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td>
-                        </tr>
-                      <% end %>
-                    </tbody>
-                  </table>
-                </div>
-              </turbo-frame>
-            </div>
-            <!-- Apartados · Unidades -->
-            <div class="tab-pane fade" id="ti-res-qty" role="tabpanel" data-tabs-target="panel">
-              <turbo-frame id="frame-inventory-res-qty" src="<%= admin_dashboard_inventory_top_path(scope: 'res', metric: 'qty') %>">
-                <div class="table-responsive">
-                  <table class="table table-sm mb-0">
-                    <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Unidades</th><th class="text-end">Valor (MXN)</th></tr></thead>
-                    <tbody>
-                      <tr>
-                        <td colspan="4" class="text-center py-3">
-                          <div class="d-inline-flex align-items-center gap-2">
-                            <div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div>
-                            <span class="text-muted">Cargando…</span>
-                          </div>
-                        </td>
-                      </tr>
-                      <% 3.times do %>
-                        <tr class="placeholder-row">
-                          <td colspan="4" class="placeholder-glow"><span class="placeholder col-12"></span></td>
-                        </tr>
-                      <% end %>
-                    </tbody>
-                  </table>
-                </div>
-              </turbo-frame>
-            </div>
-            <!-- Todos · Valor -->
-            <div class="tab-pane fade" id="ti-all-val" role="tabpanel" data-tabs-target="panel">
-              <turbo-frame id="frame-inventory-all-value" src="<%= admin_dashboard_inventory_top_path(scope: 'all', metric: 'value') %>">
-                <div class="table-responsive">
-                  <table class="table table-sm mb-0">
-                    <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Valor (MXN)</th></tr></thead>
-                    <tbody>
-                      <tr>
-                        <td colspan="3" class="text-center py-3">
-                          <div class="d-inline-flex align-items-center gap-2">
-                            <div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div>
-                            <span class="text-muted">Cargando…</span>
-                          </div>
-                        </td>
-                      </tr>
-                      <% 3.times do %>
-                        <tr class="placeholder-row">
-                          <td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td>
-                        </tr>
-                      <% end %>
-                    </tbody>
-                  </table>
-                </div>
-              </turbo-frame>
-            </div>
-            <!-- Todos · Unidades -->
-            <div class="tab-pane fade" id="ti-all-qty" role="tabpanel" data-tabs-target="panel">
-              <turbo-frame id="frame-inventory-all-qty" src="<%= admin_dashboard_inventory_top_path(scope: 'all', metric: 'qty') %>">
-                <div class="table-responsive">
-                  <table class="table table-sm mb-0">
-                    <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Unidades</th><th class="text-end">Valor (MXN)</th></tr></thead>
-                    <tbody>
-                      <tr>
-                        <td colspan="4" class="text-center py-3">
-                          <div class="d-inline-flex align-items-center gap-2">
-                            <div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div>
-                            <span class="text-muted">Cargando…</span>
-                          </div>
-                        </td>
-                      </tr>
-                      <% 3.times do %>
-                        <tr class="placeholder-row">
-                          <td colspan="4" class="placeholder-glow"><span class="placeholder col-12"></span></td>
-                        </tr>
-                      <% end %>
-                    </tbody>
-                  </table>
-                </div>
-              </turbo-frame>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <!-- Top categorías + Top clientes (lado a lado) -->
   <div class="row mt-4 g-3">
     <div class="col-xl-6">
@@ -525,78 +461,98 @@
         <div class="card-header d-flex justify-content-between align-items-center">
           <span><i class="fa-solid fa-layer-group"></i> Top Categorías</span>
           <ul class="nav nav-tabs nav-tabs-sm card-header-tabs d-none d-md-flex" role="tablist">
-            <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tc-ytd-rev" type="button" role="tab" aria-controls="tc-ytd-rev" aria-selected="true">YTD · Ingresos</button></li>
-            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tc-ytd-prof" type="button" role="tab" aria-controls="tc-ytd-prof">YTD · Utilidad</button></li>
-            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tc-ly-rev" type="button" role="tab" aria-controls="tc-ly-rev">LY · Ingresos</button></li>
-            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tc-ly-prof" type="button" role="tab" aria-controls="tc-ly-prof">LY · Utilidad</button></li>
-            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tc-all-rev" type="button" role="tab" aria-controls="tc-all-rev">All · Ingresos</button></li>
-            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tc-all-prof" type="button" role="tab" aria-controls="tc-all-prof">All · Utilidad</button></li>
+            <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tc-ytd" type="button" role="tab" aria-controls="tc-ytd" aria-selected="true">YTD</button></li>
+            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tc-ly" type="button" role="tab" aria-controls="tc-ly">LY</button></li>
+            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tc-all" type="button" role="tab" aria-controls="tc-all">All</button></li>
           </ul>
           <select class="form-select form-select-sm d-md-none w-auto" aria-label="Seleccionar periodo" data-action="change->tabs#select">
-            <option value="#tc-ytd-rev" selected>YTD · Ingresos</option>
-            <option value="#tc-ytd-prof">YTD · Utilidad</option>
-            <option value="#tc-ly-rev">LY · Ingresos</option>
-            <option value="#tc-ly-prof">LY · Utilidad</option>
-            <option value="#tc-all-rev">All · Ingresos</option>
-            <option value="#tc-all-prof">All · Utilidad</option>
+            <option value="#tc-ytd" selected>YTD</option>
+            <option value="#tc-ly">LY</option>
+            <option value="#tc-all">All</option>
           </select>
-          <!-- Botón "Ver detalle" removido a solicitud -->
         </div>
         <div class="card-body p-0">
           <div class="tab-content">
-            <!-- YTD · Ingresos -->
-            <div class="tab-pane fade show active" id="tc-ytd-rev" role="tabpanel" data-tabs-target="panel">
-              <turbo-frame id="frame-cats-ytd-rev" src="<%= admin_dashboard_categories_rank_path(period: 'ytd', metric: 'rev') %>">
-                <div class="table-responsive"><table class="table table-sm mb-0"><tbody>
-                  <tr><td colspan="3" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
-                  <% 3.times do %><tr class="placeholder-row"><td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
-                </tbody></table></div>
-              </turbo-frame>
+            <!-- Grupo: YTD -->
+            <div class="tab-pane fade show active" id="tc-ytd" role="tabpanel" data-tabs-target="panel">
+              <div data-controller="tabs">
+                <ul class="nav nav-tabs nav-tabs-sm px-3 pt-3 d-none d-md-flex" role="tablist">
+                  <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tc-ytd-rev" type="button" role="tab" aria-controls="tc-ytd-rev" aria-selected="true">Ingresos</button></li>
+                  <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tc-ytd-prof" type="button" role="tab" aria-controls="tc-ytd-prof">Utilidad</button></li>
+                </ul>
+                <div class="tab-content">
+                  <div class="tab-pane fade show active" id="tc-ytd-rev" role="tabpanel" data-tabs-target="panel">
+                    <turbo-frame id="frame-cats-ytd-rev" src="<%= admin_dashboard_categories_rank_path(period: 'ytd', metric: 'rev') %>">
+                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0"><tbody>
+                        <tr><td colspan="3" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
+                        <% 3.times do %><tr class="placeholder-row"><td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
+                      </tbody></table></div>
+                    </turbo-frame>
+                  </div>
+                  <div class="tab-pane fade" id="tc-ytd-prof" role="tabpanel" data-tabs-target="panel">
+                    <turbo-frame id="frame-cats-ytd-profit" src="<%= admin_dashboard_categories_rank_path(period: 'ytd', metric: 'profit') %>">
+                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0"><tbody>
+                        <tr><td colspan="3" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
+                        <% 3.times do %><tr class="placeholder-row"><td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
+                      </tbody></table></div>
+                    </turbo-frame>
+                  </div>
+                </div>
+              </div>
             </div>
-            <!-- YTD · Utilidad -->
-            <div class="tab-pane fade" id="tc-ytd-prof" role="tabpanel" data-tabs-target="panel">
-              <turbo-frame id="frame-cats-ytd-profit" src="<%= admin_dashboard_categories_rank_path(period: 'ytd', metric: 'profit') %>">
-                <div class="table-responsive"><table class="table table-sm mb-0"><tbody>
-                  <tr><td colspan="3" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
-                  <% 3.times do %><tr class="placeholder-row"><td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
-                </tbody></table></div>
-              </turbo-frame>
+            <!-- Grupo: LY -->
+            <div class="tab-pane fade" id="tc-ly" role="tabpanel" data-tabs-target="panel">
+              <div data-controller="tabs">
+                <ul class="nav nav-tabs nav-tabs-sm px-3 pt-3 d-none d-md-flex" role="tablist">
+                  <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tc-ly-rev" type="button" role="tab" aria-controls="tc-ly-rev" aria-selected="true">Ingresos</button></li>
+                  <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tc-ly-prof" type="button" role="tab" aria-controls="tc-ly-prof">Utilidad</button></li>
+                </ul>
+                <div class="tab-content">
+                  <div class="tab-pane fade show active" id="tc-ly-rev" role="tabpanel" data-tabs-target="panel">
+                    <turbo-frame id="frame-cats-ly-rev" src="<%= admin_dashboard_categories_rank_path(period: 'ly', metric: 'rev') %>">
+                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0"><tbody>
+                        <tr><td colspan="3" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
+                        <% 3.times do %><tr class="placeholder-row"><td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
+                      </tbody></table></div>
+                    </turbo-frame>
+                  </div>
+                  <div class="tab-pane fade" id="tc-ly-prof" role="tabpanel" data-tabs-target="panel">
+                    <turbo-frame id="frame-cats-ly-profit" src="<%= admin_dashboard_categories_rank_path(period: 'ly', metric: 'profit') %>">
+                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0"><tbody>
+                        <tr><td colspan="3" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
+                        <% 3.times do %><tr class="placeholder-row"><td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
+                      </tbody></table></div>
+                    </turbo-frame>
+                  </div>
+                </div>
+              </div>
             </div>
-            <!-- LY · Ingresos -->
-            <div class="tab-pane fade" id="tc-ly-rev" role="tabpanel" data-tabs-target="panel">
-              <turbo-frame id="frame-cats-ly-rev" src="<%= admin_dashboard_categories_rank_path(period: 'ly', metric: 'rev') %>">
-                <div class="table-responsive"><table class="table table-sm mb-0"><tbody>
-                  <tr><td colspan="3" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
-                  <% 3.times do %><tr class="placeholder-row"><td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
-                </tbody></table></div>
-              </turbo-frame>
-            </div>
-            <!-- LY · Utilidad -->
-            <div class="tab-pane fade" id="tc-ly-prof" role="tabpanel" data-tabs-target="panel">
-              <turbo-frame id="frame-cats-ly-profit" src="<%= admin_dashboard_categories_rank_path(period: 'ly', metric: 'profit') %>">
-                <div class="table-responsive"><table class="table table-sm mb-0"><tbody>
-                  <tr><td colspan="3" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
-                  <% 3.times do %><tr class="placeholder-row"><td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
-                </tbody></table></div>
-              </turbo-frame>
-            </div>
-            <!-- All · Ingresos -->
-            <div class="tab-pane fade" id="tc-all-rev" role="tabpanel" data-tabs-target="panel">
-              <turbo-frame id="frame-cats-all-rev" src="<%= admin_dashboard_categories_rank_path(period: 'all', metric: 'rev') %>">
-                <div class="table-responsive"><table class="table table-sm mb-0"><tbody>
-                  <tr><td colspan="3" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
-                  <% 3.times do %><tr class="placeholder-row"><td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
-                </tbody></table></div>
-              </turbo-frame>
-            </div>
-            <!-- All · Utilidad -->
-            <div class="tab-pane fade" id="tc-all-prof" role="tabpanel" data-tabs-target="panel">
-              <turbo-frame id="frame-cats-all-profit" src="<%= admin_dashboard_categories_rank_path(period: 'all', metric: 'profit') %>">
-                <div class="table-responsive"><table class="table table-sm mb-0"><tbody>
-                  <tr><td colspan="3" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
-                  <% 3.times do %><tr class="placeholder-row"><td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
-                </tbody></table></div>
-              </turbo-frame>
+            <!-- Grupo: All -->
+            <div class="tab-pane fade" id="tc-all" role="tabpanel" data-tabs-target="panel">
+              <div data-controller="tabs">
+                <ul class="nav nav-tabs nav-tabs-sm px-3 pt-3 d-none d-md-flex" role="tablist">
+                  <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tc-all-rev" type="button" role="tab" aria-controls="tc-all-rev" aria-selected="true">Ingresos</button></li>
+                  <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tc-all-prof" type="button" role="tab" aria-controls="tc-all-prof">Utilidad</button></li>
+                </ul>
+                <div class="tab-content">
+                  <div class="tab-pane fade show active" id="tc-all-rev" role="tabpanel" data-tabs-target="panel">
+                    <turbo-frame id="frame-cats-all-rev" src="<%= admin_dashboard_categories_rank_path(period: 'all', metric: 'rev') %>">
+                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0"><tbody>
+                        <tr><td colspan="3" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
+                        <% 3.times do %><tr class="placeholder-row"><td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
+                      </tbody></table></div>
+                    </turbo-frame>
+                  </div>
+                  <div class="tab-pane fade" id="tc-all-prof" role="tabpanel" data-tabs-target="panel">
+                    <turbo-frame id="frame-cats-all-profit" src="<%= admin_dashboard_categories_rank_path(period: 'all', metric: 'profit') %>">
+                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0"><tbody>
+                        <tr><td colspan="3" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
+                        <% 3.times do %><tr class="placeholder-row"><td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
+                      </tbody></table></div>
+                    </turbo-frame>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -605,113 +561,127 @@
   <div class="col-xl-6">
       <div class="card h-100" data-controller="tabs">
         <div class="card-header d-flex justify-content-between align-items-center">
-          <span><i class="fa-solid fa-ranking-star"></i> Top Customers</span>
+          <span><i class="fa-solid fa-user-group"></i> Top Clientes</span>
           <ul class="nav nav-tabs nav-tabs-sm card-header-tabs d-none d-md-flex" role="tablist">
-            <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#rank-range-sales" type="button" role="tab" aria-controls="rank-range-sales" aria-selected="true">YTD · Ventas</button></li>
-            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#rank-range-reserved" type="button" role="tab" aria-controls="rank-range-reserved">YTD · Apartados</button></li>
-            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#rank-range-combined" type="button" role="tab" aria-controls="rank-range-combined">YTD · Combinado</button></li>
-            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#rank-ly-sales" type="button" role="tab" aria-controls="rank-ly-sales">LY · Ventas</button></li>
-            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#rank-ly-reserved" type="button" role="tab" aria-controls="rank-ly-reserved">LY · Apartados</button></li>
-            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#rank-ly-combined" type="button" role="tab" aria-controls="rank-ly-combined">LY · Combinado</button></li>
-            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#rank-all-sales" type="button" role="tab" aria-controls="rank-all-sales">All · Ventas</button></li>
-            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#rank-all-reserved" type="button" role="tab" aria-controls="rank-all-reserved">All · Apartados</button></li>
-            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#rank-all-combined" type="button" role="tab" aria-controls="rank-all-combined">All · Combinado</button></li>
+            <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tcu-ytd" type="button" role="tab" aria-controls="tcu-ytd" aria-selected="true">YTD</button></li>
+            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tcu-ly" type="button" role="tab" aria-controls="tcu-ly">LY</button></li>
+            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tcu-all" type="button" role="tab" aria-controls="tcu-all">All</button></li>
           </ul>
           <select class="form-select form-select-sm d-md-none w-auto" aria-label="Seleccionar periodo" data-action="change->tabs#select">
-            <option value="#rank-range-sales" selected>YTD · Ventas</option>
-            <option value="#rank-range-reserved">YTD · Apartados</option>
-            <option value="#rank-range-combined">YTD · Combinado</option>
-            <option value="#rank-ly-sales">LY · Ventas</option>
-            <option value="#rank-ly-reserved">LY · Apartados</option>
-            <option value="#rank-ly-combined">LY · Combinado</option>
-            <option value="#rank-all-sales">All · Ventas</option>
-            <option value="#rank-all-reserved">All · Apartados</option>
-            <option value="#rank-all-combined">All · Combinado</option>
+            <option value="#tcu-ytd" selected>YTD</option>
+            <option value="#tcu-ly">LY</option>
+            <option value="#tcu-all">All</option>
           </select>
-          <!-- Botón "Ver detalle" removido a solicitud -->
         </div>
         <div class="card-body p-0">
           <div class="tab-content">
-            <!-- YTD · Ventas -->
-            <div class="tab-pane fade show active" id="rank-range-sales" role="tabpanel" data-tabs-target="panel">
-              <turbo-frame id="frame-cust-ytd-sales" src="<%= admin_dashboard_customers_rank_path(period: 'ytd', metric: 'sales') %>">
-                <div class="table-responsive"><table class="table table-sm mb-0"><tbody>
-                  <tr><td colspan="6" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
-                  <% 3.times do %><tr class="placeholder-row"><td colspan="6" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
-                </tbody></table></div>
-              </turbo-frame>
+            <!-- Grupo: YTD -->
+            <div class="tab-pane fade show active" id="tcu-ytd" role="tabpanel" data-tabs-target="panel">
+              <div data-controller="tabs">
+                <ul class="nav nav-tabs nav-tabs-sm px-3 pt-3 d-none d-md-flex" role="tablist">
+                  <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tcu-ytd-sales" type="button" role="tab" aria-controls="tcu-ytd-sales" aria-selected="true">Ventas</button></li>
+                  <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tcu-ytd-res" type="button" role="tab" aria-controls="tcu-ytd-res">Apartados</button></li>
+                  <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tcu-ytd-comb" type="button" role="tab" aria-controls="tcu-ytd-comb">Combinado</button></li>
+                </ul>
+                <div class="tab-content">
+                  <div class="tab-pane fade show active" id="tcu-ytd-sales" role="tabpanel" data-tabs-target="panel">
+                    <turbo-frame id="frame-cust-ytd-sales" src="<%= admin_dashboard_customers_rank_path(period: 'ytd', metric: 'sales') %>">
+                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0"><tbody>
+                        <tr><td colspan="3" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
+                        <% 3.times do %><tr class="placeholder-row"><td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
+                      </tbody></table></div>
+                    </turbo-frame>
+                  </div>
+                  <div class="tab-pane fade" id="tcu-ytd-res" role="tabpanel" data-tabs-target="panel">
+                    <turbo-frame id="frame-cust-ytd-reserved" src="<%= admin_dashboard_customers_rank_path(period: 'ytd', metric: 'reserved') %>">
+                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0"><tbody>
+                        <tr><td colspan="3" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
+                        <% 3.times do %><tr class="placeholder-row"><td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
+                      </tbody></table></div>
+                    </turbo-frame>
+                  </div>
+                  <div class="tab-pane fade" id="tcu-ytd-comb" role="tabpanel" data-tabs-target="panel">
+                    <turbo-frame id="frame-cust-ytd-combined" src="<%= admin_dashboard_customers_rank_path(period: 'ytd', metric: 'combined') %>">
+                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0"><tbody>
+                        <tr><td colspan="3" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
+                        <% 3.times do %><tr class="placeholder-row"><td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
+                      </tbody></table></div>
+                    </turbo-frame>
+                  </div>
+                </div>
+              </div>
             </div>
-            <!-- YTD · Apartados -->
-            <div class="tab-pane fade" id="rank-range-reserved" role="tabpanel" data-tabs-target="panel">
-              <turbo-frame id="frame-cust-ytd-reserved" src="<%= admin_dashboard_customers_rank_path(period: 'ytd', metric: 'reserved') %>">
-                <div class="table-responsive"><table class="table table-sm mb-0"><tbody>
-                  <tr><td colspan="4" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
-                  <% 3.times do %><tr class="placeholder-row"><td colspan="4" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
-                </tbody></table></div>
-              </turbo-frame>
+            <!-- Grupo: LY -->
+            <div class="tab-pane fade" id="tcu-ly" role="tabpanel" data-tabs-target="panel">
+              <div data-controller="tabs">
+                <ul class="nav nav-tabs nav-tabs-sm px-3 pt-3 d-none d-md-flex" role="tablist">
+                  <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tcu-ly-sales" type="button" role="tab" aria-controls="tcu-ly-sales" aria-selected="true">Ventas</button></li>
+                  <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tcu-ly-res" type="button" role="tab" aria-controls="tcu-ly-res">Apartados</button></li>
+                  <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tcu-ly-comb" type="button" role="tab" aria-controls="tcu-ly-comb">Combinado</button></li>
+                </ul>
+                <div class="tab-content">
+                  <div class="tab-pane fade show active" id="tcu-ly-sales" role="tabpanel" data-tabs-target="panel">
+                    <turbo-frame id="frame-cust-ly-sales" src="<%= admin_dashboard_customers_rank_path(period: 'ly', metric: 'sales') %>">
+                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0"><tbody>
+                        <tr><td colspan="3" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
+                        <% 3.times do %><tr class="placeholder-row"><td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
+                      </tbody></table></div>
+                    </turbo-frame>
+                  </div>
+                  <div class="tab-pane fade" id="tcu-ly-res" role="tabpanel" data-tabs-target="panel">
+                    <turbo-frame id="frame-cust-ly-reserved" src="<%= admin_dashboard_customers_rank_path(period: 'ly', metric: 'reserved') %>">
+                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0"><tbody>
+                        <tr><td colspan="3" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
+                        <% 3.times do %><tr class="placeholder-row"><td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
+                      </tbody></table></div>
+                    </turbo-frame>
+                  </div>
+                  <div class="tab-pane fade" id="tcu-ly-comb" role="tabpanel" data-tabs-target="panel">
+                    <turbo-frame id="frame-cust-ly-combined" src="<%= admin_dashboard_customers_rank_path(period: 'ly', metric: 'combined') %>">
+                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0"><tbody>
+                        <tr><td colspan="3" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
+                        <% 3.times do %><tr class="placeholder-row"><td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
+                      </tbody></table></div>
+                    </turbo-frame>
+                  </div>
+                </div>
+              </div>
             </div>
-            <!-- YTD · Combinado -->
-            <div class="tab-pane fade" id="rank-range-combined" role="tabpanel" data-tabs-target="panel">
-              <turbo-frame id="frame-cust-ytd-combined" src="<%= admin_dashboard_customers_rank_path(period: 'ytd', metric: 'combined') %>">
-                <div class="table-responsive"><table class="table table-sm mb-0"><tbody>
-                  <tr><td colspan="6" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
-                  <% 3.times do %><tr class="placeholder-row"><td colspan="6" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
-                </tbody></table></div>
-              </turbo-frame>
-            </div>
-            <!-- LY · Ventas -->
-            <div class="tab-pane fade" id="rank-ly-sales" role="tabpanel" data-tabs-target="panel">
-              <turbo-frame id="frame-cust-ly-sales" src="<%= admin_dashboard_customers_rank_path(period: 'ly', metric: 'sales') %>">
-                <div class="table-responsive"><table class="table table-sm mb-0"><tbody>
-                  <tr><td colspan="4" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
-                  <% 3.times do %><tr class="placeholder-row"><td colspan="4" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
-                </tbody></table></div>
-              </turbo-frame>
-            </div>
-            <!-- LY · Apartados -->
-            <div class="tab-pane fade" id="rank-ly-reserved" role="tabpanel" data-tabs-target="panel">
-              <turbo-frame id="frame-cust-ly-reserved" src="<%= admin_dashboard_customers_rank_path(period: 'ly', metric: 'reserved') %>">
-                <div class="table-responsive"><table class="table table-sm mb-0"><tbody>
-                  <tr><td colspan="4" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
-                  <% 3.times do %><tr class="placeholder-row"><td colspan="4" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
-                </tbody></table></div>
-              </turbo-frame>
-            </div>
-            <!-- LY · Combinado -->
-            <div class="tab-pane fade" id="rank-ly-combined" role="tabpanel" data-tabs-target="panel">
-              <turbo-frame id="frame-cust-ly-combined" src="<%= admin_dashboard_customers_rank_path(period: 'ly', metric: 'combined') %>">
-                <div class="table-responsive"><table class="table table-sm mb-0"><tbody>
-                  <tr><td colspan="6" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
-                  <% 3.times do %><tr class="placeholder-row"><td colspan="6" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
-                </tbody></table></div>
-              </turbo-frame>
-            </div>
-            <!-- All · Ventas -->
-            <div class="tab-pane fade" id="rank-all-sales" role="tabpanel" data-tabs-target="panel">
-              <turbo-frame id="frame-cust-all-sales" src="<%= admin_dashboard_customers_rank_path(period: 'all', metric: 'sales') %>">
-                <div class="table-responsive"><table class="table table-sm mb-0"><tbody>
-                  <tr><td colspan="4" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
-                  <% 3.times do %><tr class="placeholder-row"><td colspan="4" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
-                </tbody></table></div>
-              </turbo-frame>
-            </div>
-            <!-- All · Apartados -->
-            <div class="tab-pane fade" id="rank-all-reserved" role="tabpanel" data-tabs-target="panel">
-              <turbo-frame id="frame-cust-all-reserved" src="<%= admin_dashboard_customers_rank_path(period: 'all', metric: 'reserved') %>">
-                <div class="table-responsive"><table class="table table-sm mb-0"><tbody>
-                  <tr><td colspan="4" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
-                  <% 3.times do %><tr class="placeholder-row"><td colspan="4" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
-                </tbody></table></div>
-              </turbo-frame>
-            </div>
-            <!-- All · Combinado -->
-            <div class="tab-pane fade" id="rank-all-combined" role="tabpanel" data-tabs-target="panel">
-              <turbo-frame id="frame-cust-all-combined" src="<%= admin_dashboard_customers_rank_path(period: 'all', metric: 'combined') %>">
-                <div class="table-responsive"><table class="table table-sm mb-0"><tbody>
-                  <tr><td colspan="6" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
-                  <% 3.times do %><tr class="placeholder-row"><td colspan="6" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
-                </tbody></table></div>
-              </turbo-frame>
+            <!-- Grupo: All -->
+            <div class="tab-pane fade" id="tcu-all" role="tabpanel" data-tabs-target="panel">
+              <div data-controller="tabs">
+                <ul class="nav nav-tabs nav-tabs-sm px-3 pt-3 d-none d-md-flex" role="tablist">
+                  <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tcu-all-sales" type="button" role="tab" aria-controls="tcu-all-sales" aria-selected="true">Ventas</button></li>
+                  <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tcu-all-res" type="button" role="tab" aria-controls="tcu-all-res">Apartados</button></li>
+                  <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tcu-all-comb" type="button" role="tab" aria-controls="tcu-all-comb">Combinado</button></li>
+                </ul>
+                <div class="tab-content">
+                  <div class="tab-pane fade show active" id="tcu-all-sales" role="tabpanel" data-tabs-target="panel">
+                    <turbo-frame id="frame-cust-all-sales" src="<%= admin_dashboard_customers_rank_path(period: 'all', metric: 'sales') %>">
+                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0"><tbody>
+                        <tr><td colspan="3" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
+                        <% 3.times do %><tr class="placeholder-row"><td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
+                      </tbody></table></div>
+                    </turbo-frame>
+                  </div>
+                  <div class="tab-pane fade" id="tcu-all-res" role="tabpanel" data-tabs-target="panel">
+                    <turbo-frame id="frame-cust-all-reserved" src="<%= admin_dashboard_customers_rank_path(period: 'all', metric: 'reserved') %>">
+                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0"><tbody>
+                        <tr><td colspan="3" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
+                        <% 3.times do %><tr class="placeholder-row"><td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
+                      </tbody></table></div>
+                    </turbo-frame>
+                  </div>
+                  <div class="tab-pane fade" id="tcu-all-comb" role="tabpanel" data-tabs-target="panel">
+                    <turbo-frame id="frame-cust-all-combined" src="<%= admin_dashboard_customers_rank_path(period: 'all', metric: 'combined') %>">
+                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0"><tbody>
+                        <tr><td colspan="3" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
+                        <% 3.times do %><tr class="placeholder-row"><td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
+                      </tbody></table></div>
+                    </turbo-frame>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

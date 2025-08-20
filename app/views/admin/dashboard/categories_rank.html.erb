@@ -2,11 +2,11 @@
 <% period ||= @period %>
 <% metric ||= @metric %>
 <turbo-frame id="frame-cats-<%= period %>-<%= metric %>">
-  <div class="table-responsive">
-    <table class="table table-sm mb-0">
+  <div class="table-responsive p-2 px-3">
+    <table class="table table-sm table-striped mb-0 align-middle">
       <thead>
         <tr>
-          <th>Rank</th>
+          <th class="d-none d-sm-table-cell">Rank</th>
           <th>Categoría</th>
           <th class="text-end"><%= metric == 'profit' ? 'Utilidad' : 'Ingresos' %></th>
         </tr>
@@ -15,8 +15,10 @@
         <% if rows.present? %>
           <% rows.each_with_index do |r, idx| %>
             <tr>
-              <td class="text-muted">#<%= idx + 1 %></td>
-              <td><%= r[:category] %></td>
+              <td class="text-muted d-none d-sm-table-cell">#<%= idx + 1 %></td>
+              <td>
+                <div class="small fw-semibold"><i class="fa-solid fa-tags text-muted me-1"></i> <%= r[:category] %></div>
+              </td>
               <td class="text-end"><%= number_to_currency(r[:value]) %></td>
             </tr>
           <% end %>

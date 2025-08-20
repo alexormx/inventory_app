@@ -2,11 +2,11 @@
 <% rows ||= @rows %>
 <% scope ||= @scope %>
 <% metric ||= @metric %>
-<div class="table-responsive p-2">
-  <table class="table table-sm align-middle">
+<div class="table-responsive p-2 px-3">
+  <table class="table table-sm table-striped align-middle">
     <thead class="table-light sticky-top">
       <tr>
-        <th scope="col">Rank</th>
+  <th scope="col" class="d-none d-sm-table-cell">Rank</th>
         <th scope="col">Producto</th>
         <th scope="col" class="text-end">Unidades</th>
         <th scope="col" class="text-end">Valor</th>
@@ -16,7 +16,7 @@
       <% if rows.present? %>
         <% rows.each_with_index do |r, idx| %>
           <tr>
-            <td class="text-muted">#<%= idx + 1 %></td>
+            <td class="text-muted d-none d-sm-table-cell">#<%= idx + 1 %></td>
             <td>
               <div class="small fw-semibold"><i class="fa-solid fa-box-open text-muted me-1"></i> <%= r[:name] %></div>
               <% if r[:brand].present? || r[:category].present? %>

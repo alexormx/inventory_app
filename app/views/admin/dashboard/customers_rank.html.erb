@@ -2,11 +2,11 @@
 <% period ||= @period %>
 <% metric ||= @metric %>
 <turbo-frame id="frame-cust-<%= period %>-<%= metric %>">
-  <div class="table-responsive">
-    <table class="table table-sm mb-0">
+  <div class="table-responsive p-2 px-3">
+    <table class="table table-sm table-striped mb-0 align-middle">
       <thead>
         <tr>
-          <th>Rank</th>
+          <th class="d-none d-sm-table-cell">Rank</th>
           <th>Cliente</th>
           <% if metric == 'reserved' %>
             <th class="text-end">Unidades apartadas</th>
@@ -26,8 +26,10 @@
         <% if rows.present? %>
           <% rows.each_with_index do |u, idx| %>
             <tr>
-              <td class="text-muted">#<%= idx + 1 %></td>
-              <td><%= link_to (u[:name] || u[:user_id]), edit_admin_user_path(u[:user_id]) %></td>
+              <td class="text-muted d-none d-sm-table-cell">#<%= idx + 1 %></td>
+              <td>
+                <div class="small fw-semibold"><i class="fa-solid fa-user text-muted me-1"></i> <%= (u[:name] || u[:user_id]) %></div>
+              </td>
               <% if metric == 'reserved' %>
                 <td class="text-end"><%= number_with_delimiter(u[:units_reserved]) %></td>
                 <td class="text-end"><%= number_to_currency(u[:reserved_value]) %></td>
