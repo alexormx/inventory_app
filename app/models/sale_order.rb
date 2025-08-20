@@ -20,6 +20,7 @@ class SaleOrder < ApplicationRecord
 
   before_destroy :ensure_inventories_safe_or_release
   before_validation :set_default_status, on: :create
+  before_validation :compute_financials
   before_create :generate_custom_id
 
   # Opcional: si cambias status a 'Canceled', libera lo reservado
@@ -68,6 +69,21 @@ class SaleOrder < ApplicationRecord
 
   def set_default_status
     self.status ||= "Pending"
+  end
+
+  # Calcula impuestos y total a partir de subtotal, tax_rate y discount.
+  # Se ejecuta antes de validar para garantizar consistencia aunque el front no lo envíe.
+  def compute_financials
+    # Asegurar valores numéricos
+    sub = (subtotal || 0).to_d
+    rate = (tax_rate || 0).to_d
+    disc = (discount || 0).to_d
+
+    # Si falta info mínima, no forzar cálculo
+    return if sub.zero? && rate.zero? && disc.zero? && total_tax.present? && total_order_value.present?
+
+    self.total_tax = (sub * (rate / 100)).round(2)
+    self.total_order_value = (sub + total_tax.to_d - disc).round(2)
   end
 
     # Bloquea si hay vendidos; si todo está reservado, libera y permite borrar.
