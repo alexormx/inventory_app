@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_08_17_120000) do
+ActiveRecord::Schema[8.0].define(version: 2025_08_20_122000) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -76,7 +76,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_17_120000) do
     t.index ["sale_order_id"], name: "index_inventories_on_sale_order_id"
   end
 
-  create_table "inventory_status_sync_runs", force: :cascade do |t|
+  create_table "maintenance_runs", force: :cascade do |t|
+    t.string "job_name", null: false
     t.string "status", default: "queued", null: false
     t.text "stats"
     t.datetime "started_at"
@@ -84,6 +85,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_17_120000) do
     t.text "error"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["created_at"], name: "index_maintenance_runs_on_created_at"
+    t.index ["job_name"], name: "index_maintenance_runs_on_job_name"
+    t.index ["status"], name: "index_maintenance_runs_on_status"
   end
 
   create_table "payments", force: :cascade do |t|
