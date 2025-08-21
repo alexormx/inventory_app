@@ -80,7 +80,13 @@ class SaleOrder < ApplicationRecord
     disc = (discount || 0).to_d
 
     # Si falta info mínima, no forzar cálculo
-    return if sub.zero? && rate.zero? && disc.zero? && total_tax.present? && total_order_value.present?
+    if sub.zero? && rate.zero? && disc.zero?
+      # Si hay líneas y total está 0/nil, intenta calcular desde las líneas
+      if (total_order_value.nil? || total_order_value.to_d.zero?) && sale_order_items.loaded? ? sale_order_items.any? : sale_order_items.exists?
+        recalculate_totals!(persist: false)
+      end
+      return if total_tax.present? && total_order_value.present?
+    end
 
     self.total_tax = (sub * (rate / 100)).round(2)
     self.total_order_value = (sub + total_tax.to_d - disc).round(2)

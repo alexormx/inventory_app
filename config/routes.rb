@@ -130,7 +130,11 @@ Rails.application.routes.draw do
       resources :users, only: [:create]
       get 'users/exists', to: 'users#exists'
       resources :purchase_orders, only: [:create]
-  resources :sales_orders, only: [:create, :update]
+      resources :sales_orders, only: [:create, :update] do
+        member do
+          post :recalculate_and_pay
+        end
+      end
       # Pagos asociados a Sale Orders
       resources :sales_orders, only: [] do
         resources :payments, only: [:create]
