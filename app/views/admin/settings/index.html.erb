@@ -60,69 +60,10 @@
 	</div>
 </div>
 
-<div class="card mb-4">
-	<div class="card-header d-flex align-items-center gap-2">
-		<i class="fa fa-list"></i>
-		<span>Ejecuciones recientes de backfill (Sale Orders)</span>
-	</div>
-		<div class="card-body p-0">
-		<div class="table-responsive">
-			<table class="table table-sm mb-0 align-middle">
-				<thead>
-					<tr>
-						<th>ID</th>
-						<th>Estado</th>
-						<th>Inicio</th>
-						<th>Fin</th>
-						<th>Duración</th>
-						<th>Stats</th>
-						<th>Error</th>
-					</tr>
-				</thead>
-				<tbody>
-					<% if @so_backfill_runs.present? %>
-						<% @so_backfill_runs.each do |r| %>
-							<tr>
-								<td>#<%= r.id %></td>
-								<td>
-									<% badge_class = case r.status.to_s
-																	 when 'queued' then 'bg-secondary'
-																	 when 'running' then 'bg-info'
-																	 when 'completed' then 'bg-success'
-																	 when 'failed' then 'bg-danger'
-																	 else 'bg-light text-dark border'
-																	 end %>
-									<span class="badge <%= badge_class %>"><%= r.status %></span>
-								</td>
-								<td><%= r.started_at&.strftime('%Y-%m-%d %H:%M:%S') || '-' %></td>
-								<td><%= r.finished_at&.strftime('%Y-%m-%d %H:%M:%S') || '-' %></td>
-								<td><%= r.duration_seconds ? "#{r.duration_seconds}s" : '-' %></td>
-								<td class="text-break" style="max-width: 320px;">
-									<% if r.stats.present? %>
-										<pre class="mb-0 small"><%= JSON.pretty_generate(r.stats) %></pre>
-									<% else %>
-										-
-									<% end %>
-								</td>
-								<td class="text-break" style="max-width: 280px;">
-									<%= r.error.presence || '-' %>
-								</td>
-							</tr>
-						<% end %>
-					<% else %>
-						<tr>
-							<td colspan="7" class="text-center text-muted">Sin ejecuciones registradas.</td>
-						</tr>
-					<% end %>
-				</tbody>
-			</table>
-		</div>
-	</div>
-</div>
 <div class="card">
 	<div class="card-header d-flex align-items-center gap-2">
 		<i class="fa fa-list"></i>
-		<span>Ejecuciones recientes</span>
+		<span>Ejecuciones recientes (todas)</span>
 	</div>
 	<div class="card-body p-0">
 		<div class="table-responsive">
@@ -130,6 +71,7 @@
 				<thead>
 					<tr>
 						<th>ID</th>
+						<th>Job</th>
 						<th>Estado</th>
 						<th>Inicio</th>
 						<th>Fin</th>
@@ -139,19 +81,20 @@
 					</tr>
 				</thead>
 				<tbody>
-					<% if @sync_runs.present? %>
-						<% @sync_runs.each do |r| %>
+					<% if @runs.present? %>
+						<% @runs.each do |r| %>
 							<tr>
 								<td>#<%= r.id %></td>
+								<td><code><%= r.job_name %></code></td>
 								<td>
 									<% badge_class = case r.status.to_s
-																	when 'queued' then 'bg-secondary'
-																	when 'running' then 'bg-info'
-																	when 'completed' then 'bg-success'
-																	when 'failed' then 'bg-danger'
-																	else 'bg-light text-dark border'
-																	end %>
-									<span class="badge <%= badge_class %>"><%= r.status %></span>
+													 when 'queued' then 'bg-secondary'
+													 when 'running' then 'bg-info'
+													 when 'completed' then 'bg-success'
+													 when 'failed' then 'bg-danger'
+													 else 'bg-light text-dark border'
+													 end %>
+								<span class="badge <%= badge_class %>"><%= r.status %></span>
 								</td>
 								<td><%= r.started_at&.strftime('%Y-%m-%d %H:%M:%S') || '-' %></td>
 								<td><%= r.finished_at&.strftime('%Y-%m-%d %H:%M:%S') || '-' %></td>
@@ -170,11 +113,17 @@
 						<% end %>
 					<% else %>
 						<tr>
-							<td colspan="7" class="text-center text-muted">Sin ejecuciones registradas.</td>
+							<td colspan="8" class="text-center text-muted">Sin ejecuciones registradas.</td>
 						</tr>
 					<% end %>
 				</tbody>
 			</table>
 		</div>
 	</div>
+	<%# Paginación global %>
+	<% if @runs.respond_to?(:current_page) %>
+		<div class="card-footer py-2">
+			<%= paginate @runs %>
+		</div>
+	<% end %>
 </div>

@@ -3,10 +3,8 @@ class Admin::SettingsController < ApplicationController
   before_action :authorize_admin!
 
   def index
-  # Últimas ejecuciones de sincronización de inventario (unified)
-  @sync_runs = MaintenanceRun.recent_for("inventories.reevaluate_statuses")
-  # Últimas ejecuciones de backfill de Sale Orders (unified)
-  @so_backfill_runs = MaintenanceRun.recent_for("sale_orders.backfill_totals")
+  # Tabla unificada de ejecuciones (todas), paginada (10 por página)
+  @runs = MaintenanceRun.order(created_at: :desc).page(params[:page]).per(10)
   end
 
   # Temporal: sincronización de estados de inventario (stub)
