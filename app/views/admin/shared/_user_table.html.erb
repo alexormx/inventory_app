@@ -26,6 +26,7 @@
   <th>Activity</th>
   <th class="text-end"><%= sort_link('Total Purchases', :total_purchases) %></th>
   <th class="text-end"><%= sort_link('Total Sales', :total_sales) %></th>
+  <th class="text-end"><%= sort_link('Adeudo', :debt) %></th>
   <th><%= sort_link('Last Visit', :last_visit) %></th>
   <th><%= sort_link('Last Purchase', :last_purchase) %></th>
   <th><%= sort_link('Last Sale', :last_sale) %></th>
@@ -79,6 +80,7 @@
           </td>
           <td class="text-end"><%= number_to_currency(total_purch) %></td>
           <td class="text-end"><%= number_to_currency(total_sales) %></td>
+          <td class="text-end"><%= number_to_currency((u.attributes["balance_due_mxn"] || 0).to_d) %></td>
           <td>
             <% lv_raw = u.attributes["last_visit_at"] || last_visit %>
             <% if lv_raw.present? %>
