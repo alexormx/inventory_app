@@ -86,6 +86,21 @@ class SaleOrder < ApplicationRecord
     self.total_order_value = (sub + total_tax.to_d - disc).round(2)
   end
 
+  # Recalcula subtotal a partir de las líneas y vuelve a calcular impuestos y total.
+  # Úsalo cuando cambien items, tax_rate o discount.
+  def recalculate_totals!(persist: true)
+    sub = sale_order_items.sum(<<~SQL)
+      COALESCE(total_line_cost,
+               quantity * COALESCE(unit_final_price, (unit_cost - COALESCE(unit_discount, 0))))
+    SQL
+    self.subtotal = sub.to_d.round(2)
+    compute_financials
+    if persist
+      save(validate: false)
+    end
+    self
+  end
+
     # Bloquea si hay vendidos; si todo está reservado, libera y permite borrar.
   def ensure_inventories_safe_or_release
   sold = inventories.where(status: %w[sold])

@@ -10,6 +10,7 @@ class SaleOrderItem < ApplicationRecord
 
   after_save :sync_inventory_records, if: :saved_change_to_quantity?
   after_commit :update_product_stats
+  after_commit :recalculate_parent_order_totals
 
   # Guards de seguridad
   before_update  :ensure_free_to_reduce, if: :will_reduce_quantity?
@@ -66,6 +67,14 @@ class SaleOrderItem < ApplicationRecord
     Products::UpdateStatsService.new(product).call
   rescue => e
     Rails.logger.error "[SOI#update_product_stats] #{e.class}: #{e.message}"
+  end
+
+  def recalculate_parent_order_totals
+    return unless sale_order_id.present?
+    # Evitar recursión infinita: ejecuta fuera de transacción de la línea ya comprometida
+    SaleOrder.find_by(id: sale_order_id)&.recalculate_totals!(persist: true)
+  rescue => e
+    Rails.logger.error "[SOI#recalculate_parent_order_totals] #{e.class}: #{e.message}"
   end
 
   # FUTURO: Soporte para backorders
