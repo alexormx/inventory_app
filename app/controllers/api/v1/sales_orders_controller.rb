@@ -370,6 +370,120 @@ class Api::V1::SalesOrdersController < ApplicationController
     end
   end
 
+  # POST /api/v1/sales_orders/:id/recalculate_and_pay
+  # Recalcula totales desde las líneas y crea el pago faltante (Completed) y shipment (si Delivered) evitando bloqueos.
+  def recalculate_and_pay
+    sales_order = SaleOrder.find_by(id: params[:id])
+    unless sales_order
+      render json: { status: "error", message: "SaleOrder not found" }, status: :not_found and return
+    end
+
+    response_extra = {}
+
+    begin
+      ActiveRecord::Base.transaction do
+        # 1) Recalcular totales desde items si existen
+        before_total = sales_order.total_order_value
+        items_count = sales_order.sale_order_items.count
+        sales_order.recalculate_totals!(persist: true)
+        sales_order.reload
+        # Si sigue en cero, derivarlo desde líneas y persistir columnas mínimas
+        if sales_order.total_order_value.to_f <= 0.0 && items_count > 0
+          items_total = sales_order.sale_order_items.sum(<<~SQL)
+            COALESCE(total_line_cost,
+                     quantity * COALESCE(unit_final_price, (unit_cost - COALESCE(unit_discount, 0))))
+          SQL
+          items_total = items_total.to_d.round(2)
+          if items_total > 0
+            sales_order.update_columns(subtotal: items_total, total_tax: 0, total_order_value: items_total, updated_at: Time.current)
+            sales_order.reload
+          end
+        end
+        Rails.logger.info({ at: "Api::V1::SalesOrdersController#recalculate_and_pay:recalc", id: sales_order.id, before_total: before_total&.to_s, after_total: sales_order.total_order_value.to_s, items_count: items_count }.to_json)
+        response_extra[:recalculated] = { before: before_total, after: sales_order.total_order_value, items: items_count }
+
+        # 2) Si no está completamente pagada y el total > 0, crear pago por el faltante (Completed)
+  if sales_order.total_order_value.to_f > 0.0 && sales_order.total_paid < sales_order.total_order_value
+          pm_param = params.dig(:payment, :payment_method).presence || params.dig(:sales_order, :payment_method).presence
+          pm_mapped = if pm_param && Payment.payment_methods.keys.include?(pm_param.to_s)
+                        pm_param.to_s
+                      else
+                        "transferencia_bancaria"
+                      end
+
+          paid_at_ts = begin
+            base_date = sales_order.order_date || Date.today
+            (base_date.to_time.in_time_zone + 5.days)
+          rescue StandardError
+            Time.zone.now
+          end
+
+          missing = (sales_order.total_order_value - sales_order.total_paid).round(2)
+          payment = sales_order.payments.create!(
+            amount: missing,
+            status: "Completed",
+            payment_method: pm_mapped,
+            paid_at: paid_at_ts
+          )
+          response_extra[:payment] = payment
+          Rails.logger.info({ at: "Api::V1::SalesOrdersController#recalculate_and_pay:payment_created", id: sales_order.id, amount: missing.to_s }.to_json)
+        else
+          response_extra[:payment] = { skipped: true, reason: "already_fully_paid_or_zero_total" }
+          Rails.logger.info({ at: "Api::V1::SalesOrdersController#recalculate_and_pay:payment_skipped", id: sales_order.id, total: sales_order.total_order_value.to_s, total_paid: sales_order.total_paid.to_s }.to_json)
+        end
+
+        # 3) Si la orden está Delivered y no hay shipment, crear uno por defecto
+        if sales_order.status == "Delivered" && sales_order.shipment.blank?
+          order_base_date = sales_order.order_date || Date.today
+          expected = order_base_date + 20
+          shipment = sales_order.create_shipment!(
+            tracking_number: "A00000000MX",
+            carrier: "Local",
+            estimated_delivery: expected,
+            actual_delivery: expected,
+            status: Shipment.statuses[:delivered]
+          )
+          response_extra[:shipment] = shipment
+        end
+
+        render json: { status: "success", sales_order: sales_order.reload, extra: response_extra }, status: :ok and return
+      end
+    rescue ActiveRecord::RecordInvalid => e
+      render json: { status: "error", errors: e.record.errors.full_messages }, status: :unprocessable_entity and return
+    rescue StandardError => e
+      render json: { status: "error", message: e.message }, status: :internal_server_error and return
+    end
+  end
+
+  # POST /api/v1/sales_orders/:id/ensure_payment
+  # Idempotente: recalcula totales si es necesario y crea el pago por el faltante si aplica.
+  def ensure_payment
+    sales_order = SaleOrder.find_by(id: params[:id])
+    unless sales_order
+      render json: { status: "error", message: "SaleOrder not found" }, status: :not_found and return
+    end
+
+    pm_param = params.dig(:payment, :payment_method).presence || params.dig(:sales_order, :payment_method).presence
+    pm_mapped = if pm_param && Payment.payment_methods.keys.include?(pm_param.to_s)
+                  pm_param.to_s
+                else
+                  "transferencia_bancaria"
+                end
+
+    begin
+      result = ::SaleOrders::EnsurePaymentService.new(sales_order, payment_method: pm_mapped).call
+      if result.created
+        render json: { status: "success", created_amount: result.created_amount.to_s }, status: :created
+      else
+        render json: { status: "success", message: result.skipped_reason || "no_action" }, status: :ok
+      end
+    rescue ActiveRecord::RecordInvalid => e
+      render json: { status: "error", errors: e.record.errors.full_messages }, status: :unprocessable_entity
+    rescue => e
+      render json: { status: "error", message: e.message }, status: :internal_server_error
+    end
+  end
+
   private
 
   def sales_order_params

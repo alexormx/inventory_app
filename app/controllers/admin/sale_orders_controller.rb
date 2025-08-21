@@ -11,11 +11,16 @@ class Admin::SaleOrdersController < ApplicationController
     # Filtros y búsqueda similares a inventario
     params[:status] ||= params[:current_status]
     @status_filter = params[:status].presence
-    @q = params[:q].to_s.strip
+  @q = params[:q].to_s.strip
+  # Filtro: con adeudo (balance > 0)
+  @due_filter = %w[1 true yes on].include?(params[:due].to_s)
 
   scope = SaleOrder.joins(:user).includes(:user)
-  # Units per order (sum of item quantities) as items_count via subquery
-  scope = scope.select("sale_orders.*", "(SELECT COALESCE(SUM(quantity),0) FROM sale_order_items soi WHERE soi.sale_order_id = sale_orders.id) AS items_count")
+  # Subqueries: items_count, total_paid (pagos Completed), balance_due
+  items_count_sql = "(SELECT COALESCE(SUM(quantity),0) FROM sale_order_items soi WHERE soi.sale_order_id = sale_orders.id) AS items_count"
+  total_paid_sql  = "(SELECT COALESCE(SUM(amount),0) FROM payments p WHERE p.sale_order_id = sale_orders.id AND p.status = 'Completed') AS total_paid_value"
+  balance_due_sql = "(sale_orders.total_order_value - (SELECT COALESCE(SUM(amount),0) FROM payments p2 WHERE p2.sale_order_id = sale_orders.id AND p2.status = 'Completed')) AS balance_due_value"
+  scope = scope.select("sale_orders.*", items_count_sql, total_paid_sql, balance_due_sql)
     # Sorting
     sort = params[:sort].presence
     dir  = params[:dir].to_s.downcase == 'asc' ? 'asc' : 'desc'
@@ -24,7 +29,9 @@ class Admin::SaleOrdersController < ApplicationController
       'created'   => 'sale_orders.created_at',
       'customer'  => 'users.name',
   'total_mxn' => 'sale_orders.total_order_value',
-  'items'     => 'items_count'
+  'items'     => 'items_count',
+      'paid'      => 'total_paid_value',
+      'balance'   => 'balance_due_value'
     }
     if sort_map.key?(sort)
       scope = scope.order(Arel.sql("#{sort_map[sort]} #{dir.upcase}"))
@@ -33,6 +40,10 @@ class Admin::SaleOrdersController < ApplicationController
     end
     if @status_filter.present? && @status_filter != "all"
       scope = scope.where(status: @status_filter)
+    end
+    if @due_filter
+      balance_expr = "sale_orders.total_order_value - (SELECT COALESCE(SUM(amount),0) FROM payments p2 WHERE p2.sale_order_id = sale_orders.id AND p2.status = 'Completed')"
+      scope = scope.where(Arel.sql("#{balance_expr} > 0"))
     end
     if @q.present?
       adapter = ActiveRecord::Base.connection.adapter_name.downcase
@@ -53,7 +64,7 @@ class Admin::SaleOrdersController < ApplicationController
     # Contadores superiores (globales) e inferiores (filtrados)
     statuses = ["Pending", "Confirmed", "Shipped", "Delivered", "Canceled"]
     @counts_global = statuses.each_with_object({}) { |s, h| h[s] = SaleOrder.where(status: s).count }
-    counts_scope = SaleOrder.joins(:user)
+  counts_scope = SaleOrder.joins(:user)
     if @q.present?
       adapter = ActiveRecord::Base.connection.adapter_name.downcase
       id_cast = adapter.include?("postgres") ? "sale_orders.id::text" : "CAST(sale_orders.id AS TEXT)"
@@ -66,9 +77,10 @@ class Admin::SaleOrdersController < ApplicationController
         counts_scope = counts_scope.where(["#{id_cast} LIKE ? OR #{name_cond}", term, term])
       end
     end
-    if @status_filter.present? && @status_filter != "all"
+  if @status_filter.present? && @status_filter != "all"
       counts_scope = counts_scope.where(status: @status_filter)
     end
+  # Nota: los contadores por status no aplican 'due', se mantienen globales al filtro de status/búsqueda.
     @counts = statuses.each_with_object({}) { |s, h| h[s] = counts_scope.where(status: s).count }
     respond_to do |format|
       format.html
@@ -144,7 +156,7 @@ class Admin::SaleOrdersController < ApplicationController
     require 'csv'
     CSV.generate(headers: true) do |csv|
       csv << [
-        "ID", "Customer", "Order Date", "Status", "Items", "Total MXN", "Discount"
+        "ID", "Customer", "Order Date", "Status", "Items", "Total", "Pagado", "Adeudo", "Discount"
       ]
       relation.each do |so|
         csv << [
@@ -154,6 +166,8 @@ class Admin::SaleOrdersController < ApplicationController
           so.status,
           so.attributes["items_count"].to_i,
           so.total_order_value,
+          so.attributes["total_paid_value"].to_d,
+          so.attributes["balance_due_value"].to_d,
           so.discount
         ]
       end

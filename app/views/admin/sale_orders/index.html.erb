@@ -31,7 +31,7 @@
           <button class="btn btn-primary" type="submit" name="commit" value="search" title="Buscar">Buscar</button>
         </div>
       </div>
-      <div class="col-12 col-md-6 text-md-end">
+  <div class="col-12 col-md-6 text-md-end">
         <% current_status = @status_filter.presence || "all" %>
         <% outline_for = ->(s) do
              case s
@@ -53,6 +53,10 @@
           <%= button_tag "Canceled", name: :status, value: "Canceled", class: btnc.call("Canceled", current_status) %>
         </div>
         <%= hidden_field_tag :current_status, current_status %>
+        <div class="form-check form-check-inline align-middle ms-2">
+          <%= check_box_tag :due, 1, @due_filter, class: "form-check-input", id: "dueFilter" %>
+          <label class="form-check-label" for="dueFilter">Con adeudo</label>
+        </div>
   <%= link_to "Limpiar filtros", admin_sale_orders_path(request.query_parameters.slice(:sort, :dir)), class: "btn btn-sm btn-outline-secondary ms-2", title: "Quitar búsqueda y status" %>
       </div>
     <% end %>
@@ -82,7 +86,9 @@
   <th scope="col"><%= sort_link('Order Date', :date) %></th>
   <th scope="col">Status</th>
   <th scope="col" class="text-end"><%= sort_link('Items', :items) %></th>
-  <th scope="col" class="text-end"><%= sort_link('Total MXN', :total_mxn) %></th>
+  <th scope="col" class="text-end"><%= sort_link('Total', :total_mxn) %></th>
+  <th scope="col" class="text-end"><%= sort_link('Pagado', :paid) %></th>
+  <th scope="col" class="text-end"><%= sort_link('Adeudo', :balance) %></th>
       <th scope="col" class="text-end">Discount</th>
       <th scope="col" class="text-end">Actions</th>
     </tr>
@@ -99,8 +105,15 @@
           </span>
         </td>
   <td class="text-end"><%= so.attributes["items_count"].to_i %></td>
+  <td class="text-end"><%= number_to_currency(so.total_order_value, unit: "$") %></td>
+  <td class="text-end"><%= number_to_currency(so.attributes["total_paid_value"].to_d, unit: "$") %></td>
+        <% balance = so.attributes["balance_due_value"].to_d %>
         <td class="text-end">
-          <%= number_to_currency(so.total_order_value, unit: "$") %>
+          <% if balance > 0 %>
+            <span class="badge bg-danger"> <%= number_to_currency(balance, unit: "$") %> </span>
+          <% else %>
+            <span class="badge bg-success"> <%= number_to_currency(0, unit: "$") %> </span>
+          <% end %>
         </td>
         <td class="text-end"><%= "#{so.discount}%" if so.discount.present? %></td>
         <td class="text-end">

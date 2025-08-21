@@ -9,12 +9,13 @@ class Api::V1::PaymentsController < ApplicationController
       render json: { status: "error", message: "SaleOrder not found" }, status: :not_found and return
     end
 
-    # Si el total está en 0/nil pero hay items, intenta recalcular antes de decidir si ya está pagada
-    if (sales_order.total_order_value.nil? || sales_order.total_order_value.to_f <= 0.0) && sales_order.sale_order_items.exists?
+    # Si el total está en 0/nil intenta recalcular desde las líneas, sin condicionar a exists?, para romper ciclos
+    if (sales_order.total_order_value.nil? || sales_order.total_order_value.to_f <= 0.0)
       begin
         before_total = sales_order.total_order_value
         sales_order.recalculate_totals!(persist: true)
-        Rails.logger.info({ at: "Api::V1::PaymentsController#create:recalc", sales_order_id: sales_order.id, before_total: before_total&.to_s, after_total: sales_order.total_order_value.to_s }.to_json)
+        sales_order.reload
+        Rails.logger.info({ at: "Api::V1::PaymentsController#create:recalc", sales_order_id: sales_order.id, before_total: before_total&.to_s, after_total: sales_order.total_order_value.to_s, items_count: sales_order.sale_order_items.count }.to_json)
       rescue => e
         Rails.logger.error({ at: "Api::V1::PaymentsController#create:recalc_error", sales_order_id: sales_order.id, error: e.message }.to_json)
       end
@@ -55,6 +56,37 @@ class Api::V1::PaymentsController < ApplicationController
       }.to_json
     )
 
+    # Derivar total desde las líneas si el total sigue en 0/nil
+    items_total = begin
+      sales_order.sale_order_items.sum(<<~SQL)
+        COALESCE(total_line_cost,
+                 quantity * COALESCE(unit_final_price, (unit_cost - COALESCE(unit_discount, 0))))
+      SQL
+    rescue
+      0
+    end.to_d.round(2)
+
+    effective_total = if sales_order.total_order_value.to_f > 0.0
+                         sales_order.total_order_value.to_d
+                       else
+                         items_total
+                       end
+
+    # Si el total efectivo > 0 pero las columnas siguen en 0, actualiza totales para consistencia
+    if sales_order.total_order_value.to_f <= 0.0 && effective_total > 0
+      begin
+        sales_order.update_columns(
+          subtotal: effective_total,
+          total_tax: 0,
+          total_order_value: effective_total,
+          updated_at: Time.current
+        )
+        sales_order.reload
+      rescue => e
+        Rails.logger.error({ at: "Api::V1::PaymentsController#create:update_totals_from_items_error", id: sales_order.id, error: e.message }.to_json)
+      end
+    end
+
     # Si viene un monto explícito (por ejemplo desde la migración), úsalo como objetivo a cubrir.
     if amount_param && amount_param > 0
       missing_vs_param = (amount_param - sales_order.total_paid).round(2)
@@ -77,12 +109,22 @@ class Api::V1::PaymentsController < ApplicationController
       end
     end
 
-    # Si ya está pagada completamente contra el total de la orden, no duplicar
-    if sales_order.total_paid >= sales_order.total_order_value
+    # Si ya está pagada completamente y el total efectivo es > 0, no duplicar
+    if sales_order.total_order_value.to_f > 0.0 && sales_order.total_paid >= sales_order.total_order_value
       render json: { status: "success", message: "SaleOrder already fully paid", sales_order_id: sales_order.id }, status: :ok and return
     end
 
-    amount_missing = (sales_order.total_order_value - sales_order.total_paid).round(2)
+    # Monto faltante con base en total efectivo
+    amount_missing = if sales_order.total_order_value.to_f > 0.0
+                       (sales_order.total_order_value - sales_order.total_paid).round(2)
+                     else
+                       (effective_total - sales_order.total_paid).round(2)
+                     end
+
+    # Si aún el total efectivo es 0 o el faltante <= 0, salir con 422 para no confundir
+    if amount_missing <= 0
+      render json: { status: "error", message: "No payable amount (total is zero or already covered)", totals: { effective_total: effective_total.to_s, order_total: sales_order.total_order_value.to_s, paid: sales_order.total_paid.to_s } }, status: :unprocessable_entity and return
+    end
 
     payment = sales_order.payments.new(
       amount: amount_missing,

@@ -50,16 +50,18 @@ class SaleOrder < ApplicationRecord
   private
 
   def ensure_payment_and_shipment_present
+    # Solo validar al transicionar a un estado que exige pago/envío.
+    return unless saved_change_to_status?
+
     case status
     when "Confirmed"
-  errors.add(:payment, "must exist to confirm the order") unless total_order_value.to_f == 0.0 || payments.any?
+      errors.add(:payment, "must exist to confirm the order") unless total_order_value.to_f == 0.0 || payments.any?
     when "Shipped"
-  errors.add(:payment, "must exist to ship the order") unless total_order_value.to_f == 0.0 || payments.any?
-  errors.add(:shipment, "must exist to ship the order") unless shipment.present?
+      errors.add(:payment, "must exist to ship the order") unless total_order_value.to_f == 0.0 || payments.any?
+      errors.add(:shipment, "must exist to ship the order") unless shipment.present?
     when "Delivered"
-  errors.add(:payment, "must exist to deliver the order") unless total_order_value.to_f == 0.0 || payments.any?
-  errors.add(:shipment, "must exist to deliver the order") unless shipment.present?
-
+      errors.add(:payment, "must exist to deliver the order") unless total_order_value.to_f == 0.0 || payments.any?
+      errors.add(:shipment, "must exist to deliver the order") unless shipment.present?
     end
   end
 
@@ -80,7 +82,13 @@ class SaleOrder < ApplicationRecord
     disc = (discount || 0).to_d
 
     # Si falta info mínima, no forzar cálculo
-    return if sub.zero? && rate.zero? && disc.zero? && total_tax.present? && total_order_value.present?
+    if sub.zero? && rate.zero? && disc.zero?
+      # Si hay líneas y total está 0/nil, intenta calcular desde las líneas
+      if (total_order_value.nil? || total_order_value.to_d.zero?) && sale_order_items.loaded? ? sale_order_items.any? : sale_order_items.exists?
+        recalculate_totals!(persist: false)
+      end
+      return if total_tax.present? && total_order_value.present?
+    end
 
     self.total_tax = (sub * (rate / 100)).round(2)
     self.total_order_value = (sub + total_tax.to_d - disc).round(2)
@@ -89,7 +97,9 @@ class SaleOrder < ApplicationRecord
   # Recalcula subtotal a partir de las líneas y vuelve a calcular impuestos y total.
   # Úsalo cuando cambien items, tax_rate o discount.
   def recalculate_totals!(persist: true)
-    sub = sale_order_items.sum(<<~SQL)
+  return self unless sale_order_items.exists?
+
+  sub = sale_order_items.sum(<<~SQL)
       COALESCE(total_line_cost,
                quantity * COALESCE(unit_final_price, (unit_cost - COALESCE(unit_discount, 0))))
     SQL
