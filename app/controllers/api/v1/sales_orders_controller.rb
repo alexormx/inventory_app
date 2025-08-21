@@ -77,10 +77,18 @@ class Api::V1::SalesOrdersController < ApplicationController
                           "transferencia_bancaria"
                         end
 
+            paid_at_ts = begin
+              base_date = sales_order.order_date || Date.today
+              (base_date.to_time.in_time_zone + 5.days)
+            rescue StandardError
+              Time.zone.now
+            end
+
             payment = sales_order.payments.create!(
               amount: sales_order.total_order_value,
               status: "Completed",
-              payment_method: pm_mapped
+              payment_method: pm_mapped,
+              paid_at: paid_at_ts
             )
 
             response_extra[:payment] = payment
@@ -170,26 +178,28 @@ class Api::V1::SalesOrdersController < ApplicationController
                         sales_order.status
                       end
 
-    # Recalcular totales si vienen cambios en subtotal/tax_rate/discount o shipping_cost en payload
-    begin
-      subtotal = BigDecimal((attrs[:subtotal].presence || sales_order.subtotal || 0).to_s)
-      tax_rate = BigDecimal((attrs[:tax_rate].presence || sales_order.tax_rate || 0).to_s)
-      discount = BigDecimal((attrs[:discount].presence || sales_order.discount || 0).to_s)
-      shipping_cost = BigDecimal((attrs[:shipping_cost].presence || 0).to_s)
+    # Recalcular totales solo si se envían campos financieros en el payload
+    if [:subtotal, :tax_rate, :discount, :shipping_cost].any? { |k| attrs.key?(k) && attrs[k].present? }
+      begin
+        subtotal = BigDecimal((attrs[:subtotal].presence || sales_order.subtotal || 0).to_s)
+        tax_rate = BigDecimal((attrs[:tax_rate].presence || sales_order.tax_rate || 0).to_s)
+        discount = BigDecimal((attrs[:discount].presence || sales_order.discount || 0).to_s)
+        shipping_cost = BigDecimal((attrs[:shipping_cost].presence || 0).to_s)
 
-      total_tax = (subtotal * (tax_rate / 100)).round(2)
-      total_order_value = (subtotal + total_tax + shipping_cost - discount).round(2)
+        total_tax = (subtotal * (tax_rate / 100)).round(2)
+        total_order_value = (subtotal + total_tax + shipping_cost - discount).round(2)
 
-      attrs[:total_tax] = total_tax
-      attrs[:total_order_value] = total_order_value
-      attrs[:subtotal] = subtotal.round(2)
-      attrs[:discount] = discount.round(2)
-    rescue ArgumentError
-      # Dejar los valores actuales si hay error de parseo
-      attrs.delete(:total_tax)
-      attrs.delete(:total_order_value)
-      attrs.delete(:subtotal)
-      attrs.delete(:discount)
+        attrs[:total_tax] = total_tax
+        attrs[:total_order_value] = total_order_value
+        attrs[:subtotal] = subtotal.round(2)
+        attrs[:discount] = discount.round(2)
+      rescue ArgumentError
+        # Dejar los valores actuales si hay error de parseo
+        attrs.delete(:total_tax)
+        attrs.delete(:total_order_value)
+        attrs.delete(:subtotal)
+        attrs.delete(:discount)
+      end
     end
 
     response_extra = {}
@@ -216,10 +226,18 @@ class Api::V1::SalesOrdersController < ApplicationController
                           "transferencia_bancaria"
                         end
 
+            paid_at_ts = begin
+              base_date = sales_order.order_date || Date.today
+              (base_date.to_time.in_time_zone + 5.days)
+            rescue StandardError
+              Time.zone.now
+            end
+
             payment = sales_order.payments.create!(
               amount: sales_order.total_order_value - sales_order.total_paid,
               status: "Completed",
-              payment_method: pm_mapped
+              payment_method: pm_mapped,
+              paid_at: paid_at_ts
             )
             response_extra[:payment] = payment
           end
