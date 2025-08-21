@@ -131,6 +131,10 @@ Rails.application.routes.draw do
       get 'users/exists', to: 'users#exists'
       resources :purchase_orders, only: [:create]
   resources :sales_orders, only: [:create, :update]
+      # Pagos asociados a Sale Orders
+      resources :sales_orders, only: [] do
+        resources :payments, only: [:create], module: :v1
+      end
   # Items via API: batch-only
   post 'purchase_order_items/batch', to: 'purchase_order_items#batch'
   post 'sale_order_items/batch', to: 'sale_order_items#batch'
