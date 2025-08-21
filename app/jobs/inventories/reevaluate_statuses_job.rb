@@ -3,8 +3,8 @@ module Inventories
     queue_as :default
 
     def perform(run_id = nil)
-  run = run_id && InventoryStatusSyncRun.find_by(id: run_id)
-  run&.update(status: "running", started_at: Time.current)
+      run = run_id && MaintenanceRun.find_by(id: run_id)
+      run&.update(status: "running", started_at: Time.current)
 
       begin
         service = Inventories::ReevaluateStatusesService.new(relation: Inventory.all)

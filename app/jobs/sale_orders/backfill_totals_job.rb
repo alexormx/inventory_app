@@ -3,7 +3,7 @@ module SaleOrders
     queue_as :default
 
     def perform(run_id = nil)
-      run = run_id && SaleOrdersBackfillRun.find_by(id: run_id)
+      run = run_id && MaintenanceRun.find_by(id: run_id)
       run&.update(status: "running", started_at: Time.current)
 
       begin
