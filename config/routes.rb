@@ -133,7 +133,7 @@ Rails.application.routes.draw do
   resources :sales_orders, only: [:create, :update]
       # Pagos asociados a Sale Orders
       resources :sales_orders, only: [] do
-        resources :payments, only: [:create], module: :v1
+        resources :payments, only: [:create]
       end
   # Items via API: batch-only
   post 'purchase_order_items/batch', to: 'purchase_order_items#batch'
