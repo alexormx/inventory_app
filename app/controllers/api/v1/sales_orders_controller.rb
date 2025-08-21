@@ -145,10 +145,143 @@ class Api::V1::SalesOrdersController < ApplicationController
     end
   end
 
+  # PATCH/PUT /api/v1/sales_orders/:id
+  def update
+    sales_order = SaleOrder.find_by(id: params[:id])
+    unless sales_order
+      render json: { status: "error", message: "SaleOrder not found" }, status: :not_found and return
+    end
+
+    # Permitimos mismo set que en create (email es ignorado aquí)
+    attrs = sales_order_params.except(:email).to_h.symbolize_keys
+
+    # Parseo/normalización del estado deseado
+    mapping = {
+      "pending" => "Pending",
+      "confirmed" => "Confirmed",
+      "shipped" => "Shipped",
+      "delivered" => "Delivered",
+      "canceled" => "Canceled",
+      "cancelled" => "Canceled"
+    }
+    desired_status = if attrs[:status].present?
+                        mapping[attrs[:status].to_s.strip.downcase] || attrs[:status].to_s.strip.capitalize
+                      else
+                        sales_order.status
+                      end
+
+    # Recalcular totales si vienen cambios en subtotal/tax_rate/discount o shipping_cost en payload
+    begin
+      subtotal = BigDecimal((attrs[:subtotal].presence || sales_order.subtotal || 0).to_s)
+      tax_rate = BigDecimal((attrs[:tax_rate].presence || sales_order.tax_rate || 0).to_s)
+      discount = BigDecimal((attrs[:discount].presence || sales_order.discount || 0).to_s)
+      shipping_cost = BigDecimal((attrs[:shipping_cost].presence || 0).to_s)
+
+      total_tax = (subtotal * (tax_rate / 100)).round(2)
+      total_order_value = (subtotal + total_tax + shipping_cost - discount).round(2)
+
+      attrs[:total_tax] = total_tax
+      attrs[:total_order_value] = total_order_value
+      attrs[:subtotal] = subtotal.round(2)
+      attrs[:discount] = discount.round(2)
+    rescue ArgumentError
+      # Dejar los valores actuales si hay error de parseo
+      attrs.delete(:total_tax)
+      attrs.delete(:total_order_value)
+      attrs.delete(:subtotal)
+      attrs.delete(:discount)
+    end
+
+    response_extra = {}
+
+    begin
+      ActiveRecord::Base.transaction do
+        # No permitimos sobrescribir user_id por seguridad desde aquí
+        allowed = SaleOrder.attribute_names.map(&:to_sym) - [:user_id]
+        update_attrs = attrs.slice(*allowed)
+
+        # Primero actualizamos datos base (sin forzar estado imposible)
+        # Si el estado deseado requiere payment/shipment, los creamos antes de setear status
+        incoming_status = update_attrs.delete(:status)
+
+        sales_order.update!(update_attrs)
+
+        # Si el estado final será Confirmed o Delivered, aseguramos payment completo
+        if %w[Confirmed Delivered].include?(desired_status)
+          if sales_order.total_order_value.to_f > 0.0 && sales_order.total_paid < sales_order.total_order_value
+            pm_param = params.dig(:sales_order, :payment_method).presence
+            pm_mapped = if pm_param && Payment.payment_methods.keys.include?(pm_param.to_s)
+                          pm_param.to_s
+                        else
+                          "transferencia_bancaria"
+                        end
+
+            payment = sales_order.payments.create!(
+              amount: sales_order.total_order_value - sales_order.total_paid,
+              status: "Completed",
+              payment_method: pm_mapped
+            )
+            response_extra[:payment] = payment
+          end
+        end
+
+        # Si el estado final será Delivered, aseguramos shipment presente
+        if desired_status == "Delivered" && sales_order.shipment.blank?
+          expected = begin
+            if params.dig(:sales_order, :expected_delivery_date).present?
+              Date.parse(params.dig(:sales_order, :expected_delivery_date))
+            else
+              nil
+            end
+          rescue StandardError
+            nil
+          end
+
+          actual = begin
+            if params.dig(:sales_order, :actual_delivery_date).present?
+              Date.parse(params.dig(:sales_order, :actual_delivery_date))
+            else
+              nil
+            end
+          rescue StandardError
+            nil
+          end
+
+          order_base_date = sales_order.order_date || Date.today
+          expected ||= (order_base_date + 20)
+          actual ||= expected
+
+          tracking = params.dig(:sales_order, :tracking_number).presence || "A00000000MX"
+          carrier = params.dig(:sales_order, :carrier).presence || "Local"
+
+          shipment = sales_order.create_shipment!(
+            tracking_number: tracking,
+            carrier: carrier,
+            estimated_delivery: expected,
+            actual_delivery: actual,
+            status: Shipment.statuses[:delivered]
+          )
+          response_extra[:shipment] = shipment
+        end
+
+        # Finalmente, aplicamos el status deseado
+        if incoming_status.present? || desired_status != sales_order.status
+          sales_order.update_columns(status: desired_status)
+        end
+
+        render json: { status: "success", sales_order: sales_order.reload, extra: response_extra }, status: :ok and return
+      end
+    rescue ActiveRecord::RecordInvalid => e
+      render json: { status: "error", errors: e.record.errors.full_messages }, status: :unprocessable_entity and return
+    rescue StandardError => e
+      render json: { status: "error", message: e.message }, status: :internal_server_error and return
+    end
+  end
+
   private
 
   def sales_order_params
-  params.require(:sales_order).permit(:id, :order_date, :subtotal, :tax_rate, :total_tax, :discount, :total_order_value, :status, :email, :notes,
-                     :shipping_cost, :tracking_number, :carrier, :expected_delivery_date, :actual_delivery_date, :payment_method)
+    params.require(:sales_order).permit(:id, :order_date, :subtotal, :tax_rate, :total_tax, :discount, :total_order_value, :status, :email, :notes,
+      :shipping_cost, :tracking_number, :carrier, :expected_delivery_date, :actual_delivery_date, :payment_method)
   end
 end
