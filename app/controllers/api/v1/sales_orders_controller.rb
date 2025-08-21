@@ -455,6 +455,35 @@ class Api::V1::SalesOrdersController < ApplicationController
     end
   end
 
+  # POST /api/v1/sales_orders/:id/ensure_payment
+  # Idempotente: recalcula totales si es necesario y crea el pago por el faltante si aplica.
+  def ensure_payment
+    sales_order = SaleOrder.find_by(id: params[:id])
+    unless sales_order
+      render json: { status: "error", message: "SaleOrder not found" }, status: :not_found and return
+    end
+
+    pm_param = params.dig(:payment, :payment_method).presence || params.dig(:sales_order, :payment_method).presence
+    pm_mapped = if pm_param && Payment.payment_methods.keys.include?(pm_param.to_s)
+                  pm_param.to_s
+                else
+                  "transferencia_bancaria"
+                end
+
+    begin
+      result = ::SaleOrders::EnsurePaymentService.new(sales_order, payment_method: pm_mapped).call
+      if result.created
+        render json: { status: "success", created_amount: result.created_amount.to_s }, status: :created
+      else
+        render json: { status: "success", message: result.skipped_reason || "no_action" }, status: :ok
+      end
+    rescue ActiveRecord::RecordInvalid => e
+      render json: { status: "error", errors: e.record.errors.full_messages }, status: :unprocessable_entity
+    rescue => e
+      render json: { status: "error", message: e.message }, status: :internal_server_error
+    end
+  end
+
   private
 
   def sales_order_params
