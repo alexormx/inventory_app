@@ -9,12 +9,13 @@ class Api::V1::PaymentsController < ApplicationController
       render json: { status: "error", message: "SaleOrder not found" }, status: :not_found and return
     end
 
-    # Si el total está en 0/nil pero hay items, intenta recalcular antes de decidir si ya está pagada
-    if (sales_order.total_order_value.nil? || sales_order.total_order_value.to_f <= 0.0) && sales_order.sale_order_items.exists?
+    # Si el total está en 0/nil intenta recalcular desde las líneas, sin condicionar a exists?, para romper ciclos
+    if (sales_order.total_order_value.nil? || sales_order.total_order_value.to_f <= 0.0)
       begin
         before_total = sales_order.total_order_value
         sales_order.recalculate_totals!(persist: true)
-        Rails.logger.info({ at: "Api::V1::PaymentsController#create:recalc", sales_order_id: sales_order.id, before_total: before_total&.to_s, after_total: sales_order.total_order_value.to_s }.to_json)
+        sales_order.reload
+        Rails.logger.info({ at: "Api::V1::PaymentsController#create:recalc", sales_order_id: sales_order.id, before_total: before_total&.to_s, after_total: sales_order.total_order_value.to_s, items_count: sales_order.sale_order_items.count }.to_json)
       rescue => e
         Rails.logger.error({ at: "Api::V1::PaymentsController#create:recalc_error", sales_order_id: sales_order.id, error: e.message }.to_json)
       end

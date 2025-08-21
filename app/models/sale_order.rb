@@ -95,7 +95,9 @@ class SaleOrder < ApplicationRecord
   # Recalcula subtotal a partir de las líneas y vuelve a calcular impuestos y total.
   # Úsalo cuando cambien items, tax_rate o discount.
   def recalculate_totals!(persist: true)
-    sub = sale_order_items.sum(<<~SQL)
+  return self unless sale_order_items.exists?
+
+  sub = sale_order_items.sum(<<~SQL)
       COALESCE(total_line_cost,
                quantity * COALESCE(unit_final_price, (unit_cost - COALESCE(unit_discount, 0))))
     SQL

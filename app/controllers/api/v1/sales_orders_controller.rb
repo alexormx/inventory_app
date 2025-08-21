@@ -383,14 +383,15 @@ class Api::V1::SalesOrdersController < ApplicationController
     begin
       ActiveRecord::Base.transaction do
         # 1) Recalcular totales desde items si existen
-        if sales_order.sale_order_items.exists?
-          before_total = sales_order.total_order_value
-          sales_order.recalculate_totals!(persist: true)
-          response_extra[:recalculated] = { before: before_total, after: sales_order.total_order_value }
-        end
+  before_total = sales_order.total_order_value
+  items_count = sales_order.sale_order_items.count
+  sales_order.recalculate_totals!(persist: true)
+  sales_order.reload
+  Rails.logger.info({ at: "Api::V1::SalesOrdersController#recalculate_and_pay:recalc", id: sales_order.id, before_total: before_total&.to_s, after_total: sales_order.total_order_value.to_s, items_count: items_count }.to_json)
+  response_extra[:recalculated] = { before: before_total, after: sales_order.total_order_value, items: items_count }
 
         # 2) Si no está completamente pagada y el total > 0, crear pago por el faltante (Completed)
-        if sales_order.total_order_value.to_f > 0.0 && sales_order.total_paid < sales_order.total_order_value
+  if sales_order.total_order_value.to_f > 0.0 && sales_order.total_paid < sales_order.total_order_value
           pm_param = params.dig(:payment, :payment_method).presence || params.dig(:sales_order, :payment_method).presence
           pm_mapped = if pm_param && Payment.payment_methods.keys.include?(pm_param.to_s)
                         pm_param.to_s
@@ -413,8 +414,10 @@ class Api::V1::SalesOrdersController < ApplicationController
             paid_at: paid_at_ts
           )
           response_extra[:payment] = payment
+          Rails.logger.info({ at: "Api::V1::SalesOrdersController#recalculate_and_pay:payment_created", id: sales_order.id, amount: missing.to_s }.to_json)
         else
           response_extra[:payment] = { skipped: true, reason: "already_fully_paid_or_zero_total" }
+          Rails.logger.info({ at: "Api::V1::SalesOrdersController#recalculate_and_pay:payment_skipped", id: sales_order.id, total: sales_order.total_order_value.to_s, total_paid: sales_order.total_paid.to_s }.to_json)
         end
 
         # 3) Si la orden está Delivered y no hay shipment, crear uno por defecto
