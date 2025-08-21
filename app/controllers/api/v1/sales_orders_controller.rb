@@ -202,89 +202,163 @@ class Api::V1::SalesOrdersController < ApplicationController
       end
     end
 
-    response_extra = {}
+  response_extra = {}
 
     begin
       ActiveRecord::Base.transaction do
         # No permitimos sobrescribir user_id por seguridad desde aquí
         allowed = SaleOrder.attribute_names.map(&:to_sym) - [:user_id]
         update_attrs = attrs.slice(*allowed)
-
-        # Primero actualizamos datos base (sin forzar estado imposible)
-        # Si el estado deseado requiere payment/shipment, los creamos antes de setear status
         incoming_status = update_attrs.delete(:status)
 
-        sales_order.update!(update_attrs)
+        requires_payment_now = [sales_order.status, desired_status].any? { |st| %w[Confirmed Delivered].include?(st) }
+        missing_payment = sales_order.total_order_value.to_f > 0.0 && sales_order.total_paid < sales_order.total_order_value
 
-        # Si el estado final será Confirmed o Delivered, aseguramos payment completo
-        if %w[Confirmed Delivered].include?(desired_status)
-          if sales_order.total_order_value.to_f > 0.0 && sales_order.total_paid < sales_order.total_order_value
-            pm_param = params.dig(:sales_order, :payment_method).presence
-            pm_mapped = if pm_param && Payment.payment_methods.keys.include?(pm_param.to_s)
-                          pm_param.to_s
-                        else
-                          "transferencia_bancaria"
-                        end
+        if requires_payment_now && missing_payment && %w[Delivered Confirmed].include?(sales_order.status)
+          # La orden ya está en estado que exige pago y no lo tiene: evitar validaciones, actualizar totales (si vinieron) y crear Payment primero.
+          financial_keys = [:subtotal, :tax_rate, :discount, :total_tax, :total_order_value]
+          financial_update = update_attrs.slice(*financial_keys)
+          other_updates = update_attrs.except(*financial_keys)
 
-            paid_at_ts = begin
-              base_date = sales_order.order_date || Date.today
-              (base_date.to_time.in_time_zone + 5.days)
-            rescue StandardError
-              Time.zone.now
-            end
+          # Aplicar campos no críticos sin cambiar status (sin validaciones)
+          sales_order.update_columns(other_updates) if other_updates.present?
+          sales_order.update_columns(financial_update) if financial_update.present?
 
-            payment = sales_order.payments.create!(
-              amount: sales_order.total_order_value - sales_order.total_paid,
-              status: "Completed",
-              payment_method: pm_mapped,
-              paid_at: paid_at_ts
-            )
-            response_extra[:payment] = payment
-          end
-        end
+          # Crear Payment por el faltante
+          pm_param = params.dig(:sales_order, :payment_method).presence
+          pm_mapped = if pm_param && Payment.payment_methods.keys.include?(pm_param.to_s)
+                        pm_param.to_s
+                      else
+                        "transferencia_bancaria"
+                      end
 
-        # Si el estado final será Delivered, aseguramos shipment presente
-        if desired_status == "Delivered" && sales_order.shipment.blank?
-          expected = begin
-            if params.dig(:sales_order, :expected_delivery_date).present?
-              Date.parse(params.dig(:sales_order, :expected_delivery_date))
-            else
-              nil
-            end
+          paid_at_ts = begin
+            base_date = (sales_order.order_date || Date.today)
+            (base_date.to_time.in_time_zone + 5.days)
           rescue StandardError
-            nil
+            Time.zone.now
           end
 
-          actual = begin
-            if params.dig(:sales_order, :actual_delivery_date).present?
-              Date.parse(params.dig(:sales_order, :actual_delivery_date))
-            else
-              nil
-            end
-          rescue StandardError
-            nil
-          end
-
-          order_base_date = sales_order.order_date || Date.today
-          expected ||= (order_base_date + 20)
-          actual ||= expected
-
-          tracking = params.dig(:sales_order, :tracking_number).presence || "A00000000MX"
-          carrier = params.dig(:sales_order, :carrier).presence || "Local"
-
-          shipment = sales_order.create_shipment!(
-            tracking_number: tracking,
-            carrier: carrier,
-            estimated_delivery: expected,
-            actual_delivery: actual,
-            status: Shipment.statuses[:delivered]
+          payment = sales_order.payments.create!(
+            amount: (sales_order.total_order_value - sales_order.total_paid),
+            status: "Completed",
+            payment_method: pm_mapped,
+            paid_at: paid_at_ts
           )
-          response_extra[:shipment] = shipment
-        end
+          response_extra[:payment] = payment
 
-        # Finalmente, aplicamos el status deseado
-        if incoming_status.present? || desired_status != sales_order.status
-          sales_order.update_columns(status: desired_status)
+          # Shipment si ya es o será Delivered
+          if (desired_status == "Delivered" || sales_order.status == "Delivered") && sales_order.shipment.blank?
+            expected = begin
+              if params.dig(:sales_order, :expected_delivery_date).present?
+                Date.parse(params.dig(:sales_order, :expected_delivery_date))
+              else
+                nil
+              end
+            rescue StandardError
+              nil
+            end
+
+            actual = begin
+              if params.dig(:sales_order, :actual_delivery_date).present?
+                Date.parse(params.dig(:sales_order, :actual_delivery_date))
+              else
+                nil
+              end
+            rescue StandardError
+              nil
+            end
+
+            order_base_date = sales_order.order_date || Date.today
+            expected ||= (order_base_date + 20)
+            actual ||= expected
+
+            tracking = params.dig(:sales_order, :tracking_number).presence || "A00000000MX"
+            carrier = params.dig(:sales_order, :carrier).presence || "Local"
+
+            shipment = sales_order.create_shipment!(
+              tracking_number: tracking,
+              carrier: carrier,
+              estimated_delivery: expected,
+              actual_delivery: actual,
+              status: Shipment.statuses[:delivered]
+            )
+            response_extra[:shipment] = shipment
+          end
+
+          # Aplicar status deseado (si viene), sin validaciones
+          sales_order.update_columns(status: desired_status) if incoming_status.present? && desired_status != sales_order.status
+        else
+          # Flujo normal: actualizamos con validaciones y luego garantizamos payment/shipment si el estado deseado lo requiere
+          sales_order.update!(update_attrs)
+
+          if %w[Confirmed Delivered].include?(desired_status)
+            if sales_order.total_order_value.to_f > 0.0 && sales_order.total_paid < sales_order.total_order_value
+              pm_param = params.dig(:sales_order, :payment_method).presence
+              pm_mapped = if pm_param && Payment.payment_methods.keys.include?(pm_param.to_s)
+                            pm_param.to_s
+                          else
+                            "transferencia_bancaria"
+                          end
+
+              paid_at_ts = begin
+                base_date = sales_order.order_date || Date.today
+                (base_date.to_time.in_time_zone + 5.days)
+              rescue StandardError
+                Time.zone.now
+              end
+
+              payment = sales_order.payments.create!(
+                amount: sales_order.total_order_value - sales_order.total_paid,
+                status: "Completed",
+                payment_method: pm_mapped,
+                paid_at: paid_at_ts
+              )
+              response_extra[:payment] = payment
+            end
+          end
+
+          if desired_status == "Delivered" && sales_order.shipment.blank?
+            expected = begin
+              if params.dig(:sales_order, :expected_delivery_date).present?
+                Date.parse(params.dig(:sales_order, :expected_delivery_date))
+              else
+                nil
+              end
+            rescue StandardError
+              nil
+            end
+
+            actual = begin
+              if params.dig(:sales_order, :actual_delivery_date).present?
+                Date.parse(params.dig(:sales_order, :actual_delivery_date))
+              else
+                nil
+              end
+            rescue StandardError
+              nil
+            end
+
+            order_base_date = sales_order.order_date || Date.today
+            expected ||= (order_base_date + 20)
+            actual ||= expected
+
+            tracking = params.dig(:sales_order, :tracking_number).presence || "A00000000MX"
+            carrier = params.dig(:sales_order, :carrier).presence || "Local"
+
+            shipment = sales_order.create_shipment!(
+              tracking_number: tracking,
+              carrier: carrier,
+              estimated_delivery: expected,
+              actual_delivery: actual,
+              status: Shipment.statuses[:delivered]
+            )
+            response_extra[:shipment] = shipment
+          end
+
+          if incoming_status.present? || desired_status != sales_order.status
+            sales_order.update_columns(status: desired_status)
+          end
         end
 
         render json: { status: "success", sales_order: sales_order.reload, extra: response_extra }, status: :ok and return
