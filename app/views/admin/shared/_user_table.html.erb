@@ -15,19 +15,20 @@
   <table class="table table-sm table-hover align-middle">
     <thead>
       <tr>
-        <th>ID</th>
-        <th>Name</th>
+  <th><%= sort_link('ID', :created) %></th>
+  <th><%= sort_link('Name', :name) %></th>
         <th>Email</th>
         <th>Phone</th>
-        <th>Role</th>
+  <th>Role</th>
         <% if include_offline_column %>
           <th>Offline</th>
         <% end %>
-        <th class="text-end">Total Purchases</th>
-        <th class="text-end">Total Sales</th>
-        <th>Last Visit</th>
-        <th>Last Purchase</th>
-        <th>Last Sale</th>
+  <th>Activity</th>
+  <th class="text-end"><%= sort_link('Total Purchases', :total_purchases) %></th>
+  <th class="text-end"><%= sort_link('Total Sales', :total_sales) %></th>
+  <th><%= sort_link('Last Visit', :last_visit) %></th>
+  <th><%= sort_link('Last Purchase', :last_purchase) %></th>
+  <th><%= sort_link('Last Sale', :last_sale) %></th>
         <th></th>
       </tr>
     </thead>
@@ -41,7 +42,15 @@
           <td><%= u.name %></td>
           <td><%= u.email %></td>
           <td><%= u.phone %></td>
-          <td><span class="badge text-bg-secondary"><%= u.role %></span></td>
+          <td>
+            <% role_class = case u.role.to_s
+              when 'customer' then 'success'
+              when 'supplier' then 'primary'
+              when 'admin'    then 'secondary'
+              else 'secondary'
+            end %>
+            <span class="badge text-bg-<%= role_class %>"><%= u.role %></span>
+          </td>
           <% if include_offline_column %>
             <td>
               <% if u.created_offline? %>
@@ -51,18 +60,60 @@
               <% end %>
             </td>
           <% end %>
-          <td class="text-end"><%= number_to_currency(pstat[:total_value] || 0) %></td>
-          <td class="text-end"><%= number_to_currency(sstat[:total_value] || 0) %></td>
           <td>
-            <% lv = last_visit %>
-            <%= lv.is_a?(String) ? lv : lv&.strftime('%Y-%m-%d %H:%M') %>
+            <% total_purch = (u.attributes["purchases_total_mxn"] || pstat[:total_value] || 0).to_d %>
+            <% total_sales = (u.attributes["sales_total_mxn"]     || sstat[:total_value]   || 0).to_d %>
+            <% if total_sales > 0 %>
+              <span class="badge text-bg-success" title="Tiene ventas">
+                Ventas
+              </span>
+            <% end %>
+            <% if total_purch > 0 %>
+              <span class="badge text-bg-primary" title="Tiene compras">
+                Compras
+              </span>
+            <% end %>
+            <% if total_sales == 0 && total_purch == 0 %>
+              <span class="badge text-bg-secondary" title="Sin actividad">Sin actividad</span>
+            <% end %>
+          </td>
+          <td class="text-end"><%= number_to_currency(total_purch) %></td>
+          <td class="text-end"><%= number_to_currency(total_sales) %></td>
+          <td>
+            <% lv_raw = u.attributes["last_visit_at"] || last_visit %>
+            <% if lv_raw.present? %>
+              <% lv_time = begin
+                lv_raw.is_a?(String) ? Time.zone.parse(lv_raw) : lv_raw
+              rescue
+                nil
+              end %>
+              <% if lv_time.present? %>
+                <% days_ago = ((Time.zone.now - lv_time) / 1.day).floor rescue nil %>
+                <% label_class = if days_ago.nil?
+                  'text-bg-secondary'
+                elsif days_ago <= 30
+                  'text-bg-success'
+                elsif days_ago <= 90
+                  'text-bg-warning'
+                else
+                  'text-bg-secondary'
+                end %>
+                <span class="badge <%= label_class %>" title="<%= lv_time&.strftime('%Y-%m-%d %H:%M:%S') %>">
+                  hace <%= distance_of_time_in_words_to_now(lv_time, include_seconds: false) %>
+                </span>
+              <% else %>
+                <span class="badge text-bg-secondary"><%= lv_raw.to_s %></span>
+              <% end %>
+            <% else %>
+              <span class="badge text-bg-light">Nunca</span>
+            <% end %>
           </td>
           <td>
-            <% ld = pstat[:last_date] %>
+            <% ld = u.attributes["last_purchase_date"] || pstat[:last_date] %>
             <%= ld.is_a?(String) ? ld : ld&.strftime('%Y-%m-%d') %>
           </td>
           <td>
-            <% sd = sstat[:last_date] %>
+            <% sd = u.attributes["last_sale_date"] || sstat[:last_date] %>
             <%= sd.is_a?(String) ? sd : sd&.strftime('%Y-%m-%d') %>
           </td>
           <td class="text-end">

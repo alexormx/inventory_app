@@ -18,7 +18,9 @@
 <%# Barra de búsqueda + filtros por rol (estilo similar a Inventario) %>
 <div class="card mb-4">
   <div class="card-body py-2">
-    <%= form_with url: admin_users_path, method: :get, local: true, class: "row g-2 align-items-center" do %>
+  <%= form_with url: admin_users_path, method: :get, local: true, class: "row g-2 align-items-center" do %>
+      <%= hidden_field_tag :sort, params[:sort] %>
+      <%= hidden_field_tag :dir, params[:dir] %>
       <div class="col-12 col-md-6">
         <div class="input-group input-group-sm">
           <%= text_field_tag :q, @q, class: "form-control", placeholder: "Buscar por nombre…", aria: { label: "Buscar usuarios" } %>
@@ -26,7 +28,7 @@
           <button class="btn btn-primary" type="submit" name="commit" value="search" title="Buscar">Buscar</button>
         </div>
       </div>
-      <div class="col-12 col-md-6 text-md-end">
+  <div class="col-12 col-md-6 text-md-end">
         <% current_role = @role_filter.presence || "all" %>
         <% role_outline = ->(role) do
              case role
@@ -44,6 +46,24 @@
           <%= button_tag "Admins", name: :role, value: "admin", class: btn_classes.call("admin", current_role) %>
         </div>
         <%= hidden_field_tag :current_role, current_role %>
+        <div class="d-inline-block align-middle ms-2">
+          <div class="form-check form-check-inline">
+            <%= check_box_tag :with_sales, 1, @with_sales, class: "form-check-input", id: "with_sales" %>
+            <label class="form-check-label" for="with_sales">Con ventas</label>
+          </div>
+          <div class="form-check form-check-inline">
+            <%= check_box_tag :with_purchases, 1, @with_purchases, class: "form-check-input", id: "with_purchases" %>
+            <label class="form-check-label" for="with_purchases">Con compras</label>
+          </div>
+          <div class="form-check form-check-inline">
+            <%= check_box_tag :active_recent, 1, @active_recent, class: "form-check-input", id: "active_recent" %>
+            <label class="form-check-label" for="active_recent">Activos (30d)</label>
+          </div>
+          <div class="form-check form-check-inline">
+            <%= check_box_tag :inactive, 1, @inactive, class: "form-check-input", id: "inactive" %>
+            <label class="form-check-label" for="inactive">Inactivos (90d)</label>
+          </div>
+        </div>
         <%= link_to "Limpiar filtros", admin_users_path, class: "btn btn-sm btn-outline-secondary ms-2", title: "Quitar búsqueda y rol" %>
       </div>
     <% end %>
@@ -72,5 +92,5 @@
     include_offline_column: true,
     purchase_stats: @purchase_stats,
     sales_stats: @sales_stats,
-    last_visits: @last_visits %>
+  last_visits: @last_visits %>
   </div>

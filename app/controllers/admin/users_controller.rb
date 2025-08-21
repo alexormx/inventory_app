@@ -11,14 +11,74 @@ class Admin::UsersController < ApplicationController
     params[:role] ||= params[:current_role]
     @role_filter = params[:role].presence
     @q = params[:q].to_s.strip
+  # Filtros adicionales
+  @with_sales      = ActiveModel::Type::Boolean.new.cast(params[:with_sales])
+  @with_purchases  = ActiveModel::Type::Boolean.new.cast(params[:with_purchases])
+  @active_recent   = ActiveModel::Type::Boolean.new.cast(params[:active_recent]) # últimas 30 días
+  @inactive        = ActiveModel::Type::Boolean.new.cast(params[:inactive])      # sin visita o > 90 días
 
     users = User.order(created_at: :desc)
+  sort = params[:sort].presence
+  dir  = params[:dir].to_s.downcase == 'asc' ? 'asc' : 'desc'
+
     if @role_filter.present? && @role_filter != "all"
       users = users.where(role: @role_filter)
     end
     if @q.present?
       term = "%#{@q.downcase}%"
       users = users.where("LOWER(name) LIKE ?", term)
+    end
+
+    # Subconsultas para estadísticos por usuario (expresiones reutilizables)
+    purchases_total_expr = "(SELECT COALESCE(SUM(total_cost_mxn),0) FROM purchase_orders po WHERE po.user_id = users.id)"
+    sales_total_expr     = "(SELECT COALESCE(SUM(total_order_value),0) FROM sale_orders so WHERE so.user_id = users.id)"
+    last_purchase_expr   = "(SELECT MAX(order_date) FROM purchase_orders po2 WHERE po2.user_id = users.id)"
+    last_sale_expr       = "(SELECT MAX(order_date) FROM sale_orders so2 WHERE so2.user_id = users.id)"
+    last_visit_expr      = "(SELECT MAX(last_visited_at) FROM visitor_logs vl WHERE vl.user_id = users.id)"
+
+    purchases_total_sql = "#{purchases_total_expr} AS purchases_total_mxn"
+    sales_total_sql     = "#{sales_total_expr} AS sales_total_mxn"
+    last_purchase_sql   = "#{last_purchase_expr} AS last_purchase_date"
+    last_sale_sql       = "#{last_sale_expr} AS last_sale_date"
+    last_visit_sql      = "#{last_visit_expr} AS last_visit_at"
+
+  users = users.select("users.*", purchases_total_sql, sales_total_sql, last_purchase_sql, last_sale_sql, last_visit_sql)
+
+    # Aplicar filtros por agregados si están activos
+    if @with_sales
+      users = users.where(Arel.sql("#{sales_total_expr} > 0"))
+    end
+    if @with_purchases
+      users = users.where(Arel.sql("#{purchases_total_expr} > 0"))
+    end
+    if @active_recent
+      # En los últimos 30 días
+      active_sql = User.sanitize_sql_array(["(#{last_visit_expr}) IS NOT NULL AND (#{last_visit_expr}) >= ?", 30.days.ago])
+      users = users.where(active_sql)
+    end
+    if @inactive
+      # Nunca visitó o hace más de 90 días
+      users = users.where(
+        User.sanitize_sql_array([
+          "(#{last_visit_expr} IS NULL OR #{last_visit_expr} < ?)",
+          90.days.ago
+        ])
+      )
+    end
+
+    sort_map = {
+      'created'        => 'users.created_at',
+      'name'           => 'users.name',
+      'total_purchases'=> 'purchases_total_mxn',
+      'total_sales'    => 'sales_total_mxn',
+      'last_visit'     => 'last_visit_at',
+      'last_purchase'  => 'last_purchase_date',
+      'last_sale'      => 'last_sale_date'
+    }
+    if sort_map.key?(sort)
+      users = users.order(Arel.sql("#{sort_map[sort]} #{dir.upcase}"))
+    else
+      users = users.order(created_at: :desc)
     end
 
     @users = users.page(params[:page]).per(PER_PAGE)
@@ -38,13 +98,28 @@ class Admin::UsersController < ApplicationController
     if @role_filter.present? && @role_filter != "all"
       filtered_counts_scope = filtered_counts_scope.where(role: @role_filter)
     end
+    # Replicar filtros agregados para que los contadores reflejen la vista
+    if @with_sales
+      filtered_counts_scope = filtered_counts_scope.where(Arel.sql("#{sales_total_expr} > 0"))
+    end
+    if @with_purchases
+      filtered_counts_scope = filtered_counts_scope.where(Arel.sql("#{purchases_total_expr} > 0"))
+    end
+    if @active_recent
+      active_sql = User.sanitize_sql_array(["(#{last_visit_expr}) IS NOT NULL AND (#{last_visit_expr}) >= ?", 30.days.ago])
+      filtered_counts_scope = filtered_counts_scope.where(active_sql)
+    end
+    if @inactive
+      inactive_sql = User.sanitize_sql_array(["(#{last_visit_expr}) IS NULL OR (#{last_visit_expr}) < ?", 90.days.ago])
+      filtered_counts_scope = filtered_counts_scope.where(inactive_sql)
+    end
     @role_counts = {
       customers: filtered_counts_scope.where(role: 'customer').count,
       suppliers: filtered_counts_scope.where(role: 'supplier').count,
       admins:    filtered_counts_scope.where(role: 'admin').count
     }
 
-    @purchase_stats, @sales_stats, @last_visits = compute_stats(@users.map(&:id))
+  @purchase_stats, @sales_stats, @last_visits = compute_stats(@users.map(&:id))
   end
 
   def customers
