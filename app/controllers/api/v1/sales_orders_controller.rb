@@ -383,12 +383,24 @@ class Api::V1::SalesOrdersController < ApplicationController
     begin
       ActiveRecord::Base.transaction do
         # 1) Recalcular totales desde items si existen
-  before_total = sales_order.total_order_value
-  items_count = sales_order.sale_order_items.count
-  sales_order.recalculate_totals!(persist: true)
-  sales_order.reload
-  Rails.logger.info({ at: "Api::V1::SalesOrdersController#recalculate_and_pay:recalc", id: sales_order.id, before_total: before_total&.to_s, after_total: sales_order.total_order_value.to_s, items_count: items_count }.to_json)
-  response_extra[:recalculated] = { before: before_total, after: sales_order.total_order_value, items: items_count }
+        before_total = sales_order.total_order_value
+        items_count = sales_order.sale_order_items.count
+        sales_order.recalculate_totals!(persist: true)
+        sales_order.reload
+        # Si sigue en cero, derivarlo desde líneas y persistir columnas mínimas
+        if sales_order.total_order_value.to_f <= 0.0 && items_count > 0
+          items_total = sales_order.sale_order_items.sum(<<~SQL)
+            COALESCE(total_line_cost,
+                     quantity * COALESCE(unit_final_price, (unit_cost - COALESCE(unit_discount, 0))))
+          SQL
+          items_total = items_total.to_d.round(2)
+          if items_total > 0
+            sales_order.update_columns(subtotal: items_total, total_tax: 0, total_order_value: items_total, updated_at: Time.current)
+            sales_order.reload
+          end
+        end
+        Rails.logger.info({ at: "Api::V1::SalesOrdersController#recalculate_and_pay:recalc", id: sales_order.id, before_total: before_total&.to_s, after_total: sales_order.total_order_value.to_s, items_count: items_count }.to_json)
+        response_extra[:recalculated] = { before: before_total, after: sales_order.total_order_value, items: items_count }
 
         # 2) Si no está completamente pagada y el total > 0, crear pago por el faltante (Completed)
   if sales_order.total_order_value.to_f > 0.0 && sales_order.total_paid < sales_order.total_order_value
