@@ -72,6 +72,7 @@ Rails.application.routes.draw do
     resources :settings, only: [:index] do
       collection do
         post :sync_inventory_statuses
+  post :backfill_sale_orders_totals
       end
     end
 

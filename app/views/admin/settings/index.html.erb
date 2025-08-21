@@ -44,6 +44,81 @@
 	</div>
 </div>
 
+<div class="card mb-4">
+	<div class="card-header d-flex align-items-center gap-2">
+		<i class="fa fa-calculator"></i>
+		<span>Backfill de totales en Sale Orders</span>
+	</div>
+	<div class="card-body">
+		<p class="mb-3">
+			Recalcula <code>total_tax</code> y <code>total_order_value</code> para órdenes con total nulo o en 0.
+		</p>
+		<%= button_to "Iniciar backfill de Sale Orders", backfill_sale_orders_totals_admin_settings_path,
+									method: :post,
+									class: "btn btn-outline-primary",
+									data: { turbo_confirm: "¿Confirmas iniciar el backfill de Sale Orders?" } %>
+	</div>
+</div>
+
+<div class="card mb-4">
+	<div class="card-header d-flex align-items-center gap-2">
+		<i class="fa fa-list"></i>
+		<span>Ejecuciones recientes de backfill (Sale Orders)</span>
+	</div>
+	<div class="card-body p-0">
+		<div class="table-responsive">
+			<table class="table table-sm mb-0 align-middle">
+				<thead>
+					<tr>
+						<th>ID</th>
+						<th>Estado</th>
+						<th>Inicio</th>
+						<th>Fin</th>
+						<th>Duración</th>
+						<th>Stats</th>
+						<th>Error</th>
+					</tr>
+				</thead>
+				<tbody>
+					<% if @so_backfill_runs.present? %>
+						<% @so_backfill_runs.each do |r| %>
+							<tr>
+								<td>#<%= r.id %></td>
+								<td>
+									<% badge_class = case r.status.to_s
+																	 when 'queued' then 'bg-secondary'
+																	 when 'running' then 'bg-info'
+																	 when 'completed' then 'bg-success'
+																	 when 'failed' then 'bg-danger'
+																	 else 'bg-light text-dark border'
+																	 end %>
+									<span class="badge <%= badge_class %>"><%= r.status %></span>
+								</td>
+								<td><%= r.started_at&.strftime('%Y-%m-%d %H:%M:%S') || '-' %></td>
+								<td><%= r.finished_at&.strftime('%Y-%m-%d %H:%M:%S') || '-' %></td>
+								<td><%= r.duration_seconds ? "#{r.duration_seconds}s" : '-' %></td>
+								<td class="text-break" style="max-width: 320px;">
+									<% if r.stats.present? %>
+										<pre class="mb-0 small"><%= JSON.pretty_generate(r.stats) %></pre>
+									<% else %>
+										-
+									<% end %>
+								</td>
+								<td class="text-break" style="max-width: 280px;">
+									<%= r.error.presence || '-' %>
+								</td>
+							</tr>
+						<% end %>
+					<% else %>
+						<tr>
+							<td colspan="7" class="text-center text-muted">Sin ejecuciones registradas.</td>
+						</tr>
+					<% end %>
+				</tbody>
+			</table>
+		</div>
+	</div>
+</div>
 <div class="card">
 	<div class="card-header d-flex align-items-center gap-2">
 		<i class="fa fa-list"></i>
