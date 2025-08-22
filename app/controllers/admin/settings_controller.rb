@@ -21,4 +21,17 @@ class Admin::SettingsController < ApplicationController
     flash[:notice] = "Backfill de totales de Sale Orders encolado (##{run.id}). Revisa abajo el progreso."
     redirect_to admin_settings_path
   end
+
+  def delivered_orders_debt_audit
+    @result = nil
+  end
+
+  def run_delivered_orders_debt_audit
+    auto_fix = ActiveModel::Type::Boolean.new.cast(params[:auto_fix])
+    create_payments = ActiveModel::Type::Boolean.new.cast(params[:create_payments])
+    limit = params[:limit].presence&.to_i
+    auditor = Audit::DeliveredOrdersDebtAudit.new(auto_fix: auto_fix, create_payments: create_payments)
+    @result = auditor.run(limit: limit)
+    render :delivered_orders_debt_audit
+  end
 end
