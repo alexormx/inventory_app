@@ -1,0 +1,107 @@
+<h2 class="mb-3 d-flex align-items-center gap-2"><i class="fa fa-search"></i> Auditoría: SO Delivered con Adeudo</h2>
+<p class="text-muted">Verifica órdenes entregadas cuyo pago total es menor al total de la orden.</p>
+<div class="card mb-4">
+  <div class="card-body">
+    <%= form_with url: run_delivered_orders_debt_audit_admin_settings_index_path, method: :post, local: true, class: 'row gy-2 gx-3 align-items-end' do %>
+      <div class="col-12 col-md-2">
+        <label class="form-label">Limite (opcional)</label>
+        <%= number_field_tag :limit, params[:limit], min: 1, class: 'form-control form-control-sm' %>
+      </div>
+      <div class="col-12 col-md-2">
+        <div class="form-check mt-4 pt-2">
+          <%= check_box_tag :auto_fix, '1', params[:auto_fix].present?, class: 'form-check-input', id: 'auto_fix' %>
+          <label for="auto_fix" class="form-check-label">Auto-fix</label>
+        </div>
+      </div>
+      <div class="col-12 col-md-3">
+        <div class="form-check mt-4 pt-2">
+          <%= check_box_tag :create_payments, '1', params[:create_payments].present?, class: 'form-check-input', id: 'create_payments' %>
+          <label for="create_payments" class="form-check-label">Crear pagos faltantes</label>
+        </div>
+      </div>
+      <div class="col-12 col-md-3">
+        <button class="btn btn-primary btn-sm w-100" type="submit"><i class="fa fa-play"></i> Ejecutar auditoría</button>
+      </div>
+      <div class="col-12 col-md-2">
+        <%= link_to 'Regresar a Settings', admin_settings_path, class: 'btn btn-outline-secondary btn-sm w-100' %>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<% if @result.present? %>
+  <div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <span>Resumen</span>
+      <span class="badge bg-secondary">Total Delivered: <%= @result.total_orders %></span>
+    </div>
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-6 col-md-3">
+          <div class="p-2 border rounded bg-light text-center">
+            <div class="small text-muted">Con adeudo</div>
+            <div class="fw-bold"><%= @result.with_debt %></div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="p-2 border rounded bg-light text-center">
+            <div class="small text-muted">Adeudo total</div>
+            <div class="fw-bold"><%= number_to_currency(@result.total_debt_amount.to_d) %></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">Detalles (<%= @result.details.size %>)</div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-sm mb-0 align-middle">
+          <thead>
+            <tr>
+              <th>SO</th>
+              <th>User</th>
+              <th>Fecha</th>
+              <th class="text-end">Total</th>
+              <th class="text-end">Pagado</th>
+              <th class="text-end">Faltante</th>
+              <th>Fix</th>
+              <th>Error</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if @result.details.any? %>
+              <% @result.details.each do |d| %>
+                <tr class="<%= 'table-warning' if d[:missing_amount].to_d > 0 && !d[:fixed] %>">
+                  <td><code><%= d[:sale_order_id] %></code></td>
+                  <td><%= d[:user_id] %></td>
+                  <td><%= d[:order_date] %></td>
+                  <td class="text-end"><%= number_to_currency(d[:total_order_value].to_d) %></td>
+                  <td class="text-end"><%= number_to_currency(d[:total_paid].to_d) %></td>
+                  <td class="text-end fw-bold"><%= number_to_currency(d[:missing_amount].to_d) %></td>
+                  <td>
+                    <% if d.key?(:fixed) %>
+                      <% if d[:fixed] %>
+                        <span class="badge bg-success">Creado</span>
+                      <% else %>
+                        <span class="badge bg-danger">Error</span>
+                      <% end %>
+                    <% else %>
+                      <span class="badge bg-secondary">N/A</span>
+                    <% end %>
+                  </td>
+                  <td class="text-break" style="max-width:220px"><%= d[:error] %></td>
+                </tr>
+              <% end %>
+            <% else %>
+              <tr>
+                <td colspan="8" class="text-center text-muted py-4">Sin discrepancias.</td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+<% end %>

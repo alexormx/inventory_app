@@ -60,6 +60,17 @@
 	</div>
 </div>
 
+<div class="card mb-4">
+	<div class="card-header d-flex align-items-center gap-2">
+		<i class="fa fa-search"></i>
+		<span>Auditoría de SO Delivered con Adeudo</span>
+	</div>
+	<div class="card-body">
+		<p class="mb-3">Analiza órdenes en estado Delivered que aún presentan adeudo (pagos incompletos) y opcionalmente crea los pagos faltantes.</p>
+		<%= link_to "Abrir auditoría", delivered_orders_debt_audit_admin_settings_index_path, class: "btn btn-outline-danger" %>
+	</div>
+</div>
+
 <div class="card">
 	<div class="card-header d-flex align-items-center gap-2">
 		<i class="fa fa-list"></i>
