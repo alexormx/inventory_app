@@ -36,6 +36,15 @@ class SaleOrder < ApplicationRecord
     total_paid >= total_order_value
   end
 
+  # ------ Agregados de volumen y peso ------
+  def total_volume_cm3
+    sale_order_items.sum { |i| i.volume_cm3.to_d }
+  end
+
+  def total_weight_gr
+    sale_order_items.sum { |i| i.weight_gr.to_d }
+  end
+
   def update_status_if_fully_paid!
     # Solo promover de Pending -> Confirmed cuando esté fully_paid.
     # No cambiar otros estados (por ejemplo Delivered) para evitar

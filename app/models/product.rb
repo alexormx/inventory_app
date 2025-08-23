@@ -164,4 +164,25 @@ class Product < ApplicationRecord
     self.whatsapp_code = SecureRandom.alphanumeric(6).upcase
   end
 
+  public
+
+  # ---- Dimensiones / Peso helpers ----
+  # Volumen unitario en cm3 (length * width * height). Si falta algún dato retorna 0.
+  def unit_volume_cm3
+    return 0.to_d unless respond_to?(:length_cm) && respond_to?(:width_cm) && respond_to?(:height_cm)
+    l = length_cm.to_d
+    return 0.to_d if length_cm.blank? || width_cm.blank? || height_cm.blank?
+    l = length_cm.to_d
+    w = width_cm.to_d
+    h = height_cm.to_d
+    return 0.to_d if l.zero? || w.zero? || h.zero?
+    (l * w * h)
+  end
+
+  # Peso unitario en gramos
+  def unit_weight_gr
+    return 0.to_d unless respond_to?(:weight_gr)
+    return 0.to_d if weight_gr.blank?
+    weight_gr.to_d
+  end
 end

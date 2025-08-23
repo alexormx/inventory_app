@@ -12,6 +12,41 @@ class SaleOrderItem < ApplicationRecord
   after_commit :update_product_stats
   after_commit :recalculate_parent_order_totals
 
+  # ------ Métricas de volumen y peso ------
+  # Asumimos que total_line_volume y total_line_weight ya representan (volumen_cm3, peso_gr) por la cantidad.
+  # Si en algún momento se desea derivar desde dimensiones del producto, aquí sería el lugar.
+  def volume_cm3
+    return total_line_volume.to_d if total_line_volume.present?
+    # Fallback: producto dimensiones * quantity
+    if product.respond_to?(:unit_volume_cm3)
+      (product.unit_volume_cm3 * quantity.to_i).to_d
+    else
+      0.to_d
+    end
+  end
+
+  def weight_gr
+    return total_line_weight.to_d if total_line_weight.present?
+    if product.respond_to?(:unit_weight_gr)
+      (product.unit_weight_gr * quantity.to_i).to_d
+    else
+      0.to_d
+    end
+  end
+
+  # ------ Inventario asignado a esta línea (helpers) ------
+  def inventory_units
+    @inventory_units ||= Inventory.where(sale_order_id: sale_order_id, product_id: product_id)
+  end
+
+  def reserved_inventory_count
+    inventory_units.count
+  end
+
+  def missing_inventory_units
+    [quantity.to_i - reserved_inventory_count, 0].max
+  end
+
   # Guards de seguridad
   before_update  :ensure_free_to_reduce, if: :will_reduce_quantity?
   before_destroy :ensure_no_sold_and_release_reserved
