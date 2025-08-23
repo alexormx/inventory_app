@@ -58,6 +58,20 @@ class SaleOrder < ApplicationRecord
     end
   end
 
+  # Snapshot de totales calculados dinámicamente (sin mutar atributos)
+  def compute_dynamic_totals
+    return { subtotal: 0.to_d, tax: 0.to_d, total: 0.to_d } unless sale_order_items.exists?
+    sub = sale_order_items.sum(<<~SQL).to_d
+      COALESCE(total_line_cost,
+               quantity * COALESCE(unit_final_price, (unit_cost - COALESCE(unit_discount, 0))))
+    SQL
+    rate = (tax_rate || 0).to_d
+    disc = (discount || 0).to_d
+    tax = (sub * (rate/100)).round(2)
+    total = (sub + tax - disc).round(2)
+    { subtotal: sub, tax: tax, total: total }
+  end
+
   private
 
   def ensure_payment_and_shipment_present

@@ -71,6 +71,63 @@
 	</div>
 </div>
 
+<%# --- Pending Sale Orders Overview (dinámico) --- %>
+<div class="card mb-4">
+	<div class="card-header d-flex align-items-center gap-2">
+		<i class="fa fa-hourglass-half"></i>
+		<span>Pending Sale Orders (vista rápida)</span>
+	</div>
+	<div class="card-body p-0">
+		<% pending_scope = SaleOrder.where(status: 'Pending').includes(:payments, :sale_order_items) %>
+		<% if pending_scope.any? %>
+			<div class="table-responsive">
+				<table class="table table-sm mb-0 align-middle">
+					<thead>
+						<tr>
+							<th>SO</th>
+							<th>Cliente</th>
+							<th class="text-end">Items</th>
+							<th class="text-end">Total (dinámico)</th>
+							<th class="text-end">Pagado</th>
+							<th class="text-end">Adeudo</th>
+							<th></th>
+						</tr>
+					</thead>
+					<tbody>
+						<% pending_scope.limit(50).each do |so| %>
+							<% dyn = so.compute_dynamic_totals %>
+							<% paid = so.payments.where(status: 'Completed').sum(:amount).to_d %>
+							<% debt = (dyn[:total] - paid).round(2) %>
+							<tr class="<%= 'table-warning' if debt > 0 %>">
+								<td><code><%= so.id %></code></td>
+								<td><%= so.user&.name || '—' %></td>
+								<td class="text-end"><%= so.sale_order_items.sum(:quantity) %></td>
+								<td class="text-end"><%= number_to_currency(dyn[:total]) %></td>
+								<td class="text-end"><%= number_to_currency(paid) %></td>
+								<td class="text-end">
+									<% if debt > 0 %>
+										<span class="badge bg-danger"><%= number_to_currency(debt) %></span>
+									<% else %>
+										<span class="badge bg-success">$0.00</span>
+									<% end %>
+								</td>
+								<td class="text-end">
+									<%= link_to 'Ver', admin_sale_order_path(so), class: 'btn btn-sm btn-outline-secondary' %>
+								</td>
+							</tr>
+						<% end %>
+					</tbody>
+				</table>
+			</div>
+			<div class="p-2 small text-muted border-top">
+				Mostrando hasta 50 pendientes (total: <%= pending_scope.count %>). Los totales se calculan en vivo desde las líneas; no usan campos persistidos todavía.
+			</div>
+		<% else %>
+			<div class="p-3 text-muted">No hay órdenes Pending.</div>
+		<% end %>
+	</div>
+</div>
+
 <div class="card">
 	<div class="card-header d-flex align-items-center gap-2">
 		<i class="fa fa-list"></i>
