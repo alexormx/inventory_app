@@ -16,11 +16,35 @@ class SaleOrderItem < ApplicationRecord
   # Asumimos que total_line_volume y total_line_weight ya representan (volumen_cm3, peso_gr) por la cantidad.
   # Si en algún momento se desea derivar desde dimensiones del producto, aquí sería el lugar.
   def volume_cm3
-    total_line_volume.to_d
+    return total_line_volume.to_d if total_line_volume.present?
+    # Fallback: producto dimensiones * quantity
+    if product.respond_to?(:unit_volume_cm3)
+      (product.unit_volume_cm3 * quantity.to_i).to_d
+    else
+      0.to_d
+    end
   end
 
   def weight_gr
-    total_line_weight.to_d
+    return total_line_weight.to_d if total_line_weight.present?
+    if product.respond_to?(:unit_weight_gr)
+      (product.unit_weight_gr * quantity.to_i).to_d
+    else
+      0.to_d
+    end
+  end
+
+  # ------ Inventario asignado a esta línea (helpers) ------
+  def inventory_units
+    @inventory_units ||= Inventory.where(sale_order_id: sale_order_id, product_id: product_id)
+  end
+
+  def reserved_inventory_count
+    inventory_units.count
+  end
+
+  def missing_inventory_units
+    [quantity.to_i - reserved_inventory_count, 0].max
   end
 
   # Guards de seguridad
