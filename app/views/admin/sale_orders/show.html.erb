@@ -93,8 +93,8 @@
                 <td><%= number_with_precision(item.unit_cost, precision: 2) %></td>
                 <td><%= number_with_precision(item.unit_discount, precision: 2) %></td>
                 <td><%= number_with_precision(item.unit_final_price, precision: 2) %></td>
-                <td><%= number_with_precision(item.total_line_volume, precision: 2) %></td>
-                <td><%= number_with_precision(item.total_line_weight, precision: 2) %></td>
+                <td><%= number_with_precision(item.volume_cm3, precision: 2) %></td>
+                <td><%= number_with_precision(item.weight_gr, precision: 2) %></td>
                 <td><%= number_with_precision(item.total_line_cost, precision: 2) %></td>
                 <td>
                   <% invs = Inventory.where(sale_order_id: @sale_order.id, product_id: item.product_id).limit(50) %>

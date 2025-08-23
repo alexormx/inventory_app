@@ -38,11 +38,11 @@ class SaleOrder < ApplicationRecord
 
   # ------ Agregados de volumen y peso ------
   def total_volume_cm3
-    sale_order_items.sum(:total_line_volume).to_d
+    sale_order_items.sum { |i| i.volume_cm3.to_d }
   end
 
   def total_weight_gr
-    sale_order_items.sum(:total_line_weight).to_d
+    sale_order_items.sum { |i| i.weight_gr.to_d }
   end
 
   def update_status_if_fully_paid!
