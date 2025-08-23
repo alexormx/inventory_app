@@ -32,20 +32,20 @@ class Admin::SettingsController < ApplicationController
     limit = params[:limit].presence&.to_i
     auditor = Audit::DeliveredOrdersDebtAudit.new(auto_fix: auto_fix, create_payments: create_payments)
 
-    if turbo_stream_request?
+  if request.format.turbo_stream? || request.headers['Accept'].to_s.include?('text/vnd.turbo-stream.html')
       processed = 0
       total = nil
       @result = auditor.run(limit: limit, on_progress: lambda { |p, t|
         processed = p
         total ||= t
-        @processed = processed
-        @total = total
-        # Emitir turbo stream incremental
+        html = ApplicationController.render(
+          partial: "admin/settings/progress_delivered_orders_debt_audit",
+          locals: { processed: processed, total: total }
+        )
         Turbo::StreamsChannel.broadcast_replace_to(
           "audit_progress_channel",
           target: "audit-progress",
-          partial: "admin/settings/progress_delivered_orders_debt_audit",
-          locals: { processed: @processed, total: @total }
+          html: html
         )
       })
       respond_to do |format|
