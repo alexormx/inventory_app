@@ -73,7 +73,6 @@ Rails.application.routes.draw do
       collection do
         post :sync_inventory_statuses
         post :backfill_sale_orders_totals
-  post :backfill_pending_sale_orders_totals
         get  :delivered_orders_debt_audit
         post :run_delivered_orders_debt_audit
         # Permitir GET directo (fallback) para evitar errores si el usuario refresca la URL POST

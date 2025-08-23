@@ -22,12 +22,6 @@ class Admin::SettingsController < ApplicationController
     redirect_to admin_settings_path
   end
 
-  def backfill_pending_sale_orders_totals
-    run = MaintenanceRun.create!(job_name: "sale_orders.backfill_pending_totals", status: "queued")
-    SaleOrders::BackfillPendingTotalsJob.perform_later(run.id)
-    flash[:notice] = "Backfill de totales de Sale Orders Pending encolado (##{run.id})."
-    redirect_to admin_settings_path
-  end
 
   def delivered_orders_debt_audit
     @result = nil
