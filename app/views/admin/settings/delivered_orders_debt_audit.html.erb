@@ -1,5 +1,14 @@
 <h2 class="mb-3 d-flex align-items-center gap-2"><i class="fa fa-search"></i> Auditoría: SO Delivered con Adeudo</h2>
 <p class="text-muted">Verifica órdenes entregadas cuyo pago total es menor al total de la orden.</p>
+<div class="alert alert-info small">
+  <strong>¿Qué hace esta auditoría?</strong>
+  <ul class="mb-1 mt-2">
+    <li><strong>Límite:</strong> número máximo de órdenes <em>Delivered</em> a revisar (procesa las más recientes primero). Si lo dejas vacío revisa todas.</li>
+    <li><strong>Auto-fix:</strong> intenta corregir inconsistencias menores (por ahora solo marca para crear pago) sin generar registros de pago nuevos. Útil para diagnóstico rápido.</li>
+    <li><strong>Crear pagos faltantes:</strong> crea un <em>Payment</em> por el monto faltante cuando la orden tiene adeudo y no está pagada completamente. Solo actúa si hay adeudo &gt; 0.</li>
+  </ul>
+  <p class="mb-0">Si no seleccionas ninguna opción simplemente genera el reporte (modo lectura) sin modificar datos.</p>
+</div>
 <div id="audit-progress" class="mb-3" data-controller="audit-progress" data-audit-progress-status-value="idle"></div>
 
 <div class="card mb-4">
