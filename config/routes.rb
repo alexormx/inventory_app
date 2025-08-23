@@ -72,9 +72,11 @@ Rails.application.routes.draw do
     resources :settings, only: [:index] do
       collection do
         post :sync_inventory_statuses
-  post :backfill_sale_orders_totals
-  get :delivered_orders_debt_audit
-  post :run_delivered_orders_debt_audit
+        post :backfill_sale_orders_totals
+        get  :delivered_orders_debt_audit
+        post :run_delivered_orders_debt_audit
+        # Permitir GET directo (fallback) para evitar errores si el usuario refresca la URL POST
+        get  :run_delivered_orders_debt_audit, to: redirect("/admin/settings/delivered_orders_debt_audit")
       end
     end
 
