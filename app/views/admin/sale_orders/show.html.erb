@@ -38,6 +38,14 @@
       <strong>Total Order Value:</strong>
       <p>$<%= number_with_precision(@sale_order.total_order_value, precision: 2) %></p>
     </div>
+    <div class="col-md-3">
+      <strong>Total Volume (cm³):</strong>
+      <p><%= number_with_precision(@sale_order.total_volume_cm3, precision: 2) %></p>
+    </div>
+    <div class="col-md-3">
+      <strong>Total Weight (kg):</strong>
+      <p><%= number_with_precision(@sale_order.total_weight_gr / 1000.0, precision: 3) %></p>
+    </div>
   </div>
   <turbo-frame id="payment_balance">
     <div class="row g-3 mb-4">
@@ -58,7 +66,10 @@
   <!-- Items Table -->
   <div class="card mb-4">
     <div class="card-body">
-      <h5 class="card-title">Sale Order Items</h5>
+      <h5 class="card-title d-flex justify-content-between align-items-center">
+        <span>Sale Order Items</span>
+        <small class="text-muted">Vol: <%= number_with_precision(@sale_order.total_volume_cm3, precision: 2) %> cm³ | Peso: <%= number_with_precision(@sale_order.total_weight_gr/1000.0, precision: 3) %> kg</small>
+      </h5>
       <div class="table-responsive">
         <table class="table table-bordered table-sm align-middle">
           <thead class="table-light">
@@ -71,6 +82,7 @@
               <th>Volume</th>
               <th>Weight</th>
               <th>Total Line Cost</th>
+              <th class="text-center">Inventory Status (per unit)</th>
             </tr>
           </thead>
           <tbody>
@@ -84,6 +96,32 @@
                 <td><%= number_with_precision(item.total_line_volume, precision: 2) %></td>
                 <td><%= number_with_precision(item.total_line_weight, precision: 2) %></td>
                 <td><%= number_with_precision(item.total_line_cost, precision: 2) %></td>
+                <td>
+                  <% invs = Inventory.where(sale_order_id: @sale_order.id, product_id: item.product_id).limit(50) %>
+                  <% if invs.any? %>
+                    <div class="d-flex flex-wrap gap-1" style="max-width:280px">
+                      <% invs.each do |inv| %>
+                        <% badge_class = case inv.status.to_s
+                          when 'available' then 'bg-secondary'
+                          when 'reserved' then 'bg-warning text-dark'
+                          when 'in_transit' then 'bg-info'
+                          when 'sold' then 'bg-success'
+                          when 'damaged' then 'bg-danger'
+                          when 'lost' then 'bg-dark'
+                          when 'returned' then 'bg-primary'
+                          when 'scrap' then 'bg-danger-subtle text-danger'
+                          when 'pre_reserved' then 'bg-warning-subtle text-warning-emphasis'
+                          when 'pre_sold' then 'bg-success-subtle text-success-emphasis'
+                          when 'marketing' then 'bg-info-subtle text-info-emphasis'
+                          else 'bg-light text-dark border'
+                        end %>
+                        <span class="badge <%= badge_class %>" title="Inventory ID: <%= inv.id %>"><%= inv.status.first(3) %></span>
+                      <% end %>
+                    </div>
+                  <% else %>
+                    <span class="text-muted small">—</span>
+                  <% end %>
+                </td>
               </tr>
             <% end %>
           </tbody>

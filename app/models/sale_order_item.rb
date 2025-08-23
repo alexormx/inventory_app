@@ -12,6 +12,17 @@ class SaleOrderItem < ApplicationRecord
   after_commit :update_product_stats
   after_commit :recalculate_parent_order_totals
 
+  # ------ Métricas de volumen y peso ------
+  # Asumimos que total_line_volume y total_line_weight ya representan (volumen_cm3, peso_gr) por la cantidad.
+  # Si en algún momento se desea derivar desde dimensiones del producto, aquí sería el lugar.
+  def volume_cm3
+    total_line_volume.to_d
+  end
+
+  def weight_gr
+    total_line_weight.to_d
+  end
+
   # Guards de seguridad
   before_update  :ensure_free_to_reduce, if: :will_reduce_quantity?
   before_destroy :ensure_no_sold_and_release_reserved
