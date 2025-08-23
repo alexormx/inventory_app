@@ -57,6 +57,12 @@
 									method: :post,
 									class: "btn btn-outline-primary",
 									data: { turbo_confirm: "¿Confirmas iniciar el backfill de Sale Orders?" } %>
+		<hr>
+		<p class="mb-2 small text-muted">Si tienes órdenes <code>Pending</code> con total en 0 pero líneas cargadas, usa este botón para actualizar sus totales persistidos con el cálculo dinámico.</p>
+		<%= button_to "Backfill Pending (solo totales)", backfill_pending_sale_orders_totals_admin_settings_path,
+						method: :post,
+						class: "btn btn-warning",
+						data: { turbo_confirm: "¿Confirmas recalcular totales de órdenes Pending?" } %>
 	</div>
 </div>
 
