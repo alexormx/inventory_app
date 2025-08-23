@@ -2,7 +2,7 @@
 <p class="text-muted">Verifica órdenes entregadas cuyo pago total es menor al total de la orden.</p>
 <div class="card mb-4">
   <div class="card-body">
-    <%= form_with url: run_delivered_orders_debt_audit_admin_settings_index_path, method: :post, local: true, class: 'row gy-2 gx-3 align-items-end' do %>
+  <%= form_with url: run_delivered_orders_debt_audit_admin_settings_path, method: :post, local: true, class: 'row gy-2 gx-3 align-items-end' do %>
       <div class="col-12 col-md-2">
         <label class="form-label">Limite (opcional)</label>
         <%= number_field_tag :limit, params[:limit], min: 1, class: 'form-control form-control-sm' %>
