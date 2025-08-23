@@ -26,3 +26,9 @@
     </div>
   </div>
 <% end %>
+
+<%= turbo_stream.replace "sale_order_items" do %>
+  <turbo-frame id="sale_order_items">
+    <%= render 'admin/sale_orders/items_table', sale_order: @sale_order %>
+  </turbo-frame>
+<% end %>

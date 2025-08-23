@@ -194,6 +194,18 @@ class SaleOrder < ApplicationRecord
       inventories.where(status: [:sold]).update_all(status: Inventory.statuses[:reserved], status_changed_at: Time.current, updated_at: Time.current)
       inventories.where(status: [:pre_sold]).update_all(status: Inventory.statuses[:pre_reserved], status_changed_at: Time.current, updated_at: Time.current)
     end
+
+    # Broadcast Turbo Stream para refrescar la tabla y totales (si la vista está abierta)
+    begin
+      Turbo::StreamsChannel.broadcast_replace_to(
+        ["sale_order", id],
+        target: "sale_order_items",
+        partial: "admin/sale_orders/items_table",
+        locals: { sale_order: self }
+      )
+    rescue => e
+      Rails.logger.error "[SaleOrder#sync_inventory_status_for_payment_change] Broadcast error: #{e.message}"
+    end
   end
 end
 
