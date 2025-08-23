@@ -27,6 +27,8 @@ class SaleOrder < ApplicationRecord
   after_update :release_reserved_if_canceled, if: :saved_change_to_status?
   # Sincronizar estado del shipment cuando la orden pase a Delivered
   after_update :ensure_shipment_status_matches, if: :saved_change_to_status?
+  # Sincronizar inventarios reservado<->vendido al alternar Pending/Confirmed
+  after_update :sync_inventory_status_for_payment_change, if: :saved_change_to_status?
 
   def total_paid
     payments.where(status: "Completed").sum(:amount)
@@ -174,6 +176,35 @@ class SaleOrder < ApplicationRecord
       rescue StandardError => e
         Rails.logger.error("Failed to create default shipment for SaleOrder ")
       end
+    end
+  end
+
+  # Cambiar inventarios cuando la orden se confirma (pago completo) o se regresa a pendiente
+  def sync_inventory_status_for_payment_change
+    previous, current = saved_change_to_status
+    # Solo nos interesa transiciones entre Pending y Confirmed
+    return unless [previous, current].all? { |s| ["Pending", "Confirmed"].include?(s) }
+
+    if current == "Confirmed" # Pending -> Confirmed
+      # reserved -> sold ; pre_reserved -> pre_sold
+      inventories.where(status: [:reserved]).update_all(status: Inventory.statuses[:sold], status_changed_at: Time.current, updated_at: Time.current)
+      inventories.where(status: [:pre_reserved]).update_all(status: Inventory.statuses[:pre_sold], status_changed_at: Time.current, updated_at: Time.current)
+    elsif current == "Pending" # Confirmed -> Pending (pago se redujo)
+      # sold -> reserved ; pre_sold -> pre_reserved (solo para piezas aún ligadas a la orden y no entregadas)
+      inventories.where(status: [:sold]).update_all(status: Inventory.statuses[:reserved], status_changed_at: Time.current, updated_at: Time.current)
+      inventories.where(status: [:pre_sold]).update_all(status: Inventory.statuses[:pre_reserved], status_changed_at: Time.current, updated_at: Time.current)
+    end
+
+    # Broadcast Turbo Stream para refrescar la tabla y totales (si la vista está abierta)
+    begin
+      Turbo::StreamsChannel.broadcast_replace_to(
+        ["sale_order", id],
+        target: "sale_order_items",
+        partial: "admin/sale_orders/items_table",
+        locals: { sale_order: self }
+      )
+    rescue => e
+      Rails.logger.error "[SaleOrder#sync_inventory_status_for_payment_change] Broadcast error: #{e.message}"
     end
   end
 end
