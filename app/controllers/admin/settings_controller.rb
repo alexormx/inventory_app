@@ -31,7 +31,32 @@ class Admin::SettingsController < ApplicationController
     create_payments = ActiveModel::Type::Boolean.new.cast(params[:create_payments])
     limit = params[:limit].presence&.to_i
     auditor = Audit::DeliveredOrdersDebtAudit.new(auto_fix: auto_fix, create_payments: create_payments)
-    @result = auditor.run(limit: limit)
-    render :delivered_orders_debt_audit
+
+    if turbo_stream_request?
+      processed = 0
+      total = nil
+      @result = auditor.run(limit: limit, on_progress: lambda { |p, t|
+        processed = p
+        total ||= t
+        @processed = processed
+        @total = total
+        # Emitir turbo stream incremental
+        Turbo::StreamsChannel.broadcast_replace_to(
+          "audit_progress_channel",
+          target: "audit-progress",
+          partial: "admin/settings/progress_delivered_orders_debt_audit",
+          locals: { processed: @processed, total: @total }
+        )
+      })
+      respond_to do |format|
+        format.turbo_stream do
+          render "admin/settings/run_delivered_orders_debt_audit"
+        end
+        format.html { render :delivered_orders_debt_audit }
+      end
+    else
+      @result = auditor.run(limit: limit)
+      render :delivered_orders_debt_audit
+    end
   end
 end

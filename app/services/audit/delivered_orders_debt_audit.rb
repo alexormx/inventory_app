@@ -14,14 +14,16 @@ module Audit
       @payment_method = payment_method
     end
 
-    def run(limit: nil)
+    def run(limit: nil, on_progress: nil)
       scope = SaleOrder.where(status: 'Delivered')
       scope = scope.limit(limit) if limit
 
+      total_count = scope.count
+      processed = 0
       details = []
       total_debt = 0.to_d
 
-      scope.find_each do |so|
+      scope.find_each.with_index do |so, idx|
         so_total = so.total_order_value.to_d
         paid = so.payments.where(status: 'Completed').sum(:amount).to_d
         missing = (so_total - paid).round(2)
@@ -48,10 +50,18 @@ module Audit
 
         total_debt += missing
         details << detail
+        processed = idx + 1
+        if on_progress
+          begin
+            on_progress.call(processed, total_count)
+          rescue StandardError
+            # Ignorar errores del callback para no interrumpir auditoría
+          end
+        end
       end
 
       Result.new(
-        total_orders: scope.count,
+        total_orders: total_count,
         with_debt: details.size,
         total_debt_amount: total_debt.to_s,
         details: details

@@ -28,6 +28,7 @@
 
 <body class="d-flex flex-column min-vh-100 bg-light">
   <%= turbo_stream_from "flash" %>
+  <%= turbo_stream_from "audit_progress_channel" %>
 
   <div class="container-fluid">
     <div class="row">

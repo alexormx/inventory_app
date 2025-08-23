@@ -1,0 +1,10 @@
+<%= turbo_stream.update "audit-progress" do %>
+  <div class="alert alert-info py-2 d-flex align-items-center gap-2 mb-2">
+    <span class="spinner-border spinner-border-sm"></span>
+    <strong>Ejecutando auditoría...</strong>
+    <span class="small text-muted">(<%= @processed %>/<%= @total %>)</span>
+    <div class="progress flex-grow-1" style="height:4px;">
+      <div class="progress-bar" role="progressbar" style="width: <%= ((@processed.to_f / @total) * 100).round %>%"></div>
+    </div>
+  </div>
+<% end %>

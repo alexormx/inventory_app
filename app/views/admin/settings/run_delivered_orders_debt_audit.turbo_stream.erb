@@ -1,0 +1,8 @@
+<%= turbo_stream.update "audit-progress" do %>
+  <div class="alert alert-success py-2 mb-2">
+    Auditoría completada.
+  </div>
+<% end %>
+<%= turbo_stream.update "audit_result_frame" do %>
+  <%= render partial: "admin/settings/delivered_orders_debt_audit_result", locals: { result: @result } %>
+<% end %>
