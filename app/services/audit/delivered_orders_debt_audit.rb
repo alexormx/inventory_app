@@ -11,7 +11,8 @@ module Audit
     def initialize(auto_fix: false, create_payments: false, payment_method: nil)
       @auto_fix = auto_fix
       @create_payments = create_payments
-      @payment_method = payment_method
+      # Fallback: primer método de pago definido si no se envía uno
+      @payment_method = payment_method.presence || (Payment.payment_methods.keys.first if defined?(Payment))
     end
 
     def run(limit: nil, on_progress: nil)

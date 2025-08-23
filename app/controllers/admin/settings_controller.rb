@@ -30,7 +30,7 @@ class Admin::SettingsController < ApplicationController
     auto_fix = ActiveModel::Type::Boolean.new.cast(params[:auto_fix])
     create_payments = ActiveModel::Type::Boolean.new.cast(params[:create_payments])
     limit = params[:limit].presence&.to_i
-    auditor = Audit::DeliveredOrdersDebtAudit.new(auto_fix: auto_fix, create_payments: create_payments)
+  auditor = Audit::DeliveredOrdersDebtAudit.new(auto_fix: auto_fix, create_payments: create_payments, payment_method: params[:payment_method])
 
   if request.format.turbo_stream? || request.headers['Accept'].to_s.include?('text/vnd.turbo-stream.html')
       processed = 0
