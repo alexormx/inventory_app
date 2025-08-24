@@ -16,6 +16,7 @@
     <div class="collapse navbar-collapse" id="navbar-scroll">
 
       <!-- SEARCH FORM -->
+      <% if user_signed_in? %>
       <div class="mx-auto my-2 my-lg-0 w-100 d-flex justify-content-center">
         <form class="d-flex w-75" role="search" action="<%= catalog_path %>" method="get">
           <input type="search" class="form-control me-2" placeholder="Buscar productos, marcas y más..." aria-label="Buscar productos" name="q">
@@ -24,9 +25,36 @@
           </button>
         </form>
       </div>
+      <% end %>
 
       <!-- NAV MENU -->
       <ul id="navbar-menu" class="navbar-nav ms-auto d-flex align-items-center gap-2">
+
+        <% if language_switcher_enabled? %>
+        <!-- Language Switcher -->
+        <li class="nav-item dropdown">
+          <button type="button" class="btn btn-outline-secondary dropdown-toggle" id="lang-switcher" data-dropdown-toggle data-dropdown-menu="lang-menu" aria-expanded="false" aria-haspopup="true">
+            <i class="fas fa-globe"></i> <%= I18n.locale.to_s.upcase %>
+          </button>
+          <ul id="lang-menu" class="dropdown-menu dropdown-menu-end" aria-labelledby="lang-switcher">
+            <% languages = {
+              'es-MX' => { label: 'Español', flag: 'flags/mx.svg' },
+              'en'    => { label: 'English', flag: 'flags/us.svg' }
+            } %>
+            <% current_params = request.query_parameters.dup %>
+            <% languages.each do |code, meta| %>
+              <% merged_query = current_params.merge(locale: code).to_query %>
+              <% target_href = "#{request.path}?#{merged_query}" %>
+              <li>
+                <%= link_to target_href, class: "dropdown-item d-flex align-items-center gap-2 #{'active fw-bold' if I18n.locale.to_s == code}", data: { turbo: false } do %>
+                  <%= image_tag meta[:flag], alt: meta[:label], width: 20, height: 14, class: 'border' %>
+                  <span><%= meta[:label] %></span>
+                <% end %>
+              </li>
+            <% end %>
+          </ul>
+        </li>
+        <% end %>
 
         <!-- Catalogo -->
         <li class="nav-item">
@@ -46,10 +74,10 @@
 
           <!-- Account Dropdown -->
           <li class="nav-item dropdown">
-            <a href="#" id="account" class="btn btn-outline-danger dropdown-toggle d-flex align-items-center" data-bs-toggle="dropdown">
+            <button type="button" id="account" class="btn btn-outline-danger dropdown-toggle d-flex align-items-center" data-dropdown-toggle data-dropdown-menu="account-menu" aria-expanded="false" aria-haspopup="true">
               <i class="fas fa-user me-1"></i> Mi cuenta
-            </a>
-            <ul class="dropdown-menu dropdown-menu-end" id="dropdown-menu">
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end" id="account-menu" aria-labelledby="account">
               <li><%= link_to "Mi Perfil", "#", class: "dropdown-item" %></li>
               <li><%= link_to "Mis Pedidos", orders_path, class: "dropdown-item" %></li>
               <li><hr class="dropdown-divider"></li>

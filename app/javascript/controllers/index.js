@@ -2,3 +2,4 @@
 // The main application is started and controllers are registered in app/javascript/application.js
 // Keeping this file side-effect free avoids duplicate Application.start() issues.
 export {}
+// Removed dropdown export (now handled by vanilla JS)

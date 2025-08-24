@@ -31,12 +31,10 @@
   </head>
 
   <body>
+    <header>
+      <%= render 'customers/partials/navbar' %>
+    </header>
     <%= render "layouts/flash" %>
-    <% if user_signed_in? %>
-      <%= link_to "Logout", destroy_user_session_path, data: { turbo_method: :delete } %>
-    <% else %>
-      <%= link_to "Log in", new_user_session_path %>
-    <% end %>
     <main class="container mx-auto mt-28 px-5 flex">
       <%= yield %>
     </main>

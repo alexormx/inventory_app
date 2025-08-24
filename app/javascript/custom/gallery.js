@@ -25,10 +25,15 @@ document.addEventListener("turbo:load", () => {
     thumb.classList.add("selected-thumbnail");
   }
 
-  // Click en la imagen principal → abrir modal
+  // Click en la imagen principal → abrir modal (solo si Bootstrap JS disponible)
   mainImage.addEventListener("click", () => {
     modalImage.src = mainImage.src;
-    new bootstrap.Modal(modal).show();
+    if (window.bootstrap && bootstrap.Modal) {
+      new bootstrap.Modal(modal).show();
+    } else {
+      // Fallback: abrir imagen en nueva pestaña
+      window.open(mainImage.src, '_blank');
+    }
   });
 
   // Click en thumbnails

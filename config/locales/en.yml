@@ -33,3 +33,33 @@ en:
   views:
     pagination:
       truncate: "..."
+
+  home:
+    index:
+      meta:
+        title: "Pasatiempos | Collecting & Community"
+        description: "Explore collections, share your passion and join the Pasatiempos community."
+      heading_html: "Welcome to <span class='text-danger'>PASATIEMPOS</span>"
+      lead: "A space where collecting comes alive, friendships grow, and family values are celebrated."
+      cards:
+        collection:
+          alt: "Organized collection"
+          title: "Passion for collecting"
+          text: "From scale cars to cards and figures, we proudly celebrate every unique collection."
+        legacy:
+          alt: "Parent and child collecting"
+          title: "A family legacy"
+          text: "Collecting bridges generations and strengthens family bonds through shared moments."
+        community:
+          alt: "Collector friends"
+          title: "Community and friendship"
+          text: "We believe in sharing, trading and growing together. Community is Pasatiempos' heart."
+        practices:
+          alt: "Good collection practices"
+          title: "Good practices"
+          text: "We foster preservation, order and documentation so each piece transcends generations."
+      join_title: "Join us"
+      join_lead: "Explore the catalog, find that special piece and become part of our collector family!"
+      explore_cta: "Explore Catalog"
+      login_cta: "Log in"
+      register_cta: "Create account"

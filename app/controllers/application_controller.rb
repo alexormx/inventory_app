@@ -5,7 +5,8 @@ class ApplicationController < ActionController::Base
   layout :set_layout
   before_action :track_visitor
   before_action :ensure_confirmed_user!
-    helper Admin::SortHelper if defined?(Admin::SortHelper)
+  before_action :set_locale
+  helper Admin::SortHelper if defined?(Admin::SortHelper)
 
   protected
   def after_sign_in_path_for(resource)
@@ -53,8 +54,8 @@ class ApplicationController < ActionController::Base
   end
 
   def real_ip_from_cloudflare
-    request.headers['CF-Connecting-IP'] || 
-    request.headers['X-Forwarded-For']&.split(",")&.first&.strip
+    request.headers["CF-Connecting-IP"] ||
+    request.headers["X-Forwarded-For"]&.split(",")&.first&.strip
   end
 
   def ensure_confirmed_user!
@@ -65,4 +66,15 @@ class ApplicationController < ActionController::Base
     end
   end
 
+  def set_locale
+    chosen = params[:locale]&.to_sym
+    if chosen && I18n.available_locales.include?(chosen)
+      session[:locale] = chosen
+    end
+    I18n.locale = session[:locale] || I18n.default_locale
+  end
+
+  def default_url_options
+    { locale: (I18n.locale unless I18n.locale == I18n.default_locale) }.compact
+  end
 end

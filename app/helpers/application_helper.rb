@@ -20,4 +20,10 @@ module ApplicationHelper
       "KRW" => "₩"
     }[code] || code
   end
+
+  def language_switcher_enabled?
+    # Temporarily disabled. Restore previous logic when enabling again:
+    # ENV.fetch("LANG_SWITCHER", "true") == "true" && I18n.available_locales.size > 1
+    false
+  end
 end
