@@ -36,6 +36,10 @@
       <p>$<%= number_with_precision(@sale_order.total_tax, precision: 2) %></p>
     </div>
     <div class="col-md-3">
+      <strong>Shipping Cost:</strong>
+      <p>$<%= number_with_precision(@sale_order.shipping_cost || 0, precision: 2) %></p>
+    </div>
+    <div class="col-md-3">
       <strong>Total Order Value:</strong>
       <p>$<%= number_with_precision(@sale_order.total_order_value, precision: 2) %></p>
     </div>

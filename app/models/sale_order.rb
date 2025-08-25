@@ -17,6 +17,7 @@ class SaleOrder < ApplicationRecord
   validates :total_order_value, presence: true, numericality: { greater_than_or_equal_to: 0 }
   validates :status, presence: true, inclusion: { in: %w[Pending Confirmed Shipped Delivered Canceled] }
   validate :ensure_payment_and_shipment_present
+  validates :shipping_cost, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true
 
   before_destroy :ensure_inventories_safe_or_release
   before_validation :set_default_status, on: :create
@@ -67,8 +68,9 @@ class SaleOrder < ApplicationRecord
     SQL
     rate = (tax_rate || 0).to_d
     disc = (discount || 0).to_d
+    ship = (shipping_cost || 0).to_d
     tax = (sub * (rate/100)).round(2)
-    total = (sub + tax - disc).round(2)
+    total = (sub + tax + ship - disc).round(2)
     { subtotal: sub, tax: tax, total: total }
   end
 
@@ -101,38 +103,31 @@ class SaleOrder < ApplicationRecord
   # Calcula impuestos y total a partir de subtotal, tax_rate y discount.
   # Se ejecuta antes de validar para garantizar consistencia aunque el front no lo envíe.
   def compute_financials
-    # Asegurar valores numéricos
     sub = (subtotal || 0).to_d
     rate = (tax_rate || 0).to_d
     disc = (discount || 0).to_d
-
-    # Si falta info mínima, no forzar cálculo
-    if sub.zero? && rate.zero? && disc.zero?
-      # Si hay líneas y total está 0/nil, intenta calcular desde las líneas
+    ship = (shipping_cost || 0).to_d
+    if sub.zero? && rate.zero? && disc.zero? && ship.zero?
       if (total_order_value.nil? || total_order_value.to_d.zero?) && sale_order_items.loaded? ? sale_order_items.any? : sale_order_items.exists?
         recalculate_totals!(persist: false)
       end
       return if total_tax.present? && total_order_value.present?
     end
-
     self.total_tax = (sub * (rate / 100)).round(2)
-    self.total_order_value = (sub + total_tax.to_d - disc).round(2)
+    self.total_order_value = (sub + total_tax.to_d + ship - disc).round(2)
   end
 
   # Recalcula subtotal a partir de las líneas y vuelve a calcular impuestos y total.
   # Úsalo cuando cambien items, tax_rate o discount.
   def recalculate_totals!(persist: true)
-  return self unless sale_order_items.exists?
-
-  sub = sale_order_items.sum(<<~SQL)
+    return self unless sale_order_items.exists?
+    sub = sale_order_items.sum(<<~SQL)
       COALESCE(total_line_cost,
                quantity * COALESCE(unit_final_price, (unit_cost - COALESCE(unit_discount, 0))))
     SQL
     self.subtotal = sub.to_d.round(2)
     compute_financials
-    if persist
-      save(validate: false)
-    end
+    save(validate: false) if persist
     self
   end
 

@@ -9,6 +9,7 @@
         <div class="col-md-4"><strong>Status:</strong> <%= sale_order.shipment.status&.humanize || "—" %></div>
         <div class="col-md-4"><strong>Estimated Delivery:</strong> <%= sale_order.shipment.estimated_delivery %></div>
         <div class="col-md-4"><strong>Actual Delivery:</strong> <%= sale_order.shipment.actual_delivery || "—" %></div>
+        <div class="col-md-4"><strong>Shipping Cost:</strong> <%= number_to_currency(sale_order.shipment.shipping_cost || 0, unit: 'MXN ') %></div>
       </div>
     </div>
   </div>

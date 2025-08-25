@@ -9,7 +9,7 @@ module SaleOrders
       begin
         count = 0
         updated = 0
-        scope = SaleOrder.where("total_order_value IS NULL OR total_order_value = 0")
+  scope = SaleOrder.where("(total_order_value IS NULL OR total_order_value = 0)")
         count = scope.count
         scope.find_each(batch_size: 500) do |so|
           before = so.total_order_value

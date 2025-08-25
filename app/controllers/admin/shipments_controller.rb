@@ -87,6 +87,6 @@ class Admin::ShipmentsController < ApplicationController
   end
 
   def shipment_params
-    params.require(:shipment).permit(:tracking_number, :carrier, :status, :estimated_delivery, :actual_delivery)
+    params.require(:shipment).permit(:tracking_number, :carrier, :status, :estimated_delivery, :actual_delivery, :shipping_cost)
   end
 end
