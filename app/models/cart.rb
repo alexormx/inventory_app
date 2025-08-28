@@ -1,4 +1,7 @@
 class Cart
+  TAX_RATE = 0.16
+  FREE_SHIPPING_THRESHOLD = 1500
+  SHIPPING_FLAT = 99
   def initialize(session)
     @session = session
     @session[:cart] ||= {}
@@ -34,6 +37,25 @@ class Cart
 
   def item_count
     items.sum { |_, quantity| quantity.to_i }
+  end
+
+  # Subtotal alias for clarity in views
+  def subtotal
+    total
+  end
+
+  def tax_amount
+    return 0 if subtotal.zero?
+    (subtotal * TAX_RATE).round(2)
+  end
+
+  def shipping_cost
+    return 0 if subtotal.zero? || subtotal >= FREE_SHIPPING_THRESHOLD
+    SHIPPING_FLAT
+  end
+
+  def grand_total
+    subtotal + tax_amount + shipping_cost
   end
 
   def empty?

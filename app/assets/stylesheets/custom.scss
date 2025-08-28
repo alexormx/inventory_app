@@ -867,6 +867,12 @@ body [role="dialog"], .card, .modal, .dropdown-menu { background: var(--color-su
 [data-theme="dark"] .cart-mini-qty-form button { border-color: var(--color-border); }
 .cart-mini-qty-form button { line-height:1; font-size:.75rem; }
 .cart-mini-qty-form button:disabled { opacity:.4; cursor:not-allowed; }
+
+/* Cart page quantity loading state */
+.cart-qty-group.loading { position:relative; opacity:.6; }
+.cart-qty-group.loading:after { content:""; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; }
+.cart-qty-group.loading:before { content:""; position:absolute; top:50%; left:50%; width:18px; height:18px; margin:-9px; border:2px solid var(--color-border); border-top-color: var(--color-accent); border-radius:50%; animation: cartspin .6s linear infinite; }
+@keyframes cartspin { to { transform:rotate(360deg); } }
 [data-theme="dark"] .cart-preview-thumb.placeholder { background:#2e3439; }
 .cart-preview-thumb.placeholder { font-size:.9rem; color:#999; }
 [data-theme="dark"] .cart-preview { box-shadow:0 6px 32px -8px rgba(0,0,0,0.55),0 2px 10px rgba(0,0,0,0.5); }

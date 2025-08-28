@@ -18,7 +18,7 @@
     </div>
   </td>
   <td class="text-end"><%= number_to_currency(product.selling_price) %></td>
-  <td class="text-end" data-cart-item-target="lineTotal"><%= number_to_currency(product.selling_price * quantity) %></td>
+  <td class="text-end" data-cart-item-target="lineTotal" aria-live="polite"><%= number_to_currency(product.selling_price * quantity) %></td>
   <td class="text-end">
     <%= button_to cart_item_path(product), method: :delete, params: { product_id: product.id }, class: 'btn btn-sm btn-link text-danger p-0', title: 'Eliminar', aria: { label: 'Eliminar producto' }, form: { data: { turbo_confirm: '¿Eliminar este producto?' }, class: 'd-inline' } do %>
       <i class="fas fa-trash"></i><span class="visually-hidden">Eliminar</span>

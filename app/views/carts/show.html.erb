@@ -29,7 +29,7 @@
           <tfoot>
             <tr>
               <td colspan="3" class="text-end"><strong>Total:</strong></td>
-              <td id="cart-total" class="text-end"><%= number_to_currency(@cart.total) %></td>
+              <td id="cart-total" class="text-end" aria-live="polite"><%= number_to_currency(@cart.total) %></td>
               <td></td>
             </tr>
           </tfoot>
@@ -41,8 +41,10 @@
         <div class="card-body">
           <h5 id="cart-summary-heading" class="card-title mb-3">Resumen</h5>
           <ul class="list-unstyled small mb-3">
-            <li class="d-flex justify-content-between"><span>Productos (<%= @cart.item_count %>)</span><strong><%= number_to_currency(@cart.total) %></strong></li>
-            <!-- Placeholder para futuro: envío, impuestos -->
+            <li class="d-flex justify-content-between"><span>Productos (<span id="cart-item-count" aria-live="polite"><%= @cart.item_count %></span>)</span><strong id="summary-subtotal"><%= number_to_currency(@cart.subtotal) %></strong></li>
+            <li class="d-flex justify-content-between"><span>Impuestos (16%)</span><span id="summary-tax"><%= number_to_currency(@cart.tax_amount) %></span></li>
+            <li class="d-flex justify-content-between"><span>Envío <%= @cart.shipping_cost.zero? ? '(Gratis)' : '' %></span><span id="summary-shipping"><%= number_to_currency(@cart.shipping_cost) %></span></li>
+            <li class="d-flex justify-content-between border-top pt-2 fw-semibold"><span>Total a pagar</span><strong id="summary-grand-total" aria-live="polite"><%= number_to_currency(@cart.grand_total) %></strong></li>
           </ul>
           <div class="d-grid gap-2">
             <%= link_to 'Finalizar compra', checkout_step1_path, class: 'btn btn-primary btn-lg' %>

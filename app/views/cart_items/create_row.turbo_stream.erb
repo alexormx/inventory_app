@@ -18,6 +18,22 @@
   <span id="cart-count" class="badge bg-danger rounded-pill position-absolute top-0 start-100 translate-middle"><%= @cart.item_count %></span>
 <% end %>
 
+<%= turbo_stream.replace 'cart-item-count' do %>
+  <span id="cart-item-count"><%= @cart.item_count %></span>
+<% end %>
+<%= turbo_stream.replace 'summary-subtotal' do %>
+  <strong id="summary-subtotal"><%= number_to_currency(@cart.subtotal) %></strong>
+<% end %>
+<%= turbo_stream.replace 'summary-tax' do %>
+  <%= number_to_currency(@cart.tax_amount) %>
+<% end %>
+<%= turbo_stream.replace 'summary-shipping' do %>
+  <%= number_to_currency(@cart.shipping_cost) %>
+<% end %>
+<%= turbo_stream.replace 'summary-grand-total' do %>
+  <strong id="summary-grand-total"><%= number_to_currency(@cart.grand_total) %></strong>
+<% end %>
+
 <%# Mensaje flash %>
 <% if flash.now[:notice] %>
   <%= turbo_stream.append 'flash-stack' do %>
