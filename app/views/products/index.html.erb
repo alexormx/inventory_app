@@ -26,11 +26,17 @@
               <strong><%= number_to_currency(product.selling_price) %></strong>
             </p>
 
-            <%= button_to cart_items_path,
-                          params: { product_id: product.id },
-                          method: :post,
-                          class: "btn btn-outline-success btn-sm mt-auto" do %>
-              <i class="fas fa-cart-plus"></i> Agregar al carrito
+            <% if product.active? %>
+              <%= button_to cart_items_path,
+                            params: { product_id: product.id },
+                            method: :post,
+                            class: "btn btn-outline-success btn-sm mt-auto" do %>
+                <i class="fas fa-cart-plus"></i> Agregar al carrito
+              <% end %>
+            <% else %>
+              <button class="btn btn-outline-secondary btn-sm mt-auto" disabled>
+                <i class="fas fa-ban"></i> No disponible
+              </button>
             <% end %>
           </div>
         </div>

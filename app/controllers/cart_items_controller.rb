@@ -3,6 +3,14 @@ class CartItemsController < ApplicationController
 
   def create
     product = Product.find(params[:product_id])
+    unless product.active?
+      respond_to do |format|
+        format.turbo_stream { flash.now[:alert] = "Producto no disponible" }
+        format.html { redirect_back fallback_location: catalog_path, alert: "Producto no disponible" }
+        format.json { render json: { error: "Producto no disponible" }, status: :unprocessable_entity }
+      end
+      return
+    end
     @cart.add_product(product.id)
     respond_to do |format|
       format.turbo_stream
@@ -18,6 +26,13 @@ class CartItemsController < ApplicationController
 
   def update
     product = Product.find(params[:product_id])
+    unless product.active?
+      respond_to do |format|
+        format.html { redirect_back fallback_location: cart_path, alert: "Producto no disponible" }
+        format.json { render json: { error: "Producto no disponible" }, status: :unprocessable_entity }
+      end
+      return
+    end
     @cart.update(product.id, params[:quantity])
     respond_to do |format|
       format.html { redirect_to cart_path }

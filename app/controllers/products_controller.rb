@@ -1,5 +1,7 @@
 class ProductsController < ApplicationController
   layout "customer"
+  # Requiere sesión para ver catálogo y productos
+  before_action :authenticate_user!
   def index
     if params[:q].present?
       query = "%#{params[:q].downcase}%"
@@ -13,5 +15,10 @@ class ProductsController < ApplicationController
 
   def show
     @product = Product.friendly.find(params[:id])
+    # Solo permitir ver productos activos para usuarios normales.
+    # Admin puede ver cualquiera (aunque normalmente usaría el namespace admin).
+    unless current_user&.admin? || @product.active?
+      redirect_to catalog_path, alert: "Producto no disponible" and return
+    end
   end
 end

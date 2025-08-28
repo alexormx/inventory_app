@@ -56,12 +56,14 @@
         </li>
         <% end %>
 
-        <!-- Catalogo -->
+        <% if user_signed_in? %>
+        <!-- Catálogo (solo usuarios autenticados) -->
         <li class="nav-item">
           <%= link_to catalog_path, class: "btn btn-outline-danger d-flex align-items-center" do %>
             <i class="fas fa-store me-1"></i> Catálogo
           <% end %>
         </li>
+        <% end %>
 
         <% if user_signed_in? %>
           <% if current_user.admin? %>
