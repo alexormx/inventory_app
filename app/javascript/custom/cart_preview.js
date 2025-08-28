@@ -82,6 +82,16 @@
       clearTimeout(panel._unlockTimer);
   panel._unlockTimer=setTimeout(()=>{ delete panel.dataset.lockOpen; },5000);
     }
+    // Fade superior basado en scroll
+    const scrollBox = panel && panel.querySelector('.cart-preview-scroll');
+    if(scrollBox && !scrollBox.__fadeBound){
+      const toggleFade=()=>{
+        if(scrollBox.scrollTop>2) scrollBox.classList.add('has-top-fade'); else scrollBox.classList.remove('has-top-fade');
+      };
+      scrollBox.addEventListener('scroll', toggleFade, {passive:true});
+      toggleFade();
+      scrollBox.__fadeBound=true;
+    }
   }
 
   // MutationObserver para detectar reemplazo de #cart-preview

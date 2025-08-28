@@ -831,12 +831,12 @@ body [role="dialog"], .card, .modal, .dropdown-menu { background: var(--color-su
 .dropdown-menu [role="menuitem"]:focus { outline:none; background:var(--color-accent-soft); color:var(--color-accent-hover); }
 
 /* Cart mini preview */
-.cart-preview { position:absolute; top:100%; right:0; margin-top:.4rem; width:320px; max-width:90vw; background:var(--color-surface); border:1px solid var(--color-border); border-radius:16px; padding:0.9rem 0.95rem 1rem; box-shadow:0 10px 32px -6px rgba(0,0,0,0.22),0 4px 14px rgba(0,0,0,0.09); opacity:0; transform:translateY(10px) scale(.97); pointer-events:none; transition:opacity .32s cubic-bezier(.4,0,.2,1), transform .36s cubic-bezier(.4,0,.2,1); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); display:flex; flex-direction:column; }
+.cart-preview { position:absolute; top:100%; right:0; margin-top:.4rem; width:320px; max-width:90vw; max-height:80vh; background:var(--color-surface); border:1px solid var(--color-border); border-radius:16px; padding:0.9rem 0.95rem 1rem; box-shadow:0 10px 32px -6px rgba(0,0,0,0.22),0 4px 14px rgba(0,0,0,0.09); opacity:0; transform:translateY(10px) scale(.97); pointer-events:none; transition:opacity .32s cubic-bezier(.4,0,.2,1), transform .36s cubic-bezier(.4,0,.2,1); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); display:flex; flex-direction:column; }
 .cart-preview.show { opacity:1; transform:translateY(0) scale(1); pointer-events:auto; }
 .cart-preview { --arrow-offset: 38px; }
 .cart-preview:before { content:""; position:absolute; top:-8px; right:var(--arrow-offset); width:14px; height:14px; background:var(--color-surface); border:1px solid var(--color-border); border-bottom:none; border-right:none; transform:rotate(45deg); box-shadow:-2px -2px 4px rgba(0,0,0,0.04); }
 .cart-preview-header { font-size:.85rem; }
-.cart-preview .cart-preview-scroll { overflow-y:auto; overscroll-behavior:contain; scrollbar-width:thin; padding-right:4px; margin-right:-4px; max-height:300px; -webkit-overflow-scrolling:touch; }
+.cart-preview .cart-preview-scroll { overflow-y:auto; overscroll-behavior:contain; scrollbar-width:thin; padding-right:4px; margin-right:-4px; -webkit-overflow-scrolling:touch; flex:1 1 auto; }
 .cart-preview .cart-preview-scroll > ul { margin-bottom:.5rem; }
 .cart-preview .cart-preview-scroll:empty { display:flex; align-items:center; justify-content:center; }
 .cart-preview .cart-preview-scroll::-webkit-scrollbar { width:8px; }
@@ -844,8 +844,16 @@ body [role="dialog"], .card, .modal, .dropdown-menu { background: var(--color-su
 .cart-preview .cart-preview-scroll::-webkit-scrollbar-thumb { background:var(--color-border); border-radius:20px; }
 [data-theme="dark"] .cart-preview .cart-preview-scroll::-webkit-scrollbar-thumb { background:#444; }
 .cart-preview .cart-preview-scroll { position:relative; }
+/* Fade inferior */
 .cart-preview .cart-preview-scroll:after { content:""; position:sticky; bottom:0; left:0; right:0; height:14px; pointer-events:none; background:linear-gradient(to bottom, rgba(255,255,255,0), var(--color-surface)); }
 [data-theme="dark"] .cart-preview .cart-preview-scroll:after { background:linear-gradient(to bottom, rgba(0,0,0,0), var(--color-surface)); }
+/* Fade superior (aparece solo al hacer scroll) */
+.cart-preview .cart-preview-scroll:before { content:""; position:sticky; top:0; left:0; right:0; height:14px; pointer-events:none; background:linear-gradient(to top, rgba(255,255,255,0), var(--color-surface)); opacity:0; transition:opacity .18s ease; }
+[data-theme="dark"] .cart-preview .cart-preview-scroll:before { background:linear-gradient(to top, rgba(0,0,0,0), var(--color-surface)); }
+.cart-preview .cart-preview-scroll.has-top-fade:before { opacity:1; }
+
+.cart-preview-count { font-weight:600; font-size:.8rem; background:var(--color-accent-soft); color:var(--color-accent-hover); padding:2px 6px; border-radius:12px; margin-left:.35rem; }
+[data-theme="dark"] .cart-preview-count { background:var(--color-accent-soft); }
 .cart-preview-empty { text-align:center; padding:.75rem 0 0.25rem; }
 .cart-preview-empty .icon { font-size:1.9rem; opacity:.4; margin-bottom:.25rem; }
 .cart-preview-empty .cta { margin-top:.6rem; }
