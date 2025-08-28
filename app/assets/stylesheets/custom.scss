@@ -629,6 +629,36 @@ input[type="number"] {
   }
 }
 
+/* Flash stack (toast-style) */
+#flash-stack.flash-stack {
+  pointer-events: none; /* permitir clics pasar salvo dentro del alert */
+}
+#flash-stack .flash-message {
+  pointer-events: auto;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.18);
+  background: rgba(255,255,255,0.95);
+  border: 1px solid rgba(0,0,0,0.07);
+}
+#flash-stack .flash-message .btn-close {
+  --bs-btn-close-width: .65rem;
+  --bs-btn-close-height: .65rem;
+  font-size: .65rem;
+  width: .85rem;
+  height: .85rem;
+  opacity: .6;
+}
+#flash-stack .flash-message .btn-close:hover { opacity: .9; }
+
+/* Evitar solapamiento con botón de WhatsApp: si coincide, desplazar stack */
+@media (max-width: 575.98px) {
+  #flash-stack.flash-stack { right: .75rem; left: .75rem; width:auto; }
+  #flash-stack .flash-message { margin-left:auto; }
+}
+
+/* Ajuste dinámico cuando ambos están visibles (simple margen extra) */
+body:has(.whatsapp-float-button)#flash-stack,
+body:has(.whatsapp-float-button) #flash-stack { margin-bottom: 76px; }
+
 /* Kaminari pagination custom styles */
 .pagination {
   display: flex;
