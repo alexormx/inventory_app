@@ -15,19 +15,11 @@
     panel.hidden=false;
     requestAnimationFrame(()=> panel.classList.add('show'));
   }
-  function scheduleHide(ev){
+  function hideImmediate(){
     const panel=currentPanel(); if(!panel) return;
-    const link=currentLink;
-    const toEl = ev && (ev.relatedTarget || ev.toElement);
-    // Cancelar si nos movemos al panel desde el link
-    if(toEl && panel.contains(toEl)) return;
-    if(panel.matches(':hover') || panel.contains(document.activeElement) || panel.dataset.lockOpen==='true') return;
-    clearTimeout(hideTimer);
-    hideTimer = setTimeout(()=>{
-      if(panel.dataset.lockOpen==='true') return; // se volvió a bloquear
-      panel.classList.remove('show');
-      setTimeout(()=>{ const p=currentPanel(); if(p && !p.classList.contains('show')) p.hidden=true; },220);
-    },320);
+    panel.dataset.lockOpen='';
+    panel.classList.remove('show');
+    setTimeout(()=>{ const p=currentPanel(); if(p && !p.classList.contains('show')) p.hidden=true; },200);
   }
 
   function bindLink(){
@@ -42,9 +34,9 @@
     const handlers={};
     handlers['mouseenter']=show;
     handlers['focus']=show;
-  handlers['mouseleave']=scheduleHide;
-    handlers['blur']=scheduleHide;
-    ['mouseenter','focus','mouseleave','blur'].forEach(ev=> link.addEventListener(ev, handlers[ev]));
+  handlers['mouseleave']=()=>{}; // desactivado auto-cierre
+  handlers['blur']=()=>{};
+  ['mouseenter','focus','mouseleave','blur'].forEach(ev=> link.addEventListener(ev, handlers[ev]));
     link._cartPrevHandlers=handlers; // guardar en nodo para remover futuro
     currentLink=link;
     linkListenersInstalled=true;
@@ -57,7 +49,7 @@
       return;
     }
     panel.addEventListener('mouseenter', show);
-    panel.addEventListener('mouseleave', scheduleHide);
+  // Eliminamos cierre por mouseleave
     panel.__hoverBound=true;
     // Evitar cierre al hacer click en botones internos
     panel.addEventListener('click', (e)=>{
@@ -75,18 +67,7 @@
     });
   }
 
-  function autoPeekIfNeeded(){
-    const panel=currentPanel();
-    if(panel && panel.getAttribute('data-auto-peek')==='true'){
-      // Si el panel ya estaba abierto por interacción, no iniciar auto cierre
-      const wasLocked = panel.dataset.lockOpen==='true';
-      show();
-      if(!wasLocked){
-        setTimeout(()=>{ scheduleHide(); }, 2200);
-      }
-      panel.removeAttribute('data-auto-peek');
-    }
-  }
+  function autoPeekIfNeeded(){ /* ya no usado para body-only updates */ }
 
   function rebindAll(){
     bindLink();
@@ -99,7 +80,7 @@
       show();
       // Liberar bloqueo después de 5s sin interacción
       clearTimeout(panel._unlockTimer);
-      panel._unlockTimer=setTimeout(()=>{ delete panel.dataset.lockOpen; scheduleHide(new Event('mouseleave')); },5000);
+  panel._unlockTimer=setTimeout(()=>{ delete panel.dataset.lockOpen; },5000);
     }
   }
 
@@ -119,7 +100,33 @@
     const panel=currentPanel(); if(panel) panel.__hoverBound=false;
     linkListenersInstalled=false; currentLink=null;
   });
-  document.addEventListener('turbo:after-stream-render', rebindAll);
+  document.addEventListener('turbo:after-stream-render', (e)=>{
+    const panel=currentPanel();
+    if(!panel) return; 
+    // Si se reemplazó solo el body, mantener abierto si estaba visible
+    if(e.target && e.target.querySelector && e.target.querySelector('#cart-preview-body')){
+      if(panel.classList.contains('show')){
+        show();
+      }
+    }
+    rebindAll();
+  });
+
+  // Cerrar con click en botón close o click fuera
+  document.addEventListener('click', (e)=>{
+    const panel=currentPanel(); if(!panel) return;
+    if(e.target.closest('[data-cart-preview-close]')){ hideImmediate(); return; }
+    if(panel.classList.contains('show')){
+      if(!panel.contains(e.target) && !(currentLink && currentLink.contains(e.target))){ hideImmediate(); }
+    }
+  });
+
+  // Cerrar con Escape cuando el panel está abierto y foco dentro o en link
+  document.addEventListener('keydown', (e)=>{
+    if(e.key==='Escape'){
+      const panel=currentPanel(); if(panel && panel.classList.contains('show')) hideImmediate();
+    }
+  });
   // Fallback: si el usuario mueve rápido el mouse hacia el panel después de salir del link
   document.addEventListener('mousemove', (e)=>{
     const panel=currentPanel(); if(!panel) return;
