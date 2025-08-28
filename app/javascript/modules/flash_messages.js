@@ -7,7 +7,10 @@ function handleFlashMessages() {
     if(flash.dataset.init) return;
     flash.dataset.init = '1';
     // Auto dismiss
-    flash.dataset.timeoutId = setTimeout(()=>dismissFlash(flash), 5000);
+  const timeout = setTimeout(()=>dismissFlash(flash), 5000);
+  flash.dataset.timeoutId = timeout;
+  // Debug opcional (comentable)
+  // console.debug('[flash] auto-dismiss programado', flash.textContent.trim());
   });
 }
 
@@ -44,5 +47,9 @@ document.addEventListener('click', (e)=>{
 document.addEventListener('turbo:load', handleFlashMessages);
 // ✅ Also run for Turbo-driven updates (important!)
 document.addEventListener('turbo:render', handleFlashMessages);
+// ✅ Para actualizaciones via Turbo Streams (replace/update)
+document.addEventListener('turbo:after-stream-render', handleFlashMessages);
+// ✅ Para frames (por si se usan en el futuro)
+document.addEventListener('turbo:frame-load', handleFlashMessages);
 // Fallback (in case turbolinks still appears somewhere)
 document.addEventListener('turbolinks:load', handleFlashMessages);
