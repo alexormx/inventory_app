@@ -27,6 +27,7 @@ class CartItemsController < ApplicationController
 
   def update
     product = Product.find(params[:product_id])
+  @stay_open = params[:stay_open].present?
     unless product.active?
       respond_to do |format|
         format.turbo_stream do
@@ -55,6 +56,7 @@ class CartItemsController < ApplicationController
 
   def destroy
     product = Product.find(params[:product_id])
+  @stay_open = params[:stay_open].present?
     @cart.remove(product.id)
     respond_to do |format|
   format.turbo_stream

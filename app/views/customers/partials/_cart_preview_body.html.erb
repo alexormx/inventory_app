@@ -2,8 +2,9 @@
 <div class="cart-preview-header d-flex justify-content-between align-items-center mb-2 flex-shrink-0">
   <div class="d-flex align-items-center">
     <strong>Carrito</strong>
-    <% items_count = cart_obj.items.values.sum %>
-    <span class="cart-preview-count" aria-label="Total de items en el carrito"><%= items_count %></span>
+    <%# cart_obj.items devuelve un array de [product, qty]; sumamos las cantidades %>
+    <% items_count = cart_obj.items.sum { |(_, qty)| qty.to_i } %>
+    <span class="cart-preview-count" aria-label="Total de unidades en el carrito"><%= items_count %></span>
   </div>
   <button type="button" class="btn-close btn-sm" data-cart-preview-close aria-label="Cerrar carrito"></button>
 </div>

@@ -832,6 +832,10 @@ body [role="dialog"], .card, .modal, .dropdown-menu { background: var(--color-su
 
 /* Cart mini preview */
 .cart-preview { position:absolute; top:100%; right:0; margin-top:.4rem; width:320px; max-width:90vw; max-height:80vh; background:var(--color-surface); border:1px solid var(--color-border); border-radius:16px; padding:0.9rem 0.95rem 1rem; box-shadow:0 10px 32px -6px rgba(0,0,0,0.22),0 4px 14px rgba(0,0,0,0.09); opacity:0; transform:translateY(10px) scale(.97); pointer-events:none; transition:opacity .32s cubic-bezier(.4,0,.2,1), transform .36s cubic-bezier(.4,0,.2,1); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); display:flex; flex-direction:column; }
+@media (max-width: 575.98px){
+  /* En móviles muy pequeños reducir un poco la altura máxima para dejar respiro superior e inferior */
+  .cart-preview { max-height:72vh; }
+}
 .cart-preview.show { opacity:1; transform:translateY(0) scale(1); pointer-events:auto; }
 .cart-preview { --arrow-offset: 38px; }
 .cart-preview:before { content:""; position:absolute; top:-8px; right:var(--arrow-offset); width:14px; height:14px; background:var(--color-surface); border:1px solid var(--color-border); border-bottom:none; border-right:none; transform:rotate(45deg); box-shadow:-2px -2px 4px rgba(0,0,0,0.04); }

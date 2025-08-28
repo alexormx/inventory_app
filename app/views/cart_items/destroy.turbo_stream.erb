@@ -5,6 +5,8 @@
   </span>
 <% end %>
 
-<%= turbo_stream.replace "cart-preview" do %>
-  <%= render 'customers/partials/cart_preview' %>
+<%= turbo_stream.replace "cart-preview-body" do %>
+  <div id="cart-preview-body">
+    <%= render 'customers/partials/cart_preview_body', cart_obj: (@cart || Cart.new(session)) %>
+  </div>
 <% end %>

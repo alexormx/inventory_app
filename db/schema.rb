@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_08_22_120000) do
+ActiveRecord::Schema[8.0].define(version: 2025_08_28_180000) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -233,6 +233,15 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_22_120000) do
     t.string "sale_order_id", null: false
     t.integer "status"
     t.decimal "shipping_cost", precision: 10, scale: 2, default: "0.0", null: false
+  end
+
+  create_table "site_settings", force: :cascade do |t|
+    t.string "key", null: false
+    t.string "value"
+    t.string "value_type", default: "string", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["key"], name: "index_site_settings_on_key", unique: true
   end
 
   create_table "users", force: :cascade do |t|
