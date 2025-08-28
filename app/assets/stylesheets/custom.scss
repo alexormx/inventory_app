@@ -692,6 +692,7 @@ body:has(.whatsapp-float-button) #flash-stack { margin-bottom: 76px; }
 /* ============================
    Navbar (extracted from inline)
    ============================ */
+.visually-hidden { position:absolute !important; width:1px !important; height:1px !important; padding:0 !important; margin:-1px !important; overflow:hidden !important; clip:rect(0 0 0 0) !important; white-space:nowrap !important; border:0 !important; }
 .site-navbar {
   --nav-height-base: 76px;
   --nav-height-shrink: 52px;
