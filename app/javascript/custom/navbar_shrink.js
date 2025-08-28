@@ -16,10 +16,21 @@
       document.body.style.paddingTop = (bannerH + nav.offsetHeight) + 'px';
     };
 
+    let lastState = null;
+    let ticking = false;
     const toggle = () => {
-      const nav = getNav(); if(!nav) return;
-      if(window.scrollY > 40) nav.classList.add('shrink'); else nav.classList.remove('shrink');
-      recalc();
+      if(ticking) return; // throttle via rAF
+      ticking = true;
+      requestAnimationFrame(()=>{
+        const nav = getNav(); if(!nav){ ticking=false; return; }
+        const shouldShrink = window.scrollY > 40;
+        if(lastState !== shouldShrink){
+          nav.classList.toggle('shrink', shouldShrink);
+          lastState = shouldShrink;
+          recalc();
+        }
+        ticking = false;
+      });
     };
 
     // Guardar referencias para posible depuración
