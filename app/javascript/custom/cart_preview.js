@@ -3,8 +3,9 @@
   const STATE='__cartPreview'; if(window[STATE]) return; window[STATE]=true;
   function ready(fn){ if(document.readyState!=='loading') fn(); else document.addEventListener('turbo:load', fn); }
 
-  let linkBound=false;
+  let currentLink=null;
   let hideTimer=null;
+  let linkListenersInstalled=false;
 
   function currentPanel(){ return document.getElementById('cart-preview'); }
 
@@ -23,16 +24,31 @@
   }
 
   function bindLink(){
-    if(linkBound) return;
     const link=document.querySelector('.site-navbar a[href*="/cart"]');
     if(!link) return;
-    ['mouseenter','focus'].forEach(ev=> link.addEventListener(ev, show));
-    ['mouseleave','blur'].forEach(ev=> link.addEventListener(ev, scheduleHide));
-    linkBound=true;
+    if(currentLink === link && linkListenersInstalled) return;
+    // Si hubo link previo diferente, remover listeners previos
+    if(currentLink && currentLink !== link){
+      ['mouseenter','focus','mouseleave','blur'].forEach(ev=> currentLink.removeEventListener(ev, link._cartPrevHandlers?.[ev]));
+    }
+    // Preparar handlers y adjuntar
+    const handlers={};
+    handlers['mouseenter']=show;
+    handlers['focus']=show;
+    handlers['mouseleave']=scheduleHide;
+    handlers['blur']=scheduleHide;
+    ['mouseenter','focus','mouseleave','blur'].forEach(ev=> link.addEventListener(ev, handlers[ev]));
+    link._cartPrevHandlers=handlers; // guardar en nodo para remover futuro
+    currentLink=link;
+    linkListenersInstalled=true;
   }
 
   function bindPanelHover(){
-    const panel=currentPanel(); if(!panel || panel.__hoverBound) return;
+    const panel=currentPanel(); if(!panel) return;
+    if(panel.__hoverBound){
+      // no rebind necesario, ya está
+      return;
+    }
     panel.addEventListener('mouseenter', show);
     panel.addEventListener('mouseleave', scheduleHide);
     panel.__hoverBound=true;
@@ -64,5 +80,10 @@
   });
   ready(()=>{ mo.observe(document.body,{childList:true,subtree:true}); rebindAll(); });
   document.addEventListener('turbo:render', rebindAll);
+  document.addEventListener('turbo:before-cache', ()=>{
+    // Limpiar bandera para que al restaurar la página se re-bindee correctamente
+    const panel=currentPanel(); if(panel) panel.__hoverBound=false;
+    linkListenersInstalled=false; currentLink=null;
+  });
   document.addEventListener('turbo:after-stream-render', rebindAll);
 })();
