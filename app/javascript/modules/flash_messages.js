@@ -8,7 +8,7 @@ function scheduleFlash(flash){
   if(!flash || flash.dataset.init) return;
   flash.dataset.init = '1';
   // Duración configurable vía data-timeout (ms) o default 5000
-  const delay = parseInt(flash.dataset.timeout || '5000', 10);
+  const delay = parseInt(flash.dataset.timeout || '3000', 10);
   flash.__flashTimeoutId = setTimeout(()=> dismissFlash(flash), delay);
 }
 
@@ -28,7 +28,9 @@ function adjustStack(){
   const container = document.querySelector('#flash');
   if(!container) return;
   const children = Array.from(container.querySelectorAll('.flash-message'));
-  children.forEach((c,i)=>{ c.style.marginTop = (i===0?0:'.5rem'); });
+  // Asegura orden natural (primer insert arriba) manteniendo flex-end alignment
+  children.forEach((c,i)=>{ c.style.marginTop = '.5rem'; });
+  if(children[0]) children[0].style.marginTop = 0;
 }
 
 // Delegated click (captura X aunque se reemplace el nodo)

@@ -1,6 +1,6 @@
-<div id="flash" class="flash-container position-fixed top-0 start-50 translate-middle-x mt-3" style="z-index:1300; width: min(420px, 92vw);">
+<div id="flash" class="flash-container position-fixed" style="z-index:1300; width:min(360px,90vw); bottom:1rem; right:1rem; display:flex; flex-direction:column; align-items:flex-end;">
   <% flash.each do |key, message| %>
-    <div class="alert <%= bootstrap_class_for(key) %> alert-dismissible fade show flash-message shadow" role="alert" style="border-radius: .65rem; backdrop-filter: blur(6px);">
+    <div class="alert <%= bootstrap_class_for(key) %> alert-dismissible fade show flash-message shadow" role="alert" style="border-radius:.65rem; backdrop-filter: blur(6px);">
       <%= message %>
       <button type="button" class="btn-close" aria-label="Close"></button>
     </div>
