@@ -16,7 +16,7 @@
     <div class="collapse navbar-collapse" id="navbar-scroll">
 
       <!-- SEARCH FORM -->
-      <% if user_signed_in? %>
+  <% if user_signed_in? && !(controller_path == 'products' && action_name == 'index') %>
       <div class="mx-auto my-2 my-lg-0 w-100 d-flex justify-content-center">
         <form class="d-flex w-75" role="search" action="<%= catalog_path %>" method="get">
           <input type="search" class="form-control me-2" placeholder="Buscar productos, marcas y más..." aria-label="Buscar productos" name="q">
