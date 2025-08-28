@@ -22,8 +22,10 @@ module ApplicationHelper
   end
 
   def language_switcher_enabled?
-    # Temporarily disabled. Restore previous logic when enabling again:
-    # ENV.fetch("LANG_SWITCHER", "true") == "true" && I18n.available_locales.size > 1
-    false
+    SiteSetting.get('language_switcher_enabled', false) && I18n.available_locales.size > 1
+  end
+
+  def dark_mode_enabled?
+    SiteSetting.get('dark_mode_enabled', false)
   end
 end
