@@ -71,6 +71,34 @@
 	</div>
 </div>
 
+<div class="card mb-4">
+	<div class="card-header d-flex align-items-center gap-2">
+		<i class="fa fa-percentage"></i>
+		<span>Configuración de Impuestos</span>
+	</div>
+	<div class="card-body">
+		<% tax_enabled = SiteSetting.get('tax_enabled', true) %>
+		<% tax_rate_percent = SiteSetting.get('tax_rate_percent', 16) %>
+		<p class="small text-muted">Controla si se calculan impuestos en el carrito/checkout y el porcentaje aplicado.</p>
+		<%= form_with url: admin_settings_path, method: :post, data: { turbo: false }, class: 'row gy-2 gx-3 align-items-end' do %>
+			<div class="col-md-4">
+				<label class="form-label">Impuestos activados</label>
+				<select name="tax_enabled" class="form-select form-select-sm">
+					<option value="true" <%= 'selected' if tax_enabled.to_s == 'true' %>>Sí</option>
+					<option value="false" <%= 'selected' if tax_enabled.to_s == 'false' %>>No</option>
+				</select>
+			</div>
+			<div class="col-md-4">
+				<label class="form-label">Porcentaje (%)</label>
+				<input type="number" step="0.01" name="tax_rate_percent" class="form-control form-control-sm" value="<%= tax_rate_percent %>">
+			</div>
+			<div class="col-md-4">
+				<button class="btn btn-primary btn-sm" name="save_tax" value="1">Guardar</button>
+			</div>
+		<% end %>
+	</div>
+</div>
+
 
 <div class="card">
 	<div class="card-header d-flex align-items-center gap-2">

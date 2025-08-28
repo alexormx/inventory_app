@@ -5,6 +5,12 @@ class Admin::SettingsController < ApplicationController
   def index
   # Tabla unificada de ejecuciones (todas), paginada (10 por página)
   @runs = MaintenanceRun.order(created_at: :desc).page(params[:page]).per(10)
+  if request.post? && params[:save_tax]
+    SiteSetting.set('tax_enabled', params[:tax_enabled] == 'true', 'boolean')
+    SiteSetting.set('tax_rate_percent', params[:tax_rate_percent].to_f.round(2), 'integer')
+    flash[:notice] = 'Configuración de impuestos guardada.'
+    redirect_to admin_settings_path and return
+  end
   end
 
   # Temporal: sincronización de estados de inventario (stub)

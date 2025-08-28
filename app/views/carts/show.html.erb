@@ -42,7 +42,11 @@
           <h5 id="cart-summary-heading" class="card-title mb-3">Resumen</h5>
           <ul class="list-unstyled small mb-3">
             <li class="d-flex justify-content-between"><span>Productos (<span id="cart-item-count" aria-live="polite"><%= @cart.item_count %></span>)</span><strong id="summary-subtotal"><%= number_to_currency(@cart.subtotal) %></strong></li>
-            <li class="d-flex justify-content-between"><span>Impuestos (16%)</span><span id="summary-tax"><%= number_to_currency(@cart.tax_amount) %></span></li>
+            <% if @cart.tax_enabled? %>
+              <li class="d-flex justify-content-between"><span>Impuestos (<%= @cart.tax_rate_percent %>%)</span><span id="summary-tax"><%= number_to_currency(@cart.tax_amount) %></span></li>
+            <% else %>
+              <li class="d-flex justify-content-between text-muted"><span>Impuestos desactivados</span><span id="summary-tax">-</span></li>
+            <% end %>
             <li class="d-flex justify-content-between"><span>Envío <%= @cart.shipping_cost.zero? ? '(Gratis)' : '' %></span><span id="summary-shipping"><%= number_to_currency(@cart.shipping_cost) %></span></li>
             <li class="d-flex justify-content-between border-top pt-2 fw-semibold"><span>Total a pagar</span><strong id="summary-grand-total" aria-live="polite"><%= number_to_currency(@cart.grand_total) %></strong></li>
           </ul>

@@ -69,8 +69,9 @@ Rails.application.routes.draw do
         get :inventory_items
       end
     end
-    resources :settings, only: [:index] do
+  resources :settings, only: [:index] do
       collection do
+    post :index # para guardar configuraciones simples (tax)
         post :sync_inventory_statuses
         post :backfill_sale_orders_totals
         get  :delivered_orders_debt_audit

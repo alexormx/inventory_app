@@ -16,7 +16,7 @@
   <strong id="summary-subtotal"><%= number_to_currency(@cart.subtotal) %></strong>
 <% end %>
 <%= turbo_stream.replace 'summary-tax' do %>
-  <%= number_to_currency(@cart.tax_amount) %>
+  <%= @cart.tax_enabled? ? number_to_currency(@cart.tax_amount) : '-' %>
 <% end %>
 <%= turbo_stream.replace 'summary-shipping' do %>
   <%= number_to_currency(@cart.shipping_cost) %>

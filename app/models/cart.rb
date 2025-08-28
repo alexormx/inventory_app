@@ -1,5 +1,4 @@
 class Cart
-  TAX_RATE = 0.16
   FREE_SHIPPING_THRESHOLD = 1500
   SHIPPING_FLAT = 99
   def initialize(session)
@@ -45,8 +44,9 @@ class Cart
   end
 
   def tax_amount
-    return 0 if subtotal.zero?
-    (subtotal * TAX_RATE).round(2)
+  return 0 unless tax_enabled?
+  return 0 if subtotal.zero?
+  (subtotal * tax_rate).round(2)
   end
 
   def shipping_cost
@@ -56,6 +56,18 @@ class Cart
 
   def grand_total
     subtotal + tax_amount + shipping_cost
+  end
+
+  def tax_enabled?
+    SiteSetting.get('tax_enabled', 'true') == true || SiteSetting.get('tax_enabled', 'true') == 'true'
+  end
+
+  def tax_rate_percent
+    SiteSetting.get('tax_rate_percent', 16).to_i
+  end
+
+  def tax_rate
+    tax_rate_percent.to_f / 100.0
   end
 
   def empty?
