@@ -5,6 +5,7 @@
 
   let currentLink=null;
   let hideTimer=null;
+  const AUTOHIDE_DELAY=3000; // 3s
   let linkListenersInstalled=false;
 
   function currentPanel(){ return document.getElementById('cart-preview'); }
@@ -22,6 +23,13 @@
     setTimeout(()=>{ const p=currentPanel(); if(p && !p.classList.contains('show')) p.hidden=true; },200);
   }
 
+  function scheduleHide(){
+    clearTimeout(hideTimer);
+    const panel=currentPanel(); if(!panel) return;
+    if(panel.dataset.lockOpen==='true') return; // no autohide while locked
+    hideTimer=setTimeout(()=>{ hideImmediate(); }, AUTOHIDE_DELAY);
+  }
+
   function bindLink(){
     const link=document.querySelector('.site-navbar a[href*="/cart"]');
     if(!link) return;
@@ -32,10 +40,10 @@
     }
     // Preparar handlers y adjuntar
     const handlers={};
-    handlers['mouseenter']=show;
-    handlers['focus']=show;
-  handlers['mouseleave']=()=>{}; // desactivado auto-cierre
-  handlers['blur']=()=>{};
+  handlers['mouseenter']=()=>{ show(); clearTimeout(hideTimer); };
+  handlers['focus']=()=>{ show(); clearTimeout(hideTimer); };
+  handlers['mouseleave']=scheduleHide; // autohide
+  handlers['blur']=scheduleHide;
   ['mouseenter','focus','mouseleave','blur'].forEach(ev=> link.addEventListener(ev, handlers[ev]));
     link._cartPrevHandlers=handlers; // guardar en nodo para remover futuro
     currentLink=link;
@@ -48,8 +56,8 @@
       // no rebind necesario, ya está
       return;
     }
-    panel.addEventListener('mouseenter', show);
-  // Eliminamos cierre por mouseleave
+  panel.addEventListener('mouseenter', ()=>{ show(); clearTimeout(hideTimer); });
+  panel.addEventListener('mouseleave', scheduleHide);
     panel.__hoverBound=true;
     // Evitar cierre al hacer click en botones internos
     panel.addEventListener('click', (e)=>{

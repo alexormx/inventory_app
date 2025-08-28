@@ -115,16 +115,18 @@
           <!-- Cart Button -->
           <li class="nav-item">
       <% cart_count = session[:cart]&.values&.sum || 0 %>
-      <%= link_to cart_path,
-        class: "nav-item-link position-relative d-flex align-items-center #{'active' if controller_path=='cart_items'}",
-                'aria-current': (controller_path=='cart_items') ? 'page' : nil,
+          <%= link_to cart_path,
+        class: "nav-item-link position-relative d-flex align-items-center #{'active' if ['cart_items','carts'].include?(controller_path)}",
+                'aria-current': (['cart_items','carts'].include?(controller_path)) ? 'page' : nil,
                 'aria-label': "Ver carrito de compras (#{cart_count} artículos)" do %>
               <i class="fas fa-shopping-cart" aria-hidden="true"></i> <span class="link-text">Carrito</span>
                 <span id="cart-count" class="badge bg-danger rounded-pill position-absolute top-0 start-100 translate-middle" aria-live="polite" aria-atomic="true">
                 <%= cart_count %>
               </span>
             <% end %>
-            <%= render 'customers/partials/cart_preview' %>
+            <% unless controller_path == 'carts' && action_name == 'show' %>
+              <%= render 'customers/partials/cart_preview' %>
+            <% end %>
           </li>
 
         <% else %>
