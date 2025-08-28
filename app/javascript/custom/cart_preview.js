@@ -17,6 +17,8 @@
   }
   function scheduleHide(){
     const panel=currentPanel(); if(!panel) return;
+    // No esconder si el ratón está dentro o un form interno tiene foco
+    if(panel.matches(':hover') || panel.contains(document.activeElement)) return;
     hideTimer = setTimeout(()=>{
       panel.classList.remove('show');
       setTimeout(()=>{ const p=currentPanel(); if(p && !p.classList.contains('show')) p.hidden=true; },200);
@@ -52,13 +54,30 @@
     panel.addEventListener('mouseenter', show);
     panel.addEventListener('mouseleave', scheduleHide);
     panel.__hoverBound=true;
+    // Evitar cierre al hacer click en botones internos
+    panel.addEventListener('click', (e)=>{
+      if(e.target.closest('form')){
+        show(); // mantener abierto
+      }
+    });
+    // Interceptar submits internos para mantener abierto tras respuesta
+    panel.addEventListener('submit', (e)=>{
+      if(e.target.closest('.cart-mini-qty-form') || e.target.matches('form[action*="/cart_items/"]')){
+        show();
+        panel.dataset.lockOpen='true';
+      }
+    });
   }
 
   function autoPeekIfNeeded(){
     const panel=currentPanel();
     if(panel && panel.getAttribute('data-auto-peek')==='true'){
+      // Si el panel ya estaba abierto por interacción, no iniciar auto cierre
+      const wasLocked = panel.dataset.lockOpen==='true';
       show();
-      setTimeout(()=>{ scheduleHide(); }, 2200);
+      if(!wasLocked){
+        setTimeout(()=>{ scheduleHide(); }, 2200);
+      }
       panel.removeAttribute('data-auto-peek');
     }
   }
@@ -67,6 +86,11 @@
     bindLink();
     bindPanelHover();
     autoPeekIfNeeded();
+    // Si panel estaba "lockOpen" mantenerlo visible tras re-render
+    const panel=currentPanel();
+    if(panel && panel.dataset.lockOpen==='true'){
+      show();
+    }
   }
 
   // MutationObserver para detectar reemplazo de #cart-preview

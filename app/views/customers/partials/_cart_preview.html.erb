@@ -29,7 +29,7 @@
           </div>
           <div class="d-flex flex-column align-items-end gap-1">
             <div class="small fw-semibold text-nowrap"><%= number_to_currency(product.selling_price) %></div>
-            <%= button_to cart_item_path(product), method: :delete, params: { product_id: product.id }, form: { data: { turbo_confirm: '¿Eliminar del carrito?' }, class: 'm-0 p-0' }, class: 'btn btn-sm btn-link text-danger p-0 small', title: 'Eliminar', aria: { label: 'Eliminar producto del carrito' } do %>
+            <%= button_to cart_item_path(product), method: :delete, params: { product_id: product.id }, form: { class: 'm-0 p-0' }, class: 'btn btn-sm btn-link text-danger p-0 small', title: 'Eliminar', aria: { label: 'Eliminar producto del carrito' } do %>
               <i class="fas fa-times"></i>
             <% end %>
           </div>
