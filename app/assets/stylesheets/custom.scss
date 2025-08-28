@@ -704,12 +704,9 @@ body:has(.whatsapp-float-button) #flash-stack { margin-bottom: 76px; }
 }
 .site-navbar:not(.shrink) { box-shadow: 0 2px 6px rgba(0,0,0,0.04); }
 .site-navbar.shrink { min-height: var(--nav-height-shrink); box-shadow: 0 2px 6px rgba(0,0,0,0.12); }
-.site-navbar .brand-image { transition: width .25s ease; width:40px; }
+.site-navbar .brand-image { transition: width .44s cubic-bezier(.4,0,.2,1); width:40px; }
 .site-navbar.shrink .brand-image { width:32px !important; }
-.site-navbar .brand-text { transition: opacity .25s ease, width .25s ease; display:inline-block; }
-.site-navbar .brand-image { transition: width .38s cubic-bezier(.4,0,.2,1); width:40px; }
-.site-navbar.shrink .brand-image { width:32px !important; }
-.site-navbar .brand-text { transition: opacity .38s cubic-bezier(.4,0,.2,1), width .38s cubic-bezier(.4,0,.2,1); display:inline-block; }
+.site-navbar .brand-text { transition: opacity .44s cubic-bezier(.4,0,.2,1), width .44s cubic-bezier(.4,0,.2,1); display:inline-block; }
 .site-navbar.shrink .brand-text { opacity:0; width:0; margin:0; overflow:hidden; }
 .site-navbar .nav-btn .btn-text { transition: opacity .2s ease, width .2s ease; white-space:nowrap; }
 .site-navbar.shrink .nav-btn .btn-text { opacity:0; width:0; margin:0; overflow:hidden; }
@@ -755,9 +752,9 @@ body:has(.whatsapp-float-button) #flash-stack { margin-bottom: 76px; }
 .site-navbar.direction-shrink .nav-btn i { margin-right:0 !important; }
 
 /* Transiciones suavizadas para enlaces minimalistas en shrink */
-.site-navbar.direction-shrink .nav-item-link { transition: padding .34s cubic-bezier(.4,0,.2,1), background .25s ease; }
-.site-navbar .nav-item-link .link-text { transition: opacity .34s cubic-bezier(.4,0,.2,1), width .34s cubic-bezier(.4,0,.2,1); }
-.site-navbar.direction-shrink .nav-item-link .link-text { transition: opacity .28s cubic-bezier(.4,0,.2,1), width .28s cubic-bezier(.4,0,.2,1); }
+.site-navbar.direction-shrink .nav-item-link { transition: padding .5s cubic-bezier(.4,0,.2,1), background .25s ease; }
+.site-navbar .nav-item-link .link-text { transition: opacity .5s cubic-bezier(.4,0,.2,1), width .5s cubic-bezier(.4,0,.2,1); }
+.site-navbar.direction-shrink .nav-item-link .link-text { transition: opacity .42s cubic-bezier(.4,0,.2,1), width .42s cubic-bezier(.4,0,.2,1); }
 
 /* Minimal link style navbar (alternativa limpia) */
 .site-navbar .nav-item-link { position:relative; display:inline-flex; align-items:center; gap:.45rem; padding:.55rem .9rem; font-size:.9rem; font-weight:500; border-radius:8px; color:#6c2a2a; text-decoration:none; line-height:1.2; border:1px solid transparent; background:transparent; cursor:pointer; transition:color .18s ease, background .18s ease, border-color .18s ease; }

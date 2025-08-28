@@ -19,9 +19,8 @@
     let lastScrollY = window.scrollY;
     let lastAppliedState = null; // true = shrinked
     let ticking = false;
-  const DIRECTION_THRESHOLD = 48; // mayor umbral para evitar parpadeo
-  const MIN_SCROLL_FOR_SHRINK = 120; // antes 60 -> retrasamos contracción
-  let shrinkDelayTimer = null;
+  const DIRECTION_THRESHOLD = 32; // umbral medio para evitar parpadeo
+  const MIN_SCROLL_FOR_SHRINK = 70; // disparo más pronto
     let accumulated = 0;
     let lastDirection = null; // 'down' | 'up'
 
@@ -42,28 +41,15 @@
       // - Expandir (quitar) si se sube y acumulado > umbral/2 o se está cerca del top (<60)
       let shouldShrink = lastAppliedState;
       if(dir === 'down' && currentY > MIN_SCROLL_FOR_SHRINK && accumulated > DIRECTION_THRESHOLD){
-        if(!lastAppliedState){
-          if(shrinkDelayTimer) clearTimeout(shrinkDelayTimer);
-          shrinkDelayTimer = setTimeout(()=>{
-            const nav2 = getNav(); if(!nav2) return;
-            nav2.classList.add('direction-shrink');
-            lastAppliedState = true; recalc();
-          }, 140); // ligera espera para suavidad
-        }
-        shouldShrink = true; // estado objetivo
+        shouldShrink = true; // disparo inmediato; animación se encarga de suavizar
       } else if(dir === 'up' && (accumulated > DIRECTION_THRESHOLD/2 || currentY < 60)){
         shouldShrink = false;
       }
 
       if(shouldShrink !== lastAppliedState){
-        if(!shouldShrink){ // expandiendo: cancelar delay y expandir inmediato
-          if(shrinkDelayTimer) clearTimeout(shrinkDelayTimer);
-          nav.classList.remove('direction-shrink');
-          lastAppliedState = false;
-          recalc();
-        } else if(lastAppliedState){
-          // ya shrinked y se mantiene, nada
-        }
+        nav.classList.toggle('direction-shrink', shouldShrink);
+        lastAppliedState = shouldShrink;
+        recalc();
         accumulated = 0;
       }
       lastScrollY = currentY;
