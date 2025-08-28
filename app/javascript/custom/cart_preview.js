@@ -23,11 +23,18 @@
     setTimeout(()=>{ const p=currentPanel(); if(p && !p.classList.contains('show')) p.hidden=true; },200);
   }
 
+  let lastInteractionAt=0;
   function scheduleHide(){
     clearTimeout(hideTimer);
     const panel=currentPanel(); if(!panel) return;
-    if(panel.dataset.lockOpen==='true') return; // no autohide while locked
-    hideTimer=setTimeout(()=>{ hideImmediate(); }, AUTOHIDE_DELAY);
+    hideTimer=setTimeout(()=>{
+      const idleFor = Date.now()-lastInteractionAt;
+      if(idleFor < 400){ // si hubo interacción muy reciente, reprogramar una vez
+        scheduleHide();
+      } else {
+        hideImmediate();
+      }
+    }, AUTOHIDE_DELAY);
   }
 
   function bindLink(){
@@ -40,8 +47,8 @@
     }
     // Preparar handlers y adjuntar
     const handlers={};
-  handlers['mouseenter']=()=>{ show(); clearTimeout(hideTimer); };
-  handlers['focus']=()=>{ show(); clearTimeout(hideTimer); };
+  handlers['mouseenter']=()=>{ lastInteractionAt=Date.now(); show(); clearTimeout(hideTimer); };
+  handlers['focus']=()=>{ lastInteractionAt=Date.now(); show(); clearTimeout(hideTimer); };
   handlers['mouseleave']=scheduleHide; // autohide
   handlers['blur']=scheduleHide;
   ['mouseenter','focus','mouseleave','blur'].forEach(ev=> link.addEventListener(ev, handlers[ev]));
@@ -56,20 +63,20 @@
       // no rebind necesario, ya está
       return;
     }
-  panel.addEventListener('mouseenter', ()=>{ show(); clearTimeout(hideTimer); });
+  panel.addEventListener('mouseenter', ()=>{ lastInteractionAt=Date.now(); show(); clearTimeout(hideTimer); });
   panel.addEventListener('mouseleave', scheduleHide);
     panel.__hoverBound=true;
     // Evitar cierre al hacer click en botones internos
     panel.addEventListener('click', (e)=>{
       if(e.target.closest('form')){
-          panel.dataset.lockOpen='true';
+          lastInteractionAt=Date.now();
           show();
       }
     });
     // Interceptar submits internos para mantener abierto tras respuesta
     panel.addEventListener('submit', (e)=>{
       if(e.target.closest('.cart-mini-qty-form') || e.target.matches('form[action*="/cart_items/"]')){
-          panel.dataset.lockOpen='true';
+          lastInteractionAt=Date.now();
           show();
       }
     });
