@@ -610,8 +610,12 @@ input[type="number"] {
 
 .whatsapp-float-button {
   position: fixed;
-  bottom: max(18px, env(safe-area-inset-bottom) + 12px);
-  right: max(18px, env(safe-area-inset-right) + 12px);
+  /* Sass no interpreta env() + n como número para max(); usamos calc() dentro y fallback */
+  bottom: 18px;
+  right: 18px;
+  /* Override mediante custom properties compatibles en runtime */
+  bottom: calc(max(18px, env(safe-area-inset-bottom, 0px) + 12px));
+  right: calc(max(18px, env(safe-area-inset-right, 0px) + 12px));
   background: linear-gradient(145deg, #25d366, #20b558);
   color: #fff;
   border-radius: 50%;
