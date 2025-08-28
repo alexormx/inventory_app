@@ -25,10 +25,9 @@ function dismissFlash(el){
 }
 
 function adjustStack(){
-  const container = document.querySelector('#flash');
+  const container = document.querySelector('#flash-stack');
   if(!container) return;
   const children = Array.from(container.querySelectorAll('.flash-message'));
-  // Asegura orden natural (primer insert arriba) manteniendo flex-end alignment
   children.forEach((c,i)=>{ c.style.marginTop = '.5rem'; });
   if(children[0]) children[0].style.marginTop = 0;
 }

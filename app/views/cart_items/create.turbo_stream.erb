@@ -1,13 +1,13 @@
-<!-- Flash success message -->
-<%= turbo_stream.replace 'flash' do %>
-  <div id="flash" class="flash-container position-fixed" style="z-index:1300; width:min(360px,90vw); bottom:1rem; right:1rem; display:flex; flex-direction:column; align-items:flex-end;">
-    <% flash.each do |key, message| %>
-      <div class="alert <%= bootstrap_class_for(key) %> alert-dismissible fade show flash-message shadow" role="alert" style="border-radius:.65rem; backdrop-filter: blur(6px);">
-        <%= message %>
-        <button type="button" class="btn-close" aria-label="Close"></button>
+<!-- Flash success message (append stack) -->
+<% flash.each do |key, message| %>
+  <%= turbo_stream.append 'flash-stack' do %>
+    <div class="alert <%= bootstrap_class_for(key) %> alert-dismissible fade show flash-message shadow" role="alert" data-timeout="3000" style="border-radius:.65rem; backdrop-filter: blur(6px); margin-top:.5rem;">
+      <div class="d-flex align-items-start">
+        <div class="flex-grow-1 pe-2"><%= message %></div>
+        <button type="button" class="btn-close mt-1" aria-label="Close"></button>
       </div>
-    <% end %>
-  </div>
+    </div>
+  <% end %>
 <% end %>
 
 <!-- Update the cart counting with turbo -->
