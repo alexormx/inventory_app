@@ -45,7 +45,7 @@
 <%= render 'layouts/cookies_banner'%>
 
 <body>
-  <div class="alert alert-warning text-center mb-0 rounded-0" role="alert" style="padding: 0.3rem 1rem; font-size: 0.9rem; position: sticky; top: 0; z-index: 1050;">
+  <div id="construction-banner" class="alert alert-warning text-center mb-0 rounded-0 construction-banner" role="alert" style="padding: 0.3rem 1rem; font-size: 0.9rem;">
     🚧 Bienvenido a <strong>Pasatiempos a Escala</strong> – Sitio en construcción. Muy pronto podrás ver nuestros autos coleccionables.
   </div>
 
@@ -65,6 +65,19 @@
 
   <!-- ✅ Footer -->
   <%= render 'customers/partials/footer' %>
+
+  <script>
+    (function(){
+      function setNavbarOffset(){
+        const banner = document.getElementById('construction-banner');
+        if(!banner) return;
+        document.documentElement.style.setProperty('--navbar-offset', banner.offsetHeight + 'px');
+      }
+      document.addEventListener('turbo:load', setNavbarOffset);
+      window.addEventListener('resize', setNavbarOffset);
+      setNavbarOffset();
+    })();
+  </script>
 
 </body>
 </html>
