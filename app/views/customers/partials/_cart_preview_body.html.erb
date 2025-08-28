@@ -50,5 +50,9 @@
     <strong class="me-2">Carrito</strong>
     <button type="button" class="btn-close btn-sm" data-cart-preview-close aria-label="Cerrar carrito"></button>
   </div>
-  <div class="text-muted small">Carrito vacío</div>
+  <div class="cart-preview-empty">
+    <div class="icon text-muted"><i class="fas fa-shopping-basket"></i></div>
+    <div class="text-muted small mb-2">Tu carrito está vacío</div>
+    <%= link_to 'Explorar productos', catalog_path, class: 'btn btn-outline-primary btn-sm cta', data: { turbo_frame: '_top' } %>
+  </div>
 <% end %>
