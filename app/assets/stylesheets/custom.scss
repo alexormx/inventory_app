@@ -840,7 +840,7 @@ body [role="dialog"], .card, .modal, .dropdown-menu { background: var(--color-su
 .cart-preview { --arrow-offset: 38px; }
 .cart-preview:before { content:""; position:absolute; top:-8px; right:var(--arrow-offset); width:14px; height:14px; background:var(--color-surface); border:1px solid var(--color-border); border-bottom:none; border-right:none; transform:rotate(45deg); box-shadow:-2px -2px 4px rgba(0,0,0,0.04); }
 .cart-preview-header { font-size:.85rem; }
-.cart-preview .cart-preview-scroll { overflow-y:auto; overscroll-behavior:contain; scrollbar-width:thin; padding-right:4px; margin-right:-4px; -webkit-overflow-scrolling:touch; flex:1 1 auto; }
+.cart-preview .cart-preview-scroll { overflow-y:auto; overscroll-behavior:contain; scrollbar-width:thin; padding-right:4px; margin-right:-4px; -webkit-overflow-scrolling:touch; flex:1 1 auto; min-height:0; max-height:calc(80vh - 140px); }
 .cart-preview .cart-preview-scroll > ul { margin-bottom:.5rem; }
 .cart-preview .cart-preview-scroll:empty { display:flex; align-items:center; justify-content:center; }
 .cart-preview .cart-preview-scroll::-webkit-scrollbar { width:8px; }
