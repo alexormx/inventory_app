@@ -15,3 +15,10 @@
   -webkit-text-size-adjust: auto; /* Disables the Bootstrap default */
   text-size-adjust: 100%; /* ✅ Standard property supported in modern browsers */
 }
+
+.dropdown-menu { display: none; position: absolute; top: 100%; right: 0; left: auto; z-index: 1000; min-width: 10rem; padding: .5rem 0; margin: .125rem 0 0; font-size: .9rem; list-style: none; background-color: #fff; background-clip: padding-box; border: 1px solid rgba(0,0,0,.15); border-radius: .375rem; box-shadow: 0 .5rem 1rem rgba(0,0,0,.15); }
+.dropdown-menu.show { display: block; }
+.nav-item.dropdown { position: relative; }
+.dropdown-item { display: flex; align-items: center; gap: .5rem; width: 100%; padding: .25rem 1rem; clear: both; color: #212529; text-decoration: none; white-space: nowrap; }
+.dropdown-item:hover { background-color: #f8f9fa; }
+.dropdown-item.active { background-color: #e9ecef; font-weight: 600; }

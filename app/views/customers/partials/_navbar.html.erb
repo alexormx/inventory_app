@@ -1,10 +1,10 @@
-<nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
+<nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm site-navbar" data-nav>
   <div class="container">
 
     <!-- LOGO -->
-    <%= link_to root_path, id: "logo", class: "navbar-brand d-flex align-items-center" do %>
-      <%= image_tag "logo.png", alt: "Pasatiempos Logo", class: "img-fluid me-2", width: "40" %>
-      <span class="fw-bold">PASATIEMPOS</span>
+    <%= link_to root_path, id: "logo", class: "navbar-brand d-flex align-items-center brand-link" do %>
+      <%= image_tag "logo.png", alt: "Pasatiempos Logo", class: "brand-image img-fluid me-2", width: "40" %>
+      <span class="brand-text fw-bold">PASATIEMPOS</span>
     <% end %>
 
     <!-- HAMBURGER BUTTON -->
@@ -16,6 +16,7 @@
     <div class="collapse navbar-collapse" id="navbar-scroll">
 
       <!-- SEARCH FORM -->
+  <% if user_signed_in? && !(controller_path == 'products' && action_name == 'index') %>
       <div class="mx-auto my-2 my-lg-0 w-100 d-flex justify-content-center">
         <form class="d-flex w-75" role="search" action="<%= catalog_path %>" method="get">
           <input type="search" class="form-control me-2" placeholder="Buscar productos, marcas y más..." aria-label="Buscar productos" name="q">
@@ -24,32 +25,61 @@
           </button>
         </form>
       </div>
+      <% end %>
 
       <!-- NAV MENU -->
       <ul id="navbar-menu" class="navbar-nav ms-auto d-flex align-items-center gap-2">
 
-        <!-- Catalogo -->
+        <% if language_switcher_enabled? %>
+        <!-- Language Switcher -->
+        <li class="nav-item dropdown">
+          <button type="button" class="btn btn-outline-secondary dropdown-toggle" id="lang-switcher" data-dropdown-toggle data-dropdown-menu="lang-menu" aria-expanded="false" aria-haspopup="true">
+            <i class="fas fa-globe"></i> <%= I18n.locale.to_s.upcase %>
+          </button>
+          <ul id="lang-menu" class="dropdown-menu dropdown-menu-end" aria-labelledby="lang-switcher">
+            <% languages = {
+              'es-MX' => { label: 'Español', flag: 'flags/mx.svg' },
+              'en'    => { label: 'English', flag: 'flags/us.svg' }
+            } %>
+            <% current_params = request.query_parameters.dup %>
+            <% languages.each do |code, meta| %>
+              <% merged_query = current_params.merge(locale: code).to_query %>
+              <% target_href = "#{request.path}?#{merged_query}" %>
+              <li>
+                <%= link_to target_href, class: "dropdown-item d-flex align-items-center gap-2 #{'active fw-bold' if I18n.locale.to_s == code}", data: { turbo: false } do %>
+                  <%= image_tag meta[:flag], alt: meta[:label], width: 20, height: 14, class: 'border' %>
+                  <span><%= meta[:label] %></span>
+                <% end %>
+              </li>
+            <% end %>
+          </ul>
+        </li>
+        <% end %>
+
+        <% if user_signed_in? %>
+        <!-- Catálogo (solo usuarios autenticados) -->
         <li class="nav-item">
-          <%= link_to catalog_path, class: "btn btn-outline-danger d-flex align-items-center" do %>
-            <i class="fas fa-store me-1"></i> Catálogo
+          <%= link_to catalog_path, class: "btn btn-outline-danger d-flex align-items-center nav-btn" do %>
+            <i class="fas fa-store me-1"></i> <span class="btn-text">Catálogo</span>
           <% end %>
         </li>
+        <% end %>
 
         <% if user_signed_in? %>
           <% if current_user.admin? %>
             <li class="nav-item">
-              <%= link_to admin_dashboard_path, class: "btn btn-outline-danger d-flex align-items-center" do %>
-                <i class="fas fa-cogs me-1"></i> Admin
+              <%= link_to admin_dashboard_path, class: "btn btn-outline-danger d-flex align-items-center nav-btn" do %>
+                <i class="fas fa-cogs me-1"></i> <span class="btn-text">Admin</span>
               <% end %>
             </li>
           <% end %>
 
           <!-- Account Dropdown -->
           <li class="nav-item dropdown">
-            <a href="#" id="account" class="btn btn-outline-danger dropdown-toggle d-flex align-items-center" data-bs-toggle="dropdown">
-              <i class="fas fa-user me-1"></i> Mi cuenta
-            </a>
-            <ul class="dropdown-menu dropdown-menu-end" id="dropdown-menu">
+            <button type="button" id="account" class="btn btn-outline-danger dropdown-toggle d-flex align-items-center nav-btn" data-dropdown-toggle data-dropdown-menu="account-menu" aria-expanded="false" aria-haspopup="true">
+              <i class="fas fa-user me-1"></i> <span class="btn-text">Mi cuenta</span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end" id="account-menu" aria-labelledby="account">
               <li><%= link_to "Mi Perfil", "#", class: "dropdown-item" %></li>
               <li><%= link_to "Mis Pedidos", orders_path, class: "dropdown-item" %></li>
               <li><hr class="dropdown-divider"></li>
@@ -65,8 +95,8 @@
 
           <!-- Cart Button -->
           <li class="nav-item">
-            <%= link_to cart_path, class: "btn btn-outline-danger position-relative d-flex align-items-center" do %>
-              <i class="fas fa-shopping-cart me-1"></i> Carrito
+            <%= link_to cart_path, class: "btn btn-outline-danger position-relative d-flex align-items-center nav-btn" do %>
+              <i class="fas fa-shopping-cart me-1"></i> <span class="btn-text">Carrito</span>
                 <span id="cart-count" class="badge bg-danger rounded-pill position-absolute top-0 start-100 translate-middle">
                 <%= session[:cart]&.values&.sum || 0 %>
               </span>
@@ -76,15 +106,15 @@
         <% else %>
           <!-- Login -->
           <li class="nav-item">
-            <%= link_to new_user_session_path, class: "btn btn-outline-danger d-flex align-items-center" do %>
-              <i class="fas fa-sign-in-alt me-1"></i> Iniciar sesión
+            <%= link_to new_user_session_path, class: "btn btn-outline-danger d-flex align-items-center nav-btn" do %>
+              <i class="fas fa-sign-in-alt me-1"></i> <span class="btn-text">Iniciar sesión</span>
             <% end %>
           </li>
 
           <!-- Register -->
           <li class="nav-item">
-            <%= link_to new_user_registration_path, class: "btn btn-danger d-flex align-items-center" do %>
-              <i class="fas fa-user-plus me-1"></i> Registrarse
+            <%= link_to new_user_registration_path, class: "btn btn-danger d-flex align-items-center nav-btn" do %>
+              <i class="fas fa-user-plus me-1"></i> <span class="btn-text">Registrarse</span>
             <% end %>
           </li>
         <% end %>
@@ -93,3 +123,16 @@
     </div>
   </div>
 </nav>
+
+<style>
+  .site-navbar { transition: all .25s ease; position: fixed; top: var(--banner-height,0); left:0; right:0; z-index:1100; background:#f8f9fa; }
+  .site-navbar.shrink { padding-top: .15rem; padding-bottom: .15rem; box-shadow: 0 2px 6px rgba(0,0,0,0.12); }
+  .site-navbar .brand-image { transition: width .25s ease; }
+  .site-navbar.shrink .brand-image { width: 32px !important; }
+  .site-navbar.shrink .brand-text { opacity: 0; width: 0; margin: 0; overflow: hidden; }
+  .site-navbar .nav-btn .btn-text { transition: opacity .2s ease, width .2s ease; white-space: nowrap; }
+  .site-navbar.shrink .nav-btn .btn-text { opacity: 0; width: 0; margin: 0; overflow: hidden; }
+  .site-navbar .nav-btn i { transition: margin-right .2s ease; }
+  .site-navbar.shrink .nav-btn i { margin-right: 0 !important; }
+</style>
+</style>

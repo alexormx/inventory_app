@@ -1,48 +1,93 @@
-<div class="container mt-4">
-  <h1 class="mb-4">Catálogo de Productos</h1>
-  <% if params[:q].present? %>
-      <p class="text-muted mb-3">
-        Showing <strong><%= @products.count %></strong> results for "<%= params[:q] %>"
-      </p>
+<div class="container mt-4" id="catalog">
+  <div class="catalog-header d-flex flex-column flex-lg-row align-items-lg-end justify-content-between gap-2 gap-lg-3 mb-2">
+    <div class="catalog-title-wrapper">
+      <h1 class="catalog-title fw-semibold">Catálogo</h1>
+      <p class="catalog-subtitle text-muted small">Productos activos disponibles para compra.</p>
+    </div>
+    <form method="get" action="<%= catalog_path %>" class="catalog-filters d-flex flex-column flex-sm-row flex-wrap gap-2 align-items-stretch w-100 w-lg-auto mb-0">
+      <div class="input-group">
+        <span class="input-group-text bg-white"><i class="fas fa-search text-muted"></i></span>
+        <input type="search" name="q" value="<%= @q %>" class="form-control" placeholder="Buscar nombre, marca, categoría...">
+      </div>
+      <select name="sort" class="form-select form-select-sm sort-select" onchange="this.form.submit()" aria-label="Ordenar productos">
+        <option value="newest" <%= 'selected' if @sort=='newest' %>>Más recientes</option>
+        <option value="price_asc" <%= 'selected' if @sort=='price_asc' %>>Precio ↑</option>
+        <option value="price_desc" <%= 'selected' if @sort=='price_desc' %>>Precio ↓</option>
+        <option value="name_asc" <%= 'selected' if @sort=='name_asc' %>>Nombre A-Z</option>
+      </select>
+      <% if @q.present? || params[:sort].present? %>
+        <a href="<%= catalog_path %>" class="btn btn-outline-secondary btn-icon" title="Limpiar filtros"><i class="fas fa-times"></i></a>
+      <% end %>
+      <button class="btn btn-danger btn-icon" type="submit" title="Aplicar filtros"><i class="fas fa-filter"></i></button>
+    </form>
+  </div>
+
+  <% if @q.present? %>
+    <p class="text-muted small mb-3">Resultados para "<strong><%= @q %></strong>": <%= @products.total_count %></p>
   <% end %>
+
   <div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-lg-5 g-3">
     <% @products.each do |product| %>
       <div class="col">
-        <div class="card h-100 border-0 shadow-sm d-flex flex-column">
-          <%= link_to product_path(product) do %>
+        <div class="card h-100 border-0 shadow-sm d-flex flex-column catalog-item position-relative hover-lift">
+          <!-- Badge estado -->
+          <% unless product.active? %>
+            <span class="badge bg-secondary position-absolute top-0 start-0 m-1">No disp.</span>
+          <% end %>
+          <%= link_to product_path(product), class: "d-block p-2" do %>
             <% if product.product_images.attached? %>
               <%= image_tag product.product_images.first.variant(resize_to_limit: [200, 200]),
-                            class: "product-image", alt: product.product_name %>
+                            class: "product-image mx-auto d-block", alt: product.product_name %>
             <% else %>
-              <%= image_tag "placeholder.png", class: "product-image", alt: "No image available" %>
+              <%= image_tag "placeholder.png", class: "product-image mx-auto d-block", alt: "Imagen no disponible" %>
             <% end %>
           <% end %>
-
-          <div class="card-body text-center p-2 d-flex flex-column">
-            <h6 class="card-title text-truncate m-0 mb-1">
+          <div class="card-body text-center p-2 d-flex flex-column w-100">
+            <h6 class="card-title text-truncate mb-1" title="<%= product.product_name %>">
               <%= link_to product.product_name, product_path(product), class: "text-decoration-none text-dark" %>
             </h6>
-            <p class="card-text text-muted small mb-2">
-              <strong><%= number_to_currency(product.selling_price) %></strong>
+            <p class="card-text text-danger fw-bold small mb-2">
+              <%= number_to_currency(product.selling_price) %>
             </p>
-
-            <%= button_to cart_items_path,
-                          params: { product_id: product.id },
-                          method: :post,
-                          class: "btn btn-outline-success btn-sm mt-auto" do %>
-              <i class="fas fa-cart-plus"></i> Agregar al carrito
+            <% if product.active? %>
+              <%= button_to cart_items_path,
+                            params: { product_id: product.id },
+                            method: :post,
+                            class: "btn btn-danger btn-sm mt-auto", aria: { label: "Agregar #{product.product_name} al carrito" } do %>
+                <i class="fas fa-cart-plus"></i>
+              <% end %>
+            <% else %>
+              <button class="btn btn-outline-secondary btn-sm mt-auto" disabled title="Producto no disponible">
+                <i class="fas fa-ban"></i>
+              </button>
             <% end %>
           </div>
         </div>
       </div>
     <% end %>
   </div>
+
+  <% if @products.empty? %>
+    <div class="alert alert-info mt-4" role="alert">
+      No hay productos disponibles. <a href="<%= root_path %>" class="alert-link">Volver al inicio</a>.
+    </div>
+  <% end %>
+
+  <div class="mt-4 d-flex justify-content-center">
+    <%= paginate @products %>
+  </div>
 </div>
 
-
-<% if @products.empty? %>
-  <div class="alert alert-info mt-4" role="alert">
-    No hay productos disponibles en este momento.
-  </div>
-<% end %>
+<style>
+  #catalog { --catalog-gap-y: .75rem; }
+  #catalog .catalog-title { font-size: 1.85rem; line-height: 1.2; margin: 0 0 .25rem; }
+  #catalog .catalog-subtitle { margin: 0; }
+  #catalog .catalog-header .input-group { flex: 1 1 340px; min-width: 250px; }
+  #catalog .catalog-filters .sort-select { min-width: 125px; width: auto; }
+  #catalog .catalog-filters .btn-icon { display: inline-flex; align-items: center; justify-content: center; padding: .45rem .75rem; }
+  #catalog .catalog-item.hover-lift:hover { transform: translateY(-3px); box-shadow: 0 6px 18px rgba(0,0,0,0.12); }
+  #catalog .catalog-item { transition: .18s ease-in-out; }
+  #catalog .product-image { max-height: 180px; object-fit: contain; }
+  @media (max-width: 575px) { #catalog .catalog-header { margin-bottom: .75rem; } }
+</style>
 

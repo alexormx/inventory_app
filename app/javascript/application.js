@@ -3,6 +3,7 @@ import "@hotwired/turbo-rails"
 import { Application } from "@hotwired/stimulus"
 
 const application = Application.start()
+window.Stimulus = application
 
 // Nota: Evitamos Bootstrap JS para tabs; usamos Stimulus nativo
 
@@ -26,12 +27,20 @@ application.register("tabs", TabsController)
 import SubtabsController from "./controllers/subtabs_controller"
 application.register("subtabs", SubtabsController)
 
+// Remove Stimulus dropdown controller (using vanilla JS now)
+// import DropdownController from "./controllers/dropdown_controller"
+// application.register("dropdown", DropdownController)
+// console.debug("DropdownController registered")
+import "custom/dropdown_toggle"
+
 import "custom/menu"
 import "custom/toggle_inventory_items"
 import "custom/payment_modal"
 import "custom/hide_modal"
 import "custom/cookies"
 import "custom/gallery"
+import "custom/navbar_shrink"
+import "custom/flash_stack_offset"
 import "modules/toggle_menu"
 import "modules/flash_messages"
 import "modules/disable_enter_until_email"

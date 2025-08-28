@@ -306,3 +306,32 @@ es-MX:
       almost_x_years:
         one: "casi 1 año"
         other: "casi %{count} años"
+  home:
+    index:
+      meta:
+        title: "Pasatiempos | Coleccionismo y Comunidad"
+        description: "Explora colecciones, comparte tu pasión y únete a la comunidad de Pasatiempos."
+      heading_html: "Bienvenidos a <span class='text-danger'>PASATIEMPOS</span>"
+      lead: "Un espacio donde el coleccionismo cobra vida, se fortalecen amistades y se celebran los valores familiares."
+      cards:
+        collection:
+          alt: "Colección organizada"
+          title: "Pasión por el coleccionismo"
+          text: "Desde autos a escala hasta cartas y figuras, aquí celebramos cada colección única con orgullo."
+        legacy:
+          alt: "Padre e hijo coleccionando"
+          title: "Un legado familiar"
+          text: "El coleccionismo une generaciones y refuerza los lazos familiares a través de momentos compartidos."
+        community:
+          alt: "Amigos coleccionistas"
+          title: "Comunidad y amistad"
+          text: "Creemos en compartir, intercambiar y crecer juntos. La comunidad es el corazón de Pasatiempos."
+        practices:
+          alt: "Buenas prácticas de colección"
+          title: "Buenas prácticas"
+          text: "Fomentamos la conservación, el orden, y la documentación de cada pieza para que trascienda generaciones."
+      join_title: "Únete a nosotros"
+      join_lead: "¡Explora el catálogo, encuentra esa pieza especial y sé parte de nuestra familia coleccionista!"
+      explore_cta: "Explorar Catálogo"
+      login_cta: "Iniciar sesión"
+      register_cta: "Crear cuenta"

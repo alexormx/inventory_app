@@ -1,8 +1,10 @@
-<div class="px-3 mt-3" id="flash">
+<div id="flash-stack" class="flash-stack position-fixed" style="z-index:1300; width:min(360px,90vw); bottom:1rem; right:1rem; display:flex; flex-direction:column; align-items:stretch;">
   <% flash.each do |key, message| %>
-    <div class="alert <%= bootstrap_class_for(key) %> alert-dismissible fade show flash-message" role="alert">
-      <%= message %>
-      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    <div class="alert <%= bootstrap_class_for(key) %> alert-dismissible fade show flash-message shadow" role="alert" data-timeout="3000" style="border-radius:.65rem; backdrop-filter: blur(6px); margin-top:.5rem;">
+      <div class="d-flex align-items-start">
+        <div class="flex-grow-1 pe-2"><%= message %></div>
+        <button type="button" class="btn-close mt-1" aria-label="Close"></button>
+      </div>
     </div>
   <% end %>
 </div>

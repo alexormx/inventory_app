@@ -1,57 +1,27 @@
+<% content_for :title, t('home.index.meta.title') %>
+<% content_for :description, t('home.index.meta.description') %>
 <div class="container mt-5 text-center">
-  <h1 class="display-4 fw-bold mb-4">Bienvenidos a <span class="text-danger">PASATIEMPOS</span></h1>
-  <p class="lead text-muted mb-5">Un espacio donde el coleccionismo cobra vida, se fortalecen amistades y se celebran los valores familiares.</p>
+  <h1 class="display-4 fw-bold mb-4"><%= raw t('home.index.heading_html') %></h1>
+  <p class="lead text-muted mb-5"><%= t('home.index.lead') %></p>
 
-  <div class="row g-4">
-    <!-- Sección 1 -->
-    <div class="col-md-6">
-      <div class="card h-100 shadow-sm">
-        <%= image_tag "collection_shelf.jpg", class: "card-img-top", alt: "Colección organizada" %>
-        <div class="card-body">
-          <h5 class="card-title fw-semibold">Pasión por el coleccionismo</h5>
-          <p class="card-text">Desde autos a escala hasta cartas y figuras, aquí celebramos cada colección única con orgullo.</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Sección 2 -->
-    <div class="col-md-6">
-      <div class="card h-100 shadow-sm">
-        <%= image_tag "father_son_collecting.jpg", class: "card-img-top", alt: "Padre e hijo coleccionando" %>
-        <div class="card-body">
-          <h5 class="card-title fw-semibold">Un legado familiar</h5>
-          <p class="card-text">El coleccionismo une generaciones y refuerza los lazos familiares a través de momentos compartidos.</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Sección 3 -->
-    <div class="col-md-6">
-      <div class="card h-100 shadow-sm">
-        <%= image_tag "collector_friends.jpg", class: "card-img-top", alt: "Amigos coleccionistas" %>
-        <div class="card-body">
-          <h5 class="card-title fw-semibold">Comunidad y amistad</h5>
-          <p class="card-text">Creemos en compartir, intercambiar y crecer juntos. La comunidad es el corazón de Pasatiempos.</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Sección 4 -->
-    <div class="col-md-6">
-      <div class="card h-100 shadow-sm">
-        <%= image_tag "good_practices.jpg", class: "card-img-top", alt: "Buenas prácticas de colección" %>
-        <div class="card-body">
-          <h5 class="card-title fw-semibold">Buenas prácticas</h5>
-          <p class="card-text">Fomentamos la conservación, el orden, y la documentación de cada pieza para que trascienda generaciones.</p>
-        </div>
-      </div>
-    </div>
+  <div class="row row-cols-1 row-cols-md-2 g-4">
+    <%= render 'home/value_card', image: 'collection_shelf.jpg', alt: t('home.index.cards.collection.alt'), title: t('home.index.cards.collection.title'), text: t('home.index.cards.collection.text') %>
+    <%= render 'home/value_card', image: 'father_son_collecting.jpg', alt: t('home.index.cards.legacy.alt'), title: t('home.index.cards.legacy.title'), text: t('home.index.cards.legacy.text') %>
+    <%= render 'home/value_card', image: 'collector_friends.jpg', alt: t('home.index.cards.community.alt'), title: t('home.index.cards.community.title'), text: t('home.index.cards.community.text') %>
+    <%= render 'home/value_card', image: 'good_practices.jpg', alt: t('home.index.cards.practices.alt'), title: t('home.index.cards.practices.title'), text: t('home.index.cards.practices.text') %>
   </div>
 
   <hr class="my-5">
 
-  <h2 class="fw-bold text-danger">Únete a nosotros</h2>
-  <p class="lead">¡Explora el catálogo, encuentra esa pieza especial y sé parte de nuestra familia coleccionista!</p>
+  <h2 class="fw-bold text-danger"><%= t('home.index.join_title') %></h2>
+  <p class="lead"><%= t('home.index.join_lead') %></p>
 
-  <%= link_to "Explorar Catálogo", catalog_path, class: "btn btn-danger btn-lg mt-3" %>
+  <% if user_signed_in? %>
+    <%= link_to t('home.index.explore_cta'), catalog_path, class: "btn btn-danger btn-lg mt-3" %>
+  <% else %>
+    <div class="d-flex flex-column flex-sm-row justify-content-center gap-3 mt-3">
+      <%= link_to t('home.index.login_cta'), new_user_session_path, class: "btn btn-outline-danger btn-lg" %>
+      <%= link_to t('home.index.register_cta'), new_user_registration_path, class: "btn btn-danger btn-lg" %>
+    </div>
+  <% end %>
 </div>
