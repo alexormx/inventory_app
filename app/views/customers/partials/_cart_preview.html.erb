@@ -1,11 +1,12 @@
+<% cart_obj = (defined?(@cart) && @cart.present?) ? @cart : Cart.new(session) %>
 <div id="cart-preview" class="cart-preview" data-cart-preview hidden aria-live="polite" aria-label="Mini vista del carrito">
   <div class="cart-preview-header d-flex justify-content-between align-items-center mb-2">
     <strong>Carrito</strong>
     <a href="<%= cart_path %>" class="small text-decoration-none">Ver todo</a>
   </div>
-  <% if @cart && @cart.items.any? %>
+  <% if cart_obj.items.any? %>
     <ul class="list-unstyled mb-2">
-      <% @cart.items.first(5).each do |product, qty| %>
+      <% cart_obj.items.first(5).each do |product, qty| %>
         <li class="d-flex align-items-start mb-2 cart-preview-item">
           <div class="flex-grow-1 me-2">
             <div class="fw-medium small line-clamp-1"><%= product.product_name %></div>
@@ -15,12 +16,12 @@
         </li>
       <% end %>
     </ul>
-    <% if @cart.items.size > 5 %>
-      <div class="small text-muted mb-2">+ <%= @cart.items.size - 5 %> más</div>
+    <% if cart_obj.items.size > 5 %>
+      <div class="small text-muted mb-2">+ <%= cart_obj.items.size - 5 %> más</div>
     <% end %>
     <div class="d-flex justify-content-between align-items-center border-top pt-2">
       <span class="small text-muted">Total</span>
-      <strong><%= number_to_currency(@cart.total) %></strong>
+      <strong><%= number_to_currency(cart_obj.total) %></strong>
     </div>
   <% else %>
     <div class="text-muted small">Carrito vacío</div>
