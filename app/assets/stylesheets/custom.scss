@@ -735,6 +735,22 @@ body:has(.whatsapp-float-button) #flash-stack { margin-bottom: 76px; }
 }
 .site-navbar .nav-btn.active:hover { filter:brightness(1.05); }
 
+/* Nueva paleta jerárquica para botones de navbar */
+.site-navbar .nav-btn-primary { background:#dc3545; border:1px solid #dc3545; color:#fff; }
+.site-navbar .nav-btn-primary:hover, .site-navbar .nav-btn-primary:focus { background:#c82333; border-color:#c82333; color:#fff; }
+.site-navbar .nav-btn-primary.active { background:#bb1d2c; border-color:#bb1d2c; }
+
+.site-navbar .nav-btn-secondary { background:rgba(220,53,69,0.08); border:1px solid rgba(220,53,69,0.35); color:#b11424; }
+.site-navbar .nav-btn-secondary:hover, .site-navbar .nav-btn-secondary:focus { background:rgba(220,53,69,0.15); border-color:#dc3545; color:#a31221; }
+.site-navbar .nav-btn-secondary.active { background:#dc3545; color:#fff; border-color:#dc3545; }
+
+/* Estado shrink direccional: solo se contrae cuando se hace scroll hacia abajo, se expande hacia arriba */
+.site-navbar.direction-shrink { min-height: var(--nav-height-shrink); box-shadow:0 2px 6px rgba(0,0,0,0.12); }
+.site-navbar.direction-shrink .brand-image { width:32px !important; }
+.site-navbar.direction-shrink .brand-text { opacity:0; width:0; margin:0; overflow:hidden; }
+.site-navbar.direction-shrink .nav-btn .btn-text { opacity:0; width:0; margin:0; overflow:hidden; }
+.site-navbar.direction-shrink .nav-btn i { margin-right:0 !important; }
+
 /* Cart badge refinements */
 #cart-count { min-width:1.15rem; height:1.15rem; padding:0 0.25rem; font-size:.65rem; line-height:1.15rem; }
 

@@ -61,7 +61,7 @@
         <!-- Catálogo (solo usuarios autenticados) -->
         <li class="nav-item">
       <%= link_to catalog_path,
-        class: "btn btn-outline-danger d-flex align-items-center nav-btn #{'active' if controller_path=='products' && action_name=='index'}",
+        class: "btn nav-btn-primary d-flex align-items-center nav-btn #{'active' if controller_path=='products' && action_name=='index'}",
         'aria-current': (controller_path=='products' && action_name=='index') ? 'page' : nil,
         'aria-label': 'Ver catálogo de productos' do %>
             <i class="fas fa-store me-1"></i> <span class="btn-text">Catálogo</span>
@@ -72,7 +72,7 @@
         <% if user_signed_in? %>
           <% if current_user.admin? %>
             <li class="nav-item">
-              <%= link_to admin_dashboard_path, class: "btn btn-outline-danger d-flex align-items-center nav-btn", 'aria-label': 'Panel de administración' do %>
+              <%= link_to admin_dashboard_path, class: "btn nav-btn-secondary d-flex align-items-center nav-btn", 'aria-label': 'Panel de administración' do %>
                 <i class="fas fa-cogs me-1"></i> <span class="btn-text">Admin</span>
               <% end %>
             </li>
@@ -80,7 +80,7 @@
 
           <!-- Account Dropdown -->
           <li class="nav-item dropdown">
-            <button type="button" id="account" class="btn btn-outline-danger dropdown-toggle d-flex align-items-center nav-btn" data-dropdown-toggle data-dropdown-menu="account-menu" aria-expanded="false" aria-haspopup="true" aria-label="Menú de cuenta de usuario">
+            <button type="button" id="account" class="btn nav-btn-secondary dropdown-toggle d-flex align-items-center nav-btn" data-dropdown-toggle data-dropdown-menu="account-menu" aria-expanded="false" aria-haspopup="true" aria-label="Menú de cuenta de usuario">
               <i class="fas fa-user me-1"></i> <span class="btn-text">Mi cuenta</span>
             </button>
             <ul class="dropdown-menu dropdown-menu-end" id="account-menu" aria-labelledby="account">
@@ -99,8 +99,8 @@
 
           <!-- Cart Button -->
           <li class="nav-item">
-            <%= link_to cart_path,
-                class: "btn btn-outline-danger position-relative d-flex align-items-center nav-btn #{'active' if controller_path=='cart_items'}",
+      <%= link_to cart_path,
+        class: "btn nav-btn-primary position-relative d-flex align-items-center nav-btn #{'active' if controller_path=='cart_items'}",
                 'aria-current': (controller_path=='cart_items') ? 'page' : nil,
                 'aria-label': 'Ver carrito de compras' do %>
               <i class="fas fa-shopping-cart me-1" aria-hidden="true"></i> <span class="btn-text">Carrito</span>
@@ -113,14 +113,14 @@
         <% else %>
           <!-- Login -->
           <li class="nav-item">
-            <%= link_to new_user_session_path, class: "btn btn-outline-danger d-flex align-items-center nav-btn", 'aria-label': 'Iniciar sesión' do %>
+            <%= link_to new_user_session_path, class: "btn nav-btn-secondary d-flex align-items-center nav-btn", 'aria-label': 'Iniciar sesión' do %>
               <i class="fas fa-sign-in-alt me-1"></i> <span class="btn-text">Iniciar sesión</span>
             <% end %>
           </li>
 
           <!-- Register -->
           <li class="nav-item">
-            <%= link_to new_user_registration_path, class: "btn btn-danger d-flex align-items-center nav-btn", 'aria-label': 'Crear nueva cuenta' do %>
+            <%= link_to new_user_registration_path, class: "btn nav-btn-primary d-flex align-items-center nav-btn", 'aria-label': 'Crear nueva cuenta' do %>
               <i class="fas fa-user-plus me-1"></i> <span class="btn-text">Registrarse</span>
             <% end %>
           </li>
