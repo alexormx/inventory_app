@@ -751,6 +751,46 @@ body:has(.whatsapp-float-button) #flash-stack { margin-bottom: 76px; }
 .site-navbar.direction-shrink .nav-btn .btn-text { opacity:0; width:0; margin:0; overflow:hidden; }
 .site-navbar.direction-shrink .nav-btn i { margin-right:0 !important; }
 
+/* Minimal link style navbar (alternativa limpia) */
+.site-navbar .nav-item-link { position:relative; display:inline-flex; align-items:center; gap:.45rem; padding:.55rem .9rem; font-size:.9rem; font-weight:500; border-radius:8px; color:#6c2a2a; text-decoration:none; line-height:1.2; border:1px solid transparent; background:transparent; cursor:pointer; transition:color .18s ease, background .18s ease, border-color .18s ease; }
+.site-navbar .nav-item-link i { font-size:.95rem; }
+.site-navbar .nav-item-link:hover, .site-navbar .nav-item-link:focus { background:rgba(220,53,69,0.08); color:#a31221; outline:none; }
+.site-navbar .nav-item-link.active, .site-navbar .nav-item-link[aria-current="page"] { background:#dc3545; color:#fff; }
+.site-navbar .nav-item-link.active i { color:#fff; }
+.site-navbar.direction-shrink .nav-item-link { padding:.45rem .75rem; }
+.site-navbar.direction-shrink .nav-item-link .link-text { opacity:0; width:0; overflow:hidden; white-space:nowrap; transition:opacity .25s ease, width .25s ease; }
+.site-navbar .nav-item-link .link-text { transition:opacity .25s ease, width .25s ease; }
+
+/* Ajustar badge sobre enlaces minimalistas */
+.site-navbar .nav-item-link #cart-count { transform:translate(-35%, -35%); box-shadow:0 0 0 2px #fff; }
+
+/* Overlay de búsqueda global */
+.search-overlay[hidden] { display:none !important; }
+.search-overlay { position:fixed; inset:0; z-index:1400; display:flex; align-items:flex-start; justify-content:center; padding:12vh 1.25rem 2rem; }
+.search-overlay-backdrop { position:absolute; inset:0; background:rgba(0,0,0,0.45); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); }
+.search-overlay-panel { position:relative; z-index:1; width:100%; max-width:780px; background:#fff; border-radius:20px; padding:2rem 2rem 2.25rem; box-shadow:0 14px 40px -8px rgba(0,0,0,0.3), 0 4px 12px rgba(0,0,0,0.12); animation:overlayIn .32s cubic-bezier(.4,0,.2,1); }
+@keyframes overlayIn { from { opacity:0; transform:translateY(12px) scale(.98); } to { opacity:1; transform:translateY(0) scale(1); } }
+.search-overlay-form { position:relative; display:flex; align-items:center; background:#fff; border:2px solid #dc3545; border-radius:50px; padding:.85rem 3.8rem .85rem 2.75rem; font-size:1.05rem; box-shadow:0 0 0 4px rgba(220,53,69,0.12); }
+.search-overlay-form:focus-within { box-shadow:0 0 0 6px rgba(220,53,69,0.18); }
+.search-overlay-form .search-icon { position:absolute; left:1.15rem; color:#b11424; font-size:1.05rem; }
+.search-overlay-form input[type="search"] { flex:1; background:transparent; border:none; outline:none; font-weight:500; letter-spacing:.25px; }
+.search-overlay-form input::placeholder { color:#b9858b; }
+.search-overlay-form .btn-clear { position:absolute; right:3.1rem; background:none; border:none; font-size:1.35rem; line-height:1; color:#b95a64; cursor:pointer; padding:0; opacity:.65; }
+.search-overlay-form .btn-clear:hover { opacity:1; color:#dc3545; }
+.search-overlay-form .btn-close-overlay { position:absolute; right:1.15rem; background:none; border:none; color:#b11424; font-size:1.35rem; line-height:1; cursor:pointer; padding:0; opacity:.7; }
+.search-overlay-form .btn-close-overlay:hover { opacity:1; }
+.search-overlay .search-hints kbd { background:#f1f3f5; padding:2px 6px; border-radius:5px; font-size:.75rem; font-weight:600; border:1px solid #e0e0e0; }
+@media (max-width: 575.98px){
+  .search-overlay { padding:10vh .75rem 1.5rem; }
+  .search-overlay-panel { padding:1.4rem 1.25rem 2rem; border-radius:16px; }
+  .search-overlay-form { padding:.8rem 3.2rem .8rem 2.3rem; font-size:1rem; }
+  .search-overlay-form .search-icon { left:.9rem; }
+  .search-overlay-form .btn-clear { right:2.7rem; }
+  .search-overlay-form .btn-close-overlay { right:.9rem; }
+}
+
+body.overlay-open { overflow:hidden; }
+
 /* Cart badge refinements */
 #cart-count { min-width:1.15rem; height:1.15rem; padding:0 0.25rem; font-size:.65rem; line-height:1.15rem; }
 
