@@ -7,12 +7,19 @@
   <% if cart_obj.items.any? %>
     <ul class="list-unstyled mb-2">
       <% cart_obj.items.first(5).each do |product, qty| %>
-        <li class="d-flex align-items-start mb-2 cart-preview-item">
+        <li class="d-flex align-items-center mb-2 cart-preview-item">
+          <div class="me-2 flex-shrink-0">
+            <% if product.product_images.attached? %>
+              <%= image_tag product.product_images.first.variant(resize_to_fill: [40,40]), alt: product.product_name, class: 'rounded border cart-preview-thumb' %>
+            <% else %>
+              <div class="cart-preview-thumb placeholder d-flex align-items-center justify-content-center rounded border"> <i class="fas fa-box-open text-muted"></i></div>
+            <% end %>
+          </div>
           <div class="flex-grow-1 me-2">
             <div class="fw-medium small line-clamp-1"><%= product.product_name %></div>
             <div class="text-muted small">x<%= qty %> · <%= number_to_currency(product.selling_price * qty) %></div>
           </div>
-          <div class="small text-end fw-semibold"><%= number_to_currency(product.selling_price) %></div>
+          <div class="small text-end fw-semibold text-nowrap"><%= number_to_currency(product.selling_price) %></div>
         </li>
       <% end %>
     </ul>
