@@ -2,15 +2,27 @@ class ProductsController < ApplicationController
   layout "customer"
   # Requiere sesión para ver catálogo y productos
   before_action :authenticate_user!
+
+  PUBLIC_PER_PAGE = 15
   def index
-    if params[:q].present?
-      query = "%#{params[:q].downcase}%"
-      @products = Product.publicly_visible
-                        .where("LOWER(product_name) LIKE ? OR LOWER(category) LIKE ? OR LOWER(brand) LIKE ?", query, query, query)
-                        .order(created_at: :desc)
-    else
-      @products = Product.publicly_visible.order(created_at: :desc)
+    @q      = params[:q].to_s.strip
+    @sort   = params[:sort].presence || "newest"
+
+    scope = Product.publicly_visible
+    if @q.present?
+      pattern = "%#{@q.downcase}%"
+      scope = scope.where("LOWER(product_name) LIKE ? OR LOWER(category) LIKE ? OR LOWER(brand) LIKE ?", pattern, pattern, pattern)
     end
+
+    scope = case @sort
+    when "price_asc"  then scope.order(selling_price: :asc)
+    when "price_desc" then scope.order(selling_price: :desc)
+    when "name_asc"   then scope.order(Arel.sql("LOWER(product_name) ASC"))
+    else # newest
+      scope.order(created_at: :desc)
+    end
+
+    @products = scope.page(params[:page]).per(PUBLIC_PER_PAGE)
   end
 
   def show
