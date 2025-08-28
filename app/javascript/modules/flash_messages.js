@@ -1,23 +1,21 @@
 // Function to handle fading flash messages
 function handleFlashMessages() {
   const flashes = document.querySelectorAll('.flash-message');
-  if(!flashes.length) return;
+  flashes.forEach(scheduleFlash);
+}
 
-  flashes.forEach(flash => {
-    if(flash.dataset.init) return;
-    flash.dataset.init = '1';
-    // Auto dismiss
-  const timeout = setTimeout(()=>dismissFlash(flash), 5000);
-  flash.dataset.timeoutId = timeout;
-  // Debug opcional (comentable)
-  // console.debug('[flash] auto-dismiss programado', flash.textContent.trim());
-  });
+function scheduleFlash(flash){
+  if(!flash || flash.dataset.init) return;
+  flash.dataset.init = '1';
+  // Duración configurable vía data-timeout (ms) o default 5000
+  const delay = parseInt(flash.dataset.timeout || '5000', 10);
+  flash.__flashTimeoutId = setTimeout(()=> dismissFlash(flash), delay);
 }
 
 function dismissFlash(el){
   if(!el || el.dataset.dismissing) return;
   el.dataset.dismissing = '1';
-  if(el.dataset.timeoutId){ clearTimeout(el.dataset.timeoutId); }
+  if(el.__flashTimeoutId){ clearTimeout(el.__flashTimeoutId); }
   requestAnimationFrame(()=>{
     el.style.transition = 'opacity .35s ease, transform .35s ease';
     el.style.opacity = '0';
@@ -44,12 +42,24 @@ document.addEventListener('click', (e)=>{
 });
 
 // Run for full page loads
-document.addEventListener('turbo:load', handleFlashMessages);
-// ✅ Also run for Turbo-driven updates (important!)
-document.addEventListener('turbo:render', handleFlashMessages);
-// ✅ Para actualizaciones via Turbo Streams (replace/update)
-document.addEventListener('turbo:after-stream-render', handleFlashMessages);
-// ✅ Para frames (por si se usan en el futuro)
-document.addEventListener('turbo:frame-load', handleFlashMessages);
-// Fallback (in case turbolinks still appears somewhere)
-document.addEventListener('turbolinks:load', handleFlashMessages);
+['turbo:load','turbo:render','turbo:after-stream-render','turbo:frame-load','turbolinks:load'].forEach(ev=>{
+  document.addEventListener(ev, ()=> setTimeout(handleFlashMessages, 0));
+});
+
+// MutationObserver para capturar reemplazos dinámicos (Turbo Streams)
+const mo = new MutationObserver(mutations => {
+  let found = false;
+  mutations.forEach(m => {
+    m.addedNodes.forEach(n => {
+      if(n.nodeType === 1){
+        if(n.classList.contains('flash-message')) { scheduleFlash(n); found = true; }
+        n.querySelectorAll && n.querySelectorAll('.flash-message').forEach(f=>{ scheduleFlash(f); found = true; });
+      }
+    });
+  });
+  if(found) adjustStack();
+});
+mo.observe(document.documentElement, { childList: true, subtree: true });
+
+// Inicial
+setTimeout(handleFlashMessages, 0);
