@@ -15,16 +15,17 @@
     <!-- COLLAPSIBLE CONTENT -->
     <div class="collapse navbar-collapse" id="navbar-scroll">
 
-      <!-- SEARCH FORM -->
-  <% if user_signed_in? && !(controller_path == 'products' && action_name == 'index') %>
-      <div class="mx-auto my-2 my-lg-0 w-100 d-flex justify-content-center">
-        <form class="d-flex w-75" role="search" action="<%= catalog_path %>" method="get">
-          <input type="search" class="form-control me-2" placeholder="Buscar productos, marcas y más..." aria-label="Buscar productos" name="q">
-          <button type="submit" class="btn btn-outline-secondary">
-            <i class="fa fa-search"></i>
-          </button>
-        </form>
-      </div>
+      <!-- PERSISTENT COMPACT SEARCH -->
+      <% if user_signed_in? %>
+        <div class="navbar-search-wrapper ms-lg-4 my-2 my-lg-0 flex-grow-1 d-none d-lg-flex align-items-center">
+          <form class="navbar-search" role="search" action="<%= catalog_path %>" method="get">
+            <i class="fas fa-search search-icon" aria-hidden="true"></i>
+            <input type="search" class="search-input" name="q" value="<%= params[:q] %>" placeholder="Buscar..." aria-label="Buscar productos" />
+            <% if params[:q].present? %>
+              <button type="button" class="btn-clear" aria-label="Limpiar búsqueda" onclick="this.closest('form').querySelector('.search-input').value=''; this.closest('form').submit();">&times;</button>
+            <% end %>
+          </form>
+        </div>
       <% end %>
 
       <!-- NAV MENU -->
