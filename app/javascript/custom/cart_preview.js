@@ -15,14 +15,18 @@
     panel.hidden=false;
     requestAnimationFrame(()=> panel.classList.add('show'));
   }
-  function scheduleHide(){
+  function scheduleHide(ev){
     const panel=currentPanel(); if(!panel) return;
-    // No esconder si el ratón está dentro o un form interno tiene foco
-    if(panel.matches(':hover') || panel.contains(document.activeElement)) return;
+    const link=currentLink;
+    const toEl = ev && (ev.relatedTarget || ev.toElement);
+    if(toEl && (panel.contains(toEl) || (link && link.contains(toEl)))) return; // movimiento interno
+    if(panel.matches(':hover') || panel.contains(document.activeElement) || panel.dataset.lockOpen==='true') return;
+    clearTimeout(hideTimer);
     hideTimer = setTimeout(()=>{
+      if(panel.dataset.lockOpen==='true') return; // se volvió a bloquear
       panel.classList.remove('show');
-      setTimeout(()=>{ const p=currentPanel(); if(p && !p.classList.contains('show')) p.hidden=true; },200);
-    },250);
+      setTimeout(()=>{ const p=currentPanel(); if(p && !p.classList.contains('show')) p.hidden=true; },220);
+    },320);
   }
 
   function bindLink(){
@@ -37,7 +41,7 @@
     const handlers={};
     handlers['mouseenter']=show;
     handlers['focus']=show;
-    handlers['mouseleave']=scheduleHide;
+  handlers['mouseleave']=scheduleHide;
     handlers['blur']=scheduleHide;
     ['mouseenter','focus','mouseleave','blur'].forEach(ev=> link.addEventListener(ev, handlers[ev]));
     link._cartPrevHandlers=handlers; // guardar en nodo para remover futuro
@@ -57,14 +61,15 @@
     // Evitar cierre al hacer click en botones internos
     panel.addEventListener('click', (e)=>{
       if(e.target.closest('form')){
-        show(); // mantener abierto
+          panel.dataset.lockOpen='true';
+          show();
       }
     });
     // Interceptar submits internos para mantener abierto tras respuesta
     panel.addEventListener('submit', (e)=>{
       if(e.target.closest('.cart-mini-qty-form') || e.target.matches('form[action*="/cart_items/"]')){
-        show();
-        panel.dataset.lockOpen='true';
+          panel.dataset.lockOpen='true';
+          show();
       }
     });
   }
@@ -89,7 +94,7 @@
     // Si panel estaba "lockOpen" mantenerlo visible tras re-render
     const panel=currentPanel();
     if(panel && panel.dataset.lockOpen==='true'){
-      show();
+  if(panel && panel.dataset.lockOpen==='true') show();
     }
   }
 

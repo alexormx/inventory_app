@@ -43,6 +43,9 @@
       <span class="small text-muted">Total</span>
       <strong><%= number_to_currency(cart_obj.total) %></strong>
     </div>
+    <div class="mt-2">
+      <%= link_to 'Ir al carrito / Checkout', cart_path, class: 'btn btn-sm btn-primary w-100', data: { turbo_frame: '_top' } %>
+    </div>
   <% else %>
     <div class="text-muted small">Carrito vacío</div>
   <% end %>
