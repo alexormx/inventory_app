@@ -26,9 +26,9 @@ class CartItemsController < ApplicationController
   end
 
   def update
-    product = Product.find(params[:product_id])
-  @stay_open = params[:stay_open].present?
-    unless product.active?
+    @product = Product.find(params[:product_id])
+    @stay_open = params[:stay_open].present?
+    unless @product.active?
       respond_to do |format|
         format.turbo_stream do
           flash.now[:alert] = "Producto no disponible"
@@ -38,15 +38,22 @@ class CartItemsController < ApplicationController
       end
       return
     end
-    @cart.update(product.id, params[:quantity])
+    @cart.update(@product.id, params[:quantity])
     respond_to do |format|
-      format.turbo_stream
+      format.turbo_stream do
+        # Determinar si la solicitud viene desde la página de carrito (referer contiene /cart)
+        if request.referer&.include?("/cart")
+          render :update_row
+        else
+          render :update
+        end
+      end
       format.html { redirect_to cart_path }
       format.json do
-        qty = session[:cart][product.id.to_s]
+        qty = session[:cart][@product.id.to_s]
         render json: {
           quantity: qty,
-          line_total: helpers.number_to_currency(product.selling_price * qty),
+          line_total: helpers.number_to_currency(@product.selling_price * qty),
           cart_total: helpers.number_to_currency(@cart.total),
           total_items: session[:cart].values.sum
         }
@@ -55,11 +62,17 @@ class CartItemsController < ApplicationController
   end
 
   def destroy
-    product = Product.find(params[:product_id])
-  @stay_open = params[:stay_open].present?
-    @cart.remove(product.id)
+    @product = Product.find(params[:product_id])
+    @stay_open = params[:stay_open].present?
+    @cart.remove(@product.id)
     respond_to do |format|
-  format.turbo_stream
+      format.turbo_stream do
+        if request.referer&.include?("/cart")
+          render :remove_row
+        else
+          render :destroy
+        end
+      end
   format.html { redirect_to cart_path }
       format.json do
         render json: {

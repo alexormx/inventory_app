@@ -1,0 +1,12 @@
+<%# Reemplaza fila individual y totales tras update via Turbo %>
+<%= turbo_stream.replace "cart_item_#{@product.id}" do %>
+  <%= render 'carts/cart_item', product: @product, quantity: session[:cart][@product.id.to_s], cart: @cart %>
+<% end %>
+
+<%= turbo_stream.replace 'cart-total' do %>
+  <%= number_to_currency(@cart.total) %>
+<% end %>
+
+<%= turbo_stream.replace 'cart-count' do %>
+  <span id="cart-count" class="badge bg-danger rounded-pill position-absolute top-0 start-100 translate-middle"><%= @cart.item_count %></span>
+<% end %>

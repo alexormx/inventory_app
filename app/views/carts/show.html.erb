@@ -1,52 +1,55 @@
 <h1 class="mb-3">🛒 Tu Carrito</h1>
 
 <% if @cart.empty? %>
-  <p class="text-muted">Tu carrito está vacío.</p>
+  <div class="card p-4 text-center bg-light-subtle">
+    <p class="text-muted mb-3">Tu carrito está vacío.</p>
+    <%= link_to 'Explorar productos', catalog_path, class: 'btn btn-outline-primary' %>
+  </div>
 <% else %>
-  <table class="table align-middle">
-    <thead>
-      <tr>
-        <th>Producto</th>
-        <th class="text-center">Cantidad</th>
-        <th class="text-end">Precio</th>
-        <th class="text-end">Total</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @cart.items.each do |product, quantity| %>
-        <tr data-controller="cart-item" data-cart-item-product-id-value="<%= product.id %>">
-          <td>
-            <div class="d-flex align-items-center gap-2">
-              <%= image_tag(product.product_images.first, class: "img-thumbnail", size: "50x50") if product.product_images.present? %>
-              <strong><%= product.product_name %></strong>
-            </div>
-          </td>
-          <td class="text-center">
-            <div class="input-group input-group-sm justify-content-center" style="max-width: 140px;">
-              <button class="btn btn-outline-secondary px-2" type="button" data-action="click->cart-item#decrease">-</button>
-              <input type="number" min="1" class="form-control text-center px-1" value="<%= quantity %>" 
-                     data-cart-item-target="quantity" data-action="change->cart-item#quantityChanged" style="width: 45px;">
-              <button class="btn btn-outline-secondary px-2" type="button" data-action="click->cart-item#increase">+</button>
-            </div>
-          </td>
-          <td class="text-end"><%= number_to_currency(product.selling_price) %></td>
-          <td class="text-end" data-cart-item-target="lineTotal"><%= number_to_currency(product.selling_price * quantity) %></td>
-          <td>
-            <%= button_to "Eliminar", cart_item_path(product), method: :delete, params: { product_id: product.id }, class: "btn btn-sm btn-danger" %>
-          </td>
-        </tr>
-      <% end %>
-    </tbody>
-    <tfoot>
-      <tr>
-        <td colspan="3" class="text-end"><strong>Total:</strong></td>
-        <td id="cart-total" class="text-end"><%= number_to_currency(@cart.total) %></td>
-        <td></td>
-      </tr>
-    </tfoot>
-  </table>
-  <div class="text-end">
-    <%= link_to 'Finalizar compra', checkout_step1_path, class: 'btn btn-primary' %>
+  <% items = @cart.items %>
+  <div class="row g-4">
+    <div class="col-lg-8">
+      <div class="table-responsive">
+        <table class="table align-middle" aria-describedby="cart-summary-heading">
+          <caption class="visually-hidden">Listado de productos en el carrito</caption>
+          <thead>
+            <tr>
+              <th scope="col">Producto</th>
+              <th scope="col" class="text-center">Cantidad</th>
+              <th scope="col" class="text-end">Precio</th>
+              <th scope="col" class="text-end">Total</th>
+              <th scope="col" class="text-end"></th>
+            </tr>
+          </thead>
+          <tbody id="cart-items">
+            <% items.each do |product, quantity| %>
+              <%= render 'carts/cart_item', product: product, quantity: quantity, cart: @cart %>
+            <% end %>
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colspan="3" class="text-end"><strong>Total:</strong></td>
+              <td id="cart-total" class="text-end"><%= number_to_currency(@cart.total) %></td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+    <div class="col-lg-4">
+      <div class="card shadow-sm sticky-top" style="top:90px;">
+        <div class="card-body">
+          <h5 id="cart-summary-heading" class="card-title mb-3">Resumen</h5>
+          <ul class="list-unstyled small mb-3">
+            <li class="d-flex justify-content-between"><span>Productos (<%= @cart.item_count %>)</span><strong><%= number_to_currency(@cart.total) %></strong></li>
+            <!-- Placeholder para futuro: envío, impuestos -->
+          </ul>
+          <div class="d-grid gap-2">
+            <%= link_to 'Finalizar compra', checkout_step1_path, class: 'btn btn-primary btn-lg' %>
+            <%= link_to 'Seguir comprando', catalog_path, class: 'btn btn-outline-secondary btn-sm' %>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 <% end %>

@@ -22,7 +22,7 @@ class Cart
   end
 
   def items
-    @session[:cart].map do |product_id, quantity|
+    @_items ||= @session[:cart].map do |product_id, quantity|
       product = Product.find_by(id: product_id)
       [product, quantity.to_i] if product
     end.compact
@@ -30,6 +30,10 @@ class Cart
 
   def total
     items.sum { |product, quantity| product.selling_price * quantity }
+  end
+
+  def item_count
+    items.sum { |_, quantity| quantity.to_i }
   end
 
   def empty?

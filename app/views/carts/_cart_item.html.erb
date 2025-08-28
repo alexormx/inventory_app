@@ -1,0 +1,27 @@
+<%# Partial de fila de item en carrito - locals: product, quantity, cart %>
+<tr id="cart_item_<%= product.id %>" data-controller="cart-item" data-cart-item-product-id-value="<%= product.id %>">
+  <th scope="row">
+    <div class="d-flex align-items-center gap-2">
+      <% if product.product_images.attached? %>
+        <%= image_tag product.product_images.first.variant(resize_to_fill: [50,50]), alt: product.product_name, class: 'img-thumbnail' %>
+      <% else %>
+        <div class="rounded bg-light border d-flex align-items-center justify-content-center" style="width:50px;height:50px;font-size:.8rem;">📦</div>
+      <% end %>
+      <strong class="small mb-0"><%= product.product_name %></strong>
+    </div>
+  </th>
+  <td class="text-center">
+    <div class="input-group input-group-sm justify-content-center cart-qty-group" style="max-width: 140px;">
+      <button class="btn btn-outline-secondary px-2" type="button" aria-label="Disminuir" data-action="click->cart-item#decrease">−</button>
+      <input type="number" min="1" class="form-control text-center px-1" value="<%= quantity %>" data-cart-item-target="quantity" data-action="change->cart-item#quantityChanged" style="width: 50px;" aria-label="Cantidad">
+      <button class="btn btn-outline-secondary px-2" type="button" aria-label="Aumentar" data-action="click->cart-item#increase">+</button>
+    </div>
+  </td>
+  <td class="text-end"><%= number_to_currency(product.selling_price) %></td>
+  <td class="text-end" data-cart-item-target="lineTotal"><%= number_to_currency(product.selling_price * quantity) %></td>
+  <td class="text-end">
+    <%= button_to cart_item_path(product), method: :delete, params: { product_id: product.id }, class: 'btn btn-sm btn-link text-danger p-0', title: 'Eliminar', aria: { label: 'Eliminar producto' }, form: { data: { turbo_confirm: '¿Eliminar este producto?' }, class: 'd-inline' } do %>
+      <i class="fas fa-trash"></i><span class="visually-hidden">Eliminar</span>
+    <% end %>
+  </td>
+</tr>
