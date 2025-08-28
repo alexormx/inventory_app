@@ -19,7 +19,8 @@
     const panel=currentPanel(); if(!panel) return;
     const link=currentLink;
     const toEl = ev && (ev.relatedTarget || ev.toElement);
-    if(toEl && (panel.contains(toEl) || (link && link.contains(toEl)))) return; // movimiento interno
+    // Cancelar si nos movemos al panel desde el link
+    if(toEl && panel.contains(toEl)) return;
     if(panel.matches(':hover') || panel.contains(document.activeElement) || panel.dataset.lockOpen==='true') return;
     clearTimeout(hideTimer);
     hideTimer = setTimeout(()=>{
@@ -93,8 +94,12 @@
     autoPeekIfNeeded();
     // Si panel estaba "lockOpen" mantenerlo visible tras re-render
     const panel=currentPanel();
-    if(panel && panel.dataset.lockOpen==='true'){
-  if(panel && panel.dataset.lockOpen==='true') show();
+  if(panel && (panel.dataset.lockOpen==='true' || panel.getAttribute('data-lock-open')==='true')){
+      panel.dataset.lockOpen='true';
+      show();
+      // Liberar bloqueo después de 5s sin interacción
+      clearTimeout(panel._unlockTimer);
+      panel._unlockTimer=setTimeout(()=>{ delete panel.dataset.lockOpen; scheduleHide(new Event('mouseleave')); },5000);
     }
   }
 
@@ -115,4 +120,10 @@
     linkListenersInstalled=false; currentLink=null;
   });
   document.addEventListener('turbo:after-stream-render', rebindAll);
+  // Fallback: si el usuario mueve rápido el mouse hacia el panel después de salir del link
+  document.addEventListener('mousemove', (e)=>{
+    const panel=currentPanel(); if(!panel) return;
+    if(panel.dataset.lockOpen==='true') return; // ya seguro
+    if(panel.matches(':hover')) show();
+  }, {passive:true});
 })();
