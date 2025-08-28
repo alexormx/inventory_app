@@ -1,4 +1,18 @@
-  <!-- Update the cart counting with turbo -->
-<%= turbo_stream.update "cart-count" do %>
-  <%= session[:cart]&.values&.sum || 0 %>
+<!-- Flash success message -->
+<%= turbo_stream.replace 'flash' do %>
+  <div class="px-3 mt-3" id="flash">
+    <% flash.each do |key, message| %>
+      <div class="alert <%= bootstrap_class_for(key) %> alert-dismissible fade show flash-message" role="alert">
+        <%= message %>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    <% end %>
+  </div>
+<% end %>
+
+<!-- Update the cart counting with turbo -->
+<%= turbo_stream.replace "cart-count" do %>
+  <span id="cart-count" class="badge bg-danger rounded-pill position-absolute top-0 start-100 translate-middle">
+    <%= session[:cart]&.values&.sum || 0 %>
+  </span>
 <% end %>

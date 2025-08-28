@@ -12,6 +12,7 @@ class CartItemsController < ApplicationController
       return
     end
     @cart.add_product(product.id)
+  flash.now[:notice] = "#{product.product_name} fue agregado exitosamente" if request.format.turbo_stream?
     respond_to do |format|
       format.turbo_stream
       format.html { redirect_to cart_path, notice: "#{product.product_name} agregado al carrito." }

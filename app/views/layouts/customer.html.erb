@@ -45,7 +45,7 @@
 <%= render 'layouts/cookies_banner'%>
 
 <body>
-  <div id="construction-banner" class="alert alert-warning text-center mb-0 rounded-0 construction-banner" role="alert" style="padding: 0.3rem 1rem; font-size: 0.9rem;">
+  <div id="construction-banner" class="alert alert-warning text-center mb-0 rounded-0 construction-banner" role="alert" style="padding: 0.3rem 1rem; font-size: 0.9rem; position:fixed; top:0; left:0; right:0; z-index:1200;">
     🚧 Bienvenido a <strong>Pasatiempos a Escala</strong> – Sitio en construcción. Muy pronto podrás ver nuestros autos coleccionables.
   </div>
 
@@ -68,14 +68,22 @@
 
   <script>
     (function(){
-      function setNavbarOffset(){
+      function recalcLayout(){
         const banner = document.getElementById('construction-banner');
-        if(!banner) return;
-        document.documentElement.style.setProperty('--navbar-offset', banner.offsetHeight + 'px');
+        const nav = document.querySelector('.site-navbar');
+        if(!banner || !nav) return;
+        const bannerH = banner.offsetHeight;
+        document.documentElement.style.setProperty('--banner-height', bannerH + 'px');
+        // Wait a tick after potential shrink transition
+        setTimeout(()=>{
+          const navH = nav.offsetHeight;
+          document.documentElement.style.setProperty('--nav-height', navH + 'px');
+          document.body.style.paddingTop = (bannerH + navH) + 'px';
+        }, 20);
       }
-      document.addEventListener('turbo:load', setNavbarOffset);
-      window.addEventListener('resize', setNavbarOffset);
-      setNavbarOffset();
+      ['turbo:load','turbo:render'].forEach(ev=>document.addEventListener(ev,recalcLayout));
+      window.addEventListener('resize', recalcLayout);
+      recalcLayout();
     })();
   </script>
 
