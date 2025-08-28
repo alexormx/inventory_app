@@ -1,8 +1,8 @@
-<div class="px-3 mt-3" id="flash">
+<div id="flash" class="flash-container position-fixed top-0 start-50 translate-middle-x mt-3" style="z-index:1300; width: min(420px, 92vw);">
   <% flash.each do |key, message| %>
-    <div class="alert <%= bootstrap_class_for(key) %> alert-dismissible fade show flash-message" role="alert">
+    <div class="alert <%= bootstrap_class_for(key) %> alert-dismissible fade show flash-message shadow" role="alert" style="border-radius: .65rem; backdrop-filter: blur(6px);">
       <%= message %>
-      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      <button type="button" class="btn-close" aria-label="Close"></button>
     </div>
   <% end %>
 </div>
