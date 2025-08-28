@@ -1,0 +1,17 @@
+<!-- Actualización de cantidad en carrito -->
+<%= turbo_stream.replace "cart-count" do %>
+  <span id="cart-count" class="badge bg-danger rounded-pill position-absolute top-0 start-100 translate-middle">
+    <%= session[:cart]&.values&.sum || 0 %>
+  </span>
+<% end %>
+
+<%= turbo_stream.replace "cart-preview" do %>
+  <%= render 'customers/partials/cart_preview', auto_peek: true %>
+<% end %>
+
+<!-- Mensaje accesible opcional (live region dentro del preview) -->
+<%= turbo_stream.append "flash-stack" do %>
+  <% if flash.now[:notice].present? %>
+    <div class="alert alert-success flash-message" role="alert" data-timeout="2000"><%= flash.now[:notice] %></div>
+  <% end %>
+<% end %>

@@ -16,3 +16,8 @@
     <%= session[:cart]&.values&.sum || 0 %>
   </span>
 <% end %>
+
+<!-- Reemplazar mini preview del carrito -->
+<%= turbo_stream.replace "cart-preview" do %>
+  <%= render 'customers/partials/cart_preview', auto_peek: true %>
+<% end %>

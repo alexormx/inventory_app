@@ -29,6 +29,9 @@ class CartItemsController < ApplicationController
     product = Product.find(params[:product_id])
     unless product.active?
       respond_to do |format|
+        format.turbo_stream do
+          flash.now[:alert] = "Producto no disponible"
+        end
         format.html { redirect_back fallback_location: cart_path, alert: "Producto no disponible" }
         format.json { render json: { error: "Producto no disponible" }, status: :unprocessable_entity }
       end
@@ -36,6 +39,7 @@ class CartItemsController < ApplicationController
     end
     @cart.update(product.id, params[:quantity])
     respond_to do |format|
+      format.turbo_stream
       format.html { redirect_to cart_path }
       format.json do
         qty = session[:cart][product.id.to_s]
@@ -53,7 +57,8 @@ class CartItemsController < ApplicationController
     product = Product.find(params[:product_id])
     @cart.remove(product.id)
     respond_to do |format|
-      format.html { redirect_to cart_path }
+  format.turbo_stream
+  format.html { redirect_to cart_path }
       format.json do
         render json: {
           cart_total: helpers.number_to_currency(@cart.total),
