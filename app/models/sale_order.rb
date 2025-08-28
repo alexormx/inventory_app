@@ -74,6 +74,21 @@ class SaleOrder < ApplicationRecord
     { subtotal: sub, tax: tax, total: total }
   end
 
+  # Recalcula subtotal a partir de las líneas y vuelve a calcular impuestos y total.
+  # Úsalo cuando cambien items, tax_rate, discount o shipping_cost.
+  # public porque es llamado desde Shipment y SaleOrderItem callbacks.
+  def recalculate_totals!(persist: true)
+    return self unless sale_order_items.exists?
+    sub = sale_order_items.sum(<<~SQL)
+      COALESCE(total_line_cost,
+               quantity * COALESCE(unit_final_price, (unit_cost - COALESCE(unit_discount, 0))))
+    SQL
+    self.subtotal = sub.to_d.round(2)
+    compute_financials
+    save(validate: false) if persist
+    self
+  end
+
   private
 
   def ensure_payment_and_shipment_present
@@ -117,19 +132,6 @@ class SaleOrder < ApplicationRecord
     self.total_order_value = (sub + total_tax.to_d + ship - disc).round(2)
   end
 
-  # Recalcula subtotal a partir de las líneas y vuelve a calcular impuestos y total.
-  # Úsalo cuando cambien items, tax_rate o discount.
-  def recalculate_totals!(persist: true)
-    return self unless sale_order_items.exists?
-    sub = sale_order_items.sum(<<~SQL)
-      COALESCE(total_line_cost,
-               quantity * COALESCE(unit_final_price, (unit_cost - COALESCE(unit_discount, 0))))
-    SQL
-    self.subtotal = sub.to_d.round(2)
-    compute_financials
-    save(validate: false) if persist
-    self
-  end
 
     # Bloquea si hay vendidos; si todo está reservado, libera y permite borrar.
   def ensure_inventories_safe_or_release
