@@ -99,6 +99,37 @@
 	</div>
 </div>
 
+<div class="card mb-4">
+	<div class="card-header d-flex align-items-center gap-2">
+		<i class="fa fa-globe"></i>
+		<span>Interfaz (Idioma / Tema)</span>
+	</div>
+	<div class="card-body">
+		<% lang_enabled = SiteSetting.get('language_switcher_enabled', false) %>
+		<% dark_enabled = SiteSetting.get('dark_mode_enabled', false) %>
+		<p class="small text-muted">Activa o desactiva componentes UI opcionales en la navegación pública.</p>
+		<%= form_with url: admin_settings_path, method: :post, data: { turbo: false }, class: 'row gy-2 gx-3 align-items-end' do %>
+			<div class="col-md-4">
+				<label class="form-label">Selector de idioma</label>
+				<select name="language_switcher_enabled" class="form-select form-select-sm">
+					<option value="true" <%= 'selected' if lang_enabled.to_s == 'true' %>>Mostrar</option>
+					<option value="false" <%= 'selected' if lang_enabled.to_s == 'false' %>>Ocultar</option>
+				</select>
+			</div>
+			<div class="col-md-4">
+				<label class="form-label">Botón Dark Mode</label>
+				<select name="dark_mode_enabled" class="form-select form-select-sm">
+					<option value="true" <%= 'selected' if dark_enabled.to_s == 'true' %>>Activado</option>
+					<option value="false" <%= 'selected' if dark_enabled.to_s == 'false' %>>Desactivado</option>
+				</select>
+			</div>
+			<div class="col-md-4">
+				<button class="btn btn-primary btn-sm" name="save_ui" value="1">Guardar</button>
+			</div>
+		<% end %>
+	</div>
+</div>
+
 
 <div class="card">
 	<div class="card-header d-flex align-items-center gap-2">

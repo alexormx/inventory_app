@@ -11,6 +11,12 @@ class Admin::SettingsController < ApplicationController
     flash[:notice] = 'Configuración de impuestos guardada.'
     redirect_to admin_settings_path and return
   end
+  if request.post? && params[:save_ui]
+    SiteSetting.set('language_switcher_enabled', params[:language_switcher_enabled] == 'true', 'boolean')
+    SiteSetting.set('dark_mode_enabled', params[:dark_mode_enabled] == 'true', 'boolean')
+    flash[:notice] = 'Configuración de interfaz guardada.'
+    redirect_to admin_settings_path and return
+  end
   end
 
   # Temporal: sincronización de estados de inventario (stub)
