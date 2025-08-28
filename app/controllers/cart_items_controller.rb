@@ -2,8 +2,10 @@ class CartItemsController < ApplicationController
     before_action :set_cart
 
   def create
-    product = Product.find(params[:product_id])
-    unless product.active?
+    @product = Product.find(params[:product_id])
+    previous_qty = session[:cart][@product.id.to_s]
+    @new_row = previous_qty.nil?
+    unless @product.active?
       respond_to do |format|
         format.turbo_stream { flash.now[:alert] = "Producto no disponible" }
         format.html { redirect_back fallback_location: catalog_path, alert: "Producto no disponible" }
@@ -11,11 +13,17 @@ class CartItemsController < ApplicationController
       end
       return
     end
-    @cart.add_product(product.id)
-  flash.now[:notice] = "#{product.product_name} fue agregado exitosamente" if request.format.turbo_stream?
+    @cart.add_product(@product.id)
+    flash.now[:notice] = "#{@product.product_name} fue agregado exitosamente" if request.format.turbo_stream?
     respond_to do |format|
-      format.turbo_stream
-      format.html { redirect_to cart_path, notice: "#{product.product_name} agregado al carrito." }
+      format.turbo_stream do
+        if request.referer&.include?("/cart")
+          render :create_row
+        else
+          render :create
+        end
+      end
+      format.html { redirect_to cart_path, notice: "#{@product.product_name} agregado al carrito." }
       format.json do
         render json: {
           total_items: session[:cart].values.sum,

@@ -1,0 +1,26 @@
+<%# Inserta o reemplaza fila tras agregar producto desde la página del carrito %>
+<% qty = session[:cart][@product.id.to_s] %>
+<% if @new_row %>
+  <%= turbo_stream.append 'cart-items' do %>
+    <%= render 'carts/cart_item', product: @product, quantity: qty, cart: @cart %>
+  <% end %>
+<% else %>
+  <%= turbo_stream.replace "cart_item_#{@product.id}" do %>
+    <%= render 'carts/cart_item', product: @product, quantity: qty, cart: @cart %>
+  <% end %>
+<% end %>
+
+<%= turbo_stream.replace 'cart-total' do %>
+  <%= number_to_currency(@cart.total) %>
+<% end %>
+
+<%= turbo_stream.replace 'cart-count' do %>
+  <span id="cart-count" class="badge bg-danger rounded-pill position-absolute top-0 start-100 translate-middle"><%= @cart.item_count %></span>
+<% end %>
+
+<%# Mensaje flash %>
+<% if flash.now[:notice] %>
+  <%= turbo_stream.append 'flash-stack' do %>
+    <div class="alert alert-success flash-message" role="alert" data-timeout="2400"><%= flash.now[:notice] %></div>
+  <% end %>
+<% end %>
