@@ -16,3 +16,10 @@
     <%= session[:cart]&.values&.sum || 0 %>
   </span>
 <% end %>
+
+<!-- Reemplazar mini preview del carrito -->
+<%= turbo_stream.replace "cart-preview-body" do %>
+  <div id="cart-preview-body">
+    <%= render 'customers/partials/cart_preview_body', cart_obj: (@cart || Cart.new(session)) %>
+  </div>
+<% end %>

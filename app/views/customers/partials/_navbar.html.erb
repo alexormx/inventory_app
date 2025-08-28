@@ -15,16 +15,17 @@
     <!-- COLLAPSIBLE CONTENT -->
     <div class="collapse navbar-collapse" id="navbar-scroll">
 
-      <!-- SEARCH FORM -->
-  <% if user_signed_in? && !(controller_path == 'products' && action_name == 'index') %>
-      <div class="mx-auto my-2 my-lg-0 w-100 d-flex justify-content-center">
-        <form class="d-flex w-75" role="search" action="<%= catalog_path %>" method="get">
-          <input type="search" class="form-control me-2" placeholder="Buscar productos, marcas y más..." aria-label="Buscar productos" name="q">
-          <button type="submit" class="btn btn-outline-secondary">
-            <i class="fa fa-search"></i>
-          </button>
-        </form>
-      </div>
+      <!-- PERSISTENT COMPACT SEARCH -->
+      <% if user_signed_in? %>
+        <div class="navbar-search-wrapper ms-lg-4 my-2 my-lg-0 flex-grow-1 d-none d-lg-flex align-items-center">
+          <form class="navbar-search" role="search" action="<%= catalog_path %>" method="get">
+            <i class="fas fa-search search-icon" aria-hidden="true"></i>
+            <input type="search" class="search-input" name="q" value="<%= params[:q] %>" placeholder="Buscar..." aria-label="Buscar productos" />
+            <% if params[:q].present? %>
+              <button type="button" class="btn-clear" aria-label="Limpiar búsqueda" onclick="this.closest('form').querySelector('.search-input').value=''; this.closest('form').submit();">&times;</button>
+            <% end %>
+          </form>
+        </div>
       <% end %>
 
       <!-- NAV MENU -->
@@ -57,27 +58,45 @@
         <% end %>
 
         <% if user_signed_in? %>
+        <!-- Trigger búsqueda (mobile) -->
+        <li class="nav-item d-lg-none">
+          <button type="button" class="nav-item-link nav-search-trigger d-flex align-items-center" id="nav-search-trigger" aria-label="Abrir búsqueda" data-search-open>
+            <i class="fas fa-search" aria-hidden="true"></i><span class="link-text">Buscar</span>
+          </button>
+        </li>
+
         <!-- Catálogo (solo usuarios autenticados) -->
         <li class="nav-item">
-          <%= link_to catalog_path, class: "btn btn-outline-danger d-flex align-items-center nav-btn" do %>
-            <i class="fas fa-store me-1"></i> <span class="btn-text">Catálogo</span>
+          <%= link_to catalog_path,
+            class: "nav-item-link d-flex align-items-center #{'active' if controller_path=='products' && action_name=='index'}",
+            'aria-current': (controller_path=='products' && action_name=='index') ? 'page' : nil,
+            'aria-label': 'Ver catálogo de productos' do %>
+              <i class="fas fa-store" aria-hidden="true"></i> <span class="link-text">Catálogo</span>
           <% end %>
         </li>
+
+        <% if dark_mode_enabled? %>
+        <li class="nav-item">
+          <button type="button" class="nav-item-link d-flex align-items-center" id="theme-toggle" aria-label="Cambiar tema" data-theme-toggle>
+            <i class="fas fa-moon" aria-hidden="true"></i> <span class="link-text">Tema</span>
+          </button>
+        </li>
+        <% end %>
         <% end %>
 
         <% if user_signed_in? %>
           <% if current_user.admin? %>
             <li class="nav-item">
-              <%= link_to admin_dashboard_path, class: "btn btn-outline-danger d-flex align-items-center nav-btn" do %>
-                <i class="fas fa-cogs me-1"></i> <span class="btn-text">Admin</span>
+              <%= link_to admin_dashboard_path, class: "nav-item-link d-flex align-items-center #{'active' if controller_path.start_with?('admin')}", 'aria-label': 'Panel de administración' do %>
+                <i class="fas fa-cogs" aria-hidden="true"></i> <span class="link-text">Admin</span>
               <% end %>
             </li>
           <% end %>
 
           <!-- Account Dropdown -->
           <li class="nav-item dropdown">
-            <button type="button" id="account" class="btn btn-outline-danger dropdown-toggle d-flex align-items-center nav-btn" data-dropdown-toggle data-dropdown-menu="account-menu" aria-expanded="false" aria-haspopup="true">
-              <i class="fas fa-user me-1"></i> <span class="btn-text">Mi cuenta</span>
+            <button type="button" id="account" class="nav-item-link dropdown-toggle d-flex align-items-center" data-dropdown-toggle data-dropdown-menu="account-menu" aria-expanded="false" aria-haspopup="true" aria-label="Menú de cuenta de usuario">
+              <span class="user-avatar" aria-hidden="true"><%= user_initials(current_user) %></span> <span class="link-text">Mi cuenta</span>
             </button>
             <ul class="dropdown-menu dropdown-menu-end" id="account-menu" aria-labelledby="account">
               <li><%= link_to "Mi Perfil", "#", class: "dropdown-item" %></li>
@@ -95,26 +114,31 @@
 
           <!-- Cart Button -->
           <li class="nav-item">
-            <%= link_to cart_path, class: "btn btn-outline-danger position-relative d-flex align-items-center nav-btn" do %>
-              <i class="fas fa-shopping-cart me-1"></i> <span class="btn-text">Carrito</span>
-                <span id="cart-count" class="badge bg-danger rounded-pill position-absolute top-0 start-100 translate-middle">
-                <%= session[:cart]&.values&.sum || 0 %>
+      <% cart_count = session[:cart]&.values&.sum || 0 %>
+      <%= link_to cart_path,
+        class: "nav-item-link position-relative d-flex align-items-center #{'active' if controller_path=='cart_items'}",
+                'aria-current': (controller_path=='cart_items') ? 'page' : nil,
+                'aria-label': "Ver carrito de compras (#{cart_count} artículos)" do %>
+              <i class="fas fa-shopping-cart" aria-hidden="true"></i> <span class="link-text">Carrito</span>
+                <span id="cart-count" class="badge bg-danger rounded-pill position-absolute top-0 start-100 translate-middle" aria-live="polite" aria-atomic="true">
+                <%= cart_count %>
               </span>
             <% end %>
+            <%= render 'customers/partials/cart_preview' %>
           </li>
 
         <% else %>
           <!-- Login -->
           <li class="nav-item">
-            <%= link_to new_user_session_path, class: "btn btn-outline-danger d-flex align-items-center nav-btn" do %>
-              <i class="fas fa-sign-in-alt me-1"></i> <span class="btn-text">Iniciar sesión</span>
+            <%= link_to new_user_session_path, class: "nav-item-link d-flex align-items-center #{'active' if controller_path=='sessions'}", 'aria-label': 'Iniciar sesión' do %>
+              <i class="fas fa-sign-in-alt" aria-hidden="true"></i> <span class="link-text">Iniciar sesión</span>
             <% end %>
           </li>
 
           <!-- Register -->
           <li class="nav-item">
-            <%= link_to new_user_registration_path, class: "btn btn-danger d-flex align-items-center nav-btn" do %>
-              <i class="fas fa-user-plus me-1"></i> <span class="btn-text">Registrarse</span>
+            <%= link_to new_user_registration_path, class: "nav-item-link d-flex align-items-center #{'active' if controller_path=='registrations'}", 'aria-label': 'Crear nueva cuenta' do %>
+              <i class="fas fa-user-plus" aria-hidden="true"></i> <span class="link-text">Registrarse</span>
             <% end %>
           </li>
         <% end %>
@@ -124,15 +148,21 @@
   </div>
 </nav>
 
-<style>
-  .site-navbar { transition: all .25s ease; position: fixed; top: var(--banner-height,0); left:0; right:0; z-index:1100; background:#f8f9fa; }
-  .site-navbar.shrink { padding-top: .15rem; padding-bottom: .15rem; box-shadow: 0 2px 6px rgba(0,0,0,0.12); }
-  .site-navbar .brand-image { transition: width .25s ease; }
-  .site-navbar.shrink .brand-image { width: 32px !important; }
-  .site-navbar.shrink .brand-text { opacity: 0; width: 0; margin: 0; overflow: hidden; }
-  .site-navbar .nav-btn .btn-text { transition: opacity .2s ease, width .2s ease; white-space: nowrap; }
-  .site-navbar.shrink .nav-btn .btn-text { opacity: 0; width: 0; margin: 0; overflow: hidden; }
-  .site-navbar .nav-btn i { transition: margin-right .2s ease; }
-  .site-navbar.shrink .nav-btn i { margin-right: 0 !important; }
-</style>
-</style>
+<!-- Overlay de búsqueda global -->
+<div id="search-overlay" class="search-overlay" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="search-overlay-label" hidden>
+  <div class="search-overlay-backdrop" data-search-close></div>
+  <div class="search-overlay-panel">
+    <form class="search-overlay-form" action="<%= catalog_path %>" method="get" role="search">
+      <label id="search-overlay-label" for="global-search-input" class="visually-hidden">Buscar productos</label>
+      <i class="fas fa-search search-icon" aria-hidden="true"></i>
+      <input id="global-search-input" type="search" name="q" placeholder="Buscar productos... / para abrir, Esc para cerrar" autocomplete="off" />
+      <button type="button" class="btn-clear" data-search-clear aria-label="Limpiar" hidden>&times;</button>
+      <button type="button" class="btn-close-overlay" data-search-close aria-label="Cerrar búsqueda"><i class="fas fa-times"></i></button>
+    </form>
+    <div class="search-hints small text-muted mt-3">
+      <span><kbd>/</kbd> abrir</span> · <span><kbd>Esc</kbd> cerrar</span>
+    </div>
+  </div>
+</div>
+
+

@@ -1,0 +1,12 @@
+<!-- Eliminación de item en carrito -->
+<%= turbo_stream.replace "cart-count" do %>
+  <span id="cart-count" class="badge bg-danger rounded-pill position-absolute top-0 start-100 translate-middle">
+    <%= session[:cart]&.values&.sum || 0 %>
+  </span>
+<% end %>
+
+<%= turbo_stream.replace "cart-preview-body" do %>
+  <div id="cart-preview-body">
+    <%= render 'customers/partials/cart_preview_body', cart_obj: (@cart || Cart.new(session)) %>
+  </div>
+<% end %>
