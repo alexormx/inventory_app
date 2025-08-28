@@ -44,7 +44,7 @@
           <% end %>
           <div class="card-body text-center p-2 d-flex flex-column w-100">
             <h6 class="card-title text-truncate mb-1" title="<%= product.product_name %>">
-              <%= link_to product.product_name, product_path(product), class: "stretched-link text-decoration-none text-dark" %>
+              <%= link_to product.product_name, product_path(product), class: "text-decoration-none text-dark" %>
             </h6>
             <p class="card-text text-danger fw-bold small mb-2">
               <%= number_to_currency(product.selling_price) %>
