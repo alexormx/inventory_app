@@ -88,7 +88,7 @@
           <!-- Account Dropdown -->
           <li class="nav-item dropdown">
             <button type="button" id="account" class="nav-item-link dropdown-toggle d-flex align-items-center" data-dropdown-toggle data-dropdown-menu="account-menu" aria-expanded="false" aria-haspopup="true" aria-label="Menú de cuenta de usuario">
-              <i class="fas fa-user" aria-hidden="true"></i> <span class="link-text">Mi cuenta</span>
+              <span class="user-avatar" aria-hidden="true"><%= user_initials(current_user) %></span> <span class="link-text">Mi cuenta</span>
             </button>
             <ul class="dropdown-menu dropdown-menu-end" id="account-menu" aria-labelledby="account">
               <li><%= link_to "Mi Perfil", "#", class: "dropdown-item" %></li>
@@ -106,13 +106,14 @@
 
           <!-- Cart Button -->
           <li class="nav-item">
+      <% cart_count = session[:cart]&.values&.sum || 0 %>
       <%= link_to cart_path,
         class: "nav-item-link position-relative d-flex align-items-center #{'active' if controller_path=='cart_items'}",
                 'aria-current': (controller_path=='cart_items') ? 'page' : nil,
-                'aria-label': 'Ver carrito de compras' do %>
+                'aria-label': "Ver carrito de compras (#{cart_count} artículos)" do %>
               <i class="fas fa-shopping-cart" aria-hidden="true"></i> <span class="link-text">Carrito</span>
                 <span id="cart-count" class="badge bg-danger rounded-pill position-absolute top-0 start-100 translate-middle" aria-live="polite" aria-atomic="true">
-                <%= session[:cart]&.values&.sum || 0 %>
+                <%= cart_count %>
               </span>
             <% end %>
           </li>

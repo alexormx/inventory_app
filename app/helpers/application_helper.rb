@@ -28,4 +28,10 @@ module ApplicationHelper
   def dark_mode_enabled?
     SiteSetting.get('dark_mode_enabled', false)
   end
+
+  def user_initials(user)
+    return "?" unless user&.respond_to?(:name) && user.name.present?
+    parts = user.name.split
+    (parts.first[0] + (parts.size > 1 ? parts.last[0] : "")).upcase
+  end
 end
