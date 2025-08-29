@@ -25,7 +25,7 @@
           <% on_hand = product.current_on_hand %>
           <% split = product.split_immediate_and_pending(qty) %>
           <div class="d-flex flex-wrap align-items-center gap-1 mb-1">
-            <%= stock_badge(product, quantity: qty) %>
+            <%= stock_badge(product, quantity: qty, suppress_pending_note: true) %>
             <% if split[:pending].positive? && split[:pending_type] %>
               <span class="badge rounded-pill bg-light text-dark border small" title="Unidades pendientes"><%= split[:pending] %> pend.</span>
             <% end %>

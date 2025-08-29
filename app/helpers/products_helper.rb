@@ -2,7 +2,7 @@ module ProductsHelper
 	# Genera un badge unificado de disponibilidad (En stock / Preorden / Sobre pedido / Fuera de stock)
 	# Opciones:
 	#   quantity: para contextos de carrito, decidir si ya alcanzó stock
-	def stock_badge(product, quantity: nil)
+	def stock_badge(product, quantity: nil, suppress_pending_note: false)
 		on_hand = product.current_on_hand
 		oversell = product.oversell_allowed?
 		pending_split = quantity ? product.split_immediate_and_pending(quantity) : nil
@@ -33,7 +33,7 @@ module ProductsHelper
 				["Fuera de stock", "bg-secondary", "No disponible actualmente"]
 			end
 
-		pending_note = if pending_split && pending_split[:pending].positive? && pending_split[:pending_type]
+		pending_note = if !suppress_pending_note && pending_split && pending_split[:pending].positive? && pending_split[:pending_type]
 			" (#{pending_split[:pending]} pend.)"
 		end
 
