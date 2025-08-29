@@ -13,6 +13,18 @@ class CartItemsController < ApplicationController
       end
       return
     end
+    # Validar stock si no permite oversell
+    desired_total = (previous_qty || 0).to_i + 1
+    if !@product.oversell_allowed? && desired_total > @product.current_on_hand
+      respond_to do |format|
+        msg = "Stock insuficiente (disponibles: #{@product.current_on_hand}). Este producto no permite preventa ni sobre pedido."
+        format.turbo_stream { flash.now[:alert] = msg }
+        format.html { redirect_back fallback_location: catalog_path, alert: msg }
+        format.json { render json: { error: msg }, status: :unprocessable_entity }
+      end
+      return
+    end
+
     @cart.add_product(@product.id)
     flash.now[:notice] = "#{@product.product_name} fue agregado exitosamente" if request.format.turbo_stream?
     respond_to do |format|
@@ -46,7 +58,17 @@ class CartItemsController < ApplicationController
       end
       return
     end
-    @cart.update(@product.id, params[:quantity])
+    desired = params[:quantity].to_i
+    if desired > 0 && !@product.oversell_allowed? && desired > @product.current_on_hand
+      respond_to do |format|
+        msg = "No puedes agregar #{desired} unidades. Stock disponible: #{@product.current_on_hand}. Este producto no permite preventa ni sobre pedido."
+        format.turbo_stream { flash.now[:alert] = msg }
+        format.html { redirect_back fallback_location: cart_path, alert: msg }
+        format.json { render json: { error: msg }, status: :unprocessable_entity }
+      end
+      return
+    end
+    @cart.update(@product.id, desired)
     respond_to do |format|
       format.turbo_stream do
         # Determinar si la solicitud viene desde la página de carrito (referer contiene /cart)

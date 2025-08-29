@@ -93,6 +93,9 @@ Rails.application.routes.draw do
     # Payments Management
     resources :payments, only: [:create]
 
+  # Preventas y 'sobre pedido'
+  get 'preorders', to: 'preorders#index', as: :preorders
+
     # Sales Order Management
     resources :sale_orders do
       resources :sales_order_items, only: [:create, :update, :destroy]
@@ -108,6 +111,13 @@ Rails.application.routes.draw do
   # Shopping Cart routes
   resources :cart_items, only: [:create, :update, :destroy]
   get "/cart", to: "carts#show", as: :cart
+
+  # Customer shipping addresses
+  resources :shipping_addresses, only: [:index, :new, :create, :edit, :update, :destroy] do
+    member do
+      patch :make_default
+    end
+  end
 
   #checkout process with multiple steps
   get '/checkout/step1', to: 'checkouts#step1', as: :checkout_step1

@@ -248,6 +248,7 @@ class Admin::ProductsController < ApplicationController
       :length_cm,
       :width_cm,
       :height_cm,
+  :launch_date,
       custom_attributes: {}, # allow custom attributes as a hash
       product_images: [] # allow multiple file uploads
     )

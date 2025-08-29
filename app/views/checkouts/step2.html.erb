@@ -1,36 +1,64 @@
-<h1 class="mb-3">🚚 Dirección y método de envío</h1>
+<h1 class="mb-3">🚚 Dirección y envío</h1>
+<div class="mb-3 d-flex justify-content-between align-items-center">
+  <h5 class="mb-0">Selecciona una dirección</h5>
+  <%= link_to 'Gestionar direcciones', shipping_addresses_path(return_to: 'checkout_step2'), class: 'btn btn-sm btn-outline-secondary' %>
+ </div>
+<% addresses = current_user.shipping_addresses.ordered %>
+<% previous_info = @shipping_info || {} %>
 
-<%= form_with url: checkout_step2_path, method: :post, local: true do %>
-  <div class="mb-3">
-    <%= label_tag :full_name, "Nombre completo" %>
-    <%= text_field_tag :shipping_full_name, nil, class: "form-control", required: true %>
+<%= form_with url: checkout_step2_path, method: :post, local: true, id: 'shipping-step-form' do %>
+  <% if addresses.any? %>
+    <div class="list-group mb-4">
+      <% addresses.each do |a| %>
+        <% checked = if params[:selected_address_id].present?
+                       params[:selected_address_id].to_s == a.id.to_s
+                     elsif previous_info[:address_id]
+                       previous_info[:address_id].to_s == a.id.to_s
+                     else
+                       a.default?
+                     end %>
+        <label class="list-group-item d-flex justify-content-between align-items-start">
+          <span>
+            <input type="radio" name="selected_address_id" value="<%= a.id %>" <%= 'checked' if checked %> class="form-check-input me-2" />
+            <strong><%= a.label %></strong>
+            <% if a.default? %><span class="badge bg-success ms-1">Default</span><% end %><br>
+            <small class="text-muted"><%= a.full_name %> — <%= a.to_one_line %></small>
+          </span>
+          <%= link_to 'Editar', edit_shipping_address_path(a), class: 'btn btn-sm btn-outline-secondary' %>
+        </label>
+      <% end %>
+    </div>
+  <% else %>
+    <div class="alert alert-warning">No tienes direcciones. Agrega una primero.</div>
+    <%= link_to 'Agregar dirección', shipping_addresses_path(return_to: 'checkout_step2'), class: 'btn btn-primary' %>
+  <% end %>
+
+<h5 class="mb-2">Método de envío</h5>
+<p class="small text-muted">El costo puede variar según la dirección seleccionada (placeholder).</p>
+  <div class="row g-3">
+    <div class="col-md-6">
+      <% selected_method = if params[:shipping_method].present?
+                             params[:shipping_method]
+                           elsif previous_info[:method].present?
+                             previous_info[:method]
+                           else
+                             'standard'
+                           end %>
+      <div class="form-check">
+        <input class="form-check-input" type="radio" name="shipping_method" id="ship_standard" value="standard" <%= 'checked' if selected_method == 'standard' %>>
+        <label class="form-check-label" for="ship_standard">Estándar (3-5 días) - Gratis</label>
+      </div>
+      <div class="form-check">
+        <input class="form-check-input" type="radio" name="shipping_method" id="ship_express" value="express" <%= 'checked' if selected_method == 'express' %>>
+        <label class="form-check-label" for="ship_express">Exprés (1-2 días) - $149.00</label>
+      </div>
+      <div class="form-check">
+        <input class="form-check-input" type="radio" name="shipping_method" id="ship_pickup" value="pickup" <%= 'checked' if selected_method == 'pickup' %>>
+        <label class="form-check-label" for="ship_pickup">Recoger en tienda</label>
+      </div>
+    </div>
   </div>
-
-  <div class="mb-3">
-    <%= label_tag :address, "Dirección" %>
-    <%= text_field_tag :shipping_address, nil, class: "form-control", required: true %>
-  </div>
-
-  <div class="mb-3">
-    <%= label_tag :city, "Ciudad" %>
-    <%= text_field_tag :shipping_city, nil, class: "form-control", required: true %>
-  </div>
-
-  <div class="mb-3">
-    <%= label_tag :postal_code, "Código Postal" %>
-    <%= text_field_tag :shipping_postal_code, nil, class: "form-control", required: true %>
-  </div>
-
-  <div class="mb-3">
-    <%= label_tag :shipping_method, "Método de envío" %>
-    <%= select_tag :shipping_method, options_for_select([
-      ['Estándar (3-5 días)', 'standard'],
-      ['Exprés (1-2 días)', 'express'],
-      ['Recoger en tienda', 'pickup']
-    ]), class: "form-select", required: true %>
-  </div>
-
-  <div class="text-end">
-    <%= submit_tag "Continuar con el pago ➡️", class: "btn btn-primary" %>
+  <div class="text-end mt-4">
+    <button type="submit" class="btn btn-primary">Continuar con el pago ➡️</button>
   </div>
 <% end %>

@@ -14,29 +14,41 @@ class CheckoutsController < ApplicationController
   end
 
   def step2
-    @shipping_info = {} # podrías usar un formulario o model aquí
+  # Pre-cargar selección previa si el usuario vuelve del paso 3 o tras error
+  @shipping_info = session[:shipping_info] || {}
   end
 
   #create the step 2 submit action
   #this action will save the shipping info in the session
   #and redirect to step 3
   def step2_submit
-    shipping_info = {
-      full_name: params[:shipping_full_name],
-      address: params[:shipping_address],
-      city: params[:shipping_city],
-      postal_code: params[:shipping_postal_code],
-      method: params[:shipping_method]
-    }
+  Rails.logger.info "[Checkout] step2_submit params: #{params.to_unsafe_h.inspect}"
+    raw_addr_id = params[:selected_address_id].presence
+    raw_method  = params[:shipping_method].presence
 
-    # Validación simple (puedes mejorarla luego)
-    if shipping_info.values.any?(&:blank?)
-      flash.now[:alert] = "Todos los campos son obligatorios."
-      render :step2, status: :unprocessable_entity
-      return
+    # Fallbacks: dirección default, o primera; método estándar
+    addr = if raw_addr_id
+             current_user.shipping_addresses.find_by(id: raw_addr_id)
+           end
+    addr ||= current_user.shipping_addresses.find_by(default: true)
+    addr ||= current_user.shipping_addresses.first
+
+    method = raw_method || 'standard'
+
+    if addr.nil?
+      flash.now[:alert] = "Necesitas agregar al menos una dirección antes de continuar."
+      @shipping_info = {}
+      render :step2, status: :unprocessable_entity and return
     end
 
-    session[:shipping_info] = shipping_info
+    unless %w[standard express pickup].include?(method)
+      flash.now[:alert] = "Método de envío inválido."
+      @shipping_info = { address_id: addr.id }
+      render :step2, status: :unprocessable_entity and return
+    end
+
+  session[:shipping_info] = { 'address_id' => addr.id, 'method' => method }
+  Rails.logger.info "[Checkout] Stored shipping_info in session: #{session[:shipping_info].inspect}"
     redirect_to checkout_step3_path
   end
 
@@ -44,6 +56,20 @@ class CheckoutsController < ApplicationController
   #here you can select the payment method and complete the order
   def step3
     # Mostrar confirmación + seleccionar método de pago
+    raw = session[:shipping_info] || {}
+    # Normalizar claves (symbols/strings)
+    @shipping_info = {
+      address_id: raw[:address_id] || raw['address_id'],
+      method: raw[:method] || raw['method']
+    }.compact
+    @selected_address = if @shipping_info[:address_id]
+                          current_user.shipping_addresses.find_by(id: @shipping_info[:address_id])
+                        end
+    Rails.logger.info "[Checkout] step3 session shipping_info: #{@shipping_info.inspect}; selected_address: #{@selected_address&.id}"
+    if @shipping_info.blank? || @selected_address.nil? || @shipping_info[:method].blank?
+      flash.now[:alert] = 'Faltan datos de envío (debug).'
+      # No redirigimos inmediatamente para poder ver la vista y depurar.
+    end
   end
 
 
@@ -56,24 +82,73 @@ class CheckoutsController < ApplicationController
       return
     end
 
+    # 1) Validar que no haya oversell NO permitido (pending sin tipo asignado)
+    invalid_products = []
+    pending_needed = false
+    @cart.items.each do |product, qty|
+      split = product.split_immediate_and_pending(qty)
+      if split[:pending].positive?
+        if split[:pending_type].nil? # no permite ni preorder ni backorder
+          invalid_products << product
+        else
+          pending_needed = true
+        end
+      end
+    end
+
+    if invalid_products.any?
+      nombres = invalid_products.map(&:product_name).join(', ')
+      flash.now[:alert] = "Los siguientes productos exceden el stock y no permiten preventa ni sobre pedido: #{nombres}. Ajusta las cantidades en el carrito."
+      step3
+      render :step3, status: :unprocessable_entity and return
+    end
+
+    # 2) Si hay pendientes válidos (preorder/backorder) exigir aceptación explícita
+    if pending_needed && params[:accept_pending].blank?
+      flash.now[:alert] = "Debes aceptar los tiempos extendidos de entrega para continuar."
+      step3
+      render :step3, status: :unprocessable_entity and return
+    end
+
     ActiveRecord::Base.transaction do
+      shipping_info = session[:shipping_info] || {}
+      selected_address = current_user.shipping_addresses.find_by(id: shipping_info[:address_id])
+      shipping_cost = case shipping_info[:method]
+                      when 'express' then 149
+                      else 0
+                      end
       @sale_order = current_user.sale_orders.create!(
         order_date: Date.today,
         subtotal: @cart.total,
         tax_rate: 0,
         total_tax: 0,
-        total_order_value: @cart.total,
+        shipping_cost: shipping_cost,
+        total_order_value: @cart.total + shipping_cost,
         notes: session[:checkout_notes],
         status: 'Pending'
       )
 
       @cart.items.each do |product, qty|
-        @sale_order.sale_order_items.create!(
+        split = product.split_immediate_and_pending(qty)
+        soi = @sale_order.sale_order_items.create!(
           product: product,
           quantity: qty,
           unit_cost: product.selling_price,
-          total_line_cost: product.selling_price * qty
+          total_line_cost: product.selling_price * qty,
+          preorder_quantity: (split[:pending_type] == :preorder ? split[:pending] : 0),
+          backordered_quantity: (split[:pending_type] == :backorder ? split[:pending] : 0)
         )
+        if split[:pending] > 0 && split[:pending_type] == :preorder
+          PreorderReservation.create!(
+            product: product,
+            user: current_user,
+            quantity: split[:pending],
+            status: :pending,
+            reserved_at: Time.current,
+            sale_order: nil,
+            notes: "Generada desde checkout SO=#{@sale_order.id} SOI=#{soi.id}"
+          )
+        end
       end
 
       @sale_order.payments.create!(
@@ -82,12 +157,12 @@ class CheckoutsController < ApplicationController
         status: 'Pending'
       )
 
-      # TODO: También puedes usar session[:shipping_info] para guardarla
+  # TODO: persistir snapshot de dirección en modelo separado si se requiere
     end
 
     session[:cart] = {}
     session.delete(:checkout_notes)
-    session.delete(:shipping_info)
+  session.delete(:shipping_info)
 
     redirect_to checkout_thank_you_path
   rescue ActiveRecord::RecordInvalid => e

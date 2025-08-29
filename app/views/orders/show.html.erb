@@ -17,6 +17,7 @@
     <tr>
       <th>Producto</th>
       <th>Cantidad</th>
+      <th>Pendiente</th>
       <th class="text-end">Precio unitario</th>
       <th class="text-end">Total</th>
     </tr>
@@ -25,7 +26,26 @@
     <% @order.sale_order_items.each do |item| %>
       <tr>
         <td><%= item.product&.product_name || '—' %></td>
-        <td><%= item.quantity %></td>
+        <td>
+          <%= item.quantity %>
+          <% if item.pending? %>
+            <span class="badge text-bg-warning ms-1">Pendiente</span>
+          <% end %>
+        </td>
+        <td>
+          <% if item.pending? %>
+            <% parts = [] %>
+            <% if item.preorder_quantity.to_i > 0 %>
+              <% parts << "Preventa: #{item.preorder_quantity}" %>
+            <% end %>
+            <% if item.backordered_quantity.to_i > 0 %>
+              <% parts << "Sobre pedido: #{item.backordered_quantity}" %>
+            <% end %>
+            <span class="small text-muted"><%= parts.join(' · ') %></span>
+          <% else %>
+            <span class="text-muted">—</span>
+          <% end %>
+        </td>
         <td class="text-end"><%= number_to_currency(item.unit_final_price, unit: "$") %></td>
         <td class="text-end"><%= number_to_currency(item.total_line_cost, unit: "$") %></td>
       </tr>

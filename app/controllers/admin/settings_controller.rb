@@ -17,6 +17,22 @@ class Admin::SettingsController < ApplicationController
     flash[:notice] = 'Configuración de interfaz guardada.'
     redirect_to admin_settings_path and return
   end
+  if request.post? && params[:save_payments]
+    SiteSetting.set('payment_bank_account', params[:payment_bank_account].to_s.strip, 'string')
+    SiteSetting.set('payment_oxxo_number', params[:payment_oxxo_number].to_s.strip, 'string')
+    flash[:notice] = 'Datos de pago guardados.'
+    redirect_to admin_settings_path and return
+  end
+  if request.post? && params[:save_eta]
+    preorder_days = params[:preorder_eta_days].to_i
+    backorder_days = params[:backorder_eta_days].to_i
+    preorder_days = 60 if preorder_days <= 0
+    backorder_days = 60 if backorder_days <= 0
+    SiteSetting.set('preorder_eta_days', preorder_days, 'integer')
+    SiteSetting.set('backorder_eta_days', backorder_days, 'integer')
+    flash[:notice] = 'Tiempos estimados guardados.'
+    redirect_to admin_settings_path and return
+  end
   end
 
   # Temporal: sincronización de estados de inventario (stub)

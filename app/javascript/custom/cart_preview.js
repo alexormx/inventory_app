@@ -100,11 +100,13 @@
     // Fade superior basado en scroll
     const scrollBox = panel && panel.querySelector('.cart-preview-scroll');
     if(scrollBox && !scrollBox.__fadeBound){
-      const toggleFade=()=>{
+      const updateScrollState=()=>{
         if(scrollBox.scrollTop>2) scrollBox.classList.add('has-top-fade'); else scrollBox.classList.remove('has-top-fade');
+        if(scrollBox.scrollHeight>scrollBox.clientHeight+8) scrollBox.classList.add('is-scrollable'); else scrollBox.classList.remove('is-scrollable');
       };
-      scrollBox.addEventListener('scroll', toggleFade, {passive:true});
-      toggleFade();
+      scrollBox.addEventListener('scroll', updateScrollState, {passive:true});
+      window.addEventListener('resize', updateScrollState);
+      updateScrollState();
       scrollBox.__fadeBound=true;
     }
   }
@@ -159,3 +161,4 @@
     if(panel.matches(':hover')) show();
   }, {passive:true});
 })();
+

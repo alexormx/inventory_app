@@ -93,6 +93,12 @@
     <%= f.check_box :preorder_available %>
   </div>
 
+  <div class="col-md-3">
+    <%= f.label :launch_date, "Launch date (para ETA de preorden)" %>
+    <%= f.date_field :launch_date, class: "form-control" %>
+    <small class="text-muted">Usada para calcular ETA: si existe se usan <%= SiteSetting.get('preorder_eta_days',60) %> días; sin fecha se asume 90.</small>
+  </div>
+
   <div class="col-md-12">
     <%= f.label :description %>
     <%= f.text_area :description, class: "form-control", rows: 2, placeholder: "Agregar o modificar la descripcion" %>

@@ -30,8 +30,10 @@
     <% @products.each do |product| %>
       <div class="col">
         <div class="card h-100 border-0 shadow-sm d-flex flex-column catalog-item position-relative hover-lift">
-          <!-- Badge estado -->
-          <% unless product.active? %>
+          <!-- Badges de disponibilidad -->
+          <% if product.active? %>
+            <span class="position-absolute top-0 start-0 m-1"><%= stock_badge(product) %></span>
+          <% else %>
             <span class="badge bg-secondary position-absolute top-0 start-0 m-1">No disp.</span>
           <% end %>
           <%= link_to product_path(product), class: "d-block p-2" do %>
@@ -49,11 +51,19 @@
             <p class="card-text text-danger fw-bold small mb-2">
               <%= number_to_currency(product.selling_price) %>
             </p>
+            <% if (eta = stock_eta(product)) %>
+              <p class="text-muted extra-small mb-2"><i class="fa fa-clock me-1"></i><%= eta %></p>
+            <% end %>
             <% if product.active? %>
+              <% on_hand = product.current_on_hand %>
+              <% disabled = (on_hand <= 0 && !product.oversell_allowed?) %>
               <%= button_to cart_items_path,
                             params: { product_id: product.id },
                             method: :post,
-                            class: "btn btn-danger btn-sm mt-auto", aria: { label: "Agregar #{product.product_name} al carrito" } do %>
+                            class: "btn btn-danger btn-sm mt-auto #{'disabled' if disabled}",
+                            disabled: disabled,
+                            title: (disabled ? 'Sin stock disponible' : 'Agregar al carrito'),
+                            aria: { label: (disabled ? 'Sin stock' : "Agregar #{product.product_name} al carrito") } do %>
                 <i class="fas fa-cart-plus"></i>
               <% end %>
             <% else %>

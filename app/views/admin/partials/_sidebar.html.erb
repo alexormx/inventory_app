@@ -58,6 +58,13 @@
       <% end %>
     </li>
     <li class="nav-item">
+      <% active = request.path.start_with?(admin_preorders_path) %>
+      <%= link_to admin_preorders_path, class: "nav-link text-white d-flex align-items-center#{active ? ' active' : ''}", aria: (active ? { current: 'page' } : {}) do %>
+        <i class="fa fa-hourglass-half me-2"></i>
+        <span class="sidebar-label">Preórdenes / Sobre pedido</span>
+      <% end %>
+    </li>
+    <li class="nav-item">
       <% active = request.path.start_with?(admin_inventory_path) %>
       <%= link_to admin_inventory_path, class: "nav-link text-white d-flex align-items-center#{active ? ' active' : ''}", aria: (active ? { current: 'page' } : {}) do %>
         <i class="fa fa-archive me-2"></i>

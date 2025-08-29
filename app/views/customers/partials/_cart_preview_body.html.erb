@@ -22,12 +22,24 @@
         </div>
         <div class="flex-grow-1 me-2">
           <div class="fw-medium small line-clamp-1"><%= product.product_name %></div>
+          <% on_hand = product.current_on_hand %>
+          <% split = product.split_immediate_and_pending(qty) %>
+          <div class="d-flex flex-wrap align-items-center gap-1 mb-1">
+            <%= stock_badge(product, quantity: qty) %>
+            <% if split[:pending].positive? && split[:pending_type] %>
+              <span class="badge rounded-pill bg-light text-dark border small" title="Unidades pendientes"><%= split[:pending] %> pend.</span>
+            <% end %>
+          </div>
+          <% if (eta = stock_eta(product)) %>
+            <div class="small text-muted mb-1"><i class="fa fa-clock me-1"></i><%= eta %></div>
+          <% end %>
           <div class="text-muted small d-flex align-items-center gap-2">
             <%= form_with url: cart_item_path(product), method: :patch, data: { turbo_frame: "_top" }, class: 'd-inline-flex align-items-center cart-mini-qty-form' do %>
               <input type="hidden" name="product_id" value="<%= product.id %>">
               <button class="btn btn-sm btn-outline-secondary px-1 py-0 cart-mini-decrease" name="quantity" value="<%= qty - 1 %>" <%= 'disabled' if qty <= 1 %> aria-label="Disminuir cantidad">−</button>
               <span class="mx-1 small" aria-live="polite"><%= qty %></span>
-              <button class="btn btn-sm btn-outline-secondary px-1 py-0 cart-mini-increase" name="quantity" value="<%= qty + 1 %>" aria-label="Aumentar cantidad">+</button>
+              <% disabled_inc = (on_hand <= qty.to_i && !product.oversell_allowed?) %>
+              <button class="btn btn-sm btn-outline-secondary px-1 py-0 cart-mini-increase <%= 'disabled' if disabled_inc %>" name="quantity" value="<%= qty + 1 %>" aria-label="Aumentar cantidad" <%= 'disabled' if disabled_inc %>>+</button>
             <% end %>
             <span>· <%= number_to_currency(product.selling_price * qty) %></span>
           </div>
