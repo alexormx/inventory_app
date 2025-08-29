@@ -40,10 +40,53 @@ export default class extends Controller {
       .then(data => {
         this.quantityTarget.value = data.quantity
         if (this.lineTotalTarget) {
-          this.lineTotalTarget.textContent = data.line_total
+          let html = `<span class=\"line-total-amount\">${data.line_total}</span>`
+          if (data.item_pending > 0) {
+            const pendingLabel = data.item_pending_type === 'preorder' ? 'preventa' : 'sobre pedido'
+            html += `<div class=\"small text-muted mt-1 line-split-detail\"><span class=\"immediate-count\">${data.item_immediate}</span> inmediata(s) · <span class=\"pending-count\">${data.item_pending}</span> ${pendingLabel}</div>`
+          }
+          this.lineTotalTarget.innerHTML = html
+        }
+        // Actualizar badge de pendientes del ítem
+        if (typeof data.product_id !== 'undefined') {
+          const badge = document.getElementById(`pending-badge-${data.product_id}`)
+          if (data.item_pending > 0) {
+            const label = data.item_pending_type === 'preorder' ? 'Preventa' : 'Sobre pedido'
+            if (badge) {
+              // Actualizar número
+              const countSpan = badge.querySelector('.pending-count')
+              if (countSpan) countSpan.textContent = data.item_pending
+              if (data.item_pending_type === 'preorder') {
+                let posSpan = badge.querySelector('.preorder-position')
+                if (data.item_preorder_position) {
+                  if (!posSpan) {
+                    badge.innerHTML += ` · Posición <span class=\"preorder-position\">${data.item_preorder_position}</span>`
+                  } else {
+                    posSpan.textContent = data.item_preorder_position
+                  }
+                }
+              }
+              badge.firstChild.textContent = `${label}: `
+            }
+          } else if (badge) {
+            badge.remove()
+          }
         }
         const cartTotalEl = document.getElementById('cart-total')
         if (cartTotalEl) cartTotalEl.textContent = data.cart_total
+        const summarySubtotal = document.getElementById('summary-subtotal')
+        if (summarySubtotal && data.subtotal) summarySubtotal.textContent = data.subtotal
+        const summaryTax = document.getElementById('summary-tax')
+        const summaryTaxRow = document.getElementById('summary-tax-row')
+        if (summaryTax && data.tax_amount) summaryTax.textContent = data.tax_amount
+        if (summaryTaxRow && typeof data.tax_enabled !== 'undefined') {
+          if (data.tax_enabled) summaryTaxRow.classList.remove('d-none')
+          else summaryTaxRow.classList.add('d-none')
+        }
+        const summaryShipping = document.getElementById('summary-shipping')
+        if (summaryShipping && data.shipping_cost) summaryShipping.textContent = data.shipping_cost
+        const summaryGrand = document.getElementById('summary-grand-total')
+        if (summaryGrand && data.grand_total) summaryGrand.textContent = data.grand_total
         const badge = document.getElementById('cart-count')
         if (badge) badge.textContent = data.total_items
         const itemCount = document.getElementById('cart-item-count')

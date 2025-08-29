@@ -83,13 +83,27 @@ class CartItemsController < ApplicationController
         qty = session[:cart][@product.id.to_s]
         split = @product.split_immediate_and_pending(qty)
         pending_totals = aggregate_pending
+        preorder_position = nil
+        if split[:pending_type] == :preorder && split[:pending].positive?
+          existing = PreorderReservation.where(product: @product, user: current_user, status: :pending).order(:reserved_at).first
+          preorder_position = existing&.position
+        end
+        line_total_plain = helpers.number_to_currency(@product.selling_price * qty)
         render json: {
+          product_id: @product.id,
           quantity: qty,
-          line_total: helpers.number_to_currency(@product.selling_price * qty),
+          line_total: line_total_plain,
           cart_total: helpers.number_to_currency(@cart.total),
+          subtotal: helpers.number_to_currency(@cart.subtotal),
+          tax_amount: helpers.number_to_currency(@cart.tax_amount),
+          shipping_cost: helpers.number_to_currency(@cart.shipping_cost),
+          grand_total: helpers.number_to_currency(@cart.grand_total),
+          tax_enabled: @cart.tax_enabled?,
           total_items: session[:cart].values.sum,
+          item_immediate: split[:immediate],
           item_pending: split[:pending],
-            item_pending_type: split[:pending_type],
+          item_pending_type: split[:pending_type],
+          item_preorder_position: preorder_position,
           summary_pending_total: pending_totals[:pending_total],
           summary_preorder_total: pending_totals[:preorder_total],
           summary_backorder_total: pending_totals[:backorder_total]
