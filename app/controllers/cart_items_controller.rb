@@ -81,11 +81,18 @@ class CartItemsController < ApplicationController
       format.html { redirect_to cart_path }
       format.json do
         qty = session[:cart][@product.id.to_s]
+        split = @product.split_immediate_and_pending(qty)
+        pending_totals = aggregate_pending
         render json: {
           quantity: qty,
           line_total: helpers.number_to_currency(@product.selling_price * qty),
           cart_total: helpers.number_to_currency(@cart.total),
-          total_items: session[:cart].values.sum
+          total_items: session[:cart].values.sum,
+          item_pending: split[:pending],
+            item_pending_type: split[:pending_type],
+          summary_pending_total: pending_totals[:pending_total],
+          summary_preorder_total: pending_totals[:preorder_total],
+          summary_backorder_total: pending_totals[:backorder_total]
         }
       end
     end
@@ -117,6 +124,17 @@ class CartItemsController < ApplicationController
 
   def set_cart
     @cart = Cart.new(session)
+  end
+
+  def aggregate_pending
+    pending_total = 0; preorder_total = 0; backorder_total = 0
+    @cart.items.each do |product, qty|
+      s = product.split_immediate_and_pending(qty)
+      pending_total += s[:pending]
+      preorder_total += (s[:pending_type] == :preorder ? s[:pending] : 0)
+      backorder_total += (s[:pending_type] == :backorder ? s[:pending] : 0)
+    end
+    { pending_total: pending_total, preorder_total: preorder_total, backorder_total: backorder_total }
   end
 
 end

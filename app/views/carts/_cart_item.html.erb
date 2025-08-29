@@ -22,8 +22,7 @@
             <% position = existing&.position %>
           <% end %>
           <span class="badge rounded-pill text-bg-warning mt-1" style="max-width: fit-content;">
-            <%= split[:pending_type] == :preorder ? 'Preventa: ' : 'Sobre pedido: ' %>
-            <%= split[:pending] %> pendiente(s)
+            <%= (split[:pending_type] == :preorder ? 'Preventa' : 'Sobre pedido') %>: <%= split[:pending] %>
             <% if position %> · Posición <%= position %><% end %>
           </span>
         <% end %>
@@ -44,12 +43,7 @@
     <%= number_to_currency(product.selling_price * quantity) %>
     <% if split[:pending].positive? %>
       <div class="small text-muted mt-1">
-        <%= split[:immediate] %> inmediata(s)
-        <% if split[:pending_type] == :preorder %>
-          · <%= split[:pending] %> en preventa
-        <% elsif split[:pending_type] == :backorder %>
-          · <%= split[:pending] %> sobre pedido
-        <% end %>
+        <%= split[:immediate] %> inmediata(s) · <%= split[:pending] %> <%= split[:pending_type] == :preorder ? 'preventa' : 'sobre pedido' %>
       </div>
     <% end %>
   </td>

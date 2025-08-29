@@ -48,6 +48,20 @@ export default class extends Controller {
         if (badge) badge.textContent = data.total_items
         const itemCount = document.getElementById('cart-item-count')
         if (itemCount) itemCount.textContent = data.total_items
+        // Actualizar resumen de pendientes
+        const pendingLi = document.getElementById('cart-pending-summary')
+        if (pendingLi && typeof data.summary_pending_total !== 'undefined') {
+          if (data.summary_pending_total > 0) {
+            let parts = []
+            if (data.summary_preorder_total > 0) parts.push(`Preventa: ${data.summary_preorder_total}`)
+            if (data.summary_backorder_total > 0) parts.push(`Sobre pedido: ${data.summary_backorder_total}`)
+            pendingLi.classList.remove('d-none')
+            pendingLi.innerHTML = `<span>Pendientes (${data.summary_pending_total})</span><span class="small">${parts.join(' · ')}</span>`
+            pendingLi.classList.add('d-flex','justify-content-between','text-warning')
+          } else {
+            pendingLi.classList.add('d-none')
+          }
+        }
       })
       .finally(()=>{
         this.element.querySelector('.cart-qty-group')?.classList.remove('loading')

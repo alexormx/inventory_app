@@ -43,16 +43,7 @@
           <ul class="list-unstyled small mb-3">
             <li class="d-flex justify-content-between"><span>Productos (<span id="cart-item-count" aria-live="polite"><%= @cart.item_count %></span>)</span><strong id="summary-subtotal"><%= number_to_currency(@cart.subtotal) %></strong></li>
             <%# Mostrar indicador de pendientes (preorder/backorder) %>
-            <% pending_total = 0; preorder_total = 0; backorder_total = 0; @cart.items.each do |product, qty| split = product.split_immediate_and_pending(qty); pending_total += split[:pending]; preorder_total += (split[:pending_type] == :preorder ? split[:pending] : 0); backorder_total += (split[:pending_type] == :backorder ? split[:pending] : 0); end %>
-            <% if pending_total > 0 %>
-              <li class="d-flex justify-content-between text-warning">
-                <span>Pendientes (<%= pending_total %>)</span>
-                <span class="small">
-                  <% if preorder_total > 0 %>Preventa: <%= preorder_total %><% end %>
-                  <% if backorder_total > 0 %><%= preorder_total > 0 ? ' · ' : '' %>Sobre pedido: <%= backorder_total %><% end %>
-                </span>
-              </li>
-            <% end %>
+            <%= render 'carts/summary_pending' %>
             <% if @cart.tax_enabled? %>
               <li class="d-flex justify-content-between" id="summary-tax-row"><span>Impuestos (<%= @cart.tax_rate_percent %>%)</span><span id="summary-tax"><%= number_to_currency(@cart.tax_amount) %></span></li>
             <% end %>
