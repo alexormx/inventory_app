@@ -1,0 +1,87 @@
+<h1 class="h4 mb-4">Preventas / Sobre pedido</h1>
+
+<div class="row g-3 mb-4">
+  <div class="col-auto">
+    <span class="badge text-bg-warning">Pendientes: <%= @pending_count %></span>
+  </div>
+  <div class="col-auto">
+    <span class="badge text-bg-primary">Asignadas: <%= @assigned_count %></span>
+  </div>
+  <div class="col-auto">
+    <span class="badge text-bg-success">Completadas: <%= @completed_count %></span>
+  </div>
+  <div class="col-auto">
+    <span class="badge text-bg-secondary">Canceladas: <%= @cancelled_count %></span>
+  </div>
+</div>
+
+<div class="card mb-4">
+  <div class="card-body">
+    <%= form_with url: admin_preorders_path, method: :get, local: true, class: 'row g-2 align-items-end' do |f| %>
+      <div class="col-md-3">
+        <label class="form-label">Estado</label>
+        <select name="status" class="form-select form-select-sm">
+          <option value="">Todos</option>
+          <% PreorderReservation.statuses.keys.each do |s| %>
+            <option value="<%= s %>" <%= 'selected' if s == @status %>><%= s.humanize %></option>
+          <% end %>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Producto ID</label>
+        <input type="text" name="product_id" value="<%= @product_id %>" class="form-control form-control-sm" />
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Usuario ID</label>
+        <input type="text" name="user_id" value="<%= @user_id %>" class="form-control form-control-sm" />
+      </div>
+      <div class="col-md-3 d-flex gap-2">
+        <button class="btn btn-sm btn-primary mt-4" type="submit">Filtrar</button>
+        <a href="<%= admin_preorders_path %>" class="btn btn-sm btn-outline-secondary mt-4">Limpiar</a>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<table class="table table-sm table-striped align-middle">
+  <thead class="table-light">
+    <tr>
+      <th>ID</th>
+      <th>Producto</th>
+      <th>Usuario</th>
+      <th>Cantidad</th>
+      <th>Estado</th>
+      <th>Reservado</th>
+      <th>Asignado</th>
+      <th>Posición</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @preorders.each do |res| %>
+      <tr>
+        <td><%= res.id %></td>
+        <td><%= res.product&.product_name %> (<%= res.product_id %>)</td>
+        <td><%= res.user&.email %> (<%= res.user_id %>)</td>
+        <td><%= res.quantity %></td>
+        <td>
+          <% css = case res.status
+            when 'pending' then 'warning'
+            when 'assigned' then 'primary'
+            when 'completed' then 'success'
+            when 'cancelled' then 'secondary'
+            end %>
+          <span class="badge text-bg-<%= css %>"><%= res.status.humanize %></span>
+        </td>
+        <td><%= l(res.reserved_at, format: :short) if res.reserved_at %></td>
+        <td><%= l(res.assigned_at, format: :short) if res.assigned_at %></td>
+        <td><%= res.position if res.pending? %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<% if @preorders.respond_to?(:current_page) %>
+  <div class="mt-3">
+    <!-- Placeholder paginación (dependiendo de kaminari/will_paginate) -->
+  </div>
+<% end %>

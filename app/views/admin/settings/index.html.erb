@@ -71,6 +71,115 @@
 	</div>
 </div>
 
+<div class="card mb-4">
+	<div class="card-header d-flex align-items-center gap-2">
+		<i class="fa fa-percentage"></i>
+		<span>Configuración de Impuestos</span>
+	</div>
+	<div class="card-body">
+		<% tax_enabled = SiteSetting.get('tax_enabled', true) %>
+		<% tax_rate_percent = SiteSetting.get('tax_rate_percent', 16) %>
+		<p class="small text-muted">Controla si se calculan impuestos en el carrito/checkout y el porcentaje aplicado.</p>
+		<%= form_with url: admin_settings_path, method: :post, data: { turbo: false }, class: 'row gy-2 gx-3 align-items-end' do %>
+			<div class="col-md-4">
+				<label class="form-label">Impuestos activados</label>
+				<select name="tax_enabled" class="form-select form-select-sm">
+					<option value="true" <%= 'selected' if tax_enabled.to_s == 'true' %>>Sí</option>
+					<option value="false" <%= 'selected' if tax_enabled.to_s == 'false' %>>No</option>
+				</select>
+			</div>
+			<div class="col-md-4">
+				<label class="form-label">Porcentaje (%)</label>
+				<input type="number" step="0.01" name="tax_rate_percent" class="form-control form-control-sm" value="<%= tax_rate_percent %>">
+			</div>
+			<div class="col-md-4">
+				<button class="btn btn-primary btn-sm" name="save_tax" value="1">Guardar</button>
+			</div>
+		<% end %>
+	</div>
+</div>
+
+<div class="card mb-4">
+	<div class="card-header d-flex align-items-center gap-2">
+		<i class="fa fa-globe"></i>
+		<span>Interfaz (Idioma / Tema)</span>
+	</div>
+	<div class="card-body">
+		<% lang_enabled = SiteSetting.get('language_switcher_enabled', false) %>
+		<% dark_enabled = SiteSetting.get('dark_mode_enabled', false) %>
+		<p class="small text-muted">Activa o desactiva componentes UI opcionales en la navegación pública.</p>
+		<%= form_with url: admin_settings_path, method: :post, data: { turbo: false }, class: 'row gy-2 gx-3 align-items-end' do %>
+			<div class="col-md-4">
+				<label class="form-label">Selector de idioma</label>
+				<select name="language_switcher_enabled" class="form-select form-select-sm">
+					<option value="true" <%= 'selected' if lang_enabled.to_s == 'true' %>>Mostrar</option>
+					<option value="false" <%= 'selected' if lang_enabled.to_s == 'false' %>>Ocultar</option>
+				</select>
+			</div>
+			<div class="col-md-4">
+				<label class="form-label">Botón Dark Mode</label>
+				<select name="dark_mode_enabled" class="form-select form-select-sm">
+					<option value="true" <%= 'selected' if dark_enabled.to_s == 'true' %>>Activado</option>
+					<option value="false" <%= 'selected' if dark_enabled.to_s == 'false' %>>Desactivado</option>
+				</select>
+			</div>
+			<div class="col-md-4">
+				<button class="btn btn-primary btn-sm" name="save_ui" value="1">Guardar</button>
+			</div>
+		<% end %>
+	</div>
+</div>
+
+<div class="card mb-4">
+	<div class="card-header d-flex align-items-center gap-2">
+		<i class="fa fa-credit-card"></i>
+		<span>Datos de Pago (Transferencia / OXXO)</span>
+	</div>
+	<div class="card-body">
+		<% bank_account = SiteSetting.get('payment_bank_account', '') %>
+		<% oxxo_number = SiteSetting.get('payment_oxxo_number', '') %>
+		<p class="small text-muted">Estos datos se mostrarán al cliente en el paso de pago.</p>
+		<%= form_with url: admin_settings_path, method: :post, data: { turbo: false }, class: 'row gy-2 gx-3 align-items-end' do %>
+			<div class="col-md-5">
+				<label class="form-label">Cuenta bancaria / CLABE</label>
+				<input type="text" name="payment_bank_account" class="form-control form-control-sm" value="<%= bank_account %>" placeholder="Ej: 012345678901234567" />
+			</div>
+			<div class="col-md-5">
+				<label class="form-label">Número para depósito OXXO</label>
+				<input type="text" name="payment_oxxo_number" class="form-control form-control-sm" value="<%= oxxo_number %>" placeholder="XXXX XXXX XXXX XXXX" />
+			</div>
+			<div class="col-md-2">
+				<button class="btn btn-primary btn-sm w-100" name="save_payments" value="1">Guardar</button>
+			</div>
+		<% end %>
+	</div>
+</div>
+
+<div class="card mb-4">
+	<div class="card-header d-flex align-items-center gap-2">
+		<i class="fa fa-clock"></i>
+		<span>Tiempos estimados (Preorden / Sobre pedido)</span>
+	</div>
+	<div class="card-body">
+		<% preorder_days = SiteSetting.get('preorder_eta_days', 60).to_i %>
+		<% backorder_days = SiteSetting.get('backorder_eta_days', 60).to_i %>
+		<p class="small text-muted">Estos días se usan en tooltips y badges como estimado tras la confirmación manual. Si un producto no tiene fecha de lanzamiento conocida se asumirá 90 días (preorden).</p>
+		<%= form_with url: admin_settings_path, method: :post, data: { turbo: false }, class: 'row gy-2 gx-3 align-items-end' do %>
+			<div class="col-md-5">
+				<label class="form-label">Preorden ETA (días)</label>
+				<input type="number" min="1" name="preorder_eta_days" class="form-control form-control-sm" value="<%= preorder_days %>">
+			</div>
+			<div class="col-md-5">
+				<label class="form-label">Sobre pedido ETA (días)</label>
+				<input type="number" min="1" name="backorder_eta_days" class="form-control form-control-sm" value="<%= backorder_days %>">
+			</div>
+			<div class="col-md-2">
+				<button class="btn btn-primary btn-sm w-100" name="save_eta" value="1">Guardar</button>
+			</div>
+		<% end %>
+	</div>
+</div>
+
 
 <div class="card">
 	<div class="card-header d-flex align-items-center gap-2">

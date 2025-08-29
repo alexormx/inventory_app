@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_08_28_180000) do
+ActiveRecord::Schema[8.0].define(version: 2025_08_28_194000) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -100,6 +100,25 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_28_180000) do
     t.integer "payment_method"
   end
 
+  create_table "preorder_reservations", force: :cascade do |t|
+    t.integer "product_id", null: false
+    t.integer "user_id", null: false
+    t.integer "sale_order_id"
+    t.integer "quantity", null: false
+    t.integer "status", default: 0, null: false
+    t.datetime "reserved_at", null: false
+    t.datetime "assigned_at"
+    t.datetime "completed_at"
+    t.datetime "cancelled_at"
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["product_id", "status", "reserved_at"], name: "idx_preorders_fifo"
+    t.index ["product_id"], name: "index_preorder_reservations_on_product_id"
+    t.index ["sale_order_id"], name: "index_preorder_reservations_on_sale_order_id"
+    t.index ["user_id"], name: "index_preorder_reservations_on_user_id"
+  end
+
   create_table "products", force: :cascade do |t|
     t.string "product_sku", null: false
     t.string "barcode"
@@ -145,7 +164,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_28_180000) do
     t.string "whatsapp_code"
     t.text "description"
     t.string "supplier_product_code"
+    t.date "launch_date"
     t.index ["last_supplier_id"], name: "index_products_on_last_supplier_id"
+    t.index ["launch_date"], name: "index_products_on_launch_date"
     t.index ["preferred_supplier_id"], name: "index_products_on_preferred_supplier_id"
     t.index ["product_sku"], name: "index_products_on_product_sku", unique: true
     t.index ["slug"], name: "index_products_on_slug", unique: true
@@ -203,6 +224,10 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_28_180000) do
     t.decimal "total_line_weight", precision: 10, scale: 2
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "preorder_quantity", default: 0, null: false
+    t.integer "backordered_quantity", default: 0, null: false
+    t.index ["backordered_quantity"], name: "index_sale_order_items_on_backordered_quantity"
+    t.index ["preorder_quantity"], name: "index_sale_order_items_on_preorder_quantity"
     t.index ["product_id"], name: "index_sale_order_items_on_product_id"
   end
 
@@ -233,6 +258,23 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_28_180000) do
     t.string "sale_order_id", null: false
     t.integer "status"
     t.decimal "shipping_cost", precision: 10, scale: 2, default: "0.0", null: false
+  end
+
+  create_table "shipping_addresses", force: :cascade do |t|
+    t.integer "user_id", null: false
+    t.string "label", default: "Principal", null: false
+    t.string "full_name", null: false
+    t.string "line1", null: false
+    t.string "line2"
+    t.string "city", null: false
+    t.string "state"
+    t.string "postal_code", null: false
+    t.string "country", default: "MX", null: false
+    t.boolean "default", default: false, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id", "default"], name: "index_shipping_addresses_on_user_id_and_default"
+    t.index ["user_id"], name: "index_shipping_addresses_on_user_id"
   end
 
   create_table "site_settings", force: :cascade do |t|
@@ -300,6 +342,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_28_180000) do
   add_foreign_key "inventories", "purchase_orders"
   add_foreign_key "inventories", "sale_orders"
   add_foreign_key "payments", "sale_orders"
+  add_foreign_key "preorder_reservations", "products"
+  add_foreign_key "preorder_reservations", "sale_orders"
+  add_foreign_key "preorder_reservations", "users"
   add_foreign_key "products", "users", column: "last_supplier_id"
   add_foreign_key "products", "users", column: "preferred_supplier_id"
   add_foreign_key "purchase_order_items", "products"
@@ -309,5 +354,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_28_180000) do
   add_foreign_key "sale_order_items", "sale_orders"
   add_foreign_key "sale_orders", "users"
   add_foreign_key "shipments", "sale_orders"
+  add_foreign_key "shipping_addresses", "users"
   add_foreign_key "visitor_logs", "users"
 end

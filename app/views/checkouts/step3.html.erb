@@ -1,28 +1,103 @@
-<h1 class="mb-3">💳 Selecciona tu método de pago</h1>
+<h1 class="mb-3">💳 Pago</h1>
+
+<% shipping_info = @shipping_info || {} %>
+<% address = @selected_address %>
+<div class="card mb-4">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <strong>Envío</strong>
+    <% if address %>
+      <% method_label = case shipping_info[:method]
+                       when 'express' then 'Exprés (1-2 días)'
+                       when 'standard' then 'Estándar (3-5 días)'
+                       when 'pickup' then 'Recoger en tienda'
+                       else shipping_info[:method].to_s
+                       end %>
+      <small class="text-muted">Método: <%= method_label %></small>
+    <% end %>
+  </div>
+  <div class="card-body">
+    <% if address %>
+      <p class="mb-1"><strong><%= address.full_name %></strong></p>
+      <p class="mb-1 small text-muted"><%= address.to_one_line %></p>
+    <% else %>
+      <div class="alert alert-warning mb-0">Dirección no seleccionada.</div>
+    <% end %>
+  </div>
+</div>
 
 <%= form_with url: checkout_complete_path, method: :post, local: true do %>
+  <% bank_account = SiteSetting.get('payment_bank_account', '0000000000') %>
+  <% oxxo_account = SiteSetting.get('payment_oxxo_number', '0000 0000 0000 0000') %>
   <div class="mb-3">
-    <%= label_tag :payment_method, "Método de pago" %>
-    <%= select_tag :payment_method, options_for_select([
-      ['Transferencia bancaria', 'transferencia_bancaria'],
-      ['Pago con tarjeta', 'tarjeta_de_credito'],
-      ['Pago en efectivo', 'efectivo']
-    ]), class: "form-select", required: true %>
+    <label class="form-label">Método de pago</label>
+    <div class="list-group">
+      <label class="list-group-item d-flex gap-3 align-items-start">
+        <input type="radio" name="payment_method" value="transferencia_bancaria" class="form-check-input mt-1" required>
+        <div>
+          <strong>Transferencia / Depósito bancario</strong><br>
+          <small class="text-muted">Cuenta: <code><%= bank_account %></code></small>
+        </div>
+      </label>
+      <label class="list-group-item d-flex gap-3 align-items-start">
+        <input type="radio" name="payment_method" value="oxxo" class="form-check-input mt-1" required>
+        <div>
+          <strong>Depósito en OXXO</strong><br>
+          <small class="text-muted">Número: <code><%= oxxo_account %></code></small>
+        </div>
+      </label>
+    </div>
   </div>
 
   <h5 class="mt-4">🧾 Resumen del pedido:</h5>
   <ul class="list-group mb-3">
+    <% pending_present = false %>
     <% @cart.items.each do |product, qty| %>
-      <li class="list-group-item d-flex justify-content-between align-items-center">
-        <%= product.product_name %> × <%= qty %>
-        <span><%= number_to_currency(product.selling_price * qty) %></span>
+      <% split = product.split_immediate_and_pending(qty) %>
+      <% pending_present ||= split[:pending].positive? %>
+      <li class="list-group-item">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <strong><%= product.product_name %></strong>
+            <div class="small text-muted">
+              <%= split[:immediate] %> inmediata(s)
+              <% if split[:pending].positive? %>
+                • <%= split[:pending] %> <%= split[:pending_type] == :preorder ? 'preventa' : 'sobre pedido' %>
+                <% if split[:pending_type] == :preorder %>
+                  <% res = PreorderReservation.where(product: product, user: current_user, status: :pending).order(:reserved_at).first %>
+                  <% if res&.position %> (posición <%= res.position %>)<% end %>
+                <% end %>
+              <% end %>
+            </div>
+          </div>
+          <span><%= number_to_currency(product.selling_price * qty) %></span>
+        </div>
       </li>
     <% end %>
+  <% shipping_cost = (shipping_info[:method] == 'express') ? 149 : 0 %>
+    <li class="list-group-item d-flex justify-content-between">
+      <span>Subtotal</span>
+      <span><%= number_to_currency(@cart.total) %></span>
+    </li>
+    <li class="list-group-item d-flex justify-content-between">
+      <span>Envío</span>
+      <span><%= shipping_cost.zero? ? 'Gratis' : number_to_currency(shipping_cost) %></span>
+    </li>
     <li class="list-group-item d-flex justify-content-between">
       <strong>Total</strong>
-      <strong><%= number_to_currency(@cart.total) %></strong>
+      <strong><%= number_to_currency(@cart.total + shipping_cost) %></strong>
     </li>
   </ul>
+  <% if pending_present %>
+    <div class="alert alert-warning small">
+      Algunas unidades no están disponibles de inmediato. Las de <strong>preventa</strong> se surtirán cuando el producto se lance y las de <strong>sobre pedido</strong> cuando se reciba nuevo stock. Te notificaremos.
+    </div>
+    <div class="form-check mb-4">
+      <input class="form-check-input" type="checkbox" value="1" id="accept_pending" name="accept_pending" required>
+      <label class="form-check-label" for="accept_pending">
+  Acepto los tiempos extendidos de entrega para las unidades en preventa / sobre pedido.
+      </label>
+    </div>
+  <% end %>
 
   <div class="text-end">
     <%= submit_tag "✅ Finalizar compra", class: "btn btn-success" %>

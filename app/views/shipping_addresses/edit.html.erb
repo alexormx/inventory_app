@@ -1,0 +1,48 @@
+<h1 class="mb-3">Editar dirección</h1>
+<%= form_with model: @address, local: true do |f| %>
+  <% if params[:return_to].present? %>
+    <%= hidden_field_tag :return_to, params[:return_to] %>
+  <% end %>
+  <div class="row g-2">
+    <div class="col-6">
+      <%= f.label :label, 'Etiqueta' %>
+      <%= f.text_field :label, class: 'form-control', placeholder: 'Casa / Oficina' %>
+    </div>
+    <div class="col-6">
+      <%= f.label :full_name, 'Nombre' %>
+      <%= f.text_field :full_name, class: 'form-control', required: true %>
+    </div>
+    <div class="col-12">
+      <%= f.label :line1, 'Dirección (línea 1)' %>
+      <%= f.text_field :line1, class: 'form-control', required: true %>
+    </div>
+    <div class="col-12">
+      <%= f.label :line2, 'Dirección (línea 2)' %>
+      <%= f.text_field :line2, class: 'form-control' %>
+    </div>
+    <div class="col-6">
+      <%= f.label :city, 'Ciudad' %>
+      <%= f.text_field :city, class: 'form-control', required: true %>
+    </div>
+    <div class="col-6">
+      <%= f.label :state, 'Estado' %>
+      <%= f.text_field :state, class: 'form-control' %>
+    </div>
+    <div class="col-6">
+      <%= f.label :postal_code, 'CP' %>
+      <%= f.text_field :postal_code, class: 'form-control', required: true %>
+    </div>
+    <div class="col-6">
+      <%= f.label :country, 'País' %>
+      <%= f.text_field :country, class: 'form-control', required: true %>
+    </div>
+    <div class="col-12 form-check mt-1">
+      <%= f.check_box :default, class: 'form-check-input', id: 'addr_default' %>
+      <%= f.label :default, 'Establecer como predeterminada', class: 'form-check-label' %>
+    </div>
+    <div class="col-12 d-flex justify-content-between mt-2">
+      <%= link_to 'Cancelar', shipping_addresses_path, class: 'btn btn-outline-secondary' %>
+      <%= f.submit 'Actualizar', class: 'btn btn-primary' %>
+    </div>
+  </div>
+<% end %>

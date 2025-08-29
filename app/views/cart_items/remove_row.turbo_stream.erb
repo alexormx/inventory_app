@@ -1,0 +1,42 @@
+<%# Elimina fila individual y actualiza totales y badge %>
+<%= turbo_stream.remove "cart_item_#{@product.id}" %>
+
+<%= turbo_stream.replace 'cart-total' do %>
+  <%= number_to_currency(@cart.total) %>
+<% end %>
+
+<%= turbo_stream.replace 'cart-count' do %>
+  <span id="cart-count" class="badge bg-danger rounded-pill position-absolute top-0 start-100 translate-middle"><%= @cart.item_count %></span>
+<% end %>
+
+<%= turbo_stream.replace 'cart-item-count' do %>
+  <span id="cart-item-count"><%= @cart.item_count %></span>
+<% end %>
+<%= turbo_stream.replace 'summary-subtotal' do %>
+  <strong id="summary-subtotal"><%= number_to_currency(@cart.subtotal) %></strong>
+<% end %>
+<% if @cart.tax_enabled? %>
+  <%= turbo_stream.replace 'summary-tax' do %>
+    <%= number_to_currency(@cart.tax_amount) %>
+  <% end %>
+<% else %>
+  <%= turbo_stream.remove 'summary-tax-row' %>
+<% end %>
+<%= turbo_stream.replace 'summary-shipping' do %>
+  <%= number_to_currency(@cart.shipping_cost) %>
+<% end %>
+<%= turbo_stream.replace 'summary-grand-total' do %>
+  <strong id="summary-grand-total"><%= number_to_currency(@cart.grand_total) %></strong>
+<% end %>
+
+<% if @cart.empty? %>
+  <%= turbo_stream.replace 'cart-items' do %>
+    <tr><td colspan="5" class="text-center text-muted py-4">Tu carrito quedó vacío. <%= link_to 'Explorar productos', catalog_path, class: 'ms-1' %></td></tr>
+  <% end %>
+  <%= turbo_stream.replace 'cart-summary-heading' do %>
+    Resumen
+  <% end %>
+  <%= turbo_stream.append 'flash-stack' do %>
+    <div class="alert alert-info flash-message" role="alert" data-timeout="3000">Carrito vacío.</div>
+  <% end %>
+<% end %>

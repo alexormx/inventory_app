@@ -1,0 +1,61 @@
+<%# Partial de fila de item en carrito - locals: product, quantity, cart %>
+<tr id="cart_item_<%= product.id %>" data-controller="cart-item" data-cart-item-product-id-value="<%= product.id %>">
+  <th scope="row">
+    <div class="d-flex align-items-center gap-2">
+      <% if product.product_images.attached? %>
+        <%= image_tag product.product_images.first.variant(resize_to_fill: [50,50]), alt: product.product_name, class: 'img-thumbnail' %>
+      <% else %>
+        <div class="rounded bg-light border d-flex align-items-center justify-content-center" style="width:50px;height:50px;font-size:.8rem;">📦</div>
+      <% end %>
+      <div class="d-flex flex-column">
+        <strong class="small mb-0"><%= product.product_name %></strong>
+  <% on_hand = product.current_on_hand %>
+  <div class="small mt-1"><%= stock_badge(product, quantity: quantity) %></div>
+        <% if (eta = stock_eta(product)) %>
+          <div class="small text-muted"><i class="fa fa-clock me-1"></i><%= eta %></div>
+        <% end %>
+        <% split = product.split_immediate_and_pending(quantity) %>
+        <% if split[:pending].positive? && split[:pending_type] %>
+          <% position = nil %>
+          <% if split[:pending_type] == :preorder %>
+            <% existing = PreorderReservation.where(product: product, user: current_user, status: :pending).order(:reserved_at).first %>
+            <% position = existing&.position %>
+          <% end %>
+          <span class="badge rounded-pill text-bg-warning mt-1" style="max-width: fit-content;">
+            <%= split[:pending_type] == :preorder ? 'Preventa: ' : 'Sobre pedido: ' %>
+            <%= split[:pending] %> pendiente(s)
+            <% if position %> · Posición <%= position %><% end %>
+          </span>
+        <% end %>
+      </div>
+    </div>
+  </th>
+  <td class="text-center">
+    <div class="input-group input-group-sm justify-content-center cart-qty-group" style="max-width: 140px;">
+      <button class="btn btn-outline-secondary px-2" type="button" aria-label="Disminuir" data-action="click->cart-item#decrease">−</button>
+      <input type="number" min="1" class="form-control text-center px-1" value="<%= quantity %>" data-cart-item-target="quantity" data-action="change->cart-item#quantityChanged" style="width: 50px;" aria-label="Cantidad">
+  <% disabled_increase = (on_hand <= quantity.to_i && !product.oversell_allowed?) %>
+  <button class="btn btn-outline-secondary px-2 <%= 'disabled' if disabled_increase %>" type="button" aria-label="Aumentar" data-action="click->cart-item#increase" <%= 'disabled' if disabled_increase %>>+</button>
+    </div>
+  </td>
+  <td class="text-end"><%= number_to_currency(product.selling_price) %></td>
+  <td class="text-end" data-cart-item-target="lineTotal" aria-live="polite">
+    <% split ||= product.split_immediate_and_pending(quantity) %>
+    <%= number_to_currency(product.selling_price * quantity) %>
+    <% if split[:pending].positive? %>
+      <div class="small text-muted mt-1">
+        <%= split[:immediate] %> inmediata(s)
+        <% if split[:pending_type] == :preorder %>
+          · <%= split[:pending] %> en preventa
+        <% elsif split[:pending_type] == :backorder %>
+          · <%= split[:pending] %> sobre pedido
+        <% end %>
+      </div>
+    <% end %>
+  </td>
+  <td class="text-end">
+    <%= button_to cart_item_path(product), method: :delete, params: { product_id: product.id }, class: 'btn btn-sm btn-link text-danger p-0', title: 'Eliminar', aria: { label: 'Eliminar producto' }, form: { data: { turbo_confirm: '¿Eliminar este producto?' }, class: 'd-inline' } do %>
+      <i class="fas fa-trash"></i><span class="visually-hidden">Eliminar</span>
+    <% end %>
+  </td>
+</tr>

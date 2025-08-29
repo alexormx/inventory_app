@@ -7,6 +7,8 @@ class SaleOrderItem < ApplicationRecord
   validates :quantity, presence: true, numericality: { greater_than: 0 }
   validates :unit_cost, presence: true, numericality: { greater_than_or_equal_to: 0 }
   validates :total_line_cost, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true
+  validates :preorder_quantity, :backordered_quantity, numericality: { greater_than_or_equal_to: 0 }
+  validate :pending_quantities_not_exceed_total
 
   after_save :sync_inventory_records, if: :saved_change_to_quantity?
   after_commit :update_product_stats
@@ -45,6 +47,14 @@ class SaleOrderItem < ApplicationRecord
 
   def missing_inventory_units
     [quantity.to_i - reserved_inventory_count, 0].max
+  end
+
+  def immediate_quantity
+    quantity.to_i - preorder_quantity.to_i - backordered_quantity.to_i
+  end
+
+  def pending?
+    preorder_quantity.to_i.positive? || backordered_quantity.to_i.positive?
   end
 
   # Guards de seguridad
@@ -110,6 +120,12 @@ class SaleOrderItem < ApplicationRecord
     SaleOrder.find_by(id: sale_order_id)&.recalculate_totals!(persist: true)
   rescue => e
     Rails.logger.error "[SOI#recalculate_parent_order_totals] #{e.class}: #{e.message}"
+  end
+
+  def pending_quantities_not_exceed_total
+    if preorder_quantity.to_i + backordered_quantity.to_i > quantity.to_i
+      errors.add(:base, "La suma de cantidades pendientes excede la cantidad total")
+    end
   end
 
   # FUTURO: Soporte para backorders

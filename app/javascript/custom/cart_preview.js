@@ -5,6 +5,7 @@
 
   let currentLink=null;
   let hideTimer=null;
+  const AUTOHIDE_DELAY=3000; // 3s
   let linkListenersInstalled=false;
 
   function currentPanel(){ return document.getElementById('cart-preview'); }
@@ -22,6 +23,20 @@
     setTimeout(()=>{ const p=currentPanel(); if(p && !p.classList.contains('show')) p.hidden=true; },200);
   }
 
+  let lastInteractionAt=0;
+  function scheduleHide(){
+    clearTimeout(hideTimer);
+    const panel=currentPanel(); if(!panel) return;
+    hideTimer=setTimeout(()=>{
+      const idleFor = Date.now()-lastInteractionAt;
+      if(idleFor < 400){ // si hubo interacción muy reciente, reprogramar una vez
+        scheduleHide();
+      } else {
+        hideImmediate();
+      }
+    }, AUTOHIDE_DELAY);
+  }
+
   function bindLink(){
     const link=document.querySelector('.site-navbar a[href*="/cart"]');
     if(!link) return;
@@ -32,10 +47,10 @@
     }
     // Preparar handlers y adjuntar
     const handlers={};
-    handlers['mouseenter']=show;
-    handlers['focus']=show;
-  handlers['mouseleave']=()=>{}; // desactivado auto-cierre
-  handlers['blur']=()=>{};
+  handlers['mouseenter']=()=>{ lastInteractionAt=Date.now(); show(); clearTimeout(hideTimer); };
+  handlers['focus']=()=>{ lastInteractionAt=Date.now(); show(); clearTimeout(hideTimer); };
+  handlers['mouseleave']=scheduleHide; // autohide
+  handlers['blur']=scheduleHide;
   ['mouseenter','focus','mouseleave','blur'].forEach(ev=> link.addEventListener(ev, handlers[ev]));
     link._cartPrevHandlers=handlers; // guardar en nodo para remover futuro
     currentLink=link;
@@ -48,20 +63,20 @@
       // no rebind necesario, ya está
       return;
     }
-    panel.addEventListener('mouseenter', show);
-  // Eliminamos cierre por mouseleave
+  panel.addEventListener('mouseenter', ()=>{ lastInteractionAt=Date.now(); show(); clearTimeout(hideTimer); });
+  panel.addEventListener('mouseleave', scheduleHide);
     panel.__hoverBound=true;
     // Evitar cierre al hacer click en botones internos
     panel.addEventListener('click', (e)=>{
       if(e.target.closest('form')){
-          panel.dataset.lockOpen='true';
+          lastInteractionAt=Date.now();
           show();
       }
     });
     // Interceptar submits internos para mantener abierto tras respuesta
     panel.addEventListener('submit', (e)=>{
       if(e.target.closest('.cart-mini-qty-form') || e.target.matches('form[action*="/cart_items/"]')){
-          panel.dataset.lockOpen='true';
+          lastInteractionAt=Date.now();
           show();
       }
     });
@@ -85,11 +100,13 @@
     // Fade superior basado en scroll
     const scrollBox = panel && panel.querySelector('.cart-preview-scroll');
     if(scrollBox && !scrollBox.__fadeBound){
-      const toggleFade=()=>{
+      const updateScrollState=()=>{
         if(scrollBox.scrollTop>2) scrollBox.classList.add('has-top-fade'); else scrollBox.classList.remove('has-top-fade');
+        if(scrollBox.scrollHeight>scrollBox.clientHeight+8) scrollBox.classList.add('is-scrollable'); else scrollBox.classList.remove('is-scrollable');
       };
-      scrollBox.addEventListener('scroll', toggleFade, {passive:true});
-      toggleFade();
+      scrollBox.addEventListener('scroll', updateScrollState, {passive:true});
+      window.addEventListener('resize', updateScrollState);
+      updateScrollState();
       scrollBox.__fadeBound=true;
     }
   }
@@ -144,3 +161,4 @@
     if(panel.matches(':hover')) show();
   }, {passive:true});
 })();
+

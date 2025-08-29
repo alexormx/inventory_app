@@ -45,22 +45,27 @@
       <h3 class="text-success fw-bold"><%= number_to_currency(@product.selling_price) %></h3>
 
       <% if @product.active? %>
+  <% on_hand = @product.current_on_hand %>
+        <div class="mb-2">
+          <%= stock_badge(@product) %>
+          <% if (eta = stock_eta(@product)) %>
+            <div class="small text-muted mt-1"><i class="fa fa-clock me-1"></i><%= eta %></div>
+          <% end %>
+        </div>
+  <% disabled = (on_hand <= 0 && !@product.oversell_allowed?) %>
         <%= button_to cart_items_path,
                       params: { product_id: @product.id },
                       method: :post,
-                      class: "btn btn-danger btn-lg my-3 w-100" do %>
-          <i class="fas fa-cart-plus"></i> Agregar al carrito
+                      class: "btn btn-danger btn-lg my-3 w-100 #{'disabled' if disabled}",
+                      disabled: disabled,
+                      title: (disabled ? 'Sin stock disponible' : 'Agregar al carrito') do %>
+          <i class="fas fa-cart-plus"></i> <%= disabled ? 'Sin stock' : 'Agregar al carrito' %>
         <% end %>
       <% else %>
+        <span class="badge bg-secondary mb-2">No disponible</span>
         <button class="btn btn-secondary btn-lg my-3 w-100" disabled>
           <i class="fas fa-ban"></i> No disponible
         </button>
-      <% end %>
-
-      <% if @product.status == "active" %>
-        <p class="text-success"><i class="fas fa-check-circle"></i> Disponible</p>
-      <% else %>
-        <p class="text-danger"><i class="fas fa-times-circle"></i> No disponible</p>
       <% end %>
     </div>
   </div>

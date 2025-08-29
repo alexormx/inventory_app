@@ -1,0 +1,32 @@
+<%# Reemplaza fila individual y totales tras update via Turbo %>
+<%= turbo_stream.replace "cart_item_#{@product.id}" do %>
+  <%= render 'carts/cart_item', product: @product, quantity: session[:cart][@product.id.to_s], cart: @cart %>
+<% end %>
+
+<%= turbo_stream.replace 'cart-total' do %>
+  <%= number_to_currency(@cart.total) %>
+<% end %>
+
+<%= turbo_stream.replace 'cart-count' do %>
+  <span id="cart-count" class="badge bg-danger rounded-pill position-absolute top-0 start-100 translate-middle"><%= @cart.item_count %></span>
+<% end %>
+
+<%= turbo_stream.replace 'cart-item-count' do %>
+  <span id="cart-item-count"><%= @cart.item_count %></span>
+<% end %>
+<%= turbo_stream.replace 'summary-subtotal' do %>
+  <strong id="summary-subtotal"><%= number_to_currency(@cart.subtotal) %></strong>
+<% end %>
+<% if @cart.tax_enabled? %>
+  <%= turbo_stream.replace 'summary-tax' do %>
+    <%= number_to_currency(@cart.tax_amount) %>
+  <% end %>
+<% else %>
+  <%= turbo_stream.remove 'summary-tax-row' %>
+<% end %>
+<%= turbo_stream.replace 'summary-shipping' do %>
+  <%= number_to_currency(@cart.shipping_cost) %>
+<% end %>
+<%= turbo_stream.replace 'summary-grand-total' do %>
+  <strong id="summary-grand-total"><%= number_to_currency(@cart.grand_total) %></strong>
+<% end %>

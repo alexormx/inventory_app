@@ -1,5 +1,5 @@
 <% cart_obj = (defined?(@cart) && @cart.present?) ? @cart : Cart.new(session) %>
-<div id="cart-preview" class="cart-preview" data-cart-preview hidden aria-live="polite" aria-label="Mini vista del carrito">
+<div id="cart-preview" class="cart-preview d-flex flex-column" data-cart-preview hidden aria-live="polite" aria-label="Mini vista del carrito">
   <div id="cart-preview-body">
     <%= render 'customers/partials/cart_preview_body', cart_obj: cart_obj %>
   </div>

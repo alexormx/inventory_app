@@ -166,6 +166,39 @@ class Product < ApplicationRecord
 
   public
 
+  # ---- Stock helpers para carrito / preorders ----
+  def current_on_hand
+    # Inventario disponible (puedes optimizar con counter cache luego)
+    Inventory.where(product_id: id, status: [:available]).count
+  end
+
+  def oversell_allowed?
+    backorder_allowed || preorder_available
+  end
+
+  def supply_mode
+    return :preorder if preorder_available
+    return :backorder if backorder_allowed
+    :stock
+  end
+
+  # Desglose de cantidades inmediata vs pendiente según flags
+  def split_immediate_and_pending(requested_qty)
+    requested = requested_qty.to_i
+    on_hand = current_on_hand
+    immediate = [requested, on_hand].min
+    pending  = requested - immediate
+    type = nil
+    if pending > 0
+      type = if preorder_available
+               :preorder
+             elsif backorder_allowed
+               :backorder
+             end
+    end
+    { requested: requested, on_hand: on_hand, immediate: immediate, pending: pending, pending_type: type }
+  end
+
   # ---- Dimensiones / Peso helpers ----
   # Volumen unitario en cm3 (length * width * height). Si falta algún dato retorna 0.
   def unit_volume_cm3

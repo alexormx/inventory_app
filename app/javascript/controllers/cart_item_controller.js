@@ -26,6 +26,7 @@ export default class extends Controller {
   }
 
   updateQuantity(qty) {
+    this.element.querySelector('.cart-qty-group')?.classList.add('loading')
     fetch(`/cart_items/${this.productIdValue}`, {
       method: 'PUT',
       headers: {
@@ -45,6 +46,11 @@ export default class extends Controller {
         if (cartTotalEl) cartTotalEl.textContent = data.cart_total
         const badge = document.getElementById('cart-count')
         if (badge) badge.textContent = data.total_items
+        const itemCount = document.getElementById('cart-item-count')
+        if (itemCount) itemCount.textContent = data.total_items
+      })
+      .finally(()=>{
+        this.element.querySelector('.cart-qty-group')?.classList.remove('loading')
       })
   }
 }
