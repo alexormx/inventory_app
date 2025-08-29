@@ -15,17 +15,7 @@
           <div class="small text-muted"><i class="fa fa-clock me-1"></i><%= eta %></div>
         <% end %>
         <% split = product.split_immediate_and_pending(quantity) %>
-        <% if split[:pending].positive? && split[:pending_type] %>
-          <% position = nil %>
-          <% if split[:pending_type] == :preorder %>
-            <% existing = PreorderReservation.where(product: product, user: current_user, status: :pending).order(:reserved_at).first %>
-            <% position = existing&.position %>
-          <% end %>
-          <span class="badge rounded-pill text-bg-warning mt-1" style="max-width: fit-content;">
-            <%= (split[:pending_type] == :preorder ? 'Preventa' : 'Sobre pedido') %>: <%= split[:pending] %>
-            <% if position %> · Posición <%= position %><% end %>
-          </span>
-        <% end %>
+  <%# Se omite badge adicional de preventa para evitar duplicación; posición podría mostrarse en tooltip futuro %>
       </div>
     </div>
   </th>
