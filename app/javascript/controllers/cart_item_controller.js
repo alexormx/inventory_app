@@ -105,6 +105,16 @@ export default class extends Controller {
             pendingLi.classList.add('d-none')
           }
         }
+        // Si vienen totales extendidos (destroy path), refrescarlos
+        if (data.subtotal) {
+          const summarySubtotal = document.getElementById('summary-subtotal'); if (summarySubtotal) summarySubtotal.textContent = data.subtotal
+        }
+        if (data.tax_amount) {
+          const summaryTax = document.getElementById('summary-tax'); if (summaryTax) summaryTax.textContent = data.tax_amount
+          const summaryTaxRow = document.getElementById('summary-tax-row'); if (summaryTaxRow && typeof data.tax_enabled !== 'undefined') { data.tax_enabled ? summaryTaxRow.classList.remove('d-none') : summaryTaxRow.classList.add('d-none') }
+        }
+        if (data.shipping_cost) { const summaryShipping = document.getElementById('summary-shipping'); if (summaryShipping) summaryShipping.textContent = data.shipping_cost }
+        if (data.grand_total) { const summaryGrand = document.getElementById('summary-grand-total'); if (summaryGrand) summaryGrand.textContent = data.grand_total }
       })
       .finally(()=>{
         this.element.querySelector('.cart-qty-group')?.classList.remove('loading')

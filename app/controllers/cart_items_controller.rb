@@ -126,9 +126,18 @@ class CartItemsController < ApplicationController
       end
   format.html { redirect_to cart_path }
       format.json do
+        pending_totals = aggregate_pending
         render json: {
           cart_total: helpers.number_to_currency(@cart.total),
-          total_items: session[:cart].values.sum
+          subtotal: helpers.number_to_currency(@cart.subtotal),
+          tax_amount: helpers.number_to_currency(@cart.tax_amount),
+          shipping_cost: helpers.number_to_currency(@cart.shipping_cost),
+          grand_total: helpers.number_to_currency(@cart.grand_total),
+          tax_enabled: @cart.tax_enabled?,
+          total_items: session[:cart].values.sum,
+          summary_pending_total: pending_totals[:pending_total],
+          summary_preorder_total: pending_totals[:preorder_total],
+          summary_backorder_total: pending_totals[:backorder_total]
         }
       end
     end

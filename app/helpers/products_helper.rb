@@ -26,7 +26,7 @@ module ProductsHelper
 					else
 						tip = "Sin fecha de lanzamiento confirmada · Disponible en ~90 días después de confirmar"
 					end
-					["Preorden", "bg-warning text-dark", tip]
+					["Preventa", "bg-warning text-dark", tip]
 			elsif product.backorder_allowed
 				["Sobre pedido", "bg-info text-dark", "Se solicitará al proveedor. Disponible aprox en #{backorder_eta} días tras confirmar"]
 			else

@@ -38,7 +38,7 @@
     <% end %>
   </td>
   <td class="text-end">
-    <%= button_to cart_item_path(product), method: :delete, params: { product_id: product.id }, class: 'btn btn-sm btn-link text-danger p-0', title: 'Eliminar', aria: { label: 'Eliminar producto' }, form: { data: { turbo_confirm: '¿Eliminar este producto?' }, class: 'd-inline' } do %>
+  <%= button_to cart_item_path(product), method: :delete, params: { product_id: product.id }, class: 'btn btn-sm btn-link text-danger p-0', title: 'Eliminar', aria: { label: 'Eliminar producto' }, form: { data: { controller: 'confirm', action: 'submit->confirm#ask', confirm_message_value: '¿Eliminar este producto?' }, class: 'd-inline' } do %>
       <i class="fas fa-trash"></i><span class="visually-hidden">Eliminar</span>
     <% end %>
   </td>
