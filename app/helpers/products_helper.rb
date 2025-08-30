@@ -61,6 +61,24 @@ module ProductsHelper
 		end
 end
 
+# Helper genérico para servir imágenes estáticas (app/assets/images) en `<picture>` con WebP/AVIF si existen.
+# Uso: responsive_asset_image('collection_shelf.jpg', alt: 'Colección', widths: [480, 768, 1200])
+def responsive_asset_image(filename, alt:, widths: [480,768,1200], class: "", loading: 'lazy')
+	base_name = filename.sub(/\.[^.]+$/,'')
+	ext = File.extname(filename)
+	# Asumimos compilación por asset pipeline; generamos paths relativos.
+	# (Opcional: Pre-generar versiones WebP/AVIF fuera de pipeline manualmente)
+	sources = []
+	%w[avif webp].each do |fmt|
+		candidate = asset_path("#{base_name}.#{fmt}") rescue nil
+		next unless candidate
+		srcset = widths.map { |w| "#{candidate}?w=#{w} #{w}w" }.join(', ')
+		sources << content_tag(:source, nil, type: "image/#{fmt}", srcset: srcset, sizes: "(max-width: 1200px) 100vw, 1200px")
+	end
+	fallback = image_tag filename, alt: alt, class: class, loading: loading, decoding: 'async'
+	content_tag :picture, safe_join(sources) + fallback
+end
+
 # Formatea fecha como DD-MesAbrev-YYYY en español (e.g. 28-Ago-2025)
 def spanish_short_date(date)
 	return '' unless date
