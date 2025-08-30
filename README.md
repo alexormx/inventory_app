@@ -1,177 +1,143 @@
-# 📌 **Rails Inventory WebApp Progress Update**
+# 🧰 Pasatiempos a Escala – Inventario & E‑Commerce (Rails 8)
 
-## 🚀 **Project Overview**
-This document provides an updated progress report on the Rails Inventory WebApp, including completed tasks, current state, and next steps. The project is being developed using Rails 8.0.1, Ruby 3.2.2, and PostgreSQL, with Devise for authentication and Bootstrap for styling. The development follows an agile approach, with tasks broken down into sprints.
-
----
-
-## ✅ **Completed Tasks (Sprint 1)**
-
-### **Task 1.1: Configure Devise (Authentication)**
-- **Status:** Completed
-- **Details:**
-  - Devise installed and configured.
-  - Custom fields (`role`, `name`, `contact_name`, `phone`, `address`) integrated with Devise.
-  - Roles (`admin`, `customer`) implemented and validated.
-  - RSpec tests for user sign-up, login/logout, and role assignment implemented and passing.
-
-### **Task 1.2: Set Up Admin Dashboard Controller**
-- **Status:** Completed
-- **Details:**
-  - Admin dashboard controller created under the `admin` namespace.
-  - Routes configured for admin dashboard access.
-  - Authorization logic implemented to restrict access to admin users only.
-  - RSpec tests for dashboard access control (admin vs. non-admin) implemented and passing.
+Aplicación Rails 8 / Ruby 3.2.3 con enfoque en catálogo, carrito y gestión de inventario para productos coleccionables. Incluye optimizaciones recientes de rendimiento (imágenes responsive, carga diferida, modal de confirmación personalizada y actualización dinámica del carrito).
 
 ---
-
-## 📌 **Current State**
-
-- **Rails Version:** 8.0.1
-- **Ruby Version:** 3.2.3
-- **Database:** SQLite (development & test), PostgreSQL (production)
-- **Authentication:** Devise with role-based access control (admin, customer).
-
-### **Admin Dashboard**
-- **Controller:** `Admin::DashboardController` with `index` action.
-- **Authorization:** Only admin users can access the dashboard.
-- **Routes:** Namespaced under `admin` with `get 'dashboard', to: 'dashboard#index'`.
-
-### **Testing**
-- **RSpec Tests:**
-  - Authentication: User registration, login/logout, role assignment.
-  - Dashboard Access: Admin access allowed, non-admin access denied.
-- **Capybara Tests:** Basic UI integration tests for Bootstrap styles and navigation links.
+## 🔑 Stack Principal
+| Área | Tecnología |
+|------|------------|
+| Framework | Rails 8.0.1 (Propshaft + Importmap + Hotwire) |
+| Ruby | 3.2.3 |
+| DB dev/test | SQLite |
+| DB prod | PostgreSQL |
+| Autenticación | Devise + roles (admin / customer) |
+| Background / Cache | solid_queue / solid_cache / redis |
+| Imágenes dinámicas | ActiveStorage + mini_magick + image_processing |
+| Estilos | Bootstrap 5.3 + Sass |
+| Tests | RSpec, Capybara, FactoryBot |
 
 ---
-
-## 📌 **Next Steps (Sprint 1 Remaining Tasks)**
-
-### **Task 1.3: Choose & Set Up CSS Framework**
-- **Status:** In Progress
-- **Next Steps:**
-  - Add Bootstrap gem: `bundle add bootstrap`.
-  - Import Bootstrap in `application.scss`: `@import "bootstrap";`.
-  - Test Bootstrap installation by adding a simple styled button or navbar to the admin dashboard view.
-
-### **Task 1.4: Admin Dashboard Basic View**
-- **Status:** Not Started
-- **Next Steps:**
-  - Create a clear and simple admin dashboard layout (`app/views/admin/dashboard/index.html.erb`).
-  - Integrate responsive layout using Bootstrap classes.
-  - Add navigation links for future features (Products, Inventory, Sales Orders, etc.).
-
-### **Task 1.5: Push Changes to GitHub & Deploy to Heroku**
-- **Status:** Not Started
-- **Next Steps:**
-  - Push the `feature/admin-dashboard` branch to GitHub.
-  - Merge to `main` via Pull Request.
-  - Deploy to Heroku:
-    ```bash
-    git checkout main
-    git pull origin main
-    git push heroku main
-    heroku run rails db:migrate
-    ```
+## ✅ Features Clave Implementadas
+1. Autenticación y roles (Devise) con campos adicionales de perfil.
+2. Dashboard administrador y secciones de inventario / productos (en progreso iterativo).
+3. Catálogo público con paginación (`kaminari`) y filtros básicos.
+4. Carrito con actualización dinámica (Stimulus + respuestas JSON):
+  - Recalcula subtotal, impuestos, envío, totales y desglose de pendientes en vivo.
+  - Elimina duplicidad de badges (preventa / sobre pedido) mostrando badge unificado.
+5. División disponibilidad: helper `stock_badge` y `stock_eta` calculan inmediato vs. preorder/backorder.
+6. Modal de confirmación reutilizable (Stimulus `confirm_controller`) reemplaza `data-turbo-confirm`.
+7. Galería de producto con cambio de imagen principal (Stimulus `gallery_controller`).
+8. Optimización de imágenes:
+  - Helpers responsive: `responsive_asset_image` (estáticas) y `responsive_attachment_image` (ActiveStorage).
+  - Generación condicional de `<picture>` con fuentes AVIF/WebP si existen.
+  - `fetchpriority="high"` y `<link rel="preload">` para LCP en show de producto.
+  - Lazy loading + `decoding="async"` + dimensiones calculadas para evitar CLS.
+  - Rake task para pre-generar variantes modernas en assets estáticos.
+9. Banner de cookies configurable vía variables de entorno.
+10. SEO básico: meta tags OG/Twitter, sitemap (`sitemap_generator`), `robots.txt`.
 
 ---
+## 🖼️ Helpers de Imágenes Responsive
+### 1. Assets estáticos
+```erb
+<%= responsive_asset_image 'collection_shelf.jpg', alt: 'Colección', css_class: 'img-fluid', aspect_ratio: '16:9', widths: [480,768,1200] %>
+```
+Genera `<picture>` con `<source>` AVIF/WebP si `collection_shelf.avif|webp` existen, y fallback `<img>` con atributos de accesibilidad y rendimiento.
 
-## 📌 **Sprint 1 Test Cases (RSpec)**
-
-### **Authentication Tests (Devise)**
-- User registration, login, logout.
-- Role assignment (admin vs. customer).
-
-### **Dashboard Access Control Tests**
-- Admin user access allowed.
-- Non-admin users denied (redirected or shown alert).
-
-### **Basic UI Integration Tests (Capybara)**
-- Verify Bootstrap styles appear correctly.
-- Verify all navigation links are present.
-
----
-
-## 📌 **Sprint Completion Criteria**
-
-- **Authentication & Authorization:** Fully operational.
-- **Admin Dashboard:** Accessible only to admin users.
-- **Bootstrap UI Framework:** Successfully integrated and functional.
-- **Testing:** All related tests passing.
-- **Deployment:** Changes pushed to GitHub and deployed successfully on Heroku.
+### 2. ActiveStorage (productos)
+```erb
+<%= responsive_attachment_image product.product_images.first,
+    alt: product.product_name,
+    widths: [160,200,320,400],
+    css_class: 'product-image',
+    square: true %>
+```
+Produce variantes on‑demand (limitadas por ancho) y fuentes modernas si mini_magick soporta el formato.
 
 ---
-
-## 📌 **Next Suggested Sprints**
-
-### **Sprint 2: Admin Product Management (CRUD Actions and Views)**
-- **Objective:** Implement CRUD operations for product management in the admin dashboard.
-- **Tasks:**
-  - Create database migrations for products.
-  - Implement Product model with validations.
-  - Create `Admin::ProductsController` with CRUD actions.
-  - Implement views for product management.
-  - Write RSpec tests for Product model and controller.
-
-### **Sprint 3: Inventory Management (Individual Item Tracking)**
-- **Objective:** Implement inventory management features, including individual item tracking.
-- **Tasks:**
-  - Create database migrations for inventory.
-  - Implement Inventory model with validations.
-  - Create `Admin::InventoryController` with CRUD actions.
-  - Implement views for inventory management.
-  - Write RSpec tests for Inventory model and controller.
-
-### **Sprint 4: Orders Management (Sales & Purchase)**
-- **Objective:** Implement order management features for sales and purchase orders.
-- **Tasks:**
-  - Create database migrations for orders.
-  - Implement Order models (SalesOrder, PurchaseOrder) with validations.
-  - Create `Admin::OrdersController` with CRUD actions.
-  - Implement views for order management.
-  - Write RSpec tests for Order models and controller.
-
-### **Sprint 5: Payments & Shipments Tracking**
-- **Objective:** Implement payment and shipment tracking features.
-- **Tasks:**
-  - Create database migrations for payments and shipments.
-  - Implement Payment and Shipment models with validations.
-  - Create `Admin::PaymentsController` and `Admin::ShipmentsController` with CRUD actions.
-  - Implement views for payment and shipment tracking.
-  - Write RSpec tests for Payment and Shipment models and controllers.
-
-### **Sprint 6 & 7: Customer Interface (Catalog & Shopping Cart)**
-- **Objective:** Implement customer-facing features, including product catalog and shopping cart.
-- **Tasks:**
-  - Create database migrations for customer-related features.
-  - Implement Customer model with validations.
-  - Create `Customer::ProductsController` and `Customer::CartController` with necessary actions.
-  - Implement views for product catalog and shopping cart.
-  - Write RSpec tests for Customer models and controllers.
-
-### **Sprint 8: Security & Performance Optimization, Final Deployment**
-- **Objective:** Optimize security and performance, and finalize deployment.
-- **Tasks:**
-  - Implement security best practices (e.g., SSL, secure headers).
-  - Optimize database queries and application performance.
-  - Conduct final testing and bug fixes.
-  - Deploy the final version to Heroku.
+## ⚙️ Tarea para Generar AVIF/WebP en Assets
+Convierte imágenes grandes (>.150KB) en `app/assets/images` a `*.avif` y `*.webp` si no existen.
+```bash
+bin/rails images:generate_modern_formats
+```
+Luego precompilar (si aplica) o reiniciar el servidor para que se detecten.
 
 ---
+## 🛒 Carrito Dinámico
+- Controlador Stimulus `cart-item` escucha cambios de cantidad y destruye ítems vía fetch/Turbo Streams.
+- Respuesta JSON del backend incluye totales globales y desglose de inmediato vs. pendiente.
+- Accesibilidad: región `aria-live` en totales de línea.
 
-## 🚀 **Next step we will start with Sprint 2**
-Let's proceed with **Sprint 2: Admin Product Management**. If you have any questions or need further adjustments, please let me know! 🚀
+---
+## 🔐 Disponibilidad / Etiquetas de Stock
+`stock_badge(product, quantity:)` produce un solo badge coherente (En stock / Preventa / Sobre pedido / Fuera de stock) con tooltip + nota de pendientes opcional.
 
-## 🚀 SEO Improvements
-- Meta tags for description, canonical URL, and Open Graph have been added to layouts.
-- `sitemap_generator` gem generates `sitemap.xml.gz`; run `rake sitemap:generate`.
-- `robots.txt` references the sitemap to help search engines crawl the site.
+---
+## 🧪 Testing (Resumen Actual)
+- Autenticación / roles (RSpec).
+- Controladores básicos admin.
+- (Pendiente ampliar) pruebas para helpers de imágenes y carrito.
 
-## 🍪 Cookie Banner Configuration
-The cookie banner text and button label can be customized, or the banner can be disabled entirely, using environment variables:
+---
+## 🚀 Roadmap Próximo (Short-Term)
+| Prioridad | Ítem | Objetivo |
+|-----------|------|----------|
+| Alta | Medir impacto Lighthouse (performance, LCP, CLS) | Verificar ganancias tras imágenes responsive |
+| Alta | Añadir tests de helpers (`responsive_*`) | Evitar regresiones |
+| Media | Pre-cálculo de variantes críticas en deploy | Reducir primer tiempo de generación |
+| Media | Mejorar regeneración dinám. de `<source>` en galería | Mantener formatos modernos al cambiar imagen |
+| Media | Instrumentar logging de tiempos de variante | Identificar imágenes lentas |
+| Baja | i18n de tooltips adicionales | Consistencia multi-idioma |
 
-- `COOKIE_BANNER_ENABLED` – set to `false` to hide the banner (default: `true`).
-- `COOKIE_BANNER_TEXT` – message displayed to users (default shown in Spanish).
-- `COOKIE_BANNER_BUTTON_TEXT` – label for the acceptance button (default: `Aceptar`).
+---
+## 📝 Variables de Entorno Destacadas
+| Variable | Descripción | Default |
+|----------|-------------|---------|
+| COOKIE_BANNER_ENABLED | Mostrar banner cookies | true |
+| COOKIE_BANNER_TEXT | Texto banner | Español por defecto |
+| COOKIE_BANNER_BUTTON_TEXT | Texto botón | Aceptar |
+| PREORDER_ETA_DAYS / BACKORDER_ETA_DAYS (SiteSetting) | Cálculo ETA | 60 |
 
-These variables allow tailoring the cookie notice to local regulations without changing application code.
+---
+## 🧪 Comandos Útiles
+```bash
+# Ejecutar servidor desarrollo (Procfile.dev si se usa foreman)
+bin/dev
+
+# Generar variantes modernas assets
+bin/rails images:generate_modern_formats
+
+# Sitemap
+bin/rails sitemap:generate
+
+# Tests
+bundle exec rspec
+```
+
+---
+## ♿ Accesibilidad / UX
+- Botones con `aria-label` en carrito y acciones clave.
+- Eliminado uso de confirm nativo; modal accesible con cierre por ESC y click en backdrop.
+- Etiquetas alt consistentes para todas las imágenes generadas por helpers.
+
+---
+## 🔒 Seguridad / Buenas Prácticas
+- CSRF y CSP tags activos.
+- Uso de `allow_browser versions: :modern` para reducir superficie legacy.
+- Limpieza silenciosa de errores en procesamiento de imágenes evitando caídas front.
+
+---
+## 📈 Métricas a Monitorear (sugerido)
+- LCP: imagen principal de producto / primera card en home.
+- CLS: verificar tras widths/height calculados.
+- Transfer size total de homepage antes/después (objetivo < 500KB inicial).
+
+---
+## 🤝 Contribuir
+1. Crear rama `feat/...` o `fix/...`.
+2. Ejecutar tests y Lighthouse local si cambia UI.
+3. Pull Request con descripción de impacto (UX, perf, seguridad).
+
+---
+## ✨ Créditos
+Proyecto interno Pasatiempos a Escala. Uso educativo y de demostración de mejores prácticas Rails + optimización de frontend sin empaquetadores pesados.

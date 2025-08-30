@@ -38,8 +38,11 @@
           <% end %>
           <%= link_to product_path(product), class: "d-block p-2" do %>
             <% if product.product_images.attached? %>
-              <%= image_tag product.product_images.first.variant(resize_to_limit: [200, 200]),
-                            class: "product-image mx-auto d-block", alt: product.product_name %>
+      <%= responsive_attachment_image product.product_images.first,
+        alt: product.product_name,
+        widths: [160,200,320,400],
+        css_class: "product-image mx-auto d-block",
+        square: true %>
             <% else %>
               <%= image_tag "placeholder.png", class: "product-image mx-auto d-block", alt: "Imagen no disponible" %>
             <% end %>

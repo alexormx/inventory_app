@@ -1,14 +1,22 @@
 <div class="container my-5" id="product-gallery">
+  <%# Preload LCP (imagen principal) %>
+  <% if @product.product_images.attached? %>
+    <% content_for :lcp_image do %>
+      <link rel="preload" as="image" href="<%= url_for(@product.product_images.first.variant(resize_to_limit: [600,600])) %>" imagesrcset="<%= [320,480,600,800].map { |w| "#{url_for(@product.product_images.first.variant(resize_to_limit: [w,w]))} #{w}w" }.join(', ') %>" imagesizes="(max-width: 800px) 100vw, 800px" fetchpriority="high">
+    <% end %>
+  <% end %>
   <div class="row g-4">
 
     <!-- Image Gallery -->
     <div class="col-lg-5">
-      <% if @product.product_images.attached? %>
-        <div class="position-relative">
-          <%= image_tag @product.product_images.first.variant(resize_to_limit: [600, 600]),
-                        id: "main-image",
-                        class: "img-fluid rounded shadow-sm border",
-                        data: { index: 0 } %>
+  <% if @product.product_images.attached? %>
+  <div class="position-relative" data-controller="gallery">
+      <%= responsive_attachment_image @product.product_images.first,
+        alt: @product.product_name,
+        widths: [320,480,600,800],
+        css_class: "img-fluid rounded shadow-sm border",
+        square: true,
+        fetch_priority: 'high' %>
 
           <button id="prev-btn" class="btn btn-light position-absolute top-50 start-0 translate-middle-y shadow-sm">
             &lsaquo;
@@ -18,16 +26,14 @@
           </button>
         </div>
 
-        <div class="d-flex flex-wrap gap-2 mt-3">
+  <div class="d-flex flex-wrap gap-2 mt-3" data-gallery-target="thumbnails">
           <% @product.product_images.each_with_index do |img, index| %>
-            <%= image_tag img.variant(resize_to_limit: [80, 80]),
-                          class: "thumbnail-image img-thumbnail #{'border-primary' if index == 0}",
-                          alt: "Miniatura",
-                          loading: "lazy",
-                          data: {
-                            index: index,
-                            large: url_for(img.variant(resize_to_limit: [600, 600]))
-                          } %>
+            <% thumb_variant = img.variant(resize_to_limit: [80,80]) %>
+    <%= image_tag thumb_variant,
+      class: "thumbnail-image img-thumbnail #{'border-primary' if index == 0}",
+      alt: "Miniatura",
+      loading: "lazy",
+      data: { index: index, action: 'click->gallery#show', gallery_large_value: url_for(img.variant(resize_to_limit: [800,800])) } %>
           <% end %>
         </div>
       <% else %>
