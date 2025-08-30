@@ -9,14 +9,21 @@ module.exports = {
       ],
       numberOfRuns: 1,
       headless: true,
-      startServerCommand: 'RAILS_ENV=production bundle exec rails server -p 4000'
+      startServerCommand: 'RAILS_ENV=production bundle exec rails server -p 4000',
+      budgetsFile: 'lighthouse-budgets.json'
     },
     assert: {
       assertions: {
   'categories:performance': ['error', { minScore: 0.85 }],
         'categories:accessibility': ['warn', { minScore: 0.90 }],
         'categories:seo': ['warn', { minScore: 0.90 }],
-        'uses-responsive-images': 'off' // ya controlamos manualmente
+        // Métricas core
+        'largest-contentful-paint': ['error', { maxNumericValue: 2500 }],   // ms
+        'cumulative-layout-shift': ['error', { maxNumericValue: 0.1 }],
+        // Peso total (warning si excede)
+        'total-byte-weight': ['warn', { maxNumericValue: 550000 }],
+        // Ya controlado manualmente por nuestros helpers
+        'uses-responsive-images': 'off'
       }
     },
     upload: {

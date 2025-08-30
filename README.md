@@ -117,6 +117,12 @@ bundle exec rspec
 LH_PRODUCT_PATH=http://127.0.0.1:4000/products/1 npx lhci autorun
 ```
 
+### Budgets Lighthouse
+Definidos en `lighthouse-budgets.json` para limitar peso total e imágenes; assertions extra agregadas:
+- LCP ≤ 2500ms
+- CLS ≤ 0.1
+- Total transfer home ≤ ~550KB (warning si supera)
+
 ---
 ## ♿ Accesibilidad / UX
 - Botones con `aria-label` en carrito y acciones clave.
