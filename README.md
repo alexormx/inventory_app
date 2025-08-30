@@ -112,6 +112,9 @@ bin/rails sitemap:generate
 
 # Tests
 bundle exec rspec
+
+# Lighthouse CI (local)
+LH_PRODUCT_PATH=http://127.0.0.1:4000/products/1 npx lhci autorun
 ```
 
 ---
