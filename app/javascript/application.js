@@ -26,6 +26,8 @@ application.register("tabs", TabsController)
 
 import SubtabsController from "./controllers/subtabs_controller"
 application.register("subtabs", SubtabsController)
+import ConfirmController from "./controllers/confirm_controller"
+application.register("confirm", ConfirmController)
 
 // Remove Stimulus dropdown controller (using vanilla JS now)
 // import DropdownController from "./controllers/dropdown_controller"

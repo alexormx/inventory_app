@@ -1,0 +1,14 @@
+<% pending_total = 0; preorder_total = 0; backorder_total = 0; @cart.items.each do |product, qty| split = product.split_immediate_and_pending(qty); pending_total += split[:pending]; preorder_total += (split[:pending_type] == :preorder ? split[:pending] : 0); backorder_total += (split[:pending_type] == :backorder ? split[:pending] : 0); end %>
+<% if pending_total > 0 %>
+  <li class="d-flex justify-content-between text-warning" id="cart-pending-summary" aria-live="polite">
+    <span>Pendientes (<%= pending_total %>)</span>
+    <span class="small">
+      <% parts = [] %>
+      <% parts << "Preventa: #{preorder_total}" if preorder_total > 0 %>
+      <% parts << "Sobre pedido: #{backorder_total}" if backorder_total > 0 %>
+      <%= parts.join(' · ') %>
+    </span>
+  </li>
+<% else %>
+  <li id="cart-pending-summary" class="d-none"></li>
+<% end %>
