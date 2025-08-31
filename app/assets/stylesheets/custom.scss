@@ -29,6 +29,13 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+.line-clamp { /* utilidad genérica 3 líneas */
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
 .product-desc {
   min-height: 3.6em; /* aprox 3 líneas */
 }

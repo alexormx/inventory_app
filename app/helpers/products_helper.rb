@@ -172,4 +172,20 @@ module ProductsHelper
 	rescue
 		url
 	end
+
+	# Costo pronosticado de restock: si el reorder_point es mayor que el stock actual
+	# utiliza average_purchase_cost; fallback a last_purchase_cost; si no hay datos -> 0
+	def predicted_restock_cost(product)
+		on_hand = product.current_on_hand
+		return 0 unless product.reorder_point.present? && product.reorder_point.to_i > on_hand
+		pending_units = product.reorder_point.to_i - on_hand
+		unit_cost = if product.average_purchase_cost.to_f > 0
+			product.average_purchase_cost
+		elsif product.last_purchase_cost.to_f > 0
+			product.last_purchase_cost
+		else
+			0
+		end
+		(pending_units * unit_cost.to_d).round(2)
+	end
 end
