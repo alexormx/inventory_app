@@ -44,6 +44,22 @@
         <td></td>
         <td class="text-end"><%= number_to_currency(total) %></td>
       </tr>
+      <% shipping = (@sale_order.shipping_cost || 0).to_d %>
+      <% grand_total = (total + shipping).round(2) %>
+      <% if shipping.positive? %>
+        <tr class="table-primary fw-semibold">
+          <td></td>
+          <td class="text-end">Envío</td>
+          <td></td>
+          <td class="text-end"><%= number_to_currency(shipping) %></td>
+        </tr>
+      <% end %>
+      <tr class="table-primary fw-bold">
+        <td></td>
+        <td class="text-end">Total</td>
+        <td></td>
+        <td class="text-end"><%= number_to_currency(grand_total) %></td>
+      </tr>
     </tbody>
   </table>
 
