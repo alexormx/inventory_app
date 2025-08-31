@@ -1,0 +1,109 @@
+<%# Resumen compacto de pedido para enviar totales al cliente %>
+<h1 class="h5 mb-3">Resumen de Pedido <%= @order.id %></h1>
+
+<div class="mb-2 small text-muted">Fecha: <%= l(@order.order_date, format: :long) %></div>
+
+<table class="table table-sm table-bordered align-middle mb-2 order-summary-table">
+  <thead class="table-primary text-dark">
+    <tr>
+      <th style="width:55px">Cantid.</th>
+      <th>Producto</th>
+      <th style="width:100px" class="text-end">Costo unit</th>
+      <th style="width:110px" class="text-end">Costo Total</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% total = 0 %>
+    <% @order.sale_order_items.includes(product: [product_images_attachments: :blob]).each do |item| %>
+      <% prod = item.product %>
+      <% line_total = item.total_line_cost %>
+      <% total += line_total %>
+      <tr>
+        <td class="text-center"><%= item.quantity %></td>
+        <td>
+          <div class="d-flex align-items-center gap-2">
+            <% if prod&.product_images&.attached? %>
+              <% image = prod.product_images.first %>
+              <%= image_tag image.variant(resize_to_fill: [36,36]).processed, class: "rounded border", alt: prod.product_name %>
+            <% else %>
+              <div class="placeholder rounded border bg-light d-flex align-items-center justify-content-center" style="width:36px;height:36px;font-size:.55rem;">N/A</div>
+            <% end %>
+            <div class="flex-grow-1">
+              <strong class="small d-block"><%= prod&.product_name || 'Producto eliminado' %></strong>
+              <span class="text-muted extra-small" title="WhatsApp Code"><%= prod&.whatsapp_code %></span>
+            </div>
+          </div>
+        </td>
+        <td class="text-end"><%= number_to_currency(item.unit_final_price) %></td>
+        <td class="text-end"><%= number_to_currency(line_total) %></td>
+      </tr>
+    <% end %>
+    <tr class="table-primary fw-semibold">
+      <td class="text-center"></td>
+      <td class="text-end">Sub-Total</td>
+      <td class="text-end"></td>
+      <td class="text-end"><%= number_to_currency(total) %></td>
+    </tr>
+    <% shipping = (@order.shipping_cost || 0).to_d %>
+    <% grand_total = (total + shipping).round(2) %>
+    <% if shipping.positive? %>
+      <tr class="table-primary fw-semibold">
+        <td></td>
+        <td class="text-end">Envío</td>
+        <td></td>
+        <td class="text-end"><%= number_to_currency(shipping) %></td>
+      </tr>
+    <% end %>
+    <tr class="table-primary fw-bold">
+      <td></td>
+      <td class="text-end">Total</td>
+      <td></td>
+      <td class="text-end"><%= number_to_currency(grand_total) %></td>
+    </tr>
+  </tbody>
+</table>
+
+<%# Mensaje envío justo abajo de la tabla %>
+<% if @order.shipment.present? %>
+  <div class="alert alert-warning py-1 px-2 small mb-2">
+    <i class="fa fa-truck me-1"></i>Envío por <strong><%= @order.shipment.carrier %></strong>
+  </div>
+<% else %>
+  <div class="alert alert-warning py-1 px-2 small mb-2">
+    <i class="fa fa-truck me-1"></i>Aún no se ha seleccionado un método de entrega.
+  </div>
+<% end %>
+
+<div class="d-flex gap-2 mb-2">
+  <%= link_to 'Ver detalle completo', order_path(@order), class: 'btn btn-outline-secondary btn-sm' %>
+  <%= link_to 'Volver a mis pedidos', orders_path, class: 'btn btn-outline-primary btn-sm' %>
+</div>
+
+<%# Pagos %>
+<% completed_payments = @order.payments.where(status: 'Completed').order(:paid_at) %>
+<% if completed_payments.any? %>
+  <div class="card mt-3 border-0 shadow-sm">
+    <div class="card-body py-2">
+      <h6 class="mb-2 fw-semibold">Pagos recibidos</h6>
+      <ul class="list-unstyled small mb-0">
+        <% completed_payments.each do |p| %>
+          <li class="d-flex justify-content-between">
+            <span><i class="fa fa-check-circle text-success me-1"></i><%= p.payment_method.to_s.humanize %> (<%= l(p.paid_at, format: :short) if p.paid_at %>)</span>
+            <strong><%= number_to_currency(p.amount) %></strong>
+          </li>
+        <% end %>
+      </ul>
+      <div class="mt-2 text-end small text-muted">Total pagado: <strong><%= number_to_currency(@order.total_paid) %></strong></div>
+    </div>
+  </div>
+<% end %>
+
+<%# (mensaje ya incluido arriba) %>
+
+<style>
+.order-summary-table thead th { font-size:.72rem; letter-spacing:.4px; padding:.35rem .45rem; }
+.order-summary-table tbody td { font-size:.75rem; padding:.35rem .45rem; }
+.order-summary-table tbody td:first-child { font-weight:600; }
+.order-summary-table .extra-small { font-size:.6rem; }
+.order-summary-table img.rounded.border { background:#fff; }
+</style>

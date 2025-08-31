@@ -116,7 +116,7 @@
           <% end %>
         </td>
         <td class="text-end"><%= "#{so.discount}%" if so.discount.present? %></td>
-        <td class="text-end">
+        <td class="text-end d-flex gap-1 justify-content-end">
           <%= link_to admin_sale_order_path(so), class: "btn btn-sm btn-outline-secondary" do %>
             <i class="fa fa-eye"></i>
           <% end %>
@@ -128,6 +128,9 @@
                         form: { data: { turbo_confirm: "Are you sure?" }, class: "d-inline" },
                         class: "btn btn-sm btn-outline-danger" do %>
             <i class="fa fa-trash"></i>
+          <% end %>
+          <%= link_to summary_admin_sale_order_path(so), class: "btn btn-sm btn-primary", title: "Resumen compacto" do %>
+            <i class="fa fa-list"></i>
           <% end %>
         </td>
       </tr>
