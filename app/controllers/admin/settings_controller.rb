@@ -88,4 +88,11 @@ class Admin::SettingsController < ApplicationController
       render :delivered_orders_debt_audit
     end
   end
+
+  def reset_product_dimensions
+    run = MaintenanceRun.create!(job_name: "products.reset_dimensions", status: :queued)
+    Products::ResetDimensionsJob.perform_later(run.id)
+    flash[:notice] = "Reset de dimensiones/peso encolado (##{run.id}). Revisa el listado de ejecuciones."
+    redirect_to admin_settings_path
+  end
 end
