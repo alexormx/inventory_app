@@ -134,7 +134,11 @@ Rails.application.routes.draw do
   get "/checkout/thank_you", to: "checkouts#thank_you", as: :checkout_thank_you
 
   # Customer orders
-  resources :orders, only: [:index, :show]
+  resources :orders, only: [:index, :show] do
+    member do
+      get :summary
+    end
+  end
 
   # Static pages
   get "/aviso-de-privacidad", to: "pages#privacy_notice", as: :privacy_notice

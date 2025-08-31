@@ -9,4 +9,9 @@ class OrdersController < ApplicationController
   def show
     @order = current_user.sale_orders.find(params[:id])
   end
+
+  # Vista resumida para enviar totales (sin toda la metadata interna)
+  def summary
+    @order = current_user.sale_orders.find(params[:id])
+  end
 end
