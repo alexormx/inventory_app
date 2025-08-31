@@ -2,6 +2,8 @@ class ProductsController < ApplicationController
   layout "customer"
   # Requiere sesión para ver catálogo y productos
   before_action :authenticate_user!
+  before_action :set_product, only: :show
+  before_action :ensure_public_product_active, only: :show
 
   PUBLIC_PER_PAGE = 15
   def index
@@ -31,14 +33,27 @@ class ProductsController < ApplicationController
   end
 
   def show
+    # @product ya cargado y validado por before_action
+  end
+
+  private
+
+  def set_product
     @product = Product.friendly.find(params[:id])
-    # Ocultar siempre productos no activos (draft o inactive) en el catálogo público
-    unless @product.active?
-      msg = @product.draft? ? "Este producto está en borrador" : "Este producto se encuentra inactivo"
-      respond_to do |format|
-        format.html { redirect_to catalog_path, alert: msg }
-        format.json { head :not_found }
-      end and return
+  rescue ActiveRecord::RecordNotFound
+    redirect_to catalog_path, alert: "Producto no encontrado"
+  end
+
+  def ensure_public_product_active
+    return if @product&.active?
+    msg = if @product&.draft?
+            "Este producto está en borrador"
+          else
+            "Este producto se encuentra inactivo"
+          end
+    respond_to do |format|
+      format.html { redirect_to catalog_path, alert: msg }
+      format.json { head :not_found }
     end
   end
 end
