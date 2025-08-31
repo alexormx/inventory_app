@@ -1,8 +1,19 @@
-<%= turbo_stream.remove dom_id(@product, :card) %>
-<%= turbo_stream.append "products_list_inactive" do %>
-	<div class="col-md-6 col-lg-4">
-		<%= render partial: 'admin/products/product_card', locals: { product: @product, current_tab: 'inactive' } %>
+<%= turbo_stream.replace "products_list_#{@source_tab}" do %>
+	<div id="products_list_<%= @source_tab %>" class="row g-3">
+		<% @source_products.each do |p| %>
+			<div class="col-md-6 col-lg-4">
+				<%= render partial: 'admin/products/product_card', locals: { product: p, current_tab: @source_tab } %>
+			</div>
+		<% end %>
 	</div>
+<% end %>
+
+<% unless @source_tab == 'inactive' %>
+	<%= turbo_stream.prepend "products_list_inactive" do %>
+		<div class="col-md-6 col-lg-4">
+			<%= render partial: 'admin/products/product_card', locals: { product: @product, current_tab: 'inactive' } %>
+		</div>
+	<% end %>
 <% end %>
 <%= turbo_stream.replace "products_counts_global" do %>
 	<%= render partial: "admin/shared/status_counters", locals: {

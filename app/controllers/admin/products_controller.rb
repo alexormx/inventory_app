@@ -127,11 +127,11 @@ class Admin::ProductsController < ApplicationController
 
   def activate
     @product.update(status: "active")
+    @source_tab = (params[:source_tab].presence || 'all')
+    prepare_source_tab_collection(@source_tab)
+    load_counts
     respond_to do |format|
-      format.turbo_stream do
-        @current_tab = (params[:source_tab].presence || 'all')
-        load_counts
-      end
+      format.turbo_stream
       format.html { redirect_to admin_products_path(status: params[:source_tab]), notice: "Product activated" }
     end
   end
@@ -139,11 +139,11 @@ class Admin::ProductsController < ApplicationController
 
   def deactivate
     @product.update(status: "inactive")
+    @source_tab = (params[:source_tab].presence || 'all')
+    prepare_source_tab_collection(@source_tab)
+    load_counts
     respond_to do |format|
-      format.turbo_stream do
-        @current_tab = (params[:source_tab].presence || 'all')
-        load_counts
-      end
+      format.turbo_stream
       format.html { redirect_to admin_products_path(status: params[:source_tab]), notice: "Product deactivated" }
     end
   end
@@ -228,6 +228,20 @@ class Admin::ProductsController < ApplicationController
   def fix_custom_attributes_param
     return unless params[:product].present?
     coerce_custom_attributes!(params[:product])  # <- del concern
+  end
+
+  def prepare_source_tab_collection(tab)
+    scope = Product.all
+    scope = case tab
+            when 'draft' then scope.where(status: 'draft')
+            when 'active' then scope.where(status: 'active')
+            when 'inactive' then scope.where(status: 'inactive')
+            else scope # 'all'
+            end
+    # sort param reuse minimal (recent vs name vs others handled by apply_sort)
+    @sort = params[:sort].presence
+    scope = apply_sort(scope, @sort) if respond_to?(:apply_sort)
+    @source_products = scope.page(params[:page]).per(PER_PAGE)
   end
   # Strong parameters for product
   def product_params
