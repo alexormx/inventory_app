@@ -69,15 +69,16 @@ Rails.application.routes.draw do
         get :inventory_items
       end
     end
-  resources :settings, only: [:index] do
+    resources :settings, only: [:index] do
       collection do
-    post :index # para guardar configuraciones simples (tax)
+        post :index # para guardar configuraciones simples (tax)
         post :sync_inventory_statuses
         post :backfill_sale_orders_totals
         get  :delivered_orders_debt_audit
         post :run_delivered_orders_debt_audit
         # Permitir GET directo (fallback) para evitar errores si el usuario refresca la URL POST
         get  :run_delivered_orders_debt_audit, to: redirect("/admin/settings/delivered_orders_debt_audit")
+        post :reset_product_dimensions
       end
     end
 
