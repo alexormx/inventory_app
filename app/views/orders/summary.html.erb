@@ -68,6 +68,29 @@
   <%= link_to 'Volver a mis pedidos', orders_path, class: 'btn btn-outline-primary btn-sm' %>
 </div>
 
+<%# Pagos %>
+<% completed_payments = @order.payments.where(status: 'Completed').order(:paid_at) %>
+<% if completed_payments.any? %>
+  <div class="card mt-3 border-0 shadow-sm">
+    <div class="card-body py-2">
+      <h6 class="mb-2 fw-semibold">Pagos recibidos</h6>
+      <ul class="list-unstyled small mb-0">
+        <% completed_payments.each do |p| %>
+          <li class="d-flex justify-content-between">
+            <span><i class="fa fa-check-circle text-success me-1"></i><%= p.payment_method.to_s.humanize %> (<%= l(p.paid_at, format: :short) if p.paid_at %>)</span>
+            <strong><%= number_to_currency(p.amount) %></strong>
+          </li>
+        <% end %>
+      </ul>
+      <div class="mt-2 text-end small text-muted">Total pagado: <strong><%= number_to_currency(@order.total_paid) %></strong></div>
+    </div>
+  </div>
+<% end %>
+
+<% unless @order.shipping_cost.present? %>
+  <p class="mt-3 small text-warning mb-0"><i class="fa fa-truck me-1"></i>Aún no se ha seleccionado un método de entrega.</p>
+<% end %>
+
 <style>
 .order-summary-table thead th { font-size:.72rem; letter-spacing:.4px; padding:.35rem .45rem; }
 .order-summary-table tbody td { font-size:.75rem; padding:.35rem .45rem; }
