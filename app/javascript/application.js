@@ -35,28 +35,45 @@ application.register("gallery", GalleryController)
 // import DropdownController from "./controllers/dropdown_controller"
 // application.register("dropdown", DropdownController)
 // console.debug("DropdownController registered")
-import "custom/dropdown_toggle"
+// --- Lazy hydration: módulos no críticos diferidos ---
+// Criterio: dejar sólo lo imprescindible para interacción inmediata (Turbo + Stimulus controllers ya registrados).
+// El resto (UI decorativa, overlays, tooltips, efectos de scroll, formularios avanzados) se carga cuando el navegador está ocioso.
 
-import "custom/menu"
-import "custom/toggle_inventory_items"
-import "custom/payment_modal"
-import "custom/hide_modal"
-import "custom/cookies"
-import "custom/navbar_shrink"
-import "custom/search_overlay"
-import "custom/theme_toggle"
-import "custom/cart_preview"
-import "custom/cart_preview_dynamic"
-import "custom/flash_stack_offset"
-import "custom/tooltip_init"
-import "modules/toggle_menu"
-import "modules/flash_messages"
-import "modules/disable_enter_until_email"
-import "modules/sidebar_toggle"
-import "components/password_validation"
-import "components/show_password_requirements"
-import "components/total_cost_calculation"
-import "components/order_items"
+const lazyModules = [
+  () => import("custom/dropdown_toggle"),
+  () => import("custom/menu"),
+  () => import("custom/toggle_inventory_items"),
+  () => import("custom/payment_modal"),
+  () => import("custom/hide_modal"),
+  () => import("custom/cookies"),
+  () => import("custom/navbar_shrink"),
+  () => import("custom/search_overlay"),
+  () => import("custom/theme_toggle"),
+  () => import("custom/cart_preview"),
+  () => import("custom/cart_preview_dynamic"),
+  () => import("custom/flash_stack_offset"),
+  () => import("custom/tooltip_init"),
+  () => import("modules/toggle_menu"),
+  () => import("modules/flash_messages"),
+  () => import("modules/disable_enter_until_email"),
+  () => import("modules/sidebar_toggle"),
+  () => import("components/password_validation"),
+  () => import("components/show_password_requirements"),
+  () => import("components/total_cost_calculation"),
+  () => import("components/order_items")
+];
+
+function hydrateLazy(){
+  // Importar en cadena para no saturar el main thread; se pueden paralelizar si se prefiere.
+  lazyModules.reduce((p, loader)=> p.then(()=> loader().catch(()=>{})), Promise.resolve());
+}
+
+// Estrategia: usar requestIdleCallback con timeout; fallback a evento load.
+if('requestIdleCallback' in window){
+  requestIdleCallback(()=>hydrateLazy(), { timeout: 3000 });
+} else {
+  window.addEventListener('load', hydrateLazy);
+}
 // Dashboard controllers
 import ChartController from "./controllers/chart_controller"
 application.register("chart", ChartController)
