@@ -195,7 +195,7 @@ class Admin::ProductsController < ApplicationController
   private
 
   def load_counts
-    compute_counts unless defined?(@counts_global)
+  compute_counts
   end
 
   def compute_counts
