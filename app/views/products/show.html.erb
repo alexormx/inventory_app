@@ -9,32 +9,39 @@
 
     <!-- Image Gallery -->
     <div class="col-lg-5">
-  <% if @product.product_images.attached? %>
-  <div class="position-relative" data-controller="gallery">
-      <%= responsive_attachment_image @product.product_images.first,
-        alt: @product.product_name,
-        widths: [320,480,600,800],
-        css_class: "img-fluid rounded shadow-sm border",
-        square: true,
-        fetch_priority: 'high' %>
+      <% if @product.product_images.attached? %>
+        <div data-controller="gallery">
+          <div class="position-relative gallery-slides-wrapper" data-gallery-target="slides">
+            <div class="gallery-slides-track" data-gallery-target="track">
+              <% @product.product_images.each_with_index do |img, idx| %>
+                <div class="gallery-slide" data-index="<%= idx %>" aria-hidden="<%= idx == 0 ? 'false' : 'true' %>">
+                  <%= responsive_attachment_image img,
+                        alt: @product.product_name,
+                        widths: [320,480,600,800],
+                        css_class: "img-fluid rounded shadow-sm border w-100",
+                        square: true,
+                        fetch_priority: (idx == 0 ? 'high' : nil) %>
+                </div>
+              <% end %>
+            </div>
 
-          <button id="prev-btn" class="btn btn-light position-absolute top-50 start-0 translate-middle-y shadow-sm">
-            &lsaquo;
-          </button>
-          <button id="next-btn" class="btn btn-light position-absolute top-50 end-0 translate-middle-y shadow-sm">
-            &rsaquo;
-          </button>
-        </div>
+            <button type="button" class="btn btn-light position-absolute top-50 start-0 translate-middle-y shadow-sm" aria-label="Anterior" data-action="click->gallery#prev">&lsaquo;</button>
+            <button type="button" class="btn btn-light position-absolute top-50 end-0 translate-middle-y shadow-sm" aria-label="Siguiente" data-action="click->gallery#next">&rsaquo;</button>
+          </div>
 
-  <div class="d-flex flex-wrap gap-2 mt-3" data-gallery-target="thumbnails">
-          <% @product.product_images.each_with_index do |img, index| %>
-            <% thumb_variant = img.variant(resize_to_limit: [80,80]) %>
-    <%= image_tag thumb_variant,
-      class: "thumbnail-image img-thumbnail #{'border-primary' if index == 0}",
-      alt: "Miniatura",
-      loading: "lazy",
-      data: { index: index, action: 'click->gallery#show', gallery_large_value: url_for(img.variant(resize_to_limit: [800,800])) } %>
-          <% end %>
+          <div class="d-flex flex-wrap gap-2 mt-3" data-gallery-target="thumbnails" data-action="keydown->gallery#keydown">
+            <% @product.product_images.each_with_index do |img, index| %>
+              <% thumb_variant = img.variant(resize_to_limit: [80,80]) %>
+        <%= image_tag thumb_variant,
+          class: "thumbnail-image img-thumbnail #{'border-primary' if index == 0}",
+          alt: "Miniatura #{index + 1}",
+          loading: "lazy",
+          style: "cursor:pointer",
+          role: "button",
+          tabindex: 0,
+          data: { index: index, action: 'click->gallery#show keydown->gallery#keydown' } %>
+            <% end %>
+          </div>
         </div>
       <% else %>
         <%= image_tag "placeholder.png", class: "img-fluid rounded border shadow-sm", alt: "Imagen no disponible" %>

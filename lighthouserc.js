@@ -4,8 +4,10 @@ module.exports = {
       url: [
         'http://127.0.0.1:4000/',
         'http://127.0.0.1:4000/catalog',
-        // Página show de producto (ajusta el slug / id real en CI con variable de entorno LH_PRODUCT_PATH)
-        process.env.LH_PRODUCT_PATH || 'http://127.0.0.1:4000/products/1'
+        // Página show de producto (AJUSTAR LH_PRODUCT_PATH a ruta absoluta o relativa)
+        process.env.LH_PRODUCT_PATH?.startsWith('http')
+          ? process.env.LH_PRODUCT_PATH
+          : `http://127.0.0.1:4000${process.env.LH_PRODUCT_PATH || '/products/1'}`
       ],
       numberOfRuns: 1,
       headless: true,

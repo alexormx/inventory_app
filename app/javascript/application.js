@@ -28,6 +28,8 @@ import SubtabsController from "./controllers/subtabs_controller"
 application.register("subtabs", SubtabsController)
 import ConfirmController from "./controllers/confirm_controller"
 application.register("confirm", ConfirmController)
+import GalleryController from "./controllers/gallery_controller"
+application.register("gallery", GalleryController)
 
 // Remove Stimulus dropdown controller (using vanilla JS now)
 // import DropdownController from "./controllers/dropdown_controller"
@@ -40,7 +42,6 @@ import "custom/toggle_inventory_items"
 import "custom/payment_modal"
 import "custom/hide_modal"
 import "custom/cookies"
-import "custom/gallery"
 import "custom/navbar_shrink"
 import "custom/search_overlay"
 import "custom/theme_toggle"

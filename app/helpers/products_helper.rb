@@ -1,7 +1,7 @@
 module ProductsHelper
 	# Genera un badge unificado de disponibilidad (En stock / Preorden / Sobre pedido / Fuera de stock)
-	def stock_badge(product, quantity: nil, suppress_pending_note: false)
-		on_hand = product.current_on_hand
+	def stock_badge(product, quantity: nil, suppress_pending_note: false, on_hand_override: nil)
+		on_hand = on_hand_override.nil? ? product.current_on_hand : on_hand_override
 		pending_split = quantity ? product.split_immediate_and_pending(quantity) : nil
 		base_classes = "badge rounded-pill fw-normal"
 		preorder_eta = SiteSetting.get('preorder_eta_days', 60).to_i
@@ -96,7 +96,7 @@ module ProductsHelper
 	end
 
 	# Helper para ActiveStorage
-	def responsive_attachment_image(attachment, alt:, widths: [200,400,600], css_class: "", loading: 'lazy', square: true, fetch_priority: nil)
+	def responsive_attachment_image(attachment, alt:, widths: [200,400,600], css_class: "", loading: 'lazy', square: true, fetch_priority: nil, id: nil)
 		# ActiveStorage::Attachment (individual) no implementa attached?; sólo los proxies.
 		return image_tag('placeholder.png', alt: alt, class: css_class) unless attachment.present?
 		widths = Array(widths).map(&:to_i).select { |w| w > 0 }.uniq.sort
@@ -129,6 +129,7 @@ module ProductsHelper
 		largest_w = original_variants.keys.max
 		fallback_variant = largest_w ? original_variants[largest_w] : attachment
 		img_opts = { alt: alt, class: css_class, loading: loading, decoding: 'async', sizes: sizes_attr }
+		img_opts[:id] = id if id
 		img_opts[:fetchpriority] = fetch_priority if fetch_priority
 		fallback_img = image_tag(url_for(fallback_variant), **img_opts)
 		content_tag(:picture, safe_join(sources) + fallback_img)

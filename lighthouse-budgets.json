@@ -20,5 +20,15 @@
     "timings": [
       { "metric": "interactive", "budget": 5000 }
     ]
+  },
+  {
+    "path": "/products/placeholder-slug",
+    "resourceSizes": [
+      { "resourceType": "total", "budget": 650 },
+      { "resourceType": "image", "budget": 450 }
+    ],
+    "timings": [
+      { "metric": "interactive", "budget": 5200 }
+    ]
   }
 ]

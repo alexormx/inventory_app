@@ -39,6 +39,7 @@ jobs:
       - name: Run Lighthouse CI
         env:
           CHROME_PATH: /usr/bin/chromium-browser
+            LH_PRODUCT_PATH: "/products/placeholder-slug"
         run: npm run lhci || (echo 'Lighthouse failed' && exit 1)
 
       - name: Upload Lighthouse artifacts

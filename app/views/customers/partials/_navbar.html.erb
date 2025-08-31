@@ -1,4 +1,4 @@
-<nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm site-navbar" data-nav>
+<nav id="main-navbar" class="navbar navbar-expand-lg navbar-light bg-light shadow-sm site-navbar" data-nav>
   <div class="container">
 
     <!-- LOGO -->
@@ -69,6 +69,7 @@
         <li class="nav-item">
           <%= link_to catalog_path,
             class: "nav-item-link d-flex align-items-center #{'active' if controller_path=='products' && action_name=='index'}",
+            'data-nav-link': 'catalog',
             'aria-current': (controller_path=='products' && action_name=='index') ? 'page' : nil,
             'aria-label': 'Ver catálogo de productos' do %>
               <i class="fas fa-store" aria-hidden="true"></i> <span class="link-text">Catálogo</span>
@@ -117,6 +118,7 @@
       <% cart_count = session[:cart]&.values&.sum || 0 %>
           <%= link_to cart_path,
         class: "nav-item-link position-relative d-flex align-items-center #{'active' if ['cart_items','carts'].include?(controller_path)}",
+                'data-nav-link': 'cart',
                 'aria-current': (['cart_items','carts'].include?(controller_path)) ? 'page' : nil,
                 'aria-label': "Ver carrito de compras (#{cart_count} artículos)" do %>
               <i class="fas fa-shopping-cart" aria-hidden="true"></i> <span class="link-text">Carrito</span>
@@ -166,5 +168,23 @@
     </div>
   </div>
 </div>
+
+
+<script>
+// Activación dinámica de enlaces del navbar cuando el header es permanente
+(function(){
+  if(window.__navActivateInit) return; window.__navActivateInit = true;
+  function updateNavActive(){
+    var path = window.location.pathname;
+    document.querySelectorAll('#main-navbar .nav-item-link').forEach(function(el){ el.classList.remove('active'); el.removeAttribute('aria-current'); });
+    function activate(sel){ document.querySelectorAll(sel).forEach(function(el){ el.classList.add('active'); el.setAttribute('aria-current','page'); }); }
+    if(path.startsWith('/cart')) activate('#main-navbar a[data-nav-link="cart"]');
+    else if(path.startsWith('/catalog')) activate('#main-navbar a[data-nav-link="catalog"]');
+  }
+  document.addEventListener('turbo:load', updateNavActive);
+  document.addEventListener('turbo:render', updateNavActive);
+  updateNavActive();
+})();
+</script>
 
 

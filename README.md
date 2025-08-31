@@ -114,7 +114,8 @@ bin/rails sitemap:generate
 bundle exec rspec
 
 # Lighthouse CI (local)
-LH_PRODUCT_PATH=http://127.0.0.1:4000/products/1 npx lhci autorun
+export LH_PRODUCT_PATH=/products/1 # o URL completa
+LH_PRODUCT_PATH=$LH_PRODUCT_PATH npx lhci autorun
 ```
 
 ### Budgets Lighthouse
@@ -122,6 +123,7 @@ Definidos en `lighthouse-budgets.json` para limitar peso total e imágenes; asse
 - LCP ≤ 2500ms
 - CLS ≤ 0.1
 - Total transfer home ≤ ~550KB (warning si supera)
+- Página producto incluida en budgets (`/products/placeholder-slug`); reemplaza el slug en `lighthouse-budgets.json` y variable `LH_PRODUCT_PATH` para CI.
 
 ---
 ## ♿ Accesibilidad / UX

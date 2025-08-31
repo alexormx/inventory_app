@@ -168,8 +168,8 @@ class Product < ApplicationRecord
 
   # ---- Stock helpers para carrito / preorders ----
   def current_on_hand
-    # Inventario disponible (puedes optimizar con counter cache luego)
-    Inventory.where(product_id: id, status: [:available]).count
+  # Consulta simple; en vistas de lista se puede precomputar vía preload y pasar override
+  @current_on_hand ||= Inventory.where(product_id: id, status: [:available]).count
   end
 
   def oversell_allowed?
