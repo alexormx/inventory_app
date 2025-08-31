@@ -1,8 +1,8 @@
 <h2 class="mb-3 d-flex align-items-center gap-2"><i class="fa fa-tags"></i> Products</h2>
 
-<div id="products_counts_global">
+<div id="products_counts_global_container">
 <%= render partial: "admin/shared/status_counters", locals: {
-  wrapper_id: "products_counts_global",
+  # no wrapper_id to avoid duplicate id inside container
   counts: @counts_global,
   items: [
     [:draft,    "Drafts",   "bg-secondary"],
@@ -64,9 +64,8 @@
 </div>
 
 <%# Contadores inferiores (dependen de búsqueda+status; ocultar cero) %>
-<div id="products_counts_filtered">
+<div id="products_counts_filtered_container">
 <%= render partial: "admin/shared/status_counters", locals: {
-  wrapper_id: "products_counts_filtered",
   counts: @counts,
   items: [
     [:draft,    "Drafts",   "bg-secondary"],

@@ -37,6 +37,7 @@
           <% else %>
             <span class="badge bg-secondary position-absolute top-0 start-0 m-1">No disp.</span>
           <% end %>
+          <% if product.active? %>
           <%= link_to product_path(product), class: "d-block p-2" do %>
             <% if product.product_images.attached? %>
       <%= responsive_attachment_image product.product_images.first,
@@ -48,9 +49,26 @@
               <%= image_tag "placeholder.png", class: "product-image mx-auto d-block", alt: "Imagen no disponible" %>
             <% end %>
           <% end %>
+          <% else %>
+            <div class="d-block p-2 opacity-50" title="Producto inactivo">
+              <% if product.product_images.attached? %>
+        <%= responsive_attachment_image product.product_images.first,
+          alt: product.product_name,
+          widths: [60,96,150,200],
+          css_class: "product-image mx-auto d-block",
+          square: true %>
+              <% else %>
+                <%= image_tag "placeholder.png", class: "product-image mx-auto d-block", alt: "Imagen no disponible" %>
+              <% end %>
+            </div>
+          <% end %>
           <div class="card-body text-center p-2 d-flex flex-column w-100">
             <h6 class="card-title text-truncate mb-1" title="<%= product.product_name %>">
-              <%= link_to product.product_name, product_path(product), class: "text-decoration-none text-dark" %>
+              <% if product.active? %>
+                <%= link_to product.product_name, product_path(product), class: "text-decoration-none text-dark" %>
+              <% else %>
+                <span class="text-muted" aria-disabled="true"><%= product.product_name %></span>
+              <% end %>
             </h6>
             <p class="card-text text-danger fw-bold small mb-2">
               <%= number_to_currency(product.selling_price) %>

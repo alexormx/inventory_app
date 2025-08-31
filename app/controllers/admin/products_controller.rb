@@ -128,8 +128,9 @@ class Admin::ProductsController < ApplicationController
   def activate
     @product.update(status: "active")
     @source_tab = (params[:source_tab].presence || 'all')
-    prepare_source_tab_collection(@source_tab)
-    load_counts
+  # Recompute counts AFTER status change
+  load_counts
+  prepare_source_tab_collection(@source_tab)
     respond_to do |format|
       format.turbo_stream
       format.html { redirect_to admin_products_path(status: params[:source_tab]), notice: "Product activated" }
@@ -140,8 +141,8 @@ class Admin::ProductsController < ApplicationController
   def deactivate
     @product.update(status: "inactive")
     @source_tab = (params[:source_tab].presence || 'all')
-    prepare_source_tab_collection(@source_tab)
-    load_counts
+  load_counts
+  prepare_source_tab_collection(@source_tab)
     respond_to do |format|
       format.turbo_stream
       format.html { redirect_to admin_products_path(status: params[:source_tab]), notice: "Product deactivated" }
