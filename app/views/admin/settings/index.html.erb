@@ -194,7 +194,7 @@
 		<%= button_to "Iniciar reset de dimensiones y recálculo", reset_product_dimensions_admin_settings_path,
 			method: :post,
 			class: "btn btn-outline-warning",
-			data: { turbo_confirm: "¿Confirmas el reset global de dimensiones/peso y recálculo de costos?" } %>
+			data: { controller: 'confirm', action: 'click->confirm#ask', confirm_message: "¿Confirmas el reset global de dimensiones/peso y recálculo de costos?" } %>
 	</div>
 </div>
 
