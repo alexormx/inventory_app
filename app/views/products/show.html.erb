@@ -1,10 +1,5 @@
 <div class="container my-5" id="product-gallery">
-  <%# Preload LCP (imagen principal) %>
-  <% if @product.product_images.attached? %>
-    <% content_for :lcp_image do %>
-      <link rel="preload" as="image" href="<%= url_for(@product.product_images.first.variant(resize_to_limit: [600,600])) %>" imagesrcset="<%= [320,480,600,800].map { |w| "#{url_for(@product.product_images.first.variant(resize_to_limit: [w,w]))} #{w}w" }.join(', ') %>" imagesizes="(max-width: 800px) 100vw, 800px" fetchpriority="high">
-    <% end %>
-  <% end %>
+  <%# Preload LCP ahora gestionado por helper en layout (lcp_preload_product_image) %>
   <div class="row g-4">
 
     <!-- Image Gallery -->
@@ -15,12 +10,12 @@
             <div class="gallery-slides-track" data-gallery-target="track">
               <% @product.product_images.each_with_index do |img, idx| %>
                 <div class="gallery-slide" data-index="<%= idx %>" aria-hidden="<%= idx == 0 ? 'false' : 'true' %>">
-                  <%= responsive_attachment_image img,
-                        alt: @product.product_name,
-                        widths: [320,480,600,800],
-                        css_class: "img-fluid rounded shadow-sm border w-100",
-                        square: true,
-                        fetch_priority: (idx == 0 ? 'high' : nil) %>
+      <%= responsive_attachment_image img,
+        alt: @product.product_name,
+        widths: [320,480,600],
+        css_class: "img-fluid rounded shadow-sm border w-100",
+        square: true,
+        fetch_priority: (idx == 0 ? 'high' : nil) %>
                 </div>
               <% end %>
             </div>
@@ -31,13 +26,20 @@
 
           <div class="d-flex flex-wrap gap-2 mt-3" data-gallery-target="thumbnails" data-action="keydown->gallery#keydown">
             <% @product.product_images.each_with_index do |img, index| %>
-              <%= responsive_attachment_image img,
-                    alt: "Miniatura #{index + 1}",
-                    widths: [40,56,80],
-                    css_class: "thumbnail-image img-thumbnail #{'border-primary' if index == 0}",
-                    square: true,
-                    loading: 'lazy',
-                    id: nil %>
+        <button type="button"
+            class="p-0 border-0 bg-transparent thumb-btn"
+            data-action="click->gallery#show"
+            data-index="<%= index %>"
+            aria-label="Ver imagen <%= index + 1 %>"
+            tabindex="0" role="button">
+          <%= responsive_attachment_image img,
+            alt: "Miniatura #{index + 1}",
+            widths: [40,56,80],
+            css_class: "thumbnail-image img-thumbnail #{'border-primary' if index == 0}",
+            square: true,
+            loading: 'lazy',
+            id: nil %>
+        </button>
             <% end %>
           </div>
         </div>

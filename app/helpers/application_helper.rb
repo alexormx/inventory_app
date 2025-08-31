@@ -34,4 +34,62 @@ module ApplicationHelper
     parts = user.name.split
     (parts.first[0] + (parts.size > 1 ? parts.last[0] : "")).upcase
   end
+
+  # Comprueba si un asset precompilado o en pipeline existe (no lanza excepciones)
+  def asset_exists?(logical_path)
+    Rails.application.assets&.find_asset(logical_path) || (
+      Rails.application.config.assets.compile == false &&
+      Rails.application.assets_manifest&.assets&.key?(logical_path)
+    ) rescue false
+  end
+
+  # Preload simplificado para la imagen LCP de home (collection_shelf-960w.*)
+  # Genera hasta tres <link rel="preload"> si existen las variantes
+  def lcp_preload_home_image
+    base = 'collection_shelf-960w'
+    tags = []
+    {
+      'image/avif' => 'avif',
+      'image/webp' => 'webp',
+      'image/jpeg' => 'jpg'
+    }.each do |mime, ext|
+      file = "#{base}.#{ext}"
+      next unless asset_exists?(file)
+      tags << tag.link(rel: 'preload', as: 'image', href: asset_path(file), fetchpriority: 'high', imagesrcset: "#{asset_path(file)} 960w", imagesizes: '(max-width: 960px) 100vw, 960px', type: mime)
+    end
+    safe_join(tags)
+  end
+
+  # Preload LCP para página de producto (usa ActiveStorage). Pre-carga variantes 600x600.
+  def lcp_preload_product_image(product)
+    return '' unless product&.respond_to?(:product_images) && product.product_images.attached?
+    attachment = product.product_images.first
+    tags = []
+    {
+      'image/avif' => :avif,
+      'image/webp' => :webp,
+      'image/jpeg' => nil
+    }.each do |mime, fmt|
+      begin
+        variant_opts = { resize_to_limit: [600, 600] }
+        variant_opts[:format] = fmt if fmt
+        url = url_for(attachment.variant(**variant_opts))
+        if I18n.locale && I18n.locale != I18n.default_locale
+          url = url.sub(%r{/#{I18n.locale}/rails/active_storage}, '/rails/active_storage')
+          if url.include?('locale=')
+            begin
+              uri = URI.parse(url)
+              params = URI.decode_www_form(uri.query).reject { |k,_| k=='locale' }
+              uri.query = params.empty? ? nil : URI.encode_www_form(params)
+              url = uri.to_s
+            rescue; end
+          end
+        end
+        tags << tag.link(rel: 'preload', as: 'image', href: url, fetchpriority: 'high', type: mime)
+      rescue => e
+        Rails.logger.debug("[lcp_preload_product_image] fallo variante #{mime}: #{e.message}")
+      end
+    end
+    safe_join(tags)
+  end
 end

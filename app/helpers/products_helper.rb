@@ -117,7 +117,6 @@ module ProductsHelper
 
 	# Helper para ActiveStorage
 	def responsive_attachment_image(attachment, alt:, widths: [200,400,600], css_class: "", loading: 'lazy', square: true, fetch_priority: nil, id: nil)
-		# ActiveStorage::Attachment (individual) no implementa attached?; sólo los proxies.
 		return image_tag('placeholder.png', alt: alt, class: css_class) unless attachment.present?
 		widths = Array(widths).map(&:to_i).select { |w| w > 0 }.uniq.sort
 		widths = [200, 400, 600] if widths.empty?
@@ -140,7 +139,11 @@ module ProductsHelper
 					nil
 				end.compact
 				next if variant_urls.empty?
-				srcset = variant_urls.map { |variant, w| "#{url_for(variant)} #{w}w" }.join(', ')
+				srcset = variant_urls.map do |variant, w|
+					url = url_for(variant)
+					url = strip_locale_from_active_storage(url)
+					"#{url} #{w}w"
+				end.join(', ')
 				sources << content_tag(:source, nil, type: "image/#{fmt}", srcset: srcset, sizes: sizes_attr)
 			rescue
 				next
@@ -148,10 +151,12 @@ module ProductsHelper
 		end
 		largest_w = original_variants.keys.max
 		fallback_variant = largest_w ? original_variants[largest_w] : attachment
+		fallback_url = url_for(fallback_variant)
+		fallback_url = strip_locale_from_active_storage(fallback_url)
 		img_opts = { alt: alt, class: css_class, loading: loading, decoding: 'async', sizes: sizes_attr }
 		img_opts[:id] = id if id
 		img_opts[:fetchpriority] = fetch_priority if fetch_priority
-		fallback_img = image_tag(url_for(fallback_variant), **img_opts)
+		fallback_img = image_tag(fallback_url, **img_opts)
 		content_tag(:picture, safe_join(sources) + fallback_img)
 	end
 
@@ -159,5 +164,12 @@ module ProductsHelper
 		return '' unless date
 		months = %w[Ene Feb Mar Abr May Jun Jul Ago Sep Oct Nov Dic]
 		"%02d-%s-%d" % [date.day, months[date.month-1], date.year]
+	end
+
+	def strip_locale_from_active_storage(url)
+		return url unless I18n.locale && I18n.locale != I18n.default_locale
+		url.sub(%r{/#{I18n.locale}/rails/active_storage}, '/rails/active_storage')
+	rescue
+		url
 	end
 end

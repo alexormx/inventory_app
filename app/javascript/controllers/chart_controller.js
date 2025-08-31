@@ -13,35 +13,34 @@ export default class extends Controller {
     data: String       // for sparkline
   }
 
-  connect() {
-    this.init()
+  async connect() {
+    await this.init()
   }
 
-  init() {
+  async init() {
     const type = this.typeValue || this.element.dataset.chartType
     try {
       const x = this.xValue ? JSON.parse(this.xValue) : (this.element.dataset.chartX ? JSON.parse(this.element.dataset.chartX) : [])
       const series = this.seriesValue ? JSON.parse(this.seriesValue) : (this.element.dataset.chartSeries ? JSON.parse(this.element.dataset.chartSeries) : [])
       const data = this.dataValue ? JSON.parse(this.dataValue) : (this.element.dataset.chartData ? JSON.parse(this.element.dataset.chartData) : [])
 
-      let chart
+    let chart
       switch (type) {
         case 'line':
-          chart = initLine(this.element, { x, series })
+      chart = await initLine(this.element, { x, series })
           break
         case 'bar':
-          chart = initBar(this.element, { x, series })
+      chart = await initBar(this.element, { x, series })
           break
         case 'pie':
-          chart = initPie(this.element, { series })
+      chart = await initPie(this.element, { series })
           break
         case 'spark':
         case 'sparkline':
-          chart = initSparkline(this.element, { data })
+      chart = await initSparkline(this.element, { data })
           break
         default:
-          // default to line if series present
-          chart = initLine(this.element, { x, series })
+      chart = await initLine(this.element, { x, series })
       }
       registerResizeObserver(this.element, chart)
     } catch (e) {
