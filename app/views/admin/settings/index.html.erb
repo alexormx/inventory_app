@@ -180,6 +180,24 @@
 	</div>
 </div>
 
+<div class="card mb-4">
+	<div class="card-header d-flex align-items-center gap-2">
+		<i class="fa fa-ruler-combined"></i>
+		<span>Reset Dimensiones/Peso de Productos</span>
+	</div>
+	<div class="card-body">
+		<p class="mb-3 small">
+			Actualiza TODAS las dimensiones y peso de productos a los valores por defecto <code>50g / 8x4x4 cm</code> y recalcula los costos proporcionales de TODOS los Purchase Orders.
+			<br>
+			<strong>Advertencia:</strong> Operación intensiva (lee y recalcula cada PO). Úsala solo si requieres un reseteo global.
+		</p>
+		<%= button_to "Iniciar reset de dimensiones y recálculo", reset_product_dimensions_admin_settings_path,
+			method: :post,
+			class: "btn btn-outline-warning",
+			data: { controller: 'confirm', action: 'click->confirm#ask', confirm_message: "¿Confirmas el reset global de dimensiones/peso y recálculo de costos?" } %>
+	</div>
+</div>
+
 
 <div class="card">
 	<div class="card-header d-flex align-items-center gap-2">

@@ -19,6 +19,7 @@ class Product < ApplicationRecord
 
   # --- Stats update on create (your logic) ---
   after_commit :recalculate_stats_if_needed, on: [:create]
+  after_commit :recalculate_purchase_orders_if_dimensions_changed, on: [:update]
 
   # --- Custom attributes: always a JSON Hash ---
   attribute :custom_attributes, :json, default: {}
@@ -109,11 +110,16 @@ class Product < ApplicationRecord
   end
 
   def set_api_fallback_defaults
-    self.backorder_allowed     = false if self.backorder_allowed.nil?
-    self.preorder_available    = false if self.preorder_available.nil?
-    self.status              ||= "draft"
-    self.discount_limited_stock ||= 0
-    self.reorder_point          ||= 0
+  self.backorder_allowed       = false if self.backorder_allowed.nil?
+  self.preorder_available      = false if self.preorder_available.nil?
+  self.status                ||= "draft"
+  self.discount_limited_stock ||= 0
+  self.reorder_point          ||= 0
+  # Defaults físicos (asegurar tras migración)
+  self.weight_gr  = 50.0 if self.weight_gr.nil? || self.weight_gr.to_f <= 0
+  self.length_cm  = 8.0  if self.length_cm.nil? || self.length_cm.to_f <= 0
+  self.width_cm   = 4.0  if self.width_cm.nil? || self.width_cm.to_f <= 0
+  self.height_cm  = 4.0  if self.height_cm.nil? || self.height_cm.to_f <= 0
   end
 
   # === The single source of truth for normalization ===
@@ -217,5 +223,11 @@ class Product < ApplicationRecord
     return 0.to_d unless respond_to?(:weight_gr)
     return 0.to_d if weight_gr.blank?
     weight_gr.to_d
+  end
+
+  def recalculate_purchase_orders_if_dimensions_changed
+    if saved_change_to_weight_gr? || saved_change_to_length_cm? || saved_change_to_width_cm? || saved_change_to_height_cm?
+      PurchaseOrders::RecalculateCostsForProductService.new(self).call
+    end
   end
 end

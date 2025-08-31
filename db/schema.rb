@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_08_30_121000) do
+ActiveRecord::Schema[8.0].define(version: 2025_08_31_131004) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -138,10 +138,10 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_30_121000) do
     t.text "custom_attributes", default: "{}"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.integer "weight_gr", default: 100, null: false
-    t.integer "length_cm", default: 16, null: false
-    t.integer "width_cm", default: 4, null: false
-    t.integer "height_cm", default: 4, null: false
+    t.decimal "weight_gr", precision: 10, scale: 2, default: "50.0", null: false
+    t.decimal "length_cm", precision: 10, scale: 2, default: "8.0", null: false
+    t.decimal "width_cm", precision: 10, scale: 2, default: "4.0", null: false
+    t.decimal "height_cm", precision: 10, scale: 2, default: "4.0", null: false
     t.integer "preferred_supplier_id"
     t.integer "last_supplier_id"
     t.integer "total_purchase_quantity", default: 0, null: false
