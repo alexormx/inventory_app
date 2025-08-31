@@ -22,7 +22,8 @@ class ProductsController < ApplicationController
       scope.order(created_at: :desc)
     end
 
-  @products = scope.page(params[:page]).per(PUBLIC_PER_PAGE)
+  # Preload de imágenes para evitar N+1 de ActiveStorage en la grilla
+  @products = scope.with_attached_product_images.page(params[:page]).per(PUBLIC_PER_PAGE)
   # Precalcular on_hand counts en batch para evitar N+1 (simple hash)
   product_ids = @products.map(&:id)
   @on_hand_counts = Inventory.where(product_id: product_ids, status: :available)

@@ -22,3 +22,25 @@
 .dropdown-item { display: flex; align-items: center; gap: .5rem; width: 100%; padding: .25rem 1rem; clear: both; color: #212529; text-decoration: none; white-space: nowrap; }
 .dropdown-item:hover { background-color: #f8f9fa; }
 .dropdown-item.active { background-color: #e9ecef; font-weight: 600; }
+
+/* Thumbnails galería producto */
+.thumb-btn, .thumbnail-image { cursor: pointer; }
+.thumb-btn:focus { outline: 2px solid #0d6efd; outline-offset: 2px; }
+
+/* Font Awesome: forzar font-display swap para evitar FOIT y mejorar FCP.
+   Sobrescribimos sólo las familias usadas (Solid 900 y Brands 400).
+   Los navegadores reutilizan la misma descarga (mismo URL), no duplica tráfico. */
+@font-face {
+  font-family: "Font Awesome 6 Free";
+  font-style: normal;
+  font-weight: 900;
+  font-display: swap; /* o 'optional' si queremos aún menos impacto */
+  src: url("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/webfonts/fa-solid-900.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Font Awesome 6 Brands";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/webfonts/fa-brands-400.woff2") format("woff2");
+}

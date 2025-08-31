@@ -76,6 +76,10 @@ class ApplicationController < ActionController::Base
   end
 
   def default_url_options
-    { locale: (I18n.locale unless I18n.locale == I18n.default_locale) }.compact
+  # Solo añadir locale en navegación HTML; evitarlo para que no se propague a assets/ActiveStorage
+  return {} unless I18n.locale && I18n.locale != I18n.default_locale
+  return {} unless request&.format&.html?
+  return {} if request.path.start_with?('/rails/active_storage')
+  { locale: I18n.locale }
   end
 end

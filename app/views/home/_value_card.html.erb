@@ -1,6 +1,13 @@
 <div class="col">
   <div class="card h-100 shadow-sm">
-  <%= responsive_asset_image image, alt: alt, css_class: "card-img-top img-fluid", aspect_ratio: "16:9" %>
+  <% # Detectar si esta es la primera tarjeta en el render (usamos provided local first_lcp) %>
+  <% fetch_priority = (local_assigns[:lcp] ? 'high' : nil) %>
+  <%= responsive_asset_image image,
+        alt: alt,
+        css_class: "card-img-top img-fluid",
+        aspect_ratio: "16:9",
+        widths: [400,640,960],
+        fetch_priority: fetch_priority %>
     <div class="card-body">
       <h5 class="card-title fw-semibold"><%= title %></h5>
       <p class="card-text"><%= text %></p>

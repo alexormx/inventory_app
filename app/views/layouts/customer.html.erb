@@ -33,6 +33,10 @@
   <%= csrf_meta_tags %>
   <%= csp_meta_tag %>
 
+  <%# Preload LCP (home y producto show) usando helpers %>
+  <%= lcp_preload_home_image if controller_path == 'home' && action_name == 'index' %>
+  <%= lcp_preload_product_image(@product) if controller_path == 'products' && action_name == 'show' %>
+
   <!-- Font Awesome diferido para evitar bloqueo de render -->
   <script>
     (function() {
@@ -63,10 +67,9 @@
 </head>
 
 
-<!-- Incluir el partial del banner -->
-<%= render 'layouts/cookies_banner'%>
-
 <body>
+  <!-- Incluir el partial del banner (movido dentro de body) -->
+  <%= render 'layouts/cookies_banner'%>
   <div id="construction-banner" class="alert alert-warning text-center mb-0 rounded-0 construction-banner" role="alert" style="padding: 0.3rem 1rem; font-size: 0.9rem; position:fixed; top:0; left:0; right:0; z-index:1200;">
     🚧 Bienvenido a <strong>Pasatiempos a Escala</strong> – Sitio en construcción. Muy pronto podrás ver nuestros autos coleccionables.
   </div>

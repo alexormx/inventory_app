@@ -41,7 +41,7 @@
             <% if product.product_images.attached? %>
       <%= responsive_attachment_image product.product_images.first,
         alt: product.product_name,
-        widths: [160,200,320,400],
+        widths: [60,96,150,200],
         css_class: "product-image mx-auto d-block",
         square: true %>
             <% else %>
@@ -101,7 +101,7 @@
   #catalog .catalog-filters .btn-icon { display: inline-flex; align-items: center; justify-content: center; padding: .45rem .75rem; }
   #catalog .catalog-item.hover-lift:hover { transform: translateY(-3px); box-shadow: 0 6px 18px rgba(0,0,0,0.12); }
   #catalog .catalog-item { transition: .18s ease-in-out; }
-  #catalog .product-image { max-height: 180px; object-fit: contain; }
+  #catalog .product-image { max-height: 150px; object-fit: contain; }
   @media (max-width: 575px) { #catalog .catalog-header { margin-bottom: .75rem; } }
 </style>
 

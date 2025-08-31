@@ -27,14 +27,20 @@ Aplicación Rails 8 / Ruby 3.2.3 con enfoque en catálogo, carrito y gestión de
 5. División disponibilidad: helper `stock_badge` y `stock_eta` calculan inmediato vs. preorder/backorder.
 6. Modal de confirmación reutilizable (Stimulus `confirm_controller`) reemplaza `data-turbo-confirm`.
 7. Galería de producto con cambio de imagen principal (Stimulus `gallery_controller`).
-8. Optimización de imágenes:
-  - Helpers responsive: `responsive_asset_image` (estáticas) y `responsive_attachment_image` (ActiveStorage).
-  - Generación condicional de `<picture>` con fuentes AVIF/WebP si existen.
-  - `fetchpriority="high"` y `<link rel="preload">` para LCP en show de producto.
-  - Lazy loading + `decoding="async"` + dimensiones calculadas para evitar CLS.
-  - Rake task para pre-generar variantes modernas en assets estáticos.
-9. Banner de cookies configurable vía variables de entorno.
-10. SEO básico: meta tags OG/Twitter, sitemap (`sitemap_generator`), `robots.txt`.
+8. Optimización de imágenes (fases 1 y 2):
+  - Helpers: `responsive_asset_image` (assets estáticos multi‑width) y `responsive_attachment_image` (ActiveStorage AVIF/WebP si disponibles).
+  - Variantes multi‑anchos pre-generadas (`nombre-480w.webp` etc.) + `<picture>` / fallback.
+  - Preload LCP (home + producto) con helpers (`lcp_preload_home_image`, `lcp_preload_product_image`) y `fetchpriority="high"`.
+  - Lazy loading + `decoding="async"` + tamaños calculados para minimizar CLS.
+  - Rake tasks: `images:generate_modern_formats` y `images:generate_responsive_variants`.
+9. Galería avanzada (loop infinito, clones, thumbnails accesibles como botones, navegación teclado, transición suave).
+10. Lazy hydration de JS no crítico (cola `requestIdleCallback` + fallback `load`).
+11. Font Awesome diferido + override `font-display: swap`.
+12. ECharts cargado perezosamente (dynamic import) sólo si hay charts.
+13. Índices de rendimiento y preload de attachments para evitar N+1.
+14. Memoización de stock y badge unificado.
+15. Banner de cookies configurable vía variables.
+16. SEO básico: meta tags OG/Twitter, sitemap (`sitemap_generator`), `robots.txt`.
 
 ---
 ## 🖼️ Helpers de Imágenes Responsive
@@ -79,15 +85,19 @@ Luego precompilar (si aplica) o reiniciar el servidor para que se detecten.
 - (Pendiente ampliar) pruebas para helpers de imágenes y carrito.
 
 ---
-## 🚀 Roadmap Próximo (Short-Term)
+## 🚀 Roadmap Próximo
 | Prioridad | Ítem | Objetivo |
 |-----------|------|----------|
-| Alta | Medir impacto Lighthouse (performance, LCP, CLS) | Verificar ganancias tras imágenes responsive |
-| Alta | Añadir tests de helpers (`responsive_*`) | Evitar regresiones |
-| Media | Pre-cálculo de variantes críticas en deploy | Reducir primer tiempo de generación |
-| Media | Mejorar regeneración dinám. de `<source>` en galería | Mantener formatos modernos al cambiar imagen |
-| Media | Instrumentar logging de tiempos de variante | Identificar imágenes lentas |
-| Baja | i18n de tooltips adicionales | Consistencia multi-idioma |
+| Alta | Fragment caching (cards catálogo, show producto) | Menos render repetido / menor TTFB |
+| Alta | Medir impacto Lighthouse post fase 2 | Ajustar budgets y validar LCP/CLS reales |
+| Alta | Tests helpers `responsive_*` & galería | Prevenir regresiones perf/HTML accesible |
+| Alta | Job de pre-cálculo variantes críticas (on deploy / background) | Evitar primer coste de generación en frío |
+| Media | CDN / Headers cache (Cache-Control, immutable) | Mejor hit ratio y menor coste ancho de banda |
+| Media | Instrumentar tiempos y ratio hit de variantes | Detectar imágenes candidates a pre-generar |
+| Media | Actualizar dinámicamente `<source>` en galería al cambiar imagen | Mantener formatos modernos y srcset correcto |
+| Media | ECharts build liviano / alternativa (charts light) | Reducir JS diferido y CPU post-hydration |
+| Baja | i18n tooltips y textos menores | Pulido UX multi-idioma |
+| Baja | Skeleton / placeholder para imágenes LCP en conexiones lentas | Mejor percepción de carga |
 
 ---
 ## 📝 Variables de Entorno Destacadas
@@ -106,6 +116,9 @@ bin/dev
 
 # Generar variantes modernas assets
 bin/rails images:generate_modern_formats
+
+# Generar variantes responsive (multi-width) predefinidas
+bin/rails images:generate_responsive_variants
 
 # Sitemap
 bin/rails sitemap:generate
@@ -128,20 +141,40 @@ Definidos en `lighthouse-budgets.json` para limitar peso total e imágenes; asse
 ---
 ## ♿ Accesibilidad / UX
 - Botones con `aria-label` en carrito y acciones clave.
-- Eliminado uso de confirm nativo; modal accesible con cierre por ESC y click en backdrop.
-- Etiquetas alt consistentes para todas las imágenes generadas por helpers.
+- Modal de confirmación accesible (ESC, foco retornado, backdrop clickable) en lugar de confirm nativo bloqueante.
+- Thumbnails de galería como `<button>` (no `<a href="#">`), foco visible, navegación teclado circular.
+- Región `aria-live` para actualización de totales de carrito (sin anunciar valores irrelevantes).
+- Alt text consistente generado desde `product.product_name` o parámetros explícitos.
+- Prevención de CLS: dimensiones calculadas / estilos placeholders.
+- Cursor y feedback visual claro en elementos interactivos (thumbnails, badges).
 
 ---
 ## 🔒 Seguridad / Buenas Prácticas
-- CSRF y CSP tags activos.
-- Uso de `allow_browser versions: :modern` para reducir superficie legacy.
-- Limpieza silenciosa de errores en procesamiento de imágenes evitando caídas front.
+- CSRF y CSP activos.
+- `allow_browser versions: :modern` para reducir superficie legacy / polyfills.
+- Sanitización de URLs de ActiveStorage (removiendo segmento de locale y queries no necesarios) para evitar 302 y rutas inconsistentes.
+- Manejo controlado de errores en procesamiento de variantes (fail-soft) sin filtrar trazas a usuario.
+- Dependencias JS minimizadas (dynamic import) reduciendo superficie de ataque potencial.
 
 ---
 ## 📈 Métricas a Monitorear (sugerido)
 - LCP: imagen principal de producto / primera card en home.
 - CLS: verificar tras widths/height calculados.
 - Transfer size total de homepage antes/después (objetivo < 500KB inicial).
+ - % de imágenes servidas en formato moderno (AVIF/WebP) vs. JPEG.
+ - Tiempo medio generación primera variante vs. cache hit (objetivo: reducir cold start tras job pre-cálculo).
+ - Peso JS inicial vs. diferido tras lazy hydration / dynamic import.
+ - TTFB en show producto tras fragment caching (baseline antes de implementarlo).
+
+---
+## 🧾 Changelog Optimización (resumen)
+| Fase | Tema | Cambios clave |
+|------|------|---------------|
+| 1 | Imágenes base | Helpers responsive, AVIF/WebP assets, preload LCP inicial |
+| 2 | Perf avanzado | Galería loop accesible, lazy hydration, dynamic import ECharts, font-display swap, variantes multi-width, tasks pre-generación |
+| 2 | Backend | Índices rendimiento, preload attachments, memoización stock |
+| 2 | UX | Modal confirm accesible, badges unificados, thumbnails clicables |
+| 2 | URL Sanitization | Remoción locale en rutas ActiveStorage evitando errores |
 
 ---
 ## 🤝 Contribuir

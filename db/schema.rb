@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_08_28_194000) do
+ActiveRecord::Schema[8.0].define(version: 2025_08_30_121000) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -71,6 +71,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_28_194000) do
     t.datetime "status_changed_at", default: -> { "CURRENT_TIMESTAMP" }, null: false
     t.integer "purchase_order_item_id"
     t.integer "status", default: 0, null: false
+    t.index ["product_id", "status"], name: "index_inventories_on_product_id_and_status"
     t.index ["product_id"], name: "index_inventories_on_product_id"
     t.index ["purchase_order_id"], name: "index_inventories_on_purchase_order_id"
     t.index ["sale_order_id"], name: "index_inventories_on_sale_order_id"
@@ -165,9 +166,13 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_28_194000) do
     t.text "description"
     t.string "supplier_product_code"
     t.date "launch_date"
+    t.index "lower(product_name)", name: "index_products_on_lower_product_name"
+    t.index ["brand"], name: "index_products_on_brand"
+    t.index ["category"], name: "index_products_on_category"
     t.index ["last_supplier_id"], name: "index_products_on_last_supplier_id"
     t.index ["launch_date"], name: "index_products_on_launch_date"
     t.index ["preferred_supplier_id"], name: "index_products_on_preferred_supplier_id"
+    t.index ["product_name"], name: "index_products_on_product_name"
     t.index ["product_sku"], name: "index_products_on_product_sku", unique: true
     t.index ["slug"], name: "index_products_on_slug", unique: true
   end
