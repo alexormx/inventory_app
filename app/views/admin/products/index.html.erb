@@ -24,7 +24,7 @@
           <button class="btn btn-primary" type="submit" name="commit" value="search" title="Buscar">Buscar</button>
         </div>
       </div>
-      <div class="col-12 col-md-6 text-md-end">
+      <div class="col-12 col-md-6 text-md-end d-flex flex-column gap-2 align-items-md-end">
         <% current_status = params[:status].presence || "all" %>
         <% outline_for = ->(st) do
              case st
@@ -42,6 +42,19 @@
           <%= button_tag "Inactive", name: :status, value: "inactive", class: btnc.call("inactive", current_status) %>
         </div>
         <%= hidden_field_tag :status, current_status %>
+        <div class="d-flex gap-2 align-items-center flex-wrap justify-content-md-end">
+          <label for="sort" class="small text-muted mb-0">Orden:</label>
+          <%= select_tag :sort, options_for_select([
+              ['Recientes','recent'],
+              ['Nombre A-Z','name'],
+              ['Cantidad comprada','purchase_qty'],
+              ['Valor compras','purchase_value'],
+              ['Valor ventas','sales_value'],
+              ['Costo inventario','inventory_value'],
+              ['Utilidad actual','profit']
+            ], selected: params[:sort]), include_blank: false, class: 'form-select form-select-sm w-auto' %>
+          <button class="btn btn-sm btn-outline-secondary" type="submit">Aplicar</button>
+        </div>
         <%= link_to "Limpiar filtros", admin_products_path, class: "btn btn-sm btn-outline-secondary ms-2", title: "Quitar búsqueda y status" %>
       </div>
     <% end %>

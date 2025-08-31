@@ -1,0 +1,35 @@
+<%# Componente de galería compacto %>
+<div class="product-gallery" data-controller="gallery">
+  <div class="gallery-viewport position-relative" data-gallery-target="slides">
+    <div class="gallery-track" data-gallery-target="track">
+      <% product.product_images.each_with_index do |img, idx| %>
+        <div class="gallery-slide" data-index="<%= idx %>" aria-hidden="<%= idx == 0 ? 'false' : 'true' %>">
+          <%= responsive_attachment_image img,
+              alt: product.product_name,
+              widths: [320,480,600],
+              css_class: "w-100 rounded shadow-sm bg-white",
+              square: true,
+              fetch_priority: (idx == 0 ? 'high' : nil) %>
+        </div>
+      <% end %>
+    </div>
+    <% if product.product_images.size > 1 %>
+      <button type="button" class="gallery-nav prev" aria-label="Anterior" data-action="click->gallery#prev">‹</button>
+      <button type="button" class="gallery-nav next" aria-label="Siguiente" data-action="click->gallery#next">›</button>
+    <% end %>
+  </div>
+  <% if product.product_images.size > 1 %>
+    <div class="gallery-thumbs d-flex flex-wrap gap-2 mt-3" data-gallery-target="thumbnails" data-action="keydown->gallery#keydown">
+      <% product.product_images.each_with_index do |img, index| %>
+        <button type="button" class="thumb-btn p-0 border-0 bg-transparent" data-action="click->gallery#show" data-index="<%= index %>" aria-label="Ver imagen <%= index+1 %>">
+          <%= responsive_attachment_image img,
+                alt: "Miniatura #{index+1}",
+                widths: [56,80],
+                css_class: "thumbnail-image img-thumbnail #{'border-primary' if index == 0}",
+                square: true,
+                loading: 'lazy' %>
+        </button>
+      <% end %>
+    </div>
+  <% end %>
+</div>

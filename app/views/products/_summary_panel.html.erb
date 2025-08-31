@@ -1,0 +1,36 @@
+<%# Panel de resumen y compra sticky %>
+<div class="product-summary card shadow-sm border-0" data-product-summary>
+  <div class="card-body d-flex flex-column gap-3">
+    <div>
+      <h1 class="h3 fw-bold mb-1"><%= product.product_name %></h1>
+      <div class="text-muted small d-flex flex-wrap gap-3">
+        <span>SKU: <strong><%= product.product_sku %></strong></span>
+        <span>Marca: <strong><%= product.brand %></strong></span>
+        <span>Categoría: <strong><%= product.category %></strong></span>
+      </div>
+    </div>
+
+    <div class="price-zone d-flex align-items-end gap-3 flex-wrap">
+      <span class="display-price h3 text-danger fw-bold mb-0"><%= number_to_currency(product.selling_price) %></span>
+      <%= stock_badge(product) %>
+      <% if (eta = stock_eta(product)) %>
+        <span class="small text-muted"><i class="fa fa-clock me-1"></i><%= eta %></span>
+      <% end %>
+    </div>
+
+    <% on_hand = product.current_on_hand %>
+    <% disabled = (on_hand <= 0 && !product.oversell_allowed?) %>
+    <%= button_to cart_items_path,
+          params: { product_id: product.id },
+          method: :post,
+          class: "btn btn-danger btn-lg w-100 #{'disabled' if disabled}",
+          disabled: disabled,
+          title: (disabled ? 'Sin stock disponible' : 'Agregar al carrito') do %>
+      <i class="fas fa-cart-plus"></i> <%= disabled ? 'Sin stock' : 'Agregar al carrito' %>
+    <% end %>
+
+    <div class="small text-muted d-flex flex-column gap-1">
+      <span><i class="fa fa-shield-alt me-1"></i> Métodos de Pago Seguro</span>
+    </div>
+  </div>
+</div>

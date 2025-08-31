@@ -1,113 +1,56 @@
-<div class="container my-5" id="product-gallery">
-  <%# Preload LCP ahora gestionado por helper en layout (lcp_preload_product_image) %>
-  <div class="row g-4">
-
-    <!-- Image Gallery -->
-    <div class="col-lg-5">
+<div class="container py-4 product-show" data-controller="productMeta">
+  <div class="row gy-4">
+    <div class="col-lg-6">
       <% if @product.product_images.attached? %>
-        <div data-controller="gallery">
-          <div class="position-relative gallery-slides-wrapper" data-gallery-target="slides">
-            <div class="gallery-slides-track" data-gallery-target="track">
-              <% @product.product_images.each_with_index do |img, idx| %>
-                <div class="gallery-slide" data-index="<%= idx %>" aria-hidden="<%= idx == 0 ? 'false' : 'true' %>">
-      <%= responsive_attachment_image img,
-        alt: @product.product_name,
-        widths: [320,480,600],
-        css_class: "img-fluid rounded shadow-sm border w-100",
-        square: true,
-        fetch_priority: (idx == 0 ? 'high' : nil) %>
+        <%= render 'products/gallery', product: @product %>
+      <% else %>
+        <%= image_tag 'placeholder.png', class: 'w-100 rounded shadow-sm', alt: 'Imagen no disponible' %>
+      <% end %>
+    </div>
+    <div class="col-lg-6 col-xl-5 offset-xl-1">
+      <%= render 'products/summary_panel', product: @product %>
+    </div>
+  </div>
+
+  <div class="row mt-5 g-4">
+    <div class="col-lg-8">
+      <div class="card border-0 shadow-sm" id="descripcion" data-product-description>
+        <div class="card-body">
+          <h2 class="h5 fw-semibold mb-3"><i class="fas fa-align-left text-primary me-2"></i>Descripción</h2>
+          <p class="text-muted mb-0"><%= @product.description.presence || 'Este producto no tiene una descripción disponible por el momento.' %></p>
+        </div>
+      </div>
+
+      <div class="card border-0 shadow-sm mt-4" id="detalles">
+        <div class="card-body">
+          <h2 class="h5 fw-semibold mb-3"><i class="fas fa-list-alt text-primary me-2"></i>Detalles</h2>
+          <% if @product.custom_attributes.present? %>
+            <div class="row row-cols-1 row-cols-sm-2 g-3 small">
+              <% @product.parsed_custom_attributes.each do |key, value| %>
+                <div class="col d-flex">
+                  <div class="w-50 text-muted text-capitalize"><%= key %></div>
+                  <div class="flex-grow-1 fw-medium"><%= value %></div>
                 </div>
               <% end %>
             </div>
-
-            <button type="button" class="btn btn-light position-absolute top-50 start-0 translate-middle-y shadow-sm" aria-label="Anterior" data-action="click->gallery#prev">&lsaquo;</button>
-            <button type="button" class="btn btn-light position-absolute top-50 end-0 translate-middle-y shadow-sm" aria-label="Siguiente" data-action="click->gallery#next">&rsaquo;</button>
-          </div>
-
-          <div class="d-flex flex-wrap gap-2 mt-3" data-gallery-target="thumbnails" data-action="keydown->gallery#keydown">
-            <% @product.product_images.each_with_index do |img, index| %>
-        <button type="button"
-            class="p-0 border-0 bg-transparent thumb-btn"
-            data-action="click->gallery#show"
-            data-index="<%= index %>"
-            aria-label="Ver imagen <%= index + 1 %>"
-            tabindex="0" role="button">
-          <%= responsive_attachment_image img,
-            alt: "Miniatura #{index + 1}",
-            widths: [40,56,80],
-            css_class: "thumbnail-image img-thumbnail #{'border-primary' if index == 0}",
-            square: true,
-            loading: 'lazy',
-            id: nil %>
-        </button>
-            <% end %>
-          </div>
-        </div>
-      <% else %>
-        <%= image_tag "placeholder.png", class: "img-fluid rounded border shadow-sm", alt: "Imagen no disponible" %>
-      <% end %>
-    </div>
-
-    <!-- Product Info -->
-    <div class="col-lg-7">
-      <h1 class="fw-bold mb-3"><%= @product.product_name %></h1>
-      <p class="text-muted">SKU: <%= @product.product_sku %></p>
-      <p class="text-muted">Marca: <%= @product.brand %></p>
-      <p class="text-muted">Categoría: <%= @product.category %></p>
-
-      <h3 class="text-success fw-bold"><%= number_to_currency(@product.selling_price) %></h3>
-
-      <% if @product.active? %>
-  <% on_hand = @product.current_on_hand %>
-        <div class="mb-2">
-          <%= stock_badge(@product) %>
-          <% if (eta = stock_eta(@product)) %>
-            <div class="small text-muted mt-1"><i class="fa fa-clock me-1"></i><%= eta %></div>
+          <% else %>
+            <p class="text-muted small mb-0">No hay detalles adicionales.</p>
           <% end %>
         </div>
-  <% disabled = (on_hand <= 0 && !@product.oversell_allowed?) %>
-        <%= button_to cart_items_path,
-                      params: { product_id: @product.id },
-                      method: :post,
-                      class: "btn btn-danger btn-lg my-3 w-100 #{'disabled' if disabled}",
-                      disabled: disabled,
-                      title: (disabled ? 'Sin stock disponible' : 'Agregar al carrito') do %>
-          <i class="fas fa-cart-plus"></i> <%= disabled ? 'Sin stock' : 'Agregar al carrito' %>
-        <% end %>
-      <% else %>
-        <span class="badge bg-secondary mb-2">No disponible</span>
-        <button class="btn btn-secondary btn-lg my-3 w-100" disabled>
-          <i class="fas fa-ban"></i> No disponible
-        </button>
-      <% end %>
+      </div>
     </div>
-  </div>
-
-  <!-- Description -->
-  <hr class="my-5">
-  <div>
-    <h4 class="mb-3"><i class="fas fa-align-left text-primary me-2"></i> Descripción</h4>
-    <p class="text-muted">
-      <%= @product.description.presence || "Este producto no tiene una descripción disponible por el momento." %>
-    </p>
-  </div>
-
-  <!-- Details -->
-  <div class="mt-4">
-    <h4 class="mb-3"><i class="fas fa-list-alt text-primary me-2"></i> Detalles</h4>
-    <% if @product.custom_attributes.present? %>
-      <table class="table table-hover align-middle">
-        <tbody>
-          <% @product.parsed_custom_attributes.each do |key, value| %>
-            <tr>
-              <th class="text-capitalize" style="width: 200px;"><%= key %></th>
-              <td><%= value %></td>
-            </tr>
-          <% end %>
-        </tbody>
-      </table>
-    <% else %>
-      <p class="text-muted">No hay detalles adicionales para este producto.</p>
-    <% end %>
+    <div class="col-lg-4 d-none d-lg-block"><!-- espacio lateral futuro (relacionados, reviews) --></div>
   </div>
 </div>
+
+<style>
+.product-show .product-gallery .gallery-viewport{overflow:hidden;border-radius:.5rem}
+.product-show .gallery-track{display:flex;transition:transform .45s cubic-bezier(.4,.1,.2,1)}
+.product-show .gallery-slide{flex:0 0 100%;padding:2px}
+.product-show .gallery-nav{position:absolute;top:50%;transform:translateY(-50%);background:#fff;border:0;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.15);cursor:pointer;font-size:20px;color:#444}
+.product-show .gallery-nav.prev{left:8px}.product-show .gallery-nav.next{right:8px}
+.product-show .gallery-thumbs .thumbnail-image{width:72px;height:72px;object-fit:cover}
+.product-summary{position:sticky;top:calc(var(--banner-height,0px) + var(--nav-height,60px) + 1rem)}
+.product-summary .line-clamp{-webkit-line-clamp:3;-webkit-box-orient:vertical;display:-webkit-box;overflow:hidden}
+@media (max-width: 991px){.product-summary{position:static}}
+</style>

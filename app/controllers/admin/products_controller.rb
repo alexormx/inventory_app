@@ -20,7 +20,9 @@ class Admin::ProductsController < ApplicationController
       term = "%#{@q.downcase}%"
       scope = scope.where("LOWER(product_name) LIKE ? OR LOWER(product_sku) LIKE ?", term, term)
     end
-  @products = scope.order(created_at: :desc).page(params[:page]).per(PER_PAGE)
+  @sort = params[:sort].presence
+  scope = apply_sort(scope, @sort)
+  @products = scope.page(params[:page]).per(PER_PAGE)
   compute_counts
   end
 
@@ -158,7 +160,9 @@ class Admin::ProductsController < ApplicationController
       term = "%#{@q.downcase}%"
       scope = scope.where("LOWER(product_name) LIKE ? OR LOWER(product_sku) LIKE ?", term, term)
     end
-  @products = scope.order(created_at: :desc).page(params[:page]).per(PER_PAGE)
+  @sort = params[:sort].presence
+  scope = apply_sort(scope, @sort)
+  @products = scope.page(params[:page]).per(PER_PAGE)
   compute_counts
   render :drafts, layout: false
   end
@@ -170,7 +174,9 @@ class Admin::ProductsController < ApplicationController
       term = "%#{@q.downcase}%"
       scope = scope.where("LOWER(product_name) LIKE ? OR LOWER(product_sku) LIKE ?", term, term)
     end
-  @products = scope.order(created_at: :desc).page(params[:page]).per(PER_PAGE)
+  @sort = params[:sort].presence
+  scope = apply_sort(scope, @sort)
+  @products = scope.page(params[:page]).per(PER_PAGE)
   compute_counts
   render :active, layout: false
   end
@@ -182,7 +188,9 @@ class Admin::ProductsController < ApplicationController
       term = "%#{@q.downcase}%"
       scope = scope.where("LOWER(product_name) LIKE ? OR LOWER(product_sku) LIKE ?", term, term)
     end
-  @products = scope.order(created_at: :desc).page(params[:page]).per(PER_PAGE)
+  @sort = params[:sort].presence
+  scope = apply_sort(scope, @sort)
+  @products = scope.page(params[:page]).per(PER_PAGE)
   compute_counts
   render :inactive, layout: false
   end
@@ -264,6 +272,20 @@ class Admin::ProductsController < ApplicationController
         format.html { redirect_to admin_products_path, alert: "Product not found." }
         format.json { render json: { error: "Product not found" }, status: :not_found }
       end
+    end
+  end
+
+  def apply_sort(scope, sort_param)
+    case sort_param
+    when 'recent'            then scope.order(created_at: :desc)
+    when 'name'              then scope.order(Arel.sql('LOWER(product_name) ASC'))
+    when 'purchase_qty'      then scope.order(total_purchase_quantity: :desc)
+    when 'purchase_value'    then scope.order(total_purchase_value: :desc)
+    when 'sales_value'       then scope.order(total_sales_value: :desc)
+    when 'inventory_value'   then scope.order(current_inventory_value: :desc)
+    when 'profit'            then scope.order(current_profit: :desc)
+    else
+      scope.order(created_at: :desc)
     end
   end
 end
