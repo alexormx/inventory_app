@@ -103,6 +103,9 @@ Rails.application.routes.draw do
       resources :sales_order_items, only: [:create, :update, :destroy]
       resources :payments, only: [:new, :create, :edit, :update, :destroy]
   resources :shipments, only: [:new, :create, :edit, :update, :destroy]
+      member do
+        get :summary
+      end
     end
 
   end

@@ -2,6 +2,10 @@
 <div class="container mt-4">
   <%= turbo_stream_from ["sale_order", @sale_order.id] %>
   <h2>Sale Order ##<%= @sale_order.id %></h2>
+  <div class="mb-3 d-flex gap-2">
+    <%= link_to 'Resumen compacto', summary_admin_sale_order_path(@sale_order), class: 'btn btn-sm btn-primary' %>
+    <%= link_to 'Lista', admin_sale_orders_path, class: 'btn btn-sm btn-outline-secondary' %>
+  </div>
 
   <!-- Order Info -->
   <div class="row g-3 mb-4">

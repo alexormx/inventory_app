@@ -3,6 +3,7 @@ class Admin::SaleOrdersController < ApplicationController
   before_action :authenticate_user!
   before_action :authorize_admin!
   before_action :set_sale_order, only: %i[show edit update destroy]
+  before_action :set_sale_order_with_includes, only: %i[summary]
   before_action :load_counts, only: [:index]
 
   PER_PAGE = 20
@@ -119,6 +120,18 @@ class Admin::SaleOrdersController < ApplicationController
 
   def show; end
 
+  # Vista compacta de totales/costos para compartir con cliente
+  def summary
+    # @sale_order cargada con includes para evitar N+1
+    respond_to do |format|
+      format.html { render :summary }
+      format.pdf do
+        # Placeholder: se podría integrar gem wicked_pdf/prawn más adelante
+        render :summary, layout: "pdf"
+      end
+    end
+  end
+
   def destroy
     if @sale_order.destroy
       redirect_to admin_sale_orders_path, notice: "Sale order eliminada."
@@ -132,6 +145,10 @@ class Admin::SaleOrdersController < ApplicationController
 
   def set_sale_order
     @sale_order = SaleOrder.find_by!(id: params[:id])
+  end
+
+  def set_sale_order_with_includes
+    @sale_order = SaleOrder.includes(sale_order_items: [product: [product_images_attachments: :blob]]).find(params[:id])
   end
 
   def sale_order_params
