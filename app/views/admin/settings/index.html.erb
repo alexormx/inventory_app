@@ -198,6 +198,23 @@
 	</div>
 </div>
 
+<div class="card mb-4">
+	<div class="card-header d-flex align-items-center gap-2">
+		<i class="fa fa-cubes"></i>
+		<span>Recalcular Alpha / Compose Costs (PO)</span>
+	</div>
+	<div class="card-body">
+		<p class="mb-3 small">
+			Redistribuye costos adicionales (shipping/tax/other) y recalcula <em>unit_additional_cost</em>, unit compose y totales para <strong>todas</strong> las Purchase Orders.
+			Úsalo si cambiaste dimensiones globalmente después de haber creado POs y los valores no se actualizaron.
+		</p>
+		<%= button_to "Recalcular alpha/compose costs (todas las POs)", recalc_all_po_alpha_costs_admin_settings_path,
+			method: :post,
+			class: "btn btn-outline-danger",
+			data: { controller: 'confirm', action: 'click->confirm#ask', confirm_message: "¿Confirmas recalcular alpha/compose costs de TODAS las Purchase Orders?" } %>
+	</div>
+</div>
+
 
 <div class="card">
 	<div class="card-header d-flex align-items-center gap-2">

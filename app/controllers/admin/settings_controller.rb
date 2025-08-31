@@ -95,4 +95,11 @@ class Admin::SettingsController < ApplicationController
     flash[:notice] = "Reset de dimensiones/peso encolado (##{run.id}). Revisa el listado de ejecuciones."
     redirect_to admin_settings_path
   end
+
+  def recalc_all_po_alpha_costs
+    run = MaintenanceRun.create!(job_name: "purchase_orders.recalc_alpha_costs", status: :queued)
+    PurchaseOrders::RecalculateAllAlphaCostsJob.perform_later(run.id)
+    flash[:notice] = "Recalculo masivo de alpha/compose costs encolado (##{run.id})."
+    redirect_to admin_settings_path
+  end
 end

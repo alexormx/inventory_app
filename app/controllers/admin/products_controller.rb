@@ -126,29 +126,26 @@ class Admin::ProductsController < ApplicationController
   end
 
   def activate
-
-  @product.update(status: "active")
-
+    @product.update(status: "active")
+    @source_tab = (params[:source_tab].presence || 'all')
+  # Recompute counts AFTER status change
+  load_counts
+  prepare_source_tab_collection(@source_tab)
     respond_to do |format|
-      format.turbo_stream do
-        source_tab = params[:source_tab].presence || 'active'
-        @products = Product.where(status: source_tab).order(created_at: :desc).page(params[:page]).per(PER_PAGE)
-        load_counts
-      end
-      format.html { redirect_to admin_products_path, notice: "Product activated" }
+      format.turbo_stream
+      format.html { redirect_to admin_products_path(status: params[:source_tab]), notice: "Product activated" }
     end
   end
 
 
   def deactivate
     @product.update(status: "inactive")
+    @source_tab = (params[:source_tab].presence || 'all')
+  load_counts
+  prepare_source_tab_collection(@source_tab)
     respond_to do |format|
-      format.turbo_stream do
-        source_tab = params[:source_tab].presence || 'inactive'
-        @products = Product.where(status: source_tab).order(created_at: :desc).page(params[:page]).per(PER_PAGE)
-        load_counts
-      end
-      format.html { redirect_to admin_products_path, notice: "Product deactivated" }
+      format.turbo_stream
+      format.html { redirect_to admin_products_path(status: params[:source_tab]), notice: "Product deactivated" }
     end
   end
 
@@ -199,7 +196,7 @@ class Admin::ProductsController < ApplicationController
   private
 
   def load_counts
-    compute_counts unless defined?(@counts_global)
+  compute_counts
   end
 
   def compute_counts
@@ -232,6 +229,20 @@ class Admin::ProductsController < ApplicationController
   def fix_custom_attributes_param
     return unless params[:product].present?
     coerce_custom_attributes!(params[:product])  # <- del concern
+  end
+
+  def prepare_source_tab_collection(tab)
+    scope = Product.all
+    scope = case tab
+            when 'draft' then scope.where(status: 'draft')
+            when 'active' then scope.where(status: 'active')
+            when 'inactive' then scope.where(status: 'inactive')
+            else scope # 'all'
+            end
+    # sort param reuse minimal (recent vs name vs others handled by apply_sort)
+    @sort = params[:sort].presence
+    scope = apply_sort(scope, @sort) if respond_to?(:apply_sort)
+    @source_products = scope.page(params[:page]).per(PER_PAGE)
   end
   # Strong parameters for product
   def product_params

@@ -1,7 +1,8 @@
 <h2 class="mb-3 d-flex align-items-center gap-2"><i class="fa fa-tags"></i> Products</h2>
 
+<div id="products_counts_global_container">
 <%= render partial: "admin/shared/status_counters", locals: {
-  wrapper_id: "products_counts_global",
+  # no wrapper_id to avoid duplicate id inside container
   counts: @counts_global,
   items: [
     [:draft,    "Drafts",   "bg-secondary"],
@@ -12,6 +13,7 @@
   cta_label: "New Product",
   cta_path: new_admin_product_path
 } %>
+</div>
 
 <%# Búsqueda y filtros (estilo Inventario) %>
 <div class="card mb-4">
@@ -62,8 +64,8 @@
 </div>
 
 <%# Contadores inferiores (dependen de búsqueda+status; ocultar cero) %>
+<div id="products_counts_filtered_container">
 <%= render partial: "admin/shared/status_counters", locals: {
-  wrapper_id: "products_counts_filtered",
   counts: @counts,
   items: [
     [:draft,    "Drafts",   "bg-secondary"],
@@ -74,6 +76,7 @@
   extra_class: "mb-2",
   title: "Resultados"
 } %>
+</div>
 
 <div id="products_section">
   <%= render partial: 'products_section', locals: { products: @products, current_tab: (params[:status] || 'all') } %>

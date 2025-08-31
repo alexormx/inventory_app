@@ -32,10 +32,13 @@ class ProductsController < ApplicationController
 
   def show
     @product = Product.friendly.find(params[:id])
-    # Solo permitir ver productos activos para usuarios normales.
-    # Admin puede ver cualquiera (aunque normalmente usaría el namespace admin).
-    unless current_user&.admin? || @product.active?
-      redirect_to catalog_path, alert: "Producto no disponible" and return
+    # Ocultar siempre productos no activos (draft o inactive) en el catálogo público
+    unless @product.active?
+      msg = @product.draft? ? "Este producto está en borrador" : "Este producto se encuentra inactivo"
+      respond_to do |format|
+        format.html { redirect_to catalog_path, alert: msg }
+        format.json { head :not_found }
+      end and return
     end
   end
 end
