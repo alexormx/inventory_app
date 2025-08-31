@@ -33,8 +33,30 @@
   <%= csrf_meta_tags %>
   <%= csp_meta_tag %>
 
-  <!-- ✅ FontAwesome via CDN -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <!-- Font Awesome diferido para evitar bloqueo de render -->
+  <script>
+    (function() {
+      var href = "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css";
+      function loadFA(){
+        if (document.documentElement.classList.contains('fa-loaded')) return;
+        var l = document.createElement('link');
+        l.rel = 'stylesheet';
+        l.href = href;
+        l.crossOrigin = 'anonymous';
+        l.referrerPolicy = 'no-referrer';
+        document.head.appendChild(l);
+        document.documentElement.classList.add('fa-loaded');
+      }
+      if ('requestIdleCallback' in window) {
+        requestIdleCallback(loadFA, {timeout: 2000});
+      } else {
+        window.addEventListener('load', loadFA);
+      }
+    })();
+  </script>
+  <noscript>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  </noscript>
   
   <%= stylesheet_link_tag "application", media: "all", "data-turbo-track": "reload" %>
   <%= javascript_importmap_tags %>
@@ -50,12 +72,12 @@
   </div>
 
   <!-- ✅ NAVBAR -->
-  <header>
+  <header id="site-header" data-turbo-permanent>
     <%= render 'customers/partials/navbar' %>
   </header>
 
-  <!-- ✅ Main Content -->
-  <main class="container mt-4">
+  <!-- ✅ Main Content con transición (sin skeleton) -->
+  <main class="container mt-4 page-main" data-page-transition>
     <%= render 'layouts/flash' %>
     <%= yield %>
   </main>
@@ -63,28 +85,55 @@
   <!-- ✅ Floating WhatsApp Button -->
   <%= render 'layouts/floating_whatsapp' %>
 
-  <!-- ✅ Footer -->
-  <%= render 'customers/partials/footer' %>
+  <!-- ✅ Footer (persistente) -->
+  <footer id="site-footer" data-turbo-permanent>
+    <%= render 'customers/partials/footer' %>
+  </footer>
 
   <script>
     (function(){
+      if(window.__layoutSpacingInit) return; // evitar listeners duplicados por Turbo
+      window.__layoutSpacingInit = true;
       function recalcLayout(){
         const banner = document.getElementById('construction-banner');
         const nav = document.querySelector('.site-navbar');
         if(!banner || !nav) return;
         const bannerH = banner.offsetHeight;
         document.documentElement.style.setProperty('--banner-height', bannerH + 'px');
-        // Wait a tick after potential shrink transition
-        setTimeout(()=>{
+        requestAnimationFrame(()=>{
           const navH = nav.offsetHeight;
           document.documentElement.style.setProperty('--nav-height', navH + 'px');
           document.body.style.paddingTop = (bannerH + navH) + 'px';
-        }, 20);
+        });
       }
       ['turbo:load','turbo:render'].forEach(ev=>document.addEventListener(ev,recalcLayout));
-      window.addEventListener('resize', recalcLayout);
+      window.addEventListener('resize', recalcLayout, {passive:true});
       recalcLayout();
     })();
+  </script>
+
+  <script>
+  // Transición básica de desvanecido sin skeleton
+  (function(){
+    if(window.__pageTransitionsInit) return; window.__pageTransitionsInit = true;
+    document.addEventListener('turbo:visit', () => {
+      const main = document.querySelector('main.page-main');
+      if(main){ main.classList.add('is-leaving'); }
+    });
+    document.addEventListener('turbo:before-render', (e)=>{
+      const newMain = e.detail.newBody && e.detail.newBody.querySelector('main.page-main');
+      if(newMain){ newMain.classList.add('will-enter'); }
+    });
+    function finalizeEnter(){
+      const main = document.querySelector('main.page-main');
+      if(!main) return;
+      main.classList.remove('is-leaving');
+      main.classList.add('is-entering');
+      setTimeout(()=> main.classList.remove('is-entering','will-enter'), 200);
+    }
+    document.addEventListener('turbo:render', finalizeEnter);
+    document.addEventListener('turbo:load', finalizeEnter);
+  })();
   </script>
 
 </body>

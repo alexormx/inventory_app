@@ -1,0 +1,34 @@
+[
+  {
+    "path": "/",
+    "resourceSizes": [
+      { "resourceType": "total", "budget": 550 },
+      { "resourceType": "image", "budget": 350 },
+      { "resourceType": "script", "budget": 120 },
+      { "resourceType": "document", "budget": 40 }
+    ],
+    "timings": [
+      { "metric": "interactive", "budget": 4500 }
+    ]
+  },
+  {
+    "path": "/catalog",
+    "resourceSizes": [
+      { "resourceType": "total", "budget": 600 },
+      { "resourceType": "image", "budget": 400 }
+    ],
+    "timings": [
+      { "metric": "interactive", "budget": 5000 }
+    ]
+  },
+  {
+    "path": "/products/placeholder-slug",
+    "resourceSizes": [
+      { "resourceType": "total", "budget": 650 },
+      { "resourceType": "image", "budget": 450 }
+    ],
+    "timings": [
+      { "metric": "interactive", "budget": 5200 }
+    ]
+  }
+]

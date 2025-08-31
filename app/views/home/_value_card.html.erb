@@ -1,6 +1,6 @@
 <div class="col">
   <div class="card h-100 shadow-sm">
-    <%= image_tag image, class: "card-img-top", alt: alt, loading: 'lazy' %>
+  <%= responsive_asset_image image, alt: alt, css_class: "card-img-top img-fluid", aspect_ratio: "16:9" %>
     <div class="card-body">
       <h5 class="card-title fw-semibold"><%= title %></h5>
       <p class="card-text"><%= text %></p>

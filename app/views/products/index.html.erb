@@ -32,14 +32,18 @@
         <div class="card h-100 border-0 shadow-sm d-flex flex-column catalog-item position-relative hover-lift">
           <!-- Badges de disponibilidad -->
           <% if product.active? %>
-            <span class="position-absolute top-0 start-0 m-1"><%= stock_badge(product) %></span>
+            <% on_hand_cached = @on_hand_counts[product.id] || 0 %>
+            <span class="position-absolute top-0 start-0 m-1"><%= stock_badge(product, on_hand_override: on_hand_cached) %></span>
           <% else %>
             <span class="badge bg-secondary position-absolute top-0 start-0 m-1">No disp.</span>
           <% end %>
           <%= link_to product_path(product), class: "d-block p-2" do %>
             <% if product.product_images.attached? %>
-              <%= image_tag product.product_images.first.variant(resize_to_limit: [200, 200]),
-                            class: "product-image mx-auto d-block", alt: product.product_name %>
+      <%= responsive_attachment_image product.product_images.first,
+        alt: product.product_name,
+        widths: [160,200,320,400],
+        css_class: "product-image mx-auto d-block",
+        square: true %>
             <% else %>
               <%= image_tag "placeholder.png", class: "product-image mx-auto d-block", alt: "Imagen no disponible" %>
             <% end %>
@@ -55,7 +59,7 @@
               <p class="text-muted extra-small mb-2"><i class="fa fa-clock me-1"></i><%= eta %></p>
             <% end %>
             <% if product.active? %>
-              <% on_hand = product.current_on_hand %>
+              <% on_hand = @on_hand_counts[product.id] || 0 %>
               <% disabled = (on_hand <= 0 && !product.oversell_allowed?) %>
               <%= button_to cart_items_path,
                             params: { product_id: product.id },

@@ -2,9 +2,13 @@
 <tr id="cart_item_<%= product.id %>" data-controller="cart-item" data-cart-item-product-id-value="<%= product.id %>">
   <th scope="row">
     <div class="d-flex align-items-center gap-2">
-      <% if product.product_images.attached? %>
-        <%= image_tag product.product_images.first.variant(resize_to_fill: [50,50]), alt: product.product_name, class: 'img-thumbnail' %>
-      <% else %>
+  <% if product.product_images.attached? %>
+    <%= responsive_attachment_image product.product_images.first,
+      alt: product.product_name,
+      widths: [40,50,64],
+      css_class: 'img-thumbnail',
+      square: true %>
+  <% else %>
         <div class="rounded bg-light border d-flex align-items-center justify-content-center" style="width:50px;height:50px;font-size:.8rem;">📦</div>
       <% end %>
       <div class="d-flex flex-column">

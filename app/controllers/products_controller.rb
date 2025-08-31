@@ -22,7 +22,11 @@ class ProductsController < ApplicationController
       scope.order(created_at: :desc)
     end
 
-    @products = scope.page(params[:page]).per(PUBLIC_PER_PAGE)
+  @products = scope.page(params[:page]).per(PUBLIC_PER_PAGE)
+  # Precalcular on_hand counts en batch para evitar N+1 (simple hash)
+  product_ids = @products.map(&:id)
+  @on_hand_counts = Inventory.where(product_id: product_ids, status: :available)
+                 .group(:product_id).count
   end
 
   def show
