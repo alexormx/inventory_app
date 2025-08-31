@@ -35,7 +35,11 @@ class ProductsController < ApplicationController
     # Solo permitir ver productos activos para usuarios normales.
     # Admin puede ver cualquiera (aunque normalmente usaría el namespace admin).
     unless current_user&.admin? || @product.active?
-      redirect_to catalog_path, alert: "Producto no disponible" and return
+      respond_to do |format|
+        format.html { redirect_to catalog_path, alert: "Producto no disponible" }
+        format.json { head :not_found }
+      end
+      return
     end
   end
 end

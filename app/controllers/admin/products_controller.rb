@@ -126,16 +126,13 @@ class Admin::ProductsController < ApplicationController
   end
 
   def activate
-
-  @product.update(status: "active")
-
+    @product.update(status: "active")
     respond_to do |format|
       format.turbo_stream do
-        source_tab = params[:source_tab].presence || 'active'
-        @products = Product.where(status: source_tab).order(created_at: :desc).page(params[:page]).per(PER_PAGE)
+        @current_tab = (params[:source_tab].presence || 'all')
         load_counts
       end
-      format.html { redirect_to admin_products_path, notice: "Product activated" }
+      format.html { redirect_to admin_products_path(status: params[:source_tab]), notice: "Product activated" }
     end
   end
 
@@ -144,11 +141,10 @@ class Admin::ProductsController < ApplicationController
     @product.update(status: "inactive")
     respond_to do |format|
       format.turbo_stream do
-        source_tab = params[:source_tab].presence || 'inactive'
-        @products = Product.where(status: source_tab).order(created_at: :desc).page(params[:page]).per(PER_PAGE)
+        @current_tab = (params[:source_tab].presence || 'all')
         load_counts
       end
-      format.html { redirect_to admin_products_path, notice: "Product deactivated" }
+      format.html { redirect_to admin_products_path(status: params[:source_tab]), notice: "Product deactivated" }
     end
   end
 
