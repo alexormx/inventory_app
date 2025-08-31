@@ -1,5 +1,5 @@
 <div id="products_section">
-  <div class="row g-3">
+  <div id="products_list_<%= (local_assigns[:current_tab] || params[:status] || 'all') %>" class="row g-3">
   <% products.each do |product| %>
     <div class="col-md-6 col-lg-4">
   <%= render partial: 'product_card', locals: { product: product, current_tab: (local_assigns[:current_tab] || 'active') } %>
