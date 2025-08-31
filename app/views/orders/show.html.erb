@@ -53,4 +53,7 @@
   </tbody>
 </table>
 
-<%= link_to 'Regresar', orders_path, class: 'btn btn-outline-secondary mt-3' %>
+<div class="mt-3 d-flex gap-2">
+  <%= link_to 'Regresar', orders_path, class: 'btn btn-outline-secondary' %>
+  <%= link_to 'Ver resumen compacto', summary_order_path(@order), class: 'btn btn-primary' %>
+</div>
