@@ -5,7 +5,8 @@
   <p class="lead text-muted mb-5"><%= t('home.index.lead') %></p>
 
   <div class="row row-cols-1 row-cols-md-2 g-4">
-    <%= render 'home/value_card', image: 'collection_shelf.jpg', alt: t('home.index.cards.collection.alt'), title: t('home.index.cards.collection.title'), text: t('home.index.cards.collection.text') %>
+    <%# Primera imagen marcada como LCP: fetchpriority=high y preload fuentes principales %>
+    <%= render 'home/value_card', lcp: true, image: 'collection_shelf.jpg', alt: t('home.index.cards.collection.alt'), title: t('home.index.cards.collection.title'), text: t('home.index.cards.collection.text') %>
     <%= render 'home/value_card', image: 'father_son_collecting.jpg', alt: t('home.index.cards.legacy.alt'), title: t('home.index.cards.legacy.title'), text: t('home.index.cards.legacy.text') %>
     <%= render 'home/value_card', image: 'collector_friends.jpg', alt: t('home.index.cards.community.alt'), title: t('home.index.cards.community.title'), text: t('home.index.cards.community.text') %>
     <%= render 'home/value_card', image: 'good_practices.jpg', alt: t('home.index.cards.practices.alt'), title: t('home.index.cards.practices.title'), text: t('home.index.cards.practices.text') %>

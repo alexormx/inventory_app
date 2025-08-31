@@ -33,6 +33,16 @@
   <%= csrf_meta_tags %>
   <%= csp_meta_tag %>
 
+  <%# Preload LCP home (collection_shelf 960w variantes si existen). Ignora si no está en esa vista %>
+  <% if content_for?(:title) && (yield(:title).to_s.include?('Pasatiempos') rescue true) %>
+    <% # Verificamos existencia de variantes - fallback silencioso %>
+    <% [ ['image/avif','collection_shelf-960w.avif'], ['image/webp','collection_shelf-960w.webp'], ['image/jpeg','collection_shelf-960w.jpg'] ].each do |type, file| %>
+      <% if Rails.application.assets&.find_asset(file) || (Rails.application.config.assets.compile == false && Rails.application.assets_manifest.assets[file]) rescue false %>
+        <link rel="preload" as="image" href="<%= asset_path file %>" imagesrcset="<%= asset_path file %> 960w" imagesizes="(max-width: 960px) 100vw, 960px" fetchpriority="high" type="<%= type %>">
+      <% end %>
+    <% end %>
+  <% end %>
+
   <!-- Font Awesome diferido para evitar bloqueo de render -->
   <script>
     (function() {

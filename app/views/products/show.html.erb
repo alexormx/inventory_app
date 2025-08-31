@@ -31,15 +31,13 @@
 
           <div class="d-flex flex-wrap gap-2 mt-3" data-gallery-target="thumbnails" data-action="keydown->gallery#keydown">
             <% @product.product_images.each_with_index do |img, index| %>
-              <% thumb_variant = img.variant(resize_to_limit: [80,80]) %>
-        <%= image_tag thumb_variant,
-          class: "thumbnail-image img-thumbnail #{'border-primary' if index == 0}",
-          alt: "Miniatura #{index + 1}",
-          loading: "lazy",
-          style: "cursor:pointer",
-          role: "button",
-          tabindex: 0,
-          data: { index: index, action: 'click->gallery#show keydown->gallery#keydown' } %>
+              <%= responsive_attachment_image img,
+                    alt: "Miniatura #{index + 1}",
+                    widths: [40,56,80],
+                    css_class: "thumbnail-image img-thumbnail #{'border-primary' if index == 0}",
+                    square: true,
+                    loading: 'lazy',
+                    id: nil %>
             <% end %>
           </div>
         </div>
