@@ -148,7 +148,7 @@ class Admin::SaleOrdersController < ApplicationController
   end
 
   def set_sale_order_with_includes
-    @sale_order = SaleOrder.includes(sale_order_items: [product: [product_images_attachments: :blob]]).find(params[:id])
+    @sale_order = SaleOrder.includes(:payments, :shipment, sale_order_items: [product: [product_images_attachments: :blob]]).find(params[:id])
   end
 
   def sale_order_params

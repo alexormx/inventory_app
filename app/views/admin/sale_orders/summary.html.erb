@@ -86,7 +86,7 @@
     </div>
   <% end %>
 
-  <% unless @sale_order.shipping_cost.present? %>
+  <% unless @sale_order.shipment.present? %>
     <p class="mt-3 small text-warning mb-0"><i class="fa fa-truck me-1"></i>Aún no se ha seleccionado un método de entrega.</p>
   <% end %>
 </div>
