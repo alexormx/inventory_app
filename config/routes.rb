@@ -90,6 +90,11 @@ Rails.application.routes.draw do
         get :suppliers
         get :admins
       end
+      resources :shipping_addresses, controller: 'user_shipping_addresses' do
+        member do
+          patch :make_default
+        end
+      end
     end
 
     # Payments Management
