@@ -53,6 +53,7 @@ const lazyModules = [
   () => import("custom/cart_preview_dynamic"),
   () => import("custom/flash_stack_offset"),
   () => import("custom/tooltip_init"),
+  () => import("custom/address_autofill"),
   () => import("modules/toggle_menu"),
   () => import("modules/flash_messages"),
   () => import("modules/disable_enter_until_email"),

@@ -101,6 +101,18 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_31_131004) do
     t.integer "payment_method"
   end
 
+  create_table "postal_codes", force: :cascade do |t|
+    t.string "cp", limit: 5, null: false
+    t.string "state", null: false
+    t.string "municipality", null: false
+    t.string "settlement", null: false
+    t.string "settlement_type"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["cp", "settlement"], name: "index_postal_codes_on_cp_and_settlement"
+    t.index ["cp"], name: "index_postal_codes_on_cp"
+  end
+
   create_table "preorder_reservations", force: :cascade do |t|
     t.integer "product_id", null: false
     t.integer "user_id", null: false
