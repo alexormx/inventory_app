@@ -175,6 +175,9 @@ Rails.application.routes.draw do
     end
   end
 
+  # Simple API (unversioned) for postal codes autofill
+  get '/api/postal_codes', to: 'api/postal_codes#index'
+
   # Rails health check (uptime monitor, etc.)
   get "up" => "rails/health#show", as: :rails_health_check
 

@@ -1,3 +1,15 @@
+# Sample SEPOMEX postal codes (minimal) for dev/test
+if ENV['SEED_POSTAL_CODES']
+	sample = [
+		{ cp: '36500', state: 'guanajuato', municipality: 'irapuato', settlement: 'centro', settlement_type: 'colonia' },
+		{ cp: '36500', state: 'guanajuato', municipality: 'irapuato', settlement: 'modulo i', settlement_type: 'colonia' },
+		{ cp: '01000', state: 'ciudad de méxico', municipality: 'álvaro obregón', settlement: 'san ángel', settlement_type: 'colonia' }
+	]
+	sample.each do |row|
+		PostalCode.find_or_create_by!(row)
+	end
+	puts "Seeded postal codes"
+end
 # Site settings initial values (idempotent)
 SiteSetting.set('language_switcher_enabled', false) unless SiteSetting.get('language_switcher_enabled') == false
 SiteSetting.set('dark_mode_enabled', false) unless SiteSetting.get('dark_mode_enabled') == false
