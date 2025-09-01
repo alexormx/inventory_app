@@ -5,6 +5,7 @@ class ShippingAddress < ApplicationRecord
   validates :postal_code, format: { with: /\A\d{5}\z/, message: 'CP inválido' }, allow_blank: true
 
   before_save :ensure_single_default
+  before_validation :normalize_location_fields
 
   scope :ordered, -> { order(default: :desc, created_at: :asc) }
 
@@ -16,5 +17,17 @@ class ShippingAddress < ApplicationRecord
   def ensure_single_default
     return unless default? && user_id.present?
     ShippingAddress.where(user_id: user_id).where.not(id: id).update_all(default: false)
+  end
+
+  def normalize_location_fields
+    %i[settlement municipality state].each do |attr|
+      val = self[attr]
+      next if val.nil?
+      stripped = val.to_s.strip
+      self[attr] = stripped.blank? || stripped.downcase == 'nan' ? nil : stripped.downcase
+    end
+    if postal_code.present?
+      self.postal_code = postal_code.to_s.gsub(/[^0-9]/,'')[0,5]
+    end
   end
 end
