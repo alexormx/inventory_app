@@ -1,3 +1,39 @@
+## Mexican Postal Code Autofill (SEPOMEX)
+
+Feature branch: `feature/mx-postal-codes-autofill`.
+
+Adds table `postal_codes` with columns: cp, state, municipality, settlement, settlement_type.
+
+Import CSV (headers: cp,state,municipality,settlement,settlement_type):
+
+```
+bin/rails rake sepomex:import[path/to/sepomex.csv]
+```
+
+Sample seed (dev only):
+
+```
+SEED_POSTAL_CODES=1 bin/rails db:seed
+```
+
+API endpoint (unversioned):
+
+```
+GET /api/postal_codes?cp=36500
+=> { found: true, estado: "guanajuato", municipio: "irapuato", colonias: ["centro", ...] }
+```
+
+Front-end JS: `app/javascript/custom/address_autofill.js` (lazy-loaded). Use:
+
+```html
+<script type="module">
+import { setupAddressAutofill } from '/assets/custom/address_autofill.js';
+setupAddressAutofill({ cpInput: '#cp', coloniaSelect: '#colonia', municipioInput: '#municipio', estadoInput: '#estado' });
+</script>
+```
+
+System specs cover admin & customer address forms.
+
 # 🧰 Pasatiempos a Escala – Inventario & E‑Commerce (Rails 8)
 
 Aplicación Rails 8 / Ruby 3.2.3 con enfoque en catálogo, carrito y gestión de inventario para productos coleccionables. Incluye optimizaciones recientes de rendimiento (imágenes responsive, carga diferida, modal de confirmación personalizada y actualización dinámica del carrito).

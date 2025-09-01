@@ -26,7 +26,7 @@
     </div>
     <div class="col-8">
       <%= f.label :settlement, 'Colonia' %>
-      <select class="form-select" id="cust_edit_addr_colonia" name="shipping_address[settlement]"></select>
+      <select class="form-select" id="cust_edit_addr_colonia" name="shipping_address[settlement]" data-current="<%= @address.settlement %>"></select>
     </div>
     <div class="col-6">
       <%= f.label :municipality, 'Municipio' %>

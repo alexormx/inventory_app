@@ -63,6 +63,12 @@ export function setupAddressAutofill({ cpInput, coloniaSelect, municipioInput, e
           opt.textContent = titleCase(c)
           colEl.appendChild(opt)
         })
+        // Pre-seleccionar si hay data-current (normalizado a minúsculas)
+        const current = colEl.getAttribute('data-current')
+        if (current) {
+          const lowerCurrent = current.toLowerCase()
+            ;[...colEl.options].forEach(o => { if (o.value.toLowerCase() === lowerCurrent) o.selected = true })
+        }
       })
       .catch(err => {
         console.error('CP fetch error', err)
@@ -77,9 +83,13 @@ export function setupAddressAutofill({ cpInput, coloniaSelect, municipioInput, e
   }
 
   cpEl.addEventListener('input', debounceFetch)
+  // Autofetch si ya viene precargado el CP (edición)
+  if (cpEl.value.trim().match(/^\d{5}$/)) {
+    fetchCP(cpEl.value.trim())
+  }
 
   // Helpers
   function titleCase(str) {
-    return str.replace(/\b\w+/g, s => s.charAt(0).toUpperCase() + s.slice(1))
+    return (str || '').replace(/\b\w+/g, s => s.charAt(0).toUpperCase() + s.slice(1))
   }
 }
