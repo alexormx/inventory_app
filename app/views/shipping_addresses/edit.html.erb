@@ -20,17 +20,25 @@
       <%= f.label :line2, 'Dirección (línea 2)' %>
       <%= f.text_field :line2, class: 'form-control' %>
     </div>
+    <div class="col-4">
+      <%= f.label :postal_code, 'CP' %>
+      <%= f.text_field :postal_code, class: 'form-control', required: true, id: 'cust_edit_addr_cp', maxlength: 5 %>
+    </div>
+    <div class="col-8">
+      <%= f.label :settlement, 'Colonia' %>
+      <select class="form-select" id="cust_edit_addr_colonia" name="shipping_address[settlement]"></select>
+    </div>
     <div class="col-6">
-      <%= f.label :city, 'Ciudad' %>
-      <%= f.text_field :city, class: 'form-control', required: true %>
+      <%= f.label :municipality, 'Municipio' %>
+      <%= f.text_field :municipality, class: 'form-control', id: 'cust_edit_addr_municipio', readonly: true %>
     </div>
     <div class="col-6">
       <%= f.label :state, 'Estado' %>
-      <%= f.text_field :state, class: 'form-control' %>
+      <%= f.text_field :state, class: 'form-control', id: 'cust_edit_addr_estado', readonly: true %>
     </div>
     <div class="col-6">
-      <%= f.label :postal_code, 'CP' %>
-      <%= f.text_field :postal_code, class: 'form-control', required: true %>
+      <%= f.label :city, 'Ciudad (manual)' %>
+      <%= f.text_field :city, class: 'form-control', required: true %>
     </div>
     <div class="col-6">
       <%= f.label :country, 'País' %>
@@ -46,3 +54,15 @@
     </div>
   </div>
 <% end %>
+
+<script type="module">
+  import { setupAddressAutofill } from '/assets/custom/address_autofill.js';
+  document.addEventListener('turbo:load', () => {
+    setupAddressAutofill({
+      cpInput: '#cust_edit_addr_cp',
+      coloniaSelect: '#cust_edit_addr_colonia',
+      municipioInput: '#cust_edit_addr_municipio',
+      estadoInput: '#cust_edit_addr_estado'
+    });
+  });
+</script>

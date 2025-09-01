@@ -290,6 +290,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_31_131004) do
     t.boolean "default", default: false, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "settlement"
+    t.string "municipality"
+    t.index ["postal_code"], name: "index_shipping_addresses_on_postal_code"
     t.index ["user_id", "default"], name: "index_shipping_addresses_on_user_id_and_default"
     t.index ["user_id"], name: "index_shipping_addresses_on_user_id"
   end
