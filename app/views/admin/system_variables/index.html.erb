@@ -1,81 +1,116 @@
-<div class="d-flex align-items-center justify-content-between mb-3">
-  <h1 class="h5 mb-0"><i class="fa fa-sliders"></i> System Variables</h1>
-  <%= link_to 'Settings', admin_settings_path, class: 'btn btn-outline-secondary btn-sm' %>
+<div class="container-fluid px-0">
+  <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+    <h1 class="h5 mb-0 d-flex align-items-center">
+      <i class="fa fa-sliders me-2 text-secondary"></i>
+      <span>System Variables</span>
+    </h1>
+    <div class="d-flex gap-2">
+      <%= link_to 'Settings', admin_settings_path, class: 'btn btn-outline-secondary btn-sm' %>
+    </div>
+  </div>
+
+  <div class="row g-3 row-cols-1 row-cols-xl-2 align-items-stretch">
+    <!-- ENV -->
+    <div class="col">
+      <div class="card h-100 shadow-sm">
+        <div class="card-header py-2 d-flex justify-content-between align-items-center">
+          <strong>ENV (filtrado)</strong>
+          <span class="badge text-bg-light"><%= @env_vars.size %></span>
+        </div>
+        <div class="card-body p-0 small" style="max-height:340px; overflow:auto;">
+          <table class="table table-sm table-hover mb-0 align-middle">
+            <tbody>
+              <% @env_vars.each do |k,v| %>
+                <tr>
+                  <th scope="row" class="text-nowrap"><code><%= k %></code></th>
+                  <td class="text-muted"><div class="text-truncate" style="max-width:380px"><%= v %></div></td>
+                </tr>
+              <% end %>
+              <% if @env_vars.blank? %>
+                <tr><td colspan="2" class="text-center text-muted">Sin variables</td></tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Runtime Info -->
+    <div class="col">
+      <div class="card h-100 shadow-sm">
+        <div class="card-header py-2"><strong>Runtime Info</strong></div>
+        <div class="card-body p-0 small">
+          <table class="table table-sm mb-0">
+            <tbody>
+              <% @runtime_info.each do |k,v| %>
+                <tr><th class="text-nowrap"><%= k %></th><td><%= v %></td></tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Site Settings -->
+    <div class="col">
+      <div class="card h-100 shadow-sm">
+        <div class="card-header py-2 d-flex justify-content-between align-items-center">
+          <strong>Site Settings (DB)</strong>
+          <span class="badge text-bg-light"><%= @site_settings.size %></span>
+        </div>
+        <div class="card-body p-0 small" style="max-height:340px; overflow:auto;">
+          <table class="table table-sm mb-0 align-middle">
+            <tbody>
+              <% @site_settings.each do |s| %>
+                <tr>
+                  <th scope="row" class="text-nowrap"><code><%= s.key %></code></th>
+                  <td><span class="badge text-bg-light"><%= s.value %></span></td>
+                </tr>
+              <% end %>
+              <% if @site_settings.blank? %>
+                <tr><td colspan="2" class="text-center text-muted">Sin settings</td></tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dynamic Flags -->
+    <div class="col">
+      <div class="card h-100 shadow-sm">
+        <div class="card-header py-2 d-flex justify-content-between align-items-center">
+          <strong>Dynamic Flags</strong>
+          <span class="badge text-bg-light"><%= @dynamic_flags.size %></span>
+        </div>
+        <div class="card-body p-0 small">
+          <table class="table table-sm mb-0">
+            <tbody>
+              <% @dynamic_flags.each do |k,v| %>
+                <tr><th class="text-nowrap"><%= k %></th><td><code><%= v %></code></td></tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Rails Config -->
+    <div class="col-12">
+      <div class="card shadow-sm">
+        <div class="card-header py-2"><strong>Rails Config (subset)</strong></div>
+        <div class="card-body p-0 small">
+          <table class="table table-sm mb-0">
+            <tbody>
+              <% @rails_config.each do |k,v| %>
+                <tr><th class="text-nowrap"><%= k %></th><td><%= v %></td></tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p class="text-muted small mt-3 mb-0">* Valores sensibles omitidos automáticamente. Extiende esta página agregando secciones (Redis stats, Queue depth, etc.).</p>
 </div>
-
-<div class="row g-3">
-  <div class="col-md-6">
-    <div class="card h-100">
-      <div class="card-header py-2"><strong>ENV (filtrado)</strong></div>
-      <div class="card-body small overflow-auto" style="max-height:320px;">
-        <% @env_vars.each do |k,v| %>
-          <div class="d-flex justify-content-between border-bottom py-1">
-            <code class="me-2"><%= k %></code>
-            <span class="text-muted text-truncate" style="max-width:55%;"><%= v %></span>
-          </div>
-        <% end %>
-        <% if @env_vars.blank? %><p class="text-muted mb-0">No vars</p><% end %>
-      </div>
-    </div>
-  </div>
-
-  <div class="col-md-6">
-    <div class="card h-100">
-      <div class="card-header py-2"><strong>Runtime Info</strong></div>
-      <div class="card-body small">
-        <table class="table table-sm mb-0">
-          <tbody>
-            <% @runtime_info.each do |k,v| %>
-              <tr><th class="text-nowrap"><%= k %></th><td><%= v %></td></tr>
-            <% end %>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <div class="col-md-6">
-    <div class="card h-100">
-      <div class="card-header py-2"><strong>Site Settings (DB)</strong></div>
-      <div class="card-body small overflow-auto" style="max-height:320px;">
-        <% @site_settings.each do |s| %>
-          <div class="d-flex justify-content-between align-items-center border-bottom py-1">
-            <code><%= s.key %></code>
-            <span class="badge text-bg-light"><%= s.value %></span>
-          </div>
-        <% end %>
-        <% if @site_settings.blank? %><p class="text-muted mb-0">No settings</p><% end %>
-      </div>
-    </div>
-  </div>
-
-  <div class="col-md-6">
-    <div class="card h-100">
-      <div class="card-header py-2"><strong>Dynamic Flags</strong></div>
-      <div class="card-body small">
-        <ul class="list-group list-group-flush">
-          <% @dynamic_flags.each do |k,v| %>
-            <li class="list-group-item d-flex justify-content-between py-1"><span><%= k %></span><code><%= v %></code></li>
-          <% end %>
-        </ul>
-      </div>
-    </div>
-  </div>
-
-  <div class="col-12">
-    <div class="card">
-      <div class="card-header py-2"><strong>Rails Config (subset)</strong></div>
-      <div class="card-body small">
-        <table class="table table-sm mb-0">
-          <tbody>
-            <% @rails_config.each do |k,v| %>
-              <tr><th class="text-nowrap"><%= k %></th><td><%= v %></td></tr>
-            <% end %>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-</div>
-
-<p class="text-muted small mt-3">* Valores sensibles omitidos automáticamente. Extiende esta página agregando secciones (Redis stats, Queue depth, etc.).</p>
