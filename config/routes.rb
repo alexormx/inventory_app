@@ -83,6 +83,9 @@ Rails.application.routes.draw do
       end
     end
 
+  # System variables explorer
+  get 'system_variables', to: 'system_variables#index', as: :system_variables
+
     # General user management (admin-facing) con tabs
   resources :users, only: [:index, :new, :create, :edit, :update] do
       collection do

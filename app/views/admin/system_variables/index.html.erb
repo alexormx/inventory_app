@@ -1,0 +1,81 @@
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <h1 class="h5 mb-0"><i class="fa fa-sliders"></i> System Variables</h1>
+  <%= link_to 'Settings', admin_settings_path, class: 'btn btn-outline-secondary btn-sm' %>
+</div>
+
+<div class="row g-3">
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-header py-2"><strong>ENV (filtrado)</strong></div>
+      <div class="card-body small overflow-auto" style="max-height:320px;">
+        <% @env_vars.each do |k,v| %>
+          <div class="d-flex justify-content-between border-bottom py-1">
+            <code class="me-2"><%= k %></code>
+            <span class="text-muted text-truncate" style="max-width:55%;"><%= v %></span>
+          </div>
+        <% end %>
+        <% if @env_vars.blank? %><p class="text-muted mb-0">No vars</p><% end %>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-header py-2"><strong>Runtime Info</strong></div>
+      <div class="card-body small">
+        <table class="table table-sm mb-0">
+          <tbody>
+            <% @runtime_info.each do |k,v| %>
+              <tr><th class="text-nowrap"><%= k %></th><td><%= v %></td></tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-header py-2"><strong>Site Settings (DB)</strong></div>
+      <div class="card-body small overflow-auto" style="max-height:320px;">
+        <% @site_settings.each do |s| %>
+          <div class="d-flex justify-content-between align-items-center border-bottom py-1">
+            <code><%= s.key %></code>
+            <span class="badge text-bg-light"><%= s.value %></span>
+          </div>
+        <% end %>
+        <% if @site_settings.blank? %><p class="text-muted mb-0">No settings</p><% end %>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-header py-2"><strong>Dynamic Flags</strong></div>
+      <div class="card-body small">
+        <ul class="list-group list-group-flush">
+          <% @dynamic_flags.each do |k,v| %>
+            <li class="list-group-item d-flex justify-content-between py-1"><span><%= k %></span><code><%= v %></code></li>
+          <% end %>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header py-2"><strong>Rails Config (subset)</strong></div>
+      <div class="card-body small">
+        <table class="table table-sm mb-0">
+          <tbody>
+            <% @rails_config.each do |k,v| %>
+              <tr><th class="text-nowrap"><%= k %></th><td><%= v %></td></tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p class="text-muted small mt-3">* Valores sensibles omitidos automáticamente. Extiende esta página agregando secciones (Redis stats, Queue depth, etc.).</p>
