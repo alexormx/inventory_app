@@ -109,6 +109,80 @@ Luego precompilar (si aplica) o reiniciar el servidor para que se detecten.
 | PREORDER_ETA_DAYS / BACKORDER_ETA_DAYS (SiteSetting) | Cálculo ETA | 60 |
 
 ---
+## 🔍 Página Admin: System Variables
+Ruta: `/admin/system_variables` (link en la sección “System” del sidebar).
+
+Objetivo: Visibilidad centralizada y sin exponer secretos de:
+- ENV filtradas (omite llaves que contengan: SECRET, PASSWORD, KEY, TOKEN, DATABASE_URL, RAILS_MASTER_KEY)
+- SiteSettings persistidos en DB
+- Sub‑conjunto de configuración Rails (cache_store, servicio ActiveStorage, eager_load, etc.)
+- Info runtime (Ruby/Rails version, PID, memoria, timestamp)
+- Banderas dinámicas / toggles simples (ej: banner de cookies)
+
+Características:
+- Scroll interno en listas largas para evitar crecer verticalmente la página.
+- Diseño sólo lectura (por ahora) para minimizar riesgo de cambios accidentales.
+- Estructura preparada para extender con métricas (solid_queue depth, Redis info, cache hit ratio, etc.)
+
+Extender / Personalizar:
+1. Agregar nueva sección: crear método privado en `Admin::SystemVariablesController` y añadir card en la vista `app/views/admin/system_variables/index.html.erb`.
+2. Exportar JSON: añadir acción `def export` que renderice un hash agregado y link en la UI (pendiente opcional).
+3. Métricas de colas (ejemplo):
+   ```ruby
+   def queue_metrics
+     { pending_jobs: SolidQueue::Job.pending.count }
+   end
+   ```
+4. Redis stats: usar `Redis.current.info.slice('used_memory_human','connected_clients')` (manejar rescue si no disponible).
+
+Seguridad:
+- Nunca mostrar valores completos de llaves sensibles; si se requiere listar su presencia, usar enmascarado (`****suffix`).
+- Revisión antes de añadir nuevas expresiones regulares en `SENSITIVE_ENV_PATTERNS`.
+
+Testing sugerido (pendiente):
+- Request spec que garantice exclusión de variables sensibles mockeadas.
+- System spec que verifique presencia de secciones clave y ausencia de patrones `SECRET`.
+
+Próximos incrementos recomendados:
+- Botón “Copiar todo” (clipboard) para reporte técnico.
+- Endpoint JSON firmado sólo para admins (auditoría / soporte).
+- Indicadores de modo (development / production) resaltados visualmente.
+
+### 🗂 Data Dictionary / Descripciones de Tablas y Columnas
+Se mantiene en `db/schema_docs.yml` (dev) y opcionalmente en comentarios nativos de PostgreSQL para prod.
+
+Workflows:
+1. Generar / actualizar placeholders:
+  ```bash
+  bin/rails introspection:generate_schema_docs
+  ```
+  Esto añade entradas faltantes sin borrar comentarios existentes.
+2. Editar manualmente `db/schema_docs.yml` rellenando `_comment` (tabla) y cada columna.
+3. (Opcional Postgres) Aplicar comentarios a la BD:
+  ```bash
+  bin/rails introspection:apply_comments
+  ```
+4. Ver progreso:
+  ```bash
+  bin/rails introspection:dictionary_progress
+  ```
+
+Placeholders: se generan como `TODO: describir ...` si está vacío. Puedes buscar rápidamente lo pendiente:
+```bash
+grep -R "TODO: describir" db/schema_docs.yml
+```
+
+Estrategia recomendada de llenado:
+- Empezar por tablas de dominio crítico (orders, products, users).
+- Describir el propósito en 1 frase (`_comment`).
+- Para columnas: foco en semántica funcional, unidades (cents, UTC, etc.) y restricciones implícitas no expresadas por el esquema.
+- Evitar repetir lo obvio ("id primary key").
+
+Sincronización con Postgres: Los comentarios en la DB aparecen también en la UI (mezclados con YAML). YAML tiene precedencia si existe.
+
+
+
+---
 ## 🧪 Comandos Útiles
 ```bash
 # Ejecutar servidor desarrollo (Procfile.dev si se usa foreman)
