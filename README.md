@@ -148,6 +148,39 @@ Próximos incrementos recomendados:
 - Endpoint JSON firmado sólo para admins (auditoría / soporte).
 - Indicadores de modo (development / production) resaltados visualmente.
 
+### 🗂 Data Dictionary / Descripciones de Tablas y Columnas
+Se mantiene en `db/schema_docs.yml` (dev) y opcionalmente en comentarios nativos de PostgreSQL para prod.
+
+Workflows:
+1. Generar / actualizar placeholders:
+  ```bash
+  bin/rails introspection:generate_schema_docs
+  ```
+  Esto añade entradas faltantes sin borrar comentarios existentes.
+2. Editar manualmente `db/schema_docs.yml` rellenando `_comment` (tabla) y cada columna.
+3. (Opcional Postgres) Aplicar comentarios a la BD:
+  ```bash
+  bin/rails introspection:apply_comments
+  ```
+4. Ver progreso:
+  ```bash
+  bin/rails introspection:dictionary_progress
+  ```
+
+Placeholders: se generan como `TODO: describir ...` si está vacío. Puedes buscar rápidamente lo pendiente:
+```bash
+grep -R "TODO: describir" db/schema_docs.yml
+```
+
+Estrategia recomendada de llenado:
+- Empezar por tablas de dominio crítico (orders, products, users).
+- Describir el propósito en 1 frase (`_comment`).
+- Para columnas: foco en semántica funcional, unidades (cents, UTC, etc.) y restricciones implícitas no expresadas por el esquema.
+- Evitar repetir lo obvio ("id primary key").
+
+Sincronización con Postgres: Los comentarios en la DB aparecen también en la UI (mezclados con YAML). YAML tiene precedencia si existe.
+
+
 
 ---
 ## 🧪 Comandos Útiles

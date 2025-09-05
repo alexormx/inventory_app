@@ -1,3 +1,5 @@
+require 'rake'
+
 class Admin::SystemVariablesController < ApplicationController
   before_action :authenticate_user!
   before_action :authorize_admin!
@@ -14,6 +16,24 @@ class Admin::SystemVariablesController < ApplicationController
     @rails_config = gather_rails_config
     @runtime_info = runtime_info
     @dynamic_flags = dynamic_flags
+  @schema_report = Introspection::SchemaReport.call
+  @model_report  = Introspection::ModelReport.call
+  @env_usage_report = Introspection::EnvUsageReport.call
+  end
+
+  # Ejecuta la generación / actualización de placeholders de comentarios (no destructivo)
+  def generate_schema_docs
+    authorize_admin!
+    begin
+      # Cargar tareas sólo una vez; reenable para permitir múltiples invocaciones web
+      Rails.application.load_tasks unless Rake::Task.task_defined?('introspection:generate_schema_docs')
+      task = Rake::Task['introspection:generate_schema_docs']
+      task.reenable
+      task.invoke
+      redirect_to admin_system_variables_path, notice: 'Schema docs regenerado (placeholders actualizados).'
+    rescue => e
+      redirect_to admin_system_variables_path, alert: "Fallo al regenerar schema docs: #{e.class}: #{e.message}"
+    end
   end
 
   private
@@ -27,7 +47,8 @@ class Admin::SystemVariablesController < ApplicationController
   def gather_rails_config
     cfg = {}
     # Ejemplos de configuración útil (ampliable)
-    cfg[:cache_store] = Rails.configuration.cache_store&.first
+  cs = Rails.configuration.cache_store
+  cfg[:cache_store] = cs.is_a?(Array) ? cs.first : cs
     cfg[:active_storage_service] = Rails.configuration.active_storage.service
     cfg[:eager_load] = Rails.configuration.eager_load
     cfg[:consider_all_requests_local] = Rails.configuration.consider_all_requests_local

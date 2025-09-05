@@ -85,6 +85,7 @@ Rails.application.routes.draw do
 
   # System variables explorer
   get 'system_variables', to: 'system_variables#index', as: :system_variables
+  post 'system_variables/generate_schema_docs', to: 'system_variables#generate_schema_docs', as: :system_variables_generate_schema_docs
 
     # General user management (admin-facing) con tabs
   resources :users, only: [:index, :new, :create, :edit, :update] do

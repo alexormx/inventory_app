@@ -30,6 +30,10 @@ import ConfirmController from "./controllers/confirm_controller"
 application.register("confirm", ConfirmController)
 import GalleryController from "./controllers/gallery_controller"
 application.register("gallery", GalleryController)
+import SimpleTabsController from "./controllers/simple_tabs_controller"
+application.register("simple-tabs", SimpleTabsController)
+import SimpleAccordionController from "./controllers/simple_accordion_controller"
+application.register("simple-accordion", SimpleAccordionController)
 
 // Remove Stimulus dropdown controller (using vanilla JS now)
 // import DropdownController from "./controllers/dropdown_controller"
