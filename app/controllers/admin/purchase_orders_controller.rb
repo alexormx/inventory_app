@@ -80,25 +80,17 @@ class Admin::PurchaseOrdersController < ApplicationController
   end
 
   def show
-  # Auditoría: conteo de inventario generado por producto dentro de esta PO
+  # Auditoría: conteo ESTRICTO por línea (purchase_order_item_id)
   scope = Inventory.where(purchase_order_id: @purchase_order.id)
-  @inventory_counts_by_product = scope.group(:product_id).count
-  @inventory_status_counts_by_product = scope.group(:product_id, :status).count
-  # Conteo por línea específico (si hay SKUs repetidos en diferentes líneas)
-    conn = ActiveRecord::Base.connection
-    if conn.column_exists?(:inventories, :purchase_order_item_id)
-      @inventory_counts_by_line = Inventory.where(purchase_order_id: @purchase_order.id)
-                                           .where.not(purchase_order_item_id: nil)
-                                           .group(:purchase_order_item_id)
-                                           .count
-    elsif conn.column_exists?(:inventories, :linea) || conn.column_exists?(:inventories, :line)
-      col = conn.column_exists?(:inventories, :linea) ? 'linea' : 'line'
-      @inventory_counts_by_line = Inventory.where(purchase_order_id: @purchase_order.id)
-                                           .group(col)
-                                           .count
-    else
-      @inventory_counts_by_line = {}
-    end
+  @inventory_counts_by_line = scope.where.not(purchase_order_item_id: nil)
+                   .group(:purchase_order_item_id)
+                   .count
+  # Desglose de estados por línea (para tooltip)
+  @inventory_status_counts_by_line = scope.where.not(purchase_order_item_id: nil)
+                      .group(:purchase_order_item_id, :status)
+                      .count
+  # Mapa para traducir enum status numérico a nombre
+  @inventory_status_names = Inventory.statuses.invert
   end
 
   def new
