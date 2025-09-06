@@ -78,6 +78,7 @@
             <tr>
               <th>Product</th>
               <th>Qty</th>
+              <th class="text-nowrap">Inventario gen.</th>
               <th>Unit Cost</th>
               <th>Line Volume</th>
               <th>Line Weight</th>
@@ -93,6 +94,15 @@
               <tr>
                 <td><%= item.product&.product_name || "—" %></td>
                 <td><%= item.quantity %></td>
+                <td>
+                  <% pid = item.product_id %>
+                  <% inv = (@inventory_counts_by_product[pid] || 0) %>
+                  <% status_counts = @inventory_status_counts_by_product.select { |(prod_id, _), _| prod_id == pid } %>
+                  <span class="badge text-bg-light"><%= inv %></span>
+                  <% if status_counts.present? %>
+                    <small class="text-muted" title="<%= status_counts.map { |(_, st), c| "#{st}: #{c}" }.join(", ") %>">(detalle)</small>
+                  <% end %>
+                </td>
                 <td><%= number_with_precision(item.unit_cost, precision: 2) %></td>
                 <td><%= number_with_precision(item.total_line_volume, precision: 2) %></td>
                 <td><%= number_with_precision(item.total_line_weight, precision: 2) %></td>

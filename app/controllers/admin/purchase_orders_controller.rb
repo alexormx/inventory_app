@@ -80,6 +80,10 @@ class Admin::PurchaseOrdersController < ApplicationController
   end
 
   def show
+  # Auditoría: conteo de inventario generado por producto dentro de esta PO
+  scope = Inventory.where(purchase_order_id: @purchase_order.id)
+  @inventory_counts_by_product = scope.group(:product_id).count
+  @inventory_status_counts_by_product = scope.group(:product_id, :status).count
   end
 
   def new
