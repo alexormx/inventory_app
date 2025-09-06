@@ -14,6 +14,10 @@ module InventoryApp
     # Please, add to the `ignore` list any other `lib` subdirectories that do
     # not contain `.rb` files, or that should not be reloaded or eager loaded.
     # Common ones are `templates`, `generators`, or `middleware`, for example.
+  # Asegurar que app/services está en autoload/eager_load paths
+  services_path = Rails.root.join('app/services')
+  config.autoload_paths << services_path unless config.autoload_paths.include?(services_path)
+  config.eager_load_paths << services_path unless config.eager_load_paths.include?(services_path)
     config.autoload_lib(ignore: %w[ assets tasks ])
 
     # Add i18n configuration to your application.

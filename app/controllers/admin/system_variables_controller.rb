@@ -1,14 +1,5 @@
 require 'rake'
 
-# Asegurar carga de servicios Introspection en entornos con autoload estricto
-begin
-  require_dependency Rails.root.join('app/services/introspection/schema_report').to_s
-  require_dependency Rails.root.join('app/services/introspection/model_report').to_s
-  require_dependency Rails.root.join('app/services/introspection/env_usage_report').to_s
-rescue StandardError
-  # No-op: en dev/CI puede no ser necesario; en prod ayuda a evitar NameError
-end
-
 class Admin::SystemVariablesController < ApplicationController
   before_action :authenticate_user!
   before_action :authorize_admin!
