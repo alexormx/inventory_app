@@ -165,6 +165,28 @@ class Admin::PurchaseOrdersController < ApplicationController
     redirect_to admin_purchase_order_path(@purchase_order)
   end
 
+  # Auditoría: POs con líneas cuyos restos > 0 (Qty - inventario generado por línea)
+  def line_audit
+    # Buscar líneas con desajuste
+    mismatches = PurchaseOrderItem
+      .joins("LEFT JOIN inventories inv ON inv.purchase_order_item_id = purchase_order_items.id")
+      .select(
+        'purchase_order_items.*',
+        'COUNT(inv.id) AS generated_count'
+      )
+      .group('purchase_order_items.id')
+      .having('COUNT(inv.id) <> purchase_order_items.quantity')
+
+    @lines_with_mismatch = mismatches.includes(:product, :purchase_order).order('purchase_order_items.purchase_order_id DESC')
+
+    # POs con SKUs repetidos (potencial fuente del problema)
+    @pos_with_duplicate_skus = PurchaseOrderItem
+      .select('purchase_order_id, product_id, COUNT(*) as line_count')
+      .group('purchase_order_id, product_id')
+      .having('COUNT(*) > 1')
+      .order('purchase_order_id DESC, line_count DESC')
+  end
+
   private
 
   def set_purchase_order

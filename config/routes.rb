@@ -61,6 +61,9 @@ Rails.application.routes.draw do
     # Purchase Orders
     resources :purchase_orders do
       patch :confirm_receipt, on: :member
+      collection do
+        get :line_audit
+      end
     end
 
     # Reports & Settings

@@ -1,0 +1,71 @@
+<div class="container mt-4">
+  <h2>Auditoría de líneas de Purchase Orders</h2>
+  <p class="text-muted">Líneas donde Qty ≠ Inventario generado por línea; y POs con SKUs repetidos.</p>
+
+  <div class="card mb-4">
+    <div class="card-header">Líneas con desajuste</div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-sm table-hover mb-0 align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>PO</th>
+              <th>Producto</th>
+              <th>Qty</th>
+              <th>Inventario gen.</th>
+              <th>Restante</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @lines_with_mismatch.each do |li| %>
+              <% gen = li.attributes['generated_count'].to_i %>
+              <tr>
+                <td><%= link_to li.purchase_order_id, admin_purchase_order_path(li.purchase_order_id) %></td>
+                <td><%= li.product&.product_name %> (<code><%= li.product&.product_sku %></code>)</td>
+                <td><%= li.quantity %></td>
+                <td><%= gen %></td>
+                <td class="<%= (li.quantity.to_i - gen) != 0 ? 'text-danger' : '' %>"><%= li.quantity.to_i - gen %></td>
+                <td class="text-end">
+                  <%= link_to 'Ver PO', admin_purchase_order_path(li.purchase_order_id), class: 'btn btn-sm btn-outline-secondary' %>
+                </td>
+              </tr>
+            <% end %>
+            <% if @lines_with_mismatch.blank? %>
+              <tr><td colspan="6" class="text-center text-muted">Sin desajustes</td></tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">POs con SKUs repetidos</div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-sm table-hover mb-0 align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>PO</th>
+              <th>SKU</th>
+              <th>Veces</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @pos_with_duplicate_skus.each do |r| %>
+              <tr>
+                <td><%= link_to r.purchase_order_id, admin_purchase_order_path(r.purchase_order_id) %></td>
+                <td><%= Product.find_by(id: r.product_id)&.product_sku || r.product_id %></td>
+                <td><%= r.attributes['line_count'] %></td>
+              </tr>
+            <% end %>
+            <% if @pos_with_duplicate_skus.blank? %>
+              <tr><td colspan="3" class="text-center text-muted">Sin duplicados</td></tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
