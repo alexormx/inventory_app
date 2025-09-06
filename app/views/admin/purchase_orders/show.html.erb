@@ -99,9 +99,13 @@
                   <% inv_line = @inventory_counts_by_line[item.id] %>
                   <% inv_total = inv_line || (@inventory_counts_by_product[pid] || 0) %>
                   <% status_counts = @inventory_status_counts_by_product.select { |(prod_id, _), _| prod_id == pid } %>
-                  <span class="badge text-bg-light"><%= inv_total %></span>
+                  <% mismatch = inv_line && inv_line.to_i != item.quantity.to_i %>
+                  <span class="badge <%= mismatch ? 'text-bg-warning' : 'text-bg-light' %>"><%= inv_total %></span>
                   <% if status_counts.present? %>
                     <small class="text-muted" title="<%= status_counts.map { |(_, st), c| "#{st}: #{c}" }.join(", ") %>">(detalle)</small>
+                  <% end %>
+                  <% if mismatch %>
+                    <small class="text-danger ms-1">(esperado <%= item.quantity %>)</small>
                   <% end %>
                 </td>
                 <td><%= number_with_precision(item.unit_cost, precision: 2) %></td>

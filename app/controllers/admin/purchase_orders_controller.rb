@@ -85,9 +85,20 @@ class Admin::PurchaseOrdersController < ApplicationController
   @inventory_counts_by_product = scope.group(:product_id).count
   @inventory_status_counts_by_product = scope.group(:product_id, :status).count
   # Conteo por línea específico (si hay SKUs repetidos en diferentes líneas)
-  @inventory_counts_by_line = Inventory.where(purchase_order_id: @purchase_order.id)
-                     .group(:purchase_order_item_id)
-                     .count
+    conn = ActiveRecord::Base.connection
+    if conn.column_exists?(:inventories, :purchase_order_item_id)
+      @inventory_counts_by_line = Inventory.where(purchase_order_id: @purchase_order.id)
+                                           .where.not(purchase_order_item_id: nil)
+                                           .group(:purchase_order_item_id)
+                                           .count
+    elsif conn.column_exists?(:inventories, :linea) || conn.column_exists?(:inventories, :line)
+      col = conn.column_exists?(:inventories, :linea) ? 'linea' : 'line'
+      @inventory_counts_by_line = Inventory.where(purchase_order_id: @purchase_order.id)
+                                           .group(col)
+                                           .count
+    else
+      @inventory_counts_by_line = {}
+    end
   end
 
   def new
