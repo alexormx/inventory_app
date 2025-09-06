@@ -84,6 +84,10 @@ class Admin::PurchaseOrdersController < ApplicationController
   scope = Inventory.where(purchase_order_id: @purchase_order.id)
   @inventory_counts_by_product = scope.group(:product_id).count
   @inventory_status_counts_by_product = scope.group(:product_id, :status).count
+  # Conteo por línea específico (si hay SKUs repetidos en diferentes líneas)
+  @inventory_counts_by_line = Inventory.where(purchase_order_id: @purchase_order.id)
+                     .group(:purchase_order_item_id)
+                     .count
   end
 
   def new

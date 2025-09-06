@@ -24,7 +24,8 @@ module InventorySyncable
   private
 
   def sync_inventory_for_purchase(desired_quantity)
-    existing_items = Inventory.where(product_id: product.id, purchase_order_id: purchase_order_id)
+    # Sincronizar por línea específica para evitar colisiones entre líneas con el mismo SKU
+    existing_items = Inventory.where(purchase_order_item_id: id)
     current_count = existing_items.count
     difference = desired_quantity - current_count
 
@@ -34,7 +35,8 @@ module InventorySyncable
         status: inventory_status_from_order,
         status_changed_at: Time.current,
         purchase_cost: respond_to?(:unit_compose_cost_in_mxn) ? unit_compose_cost_in_mxn.to_f : item.purchase_cost,
-        purchase_order_item_id: id
+        purchase_order_id: purchase_order_id,
+        product_id: product_id
       )
     end
 
