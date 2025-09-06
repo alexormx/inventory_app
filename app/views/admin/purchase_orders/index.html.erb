@@ -79,6 +79,7 @@
   <th scope="col"><%= sort_link('Expected Delivery', :expected) %></th>
   <th scope="col">Status</th>
   <th scope="col" class="text-end"><%= sort_link('Items', :items) %></th>
+  <th scope="col" class="text-end"><%= sort_link('Restantes', :remaining) %></th>
       <th scope="col" class="text-end">Currency</th>
       <th scope="col" class="text-end">Total Cost</th>
   <th scope="col" class="text-end"><%= sort_link('Total Cost MXN', :total_mxn) %></th>
@@ -100,6 +101,7 @@
           </span>
         </td>
   <td class="text-end"><%= po.attributes["items_count"].to_i %></td>
+  <td class="text-end"><%= po.attributes["remaining_count"].to_i %></td>
         <td class="text-end"> <%= po.currency %> (<%= currency_symbol_for(po.currency)%>) </td>
         <td class="text-end">
           <%= number_to_currency(po.total_order_cost, unit: currency_symbol_for(po.currency)) %>
