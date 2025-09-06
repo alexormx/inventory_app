@@ -1,6 +1,22 @@
 <div class="container mt-4">
   <h2>Purchase Order ##<%= @purchase_order.id %></h2>
 
+  <!-- Resumen PO -->
+  <div class="row g-3 mb-3">
+    <div class="col-auto">
+      <span class="badge text-bg-secondary">Líneas: <%= @po_summary[:lines] %></span>
+    </div>
+    <div class="col-auto">
+      <span class="badge text-bg-primary">Ordenado: <%= @po_summary[:ordered] %></span>
+    </div>
+    <div class="col-auto">
+      <span class="badge text-bg-success">Inventario gen.: <%= @po_summary[:generated] %></span>
+    </div>
+    <div class="col-auto">
+      <span class="badge <%= @po_summary[:remaining] > 0 ? 'text-bg-warning' : 'text-bg-light' %>">Restante: <%= @po_summary[:remaining] %></span>
+    </div>
+  </div>
+
   <!-- Order Info -->
   <div class="row g-3 mb-4">
     <div class="col-md-3">

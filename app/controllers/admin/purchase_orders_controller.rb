@@ -91,6 +91,18 @@ class Admin::PurchaseOrdersController < ApplicationController
                       .count
   # Mapa para traducir enum status numérico a nombre
   @inventory_status_names = Inventory.statuses.invert
+
+    # Resumen superior: líneas, total ordenado, inventario generado y restante
+    lines_count   = @purchase_order.purchase_order_items.size
+    ordered_units = @purchase_order.purchase_order_items.sum(:quantity)
+    generated_inv = scope.count
+    remaining     = [ordered_units - generated_inv, 0].max
+    @po_summary = {
+      lines: lines_count,
+      ordered: ordered_units,
+      generated: generated_inv,
+      remaining: remaining
+    }
   end
 
   def new
