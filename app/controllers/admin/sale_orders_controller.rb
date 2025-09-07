@@ -2,7 +2,7 @@
 class Admin::SaleOrdersController < ApplicationController
   before_action :authenticate_user!
   before_action :authorize_admin!
-  before_action :set_sale_order, only: %i[show edit update destroy]
+  before_action :set_sale_order, only: %i[show edit update destroy cancel_reservations export_cancellations]
   before_action :set_sale_order_with_includes, only: %i[summary]
   before_action :load_counts, only: [:index]
 
@@ -149,6 +149,17 @@ class Admin::SaleOrdersController < ApplicationController
 
   def show; end
 
+  # Cancelación manual de reservas antiguas por SO (sin tocar vendidos)
+  def cancel_reservations
+    reason = params[:reason].to_s.presence || "Cancelación manual de reservas antiguas"
+    result = ::SaleOrders::CancelOldReservations.new(sale_order: @sale_order, reason: reason, actor: current_user).call
+    if result.ok
+      redirect_to admin_sale_order_path(@sale_order), notice: "Reservas canceladas: liberadas=#{result.released_units}, preventas canceladas=#{result.preorders_cancelled}."
+    else
+      redirect_to admin_sale_order_path(@sale_order), alert: (result.errors&.to_sentence || "Error al cancelar reservas")
+    end
+  end
+
   # Vista compacta de totales/costos para compartir con cliente
   def summary
     # @sale_order cargada con includes para evitar N+1
@@ -168,6 +179,27 @@ class Admin::SaleOrdersController < ApplicationController
       redirect_to admin_sale_order_path(@sale_order),
         alert: @sale_order.errors.full_messages.to_sentence.presence || "No se pudo eliminar la orden."
     end
+  end
+
+  # Exporta CSV de cancelaciones de esta SO
+  def export_cancellations
+    items = CanceledOrderItem.where(sale_order_id: @sale_order.id).includes(:product)
+    require 'csv'
+    csv = CSV.generate(headers: true) do |out|
+      out << ["Sale Order", "Product SKU", "Product Name", "Canceled Qty", "Unit Price at Cancel", "Reason", "Canceled At"]
+      items.find_each do |it|
+        out << [
+          it.sale_order_id,
+          it.product&.product_sku,
+          it.product&.product_name,
+          it.canceled_quantity,
+          it.sale_price_at_cancellation,
+          it.cancellation_reason,
+          it.canceled_at&.to_s(:db)
+        ]
+      end
+    end
+    send_data csv, filename: "cancellations-#{@sale_order.id}-#{Time.current.strftime('%Y%m%d-%H%M')}.csv", type: 'text/csv'
   end
 
   private

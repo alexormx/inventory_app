@@ -11,6 +11,11 @@
     <%= button_to 'Marcar Delivered', force_delivered_admin_sale_order_path(@sale_order), method: :post,
       data: { turbo_confirm: 'Esto promoverá estados de inventario acorde. ¿Continuar?' },
       class: 'btn btn-sm btn-success' %>
+    <%= button_to 'Cancelar reservas (manual)', cancel_reservations_admin_sale_order_path(@sale_order), method: :post,
+      params: { reason: 'Cancelación manual desde detalle de SO' },
+      data: { turbo_confirm: 'Liberará inventario reservado/pre_* y cancelará preventas asociadas. No tocará vendidos. ¿Confirmar?' },
+      class: 'btn btn-sm btn-outline-danger' %>
+    <%= link_to 'Exportar cancelaciones CSV', export_cancellations_admin_sale_order_path(@sale_order), class: 'btn btn-sm btn-outline-secondary' %>
   </div>
 
   <!-- Order Info -->

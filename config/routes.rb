@@ -138,6 +138,8 @@ Rails.application.routes.draw do
         get :summary
   post :force_pending, to: 'sale_orders_status#force_pending'
   post :force_delivered, to: 'sale_orders_status#force_delivered'
+  post :cancel_reservations, to: 'sale_orders#cancel_reservations'
+  get  :export_cancellations, to: 'sale_orders#export_cancellations'
       end
     end
 
