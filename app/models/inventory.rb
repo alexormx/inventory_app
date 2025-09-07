@@ -27,7 +27,7 @@ class Inventory < ApplicationRecord
 
   before_update :track_status_change
   after_commit :update_product_stock_quantities, if: -> { saved_change_to_status? }
-  after_commit :allocate_preorders_if_now_available, if: -> { saved_change_to_status? }
+  after_commit :allocate_preorders_if_now_available, if: -> { saved_change_to_status? || saved_change_to_sale_order_id? }
 
   # inventory.rb
   scope :assignable, -> { where(status: [:available, :in_transit], sale_order_id: nil) }
@@ -49,7 +49,7 @@ class Inventory < ApplicationRecord
   end
 
   def allocate_preorders_if_now_available
-    return unless status == "available" # sólo cuando pasa a available
+    return unless status == "available" && sale_order_id.nil? # libres
     # Calcular cuántas unidades nuevas se añadieron a available en este commit
     # Simplificación: 1 unidad por registro Inventory.
     begin

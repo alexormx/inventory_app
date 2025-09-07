@@ -7,7 +7,7 @@ module Preorders
     end
 
     def call
-      return unless @product&.preorder_available
+      return unless @product
 
       remaining = if @units
                     @units.to_i
@@ -16,7 +16,10 @@ module Preorders
                   end
       return if remaining <= 0
 
-      PreorderReservation.fifo_pending.where(product_id: @product.id).find_each do |reservation|
+      pending_scope = PreorderReservation.fifo_pending.where(product_id: @product.id)
+      return if pending_scope.none?
+
+      pending_scope.find_each do |reservation|
         break if remaining <= 0
 
         qty = [reservation.quantity.to_i, remaining].min
@@ -66,13 +69,13 @@ module Preorders
           end
         end
 
-        # Si algo quedó sin asignar, mantener la reserva de preventa pendiente por el remanente
-        if qty > (qty - to_assign)
-          reservation.update!(status: :assigned, assigned_at: Time.current)
+        # Marcar asignación total o parcial
+        assigned_amount = (qty - to_assign)
+        if assigned_amount > 0
+          reservation.update!(status: :assigned, assigned_at: Time.current, quantity: assigned_amount)
           if to_assign > 0
-            # dividir: marcamos asignado por la parte que sí alcanzó y creamos nueva reserva por el resto
+            # dividir: crear nueva reserva por el remanente no asignado
             remaining_part = to_assign
-            reservation.update!(quantity: qty - remaining_part)
             PreorderReservation.create!(product: @product, user: reservation.user, sale_order: so, quantity: remaining_part, status: :pending, reserved_at: Time.current)
           end
         end

@@ -126,6 +126,8 @@ class SaleOrderItem < ApplicationRecord
       in_transit   = Inventory.statuses[:in_transit]
       Inventory.where(sale_order_id: sale_order_id, product_id: product_id, status: [pre_reserved, pre_sold])
                .update_all(status: in_transit, sale_order_id: nil, sale_order_item_id: nil, status_changed_at: Time.current, updated_at: Time.current)
+  # Intentar asignar preventas si hubiera pendientes y ahora hay inventario libre/in_transit
+  Preorders::PreorderAllocator.new(product).call
     rescue => e
       Rails.logger.error "[SOI#cleanup_preorders_and_preassignments] #{e.class}: #{e.message}"
     end
