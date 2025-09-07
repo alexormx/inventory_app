@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_08_31_131004) do
+ActiveRecord::Schema[8.0].define(version: 2025_09_06_103001) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -118,7 +118,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_31_131004) do
   create_table "preorder_reservations", force: :cascade do |t|
     t.integer "product_id", null: false
     t.integer "user_id", null: false
-    t.integer "sale_order_id"
+    t.text "sale_order_id"
     t.integer "quantity", null: false
     t.integer "status", default: 0, null: false
     t.datetime "reserved_at", null: false
@@ -364,9 +364,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_31_131004) do
   add_foreign_key "inventories", "purchase_orders"
   add_foreign_key "inventories", "sale_orders"
   add_foreign_key "payments", "sale_orders"
-  add_foreign_key "preorder_reservations", "products"
-  add_foreign_key "preorder_reservations", "sale_orders"
-  add_foreign_key "preorder_reservations", "users"
   add_foreign_key "products", "users", column: "last_supplier_id"
   add_foreign_key "products", "users", column: "preferred_supplier_id"
   add_foreign_key "purchase_order_items", "products"

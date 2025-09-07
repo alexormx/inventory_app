@@ -12,6 +12,8 @@ Rails.application.routes.draw do
   # Sales Orders Audit
   get  'sale_orders_audit', to: 'sale_orders_audits#index', as: :sale_orders_audit
   post 'sale_orders_audit/fix', to: 'sale_orders_audits#fix_gaps', as: :sale_orders_audit_fix
+  # Fallback (si alguien hace GET por error, redirigir al índice)
+  get  'sale_orders_audit/fix', to: redirect('/admin/sale_orders_audit')
   # Inventory Audit
   get 'inventory_audit', to: 'inventory_audits#index', as: :inventory_audit
   post 'inventory_audit/fix', to: 'inventory_audits#fix_inconsistencies', as: :inventory_audit_fix

@@ -1,4 +1,4 @@
-class AddPerfIndexes < ActiveRecord::Migration[7.1]
+class AddPerfIndexes < ActiveRecord::Migration[8.0]
   def change
     add_index :inventories, [:product_id, :status]
     add_index :products, :product_name unless index_exists?(:products, :product_name)

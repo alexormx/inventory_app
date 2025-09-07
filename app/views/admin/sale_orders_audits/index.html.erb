@@ -44,7 +44,7 @@
           </thead>
           <tbody>
             <% @lines_with_gap.each do |li| %>
-              <% assigned = li.attributes['assigned_inv_count'].to_i %>
+              <% assigned = Inventory.where(sale_order_id: li.sale_order_id, product_id: li.product_id, status: [:reserved, :sold, :pre_reserved, :pre_sold]).count %>
               <% preorder = li.preorder_quantity.to_i %>
               <% backord = li.backordered_quantity.to_i %>
               <% missing = [li.quantity.to_i - (assigned + preorder + backord), 0].max %>

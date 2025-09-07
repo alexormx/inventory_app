@@ -1,4 +1,4 @@
-class AddLocationFieldsToShippingAddresses < ActiveRecord::Migration[7.1]
+class AddLocationFieldsToShippingAddresses < ActiveRecord::Migration[8.0]
   def change
     add_column :shipping_addresses, :settlement, :string
     add_column :shipping_addresses, :municipality, :string

@@ -6,8 +6,8 @@ class Admin::SaleOrdersAuditsController < ApplicationController
     # Estados de inventario que cuentan como "asignados" a una SO
     assigned_statuses = Inventory.statuses.values_at('reserved', 'sold', 'pre_reserved', 'pre_sold')
 
-    # Query: líneas cuya cantidad NO está totalmente cubierta por (inventario asignado + preorder + backorder)
-    mismatches = SaleOrderItem
+    # Query: líneas con faltante (compatibles con SQLite/Postgres)
+    mismatch_ids = SaleOrderItem
       .joins(:sale_order)
       .joins(<<~SQL)
         LEFT JOIN inventories inv
@@ -15,20 +15,28 @@ class Admin::SaleOrdersAuditsController < ApplicationController
          AND inv.product_id    = sale_order_items.product_id
       SQL
       .where("inv.id IS NULL OR inv.status IN (?)", assigned_statuses)
-      .select(
-        'sale_order_items.*',
-        'COUNT(inv.id) AS assigned_inv_count'
-      )
+      .select('sale_order_items.id')
       .group('sale_order_items.id')
       .having('COALESCE(COUNT(inv.id),0) + COALESCE(sale_order_items.preorder_quantity,0) + COALESCE(sale_order_items.backordered_quantity,0) < sale_order_items.quantity')
+      .pluck(:id)
 
-    @lines_with_gap = mismatches.includes(:product, :sale_order).order('sale_order_items.sale_order_id DESC')
+    @lines_with_gap = SaleOrderItem.where(id: mismatch_ids).includes(:product, :sale_order).order('sale_order_items.sale_order_id DESC')
+
+    # Precalcular asignados por (sale_order_id, product_id)
+    key_pairs = @lines_with_gap.map { |li| [li.sale_order_id, li.product_id] }
+    counts_by_pair = Inventory
+      .where(status: assigned_statuses)
+      .where(
+        key_pairs.uniq.map { |so_id, pid| "(sale_order_id = #{ActiveRecord::Base.connection.quote(so_id)} AND product_id = #{ActiveRecord::Base.connection.quote(pid)})" }.join(' OR ')
+      )
+      .group(:sale_order_id, :product_id)
+      .count
 
     # Resumen
     total_lines = SaleOrderItem.count
     audited_lines = @lines_with_gap.size
     missing_units = @lines_with_gap.sum do |li|
-      assigned = li.attributes['assigned_inv_count'].to_i
+      assigned = counts_by_pair[[li.sale_order_id, li.product_id]].to_i
       preorder = li.preorder_quantity.to_i
       backord  = li.backordered_quantity.to_i
       [li.quantity.to_i - (assigned + preorder + backord), 0].max

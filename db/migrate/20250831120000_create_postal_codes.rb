@@ -1,4 +1,4 @@
-class CreatePostalCodes < ActiveRecord::Migration[7.1]
+class CreatePostalCodes < ActiveRecord::Migration[8.0]
   def change
     create_table :postal_codes do |t|
       t.string :cp, null: false, limit: 5

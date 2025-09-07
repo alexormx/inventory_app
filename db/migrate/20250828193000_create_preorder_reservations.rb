@@ -1,4 +1,4 @@
-class CreatePreorderReservations < ActiveRecord::Migration[7.1]
+class CreatePreorderReservations < ActiveRecord::Migration[8.0]
   def change
     create_table :preorder_reservations do |t|
       t.references :product, null: false, foreign_key: true
