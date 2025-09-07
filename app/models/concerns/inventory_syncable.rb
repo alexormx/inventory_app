@@ -63,30 +63,61 @@ module InventorySyncable
   end
 
   def sync_inventory_for_sale(desired_quantity)
-    # Only assign inventory if it's not already assigned
+    # Estado actual asignado a la SO por producto
     assigned = Inventory.where(product_id: product.id, sale_order_id: sale_order_id)
     current_count = assigned.count
     needed = desired_quantity - current_count
 
     if needed > 0
-      available_items = Inventory.assignable
-                                 .where(product_id: product.id)
-                                 .limit(needed)
+      to_assign = needed
 
-      reserve_inventory_items(available_items)
+      # 1) available -> reserved
+      avl_items = Inventory.where(product_id: product.id, status: :available, sale_order_id: nil)
+                           .order(:status_changed_at)
+                           .limit(to_assign)
+      reserve_inventory_items(avl_items)
+      to_assign -= avl_items.count
 
-      if available_items.count < needed
-        append_pending_note(needed - available_items.count)
-      else
-        remove_pending_note
+      # 2) in_transit -> pre_* según estado de SO
+      if to_assign > 0
+        it_items = Inventory.where(product_id: product.id, status: :in_transit, sale_order_id: nil)
+                            .order(:status_changed_at)
+                            .limit(to_assign)
+        it_items.each do |item|
+          target_status = (sale_order.status == "Confirmed") ? :pre_sold : :pre_reserved
+          item.update!(
+            status: target_status,
+            sale_order_id: sale_order_id,
+            sale_order_item_id: id,
+            status_changed_at: Time.current,
+            sold_price: respond_to?(:unit_final_price) ? unit_final_price.to_f : item.sold_price
+          )
+        end
+        to_assign -= it_items.count
+      end
+
+      # 3) Faltantes -> crear preventa y reflejar en la línea
+      if to_assign > 0
+        PreorderReservation.create!(
+          product: product,
+          user: sale_order.user,
+          sale_order: sale_order,
+          quantity: to_assign,
+          status: :pending,
+          reserved_at: Time.current
+        )
+        # Actualiza contador en la línea (si existe el atributo)
+        if self.respond_to?(:preorder_quantity)
+          update_column(:preorder_quantity, preorder_quantity.to_i + to_assign)
+        end
       end
     elsif needed < 0
-      # Too many assigned, release extras
+      # Exceso de asignación: liberar reservados (no toca vendidos ni pre_*)
       extra_items = assigned.where(status: :reserved)
                             .order(status_changed_at: :desc)
                             .limit(needed.abs)
       release_inventory_items(extra_items)
-      remove_pending_note
+      # No agregar notas
     end
   end
 
@@ -102,32 +133,7 @@ module InventorySyncable
     end
   end
 
-  def append_pending_note(remaining)
-    return unless respond_to?(:sale_order) && sale_order.persisted?
-
-    line_identifier = id || object_id # usa ID si existe, o fallback a object_id temporal si aún no está persistido
-    note_prefix = "🛑 Producto #{product.product_name} (#{product.product_sku}), línea #{line_identifier}:"
-
-    new_line = "#{note_prefix} cliente pidió #{quantity}, solo reservados #{quantity - remaining}"
-
-    # Elimina notas anteriores de esta misma línea (basado en ID)
-    existing_lines = sale_order.notes.to_s.split("\n")
-    filtered_lines = existing_lines.reject { |line| line.starts_with?(note_prefix) }
-
-    # Agrega la nueva nota
-    filtered_lines << new_line
-    sale_order.update!(notes: filtered_lines.join("\n"))
-  end
-
-  def remove_pending_note
-    return unless respond_to?(:sale_order) && sale_order.persisted?
-
-    line_identifier = id || object_id
-    note_prefix = "🛑 Producto #{product.product_name} (#{product.product_sku}), línea #{line_identifier}:"
-
-    updated_notes = sale_order.notes.to_s.split("\n").reject { |line| line.starts_with?(note_prefix) }
-    sale_order.update!(notes: updated_notes.join("\n"))
-  end
+  # Notas desactivadas: ya no se agrega/remueve texto en SaleOrder.notes
 
   def inventory_status_from_order
     case parent_order&.status

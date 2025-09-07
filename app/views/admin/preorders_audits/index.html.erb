@@ -1,0 +1,53 @@
+<h1 class="h4 mb-3">Auditoría de Preventas / Sobre pedido</h1>
+
+<p class="text-muted">Detecta preventas sin vínculo válido a una Sale Order y a alguna línea pendiente (Sale Order Item) por producto. Si no hay líneas pendientes, se pueden cancelar.</p>
+
+<div class="d-flex gap-2 mb-3">
+  <%= link_to 'Cancelar inválidas (simular)', admin_preorders_audits_fix_path(dry_run: true), data: { turbo_method: :post }, class: 'btn btn-sm btn-outline-secondary' %>
+  <%= link_to 'Cancelar inválidas (ejecutar)', admin_preorders_audits_fix_path, data: { turbo_method: :post, turbo_confirm: '¿Cancelar todas las preventas sin SO o sin líneas pendientes?' }, class: 'btn btn-sm btn-danger' %>
+  <%= link_to 'Volver a Preventas', admin_preorders_path, class: 'btn btn-sm btn-light' %>
+</div>
+
+<div class="card mb-4">
+  <div class="card-body">
+    <p class="mb-1">Resumen:</p>
+    <ul class="mb-0">
+      <li>Total escaneadas: <%= @summary[:total] %></li>
+      <li>Válidas: <%= @summary[:valid] %></li>
+      <li>A cancelar: <%= @summary[:to_cancel] %></li>
+    </ul>
+  </div>
+</div>
+
+<table class="table table-sm table-striped align-middle">
+  <thead class="table-light">
+    <tr>
+      <th>ID</th>
+      <th>Producto</th>
+      <th>Usuario</th>
+      <th>SO</th>
+      <th>Motivo</th>
+      <th>Estado</th>
+      <th>Reservado</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @to_cancel.each do |res, reason| %>
+      <tr>
+        <td><%= res.id %></td>
+        <td><%= res.product&.product_name %></td>
+        <td><%= res.user&.email %></td>
+        <td>
+          <% if res.sale_order_id.present? %>
+            <%= link_to res.sale_order_id, admin_sale_order_path(res.sale_order_id) rescue res.sale_order_id %>
+          <% else %>
+            —
+          <% end %>
+        </td>
+        <td><%= reason %></td>
+        <td><span class="badge text-bg-<%= res.status == 'pending' ? 'warning' : 'secondary' %>"><%= res.status.humanize %></span></td>
+        <td><%= l(res.reserved_at, format: :short) if res.reserved_at %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

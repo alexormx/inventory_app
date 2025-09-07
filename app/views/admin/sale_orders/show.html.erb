@@ -5,6 +5,12 @@
   <div class="mb-3 d-flex gap-2">
     <%= link_to 'Resumen compacto', summary_admin_sale_order_path(@sale_order), class: 'btn btn-sm btn-primary' %>
     <%= link_to 'Lista', admin_sale_orders_path, class: 'btn btn-sm btn-outline-secondary' %>
+    <%= button_to 'Forzar Pending (editar)', force_pending_admin_sale_order_path(@sale_order), method: :post,
+      data: { turbo_confirm: 'Esto revertirá estados de inventario para permitir edición. ¿Continuar?' },
+      class: 'btn btn-sm btn-warning' %>
+    <%= button_to 'Marcar Delivered', force_delivered_admin_sale_order_path(@sale_order), method: :post,
+      data: { turbo_confirm: 'Esto promoverá estados de inventario acorde. ¿Continuar?' },
+      class: 'btn btn-sm btn-success' %>
   </div>
 
   <!-- Order Info -->

@@ -84,8 +84,8 @@ class SaleOrderItem < ApplicationRecord
 
   def ensure_free_to_reduce
     to_remove = desired_reduction
-    sold_count    = so_inventory.where(status: %w[sold]).count
-    reserved_count = so_inventory.where(status: %w[reserved]).count
+  sold_count    = so_inventory.where(status: Inventory.statuses[:sold]).count
+  reserved_count = so_inventory.where(status: Inventory.statuses[:reserved]).count
 
     # No puedo “quitar” vendidos; solo puedo liberar reservados.
     if reserved_count < to_remove
@@ -96,14 +96,14 @@ class SaleOrderItem < ApplicationRecord
   end
 
   def ensure_no_sold_and_release_reserved
-    sold = so_inventory.where(status: %w[sold])
+  sold = so_inventory.where(status: Inventory.statuses[:sold])
     if sold.exists?
-      errors.add(:base, "No se puede eliminar la línea: tiene #{sold.count} unidad(es) vendida(s).")
+  errors.add(:base, "No se puede eliminar la línea: tiene #{sold.count} unidad(es) vendida(s). Para poder eliminarla primero regresa la orden a 'Pending' (puede requerir pasar por 'Confirmed') para revertir vendido→reservado y luego intenta de nuevo.")
       throw :abort
     end
 
     # Libera las reservadas de esta línea
-    so_inventory.where(status: %w[reserved]).update_all(
+  so_inventory.where(status: Inventory.statuses[:reserved]).update_all(
       status: Inventory.statuses[:available],
       sale_order_id: nil,
   sale_order_item_id: nil,
@@ -128,6 +128,17 @@ class SaleOrderItem < ApplicationRecord
                .update_all(status: in_transit, sale_order_id: nil, sale_order_item_id: nil, status_changed_at: Time.current, updated_at: Time.current)
     rescue => e
       Rails.logger.error "[SOI#cleanup_preorders_and_preassignments] #{e.class}: #{e.message}"
+    end
+  end
+
+  # Luego de confirmar la eliminación, intenta asignar preventas pendientes con el inventario liberado
+  after_destroy_commit :allocate_preorders_after_release
+
+  def allocate_preorders_after_release
+    begin
+      Preorders::PreorderAllocator.new(product).call
+    rescue => e
+      Rails.logger.error "[SOI#allocate_preorders_after_release] #{e.class}: #{e.message}"
     end
   end
 

@@ -51,13 +51,15 @@ class SaleOrder < ApplicationRecord
   end
 
   def update_status_if_fully_paid!
-    # Solo promover de Pending -> Confirmed cuando esté fully_paid.
-    # No cambiar otros estados (por ejemplo Delivered) para evitar
-    # sobrescribir un estado final con Confirmed.
-    if fully_paid? && status == "Pending"
-      update!(status: "Confirmed")
-    elsif !fully_paid? && status == "Confirmed"
-      update!(status: "Pending")
+    # Promueve Pending -> Confirmed si está totalmente pagada.
+    # Si baja el pago, permite degradar desde Confirmed o Delivered -> Pending para habilitar edición.
+    if fully_paid?
+      update!(status: "Confirmed") if status == "Pending"
+      # Si ya está Delivered y se mantiene fully_paid, no cambiamos aquí.
+    else
+      if ["Confirmed", "Delivered"].include?(status)
+        update!(status: "Pending")
+      end
     end
   end
 
@@ -197,17 +199,18 @@ class SaleOrder < ApplicationRecord
   # Cambiar inventarios cuando la orden se confirma (pago completo) o se regresa a pendiente
   def sync_inventory_status_for_payment_change
     previous, current = saved_change_to_status
-    # Solo nos interesa transiciones entre Pending y Confirmed
-    return unless [previous, current].all? { |s| ["Pending", "Confirmed"].include?(s) }
-
-    if current == "Confirmed" # Pending -> Confirmed
-      # reserved -> sold ; pre_reserved -> pre_sold
+    # Cubrimos transiciones entre Pending, Confirmed y Delivered para sincronizar sold/reserved y pre_*.
+    case [previous, current]
+    when ["Pending", "Confirmed"], ["Confirmed", "Delivered"], ["Pending", "Delivered"]
+      # Promoción de cobro/entrega: reserved -> sold ; pre_reserved -> pre_sold
       inventories.where(status: [:reserved]).update_all(status: Inventory.statuses[:sold], status_changed_at: Time.current, updated_at: Time.current)
       inventories.where(status: [:pre_reserved]).update_all(status: Inventory.statuses[:pre_sold], status_changed_at: Time.current, updated_at: Time.current)
-    elsif current == "Pending" # Confirmed -> Pending (pago se redujo)
-      # sold -> reserved ; pre_sold -> pre_reserved (solo para piezas aún ligadas a la orden y no entregadas)
+    when ["Confirmed", "Pending"], ["Delivered", "Confirmed"], ["Delivered", "Pending"]
+      # Reversión (edición/corrección): sold -> reserved ; pre_sold -> pre_reserved
       inventories.where(status: [:sold]).update_all(status: Inventory.statuses[:reserved], status_changed_at: Time.current, updated_at: Time.current)
       inventories.where(status: [:pre_sold]).update_all(status: Inventory.statuses[:pre_reserved], status_changed_at: Time.current, updated_at: Time.current)
+    else
+      # Otras transiciones no afectan inventario
     end
 
     # Broadcast Turbo Stream para refrescar la tabla y totales (si la vista está abierta)

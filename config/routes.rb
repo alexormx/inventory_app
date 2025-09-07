@@ -18,6 +18,9 @@ Rails.application.routes.draw do
   get 'inventory_audit', to: 'inventory_audits#index', as: :inventory_audit
   post 'inventory_audit/fix', to: 'inventory_audits#fix_inconsistencies', as: :inventory_audit_fix
   post 'inventory_audit/fix_missing_so_lines', to: 'inventory_audits#fix_missing_so_lines', as: :inventory_audit_fix_missing_so_lines
+  # Preorders audit
+  get  'preorders_audit', to: 'preorders_audits#index', as: :preorders_audit
+  post 'preorders_audit/fix', to: 'preorders_audits#fix', as: :preorders_audits_fix
     resources :visitor_logs, only: [:index]
 
     #Inventory Management views
@@ -133,6 +136,8 @@ Rails.application.routes.draw do
   resources :shipments, only: [:new, :create, :edit, :update, :destroy]
       member do
         get :summary
+  post :force_pending, to: 'sale_orders_status#force_pending'
+  post :force_delivered, to: 'sale_orders_status#force_delivered'
       end
     end
 

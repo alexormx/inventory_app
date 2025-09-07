@@ -109,11 +109,40 @@ class Admin::SaleOrdersController < ApplicationController
 
   def update
     @sale_order = SaleOrder.find(params[:id])
-    if @sale_order.update(sale_order_params)
-      @sale_order.update_status_if_fully_paid!
-      redirect_to admin_sale_order_path(@sale_order), notice: "Sale order updated successfully"
-    else
-      flash.now[:alert] = "There were errors saving the sale order"
+    begin
+      if @sale_order.update(sale_order_params)
+        @sale_order.update_status_if_fully_paid!
+        redirect_to admin_sale_order_path(@sale_order), notice: "Sale order updated successfully"
+      else
+        flash.now[:alert] = "There were errors saving the sale order"
+        render :edit, status: :unprocessable_entity
+      end
+    rescue ActiveRecord::RecordNotDestroyed => e
+      # Caso común: intento de eliminar una línea con unidades ya vendidas
+      msg = e.record&.errors&.full_messages&.to_sentence.presence ||
+            "No se pudo eliminar una línea. Verifique que no tenga unidades vendidas."
+
+      # Intentar una recuperación parcial: liberar unidades reservadas de esa línea y reasignar a preventas
+      if (soi = e.record).present?
+        begin
+          freed = Inventory.where(sale_order_id: soi.sale_order_id, product_id: soi.product_id, status: Inventory.statuses[:reserved])
+                           .update_all(status: Inventory.statuses[:available], sale_order_id: nil, sale_order_item_id: nil, status_changed_at: Time.current, updated_at: Time.current)
+          if freed.to_i > 0
+            Rails.logger.info("[SaleOrders#update] Liberadas #{freed} piezas reservadas de la línea #{soi.id} tras fallo de destrucción")
+            begin
+              Preorders::PreorderAllocator.new(soi.product).call
+            rescue => alloc_err
+              Rails.logger.error("[SaleOrders#update] Error al asignar preventas tras liberar: #{alloc_err.class} #{alloc_err.message}")
+            end
+          end
+        rescue => free_err
+          Rails.logger.error("[SaleOrders#update] Error al liberar reservados tras fallo de destrucción: #{free_err.class} #{free_err.message}")
+        end
+      end
+
+      Rails.logger.warn("[SaleOrders#update] RecordNotDestroyed: #{msg}")
+      flash.now[:alert] = msg
+      @sale_order.reload
       render :edit, status: :unprocessable_entity
     end
   end
