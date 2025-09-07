@@ -49,9 +49,7 @@ class Shipment < ApplicationRecord
       end
     when "shipped"
       # Cuando el envío pasa a shipped, marcamos la SO como 'In Transit'
-      if so.status != "In Transit"
-        so.update!(status: "In Transit")
-      end
+  so.update!(status: "In Transit") unless so.status == "In Transit"
     when "pending", "returned", "canceled"
       # Si el envío deja de estar delivered, degradar a Confirmed (si fully_paid) o Pending
       if so.fully_paid?
@@ -67,11 +65,14 @@ class Shipment < ApplicationRecord
       end
     end
     # Forzar broadcast del badge tras el cambio de Shipment (UI viva)
+    html = ApplicationController.render(
+      partial: "admin/sale_orders/status_badge",
+      locals: { sale_order: so }
+    )
     Turbo::StreamsChannel.broadcast_replace_to(
       ["sale_order", so.id],
       target: "sale_order_status_badge",
-      partial: "admin/sale_orders/status_badge",
-      locals: { sale_order: so }
+      html: html
     )
   rescue => e
     Rails.logger.error "[Shipment#sync_sale_order_status_from_shipment] #{e.class}: #{e.message}"

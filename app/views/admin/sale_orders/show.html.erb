@@ -34,11 +34,11 @@
     </div>
     <div class="col-md-3">
       <strong>Status:</strong>
-      <div id="sale_order_status_container">
-        <turbo-frame id="sale_order_status_badge">
+      <turbo-frame id="sale_order_status">
+        <div id="sale_order_status_badge">
           <%= render "admin/sale_orders/status_badge", sale_order: @sale_order %>
-        </turbo-frame>
-      </div>
+        </div>
+      </turbo-frame>
     </div>
     <div class="col-md-3">
       <strong>Order Date:</strong>
