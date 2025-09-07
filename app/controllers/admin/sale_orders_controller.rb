@@ -2,7 +2,7 @@
 class Admin::SaleOrdersController < ApplicationController
   before_action :authenticate_user!
   before_action :authorize_admin!
-  before_action :set_sale_order, only: %i[show edit update destroy cancel_reservations export_cancellations]
+  before_action :set_sale_order, only: %i[show edit update destroy cancel_reservations reassign export_cancellations]
   before_action :set_sale_order_with_includes, only: %i[summary]
   before_action :load_counts, only: [:index]
 
@@ -152,6 +152,10 @@ class Admin::SaleOrdersController < ApplicationController
   # Cancelación manual de reservas antiguas por SO (sin tocar vendidos)
   def cancel_reservations
     reason = params[:reason].to_s.presence || "Cancelación manual de reservas antiguas"
+    # No permitir cancelar en Confirmed o Delivered
+    if ["Confirmed", "Delivered"].include?(@sale_order.status)
+      return redirect_to admin_sale_order_path(@sale_order), alert: "No puedes cancelar reservas de una orden Confirmed o Delivered."
+    end
     result = ::SaleOrders::CancelOldReservations.new(sale_order: @sale_order, reason: reason, actor: current_user).call
     if result.ok
       redirect_to admin_sale_order_path(@sale_order), notice: "Reservas canceladas: liberadas=#{result.released_units}, preventas canceladas=#{result.preorders_cancelled}."
