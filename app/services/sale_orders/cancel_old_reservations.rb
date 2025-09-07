@@ -88,7 +88,13 @@ module SaleOrders
 
         # 3) No eliminamos líneas; preservamos como historial. Si se desea, el admin puede luego editar cantidades manualmente.
 
-        # 4) Recalcular totales de la SO
+        # 4) Si ya no quedan inventarios ligados (excepto sold), marcar la SO como Canceled
+        remaining_non_sold = Inventory.where(sale_order_id: so.id).where.not(status: :sold).count
+        if remaining_non_sold.zero? && so.status != 'Canceled'
+          so.update!(status: 'Canceled')
+        end
+
+        # 5) Recalcular totales de la SO
         so.recalculate_totals!(persist: true)
       end
 
