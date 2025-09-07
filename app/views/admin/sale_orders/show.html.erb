@@ -101,7 +101,7 @@
   <!-- Add Payment Button -->
   <%= link_to "Add Payment",
       new_admin_sale_order_payment_path(@sale_order),
-      data: { turbo_frame: "modal_frame" },
+  data: { turbo_frame: "modal_frame", defer_until_ready: true },
       class: "btn btn-outline-primary mb-3" %>
 
   <!-- Payment Modal -->
