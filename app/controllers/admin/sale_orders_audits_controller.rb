@@ -17,7 +17,6 @@ class Admin::SaleOrdersAuditsController < ApplicationController
       .where("inv.id IS NULL OR inv.status IN (?)", assigned_statuses)
       .select(
         'sale_order_items.*',
-        'sale_orders.user_id as so_user_id',
         'COUNT(inv.id) AS assigned_inv_count'
       )
       .group('sale_order_items.id')
