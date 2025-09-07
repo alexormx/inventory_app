@@ -15,7 +15,7 @@ class SaleOrder < ApplicationRecord
   validates :tax_rate, presence: true, numericality: { greater_than_or_equal_to: 0, less_than_or_equal_to: 100 }
   validates :total_tax, presence: true, numericality: { greater_than_or_equal_to: 0 }
   validates :total_order_value, presence: true, numericality: { greater_than_or_equal_to: 0 }
-  validates :status, presence: true, inclusion: { in: %w[Pending Confirmed Shipped Delivered Canceled] }
+  validates :status, presence: true, inclusion: { in: %w[Pending Confirmed Shipped In Transit Delivered Canceled] }
   validate :ensure_payment_and_shipment_present
   validates :shipping_cost, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true
 
@@ -32,6 +32,8 @@ class SaleOrder < ApplicationRecord
   after_update :sync_inventory_status_for_payment_change, if: :saved_change_to_status?
   # Garantizar que todos los inventarios ligados tengan sale_order_item_id tras guardar
   after_commit :backfill_inventory_so_item_links
+  # Actualizar UI (status badge) por Turbo cuando cambie el estado
+  after_commit :broadcast_status_change, if: -> { previous_changes.key?("status") }
 
   def total_paid
     payments.where(status: "Completed").sum(:amount)
@@ -103,8 +105,12 @@ class SaleOrder < ApplicationRecord
     when "Confirmed"
       errors.add(:payment, "must exist to confirm the order") unless total_order_value.to_f == 0.0 || payments.any?
     when "Shipped"
+      # Para marcar como Shipped requerimos pago y envío existente
       errors.add(:payment, "must exist to ship the order") unless total_order_value.to_f == 0.0 || payments.any?
       errors.add(:shipment, "must exist to ship the order") unless shipment.present?
+    when "In Transit"
+      # Permitir 'In Transit' sin exigir pago, pero debe existir shipment
+      errors.add(:shipment, "must exist to set in transit") unless shipment.present?
     when "Delivered"
       errors.add(:payment, "must exist to deliver the order") unless total_order_value.to_f == 0.0 || payments.any?
       errors.add(:shipment, "must exist to deliver the order") unless shipment.present?
@@ -200,12 +206,12 @@ class SaleOrder < ApplicationRecord
   def sync_inventory_status_for_payment_change
     previous, current = saved_change_to_status
     # Cubrimos transiciones entre Pending, Confirmed y Delivered para sincronizar sold/reserved y pre_*.
-    case [previous, current]
-    when ["Pending", "Confirmed"], ["Confirmed", "Delivered"], ["Pending", "Delivered"]
+  case [previous, current]
+  when ["Pending", "Confirmed"], ["Confirmed", "Delivered"], ["Pending", "Delivered"]
       # Promoción de cobro/entrega: reserved -> sold ; pre_reserved -> pre_sold
       inventories.where(status: [:reserved]).update_all(status: Inventory.statuses[:sold], status_changed_at: Time.current, updated_at: Time.current)
       inventories.where(status: [:pre_reserved]).update_all(status: Inventory.statuses[:pre_sold], status_changed_at: Time.current, updated_at: Time.current)
-    when ["Confirmed", "Pending"], ["Delivered", "Confirmed"], ["Delivered", "Pending"]
+  when ["Confirmed", "Pending"], ["Delivered", "Confirmed"], ["Delivered", "Pending"]
       # Reversión (edición/corrección): sold -> reserved ; pre_sold -> pre_reserved
       inventories.where(status: [:sold]).update_all(status: Inventory.statuses[:reserved], status_changed_at: Time.current, updated_at: Time.current)
       inventories.where(status: [:pre_sold]).update_all(status: Inventory.statuses[:pre_reserved], status_changed_at: Time.current, updated_at: Time.current)
@@ -231,6 +237,17 @@ class SaleOrder < ApplicationRecord
     Inventories::BackfillSaleOrderItemId.new(scope: inventories).call
   rescue => e
     Rails.logger.error "[SaleOrder#backfill_inventory_so_item_links] #{e.class}: #{e.message}"
+  end
+
+  def broadcast_status_change
+    Turbo::StreamsChannel.broadcast_replace_to(
+      ["sale_order", id],
+      target: "sale_order_status_badge",
+      partial: "admin/sale_orders/status_badge",
+      locals: { sale_order: self }
+    )
+  rescue => e
+    Rails.logger.error "[SaleOrder#broadcast_status_change] #{e.class}: #{e.message}"
   end
 end
 

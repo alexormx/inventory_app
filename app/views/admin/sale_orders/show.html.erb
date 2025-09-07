@@ -11,11 +11,19 @@
     <%= button_to 'Marcar Delivered', force_delivered_admin_sale_order_path(@sale_order), method: :post,
       data: { turbo_confirm: 'Esto promoverá estados de inventario acorde. ¿Continuar?' },
       class: 'btn btn-sm btn-success' %>
-    <%= button_to 'Cancelar reservas (manual)', cancel_reservations_admin_sale_order_path(@sale_order), method: :post,
-      params: { reason: 'Cancelación manual desde detalle de SO' },
-      data: { turbo_confirm: 'Liberará inventario reservado/pre_* y cancelará preventas asociadas. No tocará vendidos. ¿Confirmar?' },
-      class: 'btn btn-sm btn-outline-danger' %>
-    <%= link_to 'Exportar cancelaciones CSV', export_cancellations_admin_sale_order_path(@sale_order), class: 'btn btn-sm btn-outline-secondary' %>
+    <% if @sale_order.status != 'Canceled' %>
+      <% if @sale_order.status == 'Pending' %>
+      <%= button_to 'Cancelar reservas (manual)', cancel_reservations_admin_sale_order_path(@sale_order), method: :post,
+        params: { reason: 'Cancelación manual desde detalle de SO' },
+        form: { data: { controller: 'confirm', action: 'submit->confirm#ask', confirm_message_value: 'Liberará inventario reservado/pre_* y cancelará preventas asociadas. No tocará vendidos. ¿Confirmar?' } },
+        class: 'btn btn-sm btn-outline-danger' %>
+      <% end %>
+    <% else %>
+      <%# Solo mostrar si está cancelada (ya en el bloque else) %>
+      <%= button_to 'Reasignar pedido', reassign_admin_sale_order_path(@sale_order), method: :post,
+        form: { data: { controller: 'confirm', action: 'submit->confirm#ask', confirm_message_value: 'Esto intentará reasignar inventario disponible e in-transit a esta SO como si fuera nueva, manteniendo el mismo ID. ¿Continuar?' } },
+        class: 'btn btn-sm btn-outline-primary' %>
+    <% end %>
   </div>
 
   <!-- Order Info -->
@@ -27,7 +35,9 @@
     <div class="col-md-3">
       <strong>Status:</strong>
       <turbo-frame id="sale_order_status">
-        <span class="badge <%= status_badge_class(@sale_order.status) %> px-3 py-2"><%= @sale_order.status %></span>
+        <div id="sale_order_status_badge">
+          <%= render "admin/sale_orders/status_badge", sale_order: @sale_order %>
+        </div>
       </turbo-frame>
     </div>
     <div class="col-md-3">

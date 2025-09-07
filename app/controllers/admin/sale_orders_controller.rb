@@ -2,7 +2,7 @@
 class Admin::SaleOrdersController < ApplicationController
   before_action :authenticate_user!
   before_action :authorize_admin!
-  before_action :set_sale_order, only: %i[show edit update destroy cancel_reservations export_cancellations]
+  before_action :set_sale_order, only: %i[show edit update destroy cancel_reservations reassign export_cancellations]
   before_action :set_sale_order_with_includes, only: %i[summary]
   before_action :load_counts, only: [:index]
 
@@ -152,11 +152,59 @@ class Admin::SaleOrdersController < ApplicationController
   # Cancelación manual de reservas antiguas por SO (sin tocar vendidos)
   def cancel_reservations
     reason = params[:reason].to_s.presence || "Cancelación manual de reservas antiguas"
+    # Solo permitir cancelar cuando la orden está en Pending
+    unless @sale_order.status == "Pending"
+      return redirect_to admin_sale_order_path(@sale_order), alert: "Solo puedes cancelar reservas cuando la orden está en Pending."
+    end
     result = ::SaleOrders::CancelOldReservations.new(sale_order: @sale_order, reason: reason, actor: current_user).call
     if result.ok
       redirect_to admin_sale_order_path(@sale_order), notice: "Reservas canceladas: liberadas=#{result.released_units}, preventas canceladas=#{result.preorders_cancelled}."
     else
       redirect_to admin_sale_order_path(@sale_order), alert: (result.errors&.to_sentence || "Error al cancelar reservas")
+    end
+  end
+
+  # Reasigna inventario a una SO cancelada, siguiendo el flujo de una nueva SO
+  def reassign
+    if @sale_order.status != 'Canceled'
+      return redirect_to admin_sale_order_path(@sale_order), alert: 'Solo puedes reasignar cuando la orden está en estado Canceled.'
+    end
+    begin
+      # Intentar asignar available primero y luego in_transit como pre_*
+      @sale_order.sale_order_items.includes(:product).find_each do |li|
+        needed = li.quantity.to_i
+        # contar ya asignados (por si quedaron)
+        assigned = Inventory.where(sale_order_id: @sale_order.id, product_id: li.product_id, status: [:reserved, :sold, :pre_reserved, :pre_sold]).count
+        remaining = needed - assigned
+        next if remaining <= 0
+
+        # 1) available -> reserved
+        avail = Inventory.where(product_id: li.product_id, status: :available, sale_order_id: nil).order(:status_changed_at).limit(remaining).to_a
+        avail.each do |inv|
+          inv.update!(status: :reserved, sale_order_id: @sale_order.id, sale_order_item_id: li.id, status_changed_at: Time.current, sold_price: li.unit_final_price.to_f.nonzero? || inv.sold_price)
+        end
+        remaining -= avail.size
+
+        # 2) in_transit -> pre_reserved (o pre_sold si decides confirmar después con pago)
+        if remaining > 0
+          it = Inventory.where(product_id: li.product_id, status: :in_transit, sale_order_id: nil).order(:status_changed_at).limit(remaining).to_a
+          it.each do |inv|
+            inv.update!(status: :pre_reserved, sale_order_id: @sale_order.id, sale_order_item_id: li.id, status_changed_at: Time.current, sold_price: li.unit_final_price.to_f.nonzero? || inv.sold_price)
+          end
+          remaining -= it.size
+        end
+
+        # 3) Si aún falta, crear preventa pendiente
+        if remaining > 0
+          PreorderReservation.create!(product_id: li.product_id, user_id: @sale_order.user_id, sale_order_id: @sale_order.id, quantity: remaining, status: :pending, reserved_at: Time.current)
+          li.update_columns(preorder_quantity: li.preorder_quantity.to_i + remaining, updated_at: Time.current)
+        end
+      end
+      # Poner status a Pending para indicar que necesita confirmación/pago antes de entregar
+      @sale_order.update!(status: 'Pending')
+      redirect_to admin_sale_order_path(@sale_order), notice: 'Reasignación completada. La orden quedó en Pending.'
+    rescue => e
+      redirect_to admin_sale_order_path(@sale_order), alert: "Error al reasignar: #{e.message}"
     end
   end
 
