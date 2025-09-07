@@ -85,6 +85,7 @@ Rails.application.routes.draw do
     resources :reports, only: [:index] do
       collection do
         get :inventory_items
+  get :cancellations
       end
     end
     resources :settings, only: [:index] do
