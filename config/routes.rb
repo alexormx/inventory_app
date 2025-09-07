@@ -192,8 +192,8 @@ Rails.application.routes.draw do
     end
   end
 
-  # Rails health check (uptime monitor, etc.)
-  get "up" => "rails/health#show", as: :rails_health_check
+  # Health check (lightweight; avoids hitting DB on boot)
+  get "up" => "health#show", as: :rails_health_check
 
   # Public-facing root (if any)
   root "home#index"

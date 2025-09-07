@@ -11,14 +11,29 @@ class Admin::SystemVariablesController < ApplicationController
   # 4. Feature flags / dinámicas (placeholder)
   # 5. Stats runtime (Rails env, versión Ruby, memoria aproximada)
   def index
-    @env_vars = filtered_env
-    @site_settings = SiteSetting.order(:key)
+    # Safe, lightweight info always
+    @env_vars = ::Introspection.filtered_env
     @rails_config = gather_rails_config
-    @runtime_info = runtime_info
+    @runtime_info = ::Introspection.app_info
     @dynamic_flags = dynamic_flags
-  @schema_report = ::Introspection::SchemaReport.call
-  @model_report  = ::Introspection::ModelReport.call
-  @env_usage_report = ::Introspection::EnvUsageReport.call
+
+    # DB-backed settings guarded
+    @site_settings = begin
+      SiteSetting.order(:key)
+    rescue => e
+      []
+    end
+
+    # Heavy introspection (DB/cache/FS scanning). Only on demand or if explicitly enabled
+    if params[:full] == '1'
+      @schema_report = ::Introspection.safe_schema_report
+      @model_report  = ::Introspection.safe_model_report
+      @env_usage_report = ::Introspection.safe_env_usage_report
+    else
+      @schema_report = { tables: [], generated_at: Time.current, info: 'omitido (agrega ?full=1 para generar)' }
+      @model_report  = { models: [], generated_at: Time.current, info: 'omitido (agrega ?full=1 para generar)' }
+      @env_usage_report = { total: 0, keys: [], missing: [], generated_at: Time.current, info: 'omitido (agrega ?full=1 para generar)' }
+    end
   end
 
   # Ejecuta la generación / actualización de placeholders de comentarios (no destructivo)
@@ -38,11 +53,6 @@ class Admin::SystemVariablesController < ApplicationController
 
   private
   SENSITIVE_ENV_PATTERNS = /(SECRET|PASSWORD|KEY|TOKEN|DATABASE_URL|RAILS_MASTER_KEY)/i
-
-  def filtered_env
-    ENV.to_h.select { |k,_| k.present? && k !~ SENSITIVE_ENV_PATTERNS }
-            .sort.to_h
-  end
 
   def gather_rails_config
     cfg = {}
