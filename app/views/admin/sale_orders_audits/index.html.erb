@@ -12,14 +12,16 @@
       Unidades faltantes: <span class="text-danger"><%= @summary[:missing_units] %></span>
     </div>
     <div class="d-inline-flex gap-2">
-      <%= link_to 'Simular corrección (dry run)',
-                  admin_sale_orders_audit_fix_path(dry_run: true),
-                  data: { turbo_method: :post },
-                  class: 'btn btn-sm btn-outline-primary' %>
-      <%= link_to 'Corregir faltantes',
-                  admin_sale_orders_audit_fix_path,
-                  data: { turbo_method: :post, controller: 'confirm', confirm_message: '¿Asignar inventario disponible y crear preventas para el resto?' },
-                  class: 'btn btn-sm btn-danger' %>
+      <%= button_to 'Simular corrección (dry run)',
+                    admin_sale_orders_audit_fix_path,
+                    params: { dry_run: true },
+                    method: :post,
+                    class: 'btn btn-sm btn-outline-primary' %>
+      <%= button_to 'Corregir faltantes',
+                    admin_sale_orders_audit_fix_path,
+                    method: :post,
+                    data: { controller: 'confirm', action: 'click->confirm#ask', confirm_message: '¿Asignar inventario disponible y crear preventas para el resto?' },
+                    class: 'btn btn-sm btn-danger' %>
     </div>
   </div>
 
