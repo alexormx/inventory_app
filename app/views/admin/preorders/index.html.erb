@@ -52,6 +52,8 @@
       <th>ID</th>
       <th>Producto</th>
       <th>Usuario</th>
+      <th>SO</th>
+      <th>SO Item ID</th>
       <th>Cantidad</th>
       <th>Estado</th>
       <th>Reservado</th>
@@ -63,8 +65,10 @@
     <% @preorders.each do |res| %>
       <tr>
         <td><%= res.id %></td>
-        <td><%= res.product&.product_name %> (<%= res.product_id %>)</td>
-        <td><%= res.user&.email %> (<%= res.user_id %>)</td>
+  <td><%= res.product&.product_name %></td>
+  <td><%= res.user&.email %></td>
+  <td><%= res.sale_order_id %></td>
+  <td><%= @so_item_by_pair[[res.sale_order_id, res.product_id]] %></td>
         <td><%= res.quantity %></td>
         <td>
           <% css = case res.status

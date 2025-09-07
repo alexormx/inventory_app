@@ -10,8 +10,23 @@ class Admin::PreordersController < ApplicationController
     @scope = @scope.where(status: PreorderReservation.statuses[@status]) if @status && PreorderReservation.statuses.key?(@status)
     @scope = @scope.where(product_id: @product_id) if @product_id
     @scope = @scope.where(user_id: @user_id) if @user_id
-    @scope = @scope.includes(:product, :user).order(:status, :reserved_at)
+    @scope = @scope.includes(:product, :user, :sale_order).order(:status, :reserved_at)
     @preorders = @scope.page(params[:page]).per(50) rescue @scope
+
+    # Precalcular SO Item ID por (sale_order_id, product_id) para evitar N+1
+    pairs = @preorders.map { |r| [r.sale_order_id, r.product_id] }.select { |sid, pid| sid.present? && pid.present? }
+    if pairs.any?
+      so_ids = pairs.map(&:first).uniq
+      p_ids  = pairs.map(&:last).uniq
+      items = SaleOrderItem.where(sale_order_id: so_ids, product_id: p_ids).select(:id, :sale_order_id, :product_id)
+      @so_item_by_pair = {}
+      items.each do |it|
+        key = [it.sale_order_id, it.product_id]
+        @so_item_by_pair[key] ||= it.id
+      end
+    else
+      @so_item_by_pair = {}
+    end
 
     # Métricas rápidas
     @pending_count = PreorderReservation.pending.count
