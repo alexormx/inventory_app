@@ -16,9 +16,8 @@ module InventoryApp
     # Common ones are `templates`, `generators`, or `middleware`, for example.
   # Asegurar que app/services está en autoload/eager_load paths
   services_path = Rails.root.join('app/services')
-    config.autoload_paths << services_path unless config.autoload_paths.include?(services_path)
-    config.eager_load_paths << services_path unless config.eager_load_paths.include?(services_path)
-    config.eager_load_paths << Rails.root.join('app/services', 'preorders') unless config.eager_load_paths.include?(Rails.root.join('app/services', 'preorders'))
+  config.autoload_paths << services_path unless config.autoload_paths.include?(services_path)
+  config.eager_load_paths << services_path unless config.eager_load_paths.include?(services_path)
     config.autoload_lib(ignore: %w[ assets tasks ])
 
     # Add i18n configuration to your application.
