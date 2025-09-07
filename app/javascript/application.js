@@ -1,5 +1,7 @@
 // Configure your import map in config/importmap.rb. Read more: https://github.com/rails/importmap-rails
 import "@hotwired/turbo-rails"
+// Deshabilitar acciones críticas (Payments/Shipments) hasta que cargue por completo
+import "custom/defer_actions_until_loaded"
 import { Application } from "@hotwired/stimulus"
 
 const application = Application.start()
@@ -84,4 +86,12 @@ application.register("chart", ChartController)
 
 // Ensure charts helpers are importable (side-effect import ok)
 import "./dashboard/charts"
+
+// Marcar el estado de carga para estilos CSS: bloquear botones críticos hasta estar listo
+document.addEventListener('turbo:before-render', () => {
+  document.body && document.body.classList.remove('app-ready')
+})
+document.addEventListener('turbo:load', () => {
+  document.body && document.body.classList.add('app-ready')
+})
 
