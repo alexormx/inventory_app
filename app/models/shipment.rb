@@ -48,15 +48,20 @@ class Shipment < ApplicationRecord
         so.update!(status: "Delivered")
       end
     when "shipped"
-      # No cambiamos a Shipped aquí; mantenemos Confirmed como estado comercial intermedio
+      # Cuando el envío pasa a shipped, marcamos la SO como 'In Transit'
+      if so.status != "In Transit"
+        so.update!(status: "In Transit")
+      end
     when "pending", "returned", "canceled"
       # Si el envío deja de estar delivered, degradar a Confirmed (si fully_paid) o Pending
       if so.fully_paid?
-        if so.status == "Delivered"
+        # Si venimos de Delivered o In Transit regresamos a Confirmed
+        if ["Delivered", "In Transit"].include?(so.status)
           so.update!(status: "Confirmed")
         end
       else
-        if ["Delivered", "Confirmed"].include?(so.status)
+        # Si no está fully_paid, volver a Pending desde Delivered/Confirmed/In Transit
+        if ["Delivered", "Confirmed", "In Transit"].include?(so.status)
           so.update!(status: "Pending")
         end
       end

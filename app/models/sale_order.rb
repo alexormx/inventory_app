@@ -15,7 +15,7 @@ class SaleOrder < ApplicationRecord
   validates :tax_rate, presence: true, numericality: { greater_than_or_equal_to: 0, less_than_or_equal_to: 100 }
   validates :total_tax, presence: true, numericality: { greater_than_or_equal_to: 0 }
   validates :total_order_value, presence: true, numericality: { greater_than_or_equal_to: 0 }
-  validates :status, presence: true, inclusion: { in: %w[Pending Confirmed Shipped Delivered Canceled] }
+  validates :status, presence: true, inclusion: { in: %w[Pending Confirmed Shipped In Transit Delivered Canceled] }
   validate :ensure_payment_and_shipment_present
   validates :shipping_cost, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true
 
@@ -104,7 +104,7 @@ class SaleOrder < ApplicationRecord
     case status
     when "Confirmed"
       errors.add(:payment, "must exist to confirm the order") unless total_order_value.to_f == 0.0 || payments.any?
-    when "Shipped"
+  when "Shipped", "In Transit"
       errors.add(:payment, "must exist to ship the order") unless total_order_value.to_f == 0.0 || payments.any?
       errors.add(:shipment, "must exist to ship the order") unless shipment.present?
     when "Delivered"
@@ -202,12 +202,12 @@ class SaleOrder < ApplicationRecord
   def sync_inventory_status_for_payment_change
     previous, current = saved_change_to_status
     # Cubrimos transiciones entre Pending, Confirmed y Delivered para sincronizar sold/reserved y pre_*.
-    case [previous, current]
-    when ["Pending", "Confirmed"], ["Confirmed", "Delivered"], ["Pending", "Delivered"]
+  case [previous, current]
+  when ["Pending", "Confirmed"], ["Confirmed", "Delivered"], ["Pending", "Delivered"]
       # Promoción de cobro/entrega: reserved -> sold ; pre_reserved -> pre_sold
       inventories.where(status: [:reserved]).update_all(status: Inventory.statuses[:sold], status_changed_at: Time.current, updated_at: Time.current)
       inventories.where(status: [:pre_reserved]).update_all(status: Inventory.statuses[:pre_sold], status_changed_at: Time.current, updated_at: Time.current)
-    when ["Confirmed", "Pending"], ["Delivered", "Confirmed"], ["Delivered", "Pending"]
+  when ["Confirmed", "Pending"], ["Delivered", "Confirmed"], ["Delivered", "Pending"]
       # Reversión (edición/corrección): sold -> reserved ; pre_sold -> pre_reserved
       inventories.where(status: [:sold]).update_all(status: Inventory.statuses[:reserved], status_changed_at: Time.current, updated_at: Time.current)
       inventories.where(status: [:pre_sold]).update_all(status: Inventory.statuses[:pre_reserved], status_changed_at: Time.current, updated_at: Time.current)
