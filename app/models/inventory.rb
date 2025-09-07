@@ -1,6 +1,7 @@
 class Inventory < ApplicationRecord
   belongs_to :purchase_order, optional: true
   belongs_to :sale_order, optional: true
+  belongs_to :sale_order_item, optional: true
   belongs_to :product
 
   # Nota: agregar nuevos estatus siempre al final para no cambiar los IDs existentes

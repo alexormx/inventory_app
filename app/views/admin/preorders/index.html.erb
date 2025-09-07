@@ -38,6 +38,9 @@
       <div class="col-md-3 d-flex gap-2">
         <button class="btn btn-sm btn-primary mt-4" type="submit">Filtrar</button>
         <a href="<%= admin_preorders_path %>" class="btn btn-sm btn-outline-secondary mt-4">Limpiar</a>
+  <%= link_to 'Asignar ahora', admin_preorders_assign_now_path(status: @status, product_id: @product_id, user_id: @user_id),
+          data: { turbo_method: :post, controller: 'confirm', confirm_message: '¿Buscar inventario available + in_transit y asignar a preórdenes filtradas?' },
+          class: 'btn btn-sm btn-warning mt-4' %>
       </div>
     <% end %>
   </div>

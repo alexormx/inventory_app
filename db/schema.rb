@@ -71,10 +71,12 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_31_131004) do
     t.datetime "status_changed_at", default: -> { "CURRENT_TIMESTAMP" }, null: false
     t.integer "purchase_order_item_id"
     t.integer "status", default: 0, null: false
+    t.integer "sale_order_item_id"
     t.index ["product_id", "status"], name: "index_inventories_on_product_id_and_status"
     t.index ["product_id"], name: "index_inventories_on_product_id"
     t.index ["purchase_order_id"], name: "index_inventories_on_purchase_order_id"
     t.index ["sale_order_id"], name: "index_inventories_on_sale_order_id"
+    t.index ["sale_order_item_id"], name: "index_inventories_on_sale_order_item_id"
   end
 
   create_table "maintenance_runs", force: :cascade do |t|
@@ -99,6 +101,18 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_31_131004) do
     t.datetime "updated_at", null: false
     t.string "sale_order_id", null: false
     t.integer "payment_method"
+  end
+
+  create_table "postal_codes", force: :cascade do |t|
+    t.string "cp", limit: 5, null: false
+    t.string "state", null: false
+    t.string "municipality", null: false
+    t.string "settlement", null: false
+    t.string "settlement_type"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["cp", "settlement"], name: "index_postal_codes_on_cp_and_settlement"
+    t.index ["cp"], name: "index_postal_codes_on_cp"
   end
 
   create_table "preorder_reservations", force: :cascade do |t|
@@ -278,6 +292,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_31_131004) do
     t.boolean "default", default: false, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "settlement"
+    t.string "municipality"
+    t.index ["postal_code"], name: "index_shipping_addresses_on_postal_code"
     t.index ["user_id", "default"], name: "index_shipping_addresses_on_user_id_and_default"
     t.index ["user_id"], name: "index_shipping_addresses_on_user_id"
   end

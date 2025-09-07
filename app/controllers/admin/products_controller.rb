@@ -2,7 +2,7 @@ class Admin::ProductsController < ApplicationController
   include CustomAttributesParam
   before_action :authenticate_user!
   before_action :authorize_admin!
-  before_action :set_product, only: %i[show edit update destroy purge_image activate deactivate]
+  before_action :set_product, only: %i[show edit update destroy purge_image activate deactivate assign_preorders]
   before_action :fix_custom_attributes_param, only: [:create, :update]
   before_action :load_counts, only: [:index, :drafts, :active, :inactive]
 
@@ -65,6 +65,11 @@ class Admin::ProductsController < ApplicationController
 
   def show
 
+  end
+
+  def assign_preorders
+    Preorders::PreorderAllocator.new(@product).call
+    redirect_to admin_product_path(@product), notice: "Preórdenes asignadas (si había disponibilidad)."
   end
 
   def destroy

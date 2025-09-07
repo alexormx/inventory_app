@@ -1,6 +1,22 @@
 <div class="container mt-4">
   <h2>Purchase Order ##<%= @purchase_order.id %></h2>
 
+  <div class="d-flex gap-2 mb-3">
+    <%= link_to 'Rebalancear inventario de esta PO',
+                rebalance_inventory_admin_purchase_order_path(@purchase_order),
+                data: { turbo_method: :post, controller: 'confirm', confirm_message: '¿Rebalancear inventario por línea para esta PO? Solo tocará available/in_transit.' },
+                class: 'btn btn-sm btn-danger' %>
+    <% if (@purchase_order.status == "In Transit" || @purchase_order.status == "Pending") %>
+      <%= link_to 'Confirmar recepción',
+                  confirm_receipt_admin_purchase_order_path(@purchase_order),
+                  data: { turbo_method: :patch, controller: 'confirm', confirm_message: '¿Mover inventario In Transit a Available y marcar PO como Delivered?' },
+                  class: 'btn btn-sm btn-primary' %>
+    <% end %>
+    <%= link_to 'Volver', admin_purchase_orders_path, class: 'btn btn-sm btn-outline-secondary' %>
+    <%= link_to 'Auditoría líneas', line_audit_admin_purchase_orders_path, class: 'btn btn-sm btn-outline-warning' %>
+    <div class="ms-auto"></div>
+  </div>
+
   <!-- Resumen PO -->
   <div class="row g-3 mb-3">
     <div class="col-auto">
@@ -78,11 +94,7 @@
     </div>
   </div>
 
-  <% if (@purchase_order.status == "In Transit" || @purchase_order.status == "Pending") %>
-  <%= button_to "Confirmar recepción", confirm_receipt_admin_purchase_order_path(@purchase_order),
-                method: :patch, class: "btn btn-success mb-3",
-                data: { turbo_confirm: "¿Confirmas que ya recibiste todos los productos?" } %>
-  <% end %>
+  
 
   <!-- Items Table -->
   <div class="card mb-4">

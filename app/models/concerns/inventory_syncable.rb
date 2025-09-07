@@ -29,15 +29,17 @@ module InventorySyncable
     current_count = existing_items.count
     difference = desired_quantity - current_count
 
-    # Update existing items
-    existing_items.each do |item|
-      item.update!(
-        status: inventory_status_from_order,
-        status_changed_at: Time.current,
-        purchase_cost: respond_to?(:unit_compose_cost_in_mxn) ? unit_compose_cost_in_mxn.to_f : item.purchase_cost,
-        purchase_order_id: purchase_order_id,
-        product_id: product_id
-      )
+    # No cambiar el estado de los items existentes (para no sobreescribir reservados/vendidos)
+    # Solo asegurar vínculos básicos si hiciera falta, sin tocar status.
+    existing_items.find_each do |item|
+      updates = {}
+      updates[:purchase_order_id] = purchase_order_id if item.purchase_order_id != purchase_order_id
+      updates[:product_id] = product_id if item.product_id != product_id
+      # Mantener purchase_cost intacto a menos que esté en blanco
+      if item.purchase_cost.nil? && respond_to?(:unit_compose_cost_in_mxn)
+        updates[:purchase_cost] = unit_compose_cost_in_mxn.to_f
+      end
+      item.update!(updates) if updates.any?
     end
 
     if difference > 0
@@ -93,6 +95,7 @@ module InventorySyncable
       item.update!(
         status: :reserved,
         sale_order_id: sale_order_id,
+  sale_order_item_id: id,
         status_changed_at: Time.current,
         sold_price: respond_to?(:unit_final_price) ? unit_final_price.to_f : item.sold_price
       )
@@ -145,6 +148,7 @@ module InventorySyncable
       item.update!(
         status: :available,
         sale_order_id: nil,
+  sale_order_item_id: nil,
         status_changed_at: Time.current
       )
     end

@@ -152,17 +152,123 @@ class Admin::PurchaseOrdersController < ApplicationController
 
   def confirm_receipt
     if @purchase_order.status == "In Transit"
-      Inventory.where(purchase_order_id: @purchase_order.id).in_transit.update_all(
-        status: :available,
-        updated_at: Time.current,
-        status_changed_at: Time.current
-      )
-      @purchase_order.update!(status: "Delivered")
+  # Solo cambia el estado de la PO; el modelo se encargará de mover inventario
+  @purchase_order.update!(status: "Delivered")
       flash[:notice] = "Recepción confirmada. Inventario actualizado."
     else
       flash[:alert] = "Solo se pueden confirmar órdenes 'In Transit'."
     end
     redirect_to admin_purchase_order_path(@purchase_order)
+  end
+
+  # Corrige inventario para una PO: ajusta por línea para que COUNT(inv) == quantity
+  def rebalance_inventory
+    po = PurchaseOrder.find(params[:id])
+    lines = po.purchase_order_items.includes(:product)
+  created_total = 0
+  deleted_total = 0
+    lines.each do |li|
+      desired = li.quantity.to_i
+      scope = Inventory.where(purchase_order_item_id: li.id)
+      current = scope.count
+      diff = desired - current
+      if diff > 0
+        diff.times do
+          Inventory.create!(
+            product_id: li.product_id,
+            purchase_order_id: po.id,
+            purchase_order_item_id: li.id,
+            status: (po.status.in?(["Pending","In Transit"]) ? :in_transit : :available),
+            status_changed_at: Time.current,
+            purchase_cost: li.unit_compose_cost_in_mxn.to_f
+          )
+        end
+    created_total += diff
+      elsif diff < 0
+    destroyed = scope.where(status: [:available, :in_transit], sale_order_id: nil)
+             .order(status_changed_at: :desc)
+             .limit(diff.abs)
+             .destroy_all
+             .size
+    deleted_total += destroyed
+      end
+    end
+  redirect_to admin_purchase_order_path(po), notice: "Rebalanceo completado. Creadas: #{created_total}. Eliminadas: #{deleted_total}."
+  end
+
+  # Corrige en lote todas las líneas con desajuste (según auditoría)
+  def rebalance_all_mismatches
+    dry_run = ActiveModel::Type::Boolean.new.cast(params[:dry_run])
+
+    mismatches = PurchaseOrderItem
+      .joins("LEFT JOIN inventories inv ON inv.purchase_order_item_id = purchase_order_items.id")
+      .select('purchase_order_items.id')
+      .group('purchase_order_items.id')
+      .having('COUNT(inv.id) <> purchase_order_items.quantity')
+
+    ids = mismatches.pluck(:id)
+
+    # Acumuladores
+    created_planned = 0
+    planned_available = 0
+    planned_in_transit = 0
+    deletions_planned = 0
+    deletions_possible = 0
+
+    created_done = 0
+    deleted_done = 0
+
+    PurchaseOrderItem.where(id: ids).includes(:purchase_order).find_each do |li|
+      po = li.purchase_order
+      desired = li.quantity.to_i
+      scope = Inventory.where(purchase_order_item_id: li.id)
+      current = scope.count
+      diff = desired - current
+
+      if diff > 0
+        status_sym = (po.status.in?( ["Pending","In Transit"] ) ? :in_transit : :available)
+        created_planned += diff
+        if status_sym == :in_transit
+          planned_in_transit += diff
+        else
+          planned_available += diff
+        end
+        unless dry_run
+          diff.times do
+            Inventory.create!(
+              product_id: li.product_id,
+              purchase_order_id: po.id,
+              purchase_order_item_id: li.id,
+              status: status_sym,
+              status_changed_at: Time.current,
+              purchase_cost: li.unit_compose_cost_in_mxn.to_f
+            )
+          end
+          created_done += diff
+        end
+      elsif diff < 0
+        deletions_planned += diff.abs
+        deletable_scope = scope.where(status: [:available, :in_transit], sale_order_id: nil)
+        available_to_delete = deletable_scope.count
+        deletions_possible += [available_to_delete, diff.abs].min
+        unless dry_run
+          destroyed_count = deletable_scope.order(status_changed_at: :desc)
+                                          .limit(diff.abs)
+                                          .destroy_all
+                                          .size
+          deleted_done += destroyed_count
+        end
+      end
+    end
+
+    if dry_run
+      msg = "Simulación: crear #{created_planned} (available #{planned_available}, in_transit #{planned_in_transit}); " \
+            "eliminar hasta #{deletions_possible} de #{deletions_planned} planeadas (solo available/in_transit sin SO)."
+      redirect_to line_audit_admin_purchase_orders_path, notice: msg
+    else
+      msg = "Rebalanceo masivo completado. Creadas: #{created_done}. Eliminadas: #{deleted_done}."
+      redirect_to line_audit_admin_purchase_orders_path, notice: msg
+    end
   end
 
   # Auditoría: POs con líneas cuyos restos > 0 (Qty - inventario generado por línea)

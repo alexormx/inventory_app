@@ -1,5 +1,6 @@
 <h2 class="mb-3 d-flex align-items-center gap-2"><i class="fa fa-archive"></i> Inventario
   <span class="ms-auto d-inline-flex gap-2">
+    <%= link_to "Auditoría de Inventario", admin_inventory_audit_path, class: "btn btn-sm btn-warning" %>
     <%= link_to "Export CSV", admin_inventory_path(request.query_parameters.merge(format: :csv)), class: "btn btn-sm btn-outline-secondary" %>
   </span>
 </h2>

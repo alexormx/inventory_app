@@ -9,6 +9,12 @@ Rails.application.routes.draw do
 
   # Admin namespace
   namespace :admin do
+  # Sales Orders Audit
+  get  'sale_orders_audit', to: 'sale_orders_audits#index', as: :sale_orders_audit
+  post 'sale_orders_audit/fix', to: 'sale_orders_audits#fix_gaps', as: :sale_orders_audit_fix
+  # Inventory Audit
+  get 'inventory_audit', to: 'inventory_audits#index', as: :inventory_audit
+  post 'inventory_audit/fix', to: 'inventory_audits#fix_inconsistencies', as: :inventory_audit_fix
     resources :visitor_logs, only: [:index]
 
     #Inventory Management views
@@ -43,6 +49,7 @@ Rails.application.routes.draw do
       member do
         patch :activate
         patch :deactivate
+  post  :assign_preorders
       end
       # Image removal for ActiveStorage
       delete "images/:image_id", to: "products#purge_image", as: :purge_image
@@ -63,7 +70,9 @@ Rails.application.routes.draw do
       patch :confirm_receipt, on: :member
       collection do
         get :line_audit
+        post :rebalance_all_mismatches
       end
+      post :rebalance_inventory, on: :member
     end
 
     # Reports & Settings
@@ -109,6 +118,7 @@ Rails.application.routes.draw do
 
   # Preventas y 'sobre pedido'
   get 'preorders', to: 'preorders#index', as: :preorders
+  post 'preorders/assign_now', to: 'preorders#assign_now', as: :preorders_assign_now
 
     # Sales Order Management
     resources :sale_orders do
