@@ -68,6 +68,11 @@ module InventorySyncable
     current_count = assigned.count
     needed = desired_quantity - current_count
 
+    # Si reducimos cantidad, primero ajusta pendientes (preorder/backorder) para no exceder
+    if needed < 0 && respond_to?(:preorder_quantity)
+      # Nada que hacer aquí: shrink_pending_to_fit ya se ejecuta en el modelo antes de validar
+    end
+
     if needed > 0
       to_assign = needed
 

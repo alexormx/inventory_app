@@ -62,6 +62,7 @@ class SaleOrderItem < ApplicationRecord
 
   # Guards de seguridad
   before_update  :ensure_free_to_reduce, if: :will_reduce_quantity?
+  before_validation :shrink_pending_to_fit, if: :will_reduce_quantity?
   before_destroy :ensure_no_sold_and_release_reserved
 
 
@@ -84,15 +85,69 @@ class SaleOrderItem < ApplicationRecord
 
   def ensure_free_to_reduce
     to_remove = desired_reduction
-  sold_count    = so_inventory.where(status: Inventory.statuses[:sold]).count
-  reserved_count = so_inventory.where(status: Inventory.statuses[:reserved]).count
+    sold_count    = so_inventory.where(status: Inventory.statuses[:sold]).count
+    reserved_count = so_inventory.where(status: Inventory.statuses[:reserved]).count
+    pending_pool   = preorder_quantity.to_i + backordered_quantity.to_i
 
     # No puedo “quitar” vendidos; solo puedo liberar reservados.
-    if reserved_count < to_remove
+    # Pero si tengo pendientes (preorder/backorder), primero reduzco esos sin tocar reservados.
+    # Requerimiento mínimo de reservados a liberar = to_remove - pending_pool (si es positivo)
+    min_reserved_needed = [to_remove - pending_pool, 0].max
+    if reserved_count < min_reserved_needed
       errors.add(:base, "No hay suficientes unidades reservadas para reducir #{to_remove}. "\
                         "(Vendidas: #{sold_count}, Reservadas: #{reserved_count})")
       throw :abort
     end
+  end
+
+  # Ajusta preorder_quantity/backordered_quantity para que no excedan la nueva cantidad,
+  # y cancela/modifica PreorderReservation correspondientes a esta SO/producto.
+  def shrink_pending_to_fit
+    old_qty, new_qty = quantity_change_to_be_saved
+    return unless new_qty.to_i < old_qty.to_i
+
+    total_pending = preorder_quantity.to_i + backordered_quantity.to_i
+    excess = total_pending - new_qty.to_i
+    return if excess <= 0
+
+    # 1) Disminuir preorder_quantity y cancelar reservas pendientes asociadas
+    if preorder_quantity.to_i > 0
+      reduce_pre = [preorder_quantity.to_i, excess].min
+      if reduce_pre > 0
+        self.preorder_quantity = preorder_quantity.to_i - reduce_pre
+        cancel_preorders!(reduce_pre)
+        excess -= reduce_pre
+      end
+    end
+
+    # 2) Disminuir backordered_quantity si aún sobra exceso
+    if excess > 0 && backordered_quantity.to_i > 0
+      reduce_bo = [backordered_quantity.to_i, excess].min
+      self.backordered_quantity = backordered_quantity.to_i - reduce_bo
+      excess -= reduce_bo
+    end
+    # Si todavía hay exceso (>0) aquí, lo cubrirá ensure_free_to_reduce liberando reservados.
+  end
+
+  # Cancela o reduce PreorderReservation pendientes para esta SO y producto
+  def cancel_preorders!(amount)
+    return if amount.to_i <= 0
+    remaining = amount.to_i
+    PreorderReservation.pending.where(sale_order_id: sale_order_id, product_id: product_id)
+                       .order(reserved_at: :desc)
+                       .find_each do |res|
+      break if remaining <= 0
+      if res.quantity.to_i > remaining
+        res.update!(quantity: res.quantity.to_i - remaining)
+        remaining = 0
+      else
+        take = res.quantity.to_i
+        res.update!(status: :cancelled, cancelled_at: Time.current)
+        remaining -= take
+      end
+    end
+  rescue => e
+    Rails.logger.error "[SOI#cancel_preorders!] #{e.class}: #{e.message}"
   end
 
   def ensure_no_sold_and_release_reserved
