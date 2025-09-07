@@ -1,13 +1,17 @@
 class Admin::PreordersController < ApplicationController
   before_action :authenticate_user!
   before_action :authorize_admin!
+  before_action :set_preorder, only: [:destroy, :cancel]
 
   def index
-    @status = params[:status].presence
+    status_param_present = params.key?(:status)
+    @status = status_param_present ? params[:status].presence : 'pending'
     @product_id = params[:product_id].presence
     @user_id = params[:user_id].presence
     @scope = PreorderReservation.all
-    @scope = @scope.where(status: PreorderReservation.statuses[@status]) if @status && PreorderReservation.statuses.key?(@status)
+    if @status && @status != 'all' && PreorderReservation.statuses.key?(@status)
+      @scope = @scope.where(status: PreorderReservation.statuses[@status])
+    end
     @scope = @scope.where(product_id: @product_id) if @product_id
     @scope = @scope.where(user_id: @user_id) if @user_id
     @scope = @scope.includes(:product, :user, :sale_order).order(:status, :reserved_at)
@@ -70,5 +74,22 @@ class Admin::PreordersController < ApplicationController
     end
     redirect_to admin_preorders_path(status: params[:status], product_id: product_id, user_id: user_id),
       notice: summary
+  end
+
+  # DELETE /admin/preorders/:id
+  def destroy
+    @preorder.update(status: :cancelled, cancelled_at: Time.current)
+    redirect_to admin_preorders_path, notice: "Preventa cancelada"
+  end
+
+  # POST /admin/preorders/:id/cancel (alias más explícito)
+  def cancel
+    @preorder.update(status: :cancelled, cancelled_at: Time.current)
+    redirect_to admin_preorders_path, notice: "Preventa cancelada"
+  end
+
+  private
+  def set_preorder
+    @preorder = PreorderReservation.find(params[:id])
   end
 end

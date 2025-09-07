@@ -88,16 +88,26 @@ class Admin::InventoryController < ApplicationController
   # Forzar carga completa a Array antes del render
   @inventory_items = @inventory_items.to_a
 
+  # Fallback: si sale_order_item_id es nulo pero existe sale_order_id, mapear por (sale_order_id, producto)
+  so_ids = @inventory_items.map(&:sale_order_id).compact.uniq
+  @so_item_by_sale_order = {}
+  if so_ids.any?
+    SaleOrderItem
+      .where(sale_order_id: so_ids, product_id: @product.id)
+      .pluck(:sale_order_id, :id)
+      .each { |so_id, soi_id| @so_item_by_sale_order[so_id] = soi_id }
+  end
+
   # Turbo Frames: usar el id de frame esperado (enviado por Turbo en el header)
     expected_frame_id = request.headers["Turbo-Frame"]
   respond_to do |format|
       format.turbo_stream do
         # Responder con el frame correcto si Turbo lo espera
-  render partial: "admin/inventory/items", locals: { product: @product, items: @inventory_items, frame_id: expected_frame_id }
+  render partial: "admin/inventory/items", locals: { product: @product, items: @inventory_items, frame_id: expected_frame_id, so_item_by_sale_order: @so_item_by_sale_order }
       end
       format.html do
         # Fallback: renderizar la misma partial dentro del layout normal
-  render partial: "admin/inventory/items", locals: { product: @product, items: @inventory_items, frame_id: expected_frame_id }
+  render partial: "admin/inventory/items", locals: { product: @product, items: @inventory_items, frame_id: expected_frame_id, so_item_by_sale_order: @so_item_by_sale_order }
       end
     end
   end

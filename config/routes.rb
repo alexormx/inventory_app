@@ -17,6 +17,7 @@ Rails.application.routes.draw do
   # Inventory Audit
   get 'inventory_audit', to: 'inventory_audits#index', as: :inventory_audit
   post 'inventory_audit/fix', to: 'inventory_audits#fix_inconsistencies', as: :inventory_audit_fix
+  post 'inventory_audit/fix_missing_so_lines', to: 'inventory_audits#fix_missing_so_lines', as: :inventory_audit_fix_missing_so_lines
     resources :visitor_logs, only: [:index]
 
     #Inventory Management views
@@ -88,6 +89,7 @@ Rails.application.routes.draw do
         post :index # para guardar configuraciones simples (tax)
         post :sync_inventory_statuses
         post :backfill_sale_orders_totals
+  post :backfill_inventory_sale_order_item_id
         get  :delivered_orders_debt_audit
         post :run_delivered_orders_debt_audit
         # Permitir GET directo (fallback) para evitar errores si el usuario refresca la URL POST
@@ -121,6 +123,8 @@ Rails.application.routes.draw do
   # Preventas y 'sobre pedido'
   get 'preorders', to: 'preorders#index', as: :preorders
   post 'preorders/assign_now', to: 'preorders#assign_now', as: :preorders_assign_now
+  delete 'preorders/:id', to: 'preorders#destroy', as: :preorder
+  post   'preorders/:id/cancel', to: 'preorders#cancel', as: :preorder_cancel
 
     # Sales Order Management
     resources :sale_orders do

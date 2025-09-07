@@ -21,7 +21,7 @@
       <div class="col-md-3">
         <label class="form-label">Estado</label>
         <select name="status" class="form-select form-select-sm">
-          <option value="">Todos</option>
+          <option value="all" <%= 'selected' if @status == 'all' %>>Todos</option>
           <% PreorderReservation.statuses.keys.each do |s| %>
             <option value="<%= s %>" <%= 'selected' if s == @status %>><%= s.humanize %></option>
           <% end %>
@@ -58,7 +58,8 @@
       <th>Estado</th>
       <th>Reservado</th>
       <th>Asignado</th>
-      <th>Posición</th>
+  <th>Posición</th>
+  <th></th>
     </tr>
   </thead>
   <tbody>
@@ -67,8 +68,21 @@
         <td><%= res.id %></td>
   <td><%= res.product&.product_name %></td>
   <td><%= res.user&.email %></td>
-  <td><%= res.sale_order_id %></td>
-  <td><%= @so_item_by_pair[[res.sale_order_id, res.product_id]] %></td>
+  <td>
+    <% if res.sale_order_id.present? %>
+      <%= link_to res.sale_order_id, admin_sale_order_path(res.sale_order_id) rescue res.sale_order_id %>
+    <% else %>
+      —
+    <% end %>
+  </td>
+  <td>
+    <% soi_id = @so_item_by_pair[[res.sale_order_id, res.product_id]] %>
+    <% if soi_id.present? %>
+      <%= soi_id %>
+    <% else %>
+      —
+    <% end %>
+  </td>
         <td><%= res.quantity %></td>
         <td>
           <% css = case res.status
@@ -81,7 +95,12 @@
         </td>
         <td><%= l(res.reserved_at, format: :short) if res.reserved_at %></td>
         <td><%= l(res.assigned_at, format: :short) if res.assigned_at %></td>
-        <td><%= res.position if res.pending? %></td>
+  <td><%= res.position if res.pending? %></td>
+  <td class="text-end">
+    <%# Cancelar preventa %>
+    <%= button_to 'Cancelar', admin_preorder_path(res), method: :delete,
+    data: { turbo_confirm: '¿Cancelar esta preventa?' }, class: 'btn btn-sm btn-outline-danger' %>
+  </td>
       </tr>
     <% end %>
   </tbody>

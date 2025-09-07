@@ -13,6 +13,9 @@ class SaleOrderItem < ApplicationRecord
   after_save :sync_inventory_records, if: :saved_change_to_quantity?
   after_commit :update_product_stats
   after_commit :recalculate_parent_order_totals
+  after_commit :backfill_inventory_links
+  after_destroy_commit :recalculate_parent_order_totals
+  after_destroy :cleanup_preorders_and_preassignments
 
   # ------ Métricas de volumen y peso ------
   # Asumimos que total_line_volume y total_line_weight ya representan (volumen_cm3, peso_gr) por la cantidad.
@@ -103,9 +106,36 @@ class SaleOrderItem < ApplicationRecord
     so_inventory.where(status: %w[reserved]).update_all(
       status: Inventory.statuses[:available],
       sale_order_id: nil,
+  sale_order_item_id: nil,
       status_changed_at: Time.current,
       updated_at: Time.current
     )
+  end
+
+  # Al eliminar una línea, cancelar preventas ligadas y revertir pre_* en inventario
+  def cleanup_preorders_and_preassignments
+    begin
+      # 1) Cancelar PreorderReservation vinculadas a esta SO y producto
+      cancelled = PreorderReservation.statuses[:cancelled]
+      PreorderReservation.where(sale_order_id: sale_order_id, product_id: product_id)
+                         .update_all(status: cancelled, cancelled_at: Time.current, updated_at: Time.current)
+
+      # 2) Revertir inventario pre_* a in_transit (y limpiar vínculos a SO)
+      pre_reserved = Inventory.statuses[:pre_reserved]
+      pre_sold     = Inventory.statuses[:pre_sold]
+      in_transit   = Inventory.statuses[:in_transit]
+      Inventory.where(sale_order_id: sale_order_id, product_id: product_id, status: [pre_reserved, pre_sold])
+               .update_all(status: in_transit, sale_order_id: nil, sale_order_item_id: nil, status_changed_at: Time.current, updated_at: Time.current)
+    rescue => e
+      Rails.logger.error "[SOI#cleanup_preorders_and_preassignments] #{e.class}: #{e.message}"
+    end
+  end
+
+  # Asegura que toda pieza ligada a (SO, producto) tenga el sale_order_item_id correcto
+  def backfill_inventory_links
+    return unless sale_order_id.present? && product_id.present?
+    Inventory.where(sale_order_id: sale_order_id, product_id: product_id, sale_order_item_id: nil)
+             .update_all(sale_order_item_id: id, updated_at: Time.current)
   end
 
   def update_product_stats

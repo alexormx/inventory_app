@@ -30,6 +30,8 @@ class SaleOrder < ApplicationRecord
   after_update :ensure_shipment_status_matches, if: :saved_change_to_status?
   # Sincronizar inventarios reservado<->vendido al alternar Pending/Confirmed
   after_update :sync_inventory_status_for_payment_change, if: :saved_change_to_status?
+  # Garantizar que todos los inventarios ligados tengan sale_order_item_id tras guardar
+  after_commit :backfill_inventory_so_item_links
 
   def total_paid
     payments.where(status: "Completed").sum(:amount)
@@ -145,6 +147,7 @@ class SaleOrder < ApplicationRecord
   inventories.where(status: %w[reserved pre_reserved pre_sold]).update_all(
       status: Inventory.statuses[:available],
       sale_order_id: nil,
+      sale_order_item_id: nil,
       status_changed_at: Time.current,
       updated_at: Time.current
     )
@@ -156,6 +159,7 @@ class SaleOrder < ApplicationRecord
   inventories.where(status: %w[reserved pre_reserved pre_sold]).update_all(
       status: Inventory.statuses[:available],
       sale_order_id: nil,
+      sale_order_item_id: nil,
       status_changed_at: Time.current,
       updated_at: Time.current
     )
@@ -217,6 +221,13 @@ class SaleOrder < ApplicationRecord
     rescue => e
       Rails.logger.error "[SaleOrder#sync_inventory_status_for_payment_change] Broadcast error: #{e.message}"
     end
+  end
+
+  def backfill_inventory_so_item_links
+    # Limitar al scope de esta orden para evitar operaciones globales
+    Inventories::BackfillSaleOrderItemId.new(scope: inventories).call
+  rescue => e
+    Rails.logger.error "[SaleOrder#backfill_inventory_so_item_links] #{e.class}: #{e.message}"
   end
 end
 

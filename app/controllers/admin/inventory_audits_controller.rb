@@ -4,11 +4,19 @@ class Admin::InventoryAuditsController < ApplicationController
 
   def index
     @status_counts = Inventory.group(:status).count
+    # 1) Piezas con SO pero estatus incongruente (available/in_transit)
     @inconsistencies = Inventory
       .where.not(sale_order_id: nil)
       .where(status: [:available, :in_transit])
       .includes(:product)
       .order(:product_id, :status, :id)
+
+    # 2) Piezas con SO pero sin SO line (sale_order_item_id nulo)
+    link_scope = Inventory.where.not(sale_order_id: nil).where(sale_order_item_id: nil)
+    # agrupar por par para mostrar un resumen
+    @missing_so_line_groups = link_scope
+      .group(:sale_order_id, :product_id)
+      .count
   end
 
   def fix_inconsistencies
@@ -38,6 +46,32 @@ class Admin::InventoryAuditsController < ApplicationController
       summary << " Detalle: #{detail}"
     end
     redirect_to admin_inventory_audit_path, notice: summary
+  end
+
+  def fix_missing_so_lines
+    dry = ActiveModel::Type::Boolean.new.cast(params[:dry_run])
+    scope = Inventory.where.not(sale_order_id: nil).where(sale_order_item_id: nil)
+    pairs = scope.group(:sale_order_id, :product_id).pluck(:sale_order_id, :product_id)
+    updated = 0
+    skipped = 0
+    errors = 0
+    pairs.each do |so_id, pid|
+      begin
+        if dry
+          # Simulación: contar cuántos actualizaría
+          updated += scope.where(sale_order_id: so_id, product_id: pid).count
+        else
+          res = Inventories::BackfillSaleOrderItemId.new(scope: Inventory.where(sale_order_id: so_id, product_id: pid)).call
+          updated += res.inventories_updated
+          skipped += res.pairs_skipped
+        end
+      rescue => e
+        errors += 1
+      end
+    end
+    msg = dry ? "Simulación: actualizaría #{updated} piezas; pares omitidos #{skipped}." : "Actualizadas #{updated} piezas; pares omitidos #{skipped}."
+    msg << " Errores: #{errors}." if errors > 0
+    redirect_to admin_inventory_audit_path, notice: msg
   end
 
   private

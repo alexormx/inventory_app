@@ -50,6 +50,19 @@ class Admin::SettingsController < ApplicationController
     redirect_to admin_settings_path
   end
 
+  def backfill_inventory_sale_order_item_id
+    run = MaintenanceRun.create!(job_name: "inventories.backfill_so_item_link", status: "running", started_at: Time.current)
+    begin
+      result = Inventories::BackfillSaleOrderItemId.new.call
+      run.update!(status: "completed", finished_at: Time.current, stats: result.to_h)
+      flash[:notice] = "Backfill completado: actualizados=#{result.inventories_updated}, pares=#{result.pairs_processed}, omitidos=#{result.pairs_skipped}."
+    rescue => e
+      run.update!(status: "failed", finished_at: Time.current, error: "#{e.class}: #{e.message}")
+      flash[:alert] = "Error en backfill: #{e.message}"
+    end
+    redirect_to admin_settings_path
+  end
+
 
   def delivered_orders_debt_audit
     @result = nil

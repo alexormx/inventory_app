@@ -46,6 +46,23 @@
 
 <div class="card mb-4">
 	<div class="card-header d-flex align-items-center gap-2">
+		<i class="fa fa-link"></i>
+		<span>Backfill vínculos de SO Line en Inventario</span>
+	</div>
+	<div class="card-body">
+		<p class="mb-3 small">
+			Rellena <code>sale_order_item_id</code> en Inventories cuando falte, usando la mejor coincidencia por par (Sale Order, Producto).
+			Útil si se perdió el enlace después de migraciones o ediciones.
+		</p>
+		<%= button_to "Restaurar vínculos de SO Line en Inventario", backfill_inventory_sale_order_item_id_admin_settings_path,
+			method: :post,
+			class: "btn btn-outline-primary",
+			data: { controller: 'confirm', action: 'click->confirm#ask', confirm_message: "¿Ejecutar backfill de sale_order_item_id en inventario?" } %>
+	</div>
+</div>
+
+<div class="card mb-4">
+	<div class="card-header d-flex align-items-center gap-2">
 		<i class="fa fa-calculator"></i>
 		<span>Backfill de totales en Sale Orders</span>
 	</div>

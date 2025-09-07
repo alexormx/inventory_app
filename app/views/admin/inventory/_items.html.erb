@@ -50,7 +50,10 @@
             <td><%= item.purchase_order_id || "—" %></td>
             <td><%= item.purchase_order_item_id || "—" %></td>
             <td><%= item.sale_order_id || "—" %></td>
-            <td><%= item.sale_order_item_id || "—" %></td>
+            <td>
+              <% soi_id = item.sale_order_item_id.presence || (defined?(so_item_by_sale_order) && so_item_by_sale_order[item.sale_order_id]) %>
+              <%= soi_id || "—" %>
+            </td>
             <td><%= number_to_currency(item.purchase_cost) %></td>
             <td><%= number_to_currency(item.sold_price) %></td>
             <td><%= item.status_changed_at&.strftime("%F") %></td>
