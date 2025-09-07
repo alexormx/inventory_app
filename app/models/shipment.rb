@@ -44,17 +44,25 @@ class Shipment < ApplicationRecord
     case status
     when "delivered"
       # Promueve a Delivered solo si estaba Confirmed/Pending; el callback en SO ajusta inventario
-      so.update!(status: "Delivered") unless so.status == "Delivered"
+      if so.status != "Delivered"
+        so.update!(status: "Delivered")
+      end
     when "shipped"
       # No cambiamos a Shipped aquí; mantenemos Confirmed como estado comercial intermedio
     when "pending", "returned", "canceled"
       # Si el envío deja de estar delivered, degradar a Confirmed (si fully_paid) o Pending
       if so.fully_paid?
-        so.update!(status: "Confirmed") if so.status == "Delivered"
+        if so.status == "Delivered"
+          so.update!(status: "Confirmed")
+        end
       else
-        so.update!(status: "Pending") if ["Delivered", "Confirmed"].include?(so.status)
+        if ["Delivered", "Confirmed"].include?(so.status)
+          so.update!(status: "Pending")
+        end
       end
     end
+    # Forzar broadcast del badge tras el cambio de Shipment (por si la SO ya estaba cargada en UI)
+    so.broadcast_status_change if so.previous_changes.key?("status")
   rescue => e
     Rails.logger.error "[Shipment#sync_sale_order_status_from_shipment] #{e.class}: #{e.message}"
   end

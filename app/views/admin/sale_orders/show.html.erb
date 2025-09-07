@@ -35,7 +35,7 @@
     <div class="col-md-3">
       <strong>Status:</strong>
       <turbo-frame id="sale_order_status">
-        <span class="badge <%= status_badge_class(@sale_order.status) %> px-3 py-2"><%= @sale_order.status %></span>
+        <%= render "admin/sale_orders/status_badge", sale_order: @sale_order %>
       </turbo-frame>
     </div>
     <div class="col-md-3">
