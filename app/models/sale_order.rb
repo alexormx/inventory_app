@@ -33,7 +33,7 @@ class SaleOrder < ApplicationRecord
   # Garantizar que todos los inventarios ligados tengan sale_order_item_id tras guardar
   after_commit :backfill_inventory_so_item_links
   # Actualizar UI (status badge) por Turbo cuando cambie el estado
-  after_commit :broadcast_status_change, if: -> { saved_change_to_status? }
+  after_commit :broadcast_status_change, if: -> { previous_changes.key?("status") }
 
   def total_paid
     payments.where(status: "Completed").sum(:amount)
@@ -238,7 +238,7 @@ class SaleOrder < ApplicationRecord
   def broadcast_status_change
     Turbo::StreamsChannel.broadcast_replace_to(
       ["sale_order", id],
-      target: "sale_order_status",
+      target: "sale_order_status_badge",
       partial: "admin/sale_orders/status_badge",
       locals: { sale_order: self }
     )

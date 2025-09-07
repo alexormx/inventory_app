@@ -66,8 +66,13 @@ class Shipment < ApplicationRecord
         end
       end
     end
-    # Forzar broadcast del badge tras el cambio de Shipment (por si la SO ya estaba cargada en UI)
-    so.broadcast_status_change if so.previous_changes.key?("status")
+    # Forzar broadcast del badge tras el cambio de Shipment (UI viva)
+    Turbo::StreamsChannel.broadcast_replace_to(
+      ["sale_order", so.id],
+      target: "sale_order_status_badge",
+      partial: "admin/sale_orders/status_badge",
+      locals: { sale_order: so }
+    )
   rescue => e
     Rails.logger.error "[Shipment#sync_sale_order_status_from_shipment] #{e.class}: #{e.message}"
   end
