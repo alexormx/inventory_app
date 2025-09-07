@@ -51,7 +51,8 @@
   <thead class="table-light">
     <tr>
       <th>ID</th>
-      <th>Producto</th>
+  <th>SKU</th>
+  <th>Producto</th>
       <th>Usuario</th>
       <th>SO</th>
       <th>SO Item ID</th>
@@ -67,6 +68,14 @@
     <% @preorders.each do |res| %>
       <tr>
         <td><%= res.id %></td>
+  <td>
+    <% if res.product&.product_sku.present? %>
+      <%= link_to res.product.product_sku,
+          admin_inventory_path(q: res.product.product_sku, current_status: 'all', commit: 'search') %>
+    <% else %>
+      —
+    <% end %>
+  </td>
   <td><%= res.product&.product_name %></td>
   <td><%= res.user&.email %></td>
   <td>
