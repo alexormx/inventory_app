@@ -152,9 +152,9 @@ class Admin::SaleOrdersController < ApplicationController
   # Cancelación manual de reservas antiguas por SO (sin tocar vendidos)
   def cancel_reservations
     reason = params[:reason].to_s.presence || "Cancelación manual de reservas antiguas"
-    # No permitir cancelar en Confirmed o Delivered
-    if ["Confirmed", "Delivered"].include?(@sale_order.status)
-      return redirect_to admin_sale_order_path(@sale_order), alert: "No puedes cancelar reservas de una orden Confirmed o Delivered."
+    # Solo permitir cancelar cuando la orden está en Pending
+    unless @sale_order.status == "Pending"
+      return redirect_to admin_sale_order_path(@sale_order), alert: "Solo puedes cancelar reservas cuando la orden está en Pending."
     end
     result = ::SaleOrders::CancelOldReservations.new(sale_order: @sale_order, reason: reason, actor: current_user).call
     if result.ok
