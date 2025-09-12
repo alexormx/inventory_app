@@ -32,7 +32,7 @@
           <th>Purchase Order</th>
           <th>Line</th>
           <th>Sale Order</th>
-          <th>SO Line</th>
+          <th>Adj Ref</th>
           <th>Purchase Cost</th>
           <th>Sale Price</th>
           <th>Updated</th>
@@ -41,7 +41,7 @@
       <tbody>
         <% items.each do |item| %>
           <tr id="inventory-item-<%= item.id %>">
-            <td><%= item.id %></td>  
+            <td><%= item.id %></td>
             <td>
               <turbo-frame id="inventory_status_<%= item.id %>">
                 <%= render partial: "admin/inventory/status_badge", locals: { item: item } %>
@@ -50,10 +50,7 @@
             <td><%= item.purchase_order_id || "—" %></td>
             <td><%= item.purchase_order_item_id || "—" %></td>
             <td><%= item.sale_order_id || "—" %></td>
-            <td>
-              <% soi_id = item.sale_order_item_id.presence || (defined?(so_item_by_sale_order) && so_item_by_sale_order[item.sale_order_id]) %>
-              <%= soi_id || "—" %>
-            </td>
+            <td><%= item.adjustment_reference || "—" %></td>
             <td><%= number_to_currency(item.purchase_cost) %></td>
             <td><%= number_to_currency(item.sold_price) %></td>
             <td><%= item.status_changed_at&.strftime("%F") %></td>

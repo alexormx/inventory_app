@@ -1,261 +1,231 @@
-# 🧰 Pasatiempos a Escala – Inventario & E‑Commerce (Rails 8)
+# 📌 **Rails Inventory WebApp Progress Update**
 
-Aplicación Rails 8 / Ruby 3.2.3 con enfoque en catálogo, carrito y gestión de inventario para productos coleccionables. Incluye optimizaciones recientes de rendimiento (imágenes responsive, carga diferida, modal de confirmación personalizada y actualización dinámica del carrito).
-
----
-## 🔑 Stack Principal
-| Área | Tecnología |
-|------|------------|
-| Framework | Rails 8.0.1 (Propshaft + Importmap + Hotwire) |
-| Ruby | 3.2.3 |
-| DB dev/test | SQLite |
-| DB prod | PostgreSQL |
-| Autenticación | Devise + roles (admin / customer) |
-| Background / Cache | solid_queue / solid_cache / redis |
-| Imágenes dinámicas | ActiveStorage + mini_magick + image_processing |
-| Estilos | Bootstrap 5.3 + Sass |
-| Tests | RSpec, Capybara, FactoryBot |
+## 🚀 **Project Overview**
+This document provides an updated progress report on the Rails Inventory WebApp, including completed tasks, current state, and next steps. The project is being developed using Rails 8.0.1, Ruby 3.2.2, and PostgreSQL, with Devise for authentication and Bootstrap for styling. The development follows an agile approach, with tasks broken down into sprints.
 
 ---
-## ✅ Features Clave Implementadas
-1. Autenticación y roles (Devise) con campos adicionales de perfil.
-2. Dashboard administrador y secciones de inventario / productos (en progreso iterativo).
-3. Catálogo público con paginación (`kaminari`) y filtros básicos.
-4. Carrito con actualización dinámica (Stimulus + respuestas JSON):
-  - Recalcula subtotal, impuestos, envío, totales y desglose de pendientes en vivo.
-  - Elimina duplicidad de badges (preventa / sobre pedido) mostrando badge unificado.
-5. División disponibilidad: helper `stock_badge` y `stock_eta` calculan inmediato vs. preorder/backorder.
-6. Modal de confirmación reutilizable (Stimulus `confirm_controller`) reemplaza `data-turbo-confirm`.
-7. Galería de producto con cambio de imagen principal (Stimulus `gallery_controller`).
-8. Optimización de imágenes (fases 1 y 2):
-  - Helpers: `responsive_asset_image` (assets estáticos multi‑width) y `responsive_attachment_image` (ActiveStorage AVIF/WebP si disponibles).
-  - Variantes multi‑anchos pre-generadas (`nombre-480w.webp` etc.) + `<picture>` / fallback.
-  - Preload LCP (home + producto) con helpers (`lcp_preload_home_image`, `lcp_preload_product_image`) y `fetchpriority="high"`.
-  - Lazy loading + `decoding="async"` + tamaños calculados para minimizar CLS.
-  - Rake tasks: `images:generate_modern_formats` y `images:generate_responsive_variants`.
-9. Galería avanzada (loop infinito, clones, thumbnails accesibles como botones, navegación teclado, transición suave).
-10. Lazy hydration de JS no crítico (cola `requestIdleCallback` + fallback `load`).
-11. Font Awesome diferido + override `font-display: swap`.
-12. ECharts cargado perezosamente (dynamic import) sólo si hay charts.
-13. Índices de rendimiento y preload de attachments para evitar N+1.
-14. Memoización de stock y badge unificado.
-15. Banner de cookies configurable vía variables.
-16. SEO básico: meta tags OG/Twitter, sitemap (`sitemap_generator`), `robots.txt`.
+
+## ✅ **Completed Tasks (Sprint 1)**
+
+### **Task 1.1: Configure Devise (Authentication)**
+- **Status:** Completed
+- **Details:**
+  - Devise installed and configured.
+  - Custom fields (`role`, `name`, `contact_name`, `phone`, `address`) integrated with Devise.
+  - Roles (`admin`, `customer`) implemented and validated.
+  - RSpec tests for user sign-up, login/logout, and role assignment implemented and passing.
+
+### **Task 1.2: Set Up Admin Dashboard Controller**
+- **Status:** Completed
+- **Details:**
+  - Admin dashboard controller created under the `admin` namespace.
+  - Routes configured for admin dashboard access.
+  - Authorization logic implemented to restrict access to admin users only.
+  - RSpec tests for dashboard access control (admin vs. non-admin) implemented and passing.
 
 ---
-## 🖼️ Helpers de Imágenes Responsive
-### 1. Assets estáticos
-```erb
-<%= responsive_asset_image 'collection_shelf.jpg', alt: 'Colección', css_class: 'img-fluid', aspect_ratio: '16:9', widths: [480,768,1200] %>
-```
-Genera `<picture>` con `<source>` AVIF/WebP si `collection_shelf.avif|webp` existen, y fallback `<img>` con atributos de accesibilidad y rendimiento.
 
-### 2. ActiveStorage (productos)
-```erb
-<%= responsive_attachment_image product.product_images.first,
-    alt: product.product_name,
-    widths: [160,200,320,400],
-    css_class: 'product-image',
-    square: true %>
-```
-Produce variantes on‑demand (limitadas por ancho) y fuentes modernas si mini_magick soporta el formato.
+## 📌 **Current State**
 
----
-## ⚙️ Tarea para Generar AVIF/WebP en Assets
-Convierte imágenes grandes (>.150KB) en `app/assets/images` a `*.avif` y `*.webp` si no existen.
-```bash
-bin/rails images:generate_modern_formats
-```
-Luego precompilar (si aplica) o reiniciar el servidor para que se detecten.
+- **Rails Version:** 8.0.1
+- **Ruby Version:** 3.2.3
+- **Database:** SQLite (development & test), PostgreSQL (production)
+- **Authentication:** Devise with role-based access control (admin, customer).
+
+### **Admin Dashboard**
+- **Controller:** `Admin::DashboardController` with `index` action.
+- **Authorization:** Only admin users can access the dashboard.
+- **Routes:** Namespaced under `admin` with `get 'dashboard', to: 'dashboard#index'`.
+
+### **Testing**
+- **RSpec Tests:**
+  - Authentication: User registration, login/logout, role assignment.
+  - Dashboard Access: Admin access allowed, non-admin access denied.
+- **Capybara Tests:** Basic UI integration tests for Bootstrap styles and navigation links.
 
 ---
-## 🛒 Carrito Dinámico
-- Controlador Stimulus `cart-item` escucha cambios de cantidad y destruye ítems vía fetch/Turbo Streams.
-- Respuesta JSON del backend incluye totales globales y desglose de inmediato vs. pendiente.
-- Accesibilidad: región `aria-live` en totales de línea.
+
+## 📌 **Next Steps (Sprint 1 Remaining Tasks)**
+
+### **Task 1.3: Choose & Set Up CSS Framework**
+- **Status:** In Progress
+- **Next Steps:**
+  - Add Bootstrap gem: `bundle add bootstrap`.
+  - Import Bootstrap in `application.scss`: `@import "bootstrap";`.
+  - Test Bootstrap installation by adding a simple styled button or navbar to the admin dashboard view.
+
+### **Task 1.4: Admin Dashboard Basic View**
+- **Status:** Not Started
+- **Next Steps:**
+  - Create a clear and simple admin dashboard layout (`app/views/admin/dashboard/index.html.erb`).
+  - Integrate responsive layout using Bootstrap classes.
+  - Add navigation links for future features (Products, Inventory, Sales Orders, etc.).
+
+### **Task 1.5: Push Changes to GitHub & Deploy to Heroku**
+- **Status:** Not Started
+- **Next Steps:**
+  - Push the `feature/admin-dashboard` branch to GitHub.
+  - Merge to `main` via Pull Request.
+  - Deploy to Heroku:
+    ```bash
+    git checkout main
+    git pull origin main
+    git push heroku main
+    heroku run rails db:migrate
+    ```
 
 ---
-## 🔐 Disponibilidad / Etiquetas de Stock
-`stock_badge(product, quantity:)` produce un solo badge coherente (En stock / Preventa / Sobre pedido / Fuera de stock) con tooltip + nota de pendientes opcional.
+
+## 📌 **Sprint 1 Test Cases (RSpec)**
+
+### **Authentication Tests (Devise)**
+- User registration, login, logout.
+- Role assignment (admin vs. customer).
+
+### **Dashboard Access Control Tests**
+- Admin user access allowed.
+- Non-admin users denied (redirected or shown alert).
+
+### **Basic UI Integration Tests (Capybara)**
+- Verify Bootstrap styles appear correctly.
+- Verify all navigation links are present.
 
 ---
-## 🧪 Testing (Resumen Actual)
-- Autenticación / roles (RSpec).
-- Controladores básicos admin.
-- (Pendiente ampliar) pruebas para helpers de imágenes y carrito.
+
+## 📌 **Sprint Completion Criteria**
+
+- **Authentication & Authorization:** Fully operational.
+- **Admin Dashboard:** Accessible only to admin users.
+- **Bootstrap UI Framework:** Successfully integrated and functional.
+- **Testing:** All related tests passing.
+- **Deployment:** Changes pushed to GitHub and deployed successfully on Heroku.
 
 ---
-## 🚀 Roadmap Próximo
-| Prioridad | Ítem | Objetivo |
-|-----------|------|----------|
-| Alta | Fragment caching (cards catálogo, show producto) | Menos render repetido / menor TTFB |
-| Alta | Medir impacto Lighthouse post fase 2 | Ajustar budgets y validar LCP/CLS reales |
-| Alta | Tests helpers `responsive_*` & galería | Prevenir regresiones perf/HTML accesible |
-| Alta | Job de pre-cálculo variantes críticas (on deploy / background) | Evitar primer coste de generación en frío |
-| Media | CDN / Headers cache (Cache-Control, immutable) | Mejor hit ratio y menor coste ancho de banda |
-| Media | Instrumentar tiempos y ratio hit de variantes | Detectar imágenes candidates a pre-generar |
-| Media | Actualizar dinámicamente `<source>` en galería al cambiar imagen | Mantener formatos modernos y srcset correcto |
-| Media | ECharts build liviano / alternativa (charts light) | Reducir JS diferido y CPU post-hydration |
-| Baja | i18n tooltips y textos menores | Pulido UX multi-idioma |
-| Baja | Skeleton / placeholder para imágenes LCP en conexiones lentas | Mejor percepción de carga |
+
+## 📌 **Next Suggested Sprints**
+
+### **Sprint 2: Admin Product Management (CRUD Actions and Views)**
+- **Objective:** Implement CRUD operations for product management in the admin dashboard.
+- **Tasks:**
+  - Create database migrations for products.
+  - Implement Product model with validations.
+  - Create `Admin::ProductsController` with CRUD actions.
+  - Implement views for product management.
+  - Write RSpec tests for Product model and controller.
+
+### **Sprint 3: Inventory Management (Individual Item Tracking)**
+- **Objective:** Implement inventory management features, including individual item tracking.
+- **Tasks:**
+  - Create database migrations for inventory.
+  - Implement Inventory model with validations.
+  - Create `Admin::InventoryController` with CRUD actions.
+  - Implement views for inventory management.
+  - Write RSpec tests for Inventory model and controller.
+
+### **Sprint 4: Orders Management (Sales & Purchase)**
+- **Objective:** Implement order management features for sales and purchase orders.
+- **Tasks:**
+  - Create database migrations for orders.
+  - Implement Order models (SalesOrder, PurchaseOrder) with validations.
+  - Create `Admin::OrdersController` with CRUD actions.
+  - Implement views for order management.
+  - Write RSpec tests for Order models and controller.
+
+### **Sprint 5: Payments & Shipments Tracking**
+- **Objective:** Implement payment and shipment tracking features.
+- **Tasks:**
+  - Create database migrations for payments and shipments.
+  - Implement Payment and Shipment models with validations.
+  - Create `Admin::PaymentsController` and `Admin::ShipmentsController` with CRUD actions.
+  - Implement views for payment and shipment tracking.
+  - Write RSpec tests for Payment and Shipment models and controllers.
+
+### **Sprint 6 & 7: Customer Interface (Catalog & Shopping Cart)**
+- **Objective:** Implement customer-facing features, including product catalog and shopping cart.
+- **Tasks:**
+  - Create database migrations for customer-related features.
+  - Implement Customer model with validations.
+  - Create `Customer::ProductsController` and `Customer::CartController` with necessary actions.
+  - Implement views for product catalog and shopping cart.
+  - Write RSpec tests for Customer models and controllers.
+
+### **Sprint 8: Security & Performance Optimization, Final Deployment**
+- **Objective:** Optimize security and performance, and finalize deployment.
+- **Tasks:**
+  - Implement security best practices (e.g., SSL, secure headers).
+  - Optimize database queries and application performance.
+  - Conduct final testing and bug fixes.
+  - Deploy the final version to Heroku.
 
 ---
-## 📝 Variables de Entorno Destacadas
-| Variable | Descripción | Default |
-|----------|-------------|---------|
-| COOKIE_BANNER_ENABLED | Mostrar banner cookies | true |
-| COOKIE_BANNER_TEXT | Texto banner | Español por defecto |
-| COOKIE_BANNER_BUTTON_TEXT | Texto botón | Aceptar |
-| PREORDER_ETA_DAYS / BACKORDER_ETA_DAYS (SiteSetting) | Cálculo ETA | 60 |
+
+## 🚀 **Next step we will start with Sprint 2**
+Let's proceed with **Sprint 2: Admin Product Management**. If you have any questions or need further adjustments, please let me know! 🚀
+
+## 🚀 SEO Improvements
+- Meta tags for description, canonical URL, and Open Graph have been added to layouts.
+- `sitemap_generator` gem generates `sitemap.xml.gz`; run `rake sitemap:generate`.
+- `robots.txt` references the sitemap to help search engines crawl the site.
+
+## 🍪 Cookie Banner Configuration
+The cookie banner text and button label can be customized, or the banner can be disabled entirely, using environment variables:
+
+- `COOKIE_BANNER_ENABLED` – set to `false` to hide the banner (default: `true`).
+- `COOKIE_BANNER_TEXT` – message displayed to users (default shown in Spanish).
+- `COOKIE_BANNER_BUTTON_TEXT` – label for the acceptance button (default: `Aceptar`).
+
+These variables allow tailoring the cookie notice to local regulations without changing application code.
 
 ---
-## 🔍 Página Admin: System Variables
-Ruta: `/admin/system_variables` (link en la sección “System” del sidebar).
 
-Objetivo: Visibilidad centralizada y sin exponer secretos de:
-- ENV filtradas (omite llaves que contengan: SECRET, PASSWORD, KEY, TOKEN, DATABASE_URL, RAILS_MASTER_KEY)
-- SiteSettings persistidos en DB
-- Sub‑conjunto de configuración Rails (cache_store, servicio ActiveStorage, eager_load, etc.)
-- Info runtime (Ruby/Rails version, PID, memoria, timestamp)
-- Banderas dinámicas / toggles simples (ej: banner de cookies)
+## 🧾 Inventory Adjustments Ledger (Nueva Funcionalidad)
 
-Características:
-- Scroll interno en listas largas para evitar crecer verticalmente la página.
-- Diseño sólo lectura (por ahora) para minimizar riesgo de cambios accidentales.
-- Estructura preparada para extender con métricas (solid_queue depth, Redis info, cache hit ratio, etc.)
+### Objetivo
+Registrar aumentos y disminuciones manuales/físicos de inventario con trazabilidad e idempotencia.
 
-Extender / Personalizar:
-1. Agregar nueva sección: crear método privado en `Admin::SystemVariablesController` y añadir card en la vista `app/views/admin/system_variables/index.html.erb`.
-2. Exportar JSON: añadir acción `def export` que renderice un hash agregado y link en la UI (pendiente opcional).
-3. Métricas de colas (ejemplo):
-   ```ruby
-   def queue_metrics
-     { pending_jobs: SolidQueue::Job.pending.count }
-   end
-   ```
-4. Redis stats: usar `Redis.current.info.slice('used_memory_human','connected_clients')` (manejar rescue si no disponible).
+### Entidades Principales
+- `InventoryAdjustment` (draft/applied) con campos: `status`, `adjustment_type`, `reference`, `applied_at`, `applied_by_id`, `reversed_at`.
+- `InventoryAdjustmentLine` cada línea apunta a un `product`, define `direction` (`increase` | `decrease`), `quantity`, `reason` (para decreases) y `unit_cost` (para increases).
+- `InventoryAdjustmentEntry` histórico granular por pieza afectada (creada o cambio de estado).
 
-Seguridad:
-- Nunca mostrar valores completos de llaves sensibles; si se requiere listar su presencia, usar enmascarado (`****suffix`).
-- Revisión antes de añadir nuevas expresiones regulares en `SENSITIVE_ENV_PATTERNS`.
+### Flujo
+1. Crear ajuste en estado `draft` sin líneas iniciales.
+2. Agregar líneas dinámicamente vía buscador de productos (JS importmap: `inventory_adjustment_lines.js`).
+3. Al aplicar (`apply!`):
+  - Se genera referencia si falta.
+  - Se validan existencias suficientes para todas las disminuciones (se agrupan por producto).
+  - Increases: crea nuevas filas en `inventories` con `source = ledger_adjustment` y `adjustment_reference`.
+  - Decreases: marca piezas disponibles según FIFO cambiando `status` a uno derivado de `reason` (scrap, marketing, lost, damaged) y agrega `adjustment_reference`.
+  - Se recalculan métricas del producto.
 
-Testing sugerido (pendiente):
-- Request spec que garantice exclusión de variables sensibles mockeadas.
-- System spec que verifique presencia de secciones clave y ausencia de patrones `SECRET`.
+### Referencia
+Formato: `ADJ-YYYYMM-NN` (ej: `ADJ-202509-01`). El consecutivo se reinicia cada mes por prefijo `YYYYMM`.
 
-Próximos incrementos recomendados:
-- Botón “Copiar todo” (clipboard) para reporte técnico.
-- Endpoint JSON firmado sólo para admins (auditoría / soporte).
-- Indicadores de modo (development / production) resaltados visualmente.
+### Razones de Decrease → Estado de Inventario
+| Reason     | Estado destino |
+|-----------|----------------|
+| scrap     | scrap          |
+| marketing | marketing      |
+| lost      | lost           |
+| damaged   | damaged        |
 
-### 🗂 Data Dictionary / Descripciones de Tablas y Columnas
-Se mantiene en `db/schema_docs.yml` (dev) y opcionalmente en comentarios nativos de PostgreSQL para prod.
+### Múltiples líneas del mismo producto
+Se permiten múltiples líneas (ej: diferentes razones o costos) y se agrupan sólo para validar stock de disminuciones.
 
-Workflows:
-1. Generar / actualizar placeholders:
-  ```bash
-  bin/rails introspection:generate_schema_docs
-  ```
-  Esto añade entradas faltantes sin borrar comentarios existentes.
-2. Editar manualmente `db/schema_docs.yml` rellenando `_comment` (tabla) y cada columna.
-3. (Opcional Postgres) Aplicar comentarios a la BD:
-  ```bash
-  bin/rails introspection:apply_comments
-  ```
-4. Ver progreso:
-  ```bash
-  bin/rails introspection:dictionary_progress
-  ```
+### Nueva columna en `inventories`
+`adjustment_reference` para saber qué ajuste creó/modificó la pieza. También se coloca la referencia en `notes` de las piezas creadas.
 
-Placeholders: se generan como `TODO: describir ...` si está vacío. Puedes buscar rápidamente lo pendiente:
-```bash
-grep -R "TODO: describir" db/schema_docs.yml
-```
+### Reverse
+Implementado (servicio `ReverseInventoryAdjustmentService`) para deshacer: revierte estados / elimina creados (no documentado aquí en detalle aún).
 
-Estrategia recomendada de llenado:
-- Empezar por tablas de dominio crítico (orders, products, users).
-- Describir el propósito en 1 frase (`_comment`).
-- Para columnas: foco en semántica funcional, unidades (cents, UTC, etc.) y restricciones implícitas no expresadas por el esquema.
-- Evitar repetir lo obvio ("id primary key").
+### Tests Clave
+- Generación de referencia y secuencia mensual.
+- Aplicación con múltiples líneas mismo producto (increase + decrease).
+- Validación de stock insuficiente agrupando decreases.
 
-Sincronización con Postgres: Los comentarios en la DB aparecen también en la UI (mezclados con YAML). YAML tiene precedencia si existe.
-
-
+### Próximas Mejores
+- Parametrizar patrón de referencia vía variable de sistema.
+- Endpoint JSON para auditoría rápida.
+- Paginación / filtros por razón.
 
 ---
-## 🧪 Comandos Útiles
-```bash
-# Ejecutar servidor desarrollo (Procfile.dev si se usa foreman)
-bin/dev
-
-# Generar variantes modernas assets
-bin/rails images:generate_modern_formats
-
-# Generar variantes responsive (multi-width) predefinidas
-bin/rails images:generate_responsive_variants
-
-# Sitemap
-bin/rails sitemap:generate
-
-# Tests
-bundle exec rspec
-
-# Lighthouse CI (local)
-export LH_PRODUCT_PATH=/products/1 # o URL completa
-LH_PRODUCT_PATH=$LH_PRODUCT_PATH npx lhci autorun
-```
-
-### Budgets Lighthouse
-Definidos en `lighthouse-budgets.json` para limitar peso total e imágenes; assertions extra agregadas:
-- LCP ≤ 2500ms
-- CLS ≤ 0.1
-- Total transfer home ≤ ~550KB (warning si supera)
-- Página producto incluida en budgets (`/products/placeholder-slug`); reemplaza el slug en `lighthouse-budgets.json` y variable `LH_PRODUCT_PATH` para CI.
-
----
-## ♿ Accesibilidad / UX
-- Botones con `aria-label` en carrito y acciones clave.
-- Modal de confirmación accesible (ESC, foco retornado, backdrop clickable) en lugar de confirm nativo bloqueante.
-- Thumbnails de galería como `<button>` (no `<a href="#">`), foco visible, navegación teclado circular.
-- Región `aria-live` para actualización de totales de carrito (sin anunciar valores irrelevantes).
-- Alt text consistente generado desde `product.product_name` o parámetros explícitos.
-- Prevención de CLS: dimensiones calculadas / estilos placeholders.
-- Cursor y feedback visual claro en elementos interactivos (thumbnails, badges).
-
----
-## 🔒 Seguridad / Buenas Prácticas
-- CSRF y CSP activos.
-- `allow_browser versions: :modern` para reducir superficie legacy / polyfills.
-- Sanitización de URLs de ActiveStorage (removiendo segmento de locale y queries no necesarios) para evitar 302 y rutas inconsistentes.
-- Manejo controlado de errores en procesamiento de variantes (fail-soft) sin filtrar trazas a usuario.
-- Dependencias JS minimizadas (dynamic import) reduciendo superficie de ataque potencial.
-
----
-## 📈 Métricas a Monitorear (sugerido)
-- LCP: imagen principal de producto / primera card en home.
-- CLS: verificar tras widths/height calculados.
-- Transfer size total de homepage antes/después (objetivo < 500KB inicial).
- - % de imágenes servidas en formato moderno (AVIF/WebP) vs. JPEG.
- - Tiempo medio generación primera variante vs. cache hit (objetivo: reducir cold start tras job pre-cálculo).
- - Peso JS inicial vs. diferido tras lazy hydration / dynamic import.
- - TTFB en show producto tras fragment caching (baseline antes de implementarlo).
-
----
-## 🧾 Changelog Optimización (resumen)
-| Fase | Tema | Cambios clave |
-|------|------|---------------|
-| 1 | Imágenes base | Helpers responsive, AVIF/WebP assets, preload LCP inicial |
-| 2 | Perf avanzado | Galería loop accesible, lazy hydration, dynamic import ECharts, font-display swap, variantes multi-width, tasks pre-generación |
-| 2 | Backend | Índices rendimiento, preload attachments, memoización stock |
-| 2 | UX | Modal confirm accesible, badges unificados, thumbnails clicables |
-| 2 | URL Sanitization | Remoción locale en rutas ActiveStorage evitando errores |
-
----
-## 🤝 Contribuir
-1. Crear rama `feat/...` o `fix/...`.
-2. Ejecutar tests y Lighthouse local si cambia UI.
-3. Pull Request con descripción de impacto (UX, perf, seguridad).
-
----
-## ✨ Créditos
-Proyecto interno Pasatiempos a Escala. Uso educativo y de demostración de mejores prácticas Rails + optimización de frontend sin empaquetadores pesados.

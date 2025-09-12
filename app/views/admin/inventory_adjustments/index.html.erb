@@ -1,0 +1,38 @@
+<div class="container mt-3">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h3>Inventory Adjustments</h3>
+    <%= link_to 'New Adjustment', new_admin_inventory_adjustment_path, class: 'btn btn-primary' %>
+  </div>
+
+  <% if @inventory_adjustments.any? %>
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Status</th>
+          <th>Type</th>
+          <th>Reference</th>
+          <th>Created At</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @inventory_adjustments.each do |adj| %>
+          <tr>
+            <td><%= adj.id %></td>
+            <td><span class="badge bg-<%= adj.status_applied? ? 'success' : 'secondary' %>"><%= adj.status %></span></td>
+            <td><%= adj.adjustment_type %></td>
+            <td><%= adj.reference %></td>
+            <td><%= l(adj.created_at, format: :short) %></td>
+            <td class="text-end">
+              <%= link_to 'Show', admin_inventory_adjustment_path(adj), class: 'btn btn-sm btn-outline-primary' %>
+              <%= link_to 'Edit', edit_admin_inventory_adjustment_path(adj), class: 'btn btn-sm btn-outline-secondary' if adj.status_draft? %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% else %>
+    <div class="alert alert-info">No adjustments yet.</div>
+  <% end %>
+</div>

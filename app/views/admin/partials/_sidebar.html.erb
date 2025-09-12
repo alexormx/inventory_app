@@ -42,6 +42,13 @@
         <span class="sidebar-label">Products</span>
       <% end %>
     </li>
+      <li class="nav-item">
+        <% active = request.path.start_with?(admin_inventory_adjustments_path) %>
+        <%= link_to admin_inventory_adjustments_path, class: "nav-link text-white d-flex align-items-center#{active ? ' active' : ''}", aria: (active ? { current: 'page' } : {}) do %>
+          <i class="fa-solid fa-scale-balanced me-2"></i>
+          <span class="sidebar-label">Inventory Adjustments</span>
+        <% end %>
+      </li>
     <li class="nav-item">
       <% active = request.path.start_with?(admin_purchase_orders_path) %>
       <%= link_to admin_purchase_orders_path, class: "nav-link text-white d-flex align-items-center#{active ? ' active' : ''}", aria: (active ? { current: 'page' } : {}) do %>
