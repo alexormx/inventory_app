@@ -1,10 +1,4 @@
-<h1 class="h4 mb-2"><%= @product.product_name %></h1>
-<div class="d-flex gap-2 mb-3">
-  <%= link_to 'Asignar preórdenes ahora',
-              assign_preorders_admin_product_path(@product),
-              data: { turbo_method: :post, controller: 'confirm', confirm_message: '¿Asignar preórdenes para este producto usando available + in_transit?' },
-              class: 'btn btn-sm btn-warning' %>
-</div>
+<h1 class="h4 mb-4"><%= @product.product_name %></h1>
 
 <div class="row">
   <!-- Left: Main image -->

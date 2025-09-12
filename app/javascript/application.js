@@ -3,6 +3,8 @@ import "@hotwired/turbo-rails"
 // Deshabilitar acciones críticas (Payments/Shipments) hasta que cargue por completo
 import "custom/defer_actions_until_loaded"
 import { Application } from "@hotwired/stimulus"
+// Cargar inmediatamente el módulo de líneas de ajustes para asegurar funcionalidad en formularios
+import "components/inventory_adjustment_lines"
 
 const application = Application.start()
 window.Stimulus = application
@@ -30,12 +32,30 @@ import SubtabsController from "./controllers/subtabs_controller"
 application.register("subtabs", SubtabsController)
 import ConfirmController from "./controllers/confirm_controller"
 application.register("confirm", ConfirmController)
-import GalleryController from "./controllers/gallery_controller"
-application.register("gallery", GalleryController)
-import SimpleTabsController from "./controllers/simple_tabs_controller"
-application.register("simple-tabs", SimpleTabsController)
-import SimpleAccordionController from "./controllers/simple_accordion_controller"
-application.register("simple-accordion", SimpleAccordionController)
+// Gallery controller cargado de forma tolerante para evitar bloquear el bundle si falta default
+import("./controllers/gallery_controller").then(mod => {
+  const Ctl = mod.default || mod.GalleryController;
+  if (Ctl) {
+    application.register("gallery", Ctl);
+  } else {
+    console.warn("[gallery_controller] módulo sin export compatible (default/GalleryController)");
+  }
+}).catch(err => {
+  console.warn("[gallery_controller] carga diferida falló", err);
+});
+import("./controllers/simple_tabs_controller").then(mod => {
+  const Ctl = mod.default || mod.SimpleTabsController;
+  if(Ctl){ application.register("simple-tabs", Ctl); }
+  else { console.warn("[simple_tabs_controller] módulo sin export válido"); }
+}).catch(err => console.warn("[simple_tabs_controller] carga diferida falló", err));
+import("./controllers/simple_accordion_controller").then(mod => {
+  const Ctl = mod.default || mod.SimpleAccordionController;
+  if(Ctl){
+    application.register("simple-accordion", Ctl)
+  } else {
+    console.warn("[simple_accordion_controller] módulo sin export válido");
+  }
+}).catch(err => console.warn("[simple_accordion_controller] carga diferida falló", err));
 
 // Remove Stimulus dropdown controller (using vanilla JS now)
 // import DropdownController from "./controllers/dropdown_controller"

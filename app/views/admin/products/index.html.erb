@@ -1,8 +1,7 @@
 <h2 class="mb-3 d-flex align-items-center gap-2"><i class="fa fa-tags"></i> Products</h2>
 
-<div id="products_counts_global_container">
 <%= render partial: "admin/shared/status_counters", locals: {
-  # no wrapper_id to avoid duplicate id inside container
+  wrapper_id: "products_counts_global",
   counts: @counts_global,
   items: [
     [:draft,    "Drafts",   "bg-secondary"],
@@ -13,7 +12,6 @@
   cta_label: "New Product",
   cta_path: new_admin_product_path
 } %>
-</div>
 
 <%# Búsqueda y filtros (estilo Inventario) %>
 <div class="card mb-4">
@@ -26,7 +24,7 @@
           <button class="btn btn-primary" type="submit" name="commit" value="search" title="Buscar">Buscar</button>
         </div>
       </div>
-      <div class="col-12 col-md-6 text-md-end d-flex flex-column gap-2 align-items-md-end">
+      <div class="col-12 col-md-6 text-md-end">
         <% current_status = params[:status].presence || "all" %>
         <% outline_for = ->(st) do
              case st
@@ -44,19 +42,6 @@
           <%= button_tag "Inactive", name: :status, value: "inactive", class: btnc.call("inactive", current_status) %>
         </div>
         <%= hidden_field_tag :status, current_status %>
-        <div class="d-flex gap-2 align-items-center flex-wrap justify-content-md-end">
-          <label for="sort" class="small text-muted mb-0">Orden:</label>
-          <%= select_tag :sort, options_for_select([
-              ['Recientes','recent'],
-              ['Nombre A-Z','name'],
-              ['Cantidad comprada','purchase_qty'],
-              ['Valor compras','purchase_value'],
-              ['Valor ventas','sales_value'],
-              ['Costo inventario','inventory_value'],
-              ['Utilidad actual','profit']
-            ], selected: params[:sort]), include_blank: false, class: 'form-select form-select-sm w-auto' %>
-          <button class="btn btn-sm btn-outline-secondary" type="submit">Aplicar</button>
-        </div>
         <%= link_to "Limpiar filtros", admin_products_path, class: "btn btn-sm btn-outline-secondary ms-2", title: "Quitar búsqueda y status" %>
       </div>
     <% end %>
@@ -64,8 +49,8 @@
 </div>
 
 <%# Contadores inferiores (dependen de búsqueda+status; ocultar cero) %>
-<div id="products_counts_filtered_container">
 <%= render partial: "admin/shared/status_counters", locals: {
+  wrapper_id: "products_counts_filtered",
   counts: @counts,
   items: [
     [:draft,    "Drafts",   "bg-secondary"],
@@ -76,7 +61,6 @@
   extra_class: "mb-2",
   title: "Resultados"
 } %>
-</div>
 
 <div id="products_section">
   <%= render partial: 'products_section', locals: { products: @products, current_tab: (params[:status] || 'all') } %>

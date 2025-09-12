@@ -15,14 +15,6 @@
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
 
-    <!-- Preconnect sugerido para fonts/CDN si se usan (placeholder) -->
-    <%#= tag.link rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: true %>
-
-    <!-- Preload potencial para imagen LCP si estamos en show de producto -->
-    <% if content_for?(:lcp_image) %>
-      <%= content_for :lcp_image %>
-    <% end %>
-
     <%= yield :head %>
 
     <%# Enable PWA manifest for installable apps (make sure to enable in config/routes.rb too!) %>
@@ -46,7 +38,6 @@
     <main class="container mx-auto mt-28 px-5 flex">
       <%= yield %>
     </main>
-  <%= render 'layouts/confirm_modal' %>
     <button class="btn btn-primary">Bootstrap Works!</button>
   </body>
 </html>

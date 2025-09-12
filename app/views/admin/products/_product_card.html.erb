@@ -1,4 +1,4 @@
-<div id="<%= dom_id(product, :card) %>" class="card shadow-sm mb-3 h-100 product-card">
+<div class="card shadow-sm mb-3 h-100 product-card">
   <div class="card-body">
     <div class="d-flex align-items-center mb-2">
       <% if product.product_images.attached? %>
@@ -29,15 +29,6 @@
       <span>Stock: <strong><%= stock_on_hand %></strong></span>
   ·
   <span>Apartados: <strong><%= reserved %></strong></span>
-    </div>
-    <div class="mb-2 kpi-financial small d-flex flex-wrap gap-2">
-      <span class="text-muted">Valor compras: <strong><%= number_to_currency(product.total_purchase_value) %></strong></span>
-      <span class="text-muted">Ventas: <strong><%= number_to_currency(product.total_sales_value) %></strong></span>
-      <span class="text-muted">Inventario: <strong><%= number_to_currency(product.current_inventory_value) %></strong></span>
-      <% pred = predicted_restock_cost(product) %>
-      <% if pred.to_f > 0 %>
-        <span class="text-muted" title="Costo para alcanzar reorder point"><i class="fa fa-arrow-rotate-right"></i> Restock: <strong><%= number_to_currency(pred) %></strong></span>
-      <% end %>
     </div>
     <%= turbo_frame_tag "product_badge_#{product.id}" do %>
       <%= render partial: 'status_badge', locals: { product: product } %>

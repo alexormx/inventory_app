@@ -69,43 +69,18 @@ class PurchaseOrder < ApplicationRecord
         status_changed_at: Time.current,
         updated_at: Time.current
       )
-      # Convertir pre_* a su equivalente final ahora que la PO está entregada
-      scope.where(status: [:pre_reserved]).update_all(
-        status: Inventory.statuses[:reserved],
-        status_changed_at: Time.current,
-        updated_at: Time.current
-      )
-      scope.where(status: [:pre_sold]).update_all(
-        status: Inventory.statuses[:sold],
-        status_changed_at: Time.current,
-        updated_at: Time.current
-      )
-      trigger_preorder_allocation_for(statuses: [:available])
     when "Pending", "In Transit"
       scope.where(status: [:available, :in_transit]).update_all(
         status: Inventory.statuses[:in_transit],
         status_changed_at: Time.current,
         updated_at: Time.current
       )
-      trigger_preorder_allocation_for(statuses: [:in_transit])
     when "Canceled"
       scope.where.not(status: terminal).update_all(
         status: Inventory.statuses[:scrap],
         status_changed_at: Time.current,
         updated_at: Time.current
       )
-    end
-  end
-
-  def trigger_preorder_allocation_for(statuses: [])
-    return if statuses.blank?
-    product_ids = Inventory.where(purchase_order_id: self.id, status: statuses).distinct.pluck(:product_id)
-    Product.where(id: product_ids).find_each do |product|
-      begin
-        Preorders::PreorderAllocator.new(product).call
-      rescue => e
-        Rails.logger.error "[PO##{id}] Preorder allocation failed for product=#{product.id}: #{e.class} #{e.message}"
-      end
     end
   end
 

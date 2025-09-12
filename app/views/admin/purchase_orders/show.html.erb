@@ -1,38 +1,6 @@
 <div class="container mt-4">
   <h2>Purchase Order ##<%= @purchase_order.id %></h2>
 
-  <div class="d-flex gap-2 mb-3">
-    <%= link_to 'Rebalancear inventario de esta PO',
-                rebalance_inventory_admin_purchase_order_path(@purchase_order),
-                data: { turbo_method: :post, controller: 'confirm', confirm_message: '¿Rebalancear inventario por línea para esta PO? Solo tocará available/in_transit.' },
-                class: 'btn btn-sm btn-danger' %>
-    <% if (@purchase_order.status == "In Transit" || @purchase_order.status == "Pending") %>
-      <%= link_to 'Confirmar recepción',
-                  confirm_receipt_admin_purchase_order_path(@purchase_order),
-                  data: { turbo_method: :patch, controller: 'confirm', confirm_message: '¿Mover inventario In Transit a Available y marcar PO como Delivered?' },
-                  class: 'btn btn-sm btn-primary' %>
-    <% end %>
-    <%= link_to 'Volver', admin_purchase_orders_path, class: 'btn btn-sm btn-outline-secondary' %>
-    <%= link_to 'Auditoría líneas', line_audit_admin_purchase_orders_path, class: 'btn btn-sm btn-outline-warning' %>
-    <div class="ms-auto"></div>
-  </div>
-
-  <!-- Resumen PO -->
-  <div class="row g-3 mb-3">
-    <div class="col-auto">
-      <span class="badge text-bg-secondary">Líneas: <%= @po_summary[:lines] %></span>
-    </div>
-    <div class="col-auto">
-      <span class="badge text-bg-primary">Ordenado: <%= @po_summary[:ordered] %></span>
-    </div>
-    <div class="col-auto">
-      <span class="badge text-bg-success">Inventario gen.: <%= @po_summary[:generated] %></span>
-    </div>
-    <div class="col-auto">
-      <span class="badge <%= @po_summary[:remaining] > 0 ? 'text-bg-warning' : 'text-bg-light' %>">Restante: <%= @po_summary[:remaining] %></span>
-    </div>
-  </div>
-
   <!-- Order Info -->
   <div class="row g-3 mb-4">
     <div class="col-md-3">
@@ -94,7 +62,11 @@
     </div>
   </div>
 
-  
+  <% if (@purchase_order.status == "In Transit" || @purchase_order.status == "Pending") %>
+  <%= button_to "Confirmar recepción", confirm_receipt_admin_purchase_order_path(@purchase_order),
+                method: :patch, class: "btn btn-success mb-3",
+                data: { turbo_confirm: "¿Confirmas que ya recibiste todos los productos?" } %>
+  <% end %>
 
   <!-- Items Table -->
   <div class="card mb-4">
@@ -106,7 +78,6 @@
             <tr>
               <th>Product</th>
               <th>Qty</th>
-              <th class="text-nowrap">Inventario gen.</th>
               <th>Unit Cost</th>
               <th>Line Volume</th>
               <th>Line Weight</th>
@@ -122,22 +93,6 @@
               <tr>
                 <td><%= item.product&.product_name || "—" %></td>
                 <td><%= item.quantity %></td>
-                <td>
-                  <% inv_line = @inventory_counts_by_line[item.id].to_i %>
-                  <% mismatch = inv_line != item.quantity.to_i %>
-                  <span class="badge <%= mismatch ? 'text-bg-warning' : 'text-bg-light' %>"><%= inv_line %></span>
-                  <% sc = @inventory_status_counts_by_line.select { |(poi_id, _), _| poi_id == item.id } %>
-                  <% if sc.present? %>
-                    <% title = sc.map { |((_, st), c)|
-                      name = @inventory_status_names[st] || st
-                      "#{name}: #{c}"
-                    }.join(', ') %>
-                    <small class="text-muted" title="<%= title %>">(detalle)</small>
-                  <% end %>
-                  <% if mismatch %>
-                    <small class="text-danger ms-1">(esperado <%= item.quantity %>)</small>
-                  <% end %>
-                </td>
                 <td><%= number_with_precision(item.unit_cost, precision: 2) %></td>
                 <td><%= number_with_precision(item.total_line_volume, precision: 2) %></td>
                 <td><%= number_with_precision(item.total_line_weight, precision: 2) %></td>

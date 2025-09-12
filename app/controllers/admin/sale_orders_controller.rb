@@ -2,8 +2,7 @@
 class Admin::SaleOrdersController < ApplicationController
   before_action :authenticate_user!
   before_action :authorize_admin!
-  before_action :set_sale_order, only: %i[show edit update destroy cancel_reservations reassign export_cancellations]
-  before_action :set_sale_order_with_includes, only: %i[summary]
+  before_action :set_sale_order, only: %i[show edit update destroy]
   before_action :load_counts, only: [:index]
 
   PER_PAGE = 20
@@ -109,116 +108,16 @@ class Admin::SaleOrdersController < ApplicationController
 
   def update
     @sale_order = SaleOrder.find(params[:id])
-    begin
-      if @sale_order.update(sale_order_params)
-        @sale_order.update_status_if_fully_paid!
-        redirect_to admin_sale_order_path(@sale_order), notice: "Sale order updated successfully"
-      else
-        flash.now[:alert] = "There were errors saving the sale order"
-        render :edit, status: :unprocessable_entity
-      end
-    rescue ActiveRecord::RecordNotDestroyed => e
-      # Caso común: intento de eliminar una línea con unidades ya vendidas
-      msg = e.record&.errors&.full_messages&.to_sentence.presence ||
-            "No se pudo eliminar una línea. Verifique que no tenga unidades vendidas."
-
-      # Intentar una recuperación parcial: liberar unidades reservadas de esa línea y reasignar a preventas
-      if (soi = e.record).present?
-        begin
-          freed = Inventory.where(sale_order_id: soi.sale_order_id, product_id: soi.product_id, status: Inventory.statuses[:reserved])
-                           .update_all(status: Inventory.statuses[:available], sale_order_id: nil, sale_order_item_id: nil, status_changed_at: Time.current, updated_at: Time.current)
-          if freed.to_i > 0
-            Rails.logger.info("[SaleOrders#update] Liberadas #{freed} piezas reservadas de la línea #{soi.id} tras fallo de destrucción")
-            begin
-              Preorders::PreorderAllocator.new(soi.product).call
-            rescue => alloc_err
-              Rails.logger.error("[SaleOrders#update] Error al asignar preventas tras liberar: #{alloc_err.class} #{alloc_err.message}")
-            end
-          end
-        rescue => free_err
-          Rails.logger.error("[SaleOrders#update] Error al liberar reservados tras fallo de destrucción: #{free_err.class} #{free_err.message}")
-        end
-      end
-
-      Rails.logger.warn("[SaleOrders#update] RecordNotDestroyed: #{msg}")
-      flash.now[:alert] = msg
-      @sale_order.reload
+    if @sale_order.update(sale_order_params)
+      @sale_order.update_status_if_fully_paid!
+      redirect_to admin_sale_order_path(@sale_order), notice: "Sale order updated successfully"
+    else
+      flash.now[:alert] = "There were errors saving the sale order"
       render :edit, status: :unprocessable_entity
     end
   end
 
   def show; end
-
-  # Cancelación manual de reservas antiguas por SO (sin tocar vendidos)
-  def cancel_reservations
-    reason = params[:reason].to_s.presence || "Cancelación manual de reservas antiguas"
-    # Solo permitir cancelar cuando la orden está en Pending
-    unless @sale_order.status == "Pending"
-      return redirect_to admin_sale_order_path(@sale_order), alert: "Solo puedes cancelar reservas cuando la orden está en Pending."
-    end
-    result = ::SaleOrders::CancelOldReservations.new(sale_order: @sale_order, reason: reason, actor: current_user).call
-    if result.ok
-      redirect_to admin_sale_order_path(@sale_order), notice: "Reservas canceladas: liberadas=#{result.released_units}, preventas canceladas=#{result.preorders_cancelled}."
-    else
-      redirect_to admin_sale_order_path(@sale_order), alert: (result.errors&.to_sentence || "Error al cancelar reservas")
-    end
-  end
-
-  # Reasigna inventario a una SO cancelada, siguiendo el flujo de una nueva SO
-  def reassign
-    if @sale_order.status != 'Canceled'
-      return redirect_to admin_sale_order_path(@sale_order), alert: 'Solo puedes reasignar cuando la orden está en estado Canceled.'
-    end
-    begin
-      # Intentar asignar available primero y luego in_transit como pre_*
-      @sale_order.sale_order_items.includes(:product).find_each do |li|
-        needed = li.quantity.to_i
-        # contar ya asignados (por si quedaron)
-        assigned = Inventory.where(sale_order_id: @sale_order.id, product_id: li.product_id, status: [:reserved, :sold, :pre_reserved, :pre_sold]).count
-        remaining = needed - assigned
-        next if remaining <= 0
-
-        # 1) available -> reserved
-        avail = Inventory.where(product_id: li.product_id, status: :available, sale_order_id: nil).order(:status_changed_at).limit(remaining).to_a
-        avail.each do |inv|
-          inv.update!(status: :reserved, sale_order_id: @sale_order.id, sale_order_item_id: li.id, status_changed_at: Time.current, sold_price: li.unit_final_price.to_f.nonzero? || inv.sold_price)
-        end
-        remaining -= avail.size
-
-        # 2) in_transit -> pre_reserved (o pre_sold si decides confirmar después con pago)
-        if remaining > 0
-          it = Inventory.where(product_id: li.product_id, status: :in_transit, sale_order_id: nil).order(:status_changed_at).limit(remaining).to_a
-          it.each do |inv|
-            inv.update!(status: :pre_reserved, sale_order_id: @sale_order.id, sale_order_item_id: li.id, status_changed_at: Time.current, sold_price: li.unit_final_price.to_f.nonzero? || inv.sold_price)
-          end
-          remaining -= it.size
-        end
-
-        # 3) Si aún falta, crear preventa pendiente
-        if remaining > 0
-          PreorderReservation.create!(product_id: li.product_id, user_id: @sale_order.user_id, sale_order_id: @sale_order.id, quantity: remaining, status: :pending, reserved_at: Time.current)
-          li.update_columns(preorder_quantity: li.preorder_quantity.to_i + remaining, updated_at: Time.current)
-        end
-      end
-      # Poner status a Pending para indicar que necesita confirmación/pago antes de entregar
-      @sale_order.update!(status: 'Pending')
-      redirect_to admin_sale_order_path(@sale_order), notice: 'Reasignación completada. La orden quedó en Pending.'
-    rescue => e
-      redirect_to admin_sale_order_path(@sale_order), alert: "Error al reasignar: #{e.message}"
-    end
-  end
-
-  # Vista compacta de totales/costos para compartir con cliente
-  def summary
-    # @sale_order cargada con includes para evitar N+1
-    respond_to do |format|
-      format.html { render :summary }
-      format.pdf do
-        # Placeholder: se podría integrar gem wicked_pdf/prawn más adelante
-        render :summary, layout: "pdf"
-      end
-    end
-  end
 
   def destroy
     if @sale_order.destroy
@@ -229,35 +128,10 @@ class Admin::SaleOrdersController < ApplicationController
     end
   end
 
-  # Exporta CSV de cancelaciones de esta SO
-  def export_cancellations
-    items = CanceledOrderItem.where(sale_order_id: @sale_order.id).includes(:product)
-    require 'csv'
-    csv = CSV.generate(headers: true) do |out|
-      out << ["Sale Order", "Product SKU", "Product Name", "Canceled Qty", "Unit Price at Cancel", "Reason", "Canceled At"]
-      items.find_each do |it|
-        out << [
-          it.sale_order_id,
-          it.product&.product_sku,
-          it.product&.product_name,
-          it.canceled_quantity,
-          it.sale_price_at_cancellation,
-          it.cancellation_reason,
-          it.canceled_at&.to_s(:db)
-        ]
-      end
-    end
-    send_data csv, filename: "cancellations-#{@sale_order.id}-#{Time.current.strftime('%Y%m%d-%H%M')}.csv", type: 'text/csv'
-  end
-
   private
 
   def set_sale_order
     @sale_order = SaleOrder.find_by!(id: params[:id])
-  end
-
-  def set_sale_order_with_includes
-    @sale_order = SaleOrder.includes(:payments, :shipment, sale_order_items: [product: [product_images_attachments: :blob]]).find(params[:id])
   end
 
   def sale_order_params

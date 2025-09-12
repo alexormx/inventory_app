@@ -13,14 +13,7 @@ class Admin::PurchaseOrdersController < ApplicationController
 
   scope = PurchaseOrder.joins(:user).includes(:user)
   # Units per order (sum of item quantities) as items_count via subquery
-  items_count_sql = "(SELECT COALESCE(SUM(quantity),0) FROM purchase_order_items poi WHERE poi.purchase_order_id = purchase_orders.id)"
-  inv_count_sql   = "(SELECT COALESCE(COUNT(*),0) FROM inventories inv WHERE inv.purchase_order_id = purchase_orders.id)"
-  scope = scope.select(
-    "purchase_orders.*",
-    "#{items_count_sql} AS items_count",
-    "#{inv_count_sql} AS inventory_count",
-    "(#{items_count_sql} - #{inv_count_sql}) AS remaining_count"
-  )
+  scope = scope.select("purchase_orders.*", "(SELECT COALESCE(SUM(quantity),0) FROM purchase_order_items poi WHERE poi.purchase_order_id = purchase_orders.id) AS items_count")
   # Sorting
   sort = params[:sort].presence
   dir  = params[:dir].to_s.downcase == 'asc' ? 'asc' : 'desc'
@@ -30,7 +23,6 @@ class Admin::PurchaseOrdersController < ApplicationController
     'expected'     => 'purchase_orders.expected_delivery_date',
   'total_mxn'    => 'purchase_orders.total_cost_mxn',
   'items'        => 'items_count',
-  'remaining'    => 'remaining_count',
     'created'      => 'purchase_orders.created_at'
   }
   if sort_map.key?(sort)
@@ -88,29 +80,6 @@ class Admin::PurchaseOrdersController < ApplicationController
   end
 
   def show
-  # Auditoría: conteo ESTRICTO por línea (purchase_order_item_id)
-  scope = Inventory.where(purchase_order_id: @purchase_order.id)
-  @inventory_counts_by_line = scope.where.not(purchase_order_item_id: nil)
-                   .group(:purchase_order_item_id)
-                   .count
-  # Desglose de estados por línea (para tooltip)
-  @inventory_status_counts_by_line = scope.where.not(purchase_order_item_id: nil)
-                      .group(:purchase_order_item_id, :status)
-                      .count
-  # Mapa para traducir enum status numérico a nombre
-  @inventory_status_names = Inventory.statuses.invert
-
-    # Resumen superior: líneas, total ordenado, inventario generado y restante
-    lines_count   = @purchase_order.purchase_order_items.size
-    ordered_units = @purchase_order.purchase_order_items.sum(:quantity)
-    generated_inv = scope.count
-    remaining     = [ordered_units - generated_inv, 0].max
-    @po_summary = {
-      lines: lines_count,
-      ordered: ordered_units,
-      generated: generated_inv,
-      remaining: remaining
-    }
   end
 
   def new
@@ -152,145 +121,17 @@ class Admin::PurchaseOrdersController < ApplicationController
 
   def confirm_receipt
     if @purchase_order.status == "In Transit"
-  # Solo cambia el estado de la PO; el modelo se encargará de mover inventario
-  @purchase_order.update!(status: "Delivered")
+      Inventory.where(purchase_order_id: @purchase_order.id).in_transit.update_all(
+        status: :available,
+        updated_at: Time.current,
+        status_changed_at: Time.current
+      )
+      @purchase_order.update!(status: "Delivered")
       flash[:notice] = "Recepción confirmada. Inventario actualizado."
     else
       flash[:alert] = "Solo se pueden confirmar órdenes 'In Transit'."
     end
     redirect_to admin_purchase_order_path(@purchase_order)
-  end
-
-  # Corrige inventario para una PO: ajusta por línea para que COUNT(inv) == quantity
-  def rebalance_inventory
-    po = PurchaseOrder.find(params[:id])
-    lines = po.purchase_order_items.includes(:product)
-  created_total = 0
-  deleted_total = 0
-    lines.each do |li|
-      desired = li.quantity.to_i
-      scope = Inventory.where(purchase_order_item_id: li.id)
-      current = scope.count
-      diff = desired - current
-      if diff > 0
-        diff.times do
-          Inventory.create!(
-            product_id: li.product_id,
-            purchase_order_id: po.id,
-            purchase_order_item_id: li.id,
-            status: (po.status.in?(["Pending","In Transit"]) ? :in_transit : :available),
-            status_changed_at: Time.current,
-            purchase_cost: li.unit_compose_cost_in_mxn.to_f
-          )
-        end
-    created_total += diff
-      elsif diff < 0
-    destroyed = scope.where(status: [:available, :in_transit], sale_order_id: nil)
-             .order(status_changed_at: :desc)
-             .limit(diff.abs)
-             .destroy_all
-             .size
-    deleted_total += destroyed
-      end
-    end
-  redirect_to admin_purchase_order_path(po), notice: "Rebalanceo completado. Creadas: #{created_total}. Eliminadas: #{deleted_total}."
-  end
-
-  # Corrige en lote todas las líneas con desajuste (según auditoría)
-  def rebalance_all_mismatches
-    dry_run = ActiveModel::Type::Boolean.new.cast(params[:dry_run])
-
-    mismatches = PurchaseOrderItem
-      .joins("LEFT JOIN inventories inv ON inv.purchase_order_item_id = purchase_order_items.id")
-      .select('purchase_order_items.id')
-      .group('purchase_order_items.id')
-      .having('COUNT(inv.id) <> purchase_order_items.quantity')
-
-    ids = mismatches.pluck(:id)
-
-    # Acumuladores
-    created_planned = 0
-    planned_available = 0
-    planned_in_transit = 0
-    deletions_planned = 0
-    deletions_possible = 0
-
-    created_done = 0
-    deleted_done = 0
-
-    PurchaseOrderItem.where(id: ids).includes(:purchase_order).find_each do |li|
-      po = li.purchase_order
-      desired = li.quantity.to_i
-      scope = Inventory.where(purchase_order_item_id: li.id)
-      current = scope.count
-      diff = desired - current
-
-      if diff > 0
-        status_sym = (po.status.in?( ["Pending","In Transit"] ) ? :in_transit : :available)
-        created_planned += diff
-        if status_sym == :in_transit
-          planned_in_transit += diff
-        else
-          planned_available += diff
-        end
-        unless dry_run
-          diff.times do
-            Inventory.create!(
-              product_id: li.product_id,
-              purchase_order_id: po.id,
-              purchase_order_item_id: li.id,
-              status: status_sym,
-              status_changed_at: Time.current,
-              purchase_cost: li.unit_compose_cost_in_mxn.to_f
-            )
-          end
-          created_done += diff
-        end
-      elsif diff < 0
-        deletions_planned += diff.abs
-        deletable_scope = scope.where(status: [:available, :in_transit], sale_order_id: nil)
-        available_to_delete = deletable_scope.count
-        deletions_possible += [available_to_delete, diff.abs].min
-        unless dry_run
-          destroyed_count = deletable_scope.order(status_changed_at: :desc)
-                                          .limit(diff.abs)
-                                          .destroy_all
-                                          .size
-          deleted_done += destroyed_count
-        end
-      end
-    end
-
-    if dry_run
-      msg = "Simulación: crear #{created_planned} (available #{planned_available}, in_transit #{planned_in_transit}); " \
-            "eliminar hasta #{deletions_possible} de #{deletions_planned} planeadas (solo available/in_transit sin SO)."
-      redirect_to line_audit_admin_purchase_orders_path, notice: msg
-    else
-      msg = "Rebalanceo masivo completado. Creadas: #{created_done}. Eliminadas: #{deleted_done}."
-      redirect_to line_audit_admin_purchase_orders_path, notice: msg
-    end
-  end
-
-  # Auditoría: POs con líneas cuyos restos > 0 (Qty - inventario generado por línea)
-  def line_audit
-    # Buscar líneas con desajuste
-    mismatches = PurchaseOrderItem
-      .joins("LEFT JOIN inventories inv ON inv.purchase_order_item_id = purchase_order_items.id")
-      .select(
-        'purchase_order_items.*',
-        'COUNT(inv.id) AS generated_count'
-      )
-      .group('purchase_order_items.id')
-      .having('COUNT(inv.id) <> purchase_order_items.quantity')
-
-    @lines_with_mismatch = mismatches.includes(:product, :purchase_order).order('purchase_order_items.purchase_order_id DESC')
-
-    # POs con SKUs repetidos (potencial fuente del problema)
-    @pos_with_duplicate_skus = PurchaseOrderItem
-      .select('purchase_order_id, product_id, COUNT(*) as line_count')
-      .group('purchase_order_id, product_id')
-      .having('COUNT(*) > 1')
-      .order('purchase_order_id DESC, line_count DESC')
   end
 
   private

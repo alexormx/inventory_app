@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_09_06_103001) do
+ActiveRecord::Schema[8.0].define(version: 2025_09_12_123000) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -72,11 +72,61 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_06_103001) do
     t.integer "purchase_order_item_id"
     t.integer "status", default: 0, null: false
     t.integer "sale_order_item_id"
+    t.string "source"
+    t.string "adjustment_reference"
+    t.index ["adjustment_reference"], name: "index_inventories_on_adjustment_reference"
     t.index ["product_id", "status"], name: "index_inventories_on_product_id_and_status"
     t.index ["product_id"], name: "index_inventories_on_product_id"
     t.index ["purchase_order_id"], name: "index_inventories_on_purchase_order_id"
     t.index ["sale_order_id"], name: "index_inventories_on_sale_order_id"
     t.index ["sale_order_item_id"], name: "index_inventories_on_sale_order_item_id"
+    t.index ["source"], name: "index_inventories_on_source"
+  end
+
+  create_table "inventory_adjustment_entries", force: :cascade do |t|
+    t.integer "inventory_adjustment_line_id", null: false
+    t.integer "inventory_id", null: false
+    t.string "action", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["inventory_adjustment_line_id"], name: "idx_adj_entries_line"
+    t.index ["inventory_id"], name: "index_inventory_adjustment_entries_on_inventory_id"
+  end
+
+  create_table "inventory_adjustment_lines", force: :cascade do |t|
+    t.integer "inventory_adjustment_id", null: false
+    t.integer "product_id", null: false
+    t.integer "quantity", null: false
+    t.string "reason"
+    t.decimal "unit_cost", precision: 10, scale: 2
+    t.text "note"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "direction", default: "increase", null: false
+    t.index ["direction"], name: "index_inventory_adjustment_lines_on_direction"
+    t.index ["inventory_adjustment_id"], name: "index_inventory_adjustment_lines_on_inventory_adjustment_id"
+    t.index ["product_id"], name: "index_inventory_adjustment_lines_on_product_id"
+  end
+
+  create_table "inventory_adjustments", force: :cascade do |t|
+    t.string "code"
+    t.string "status", default: "draft", null: false
+    t.string "adjustment_type", default: "audit", null: false
+    t.datetime "found_at"
+    t.string "reference"
+    t.text "note"
+    t.integer "user_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.datetime "applied_at"
+    t.integer "applied_by_id"
+    t.datetime "reversed_at"
+    t.integer "reversed_by_id"
+    t.index ["adjustment_type"], name: "index_inventory_adjustments_on_adjustment_type"
+    t.index ["applied_at"], name: "index_inventory_adjustments_on_applied_at"
+    t.index ["code"], name: "index_inventory_adjustments_on_code", unique: true
+    t.index ["found_at"], name: "index_inventory_adjustments_on_found_at"
+    t.index ["reversed_at"], name: "index_inventory_adjustments_on_reversed_at"
   end
 
   create_table "maintenance_runs", force: :cascade do |t|
@@ -228,6 +278,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_06_103001) do
     t.decimal "total_cost_mxn", precision: 10, scale: 2, default: "0.0", null: false
     t.decimal "total_volume", precision: 10, scale: 2, default: "0.0", null: false
     t.decimal "total_weight", precision: 10, scale: 2, default: "0.0", null: false
+    t.string "kind", default: "regular", null: false
+    t.index ["kind"], name: "index_purchase_orders_on_kind"
     t.index ["user_id"], name: "index_purchase_orders_on_user_id"
   end
 
@@ -306,6 +358,15 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_06_103001) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["key"], name: "index_site_settings_on_key", unique: true
+  end
+
+  create_table "system_variables", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "value"
+    t.string "description"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_system_variables_on_name", unique: true
   end
 
   create_table "users", force: :cascade do |t|

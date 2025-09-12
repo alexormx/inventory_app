@@ -1,37 +1,19 @@
-<%# Reemplazar lista de origen (para cerrar hueco) %>
-<%= turbo_stream.replace "products_list_#{@source_tab}" do %>
-	<div id="products_list_<%= @source_tab %>" class="row g-3">
-		<% @source_products.each do |p| %>
-			<div class="col-md-6 col-lg-4">
-				<%= render partial: 'admin/products/product_card', locals: { product: p, current_tab: @source_tab } %>
-			</div>
-		<% end %>
-	</div>
+<%= turbo_stream.replace "products_frame" do %>
+  <turbo-frame id="products_frame">
+    <%= render partial: "admin/products/pipeline", locals: { products: @products, current_tab: (params[:source_tab] || 'active'), counts: @counts } %>
+  </turbo-frame>
 <% end %>
 
-<% unless @source_tab == 'active' %>
-	<%= turbo_stream.prepend "products_list_active" do %>
-		<div class="col-md-6 col-lg-4">
-			<%= render partial: 'admin/products/product_card', locals: { product: @product, current_tab: 'active' } %>
-		</div>
-	<% end %>
-<% end %>
-<%= turbo_stream.replace "products_counts_global_container" do %>
-	<%= render partial: "admin/shared/status_counters", locals: {
-		counts: @counts_global,
-		items: [[:draft,"Drafts","bg-secondary"],[:active,"Active","bg-success"],[:inactive,"Inactive","bg-danger"]],
-		title: "Resumen",
-		cta_label: "New Product",
-	cta_path: new_admin_product_path,
-	extra_class: "ts-#{Time.now.to_i}"
-	} %>
-<% end %>
-<%= turbo_stream.replace "products_counts_filtered_container" do %>
-	<%= render partial: "admin/shared/status_counters", locals: {
-		counts: @counts,
-		items: [[:draft,"Drafts","bg-secondary"],[:active,"Active","bg-success"],[:inactive,"Inactive","bg-danger"]],
-		hide_zero: true,
-		extra_class: "mb-2",
-		title: "Resultados"
-	} %>
+<%= turbo_stream.update "products_counts" do %>
+  <%= render partial: "admin/shared/status_counters", locals: {
+    wrapper_id: "products_counts",
+    counts: @counts,
+    items: [
+      [:draft,    "Drafts",   "bg-secondary"],
+      [:active,   "Active",   "bg-success"],
+      [:inactive, "Inactive", "bg-danger"],
+    ],
+    cta_label: "New Product",
+    cta_path: new_admin_product_path
+  } %>
 <% end %>
