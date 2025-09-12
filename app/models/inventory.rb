@@ -4,6 +4,13 @@ class Inventory < ApplicationRecord
   belongs_to :sale_order_item, optional: true
   belongs_to :product
 
+  SOURCES = [
+    "po_regular",      # creado desde PO regular
+    "po_adjustment",   # creado desde PO de ajuste
+    "manual",          # creado manualmente
+    "ledger_adjustment" # creado desde ledger de ajustes
+  ].freeze
+
   # Nota: agregar nuevos estatus siempre al final para no cambiar los IDs existentes
   enum :status, [
     :available,
@@ -24,6 +31,8 @@ class Inventory < ApplicationRecord
   validates :sold_price, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true
   validates :status, presence: true, inclusion: { in: Inventory.statuses.keys }
 
+  # Asigna source automáticamente si viene de una PO y no se especificó
+  before_validation :set_source_from_purchase_order, on: :create
 
   before_update :track_status_change
   after_commit :update_product_stock_quantities, if: -> { saved_change_to_status? }
@@ -37,6 +46,12 @@ class Inventory < ApplicationRecord
 
 
   private
+
+  def set_source_from_purchase_order
+    return if source.present? || purchase_order_id.blank?
+    # Usa el kind de la PO para distinguir ajuste vs regular
+    self.source = purchase_order&.kind == "adjustment" ? "po_adjustment" : "po_regular"
+  end
 
   def track_status_change
     if status_changed?

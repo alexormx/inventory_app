@@ -1,11 +1,6 @@
-// Minimal ECharts helpers y theme (carga perezosa de ECharts)
-let _echartsPromise
-async function loadLib() {
-  if (!_echartsPromise) {
-    _echartsPromise = import("echarts")
-  }
-  return _echartsPromise
-}
+// Minimal ECharts helpers and theme for the dashboard
+// Uses ESM import pinned via importmap to 'echarts'
+import * as echarts from "echarts"
 
 const baseTextColor = getComputedStyle(document.documentElement).getPropertyValue('--bs-body-color') || '#212529'
 const gridLineColor = '#e9ecef'
@@ -19,8 +14,8 @@ function baseGrid() {
   return { left: 8, right: 8, top: 24, bottom: 8, containLabel: true }
 }
 
-export async function initLine(el, { x = [], series = [] } = {}) {
-  const { default: _echarts } = await loadLib(); const chart = _echarts.init(el)
+export function initLine(el, { x = [], series = [] } = {}) {
+  const chart = echarts.init(el)
   chart.setOption({
     textStyle: { color: baseTextColor, fontFamily: 'system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial' },
     tooltip: { trigger: 'axis' },
@@ -33,8 +28,8 @@ export async function initLine(el, { x = [], series = [] } = {}) {
   return chart
 }
 
-export async function initBar(el, { x = [], series = [] } = {}) {
-  const { default: _echarts } = await loadLib(); const chart = _echarts.init(el)
+export function initBar(el, { x = [], series = [] } = {}) {
+  const chart = echarts.init(el)
   chart.setOption({
     textStyle: { color: baseTextColor },
     tooltip: { trigger: 'axis' },
@@ -47,8 +42,8 @@ export async function initBar(el, { x = [], series = [] } = {}) {
   return chart
 }
 
-export async function initPie(el, { series = [] } = {}) {
-  const { default: _echarts } = await loadLib(); const chart = _echarts.init(el)
+export function initPie(el, { series = [] } = {}) {
+  const chart = echarts.init(el)
   chart.setOption({
     textStyle: { color: baseTextColor },
     tooltip: { trigger: 'item' },
@@ -69,8 +64,8 @@ export async function initPie(el, { series = [] } = {}) {
   return chart
 }
 
-export async function initSparkline(el, { data = [] } = {}) {
-  const { default: _echarts } = await loadLib(); const chart = _echarts.init(el)
+export function initSparkline(el, { data = [] } = {}) {
+  const chart = echarts.init(el)
   chart.setOption({
     grid: { left: 0, right: 0, top: 2, bottom: 2 },
     xAxis: { type: 'category', show: false, data: data.map((_, i) => i) },
@@ -102,5 +97,4 @@ export function registerResizeObserver(el, chart) {
   }
 }
 
-// Export util para acceso directo si se necesita: devuelve promesa que resuelve a módulo
-export function echartsModule() { return loadLib() }
+export { echarts }

@@ -1,0 +1,7 @@
+<div class="container mt-3">
+  <h3>Edit Inventory Adjustment</h3>
+  <% if @inventory_adjustment.status_applied? %>
+    <div class="alert alert-warning">Applied adjustments are read-only. Reverse to edit.</div>
+  <% end %>
+  <%= render 'form' %>
+</div>

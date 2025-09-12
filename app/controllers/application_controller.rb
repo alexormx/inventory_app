@@ -1,6 +1,5 @@
 class ApplicationController < ActionController::Base
   include ApiTokenAuthenticatable
-  helper ProductsHelper
   # Only allow modern browsers supporting webp images, web push, badges, import maps, CSS nesting, and CSS :has.
   allow_browser versions: :modern
   layout :set_layout
@@ -76,10 +75,6 @@ class ApplicationController < ActionController::Base
   end
 
   def default_url_options
-  # Solo añadir locale en navegación HTML; evitarlo para que no se propague a assets/ActiveStorage
-  return {} unless I18n.locale && I18n.locale != I18n.default_locale
-  return {} unless request&.format&.html?
-  return {} if request.path.start_with?('/rails/active_storage')
-  { locale: I18n.locale }
+    { locale: (I18n.locale unless I18n.locale == I18n.default_locale) }.compact
   end
 end

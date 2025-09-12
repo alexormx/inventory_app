@@ -27,7 +27,7 @@ Capybara.register_driver :selenium_chrome_headless do |app|
   options = Selenium::WebDriver::Chrome::Options.new
   options.add_argument('--headless=new')
   options.add_argument('--disable-gpu')
-  options.add_argument("--disable-dev-shm-usage") 
+  options.add_argument("--disable-dev-shm-usage")
   options.add_argument('--no-sandbox')
   options.add_argument('--disable-dev-shm-usage')
   # FIX: Add Accept header to prevent 406 Not Acceptable errors with Rails 7/Turbo
@@ -38,7 +38,7 @@ Capybara.register_driver :selenium_chrome_headless do |app|
   service = Selenium::WebDriver::Service.chrome(
     path: driver_path
   )
-  
+
   Capybara::Selenium::Driver.new(app, browser: :chrome, options: options, service: service)
 end
 
@@ -54,6 +54,7 @@ RSpec.configure do |config|
   config.include Devise::Test::ControllerHelpers, type: :controller
   config.include Devise::Test::IntegrationHelpers, type: :system
   config.include Devise::Test::IntegrationHelpers, type: :request
+  config.include ActiveSupport::Testing::TimeHelpers
 
   # Default URL options (for *_url helpers & Devise mailers)
   config.before(:suite) do

@@ -96,7 +96,7 @@ class Admin::ProductsController < ApplicationController
 
   def search
     q = params[:query].to_s.strip
-    return render json: [] if q.blank?
+  return render json: [] if q.blank? || q.length < 3
 
     pattern = "%#{ActiveRecord::Base.sanitize_sql_like(q)}%"
 

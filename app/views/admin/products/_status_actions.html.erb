@@ -1,12 +1,11 @@
 <%# Botones de acción de estado (reemplaza al toggle) %>
-<% current_tab = (local_assigns[:current_tab] || params[:source_tab] || params[:status] || 'all') %>
 <% if product.status == 'active' %>
-  <%= link_to 'Desactivar', deactivate_admin_product_path(product, source_tab: current_tab, status: current_tab, page: params[:page]), data: { turbo_method: :patch }, class: 'btn btn-sm btn-outline-danger' %>
+  <%= link_to 'Desactivar', deactivate_admin_product_path(product, source_tab: (local_assigns[:current_tab] || params[:source_tab] || 'active'), page: params[:page]), data: { turbo_method: :patch }, class: 'btn btn-sm btn-outline-danger' %>
 <% elsif product.status == 'inactive' %>
-  <%= link_to 'Activar', activate_admin_product_path(product, source_tab: current_tab, status: current_tab, page: params[:page]), data: { turbo_method: :patch }, class: 'btn btn-sm btn-primary' %>
+  <%= link_to 'Activar', activate_admin_product_path(product, source_tab: (local_assigns[:current_tab] || params[:source_tab] || 'inactive'), page: params[:page]), data: { turbo_method: :patch }, class: 'btn btn-sm btn-primary' %>
 <% else %>
   <div class="btn-group" role="group">
-    <%= link_to 'Activar', activate_admin_product_path(product, source_tab: current_tab, status: current_tab, page: params[:page]), data: { turbo_method: :patch }, class: 'btn btn-sm btn-primary' %>
-    <%= link_to 'Inactivar', deactivate_admin_product_path(product, source_tab: current_tab, status: current_tab, page: params[:page]), data: { turbo_method: :patch }, class: 'btn btn-sm btn-outline-danger' %>
+  <%= link_to 'Activar', activate_admin_product_path(product, source_tab: (local_assigns[:current_tab] || params[:source_tab] || 'draft'), page: params[:page]), data: { turbo_method: :patch }, class: 'btn btn-sm btn-primary' %>
+  <%= link_to 'Inactivar', deactivate_admin_product_path(product, source_tab: (local_assigns[:current_tab] || params[:source_tab] || 'draft'), page: params[:page]), data: { turbo_method: :patch }, class: 'btn btn-sm btn-outline-danger' %>
   </div>
 <% end %>

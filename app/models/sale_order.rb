@@ -2,6 +2,29 @@ class SaleOrder < ApplicationRecord
   include CustomIdGenerator
   belongs_to :user
 
+  STATUSES = [
+    "Pending",
+    "Confirmed",
+    "In Transit",
+    "Delivered",
+    "Canceled",
+    "Returned"
+  ].freeze
+
+
+
+  CANONICAL_STATUS = {
+    "pending"     => "Pending",
+    "confirmed"   => "Confirmed",
+    "in_transit"  => "In Transit",
+    "shipped"     => "In Transit",  # si llega “shipped”, lo mapeamos a In Transit
+    "delivered"   => "Delivered",
+    "canceled"    => "Canceled",
+    "cancelled"   => "Canceled",
+    "returned"    => "Returned"
+  }.freeze
+
+
   has_many :inventories, class_name: "Inventory", foreign_key: :sale_order_id
   has_many :payments, dependent: :restrict_with_error
   has_one :shipment, foreign_key: "sale_order_id", dependent: :restrict_with_error
@@ -15,13 +38,14 @@ class SaleOrder < ApplicationRecord
   validates :tax_rate, presence: true, numericality: { greater_than_or_equal_to: 0, less_than_or_equal_to: 100 }
   validates :total_tax, presence: true, numericality: { greater_than_or_equal_to: 0 }
   validates :total_order_value, presence: true, numericality: { greater_than_or_equal_to: 0 }
-  validates :status, presence: true, inclusion: { in: %w[Pending Confirmed Shipped In Transit Delivered Canceled] }
+  validates :status, inclusion: { in: STATUSES }
   validate :ensure_payment_and_shipment_present
   validates :shipping_cost, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true
 
   before_destroy :ensure_inventories_safe_or_release
   before_validation :set_default_status, on: :create
   before_validation :compute_financials
+  before_validation :normalize_status
   before_create :generate_custom_id
 
   # Opcional: si cambias status a 'Canceled', libera lo reservado
@@ -145,14 +169,14 @@ class SaleOrder < ApplicationRecord
 
     # Bloquea si hay vendidos; si todo está reservado, libera y permite borrar.
   def ensure_inventories_safe_or_release
-  sold = inventories.where(status: %w[sold])
+    sold = inventories.where(status: %w[sold])
     if sold.exists?
       errors.add(:base, "No se puede eliminar: hay #{sold.count} artículo(s) vendidos en esta orden.")
       throw :abort
     end
 
     # Libera las reservadas
-  inventories.where(status: %w[reserved pre_reserved pre_sold]).update_all(
+    inventories.where(status: %w[reserved pre_reserved pre_sold]).update_all(
       status: Inventory.statuses[:available],
       sale_order_id: nil,
       sale_order_item_id: nil,
@@ -248,6 +272,12 @@ class SaleOrder < ApplicationRecord
     )
   rescue => e
     Rails.logger.error "[SaleOrder#broadcast_status_change] #{e.class}: #{e.message}"
+  end
+
+  def normalize_status
+    return if status.blank?
+    key = status.to_s.strip.downcase.tr(" ", "_")
+    self.status = CANONICAL_STATUS[key] || status
   end
 end
 

@@ -1,5 +1,6 @@
 class CanceledOrderItem < ApplicationRecord
-  belongs_to :sale_order
+  belongs_to :sale_order, foreign_key: "sale_order_id", primary_key: "id"
+  belongs_to :purchase_order
   belongs_to :product
 
   validates :canceled_quantity, presence: true, numericality: { only_integer: true, greater_than: 0 }

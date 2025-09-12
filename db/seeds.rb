@@ -1,3 +1,12 @@
+# System Variables (idempotent)
+begin
+	if defined?(SystemVariable)
+		SystemVariable.set('INVENTORY_ADJ_REFERENCE_PATTERN', 'ADJ-YYYYMM', description: 'Patrón base para referencia de ajustes (prefijo + YYYYMM + -NN).')
+		SystemVariable.set('INVENTORY_ADJ_ALLOW_MULTI_LINES', 'true', description: 'Permitir múltiples líneas por producto en un ajuste.')
+	end
+rescue => e
+	puts "Seed SystemVariable error: #{e.class} #{e.message}"
+end
 # Site settings initial values (idempotent)
 SiteSetting.set('language_switcher_enabled', false) unless SiteSetting.get('language_switcher_enabled') == false
 SiteSetting.set('dark_mode_enabled', false) unless SiteSetting.get('dark_mode_enabled') == false

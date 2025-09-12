@@ -104,8 +104,7 @@ Rails.application.routes.draw do
     end
 
   # System variables explorer
-  get 'system_variables', to: 'system_variables#index', as: :system_variables
-  post 'system_variables/generate_schema_docs', to: 'system_variables#generate_schema_docs', as: :system_variables_generate_schema_docs
+  resources :system_variables, only: [:index, :create, :update]
 
     # General user management (admin-facing) con tabs
   resources :users, only: [:index, :new, :create, :edit, :update] do
@@ -142,6 +141,12 @@ Rails.application.routes.draw do
   post :cancel_reservations, to: 'sale_orders#cancel_reservations'
   post :reassign, to: 'sale_orders#reassign'
       end
+    end
+
+    # Inventory Adjustments (Ledger)
+    resources :inventory_adjustments do
+      post :apply, on: :member
+  post :reverse, on: :member
     end
 
   end
