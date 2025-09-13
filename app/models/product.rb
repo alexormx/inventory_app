@@ -190,19 +190,9 @@ class Product < ApplicationRecord
 
   # Desglose de cantidades inmediata vs pendiente según flags
   def split_immediate_and_pending(requested_qty)
-    requested = requested_qty.to_i
-    on_hand = current_on_hand
-    immediate = [requested, on_hand].min
-    pending  = requested - immediate
-    type = nil
-    if pending > 0
-      type = if preorder_available
-               :preorder
-             elsif backorder_allowed
-               :backorder
-             end
-    end
-    { requested: requested, on_hand: on_hand, immediate: immediate, pending: pending, pending_type: type }
+  splitter = Inventory::AvailabilitySplitter.new(self, requested_qty)
+  r = splitter.call
+  { requested: r.requested, on_hand: r.on_hand, immediate: r.immediate, pending: r.pending, pending_type: r.pending_type }
   end
 
   # ---- Dimensiones / Peso helpers ----

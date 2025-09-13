@@ -1,3 +1,8 @@
+<div class="checkout-progress mb-3">
+  <div class="progress" style="height:6px;">
+    <div class="progress-bar bg-primary" style="width:100%"></div>
+  </div>
+</div>
 <h1 class="mb-3">💳 Pago</h1>
 
 <% shipping_info = @shipping_info || {} %>
@@ -25,7 +30,9 @@
   </div>
 </div>
 
-<%= form_with url: checkout_complete_path, method: :post, local: true do %>
+<% session[:checkout_token] ||= SecureRandom.hex(8) %>
+<%= form_with url: checkout_complete_path, method: :post, local: true, html: { id: 'checkout-complete-form' } do %>
+  <%= hidden_field_tag :checkout_token, session[:checkout_token] %>
   <% bank_account = SiteSetting.get('payment_bank_account', '0000000000') %>
   <% oxxo_account = SiteSetting.get('payment_oxxo_number', '0000 0000 0000 0000') %>
   <div class="mb-3">
@@ -100,6 +107,17 @@
   <% end %>
 
   <div class="text-end">
-    <%= submit_tag "✅ Finalizar compra", class: "btn btn-success" %>
+    <%= submit_tag "✅ Finalizar compra", class: "btn btn-success", data: { disable_with: 'Procesando…' } %>
   </div>
 <% end %>
+
+<script>
+  (function(){
+    const form = document.getElementById('checkout-complete-form');
+    if(!form) return;
+    form.addEventListener('submit', function(e){
+      const btn = form.querySelector('input[type=submit],button[type=submit]');
+      if(btn){ btn.disabled = true; }
+    });
+  })();
+</script>
