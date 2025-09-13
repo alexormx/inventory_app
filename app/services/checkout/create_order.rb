@@ -39,7 +39,7 @@ module Checkout
       end
       return fail_with(errors) if errors.any?
 
-      sale_order = nil
+  sale_order = nil
       ActiveRecord::Base.transaction do
         sale_order = @user.sale_orders.create!(
           order_date: Date.today,
@@ -102,6 +102,11 @@ module Checkout
 
       Result.new(sale_order: sale_order, errors: [], warnings: warnings, availability: availability_map)
     rescue => e
+      # Logging detallado
+      Rails.logger.error "[Checkout::CreateOrder] ERROR #{e.class}: #{e.message}"
+      if sale_order&.errors&.any?
+        Rails.logger.error "[Checkout::CreateOrder] SaleOrder errors: #{sale_order.errors.full_messages.join('; ')}"
+      end
       fail_with(["Exception #{e.class}: #{e.message}"])
     end
 
