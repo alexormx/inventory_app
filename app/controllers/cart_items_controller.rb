@@ -146,7 +146,8 @@ class CartItemsController < ApplicationController
   private
 
   def set_cart
-    @cart = Cart.new(session)
+  session[:cart] ||= {}
+  @cart = Cart.new(session)
   end
 
   def aggregate_pending
