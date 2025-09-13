@@ -3,7 +3,7 @@ require 'rails_helper'
 RSpec.describe Checkout::CreateOrder, type: :service do
   let(:user) { create(:user) }
   let!(:address) { create(:shipping_address, user: user) }
-  let(:product) { create(:product, selling_price: 100, preorder_available: false, backorder_allowed: false) }
+  let(:product) { create(:product, selling_price: 100, preorder_available: false, backorder_allowed: false, status: :active) }
 
   # Carrito sencillo simulado; asumimos existe clase Cart que responde items y empty?
   class TestCart
@@ -20,7 +20,7 @@ RSpec.describe Checkout::CreateOrder, type: :service do
   context 'happy path sin pendientes' do
     it 'crea sale_order, items, snapshot y payment' do
   allow(product).to receive(:current_on_hand).and_return(5)
-      cart = build_cart({ product => 2 })
+  cart = build_cart({ product => 2 })
 
       result = described_class.new(
         user: user,
@@ -45,7 +45,7 @@ RSpec.describe Checkout::CreateOrder, type: :service do
   context 'stock insuficiente sin preorder/backorder' do
     it 'falla con error descriptivo' do
   allow(product).to receive(:current_on_hand).and_return(0)
-      cart = build_cart({ product => 1 })
+  cart = build_cart({ product => 1 })
       result = described_class.new(
         user: user,
         cart: cart,
