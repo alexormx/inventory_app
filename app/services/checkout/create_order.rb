@@ -89,15 +89,14 @@ module Checkout
           shipping_method: @shipping_method,
           raw_address_json: source_address.attributes.slice('id','full_name','line1','line2','city','state','postal_code','country','label','default')
         )
-
+        # Recalcular totales ahora que ya tenemos líneas y snapshot
+        sale_order.recalculate_totals!(persist: true)
+        # Crear pago con el monto final (evita RecordInvalid por amount=0)
         sale_order.payments.create!(
-          amount: 0, # se recalcula después
+          amount: sale_order.total_order_value,
           payment_method: @payment_method,
           status: 'Pending'
-        )
-
-        sale_order.recalculate_totals!(persist: true)
-        sale_order.payments.first.update_columns(amount: sale_order.total_order_value)
+        ) if sale_order.total_order_value.to_f > 0
       end
 
       Result.new(sale_order: sale_order, errors: [], warnings: warnings, availability: availability_map)
