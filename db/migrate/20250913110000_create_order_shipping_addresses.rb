@@ -1,7 +1,8 @@
 class CreateOrderShippingAddresses < ActiveRecord::Migration[8.0]
   def change
     create_table :order_shipping_addresses do |t|
-      t.references :sale_order, null: false, foreign_key: true, index: { unique: true }
+      # ID de sale_orders es string (custom). Definimos la columna explícitamente.
+      t.string :sale_order_id, null: false
       t.bigint :source_shipping_address_id
       t.string :full_name, null: false
       t.string :line1, null: false
@@ -17,7 +18,9 @@ class CreateOrderShippingAddresses < ActiveRecord::Migration[8.0]
       t.timestamps
     end
 
+  add_index :order_shipping_addresses, :sale_order_id, unique: true
     add_index :order_shipping_addresses, :source_shipping_address_id
     add_index :order_shipping_addresses, :shipping_method
+  add_foreign_key :order_shipping_addresses, :sale_orders, column: :sale_order_id
   end
 end
