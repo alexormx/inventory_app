@@ -75,99 +75,53 @@ class CheckoutsController < ApplicationController
 
   def complete
     payment_method = params[:payment_method]
-
     if payment_method.blank?
       flash.now[:alert] = "Selecciona un método de pago."
-      render :step3, status: :unprocessable_entity
-      return
-    end
-
-    # 1) Validar que no haya oversell NO permitido (pending sin tipo asignado)
-    invalid_products = []
-    pending_needed = false
-    @cart.items.each do |product, qty|
-      split = product.split_immediate_and_pending(qty)
-      if split[:pending].positive?
-        if split[:pending_type].nil? # no permite ni preorder ni backorder
-          invalid_products << product
-        else
-          pending_needed = true
-        end
-      end
-    end
-
-    if invalid_products.any?
-      nombres = invalid_products.map(&:product_name).join(', ')
-      flash.now[:alert] = "Los siguientes productos exceden el stock y no permiten preventa ni sobre pedido: #{nombres}. Ajusta las cantidades en el carrito."
       step3
       render :step3, status: :unprocessable_entity and return
     end
 
-    # 2) Si hay pendientes válidos (preorder/backorder) exigir aceptación explícita
-    if pending_needed && params[:accept_pending].blank?
-      flash.now[:alert] = "Debes aceptar los tiempos extendidos de entrega para continuar."
+    shipping_info = session[:shipping_info] || {}
+  # Normalizar claves (pueden ser strings en la sesión)
+  address_id = shipping_info[:address_id] || shipping_info['address_id']
+  method = shipping_info[:method] || shipping_info['method']
+
+    # Validar aceptación de pendientes si aplica (lo revalida el servicio al recalcular availability)
+    if params[:accept_pending].blank?
+      # Checar rápido si existe algún pending potencial para pedir aceptación explícita
+      needs_accept = @cart.items.any? do |product, qty|
+        sp = product.split_immediate_and_pending(qty)
+        sp[:pending].positive? && [:preorder, :backorder].include?(sp[:pending_type])
+      end
+      if needs_accept
+        flash.now[:alert] = "Debes aceptar los tiempos extendidos de entrega para continuar."
+        step3
+        render :step3, status: :unprocessable_entity and return
+      end
+    end
+
+    # (Futuro) idempotency_key = params[:checkout_token]
+    result = Checkout::CreateOrder.new(
+      user: current_user,
+      cart: @cart,
+      shipping_address_id: address_id,
+      shipping_method: method,
+      payment_method: payment_method,
+      notes: session[:checkout_notes],
+      idempotency_key: nil
+    ).call
+
+    unless result.success?
+      flash.now[:alert] = result.errors.join('. ')
       step3
       render :step3, status: :unprocessable_entity and return
     end
 
-    ActiveRecord::Base.transaction do
-      shipping_info = session[:shipping_info] || {}
-      selected_address = current_user.shipping_addresses.find_by(id: shipping_info[:address_id])
-      shipping_cost = case shipping_info[:method]
-                      when 'express' then 149
-                      else 0
-                      end
-      @sale_order = current_user.sale_orders.create!(
-        order_date: Date.today,
-        subtotal: @cart.total,
-        tax_rate: 0,
-        total_tax: 0,
-        shipping_cost: shipping_cost,
-        total_order_value: @cart.total + shipping_cost,
-        notes: session[:checkout_notes],
-        status: 'Pending'
-      )
-
-      @cart.items.each do |product, qty|
-        split = product.split_immediate_and_pending(qty)
-        soi = @sale_order.sale_order_items.create!(
-          product: product,
-          quantity: qty,
-          unit_cost: product.selling_price,
-          total_line_cost: product.selling_price * qty,
-          preorder_quantity: (split[:pending_type] == :preorder ? split[:pending] : 0),
-          backordered_quantity: (split[:pending_type] == :backorder ? split[:pending] : 0)
-        )
-        if split[:pending] > 0 && split[:pending_type] == :preorder
-          PreorderReservation.create!(
-            product: product,
-            user: current_user,
-            quantity: split[:pending],
-            status: :pending,
-            reserved_at: Time.current,
-            sale_order: nil,
-            notes: "Generada desde checkout SO=#{@sale_order.id} SOI=#{soi.id}"
-          )
-        end
-      end
-
-      @sale_order.payments.create!(
-        amount: @sale_order.total_order_value,
-        payment_method: payment_method,
-        status: 'Pending'
-      )
-
-  # TODO: persistir snapshot de dirección en modelo separado si se requiere
-    end
-
+    @sale_order = result.sale_order
     session[:cart] = {}
     session.delete(:checkout_notes)
-  session.delete(:shipping_info)
-
+    session.delete(:shipping_info)
     redirect_to checkout_thank_you_path
-  rescue ActiveRecord::RecordInvalid => e
-    flash.now[:alert] = "Ocurrió un error al procesar la orden: #{e.message}"
-    render :step3, status: :unprocessable_entity
   end
 
   # Aquí podrías enviar un correo de confirmación o notificación

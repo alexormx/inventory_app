@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_09_12_123000) do
+ActiveRecord::Schema[8.0].define(version: 2025_09_13_161833) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -141,6 +141,25 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_12_123000) do
     t.index ["created_at"], name: "index_maintenance_runs_on_created_at"
     t.index ["job_name"], name: "index_maintenance_runs_on_job_name"
     t.index ["status"], name: "index_maintenance_runs_on_status"
+  end
+
+  create_table "order_shipping_addresses", force: :cascade do |t|
+    t.bigint "source_shipping_address_id"
+    t.string "full_name", null: false
+    t.string "line1", null: false
+    t.string "line2"
+    t.string "city", null: false
+    t.string "state"
+    t.string "postal_code", null: false
+    t.string "country", null: false
+    t.string "shipping_method", null: false
+    t.json "raw_address_json", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "sale_order_id"
+    t.index ["sale_order_id"], name: "index_order_shipping_addresses_on_sale_order_id", unique: true
+    t.index ["shipping_method"], name: "index_order_shipping_addresses_on_shipping_method"
+    t.index ["source_shipping_address_id"], name: "index_order_shipping_addresses_on_source_shipping_address_id"
   end
 
   create_table "payments", force: :cascade do |t|
@@ -424,6 +443,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_12_123000) do
   add_foreign_key "inventories", "products"
   add_foreign_key "inventories", "purchase_orders"
   add_foreign_key "inventories", "sale_orders"
+  add_foreign_key "order_shipping_addresses", "sale_orders"
   add_foreign_key "payments", "sale_orders"
   add_foreign_key "products", "users", column: "last_supplier_id"
   add_foreign_key "products", "users", column: "preferred_supplier_id"
