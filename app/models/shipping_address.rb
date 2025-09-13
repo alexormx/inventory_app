@@ -11,6 +11,30 @@ class ShippingAddress < ApplicationRecord
 
 	scope :ordered, -> { order(default: :desc, created_at: :asc) }
 
+	# Devuelve representación compacta en una sola línea para checkout / listados
+	def to_one_line
+		parts = [line1]
+		parts << line2 if line2.present?
+		loc = [city, state].compact.reject(&:blank?).join(', ')
+		parts << loc unless loc.blank?
+		parts << postal_code
+		parts << country
+		parts.compact.reject(&:blank?).join(' | ')
+	end
+
+	# Bloque multilínea opcional (podría usarse en emails)
+	def to_block
+		([full_name] + [line1, line2].reject(&:blank?) + [city_state_line, postal_code_country_line]).reject(&:blank?).join("\n")
+	end
+
+	def city_state_line
+		[city, state].compact.reject(&:blank?).join(', ')
+	end
+
+	def postal_code_country_line
+		[postal_code, country].reject(&:blank?).join(' ')
+	end
+
 	private
 
 	def normalize_fields
