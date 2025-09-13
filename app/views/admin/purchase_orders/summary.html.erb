@@ -1,0 +1,80 @@
+<%# Resumen compacto de Purchase Order %>
+<h1 class="h5 mb-3">PO <%= @purchase_order.id %> (Compacto)</h1>
+<div class="mb-2 small text-muted">Fecha: <%= l(@purchase_order.order_date, format: :long) %> • Esperada: <%= l(@purchase_order.expected_delivery_date, format: :long) %></div>
+<table class="table table-sm table-bordered align-middle mb-2 po-summary-table">
+  <thead class="table-primary text-dark">
+    <tr>
+      <th style="width:55px">Cantid.</th>
+      <th>Producto</th>
+      <th style="width:110px" class="text-end">Costo Unit</th>
+      <th style="width:110px" class="text-end">Costo Línea</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% subtotal = 0.to_d %>
+    <% @purchase_order.purchase_order_items.includes(:product).each do |item| %>
+      <% prod = item.product %>
+      <% line_total = item.total_line_cost.to_d %>
+      <% subtotal += line_total %>
+      <tr>
+        <td class="text-center"><%= item.quantity %></td>
+        <td>
+          <strong class="small d-block"><%= prod&.product_name || 'Producto eliminado' %></strong>
+          <span class="text-muted extra-small"><%= prod&.product_sku %></span>
+        </td>
+        <td class="text-end"><%= number_to_currency(item.unit_cost) %></td>
+        <td class="text-end"><%= number_to_currency(line_total) %></td>
+      </tr>
+    <% end %>
+    <tr class="table-primary fw-semibold">
+      <td></td>
+      <td class="text-end">Sub-Total</td>
+      <td></td>
+      <td class="text-end"><%= number_to_currency(subtotal) %></td>
+    </tr>
+    <% shipping = (@purchase_order.shipping_cost || 0).to_d %>
+    <% other    = (@purchase_order.other_cost || 0).to_d %>
+    <% tax      = (@purchase_order.tax_cost || 0).to_d %>
+    <% if shipping.positive? %>
+      <tr class="table-primary fw-semibold">
+        <td></td>
+        <td class="text-end">Envío</td>
+        <td></td>
+        <td class="text-end"><%= number_to_currency(shipping) %></td>
+      </tr>
+    <% end %>
+    <% if other.positive? %>
+      <tr class="table-primary fw-semibold">
+        <td></td>
+        <td class="text-end">Otros</td>
+        <td></td>
+        <td class="text-end"><%= number_to_currency(other) %></td>
+      </tr>
+    <% end %>
+    <% if tax.positive? %>
+      <tr class="table-primary fw-semibold">
+        <td></td>
+        <td class="text-end">Impuestos</td>
+        <td></td>
+        <td class="text-end"><%= number_to_currency(tax) %></td>
+      </tr>
+    <% end %>
+    <% grand_total = (subtotal + shipping + other + tax).round(2) %>
+    <tr class="table-primary fw-bold">
+      <td></td>
+      <td class="text-end">Total</td>
+      <td></td>
+      <td class="text-end"><%= number_to_currency(grand_total) %></td>
+    </tr>
+  </tbody>
+</table>
+<div class="d-flex gap-2 mb-2">
+  <%= link_to 'Ver detalle completo', admin_purchase_order_path(@purchase_order), class: 'btn btn-outline-secondary btn-sm' %>
+  <%= link_to 'Volver a listado', admin_purchase_orders_path, class: 'btn btn-outline-primary btn-sm' %>
+</div>
+<style>
+.po-summary-table thead th { font-size:.72rem; letter-spacing:.4px; padding:.35rem .45rem; }
+.po-summary-table tbody td { font-size:.75rem; padding:.35rem .45rem; }
+.po-summary-table tbody td:first-child { font-weight:600; }
+.po-summary-table .extra-small { font-size:.6rem; }
+</style>

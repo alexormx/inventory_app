@@ -74,6 +74,7 @@ Rails.application.routes.draw do
     # Purchase Orders
     resources :purchase_orders do
       patch :confirm_receipt, on: :member
+  get :summary, on: :member
       collection do
         get :line_audit
         post :rebalance_all_mismatches

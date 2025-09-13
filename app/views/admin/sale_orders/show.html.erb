@@ -1,7 +1,11 @@
 <!-- app/views/admin/sale_orders/show.html.erb -->
 <div class="container mt-4">
   <%= turbo_stream_from ["sale_order", @sale_order.id] %>
-  <h2>Sale Order ##<%= @sale_order.id %></h2>
+  <h2 class="d-flex align-items-center gap-2">Sale Order ##<%= @sale_order.id %>
+    <span class="ms-auto">
+      <%= link_to 'Vista compacta (cliente)', summary_order_path(@sale_order), class: 'btn btn-sm btn-outline-primary' %>
+    </span>
+  </h2>
 
   <!-- Order Info -->
   <div class="row g-3 mb-4">

@@ -1,7 +1,7 @@
 class Admin::PurchaseOrdersController < ApplicationController
   before_action :authenticate_user!
   before_action :authorize_admin!
-  before_action :set_purchase_order, only: [:show, :edit, :update, :confirm_receipt, :destroy]
+  before_action :set_purchase_order, only: [:show, :edit, :update, :confirm_receipt, :destroy, :summary]
   before_action :load_counts, only: [:index]
 
   PER_PAGE = 20
@@ -80,6 +80,11 @@ class Admin::PurchaseOrdersController < ApplicationController
   end
 
   def show
+  end
+
+  def summary
+    # Vista compacta solo lectura para compartir totales y líneas esenciales
+    render :summary
   end
 
   def new

@@ -21,7 +21,8 @@
           </td>
           <td class="text-end"><%= number_to_currency(order.total_order_value, unit: "$") %></td>
           <td class="text-end">
-            <%= link_to 'Ver', order_path(order), class: 'btn btn-sm btn-outline-secondary' %>
+            <%= link_to 'Ver', order_path(order), class: 'btn btn-sm btn-outline-secondary me-1' %>
+            <%= link_to 'Compacto', summary_order_path(order), class: 'btn btn-sm btn-outline-primary' %>
           </td>
         </tr>
       <% end %>
