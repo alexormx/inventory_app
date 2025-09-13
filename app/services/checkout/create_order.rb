@@ -30,7 +30,7 @@ module Checkout
 
       # Recalcular disponibilidad actual
       @cart.items.each do |product, qty|
-        split = Inventory::AvailabilitySplitter.new(product, qty).call
+  split = InventoryServices::AvailabilitySplitter.new(product, qty).call
         availability_map[product.id] = split
         # Caso: faltante sin permiso de preorder/backorder
         if split.pending.positive? && split.pending_type.nil?

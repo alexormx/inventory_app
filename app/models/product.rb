@@ -190,7 +190,7 @@ class Product < ApplicationRecord
 
   # Desglose de cantidades inmediata vs pendiente según flags
   def split_immediate_and_pending(requested_qty)
-  splitter = Inventory::AvailabilitySplitter.new(self, requested_qty)
+  splitter = InventoryServices::AvailabilitySplitter.new(self, requested_qty)
   r = splitter.call
   { requested: r.requested, on_hand: r.on_hand, immediate: r.immediate, pending: r.pending, pending_type: r.pending_type }
   end

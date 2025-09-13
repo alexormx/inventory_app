@@ -1,4 +1,4 @@
-module Inventory
+module InventoryServices
   # Calcula desglose de disponibilidad inmediata vs pendiente (preorder/backorder futuro).
   # Hoy solo distingue preventa (si product.preorder_available) y backorder (si product.backorder_allowed).
   # Retorna Hash con claves: requested, on_hand, immediate, pending, pending_type

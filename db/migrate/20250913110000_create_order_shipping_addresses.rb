@@ -11,7 +11,9 @@ class CreateOrderShippingAddresses < ActiveRecord::Migration[8.0]
       t.string :postal_code, null: false
       t.string :country, null: false
       t.string :shipping_method, null: false
-      t.jsonb :raw_address_json, null: false, default: {}
+  # Usamos :json para compatibilidad local (SQLite) y producción (Postgres).
+  # En Postgres podrías migrar luego a jsonb con una migración adicional si necesitas índices GIN.
+  t.json :raw_address_json, null: false, default: {}
       t.timestamps
     end
 
