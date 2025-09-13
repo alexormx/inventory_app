@@ -1,7 +1,6 @@
 module InventoryServices
   # Calcula desglose de disponibilidad inmediata vs pendiente (preorder/backorder futuro).
-  # Hoy solo distingue preventa (si product.preorder_available) y backorder (si product.backorder_allowed).
-  # Retorna Hash con claves: requested, on_hand, immediate, pending, pending_type
+  # Retorna struct con: requested, on_hand, immediate, pending, pending_type
   class AvailabilitySplitter
     Result = Struct.new(:requested, :on_hand, :immediate, :pending, :pending_type, keyword_init: true)
 
