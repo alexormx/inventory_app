@@ -82,8 +82,9 @@ class CheckoutsController < ApplicationController
     end
 
     shipping_info = session[:shipping_info] || {}
-    address_id = shipping_info[:address_id]
-    method = shipping_info[:method]
+  # Normalizar claves (pueden ser strings en la sesión)
+  address_id = shipping_info[:address_id] || shipping_info['address_id']
+  method = shipping_info[:method] || shipping_info['method']
 
     # Validar aceptación de pendientes si aplica (lo revalida el servicio al recalcular availability)
     if params[:accept_pending].blank?
