@@ -5,7 +5,8 @@ RSpec.describe CartItemsController, type: :controller do
   let(:user) { create(:user, confirmed_at: Time.current) }
 
   before do
-    sign_in user
+    # Evitar filtros de tracking y confirmación complejos: simulamos usuario y sesión
+    allow(controller).to receive(:current_user).and_return(user)
     session[:cart] = {}
   end
 
