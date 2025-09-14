@@ -12,11 +12,7 @@
   <ul class="nav flex-column">
     <!-- 📊 Dashboard -->
     <li class="nav-item mb-1">
-      <% active = request.path.start_with?(admin_dashboard_path) %>
-      <%= link_to admin_dashboard_path, class: "nav-link text-white d-flex align-items-center#{active ? ' active' : ''}", aria: (active ? { current: 'page' } : {}) do %>
-        <i class="fa-solid fa-chart-line me-2"></i>
-        <span class="sidebar-label">Dashboard</span>
-      <% end %>
+      <%= admin_sidebar_link 'Dashboard', admin_dashboard_path, icon: 'fa-chart-line' %>
     </li>
 
     <hr class="text-secondary my-2">
@@ -24,11 +20,7 @@
     <!-- 🧑 Users -->
     <li class="text-uppercase small text-secondary ps-2 mb-1 sidebar-label">Users</li>
     <li class="nav-item">
-      <% active = request.path.start_with?(admin_users_path) %>
-      <%= link_to admin_users_path, class: "nav-link text-white d-flex align-items-center#{active ? ' active' : ''}", aria: (active ? { current: 'page' } : {}) do %>
-        <i class="fa fa-users me-2"></i>
-        <span class="sidebar-label">Users</span>
-      <% end %>
+      <%= admin_sidebar_link 'Users', admin_users_path, icon: 'fa-users' %>
     </li>
 
     <hr class="text-secondary my-2">
@@ -36,47 +28,23 @@
     <!-- 📦 Inventory -->
     <li class="text-uppercase small text-secondary ps-2 mb-1 sidebar-label">Inventory</li>
     <li class="nav-item">
-      <% active = request.path.start_with?(admin_products_path) %>
-      <%= link_to admin_products_path, class: "nav-link text-white d-flex align-items-center#{active ? ' active' : ''}", aria: (active ? { current: 'page' } : {}) do %>
-        <i class="fa fa-tags me-2"></i>
-        <span class="sidebar-label">Products</span>
-      <% end %>
+      <%= admin_sidebar_link 'Products', admin_products_path, icon: 'fa-tags' %>
     </li>
-      <li class="nav-item">
-        <% active = request.path.start_with?(admin_inventory_adjustments_path) %>
-        <%= link_to admin_inventory_adjustments_path, class: "nav-link text-white d-flex align-items-center#{active ? ' active' : ''}", aria: (active ? { current: 'page' } : {}) do %>
-          <i class="fa-solid fa-scale-balanced me-2"></i>
-          <span class="sidebar-label">Inventory Adjustments</span>
-        <% end %>
-      </li>
     <li class="nav-item">
-      <% active = request.path.start_with?(admin_purchase_orders_path) %>
-      <%= link_to admin_purchase_orders_path, class: "nav-link text-white d-flex align-items-center#{active ? ' active' : ''}", aria: (active ? { current: 'page' } : {}) do %>
-        <i class="fa fa-truck me-2"></i>
-        <span class="sidebar-label">Purchase Orders</span>
-      <% end %>
+  <%= admin_sidebar_link 'Inventory Adjustments', admin_inventory_adjustments_path, icon: 'fa-scale-balanced' %>
+    </li>
+    <li class="nav-item">
+      <%= admin_sidebar_link 'Purchase Orders', admin_purchase_orders_path, icon: 'fa-truck' %>
     </li>
 
     <li class="nav-item">
-      <% active = request.path.start_with?(admin_sale_orders_path) %>
-      <%= link_to admin_sale_orders_path, class: "nav-link text-white d-flex align-items-center#{active ? ' active' : ''}", aria: (active ? { current: 'page' } : {}) do %>
-        <i class="fa fa-shopping-cart me-2"></i>
-        <span class="sidebar-label">Sale Orders</span>
-      <% end %>
+      <%= admin_sidebar_link 'Sale Orders', admin_sale_orders_path, icon: 'fa-shopping-cart' %>
     </li>
     <li class="nav-item">
-      <% active = request.path.start_with?(admin_preorders_path) %>
-      <%= link_to admin_preorders_path, class: "nav-link text-white d-flex align-items-center#{active ? ' active' : ''}", aria: (active ? { current: 'page' } : {}) do %>
-        <i class="fa fa-hourglass-half me-2"></i>
-        <span class="sidebar-label">Preórdenes / Sobre pedido</span>
-      <% end %>
+      <%= admin_sidebar_link 'Preórdenes / Sobre pedido', admin_preorders_path, icon: 'fa-hourglass-half' %>
     </li>
     <li class="nav-item">
-      <% active = request.path.start_with?(admin_inventory_path) %>
-      <%= link_to admin_inventory_path, class: "nav-link text-white d-flex align-items-center#{active ? ' active' : ''}", aria: (active ? { current: 'page' } : {}) do %>
-        <i class="fa fa-archive me-2"></i>
-        <span class="sidebar-label">Inventory</span>
-      <% end %>
+      <%= admin_sidebar_link 'Inventory', admin_inventory_path, icon: 'fa-archive', section: true %>
     </li>
 
     <hr class="text-secondary my-2">
@@ -84,32 +52,16 @@
     <!-- ⚙️ System -->
     <li class="text-uppercase small text-secondary ps-2 mb-1 sidebar-label">System</li>
     <li class="nav-item">
-      <% active = request.path.start_with?(admin_reports_path) %>
-      <%= link_to admin_reports_path, class: "nav-link text-white d-flex align-items-center#{active ? ' active' : ''}", aria: (active ? { current: 'page' } : {}) do %>
-        <i class="fa-solid fa-chart-pie me-2"></i>
-        <span class="sidebar-label">Reports</span>
-      <% end %>
+      <%= admin_sidebar_link 'Reports', admin_reports_path, icon: 'fa-chart-pie' %>
     </li>
     <li class="nav-item">
-      <% active = request.path.start_with?(admin_settings_path) %>
-      <%= link_to admin_settings_path, class: "nav-link text-white d-flex align-items-center#{active ? ' active' : ''}", aria: (active ? { current: 'page' } : {}) do %>
-        <i class="fa-solid fa-sliders me-2"></i>
-        <span class="sidebar-label">Settings</span>
-      <% end %>
+      <%= admin_sidebar_link 'Settings', admin_settings_path, icon: 'fa-sliders' %>
     </li>
     <li class="nav-item">
-      <% active = request.path.start_with?(admin_system_variables_path) %>
-      <%= link_to admin_system_variables_path, class: "nav-link text-white d-flex align-items-center#{active ? ' active' : ''}", aria: (active ? { current: 'page' } : {}) do %>
-        <i class="fa-solid fa-database me-2"></i>
-        <span class="sidebar-label">System Variables</span>
-      <% end %>
+      <%= admin_sidebar_link 'System Variables', admin_system_variables_path, icon: 'fa-database' %>
     </li>
     <li class="nav-item">
-      <% active = request.path.start_with?(admin_visitor_logs_path) %>
-      <%= link_to admin_visitor_logs_path, class: "nav-link text-white d-flex align-items-center#{active ? ' active' : ''}", aria: (active ? { current: 'page' } : {}) do %>
-        <i class="fa-solid fa-eye me-2"></i>
-        <span class="sidebar-label">Visitor Logs</span>
-      <% end %>
+      <%= admin_sidebar_link 'Visitor Logs', admin_visitor_logs_path, icon: 'fa-eye' %>
     </li>
   </ul>
 </div>
