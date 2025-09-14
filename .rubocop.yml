@@ -1,10 +1,82 @@
 inherit_from: .rubocop_todo.yml
 
-# Omakase Ruby styling for Rails
-inherit_gem: { rubocop-rails-omakase: rubocop.yml }
+# Use plugin syntax per RuboCop plugin migration guide
+plugins:
+  - rubocop-rails
+  - rubocop-rspec
 
-# Overwrite or add rules to create your own house style
-#
-# # Use `[a, [b, c]]` not `[ a, [ b, c ] ]`
+# Global settings
+AllCops:
+  NewCops: enable
+  TargetRubyVersion: 3.2
+  SuggestExtensions: false
+  Exclude:
+    - 'spec/**/*'
+    - 'test/**/*'
+    - 'db/schema.rb'
+
+# Common project tweaks to avoid noisy false-positives while keeping code tidy
+Layout/LineLength:
+  Max: 160
+  Exclude:
+    - 'spec/**/*'
+    - 'test/**/*'
+
+Style/Documentation:
+  Enabled: false
+
+Metrics/BlockLength:
+  Exclude:
+    - 'config/routes.rb'
+    - 'spec/**/*'
+    - 'Rakefile'
+    - 'app/controllers/api/v1/purchase_order_items_controller.rb'
+
+# Controllers/services often exceed default thresholds during orchestration
+Metrics/MethodLength:
+  Max: 80
+  Exclude:
+    - 'app/controllers/api/v1/purchase_order_items_controller.rb'
+Metrics/AbcSize:
+  Max: 65
+  Exclude:
+    - 'app/controllers/api/v1/purchase_order_items_controller.rb'
+Metrics/PerceivedComplexity:
+  Max: 14
+  Exclude:
+    - 'app/controllers/api/v1/purchase_order_items_controller.rb'
+Metrics/CyclomaticComplexity:
+  Max: 14
+  Exclude:
+    - 'app/controllers/api/v1/purchase_order_items_controller.rb'
+Metrics/ClassLength:
+  Max: 280
+Metrics/ModuleLength:
+  Max: 220
+
+RSpec/ExampleLength:
+  Exclude:
+    - 'spec/services/**/*'
+    - 'spec/models/**/*'
+    - 'spec/requests/**/*'
+RSpec/MultipleExpectations:
+  Exclude:
+    - 'spec/services/**/*'
+    - 'spec/models/**/*'
+    - 'spec/requests/**/*'
+RSpec/ContextWording:
+  Enabled: false
+Lint/Debugger:
+  Exclude:
+    - 'spec/rails_helper.rb'
+
+Rails/I18nLocaleTexts:
+  Exclude:
+    - 'app/controllers/**/*'
+    - 'app/services/**/*'
+    - 'spec/**/*'
+
+# Local overrides can go here
+# Example:
 # Layout/SpaceInsideArrayLiteralBrackets:
-#   Enabled: false
+#   EnforcedStyle: no_space

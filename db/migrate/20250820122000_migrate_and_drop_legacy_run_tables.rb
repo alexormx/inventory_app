@@ -1,9 +1,11 @@
-class MigrateAndDropLegacyRunTables < ActiveRecord::Migration[7.1]
+# frozen_string_literal: true
+
+class MigrateAndDropLegacyRunTables < ActiveRecord::Migration[8.0]
   def up
     # Mover datos existentes a la tabla unificada
     if table_exists?(:maintenance_runs)
       if table_exists?(:inventory_status_sync_runs)
-        execute <<~SQL
+        execute <<~SQL.squish
           INSERT INTO maintenance_runs (job_name, status, stats, started_at, finished_at, error, created_at, updated_at)
           SELECT 'inventories.reevaluate_statuses', status, stats, started_at, finished_at, error, created_at, updated_at
           FROM inventory_status_sync_runs
@@ -11,7 +13,7 @@ class MigrateAndDropLegacyRunTables < ActiveRecord::Migration[7.1]
       end
 
       if table_exists?(:sale_orders_backfill_runs)
-        execute <<~SQL
+        execute <<~SQL.squish
           INSERT INTO maintenance_runs (job_name, status, stats, started_at, finished_at, error, created_at, updated_at)
           SELECT 'sale_orders.backfill_totals', status, stats, started_at, finished_at, error, created_at, updated_at
           FROM sale_orders_backfill_runs
