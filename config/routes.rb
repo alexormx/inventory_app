@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 Rails.application.routes.draw do
   get "pages/privacy_notice"
   get "carts/show"
@@ -9,18 +11,19 @@ Rails.application.routes.draw do
 
   # Admin namespace
   namespace :admin do
-  # Sales Orders Audit
-  get  'sale_orders_audit', to: 'sale_orders_audits#index', as: :sale_orders_audit
-  post 'sale_orders_audit/fix', to: 'sale_orders_audits#fix_gaps', as: :sale_orders_audit_fix
-  # Fallback (si alguien hace GET por error, redirigir al índice)
-  get  'sale_orders_audit/fix', to: redirect('/admin/sale_orders_audit')
-  # Inventory Audit
-  get 'inventory_audit', to: 'inventory_audits#index', as: :inventory_audit
-  post 'inventory_audit/fix', to: 'inventory_audits#fix_inconsistencies', as: :inventory_audit_fix
-  post 'inventory_audit/fix_missing_so_lines', to: 'inventory_audits#fix_missing_so_lines', as: :inventory_audit_fix_missing_so_lines
-  # Preorders audit
-  get  'preorders_audit', to: 'preorders_audits#index', as: :preorders_audit
-  post 'preorders_audit/fix', to: 'preorders_audits#fix', as: :preorders_audits_fix
+    # Sales Orders Audit
+    get 'sale_orders_audit', to: 'sale_orders_audits#index', as: :sale_orders_audit
+    post 'sale_orders_audit/fix', to: 'sale_orders_audits#fix_gaps', as: :sale_orders_audit_fix
+    # Fallback (si alguien hace GET por error, redirigir al índice)
+    get  'sale_orders_audit/fix', to: redirect('/admin/sale_orders_audit')
+    # Inventory Audit
+    get 'inventory_audit', to: 'inventory_audits#index', as: :inventory_audit
+    post 'inventory_audit/fix', to: 'inventory_audits#fix_inconsistencies', as: :inventory_audit_fix
+    post 'inventory_audit/fix_missing_so_lines', to: 'inventory_audits#fix_missing_so_lines',
+                                                 as: :inventory_audit_fix_missing_so_lines
+    # Preorders audit
+    get  'preorders_audit', to: 'preorders_audits#index', as: :preorders_audit
+    post 'preorders_audit/fix', to: 'preorders_audits#fix', as: :preorders_audits_fix
     resources :visitor_logs, only: [:index]
 
     #Inventory Management views
@@ -35,13 +38,13 @@ Rails.application.routes.draw do
     end
 
     # Admin Dashboard
-  get 'dashboard', to: 'dashboard#index', as: :dashboard
+    get 'dashboard', to: 'dashboard#index', as: :dashboard
     get 'dashboard/profitable', to: 'dashboard#profitable', as: :dashboard_profitable
     get 'dashboard/inventory_top', to: 'dashboard#inventory_top', as: :dashboard_inventory_top
-  get 'dashboard/categories_rank', to: 'dashboard#categories_rank', as: :dashboard_categories_rank
-  get 'dashboard/customers_rank', to: 'dashboard#customers_rank', as: :dashboard_customers_rank
-  # Geo stats for dashboard (JSON)
-  get 'dashboard/geo', to: 'dashboard#geo', as: :dashboard_geo
+    get 'dashboard/categories_rank', to: 'dashboard#categories_rank', as: :dashboard_categories_rank
+    get 'dashboard/customers_rank', to: 'dashboard#customers_rank', as: :dashboard_customers_rank
+    # Geo stats for dashboard (JSON)
+    get 'dashboard/geo', to: 'dashboard#geo', as: :dashboard_geo
     # Tablas/frames del dashboard (Turbo)
     get 'dashboard/sellers', to: 'dashboard#sellers', as: :dashboard_sellers
 
@@ -55,7 +58,7 @@ Rails.application.routes.draw do
       member do
         patch :activate
         patch :deactivate
-  post  :assign_preorders
+        post  :assign_preorders
       end
       # Image removal for ActiveStorage
       delete "images/:image_id", to: "products#purge_image", as: :purge_image
@@ -66,15 +69,15 @@ Rails.application.routes.draw do
       end
     end
 
-  # Deprecated standalone User Management (migrated to unified Users tabs)
-  # resources :customers
-  # resources :suppliers, only: [:index, :new, :create, :edit, :update]
-  # resources :admins,   only: [:index, :new, :create, :edit, :update]
+    # Deprecated standalone User Management (migrated to unified Users tabs)
+    # resources :customers
+    # resources :suppliers, only: [:index, :new, :create, :edit, :update]
+    # resources :admins,   only: [:index, :new, :create, :edit, :update]
 
     # Purchase Orders
     resources :purchase_orders do
       patch :confirm_receipt, on: :member
-  get :summary, on: :member
+      get :summary, on: :member
       collection do
         get :line_audit
         post :rebalance_all_mismatches
@@ -86,7 +89,7 @@ Rails.application.routes.draw do
     resources :reports, only: [:index] do
       collection do
         get :inventory_items
-  get :cancellations
+        get :cancellations
       end
     end
     resources :settings, only: [:index] do
@@ -94,21 +97,21 @@ Rails.application.routes.draw do
         post :index # para guardar configuraciones simples (tax)
         post :sync_inventory_statuses
         post :backfill_sale_orders_totals
-  post :backfill_inventory_sale_order_item_id
+        post :backfill_inventory_sale_order_item_id
         get  :delivered_orders_debt_audit
         post :run_delivered_orders_debt_audit
         # Permitir GET directo (fallback) para evitar errores si el usuario refresca la URL POST
         get  :run_delivered_orders_debt_audit, to: redirect("/admin/settings/delivered_orders_debt_audit")
         post :reset_product_dimensions
-  post :recalc_all_po_alpha_costs
+        post :recalc_all_po_alpha_costs
       end
     end
 
-  # System variables explorer
-  resources :system_variables, only: [:index, :create, :update]
+    # System variables explorer
+    resources :system_variables, only: %i[index create update]
 
     # General user management (admin-facing) con tabs
-  resources :users, only: [:index, :new, :create, :edit, :update] do
+    resources :users, only: %i[index new create edit update] do
       collection do
         get :customers
         get :suppliers
@@ -124,30 +127,30 @@ Rails.application.routes.draw do
     # Payments Management
     resources :payments, only: [:create]
 
-  # Preventas y 'sobre pedido'
-  get 'preorders', to: 'preorders#index', as: :preorders
-  post 'preorders/assign_now', to: 'preorders#assign_now', as: :preorders_assign_now
-  delete 'preorders/:id', to: 'preorders#destroy', as: :preorder
-  post   'preorders/:id/cancel', to: 'preorders#cancel', as: :preorder_cancel
+    # Preventas y 'sobre pedido'
+    get 'preorders', to: 'preorders#index', as: :preorders
+    post 'preorders/assign_now', to: 'preorders#assign_now', as: :preorders_assign_now
+    delete 'preorders/:id', to: 'preorders#destroy', as: :preorder
+    post   'preorders/:id/cancel', to: 'preorders#cancel', as: :preorder_cancel
 
     # Sales Order Management
     resources :sale_orders do
-      resources :sales_order_items, only: [:create, :update, :destroy]
-      resources :payments, only: [:new, :create, :edit, :update, :destroy]
-  resources :shipments, only: [:new, :create, :edit, :update, :destroy]
+      resources :sales_order_items, only: %i[create update destroy]
+      resources :payments, only: %i[new create edit update destroy]
+      resources :shipments, only: %i[new create edit update destroy]
       member do
         get :summary
-  post :force_pending, to: 'sale_orders_status#force_pending'
-  post :force_delivered, to: 'sale_orders_status#force_delivered'
-  post :cancel_reservations, to: 'sale_orders#cancel_reservations'
-  post :reassign, to: 'sale_orders#reassign'
+        post :force_pending, to: 'sale_orders_status#force_pending'
+        post :force_delivered, to: 'sale_orders_status#force_delivered'
+        post :cancel_reservations, to: 'sale_orders#cancel_reservations'
+        post :reassign, to: 'sale_orders#reassign'
       end
     end
 
     # Inventory Adjustments (Ledger)
     resources :inventory_adjustments do
       post :apply, on: :member
-  post :reverse, on: :member
+      post :reverse, on: :member
     end
 
   end
@@ -156,11 +159,11 @@ Rails.application.routes.draw do
   resources :products, only: [:show]
 
   # Shopping Cart routes
-  resources :cart_items, only: [:create, :update, :destroy]
+  resources :cart_items, only: %i[create update destroy]
   get "/cart", to: "carts#show", as: :cart
 
   # Customer shipping addresses
-  resources :shipping_addresses, only: [:index, :new, :create, :edit, :update, :destroy] do
+  resources :shipping_addresses, only: %i[index new create edit update destroy] do
     member do
       patch :make_default
     end
@@ -179,7 +182,7 @@ Rails.application.routes.draw do
   get "/checkout/thank_you", to: "checkouts#thank_you", as: :checkout_thank_you
 
   # Customer orders
-  resources :orders, only: [:index, :show] do
+  resources :orders, only: %i[index show] do
     member do
       get :summary
     end
@@ -196,19 +199,27 @@ Rails.application.routes.draw do
       resources :users, only: [:create]
       get 'users/exists', to: 'users#exists'
       resources :purchase_orders, only: [:create]
-    resources :sales_orders, only: [:create, :update] do
+      resources :sales_orders, only: %i[create update] do
         member do
           post :recalculate_and_pay
-      post :ensure_payment
+          post :ensure_payment
         end
       end
       # Pagos asociados a Sale Orders
       resources :sales_orders, only: [] do
         resources :payments, only: [:create]
       end
-  # Items via API: batch-only
-  post 'purchase_order_items/batch', to: 'purchase_order_items#batch'
-  post 'sale_order_items/batch', to: 'sale_order_items#batch'
+      # Items via API
+      resources :purchase_order_items, only: [:create] do
+        collection do
+          post :batch
+        end
+      end
+      resources :sale_order_items, only: [:create] do
+        collection do
+          post :batch
+        end
+      end
     end
   end
 

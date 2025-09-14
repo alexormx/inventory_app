@@ -1,31 +1,32 @@
-import { Controller } from "@hotwired/stimulus";
+import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
   static targets = ["menu", "button"]
-  
-  connect() {
-    // ✅ Add event listener to the button dynamically
-    this.buttonTarget.addEventListener("click", this.toggle.bind(this));
 
-    // ✅ Close dropdown when clicking outside
-    document.addEventListener("click", this.closeMenu.bind(this));
+  connect() {
+    this.outsideClickHandler = this.closeIfOutside.bind(this)
+    document.addEventListener("click", this.outsideClickHandler)
+  }
+
+  disconnect() {
+    document.removeEventListener("click", this.outsideClickHandler)
   }
 
   toggle(event) {
-    event.preventDefault();
-    event.stopPropagation();
-    this.menuTarget.classList.toggle("show");
+    event.preventDefault()
+    event.stopPropagation()
+    const isOpen = this.menuTarget.classList.toggle("show")
+    this.element.classList.toggle("show", isOpen)
+    this.buttonTarget.setAttribute("aria-expanded", isOpen)
   }
 
-  closeMenu(event) {
+  closeIfOutside(event) {
     if (!this.element.contains(event.target)) {
-      this.menuTarget.classList.remove("show");
+      this.menuTarget.classList.remove("show")
+      this.element.classList.remove("show")
+      if (this.hasButtonTarget) {
+        this.buttonTarget.setAttribute("aria-expanded", false)
+      }
     }
-  }
-  
-  disconnect() {
-    // ✅ Remove event listener when Stimulus controller is disconnected
-    this.buttonTarget.removeEventListener("click", this.toggle.bind(this));
-    document.removeEventListener("click", this.closeMenu.bind(this));
   }
 }

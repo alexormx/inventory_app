@@ -1,9 +1,11 @@
+# frozen_string_literal: true
+
 # app/models/concerns/inventory_syncable.rb
 module InventorySyncable
   extend ActiveSupport::Concern
 
   def sync_inventory_records
-    Rails.logger.debug "[🔍 InventorySync] Syncing for product_id=#{product_id}, order_id=#{parent_order&.id}"
+    Rails.logger.debug { "[🔍 InventorySync] Syncing for product_id=#{product_id}, order_id=#{parent_order&.id}" }
     return unless product && parent_order&.persisted?
 
     is_sale = respond_to?(:sale_order)
@@ -16,7 +18,7 @@ module InventorySyncable
     elsif is_sale
       sync_inventory_for_sale(desired_quantity)
     end
-  rescue => e
+  rescue StandardError => e
     Rails.logger.error "[❌ InventorySync Error] #{e.class}: #{e.message}"
     raise
   end
@@ -24,7 +26,8 @@ module InventorySyncable
   private
 
   def sync_inventory_for_purchase(desired_quantity)
-    existing_items = Inventory.where(product_id: product.id, purchase_order_id: purchase_order_id)
+    # Manage inventory per line item to avoid interfering across lines for the same PO
+    existing_items = Inventory.where(product_id: product.id, purchase_order_item_id: id)
     current_count = existing_items.count
     difference = desired_quantity - current_count
 
@@ -38,7 +41,7 @@ module InventorySyncable
       )
     end
 
-    if difference > 0
+    if difference.positive?
       difference.times do
         Inventory.create!(
           product: product,
@@ -49,9 +52,9 @@ module InventorySyncable
           purchase_cost: respond_to?(:unit_compose_cost_in_mxn) ? unit_compose_cost_in_mxn.to_f : 0
         )
       end
-    elsif difference < 0
+    elsif difference.negative?
       # Remove excess unassigned items
-      existing_items.where(status: [ :in_transit, :available ])
+      existing_items.where(status: %i[in_transit available])
                     .order(status_changed_at: :desc)
                     .limit(difference.abs)
                     .destroy_all
@@ -64,9 +67,10 @@ module InventorySyncable
     current_count = assigned.count
     needed = desired_quantity - current_count
 
-    if needed > 0
+    if needed.positive?
       available_items = Inventory.assignable
                                  .where(product_id: product.id)
+                                 .order(created_at: :desc)
                                  .limit(needed)
 
       reserve_inventory_items(available_items)
@@ -76,7 +80,7 @@ module InventorySyncable
       else
         remove_pending_note
       end
-    elsif needed < 0
+    elsif needed.negative?
       # Too many assigned, release extras
       extra_items = assigned.where(status: :reserved)
                             .order(status_changed_at: :desc)
@@ -126,16 +130,19 @@ module InventorySyncable
 
   def inventory_status_from_order
     case parent_order&.status
-    when "Pending", "In Transit" then :in_transit
-    when "Delivered" then :available
-    when "Canceled" then :scrap
-    when "Shipped", "Confirmed" then :sold
+    when 'Delivered' then :available
+    when 'Canceled' then :scrap
+    when 'Shipped', 'Confirmed' then :sold
     else :in_transit
     end
   end
 
   def parent_order
-    respond_to?(:sale_order) ? sale_order : (respond_to?(:purchase_order) ? purchase_order : nil)
+    if respond_to?(:sale_order)
+      sale_order
+    else
+      (respond_to?(:purchase_order) ? purchase_order : nil)
+    end
   end
 
   def release_inventory_items(items)

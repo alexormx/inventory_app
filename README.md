@@ -229,3 +229,102 @@ Implementado (servicio `ReverseInventoryAdjustmentService`) para deshacer: revie
 - Paginación / filtros por razón.
 
 ---
+
+## 🧪 Developer Notes: Deterministic Inventory in Tests
+
+To keep specs predictable, the `product` factory now supports two transient flags:
+
+- `skip_seed_inventory` (Boolean): when true, the factory won’t auto-create stock for the product. Default: false.
+- `seed_inventory_count` (Integer): how many available units to auto-create (ignored if `skip_seed_inventory: true`). Default: 5.
+
+Examples:
+
+```ruby
+# Default: seeds 5 available inventory units (good for cart specs)
+product = create(:product)
+
+# No auto stock (good for inventory adjustment specs expecting zero before apply!)
+product = create(:product, skip_seed_inventory: true)
+
+# Seed a custom amount
+product = create(:product, seed_inventory_count: 10)
+```
+
+Notes:
+- Inventory added by the factory uses status `:available` and a basic `purchase_cost`.
+- Use explicit `create_list(:inventory, n, product: product)` in specs when you need precise control.
+
+---
+
+## 🔌 API: Order Items Endpoints (v1)
+
+New endpoints enable programmatic creation of order line items.
+
+Purchase Order Items:
+- POST `/api/v1/purchase_order_items` — create a single item
+- POST `/api/v1/purchase_order_items/batch` — bulk create; auto-allocates additional costs by volume and computes MXN totals
+
+Sale Order Items:
+- POST `/api/v1/sale_order_items` — create a single item
+- POST `/api/v1/sale_order_items/batch` — bulk create
+
+Common params (single create):
+- Identify product by `product_id` or `product_sku`.
+
+Purchase example payload:
+
+```json
+{
+  "purchase_order_item": {
+    "purchase_order_id": "PO-202509-001",
+    "product_sku": "SKU-1",
+    "quantity": 3,
+    "unit_cost": 5,
+    "unit_compose_cost_in_mxn": 5
+  }
+}
+```
+
+Sale example payload:
+
+```json
+{
+  "sale_order_item": {
+    "sale_order_id": "SO-202509-001",
+    "product_sku": "SKU-1",
+    "quantity": 4,
+    "unit_final_price": 10
+  }
+}
+```
+
+Responses:
+- Success returns `201 Created` with `{ status: "ok", id: <item_id> }` for single creates.
+- Batch returns `{ status: "ok", created: [...], errors: [...] }` and `201` if any line created, else `422`.
+
+Auth: endpoints expect token auth via `authenticate_with_token!` (adjust as needed for your environment/tests).
+
+---
+
+## 🔄 Inventory Sync Rules
+
+These rules are enforced automatically via `InventorySyncable` on the item models:
+
+PurchaseOrderItem → Inventory
+- Syncs per line item (scoped by `purchase_order_item_id`) to avoid cross-line interference.
+- Creates or deletes only the difference between desired `quantity` and current line’s inventory count.
+- Status depends on Purchase Order status:
+  - "Pending" / "In Transit" → `:in_transit`
+  - "Delivered" → `:available`
+  - "Canceled" → `:scrap`
+
+SaleOrderItem → Inventory
+- Reserves assignable inventory (statuses `:available` or `:in_transit`, not linked) for the given product and sale order.
+- Picks newest first (`order(created_at: :desc)`) so freshly received PO items are consumed before old seed/demo stock.
+- Reducing quantity releases the most recently reserved pieces first.
+- When not enough stock is available, a note is appended on the Sale Order indicating partial reservation.
+
+Implications for tests:
+- To guarantee that SO reservations consume items created by your recent PO, create those PO items right before the SO items (or use `skip_seed_inventory: true` on products and seed exactly what you need).
+
+---
