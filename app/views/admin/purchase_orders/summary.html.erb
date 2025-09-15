@@ -5,7 +5,7 @@
   <thead class="table-primary text-dark">
     <tr>
       <th style="width:55px">Cantid.</th>
-      <th>Producto</th>
+      <th style="width:220px">Producto</th>
       <th style="width:110px" class="text-end">Costo Unit</th>
       <th style="width:110px" class="text-end">Costo Línea</th>
     </tr>
@@ -19,8 +19,18 @@
       <tr>
         <td class="text-center"><%= item.quantity %></td>
         <td>
-          <strong class="small d-block"><%= prod&.product_name || 'Producto eliminado' %></strong>
-          <span class="text-muted extra-small"><%= prod&.product_sku %></span>
+          <div class="d-flex align-items-center gap-2">
+            <% if prod&.respond_to?(:product_images) && prod.product_images.attached? %>
+              <% image = prod.product_images.first %>
+              <%= image_tag image.variant(resize_to_fill: [36,36]).processed, class: "rounded border bg-white", alt: prod.product_name %>
+            <% else %>
+              <div class="placeholder rounded border bg-light d-flex align-items-center justify-content-center" style="width:36px;height:36px;font-size:.55rem;">N/A</div>
+            <% end %>
+            <div class="flex-grow-1 product-info">
+              <strong class="small d-block text-truncate" title="<%= prod&.product_name %>"><%= prod&.product_name || 'Producto eliminado' %></strong>
+              <span class="text-muted extra-small text-truncate d-block" title="SKU: <%= prod&.product_sku %>"><%= prod&.product_sku %></span>
+            </div>
+          </div>
         </td>
         <td class="text-end"><%= number_to_currency(item.unit_cost) %></td>
         <td class="text-end"><%= number_to_currency(line_total) %></td>
@@ -77,4 +87,6 @@
 .po-summary-table tbody td { font-size:.75rem; padding:.35rem .45rem; }
 .po-summary-table tbody td:first-child { font-weight:600; }
 .po-summary-table .extra-small { font-size:.6rem; }
+.po-summary-table .product-info { min-width:0; }
+.po-summary-table .product-info .text-truncate { max-width:150px; }
 </style>

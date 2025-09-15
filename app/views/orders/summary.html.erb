@@ -7,7 +7,7 @@
   <thead class="table-primary text-dark">
     <tr>
       <th style="width:55px">Cantid.</th>
-      <th>Producto</th>
+      <th style="width:220px">Producto</th>
       <th style="width:100px" class="text-end">Costo unit</th>
       <th style="width:110px" class="text-end">Costo Total</th>
     </tr>
@@ -24,13 +24,13 @@
           <div class="d-flex align-items-center gap-2">
             <% if prod&.product_images&.attached? %>
               <% image = prod.product_images.first %>
-              <%= image_tag image.variant(resize_to_fill: [36,36]).processed, class: "rounded border", alt: prod.product_name %>
+              <%= image_tag image.variant(resize_to_fill: [36,36]).processed, class: "rounded border bg-white", alt: prod.product_name %>
             <% else %>
               <div class="placeholder rounded border bg-light d-flex align-items-center justify-content-center" style="width:36px;height:36px;font-size:.55rem;">N/A</div>
             <% end %>
-            <div class="flex-grow-1">
-              <strong class="small d-block"><%= prod&.product_name || 'Producto eliminado' %></strong>
-              <span class="text-muted extra-small" title="WhatsApp Code"><%= prod&.whatsapp_code %></span>
+            <div class="flex-grow-1 product-info">
+              <strong class="small d-block text-truncate" title="<%= prod&.product_name %>"><%= prod&.product_name || 'Producto eliminado' %></strong>
+              <span class="text-muted extra-small text-truncate d-block" title="WhatsApp Code: <%= prod&.whatsapp_code %>"><%= prod&.whatsapp_code %></span>
             </div>
           </div>
         </td>
@@ -106,4 +106,6 @@
 .order-summary-table tbody td:first-child { font-weight:600; }
 .order-summary-table .extra-small { font-size:.6rem; }
 .order-summary-table img.rounded.border { background:#fff; }
+.order-summary-table .product-info { min-width:0; }
+.order-summary-table .product-info .text-truncate { max-width:150px; }
 </style>
