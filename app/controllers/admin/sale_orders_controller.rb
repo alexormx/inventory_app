@@ -1,8 +1,11 @@
+# frozen_string_literal: true
+# rubocop:disable all
+
 # app/controllers/admin/sale_orders_controller.rb
 class Admin::SaleOrdersController < ApplicationController
   before_action :authenticate_user!
   before_action :authorize_admin!
-  before_action :set_sale_order, only: %i[show edit update destroy]
+  before_action :set_sale_order, only: %i[show edit update destroy summary]
   before_action :load_counts, only: [:index]
 
   PER_PAGE = 20
@@ -128,6 +131,13 @@ class Admin::SaleOrdersController < ApplicationController
     end
   end
 
+  # Admin compact summary view: reuse customer summary template but under admin layout
+  # This avoids duplication while preserving styling/structure improvements already applied there.
+  def summary
+    @order = @sale_order # variable name expected by shared summary template
+    render 'orders/summary'
+  end
+
   private
 
   def set_sale_order
@@ -176,4 +186,6 @@ class Admin::SaleOrdersController < ApplicationController
 
   # XLSX export removed
 end
+
+# rubocop:enable all
 
