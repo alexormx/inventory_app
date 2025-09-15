@@ -1,13 +1,14 @@
 <%# Resumen compacto de Purchase Order %>
 <h1 class="h5 mb-3">PO <%= @purchase_order.id %> (Compacto)</h1>
 <div class="mb-2 small text-muted">Fecha: <%= l(@purchase_order.order_date, format: :long) %> • Esperada: <%= l(@purchase_order.expected_delivery_date, format: :long) %></div>
+<div class="compact-summary-wrapper po-wrapper mx-auto">
 <table class="table table-sm table-bordered align-middle mb-2 po-summary-table">
   <thead class="table-primary text-dark">
     <tr>
-      <th style="width:55px">Cantid.</th>
-      <th style="width:220px">Producto</th>
-      <th style="width:110px" class="text-end">Costo Unit</th>
-      <th style="width:110px" class="text-end">Costo Línea</th>
+      <th style="width:42px">Cantid.</th>
+      <th style="width:264px">Producto</th>
+      <th style="width:60px" class="text-end">Costo Unit</th>
+      <th style="width:66px" class="text-end">Costo Línea</th>
     </tr>
   </thead>
   <tbody>
@@ -78,9 +79,10 @@
     </tr>
   </tbody>
 </table>
-<div class="d-flex gap-2 mb-2">
-  <%= link_to 'Ver detalle completo', admin_purchase_order_path(@purchase_order), class: 'btn btn-outline-secondary btn-sm' %>
-  <%= link_to 'Volver a listado', admin_purchase_orders_path, class: 'btn btn-outline-primary btn-sm' %>
+  <div class="d-flex gap-2 mt-3">
+    <%= link_to 'Ver detalle completo', admin_purchase_order_path(@purchase_order), class: 'btn btn-outline-secondary btn-sm' %>
+    <%= link_to 'Volver a listado', admin_purchase_orders_path, class: 'btn btn-outline-primary btn-sm' %>
+  </div>
 </div>
 <style>
 .po-summary-table thead th { font-size:.72rem; letter-spacing:.4px; padding:.35rem .45rem; }
@@ -88,5 +90,7 @@
 .po-summary-table tbody td:first-child { font-weight:600; }
 .po-summary-table .extra-small { font-size:.6rem; }
 .po-summary-table .product-info { min-width:0; }
-.po-summary-table .product-info .text-truncate { max-width:150px; }
+.po-summary-table .product-info .text-truncate { max-width:185px; }
+.compact-summary-wrapper.po-wrapper { width:60%; min-width:320px; }
+@media (max-width: 992px){ .compact-summary-wrapper.po-wrapper { width:100%; } }
 </style>

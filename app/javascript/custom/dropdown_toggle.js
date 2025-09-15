@@ -66,7 +66,7 @@ function initDropdowns() {
       }
     }
 
-    btn.addEventListener('click', e => { e.preventDefault(); toggle() })
+  btn.addEventListener('click', e => { e.preventDefault(); toggle() })
     btn.addEventListener('keydown', e => {
       if(['ArrowDown','ArrowUp','Enter',' '].includes(e.key)){
         e.preventDefault(); toggle();
@@ -78,6 +78,14 @@ function initDropdowns() {
       if(btn.contains(e.target) || menu.contains(e.target)) return
       close(false)
     })
+
+    // Cerrar al hacer click en un item que navega (enlaces o botones con data-turbo)
+    menu.addEventListener('click', e => {
+      const target = e.target.closest('[role="menuitem"]')
+      if(!target) return
+      // Si es un enlace normal dejar que Turbo navegue, pero cerrar primero
+      close(false)
+    })
   })
 
   // Cerrar todos si se hace scroll (evitar menús flotando fuera de contexto)
@@ -87,6 +95,15 @@ function initDropdowns() {
       m.classList.remove('show'); btn && btn.setAttribute('aria-expanded','false')
     })
   }, { passive:true })
+
+  // Antes de navegar con Turbo cerrar cualquier dropdown abierto
+  document.addEventListener('turbo:before-visit', () => {
+    document.querySelectorAll('.dropdown-menu.show').forEach(m=>{
+      m.classList.remove('show')
+      const btn = document.querySelector('[data-dropdown-menu="'+m.id+'"]')
+      btn && btn.setAttribute('aria-expanded','false')
+    })
+  })
 }
 
 function closeOthers(current) {
