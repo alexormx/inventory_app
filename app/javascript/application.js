@@ -5,6 +5,8 @@ import "custom/defer_actions_until_loaded"
 import { Application } from "@hotwired/stimulus"
 // Cargar inmediatamente el módulo de líneas de ajustes para asegurar funcionalidad en formularios
 import "components/inventory_adjustment_lines"
+// Cargar inmediatamente dropdown para que el menú 'Mi cuenta' funcione sin esperar lazy hydration
+import "custom/dropdown_toggle"
 
 const application = Application.start()
 window.Stimulus = application
@@ -66,7 +68,6 @@ import("./controllers/simple_accordion_controller").then(mod => {
 // El resto (UI decorativa, overlays, tooltips, efectos de scroll, formularios avanzados) se carga cuando el navegador está ocioso.
 
 const lazyModules = [
-  () => import("custom/dropdown_toggle"),
   () => import("custom/menu"),
   () => import("custom/toggle_inventory_items"),
   () => import("custom/payment_modal"),

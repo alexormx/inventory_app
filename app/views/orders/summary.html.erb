@@ -1,15 +1,14 @@
 <%# Resumen compacto de pedido para enviar totales al cliente %>
-<h1 class="h5 mb-3">Resumen de Pedido <%= @order.id %></h1>
-
-<div class="mb-2 small text-muted">Fecha: <%= l(@order.order_date, format: :long) %></div>
-
+<div class="compact-summary-wrapper order-wrapper mx-auto">
+  <h1 class="h5 mb-3">Resumen de Pedido <%= @order.id %></h1>
+  <div class="mb-2 small text-muted">Fecha: <%= l(@order.order_date, format: :long) %></div>
 <table class="table table-sm table-bordered align-middle mb-2 order-summary-table">
   <thead class="table-primary text-dark">
     <tr>
-      <th style="width:55px">Cantid.</th>
-      <th>Producto</th>
-      <th style="width:100px" class="text-end">Costo unit</th>
-      <th style="width:110px" class="text-end">Costo Total</th>
+      <th style="width:42px">Cantid.</th>
+      <th style="width:264px">Producto</th>
+      <th style="width:60px" class="text-end">Costo unit</th>
+      <th style="width:66px" class="text-end">Costo Total</th>
     </tr>
   </thead>
   <tbody>
@@ -24,13 +23,13 @@
           <div class="d-flex align-items-center gap-2">
             <% if prod&.product_images&.attached? %>
               <% image = prod.product_images.first %>
-              <%= image_tag image.variant(resize_to_fill: [36,36]).processed, class: "rounded border", alt: prod.product_name %>
+              <%= image_tag image.variant(resize_to_fill: [36,36]).processed, class: "rounded border bg-white", alt: prod.product_name %>
             <% else %>
               <div class="placeholder rounded border bg-light d-flex align-items-center justify-content-center" style="width:36px;height:36px;font-size:.55rem;">N/A</div>
             <% end %>
-            <div class="flex-grow-1">
-              <strong class="small d-block"><%= prod&.product_name || 'Producto eliminado' %></strong>
-              <span class="text-muted extra-small" title="WhatsApp Code"><%= prod&.whatsapp_code %></span>
+            <div class="flex-grow-1 product-info">
+              <strong class="small d-block text-truncate" title="<%= prod&.product_name %>"><%= prod&.product_name || 'Producto eliminado' %></strong>
+              <span class="text-muted extra-small text-truncate d-block" title="WhatsApp Code: <%= prod&.whatsapp_code %>"><%= prod&.whatsapp_code %></span>
             </div>
           </div>
         </td>
@@ -62,41 +61,41 @@
     </tr>
   </tbody>
 </table>
-
-<%# Mensaje envío justo abajo de la tabla %>
-<% if @order.shipment.present? %>
-  <div class="alert alert-warning py-1 px-2 small mb-2">
-    <i class="fa fa-truck me-1"></i>Envío por <strong><%= @order.shipment.carrier %></strong>
-  </div>
-<% else %>
-  <div class="alert alert-warning py-1 px-2 small mb-2">
-    <i class="fa fa-truck me-1"></i>Aún no se ha seleccionado un método de entrega.
-  </div>
-<% end %>
-
-<div class="d-flex gap-2 mb-2">
-  <%= link_to 'Ver detalle completo', order_path(@order), class: 'btn btn-outline-secondary btn-sm' %>
-  <%= link_to 'Volver a mis pedidos', orders_path, class: 'btn btn-outline-primary btn-sm' %>
-</div>
-
-<%# Pagos %>
-<% completed_payments = @order.payments.where(status: 'Completed').order(:paid_at) %>
-<% if completed_payments.any? %>
-  <div class="card mt-3 border-0 shadow-sm">
-    <div class="card-body py-2">
-      <h6 class="mb-2 fw-semibold">Pagos recibidos</h6>
-      <ul class="list-unstyled small mb-0">
-        <% completed_payments.each do |p| %>
-          <li class="d-flex justify-content-between">
-            <span><i class="fa fa-check-circle text-success me-1"></i><%= p.payment_method.to_s.humanize %> (<%= l(p.paid_at, format: :short) if p.paid_at %>)</span>
-            <strong><%= number_to_currency(p.amount) %></strong>
-          </li>
-        <% end %>
-      </ul>
-      <div class="mt-2 text-end small text-muted">Total pagado: <strong><%= number_to_currency(@order.total_paid) %></strong></div>
+<%# Mensaje envío y pagos dentro del contenedor para mantener ancho consistente %>
+  <% if @order.shipment.present? %>
+    <div class="alert alert-warning py-1 px-2 small mb-2">
+      <i class="fa fa-truck me-1"></i>Envío por <strong><%= @order.shipment.carrier %></strong>
     </div>
+  <% else %>
+    <div class="alert alert-warning py-1 px-2 small mb-2">
+      <i class="fa fa-truck me-1"></i>Aún no se ha seleccionado un método de entrega.
+    </div>
+  <% end %>
+
+  <%# Pagos %>
+  <% completed_payments = @order.payments.where(status: 'Completed').order(:paid_at) %>
+  <% if completed_payments.any? %>
+    <div class="card mt-2 border-0 shadow-sm">
+      <div class="card-body py-2">
+        <h6 class="mb-2 fw-semibold">Pagos recibidos</h6>
+        <ul class="list-unstyled small mb-0">
+          <% completed_payments.each do |p| %>
+            <li class="d-flex justify-content-between">
+              <span><i class="fa fa-check-circle text-success me-1"></i><%= p.payment_method.to_s.humanize %> (<%= l(p.paid_at, format: :short) if p.paid_at %>)</span>
+              <strong><%= number_to_currency(p.amount) %></strong>
+            </li>
+          <% end %>
+        </ul>
+        <div class="mt-2 text-end small text-muted">Total pagado: <strong><%= number_to_currency(@order.total_paid) %></strong></div>
+      </div>
+    </div>
+  <% end %>
+
+  <div class="d-flex gap-2 mt-3">
+    <%= link_to 'Ver detalle completo', order_path(@order), class: 'btn btn-outline-secondary btn-sm' %>
+    <%= link_to 'Volver a mis pedidos', orders_path, class: 'btn btn-outline-primary btn-sm' %>
   </div>
-<% end %>
+</div>
 
 <%# (mensaje ya incluido arriba) %>
 
@@ -106,4 +105,8 @@
 .order-summary-table tbody td:first-child { font-weight:600; }
 .order-summary-table .extra-small { font-size:.6rem; }
 .order-summary-table img.rounded.border { background:#fff; }
+.order-summary-table .product-info { min-width:0; }
+.order-summary-table .product-info .text-truncate { max-width:185px; }
+.compact-summary-wrapper.order-wrapper { width:60%; min-width:320px; }
+@media (max-width: 992px){ .compact-summary-wrapper.order-wrapper { width:100%; } }
 </style>
