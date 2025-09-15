@@ -2,7 +2,7 @@
 
 FactoryBot.define do
   sequence(:sku_seq)       { |n| "SKU-#{n.to_s.rjust(5, '0')}" }
-  sequence(:whatsapp_seq)  { |n| "WGT#{n.to_s.rjust(3, '0')}" }
+  sequence(:whatsapp_seq)  { |n| "WGT#{n.to_s.rjust(3, '0')}-#{SecureRandom.hex(2)}" }
 
   factory :product do
     product_sku     { generate(:sku_seq) }
@@ -30,7 +30,7 @@ FactoryBot.define do
     height_cm       { 4 }
 
     # Identifiers
-    whatsapp_code   { generate(:whatsapp_seq) } # ✅ required & unique
+  whatsapp_code   { generate(:whatsapp_seq) } # ✅ required & unique (adds random hex to avoid collisions in non-isolated tests)
 
     custom_attributes { {} }
 

@@ -12,14 +12,44 @@ RSpec.describe Product, type: :model do
 
   describe 'whatsapp_code' do
     it 'requires uniqueness of whatsapp_code' do
-      create(:product, whatsapp_code: 'WGT001')
-      expect(build(:product, whatsapp_code: 'WGT001')).not_to be_valid
+      code = "WGT#{SecureRandom.hex(3).upcase}" # minimize collision risk
+      # Create first product directly (skip factory callbacks that may introduce duplicates)
+      Product.create!(
+        product_sku: "SKU-UNIQ-#{SecureRandom.hex(4)}",
+        product_name: 'Uniq Name A',
+        brand: 'BrandX',
+        category: 'diecast',
+        whatsapp_code: code,
+        selling_price: 100,
+        minimum_price: 50,
+        maximum_discount: 0
+      )
+      dup = Product.new(
+        product_sku: "SKU-UNIQ-#{SecureRandom.hex(4)}",
+        product_name: 'Uniq Name B',
+        brand: 'BrandX',
+        category: 'diecast',
+        whatsapp_code: code,
+        selling_price: 100,
+        minimum_price: 50,
+        maximum_discount: 0
+      )
+      expect(dup).not_to be_valid
+      expect(dup.errors[:whatsapp_code]).to be_present
     end
 
     it "auto-generates whatsapp_code when blank" do
-      product = build(:product, whatsapp_code: nil)
-      expect(product).to be_valid
-      product.valid? # dispara before_validation
+      product = Product.new(
+        product_sku: "SKU-UNIQ-#{SecureRandom.hex(4)}",
+        product_name: 'Name C',
+        brand: 'BrandY',
+        category: 'diecast',
+        whatsapp_code: nil,
+        selling_price: 100,
+        minimum_price: 50,
+        maximum_discount: 0
+      )
+      expect(product.valid?).to be true
       expect(product.whatsapp_code).to be_present
     end
   end

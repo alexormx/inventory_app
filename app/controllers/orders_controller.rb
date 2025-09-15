@@ -1,6 +1,7 @@
+# frozen_string_literal: true
+
 class OrdersController < ApplicationController
   before_action :authenticate_user!
-  layout "customer"
 
   def index
     @orders = current_user.sale_orders.order(created_at: :desc)
@@ -12,7 +13,12 @@ class OrdersController < ApplicationController
 
   def summary
     @order = find_order
-    render :summary
+    # Override layout only when admin explicitly requests admin context
+    if current_user&.admin? && params[:admin_context] == '1'
+      render :summary, layout: 'admin'
+    else
+      render :summary, layout: 'customer'
+    end
   end
 
   private

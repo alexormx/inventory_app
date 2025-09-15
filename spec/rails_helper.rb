@@ -14,6 +14,10 @@ ENV['TF_CPP_MIN_LOG_LEVEL'] = '2' # Reduces TensorFlow logging
 require 'rspec/rails'
 require 'capybara/rspec'
 require 'selenium-webdriver'
+require 'devise'
+
+# Ensure Devise mappings are loaded (workaround if not automatically loaded in Rails 8 test env)
+Rails.application.reload_routes! if Devise.mappings.empty?
 
 begin
   ActiveRecord::Migration.maintain_test_schema!
@@ -53,13 +57,24 @@ RSpec.configure do |config|
   # This can be reverted later by removing this filter.
   config.filter_run_excluding type: :system
 
+  # Automatically tag specs based on their file location (e.g., spec/requests => type: :request)
+  config.infer_spec_type_from_file_location!
+
   # Helpers
   config.include Rails.application.routes.url_helpers
   config.include FactoryBot::Syntax::Methods
+  # Devise helpers
   config.include Devise::Test::ControllerHelpers, type: :controller
   config.include Devise::Test::IntegrationHelpers, type: :system
   config.include Devise::Test::IntegrationHelpers, type: :request
+  config.include Devise::Test::IntegrationHelpers, type: :feature
+  config.include Devise::Test::IntegrationHelpers
   config.include ActiveSupport::Testing::TimeHelpers
+
+  # Provide devise mapping automatically for controller specs to avoid manual @request.env setup
+  config.before(:each, type: :controller) do
+    @request.env['devise.mapping'] = Devise.mappings[:user]
+  end
 
   # Default URL options (for *_url helpers & Devise mailers)
   config.before(:suite) do
