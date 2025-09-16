@@ -22,6 +22,7 @@ import SimpleTabsController from "./simple_tabs_controller"
 import SubtabsController from "./subtabs_controller"
 import TabsController from "./tabs_controller"
 import ToggleInventoryController from "./toggle_inventory_controller"
+import ProductSearchController from "./product_search_controller"
 
 application.register("audit-progress", AuditProgressController)
 application.register("cart-item", CartItemController)
@@ -43,6 +44,7 @@ application.register("simple-tabs", SimpleTabsController)
 application.register("subtabs", SubtabsController)
 application.register("tabs", TabsController)
 application.register("toggle-inventory", ToggleInventoryController)
+application.register("product-search", ProductSearchController)
 
 // Export opcional para debugging
 window.Stimulus = application
