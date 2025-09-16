@@ -48,3 +48,9 @@ application.register("product-search", ProductSearchController)
 
 // Export opcional para debugging
 window.Stimulus = application
+try {
+	const ids = Array.from(application.router.modules.map(m => m.identifier))
+	console.debug('[stimulus] registered identifiers:', ids)
+} catch(e) {
+	console.debug('[stimulus] could not list identifiers', e)
+}
