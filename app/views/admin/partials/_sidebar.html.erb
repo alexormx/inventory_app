@@ -4,7 +4,7 @@
       <i class="fa-solid fa-gear sidebar-label"></i>
       <span class="sidebar-label">PASATIEMPOS</span>
     </h5>
-  <button id="sidebarToggle" class="sidebar-toggle-btn d-md-inline d-none" aria-label="Toggle sidebar">
+  <button class="sidebar-toggle-btn d-md-inline d-none js-sidebar-toggle" aria-label="Toggle sidebar" data-sidebar-toggle>
       <i class="fa-solid fa-bars"></i>
     </button>
   </div>
@@ -15,7 +15,7 @@
       <%= admin_sidebar_link 'Dashboard', admin_dashboard_path, icon: 'fa-chart-line' %>
     </li>
 
-    <hr class="text-secondary my-2">
+  <li class="text-secondary my-2" role="separator" aria-hidden="true"><hr class="m-0"></li>
 
     <!-- 🧑 Users -->
     <li class="text-uppercase small text-secondary ps-2 mb-1 sidebar-label">Users</li>
@@ -23,7 +23,7 @@
       <%= admin_sidebar_link 'Users', admin_users_path, icon: 'fa-users' %>
     </li>
 
-    <hr class="text-secondary my-2">
+  <li class="text-secondary my-2" role="separator" aria-hidden="true"><hr class="m-0"></li>
 
     <!-- 📦 Inventory -->
     <li class="text-uppercase small text-secondary ps-2 mb-1 sidebar-label">Inventory</li>
@@ -47,7 +47,7 @@
       <%= admin_sidebar_link 'Inventory', admin_inventory_path, icon: 'fa-archive', section: true %>
     </li>
 
-    <hr class="text-secondary my-2">
+  <li class="text-secondary my-2" role="separator" aria-hidden="true"><hr class="m-0"></li>
 
     <!-- ⚙️ System -->
     <li class="text-uppercase small text-secondary ps-2 mb-1 sidebar-label">System</li>

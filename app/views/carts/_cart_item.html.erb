@@ -26,7 +26,7 @@
   <td class="text-center">
     <div class="input-group input-group-sm justify-content-center cart-qty-group" style="max-width: 140px;">
       <button class="btn btn-outline-secondary px-2" type="button" aria-label="Disminuir" data-action="click->cart-item#decrease">−</button>
-      <input type="number" min="1" class="form-control text-center px-1" value="<%= quantity %>" data-cart-item-target="quantity" data-action="change->cart-item#quantityChanged" style="width: 50px;" aria-label="Cantidad">
+  <input type="number" min="1" class="form-control text-center px-1" value="<%= quantity %>" data-cart-item-target="quantity" data-action="change->cart-item#quantityChanged" style="width: 50px;" aria-label="Cantidad" id="cart_item_quantity_<%= product.id %>" name="cart[items][<%= product.id %>][quantity]">
   <% disabled_increase = (on_hand <= quantity.to_i && !product.oversell_allowed?) %>
   <button class="btn btn-outline-secondary px-2 <%= 'disabled' if disabled_increase %>" type="button" aria-label="Aumentar" data-action="click->cart-item#increase" <%= 'disabled' if disabled_increase %>>+</button>
     </div>

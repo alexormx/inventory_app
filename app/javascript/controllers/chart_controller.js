@@ -19,12 +19,34 @@ export default class extends Controller {
 
   init() {
     const type = this.typeValue || this.element.dataset.chartType
-    try {
-      const x = this.xValue ? JSON.parse(this.xValue) : (this.element.dataset.chartX ? JSON.parse(this.element.dataset.chartX) : [])
-      const series = this.seriesValue ? JSON.parse(this.seriesValue) : (this.element.dataset.chartSeries ? JSON.parse(this.element.dataset.chartSeries) : [])
-      const data = this.dataValue ? JSON.parse(this.dataValue) : (this.element.dataset.chartData ? JSON.parse(this.element.dataset.chartData) : [])
 
-      let chart
+    const safeParse = (raw, fallback) => {
+      if (raw == null) return fallback
+      const trimmed = typeof raw === 'string' ? raw.trim() : raw
+      if (trimmed === '' || trimmed === '[]' || trimmed === '{}') {
+        try {
+          // Return parsed simple empty structures if valid JSON empties
+          return JSON.parse(trimmed)
+        } catch (_) {
+          return fallback
+        }
+      }
+      try {
+        return JSON.parse(trimmed)
+      } catch (_) {
+        return fallback
+      }
+    }
+
+    const x = this.xValue ? safeParse(this.xValue, []) : (this.element.dataset.chartX ? safeParse(this.element.dataset.chartX, []) : [])
+    const series = this.seriesValue ? safeParse(this.seriesValue, []) : (this.element.dataset.chartSeries ? safeParse(this.element.dataset.chartSeries, []) : [])
+    const data = this.dataValue ? safeParse(this.dataValue, []) : (this.element.dataset.chartData ? safeParse(this.element.dataset.chartData, []) : [])
+
+    // Si no hay datos relevantes y tampoco tipo, no hacer nada para evitar trabajo inútil
+    if (!type && series.length === 0 && data.length === 0) return
+
+    let chart
+    try {
       switch (type) {
         case 'line':
           chart = initLine(this.element, { x, series })
@@ -40,12 +62,11 @@ export default class extends Controller {
           chart = initSparkline(this.element, { data })
           break
         default:
-          // default to line if series present
           chart = initLine(this.element, { x, series })
       }
-      registerResizeObserver(this.element, chart)
-    } catch (e) {
-      console.error('chart_controller init error', e)
+      if (chart) registerResizeObserver(this.element, chart)
+    } catch (_e) {
+      // Silencioso: evitamos bloquear otros controllers; si se requiere, podríamos emitir un CustomEvent
     }
   }
 }

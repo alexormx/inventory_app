@@ -7,6 +7,10 @@ import { Application } from "@hotwired/stimulus"
 import "components/inventory_adjustment_lines"
 // Cargar inmediatamente dropdown para que el menú 'Mi cuenta' funcione sin esperar lazy hydration
 import "custom/dropdown_toggle"
+// Toggle navbar admin (hamburger)
+import "custom/admin_navbar_toggle"
+// Toggle navbar público (hamburger)
+import "custom/navbar_toggle"
 
 const application = Application.start()
 window.Stimulus = application

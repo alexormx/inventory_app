@@ -1,0 +1,100 @@
+// Navbar público hamburger toggle (sin Bootstrap JS)
+// Contrato:
+//  - Botón: #hamburger
+//  - Contenedor colapsable: #navbar-scroll (inicia oculto en mobile via CSS inline logic / clase helper)
+//  - Añade/remueve clase 'is-open' y atributo hidden para accesibilidad.
+//  - Sincroniza aria-expanded.
+//  - Cierra al hacer click fuera, al navegar (turbo:before-render) y con Escape.
+//  - Resistente a recargas Turbo múltiples.
+
+(function(){
+  const BTN_ID = 'hamburger';
+  const PANEL_ID = 'navbar-scroll';
+  const OPEN_CLASS = 'is-open';
+
+  function select(id){ return document.getElementById(id); }
+
+  function applyInitialState(btn, panel){
+    // En pantallas pequeñas ocultar inicialmente; en grandes mostrar.
+    if(window.matchMedia('(max-width: 991.98px)').matches){
+      if(!panel.classList.contains(OPEN_CLASS)){
+        panel.setAttribute('hidden','');
+        btn.setAttribute('aria-expanded','false');
+      }
+    } else {
+      panel.removeAttribute('hidden');
+      btn.setAttribute('aria-expanded','true');
+    }
+  }
+
+  function close(btn, panel){
+    panel.classList.remove(OPEN_CLASS);
+    panel.setAttribute('hidden','');
+    btn.setAttribute('aria-expanded','false');
+  }
+
+  function open(btn, panel){
+    panel.classList.add(OPEN_CLASS);
+    panel.removeAttribute('hidden');
+    btn.setAttribute('aria-expanded','true');
+  }
+
+  function toggle(btn, panel){
+    if(panel.classList.contains(OPEN_CLASS)){
+      close(btn, panel);
+    } else {
+      open(btn, panel);
+    }
+  }
+
+  function enhance(){
+    const btn = select(BTN_ID);
+    const panel = select(PANEL_ID);
+    if(!btn || !panel) return;
+
+    // Evitar múltiples bindings (Turbo re-visits)
+    if(btn.dataset.enhanced === 'true') return;
+    btn.dataset.enhanced = 'true';
+
+    // Inicial
+    applyInitialState(btn, panel);
+
+    btn.addEventListener('click', (e)=>{
+      e.preventDefault();
+      toggle(btn, panel);
+      e.stopPropagation();
+    });
+
+    // Click fuera cierra
+    document.addEventListener('click', (e)=>{
+      if(!panel.contains(e.target) && !btn.contains(e.target)){
+        if(panel.classList.contains(OPEN_CLASS)) close(btn, panel);
+      }
+    });
+
+    // Escape cierra
+    document.addEventListener('keydown', (e)=>{
+      if(e.key === 'Escape' && panel.classList.contains(OPEN_CLASS)){
+        close(btn, panel);
+        btn.focus();
+      }
+    });
+
+    // Al cambiar breakpoint (resize) re-evaluar
+    const mql = window.matchMedia('(max-width: 991.98px)');
+    mql.addEventListener('change', ()=> applyInitialState(btn, panel));
+
+    // Cerrar antes de navegación Turbo para evitar estados fantasma
+    document.addEventListener('turbo:before-render', ()=>{
+      if(panel.classList.contains(OPEN_CLASS)) close(btn, panel);
+    });
+  }
+
+  // Inicialización en eventos Turbo y cuando idle (fallback)
+  document.addEventListener('turbo:load', enhance);
+  if('requestIdleCallback' in window){
+    requestIdleCallback(()=>enhance(), { timeout:1500 });
+  } else {
+    window.setTimeout(enhance, 800);
+  }
+})();

@@ -16,20 +16,24 @@ export default class extends Controller {
 
   connect() {
     // Si no hay un tab marcado como activo, activar el primero o el indicado por defaultTab
-    const current = this.tabTargets.find(t => t.getAttribute("aria-selected") === "true" || t.classList.contains("active"))
-    if (current) {
-      this._showFor(current)
-    } else {
-      const byId = this.defaultTabValue && this.tabTargets.find(t => this._panelFor(t)?.id === this.defaultTabValue)
-      this._showFor(byId || this.tabTargets[0])
+    if (this.tabTargets.length > 0) {
+      const current = this.tabTargets.find(t => t.getAttribute("aria-selected") === "true" || t.classList.contains("active"))
+      if (current) {
+        this._showFor(current)
+      } else {
+        const byId = this.defaultTabValue && this.tabTargets.find(t => this._panelFor(t)?.id === this.defaultTabValue)
+        this._showFor(byId || this.tabTargets[0])
+      }
     }
 
-    // Sincronizar <select> móvil inicial si existe
+    // Sincronizar <select> móvil inicial si existe (defensivo)
     const select = this._selectEl()
-    if (select) {
+    if (select && this.panelTargets.length > 0) {
       const active = this.panelTargets.find(p => p.classList.contains('active')) || this.panelTargets[0]
       if (active) select.value = `#${active.id}`
     }
+
+    this._enhanceA11y()
   }
 
   activate(event) {
@@ -94,5 +98,33 @@ export default class extends Controller {
     if (aria) return this.panelTargets.find(p => p.id === aria)
 
     return null
+  }
+
+  // Devuelve el <select> para modo móvil si existe; antes faltaba este método y causaba TypeError
+  _selectEl() {
+    // Heurísticas: permitir varias convenciones sin romper si no existe
+    return this.element.querySelector(
+      'select[data-tabs-select], select.tabs-select, select[data-role="tabs-select"], select.tabs-mobile'
+    )
+  }
+
+  _enhanceA11y() {
+    // Asigna ids a tabs si faltan y vincula aria-labelledby/aria-controls
+    this.tabTargets.forEach((tab, idx) => {
+      if (!tab.id) {
+        const base = this.element.id ? `${this.element.id}-tab-${idx}` : `tab-${idx}-${Math.random().toString(36).slice(2,7)}`
+        tab.id = base
+      }
+      const panel = this._panelFor(tab)
+      if (panel) {
+        if (!tab.getAttribute('aria-controls')) tab.setAttribute('aria-controls', panel.id)
+        if (!panel.getAttribute('aria-labelledby')) panel.setAttribute('aria-labelledby', tab.id)
+        panel.setAttribute('role', 'tabpanel')
+      }
+      const li = tab.closest('li')
+      if (li && li.parentElement && li.parentElement.getAttribute('role') === 'tablist') {
+        li.setAttribute('role', 'presentation')
+      }
+    })
   }
 }

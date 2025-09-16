@@ -12,8 +12,20 @@
  @import "dashboard";
 
  body {
-  -webkit-text-size-adjust: auto; /* Disables the Bootstrap default */
+  -webkit-text-size-adjust: 100%; /* Evita zoom automático en iOS y estandariza ajuste de tamaño */
   text-size-adjust: 100%; /* ✅ Standard property supported in modern browsers */
+}
+
+// Tipografía / compatibilidad cross-browser
+html {
+  // Evita zoom automático en iOS y estandariza ajuste de tamaño
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+// Normaliza el uso de match-parent (Safari moderno prefiere inherit en muchos casos)
+body, div, span {
+  text-align: inherit;
 }
 
 .dropdown-menu { display: none; position: absolute; top: 100%; right: 0; left: auto; z-index: 1000; min-width: 10rem; padding: .5rem 0; margin: .125rem 0 0; font-size: .9rem; list-style: none; background-color: #fff; background-clip: padding-box; border: 1px solid rgba(0,0,0,.15); border-radius: .375rem; box-shadow: 0 .5rem 1rem rgba(0,0,0,.15); }

@@ -2,7 +2,7 @@
 function addToggleListener(selected_id, menu_id, toggle_class) {
   const selected_element = document.querySelector(`#${selected_id}`);
   const menu = document.querySelector(`#${menu_id}`)
-  
+
   if(!selected_element || !menu) return;
 
   // Function to toggle visibility
@@ -27,7 +27,6 @@ function addToggleListener(selected_id, menu_id, toggle_class) {
 
 // Add toggle listeners to listen for clicks.
 document.addEventListener("turbo:load", function() {
-  addToggleListener("hamburger", "navbar-scroll", "collapse");
-  addToggleListener("admin-hamburger", "admin-navbar", "collapse");
+  // Hamburger público manejado ahora por custom/navbar_toggle.js (más accesible y con aria)
   addToggleListener("account",   "dropdown-menu", "active");
 });

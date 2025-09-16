@@ -3,11 +3,20 @@ document.addEventListener('DOMContentLoaded', initDropdowns)
 
 function initDropdowns() {
   document.querySelectorAll('[data-dropdown-toggle]').forEach(btn => {
-    if (btn.dataset.dropdownBound) return
-    btn.dataset.dropdownBound = 'true'
+    if (btn.dataset.dropdownBound === 'true') return
     const menuId = btn.getAttribute('data-dropdown-menu')
-    const menu = document.getElementById(menuId)
-    if (!menu) return
+    let menu = document.getElementById(menuId)
+    if (!menu) {
+      // Puede ocurrir al venir de admin (Turbo navigation) y el partial todavía no se ha reemplazado.
+      // Reintentar una sola vez en el próximo frame.
+      if (!btn.dataset.dropdownRetry) {
+        btn.dataset.dropdownRetry = '1'
+        requestAnimationFrame(()=> initDropdowns())
+      }
+      return
+    }
+    // Sólo marcar como bound cuando realmente encontramos el menú.
+    btn.dataset.dropdownBound = 'true'
 
     // ARIA roles
     menu.setAttribute('role','menu')
@@ -104,6 +113,24 @@ function initDropdowns() {
       btn && btn.setAttribute('aria-expanded','false')
     })
   })
+}
+
+// En caso de que turbo:load no alcance (navegaciones parciales), reforzar en turbo:render
+document.addEventListener('turbo:render', () => { initDropdowns() })
+
+// Fallback definitivo: observar inserciones del menú si el botón existe sin menú
+const __dropdownObserver = new MutationObserver((mutations)=>{
+  let needsInit=false
+  for(const m of mutations){
+    if([...m.addedNodes].some(n=> n.id && document.querySelector('[data-dropdown-toggle][data-dropdown-menu="'+n.id+'"]'))){
+      needsInit=true; break
+    }
+  }
+  if(needsInit) initDropdowns()
+})
+if(!window.__dropdownObserverStarted){
+  window.__dropdownObserverStarted=true
+  __dropdownObserver.observe(document.documentElement,{childList:true,subtree:true})
 }
 
 function closeOthers(current) {

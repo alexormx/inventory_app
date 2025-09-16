@@ -1,15 +1,16 @@
 function initInventoryAdjustmentLines(){
-  if(window.__IA_LINES_LOADED){ console.log("[IA Lines] already initialized"); return; }
+  const DEBUG = window?.APP_DEBUG === true; // activar poniendo window.APP_DEBUG = true en consola si se necesita
+  if(window.__IA_LINES_LOADED){ if(DEBUG) console.log("[IA Lines] already initialized"); return; }
   window.__IA_LINES_LOADED = true;
-  console.log("[IA Lines] init invoked");
+  if(DEBUG) console.log("[IA Lines] init invoked");
   const searchInput = document.querySelector("#inventory-adjustment-product-search");
   const resultsContainer = document.querySelector("#inventory-adjustment-product-results");
   const linesTableBody = document.querySelector("#inventory-adjustment-lines-body");
   const form = document.querySelector("form.inventory_adjustment, form#new_inventory_adjustment");
-  if (!searchInput) { console.log("[IA Lines] search input not found"); return; }
-  if (!resultsContainer) { console.log("[IA Lines] results container not found"); return; }
-  if (!linesTableBody) { console.log("[IA Lines] lines body not found"); return; }
-  console.log("[IA Lines] initialization OK");
+  if (!searchInput) { if(DEBUG) console.log("[IA Lines] search input not found"); return; }
+  if (!resultsContainer) { if(DEBUG) console.log("[IA Lines] results container not found"); return; }
+  if (!linesTableBody) { if(DEBUG) console.log("[IA Lines] lines body not found"); return; }
+  if(DEBUG) console.log("[IA Lines] initialization OK");
 
   let debounceTimer = null;
   let lineIndex = linesTableBody.querySelectorAll("tr.line-row").length;
@@ -21,14 +22,14 @@ function initInventoryAdjustmentLines(){
     const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     debounceTimer = setTimeout(() => {
       const url = `/admin/products/search?query=${encodeURIComponent(q)}`;
-      console.log("[IA Lines] fetching", url);
+  if(DEBUG) console.log("[IA Lines] fetching", url);
       fetch(url, {
         headers: { "Accept": "application/json", "X-CSRF-Token": token }
       }).then(r => {
-        console.log("[IA Lines] response status", r.status);
+  if(DEBUG) console.log("[IA Lines] response status", r.status);
         return r.json();
       }).then(products => {
-        console.log("[IA Lines] products returned", products.length);
+  if(DEBUG) console.log("[IA Lines] products returned", products.length);
         resultsContainer.innerHTML = "";
         products.forEach(p => {
           const btn = document.createElement("button");
