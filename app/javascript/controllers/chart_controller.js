@@ -13,11 +13,20 @@ export default class extends Controller {
     data: String       // for sparkline
   }
 
-  connect() {
-    this.init()
+  async connect() {
+    // Lazy load ECharts only if the element exists
+    let echarts
+    try {
+      echarts = (await import("echarts")).default
+    } catch (e) {
+      console.warn("[chart_controller] Error loading echarts", e)
+      return
+    }
+
+    this.init(echarts)
   }
 
-  init() {
+  init(echarts) {
     const type = this.typeValue || this.element.dataset.chartType
 
     const safeParse = (raw, fallback) => {
@@ -49,20 +58,20 @@ export default class extends Controller {
     try {
       switch (type) {
         case 'line':
-          chart = initLine(this.element, { x, series })
+          chart = initLine(echarts, this.element, { x, series })
           break
         case 'bar':
-          chart = initBar(this.element, { x, series })
+          chart = initBar(echarts, this.element, { x, series })
           break
         case 'pie':
-          chart = initPie(this.element, { series })
+          chart = initPie(echarts, this.element, { series })
           break
         case 'spark':
         case 'sparkline':
-          chart = initSparkline(this.element, { data })
+          chart = initSparkline(echarts, this.element, { data })
           break
         default:
-          chart = initLine(this.element, { x, series })
+          chart = initLine(echarts, this.element, { x, series })
       }
       if (chart) registerResizeObserver(this.element, chart)
     } catch (_e) {
