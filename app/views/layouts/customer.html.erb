@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  
+
   <title><%= content_for?(:title) ? yield(:title) : "Pasatiempos a Escala" %></title>
 
   <meta name="description" content="<%= content_for?(:meta_description) ? yield(:meta_description) : 'Pasatiempos a Escala. Muy pronto podrás ver productos disponibles para comprar en línea.' %>">
   <meta name="author" content="Pasatiempos">
   <meta name="robots" content="index, follow">
   <meta name="language" content="es">
-  
+
   <!-- Favicon -->
   <%= favicon_link_tag 'favicon.ico' %>
   <%= favicon_link_tag 'favicon.svg', type: 'image/svg+xml' %>
@@ -61,7 +61,7 @@
   <noscript>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
   </noscript>
-  
+
   <%= stylesheet_link_tag "application", media: "all", "data-turbo-track": "reload" %>
   <%= javascript_include_tag "application", "data-turbo-track": "reload", defer: true %>
 </head>
@@ -84,7 +84,7 @@
     <%= render 'layouts/flash' %>
     <%= yield %>
   </main>
-  
+
   <!-- ✅ Floating WhatsApp Button -->
   <%= render 'layouts/floating_whatsapp' %>
 
