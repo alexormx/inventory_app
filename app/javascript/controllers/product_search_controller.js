@@ -15,10 +15,18 @@ export default class extends Controller {
 
   connect(){
     this._timer = null
+    if(window.APP_DEBUG) console.debug('[product-search] connect', { url: this.urlValue, minLength: this.minLengthValue })
+    // Defensive: if data-action somehow stripped, attach listeners directly
+    if(!this.inputTarget.getAttribute('data-action')){
+      this.inputTarget.addEventListener('input', ()=> this.input())
+      this.inputTarget.addEventListener('keyup', ()=> this.input())
+      if(window.APP_DEBUG) console.debug('[product-search] attached fallback listeners')
+    }
   }
 
   input(){
     const q = this.inputTarget.value.trim()
+    if(window.APP_DEBUG) console.debug('[product-search] input handler', { raw: this.inputTarget.value, trimmed: q, len: q.length, minLength: this.minLengthValue })
     if(q.length < this.minLengthValue){
       this.showInfo(`Type at least ${this.minLengthValue} characters (${q.length}/${this.minLengthValue}).`)
       return
@@ -31,6 +39,7 @@ export default class extends Controller {
   performSearch(query){
     const url = `${this.urlValue}?query=${encodeURIComponent(query)}`
     const token = document.querySelector('meta[name="csrf-token"]')?.content
+    if(window.APP_DEBUG) console.debug('[product-search] fetching', url)
     fetch(url, { headers: { 'Accept':'application/json', 'X-CSRF-Token': token }})
       .then(r => { if(!r.ok) throw new Error(`HTTP ${r.status}`); return r.json() })
       .then(products => this.render(products))
@@ -38,6 +47,7 @@ export default class extends Controller {
   }
 
   render(products){
+    if(window.APP_DEBUG) console.debug('[product-search] render', { count: Array.isArray(products) ? products.length : 'invalid' })
     this.resultsTarget.innerHTML = ''
     if(!Array.isArray(products)) return this.renderError(new Error('Invalid response'))
     if(products.length === 0) return this.showInfo('No products found')
