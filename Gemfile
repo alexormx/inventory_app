@@ -17,6 +17,7 @@ gem "propshaft"  # Modern asset pipeline for Rails
 
 # ✅ Hotwire (Turbo + Stimulus)
 gem "importmap-rails"  # ESM import maps for JavaScript
+gem 'jsbundling-rails'  # JavaScript bundling with esbuild
 gem "turbo-rails"  # SPA-like page accelerator
 gem "stimulus-rails"  # JavaScript framework
 

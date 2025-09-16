@@ -74,4 +74,7 @@ Rails.application.configure do
   config.assets.compile = true
   config.assets.digest = false
   config.assets.debug = true
+  config.public_file_server.headers = { 'Cache-Control' => 'public, max-age=3600' }
+  # Opcional compresión en dev
+  # config.middleware.use Rack::Deflater
 end
