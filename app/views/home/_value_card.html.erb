@@ -1,6 +1,9 @@
 <div class="col">
   <div class="card h-100 shadow-sm">
-    <%= image_tag image, class: "card-img-top", alt: alt, loading: 'lazy' %>
+  <%= picture_asset_tag image,
+      alt: alt,
+      class: "card-img-top",
+      loading: 'lazy' %>
     <div class="card-body">
       <h5 class="card-title fw-semibold"><%= title %></h5>
       <p class="card-text"><%= text %></p>

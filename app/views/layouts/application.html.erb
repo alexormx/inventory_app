@@ -7,7 +7,8 @@
     <meta property="og:title" content="<%= content_for(:title) || 'Inventory App' %>">
     <meta property="og:description" content="<%= content_for(:description) || 'Inventory management platform' %>">
     <meta property="og:url" content="<%= request.original_url %>">
-    <meta property="og:image" content="<%= image_url('logo.png') %>">
+  <%# Usamos WebP si existe, con fallback a PNG %>
+  <meta property="og:image" content="<%= image_url('logo.webp') rescue image_url('logo.png') %>">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="apple-mobile-web-app-capable" content="yes">
