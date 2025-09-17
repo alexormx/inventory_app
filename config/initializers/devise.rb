@@ -314,5 +314,5 @@ Devise.setup do |config|
   # config.sign_in_after_change_password = true
 
   # Prevent Devise from wrapping input fields in "field_with_errors"
-  Rails.application.config.action_view.field_error_proc = Proc.new { |html_tag, instance| html_tag.html_safe }  
+  Rails.application.config.action_view.field_error_proc = Proc.new { |html_tag, instance| html_tag.html_safe }
 end

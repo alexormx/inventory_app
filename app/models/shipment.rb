@@ -22,7 +22,7 @@ class Shipment < ApplicationRecord
       self.last_update = Time.current
     end
   end
-  
+
   def actual_not_before_estimated
     return if actual_delivery.blank? || estimated_delivery.blank?
     if actual_delivery < estimated_delivery

@@ -58,7 +58,7 @@ module ProductsHelper
 	# Helper para imágenes estáticas en `<picture>`
 	def responsive_asset_image(filename, alt:, widths: [480,768,1200], css_class: "", loading: 'lazy', aspect_ratio: nil, fetch_priority: nil)
 		return '' if filename.blank?
-		original = filename
+		filename
 		base_name = filename.sub(/\.[^.]+$/,'')
 		orig_ext  = File.extname(filename).delete('.')
 		asset_exists = asset_exists?(filename)

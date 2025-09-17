@@ -39,7 +39,7 @@ class AddPurchaseTrackingToProducts < ActiveRecord::Migration[8.0]
     remove_column :products, :projected_sales_value
     remove_column :products, :current_inventory_value
     remove_column :products, :current_profit
-    
+
     # Reverse extra insights
     remove_column :products, :total_units_sold
     remove_column :products, :total_sales_order
