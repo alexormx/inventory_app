@@ -328,3 +328,26 @@ Implications for tests:
 - To guarantee that SO reservations consume items created by your recent PO, create those PO items right before the SO items (or use `skip_seed_inventory: true` on products and seed exactly what you need).
 
 ---
+
+## 🔧 Desarrollo local (setup rápido)
+
+Prerrequisitos:
+- Ruby 3.2.3 y Bundler
+- Node.js 18+ y npm o yarn
+- PostgreSQL (prod) y SQLite (dev/test)
+
+Instalación:
+- bundle install
+- npm install  # o yarn install
+- bin/rails db:setup
+
+Ejecutar en desarrollo:
+- bin/dev  # levanta Puma y el watcher de esbuild
+
+Solución de problemas comunes:
+- Error esbuild not found → correr npm install (o yarn install)
+- Advertencia stringio duplicado → gem cleanup stringio
+- Verificar autoload → bin/rails zeitwerk:check
+
+Pruebas:
+- bundle exec rspec
