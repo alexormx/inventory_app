@@ -43,6 +43,6 @@ class Api::V1::PurchaseOrdersController < ApplicationController
   def purchase_order_params
     params.require(:purchase_order).permit(:id, :order_date, :currency, :exchange_rate, :tax_cost, :shipping_cost, :other_cost, :subtotal, :total_order_cost, :status, :email, :expected_delivery_date, :actual_delivery_date)
   end
-  
+
 end
 

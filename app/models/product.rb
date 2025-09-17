@@ -199,7 +199,7 @@ class Product < ApplicationRecord
   # Volumen unitario en cm3 (length * width * height). Si falta algún dato retorna 0.
   def unit_volume_cm3
     return 0.to_d unless respond_to?(:length_cm) && respond_to?(:width_cm) && respond_to?(:height_cm)
-    l = length_cm.to_d
+    length_cm.to_d
     return 0.to_d if length_cm.blank? || width_cm.blank? || height_cm.blank?
     l = length_cm.to_d
     w = width_cm.to_d

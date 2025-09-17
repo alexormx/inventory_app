@@ -9,7 +9,7 @@ class AdjustUserColumns < ActiveRecord::Migration[8.0]
     change_column :users, :address, :string, null: true
 
     #Ensure discount_rate allows nil and has a default value (e.g., 0.0)
-    change_column :users, :discount_rate, :decimal, precision: 5, scale: 2, null: true, default: 0.0  
+    change_column :users, :discount_rate, :decimal, precision: 5, scale: 2, null: true, default: 0.0
   end
 
   def down

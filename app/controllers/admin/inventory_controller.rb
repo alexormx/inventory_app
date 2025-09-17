@@ -106,14 +106,14 @@ class Admin::InventoryController < ApplicationController
     @item = Inventory.find(params[:id])
     render partial: "admin/inventory/edit_status_form", locals: { item: @item }
   end
-  
+
   def update_status
     @item = Inventory.find(params[:id])
 
     if @item.status != "sold" && Inventory.statuses.keys.include?(params[:status])
       @item.update(status: params[:status], status_changed_at: Time.current)
       @product = @item.product
-  
+
       respond_to do |format|
         format.turbo_stream do
           render turbo_stream: [

@@ -124,7 +124,7 @@ class SaleOrderItem < ApplicationRecord
     if excess > 0 && backordered_quantity.to_i > 0
       reduce_bo = [backordered_quantity.to_i, excess].min
       self.backordered_quantity = backordered_quantity.to_i - reduce_bo
-      excess -= reduce_bo
+      excess - reduce_bo
     end
     # Si todavía hay exceso (>0) aquí, lo cubrirá ensure_free_to_reduce liberando reservados.
   end

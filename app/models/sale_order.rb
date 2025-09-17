@@ -220,7 +220,7 @@ class SaleOrder < ApplicationRecord
           actual_delivery: est,
           status: Shipment.statuses[:delivered]
         )
-      rescue StandardError => e
+      rescue StandardError
         Rails.logger.error("Failed to create default shipment for SaleOrder ")
       end
     end

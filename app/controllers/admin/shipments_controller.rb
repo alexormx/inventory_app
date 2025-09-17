@@ -43,7 +43,7 @@ class Admin::ShipmentsController < ApplicationController
     else
       respond_to do |format|
         format.turbo_stream do
-          render partial: "admin/shipments/form", 
+          render partial: "admin/shipments/form",
                 locals: { shipment: @shipment, sale_order: @sale_order },
                 status: :unprocessable_entity
         end

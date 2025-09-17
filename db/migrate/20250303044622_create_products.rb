@@ -28,6 +28,6 @@ class CreateProducts < ActiveRecord::Migration[8.0]
     end
     # ✅ Ensure product_sku is unique
     add_index :products, :product_sku, unique: true
-  
+
   end
 end
