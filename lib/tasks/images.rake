@@ -14,6 +14,12 @@ namespace :images do
   IMAGE_DIR = Rails.root.join('app', 'assets', 'images')
   SOURCE_EXT = %w[.jpg .jpeg .png].freeze
 
+  def avif_enabled?
+    # Por defecto habilitado en desarrollo, deshabilitado en producción salvo que IMAGES_AVIF_ENABLED=true
+    default = Rails.env.development?.to_s
+    ActiveModel::Type::Boolean.new.cast(ENV.fetch('IMAGES_AVIF_ENABLED', default))
+  end
+
   def processor
     # Prefer vips si está disponible por rendimiento; fallback a mini_magick
     if defined?(ImageProcessing::Vips)
@@ -30,11 +36,16 @@ namespace :images do
     when :webp
       proc.convert('webp').saver(quality: quality).call(destination: dest_path)
     when :avif
-      # Para AVIF con vips: saver(quality: 45); con mini_magick usamos libaom parameters
-      if defined?(ImageProcessing::Vips)
-        proc.convert('avif').saver(quality: 45).call(destination: dest_path)
-      else
-        proc.convert('avif').call(destination: dest_path)
+      return unless avif_enabled?
+      # Para AVIF con vips: saver(quality: 45); con mini_magick intentamos convert y rescatamos si no está soportado
+      begin
+        if defined?(ImageProcessing::Vips)
+          proc.convert('avif').saver(quality: 45).call(destination: dest_path)
+        else
+          proc.convert('avif').call(destination: dest_path)
+        end
+      rescue => e
+        warn "[images] AVIF no soportado en este entorno: #{e.message}. Se omite."
       end
     else
       raise "Formato no soportado: #{format}"
@@ -60,7 +71,9 @@ namespace :images do
       webp = base + '.webp'
       avif = base + '.avif'
 
-      [[:webp, webp], [:avif, avif]].each do |fmt, dest|
+  targets = [[:webp, webp]]
+  targets << [:avif, avif] if avif_enabled?
+  targets.each do |fmt, dest|
         next if File.exist?(dest) && !force
         puts "→ #{File.basename(path)} -> #{File.basename(dest)}"
         begin
@@ -82,7 +95,7 @@ namespace :images do
       avif = base + '.avif'
       orig = File.size?(path) || 0
       webp_size = File.size?(webp) || 0
-      avif_size = File.size?(avif) || 0
+      avif_size = avif_enabled? ? (File.size?(avif) || 0) : 0
       best = [webp_size, avif_size].reject(&:zero?).min || 0
       saving = [orig - best, 0].max
       summary << [path.sub(IMAGE_DIR.to_s + '/', ''), orig, webp_size, avif_size, saving]
