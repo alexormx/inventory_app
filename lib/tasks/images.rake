@@ -102,3 +102,9 @@ namespace :images do
     puts "Ahorro estimado: #{bytes(total_saving)}"
   end
 end
+
+# Ejecutar conversión automáticamente durante el build (assets:precompile)
+Rake::Task["assets:precompile"].enhance do
+  puts "[images] Ejecutando conversión a WebP/AVIF durante assets:precompile"
+  Rake::Task["images:convert"].invoke
+end
