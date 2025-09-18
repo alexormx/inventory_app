@@ -818,6 +818,24 @@ body [role="dialog"], .card, .modal, .dropdown-menu { background: var(--color-su
 .site-navbar.direction-shrink .nav-btn .btn-text { opacity:0; width:0; margin:0; overflow:hidden; }
 .site-navbar.direction-shrink .nav-btn i { margin-right:0 !important; }
 
+/* No aplicar shrink visual cuando el menú móvil está abierto */
+@media (max-width: 991.98px) {
+  #navbar-scroll.is-open ~ #navbar-menu, /* fallback si hubiera */
+  #navbar-scroll.is-open,
+  #admin-navbar.is-open {
+    /* Cuando el colapso está abierto, mantén visibles textos y alturas */
+    & ~ .site-navbar, .site-navbar & {
+      min-height: var(--nav-height-base) !important;
+    }
+    .brand-text, .nav-btn .btn-text, .nav-item-link .link-text {
+      opacity: 1 !important;
+      width: auto !important;
+      margin: initial !important;
+      overflow: visible !important;
+    }
+  }
+}
+
 /* Transiciones suavizadas para enlaces minimalistas en shrink */
 .site-navbar.direction-shrink .nav-item-link { transition: padding .5s cubic-bezier(.4,0,.2,1), background .25s ease; }
 .site-navbar .nav-item-link .link-text { transition: opacity .5s cubic-bezier(.4,0,.2,1), width .5s cubic-bezier(.4,0,.2,1); }
@@ -958,6 +976,21 @@ body.overlay-open { overflow:hidden; }
 @media (max-width: 991.98px) { /* Bootstrap lg breakpoint */
   .site-navbar .navbar-collapse { padding-top:.5rem; padding-bottom:.75rem; }
   .site-navbar .nav-btn { width:100%; justify-content:flex-start; }
+  /* Enlaces ocupan ancho completo dentro del menú colapsado */
+  .site-navbar .navbar-collapse .nav-item-link { width: 100%; justify-content: flex-start; }
+  /* Evitar que se oculten textos en mobile cuando el navbar entra en modo shrink */
+  .site-navbar.shrink .brand-text,
+  .site-navbar.direction-shrink .brand-text,
+  .site-navbar.shrink .nav-btn .btn-text,
+  .site-navbar.direction-shrink .nav-btn .btn-text,
+  .site-navbar.direction-shrink .nav-item-link .link-text {
+    opacity: 1 !important;
+    width: auto !important;
+    margin: initial;
+    overflow: visible;
+  }
+  /* Asegurar buen objetivo táctil del botón hamburger */
+  .site-navbar .navbar-toggler { min-width:44px; min-height:44px; padding:.4rem .6rem; }
 }
 .site-navbar .navbar-collapse[hidden] { display:none !important; }
 @media (max-width: 991.98px) {
