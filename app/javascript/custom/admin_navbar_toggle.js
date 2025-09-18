@@ -47,6 +47,8 @@
     panel.removeAttribute('hidden');
     btn.setAttribute('aria-expanded','true');
   btn.classList.remove(BTN_COLLAPSED);
+  const focusable = panel.querySelector('a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])');
+  focusable && setTimeout(()=> focusable.focus(), 0);
   }
 
   function toggle(btn, panel){
@@ -69,11 +71,9 @@
     // Inicial
     applyInitialState(btn, panel);
 
-    btn.addEventListener('click', (e)=>{
-      e.preventDefault();
-      toggle(btn, panel);
-      e.stopPropagation();
-    });
+  const onToggle = (e)=>{ e.preventDefault(); toggle(btn, panel); e.stopPropagation(); };
+  btn.addEventListener('click', onToggle);
+  btn.addEventListener('keydown', (e)=>{ if(e.key==='Enter' || e.key===' ') onToggle(e); });
 
     // Click fuera cierra
     document.addEventListener('click', (e)=>{

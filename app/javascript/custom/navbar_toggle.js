@@ -41,12 +41,20 @@
   btn.classList.add(BTN_COLLAPSED);
   }
 
+  function focusFirstItem(panel){
+    const focusable = panel.querySelector(
+      'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    );
+    focusable && setTimeout(()=> focusable.focus(), 0);
+  }
+
   function open(btn, panel){
   panel.classList.add(OPEN_CLASS);
   panel.classList.add(SHOW_CLASS);
     panel.removeAttribute('hidden');
     btn.setAttribute('aria-expanded','true');
   btn.classList.remove(BTN_COLLAPSED);
+    focusFirstItem(panel);
   }
 
   function toggle(btn, panel){
@@ -69,10 +77,14 @@
     // Inicial
     applyInitialState(btn, panel);
 
-    btn.addEventListener('click', (e)=>{
+    const onToggle = (e)=>{
       e.preventDefault();
       toggle(btn, panel);
       e.stopPropagation();
+    };
+    btn.addEventListener('click', onToggle);
+    btn.addEventListener('keydown', (e)=>{
+      if(e.key === 'Enter' || e.key === ' '){ onToggle(e); }
     });
 
     // Click fuera cierra
@@ -83,7 +95,7 @@
     });
 
     // Escape cierra
-    document.addEventListener('keydown', (e)=>{
+  document.addEventListener('keydown', (e)=>{
       if(e.key === 'Escape' && panel.classList.contains(OPEN_CLASS)){
         close(btn, panel);
         btn.focus();

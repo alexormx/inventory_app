@@ -429,9 +429,9 @@ img.product-order-image {
 }
 .admin-navbar .navbar-collapse[hidden] { display:none !important; }
 @media (max-width: 991.98px) {
-  /* Animación simple para apertura/cierre en mobile */
-  #admin-navbar { transition: opacity .18s ease, transform .18s ease; }
-  #admin-navbar[hidden] { opacity:0; transform:translateY(-4px); }
+  /* Animación suave para apertura/cierre en mobile */
+  #admin-navbar { transition: opacity .24s cubic-bezier(.4,0,.2,1), transform .24s cubic-bezier(.4,0,.2,1); will-change: opacity, transform; }
+  #admin-navbar[hidden] { opacity:0; transform:translateY(-6px); }
   #admin-navbar.is-open { opacity:1; transform:translateY(0); }
 }
 .admin-navbar .navbar-brand,
@@ -994,10 +994,25 @@ body.overlay-open { overflow:hidden; }
 }
 .site-navbar .navbar-collapse[hidden] { display:none !important; }
 @media (max-width: 991.98px) {
-  /* Animación simple para apertura/cierre en mobile */
-  #navbar-scroll { transition: opacity .18s ease, transform .18s ease; }
-  #navbar-scroll[hidden] { opacity:0; transform:translateY(-4px); }
+  /* Animación suave para apertura/cierre en mobile */
+  #navbar-scroll { transition: opacity .24s cubic-bezier(.4,0,.2,1), transform .24s cubic-bezier(.4,0,.2,1); will-change: opacity, transform; }
+  #navbar-scroll[hidden] { opacity:0; transform:translateY(-6px); }
   #navbar-scroll.is-open { opacity:1; transform:translateY(0); }
+}
+
+/* Alternar icono del toggler (≡ ↔ ×) con aria-expanded */
+.site-navbar .navbar-toggler .navbar-toggler-icon { transition: background-image .2s ease, transform .2s ease; }
+.site-navbar .navbar-toggler[aria-expanded="true"] .navbar-toggler-icon {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30' stroke='%23333' stroke-linecap='round' stroke-width='2'%3E%3Cpath d='M7 7 L23 23 M23 7 L7 23'/%3E%3C/svg%3E");
+}
+[data-theme="dark"] .site-navbar .navbar-toggler[aria-expanded="true"] .navbar-toggler-icon {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30' stroke='%23fff' stroke-linecap='round' stroke-width='2'%3E%3Cpath d='M7 7 L23 23 M23 7 L7 23'/%3E%3C/svg%3E");
+}
+
+/* Respeto a usuarios con motion reducido */
+@media (prefers-reduced-motion: reduce) {
+  #navbar-scroll, #admin-navbar { transition: none !important; }
+  .site-navbar .navbar-toggler .navbar-toggler-icon { transition: none !important; }
 }
 
 
