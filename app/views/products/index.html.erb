@@ -100,8 +100,12 @@
   </div>
 
   <% if @products.empty? %>
-    <div class="alert alert-info mt-4" role="alert">
-      No hay productos disponibles. <a href="<%= root_path %>" class="alert-link">Volver al inicio</a>.
+    <div class="alert alert-warning mt-4" role="alert">
+      <% if @q.present? %>
+        No encontramos productos que coincidan con "<strong><%= @q %></strong>". Intenta con otra búsqueda o limpia los filtros.
+      <% else %>
+        No hay productos disponibles por ahora.
+      <% end %>
     </div>
   <% end %>
 
@@ -123,9 +127,12 @@
   @media (max-width: 575px) { #catalog .catalog-header { margin-bottom: .75rem; } }
 </style>
 
-    #catalog .catalog-header .input-group-search .form-control { padding-top: .375rem; padding-bottom: .375rem; }
-    @media (max-width: 575.98px) {
-      #catalog .catalog-header .input-group-search .input-group-text { padding: .25rem .5rem; }
-      #catalog .catalog-header .input-group-search .form-control { padding: .35rem .5rem; font-size: .95rem; }
-    }
+<style>
+  /* Ajustes de altura/espaciado para el buscador del catálogo */
+  #catalog .catalog-header .input-group-search .form-control { padding-top: .375rem; padding-bottom: .375rem; }
+  @media (max-width: 575.98px) {
+    #catalog .catalog-header .input-group-search .input-group-text { padding: .25rem .5rem; }
+    #catalog .catalog-header .input-group-search .form-control { padding: .35rem .5rem; font-size: .95rem; }
+  }
+</style>
 
