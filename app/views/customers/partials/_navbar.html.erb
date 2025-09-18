@@ -18,6 +18,18 @@
 
     <!-- COLLAPSIBLE CONTENT -->
     <div class="collapse navbar-collapse" id="navbar-scroll">
+      <!-- TOP SEARCH (mobile only) -->
+      <% if user_signed_in? %>
+        <div class="navbar-top-search d-lg-none w-100 my-2">
+          <form class="navbar-search" role="search" action="<%= catalog_path %>" method="get">
+            <i class="fas fa-search search-icon" aria-hidden="true"></i>
+            <input type="search" class="search-input" name="q" value="<%= params[:q] %>" placeholder="Buscar..." aria-label="Buscar productos" />
+            <% if params[:q].present? %>
+              <button type="button" class="btn-clear" aria-label="Limpiar búsqueda" onclick="this.closest('form').querySelector('.search-input').value=''; this.closest('form').submit();">&times;</button>
+            <% end %>
+          </form>
+        </div>
+      <% end %>
 
       <!-- PERSISTENT COMPACT SEARCH -->
       <% if user_signed_in? %>

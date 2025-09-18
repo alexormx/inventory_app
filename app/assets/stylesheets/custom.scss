@@ -999,6 +999,9 @@ body.overlay-open { overflow:hidden; }
   #navbar-scroll[hidden] { opacity:0; transform:translateY(-6px); }
   #navbar-scroll.is-open { opacity:1; transform:translateY(0); }
 
+  /* Top search spacing inside mobile collapse */
+  .navbar-top-search { padding: 0 .5rem; }
+
   /* Backdrop para menú móvil */
   .nav-backdrop { position: fixed; left:0; right:0; bottom:0; top: var(--nav-offset, 0); background: rgba(0,0,0,0.35); z-index: 1050; opacity: 0; pointer-events: none; transition: opacity .2s ease; }
   .nav-backdrop.show { opacity: 1; pointer-events: auto; }
