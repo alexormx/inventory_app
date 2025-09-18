@@ -17,6 +17,8 @@ import "./custom/navbar_toggle"
 import "./custom/theme_toggle"
 // Tooltips (si hay data-bs-toggle="tooltip")
 import "./custom/tooltip_init"
+// Overlay de búsqueda global (abre con botón o tecla /)
+import "./custom/search_overlay"
 
 // Admin: ajustes de inventario (form dinámico)
 import "./components/inventory_adjustment_lines"

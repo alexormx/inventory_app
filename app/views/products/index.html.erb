@@ -5,9 +5,9 @@
       <p class="catalog-subtitle text-muted small">Productos activos disponibles para compra.</p>
     </div>
     <form method="get" action="<%= catalog_path %>" class="catalog-filters d-flex flex-column flex-sm-row flex-wrap gap-2 align-items-stretch w-100 w-lg-auto mb-0">
-      <div class="input-group">
-        <span class="input-group-text bg-white"><i class="fas fa-search text-muted"></i></span>
-        <input type="search" name="q" value="<%= @q %>" class="form-control" placeholder="Buscar nombre, marca, categoría...">
+      <div class="input-group input-group-sm input-group-search">
+    <span class="input-group-text bg-white"><i class="fas fa-search text-muted"></i></span>
+    <input type="search" name="q" value="<%= @q %>" class="form-control" placeholder="Buscar nombre, marca, categoría..." aria-label="Buscar productos">
       </div>
       <select name="sort" class="form-select form-select-sm sort-select" onchange="this.form.submit()" aria-label="Ordenar productos">
         <option value="newest" <%= 'selected' if @sort=='newest' %>>Más recientes</option>
@@ -122,4 +122,10 @@
   #catalog .product-image { max-height: 150px; object-fit: contain; }
   @media (max-width: 575px) { #catalog .catalog-header { margin-bottom: .75rem; } }
 </style>
+
+    #catalog .catalog-header .input-group-search .form-control { padding-top: .375rem; padding-bottom: .375rem; }
+    @media (max-width: 575.98px) {
+      #catalog .catalog-header .input-group-search .input-group-text { padding: .25rem .5rem; }
+      #catalog .catalog-header .input-group-search .form-control { padding: .35rem .5rem; font-size: .95rem; }
+    }
 
