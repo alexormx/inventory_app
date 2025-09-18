@@ -5,10 +5,13 @@
       <p class="catalog-subtitle text-muted small">Productos activos disponibles para compra.</p>
     </div>
     <form method="get" action="<%= catalog_path %>" class="catalog-filters d-flex flex-column flex-sm-row flex-wrap gap-2 align-items-stretch w-100 w-lg-auto mb-0">
-      <div class="input-group">
-        <span class="input-group-text bg-white"><i class="fas fa-search text-muted"></i></span>
-        <input type="search" name="q" value="<%= @q %>" class="form-control" placeholder="Buscar nombre, marca, categoría...">
-      </div>
+      <!-- Buscador removido: usamos solo el del navbar (opción B) -->
+      <% if @q.present? %>
+        <div class="search-chip d-inline-flex align-items-center">
+          <span class="chip-text" title="Criterio de búsqueda"><%= @q %></span>
+          <a href="<%= catalog_path(request.query_parameters.except(:q, :page)) %>" class="chip-clear" aria-label="Limpiar búsqueda">&times;</a>
+        </div>
+      <% end %>
       <select name="sort" class="form-select form-select-sm sort-select" onchange="this.form.submit()" aria-label="Ordenar productos">
         <option value="newest" <%= 'selected' if @sort=='newest' %>>Más recientes</option>
         <option value="price_asc" <%= 'selected' if @sort=='price_asc' %>>Precio ↑</option>
@@ -26,10 +29,83 @@
     <p class="text-muted small mb-3">Resultados para "<strong><%= @q %></strong>": <%= @products.total_count %></p>
   <% end %>
 
-  <div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-lg-5 g-3">
-    <% @products.each do |product| %>
-      <div class="col">
-        <div class="card h-100 border-0 shadow-sm d-flex flex-column catalog-item position-relative hover-lift">
+  <div class="row g-3">
+    <!-- Sidebar filtros -->
+  <aside class="d-none d-md-block col-md-3 col-lg-2">
+      <form method="get" action="<%= catalog_path %>" class="catalog-sidebar-filters">
+        <input type="hidden" name="sort" value="<%= @sort %>">
+        <% if @q.present? %><input type="hidden" name="q" value="<%= @q %>"><% end %>
+
+        <div class="filter-block mb-3">
+          <h6 class="fw-semibold small text-uppercase text-muted mb-2">Disponibilidad</h6>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="in_stock" value="1" id="f-in-stock" <%= 'checked' if ActiveModel::Type::Boolean.new.cast(params[:in_stock]) %>>
+            <label class="form-check-label" for="f-in-stock">En stock</label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="backorder" value="1" id="f-backorder" <%= 'checked' if ActiveModel::Type::Boolean.new.cast(params[:backorder]) %>>
+            <label class="form-check-label" for="f-backorder">Permite backorder</label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="preorder" value="1" id="f-preorder" <%= 'checked' if ActiveModel::Type::Boolean.new.cast(params[:preorder]) %>>
+            <label class="form-check-label" for="f-preorder">Disponible para preventa</label>
+          </div>
+        </div>
+
+        <div class="filter-block mb-3">
+          <h6 class="fw-semibold small text-uppercase text-muted mb-2">Precio</h6>
+          <div class="input-group input-group-sm mb-2">
+            <span class="input-group-text">Min</span>
+            <input type="number" step="0.01" min="0" class="form-control" name="price_min" value="<%= params[:price_min] %>">
+          </div>
+          <div class="input-group input-group-sm">
+            <span class="input-group-text">Max</span>
+            <input type="number" step="0.01" min="0" class="form-control" name="price_max" value="<%= params[:price_max] %>">
+          </div>
+        </div>
+
+        <% if @all_categories.present? %>
+        <div class="filter-block mb-3">
+          <h6 class="fw-semibold small text-uppercase text-muted mb-2">Categorías</h6>
+          <% selected = Array(params[:categories]).reject(&:blank?) %>
+          <div class="filter-scroll">
+            <% @all_categories.each do |c| %>
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="categories[]" value="<%= c %>" id="cat-<%= c.parameterize %>" <%= 'checked' if selected.include?(c) %>>
+                <label class="form-check-label" for="cat-<%= c.parameterize %>"><%= c %></label>
+              </div>
+            <% end %>
+          </div>
+        </div>
+        <% end %>
+
+        <% if @all_brands.present? %>
+        <div class="filter-block mb-3">
+          <h6 class="fw-semibold small text-uppercase text-muted mb-2">Marcas</h6>
+          <% selected_b = Array(params[:brands]).reject(&:blank?) %>
+          <div class="filter-scroll">
+            <% @all_brands.each do |b| %>
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="brands[]" value="<%= b %>" id="brand-<%= b.parameterize %>" <%= 'checked' if selected_b.include?(b) %>>
+                <label class="form-check-label" for="brand-<%= b.parameterize %>"><%= b %></label>
+              </div>
+            <% end %>
+          </div>
+        </div>
+        <% end %>
+
+        <div class="d-grid gap-2">
+          <button class="btn btn-danger btn-sm" type="submit">Aplicar filtros</button>
+          <a href="<%= catalog_path %>" class="btn btn-outline-secondary btn-sm">Limpiar todo</a>
+        </div>
+      </form>
+    </aside>
+
+    <div class="col-12 col-md-9 col-lg-10">
+      <div class="row row-cols-2 row-cols-sm-3 row-cols-md-3 row-cols-lg-5 g-3">
+        <% @products.each do |product| %>
+          <div class="col">
+            <div class="card h-100 border-0 shadow-sm d-flex flex-column catalog-item position-relative hover-lift">
           <!-- Badges de disponibilidad -->
           <% if product.active? %>
             <% on_hand_cached = @on_hand_counts[product.id] || 0 %>
@@ -94,19 +170,25 @@
               </button>
             <% end %>
           </div>
-        </div>
+            </div>
+          </div>
+        <% end %>
       </div>
-    <% end %>
-  </div>
 
-  <% if @products.empty? %>
-    <div class="alert alert-info mt-4" role="alert">
-      No hay productos disponibles. <a href="<%= root_path %>" class="alert-link">Volver al inicio</a>.
+      <% if @products.empty? %>
+        <div class="alert alert-warning mt-4" role="alert">
+          <% if @q.present? %>
+            No encontramos productos que coincidan con "<strong><%= @q %></strong>". Intenta con otra búsqueda o limpia los filtros.
+          <% else %>
+            No hay productos disponibles por ahora.
+          <% end %>
+        </div>
+      <% end %>
+
+      <div class="mt-4 d-flex justify-content-center">
+        <%= paginate @products %>
+      </div>
     </div>
-  <% end %>
-
-  <div class="mt-4 d-flex justify-content-center">
-    <%= paginate @products %>
   </div>
 </div>
 
@@ -121,5 +203,31 @@
   #catalog .catalog-item { transition: .18s ease-in-out; }
   #catalog .product-image { max-height: 150px; object-fit: contain; }
   @media (max-width: 575px) { #catalog .catalog-header { margin-bottom: .75rem; } }
+  /* Sidebar de filtros */
+  #catalog .catalog-sidebar-filters { position: sticky; top: calc(var(--nav-height-shrink, 52px) + 12px); }
+  #catalog .catalog-sidebar-filters .filter-block .filter-scroll { max-height: 200px; overflow: auto; padding-right: 4px; }
+  #catalog .catalog-sidebar-filters .form-check { margin-bottom: .25rem; }
+  #catalog .catalog-sidebar-filters .input-group-text { min-width: 40px; justify-content: center; padding: .25rem .4rem; }
+  #catalog .catalog-sidebar-filters .form-control { padding: .25rem .4rem; }
+  /* Texto más pequeño en el sidebar */
+  #catalog .catalog-sidebar-filters { font-size: .85rem; }
+  #catalog .catalog-sidebar-filters h6 { font-size: .78rem; letter-spacing: .02em; }
+  #catalog .catalog-sidebar-filters .form-check-label,
+  #catalog .catalog-sidebar-filters .input-group-text { font-size: .85rem; }
+</style>
+
+<style>
+  /* Ajustes de altura/espaciado para el buscador del catálogo */
+  #catalog .catalog-header .input-group-search .form-control { padding-top: .375rem; padding-bottom: .375rem; }
+  @media (max-width: 575.98px) {
+    #catalog .catalog-header .input-group-search .input-group-text { padding: .25rem .5rem; }
+    #catalog .catalog-header .input-group-search .form-control { padding: .35rem .5rem; font-size: .95rem; }
+  }
+
+  /* Chip de búsqueda (texto en recuadro con X) */
+  .search-chip { border:1px solid var(--color-border,#d5d7da); border-radius:18px; padding:.15rem .5rem .15rem .65rem; background:#fff; font-size:.9rem; gap:.4rem; }
+  .search-chip .chip-text { max-width: 220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .search-chip .chip-clear { display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:50%; text-decoration:none; color:#666; background:transparent; border:1px solid #ccc; line-height:1; font-size:1rem; }
+  .search-chip .chip-clear:hover { color:#a31221; border-color:#a31221; }
 </style>
 

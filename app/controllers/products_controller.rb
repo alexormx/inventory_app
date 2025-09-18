@@ -10,11 +10,32 @@ class ProductsController < ApplicationController
     @q      = params[:q].to_s.strip
     @sort   = params[:sort].presence || "newest"
 
+    # Facetas básicas para filtros
+    @all_categories = Product.publicly_visible.distinct.order(Arel.sql("LOWER(category) ASC")).pluck(:category).compact
+    @all_brands     = Product.publicly_visible.distinct.order(Arel.sql("LOWER(brand) ASC")).pluck(:brand).compact
+
     scope = Product.publicly_visible
     if @q.present?
       pattern = "%#{@q.downcase}%"
       scope = scope.where("LOWER(product_name) LIKE ? OR LOWER(category) LIKE ? OR LOWER(brand) LIKE ?", pattern, pattern, pattern)
     end
+
+    # Filtros desde sidebar
+    selected_categories = Array(params[:categories]).reject(&:blank?)
+    selected_brands     = Array(params[:brands]).reject(&:blank?)
+    price_min           = params[:price_min].presence
+    price_max           = params[:price_max].presence
+    in_stock_only       = ActiveModel::Type::Boolean.new.cast(params[:in_stock])
+    backorder_only      = ActiveModel::Type::Boolean.new.cast(params[:backorder])
+    preorder_only       = ActiveModel::Type::Boolean.new.cast(params[:preorder])
+
+    scope = scope.where(category: selected_categories) if selected_categories.present?
+    scope = scope.where(brand: selected_brands)         if selected_brands.present?
+    scope = scope.where("selling_price >= ?", price_min.to_f) if price_min.present?
+    scope = scope.where("selling_price <= ?", price_max.to_f) if price_max.present?
+    scope = scope.joins(:inventories).where(inventories: { status: Inventory.statuses[:available] }).distinct if in_stock_only
+    scope = scope.where(backorder_allowed: true) if backorder_only
+    scope = scope.where(preorder_available: true) if preorder_only
 
     scope = case @sort
     when "price_asc"  then scope.order(selling_price: :asc)

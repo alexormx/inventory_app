@@ -17,7 +17,6 @@ import "./custom/navbar_toggle"
 import "./custom/theme_toggle"
 // Tooltips (si hay data-bs-toggle="tooltip")
 import "./custom/tooltip_init"
-
 // Admin: ajustes de inventario (form dinámico)
 import "./components/inventory_adjustment_lines"
 
