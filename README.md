@@ -279,6 +279,45 @@ Purchase example payload:
     "purchase_order_id": "PO-202509-001",
     "product_sku": "SKU-1",
     "quantity": 3,
+## 🛍️ Catálogo: Búsqueda y Filtros (Cliente)
+
+Estado: activo en producción (rama: fix/catalog-search-mobile → main)
+
+- Buscador único:
+  - Desktop: barra compacta en el navbar.
+  - Mobile: barra superior dentro del menú colapsado del navbar.
+  - Se eliminó la overlay de búsqueda para evitar duplicidad.
+- Vista de Catálogo (`/catalog`):
+  - Ordenar: se mantiene selector en la cabecera (newest, price_asc, price_desc, name_asc).
+  - Filtros en sidebar (solo desktop/tablet ≥ md): categorías, marcas, disponibilidad (en stock, backorder, preventa) y rango de precio.
+  - Chip de limpieza: cuando hay `q`, aparece un chip con el texto y una “X” para limpiar la búsqueda preservando el resto de filtros.
+  - Mensaje “sin resultados” claro cuando `@products` está vacío, diferenciando si había `q`.
+  - Responsive: el sidebar se oculta en móvil (`d-none d-md-block`).
+
+Parámetros soportados en `GET /catalog`:
+```
+q=<texto>
+sort=newest|price_asc|price_desc|name_asc
+categories[]=<cat1>&categories[]=<cat2>
+brands[]=<brand1>&brands[]=<brand2>
+price_min=<num>&price_max=<num>
+in_stock=1
+backorder=1
+preorder=1
+page=<n>
+```
+
+Accesibilidad/UX:
+- ARIA labels en navbar y elementos interactivos.
+- Keyboard friendly (nav toggles; el buscador del catálogo se limpia con la X clickable).
+
+Testing:
+- Request specs en `spec/requests/catalog_spec.rb` cubren: búsqueda, orden, filtros de categorías/marcas, rango de precio, in_stock/backorder/preorder.
+
+Notas de despliegue:
+- No hay migraciones nuevas.
+- Asegura `npm install` y assets precompilados en Heroku. AVIF desactivado por defecto; WebP activo.
+
     "unit_cost": 5,
     "unit_compose_cost_in_mxn": 5
   }
