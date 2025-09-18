@@ -998,6 +998,15 @@ body.overlay-open { overflow:hidden; }
   #navbar-scroll { transition: opacity .24s cubic-bezier(.4,0,.2,1), transform .24s cubic-bezier(.4,0,.2,1); will-change: opacity, transform; }
   #navbar-scroll[hidden] { opacity:0; transform:translateY(-6px); }
   #navbar-scroll.is-open { opacity:1; transform:translateY(0); }
+
+  /* Backdrop para menú móvil */
+  .nav-backdrop { position: fixed; left:0; right:0; bottom:0; top: var(--nav-offset, 0); background: rgba(0,0,0,0.35); z-index: 1050; opacity: 0; pointer-events: none; transition: opacity .2s ease; }
+  .nav-backdrop.show { opacity: 1; pointer-events: auto; }
+
+  /* Stagger suave de items (los delays se aplican inline desde JS) */
+  #navbar-menu > li { transition: transform .24s cubic-bezier(.4,0,.2,1), opacity .24s cubic-bezier(.4,0,.2,1); }
+  #navbar-scroll[hidden] #navbar-menu > li { transform: translateY(-4px); opacity: 0; }
+  #navbar-scroll.is-open #navbar-menu > li { transform: translateY(0); opacity: 1; }
 }
 
 /* Alternar icono del toggler (≡ ↔ ×) con aria-expanded */

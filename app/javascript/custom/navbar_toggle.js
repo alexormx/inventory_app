@@ -13,6 +13,7 @@
   const OPEN_CLASS = 'is-open';
   const SHOW_CLASS = 'show'; // Bootstrap collapse visible
   const BTN_COLLAPSED = 'collapsed';
+  let backdropEl = null;
 
   function select(id){ return document.getElementById(id); }
 
@@ -39,6 +40,34 @@
     panel.setAttribute('hidden','');
     btn.setAttribute('aria-expanded','false');
   btn.classList.add(BTN_COLLAPSED);
+    btn.setAttribute('aria-label','Abrir menú');
+    // Ocultar backdrop si existe
+    if(backdropEl){
+      backdropEl.classList.remove('show');
+      backdropEl.setAttribute('hidden','');
+      backdropEl.onclick = null;
+    }
+    // Limpiar stagger
+    const items = panel.querySelectorAll('#navbar-menu > li');
+    items.forEach(el => { el.style.transitionDelay=''; });
+  }
+
+  function ensureBackdrop(){
+    if(backdropEl) return backdropEl;
+    backdropEl = document.createElement('div');
+    backdropEl.className = 'nav-backdrop';
+    backdropEl.setAttribute('hidden','');
+    document.body.appendChild(backdropEl);
+    return backdropEl;
+  }
+
+  function positionBackdrop(){
+    if(!backdropEl) return;
+    const nav = document.querySelector('.site-navbar');
+    const banner = document.getElementById('construction-banner');
+    const bannerH = banner ? banner.offsetHeight : 0;
+    const navH = nav ? nav.offsetHeight : 60;
+    backdropEl.style.top = (bannerH + navH) + 'px';
   }
 
   function focusFirstItem(panel){
@@ -54,6 +83,18 @@
     panel.removeAttribute('hidden');
     btn.setAttribute('aria-expanded','true');
   btn.classList.remove(BTN_COLLAPSED);
+    btn.setAttribute('aria-label','Cerrar menú');
+    // Backdrop sólo en mobile
+    if(window.matchMedia('(max-width: 991.98px)').matches){
+      ensureBackdrop();
+      positionBackdrop();
+      backdropEl.removeAttribute('hidden');
+      backdropEl.classList.add('show');
+      backdropEl.onclick = () => close(btn, panel);
+    }
+    // Stagger de items del menú para efecto suave
+    const items = panel.querySelectorAll('#navbar-menu > li');
+    items.forEach((el, i) => { el.style.transitionDelay = (40*i)+'ms'; });
     focusFirstItem(panel);
   }
 
@@ -105,10 +146,12 @@
     // Al cambiar breakpoint (resize) re-evaluar
     const mql = window.matchMedia('(max-width: 991.98px)');
     mql.addEventListener('change', ()=> applyInitialState(btn, panel));
+  window.addEventListener('resize', positionBackdrop, { passive:true });
 
     // Cerrar antes de navegación Turbo para evitar estados fantasma
     document.addEventListener('turbo:before-render', ()=>{
       if(panel.classList.contains(OPEN_CLASS)) close(btn, panel);
+  if(backdropEl){ backdropEl.remove(); backdropEl=null; }
     });
   }
 
