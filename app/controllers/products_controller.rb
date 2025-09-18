@@ -11,8 +11,8 @@ class ProductsController < ApplicationController
     @sort   = params[:sort].presence || "newest"
 
   # Facetas básicas para filtros (ordenar en Ruby para evitar DISTINCT + ORDER BY en PG)
-  @all_categories = Product.publicly_visible.distinct.pluck(:category).compact.sort_by { |c| c.to_s.downcase }
-  @all_brands     = Product.publicly_visible.distinct.pluck(:brand).compact.sort_by { |b| b.to_s.downcase }
+  @all_categories = Product.publicly_visible.distinct.pluck(:category).compact.reject(&:blank?).sort_by { |c| c.to_s.downcase }
+  @all_brands     = Product.publicly_visible.distinct.pluck(:brand).compact.reject(&:blank?).sort_by { |b| b.to_s.downcase }
 
     scope = Product.publicly_visible
     if @q.present?
