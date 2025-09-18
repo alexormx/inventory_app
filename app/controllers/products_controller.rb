@@ -10,9 +10,9 @@ class ProductsController < ApplicationController
     @q      = params[:q].to_s.strip
     @sort   = params[:sort].presence || "newest"
 
-    # Facetas básicas para filtros
-    @all_categories = Product.publicly_visible.distinct.order(Arel.sql("LOWER(category) ASC")).pluck(:category).compact
-    @all_brands     = Product.publicly_visible.distinct.order(Arel.sql("LOWER(brand) ASC")).pluck(:brand).compact
+  # Facetas básicas para filtros (ordenar en Ruby para evitar DISTINCT + ORDER BY en PG)
+  @all_categories = Product.publicly_visible.distinct.pluck(:category).compact.sort_by { |c| c.to_s.downcase }
+  @all_brands     = Product.publicly_visible.distinct.pluck(:brand).compact.sort_by { |b| b.to_s.downcase }
 
     scope = Product.publicly_visible
     if @q.present?
