@@ -111,11 +111,12 @@ Rails.application.routes.draw do
     resources :system_variables, only: %i[index create update]
 
     # General user management (admin-facing) con tabs
-    resources :users, only: %i[index new create edit update] do
+  resources :users, only: %i[index new create edit update] do
       collection do
         get :customers
         get :suppliers
         get :admins
+    get :suggest
       end
       resources :shipping_addresses, controller: 'user_shipping_addresses' do
         member do

@@ -2,7 +2,11 @@
 <%= form_with model: [:admin, @sale_order], local: true do |f| %>
   <div class="mb-3">
     <%= f.label :user_id, "Customer" %>
-    <%= f.collection_select :user_id, User.where(role: "customer"), :id, :name, { prompt: "Select Customer" }, class: "form-select" %>
+    <div data-controller="user-suggest" data-user-suggest-role-value="customer">
+      <input type="text" class="form-control" data-user-suggest-target="input" placeholder="Empieza a escribir el cliente" data-action="input->user-suggest#input keydown->user-suggest#keydown">
+      <%= f.hidden_field :user_id, data: { 'user-suggest-target': 'hidden' } %>
+      <div class="form-text" data-user-suggest-target="hint"></div>
+    </div>
   </div>
   <div class="mb-3">
     <%= f.label :order_date %>

@@ -1,7 +1,11 @@
 <!-- Customer -->
 <div class="col-md-3">
   <%= f.label :user_id, "Customer", class: "form-label-sm" %>
-  <%= f.collection_select :user_id, User.where(role: "customer"), :id, :name, { include_blank: true }, class: "form-select form-select-sm" %>
+  <div data-controller="user-suggest" data-user-suggest-role-value="customer">
+    <input type="text" class="form-control form-control-sm" data-user-suggest-target="input" placeholder="Cliente" data-action="input->user-suggest#input keydown->user-suggest#keydown">
+    <%= f.hidden_field :user_id, data: { 'user-suggest-target': 'hidden' } %>
+    <div class="form-text" data-user-suggest-target="hint"></div>
+  </div>
 </div>
 
 <!-- Order Date -->
