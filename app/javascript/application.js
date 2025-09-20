@@ -4,6 +4,8 @@ import "./controllers"   // index.js arranca Stimulus y registra todo
 // Legacy helpers still in vanilla
 import "./custom/cart_preview"
 import "./custom/cart_preview_dynamic"
+// Abre el <dialog> cuando se carga el frame del modal de pagos
+import "./custom/payment_modal"
 
 // Órdenes: cálculo de costos y totales (SO/PO)
 import "./components/order_items"
