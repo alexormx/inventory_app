@@ -90,8 +90,11 @@ export default class extends Controller {
   _renderList(users){
     if(!this.hasResultsTarget){ return }
     this.resultsTarget.innerHTML = ''
-    const list = document.createElement('div')
-    list.className = 'list-group position-absolute w-100 shadow-sm'
+  const list = document.createElement('div')
+  list.className = 'list-group position-absolute w-100 shadow-sm user-suggest-dropdown'
+  list.style.top = '100%'
+  list.style.left = '0'
+  list.style.zIndex = '1200'
     users.forEach((u, idx) => {
       const a = document.createElement('button')
       a.type = 'button'
