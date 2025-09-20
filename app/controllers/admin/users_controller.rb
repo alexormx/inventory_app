@@ -152,30 +152,21 @@ class Admin::UsersController < ApplicationController
   def suggest
     q = params[:q].to_s.strip
     role = params[:role].presence
-    return render json: {} if q.blank?
+    return render json: [] if q.blank?
 
     scope = User.all
     scope = scope.where(role: role) if role.present? && %w[customer supplier].include?(role)
 
-    # Priorizar prefijo (que empieza con q), luego contener q; ordenar por longitud y alfabético
-    adapter = ActiveRecord::Base.connection.adapter_name.downcase
-    like_operator = adapter.include?("postgres") ? 'ILIKE' : 'LIKE'
-    q_down = adapter.include?("postgres") ? q : q.downcase
-
-    prefix_sql = User.sanitize_sql_array(["(LOWER(name) LIKE ?)", "#{q_down.downcase}%"]) # prefix match
-    contain_sql = User.sanitize_sql_array(["(LOWER(name) LIKE ?)", "%#{q_down.downcase}%"]) # contains
-
+    # Priorizar prefijo (empieza con q), luego contener q; ordenar por longitud y alfabético
+    q_down = q.downcase
     candidates = scope
-      .where("LOWER(name) LIKE ? OR LOWER(name) LIKE ?", "#{q_down.downcase}%", "%#{q_down.downcase}%")
-      .limit(30)
+      .where("LOWER(name) LIKE ? OR LOWER(name) LIKE ?", "#{q_down}%", "%#{q_down}%")
+      .limit(50)
 
-    best = candidates.min_by { |u| [ (u.name.downcase.start_with?(q_down.downcase) ? 0 : 1), u.name.length, u.name.downcase ] }
-
-    if best
-      render json: { id: best.id, name: best.name }
-    else
-      render json: {}
-    end
+    list = candidates.sort_by { |u| [ (u.name.to_s.downcase.start_with?(q_down) ? 0 : 1), u.name.to_s.length, u.name.to_s.downcase ] }
+                     .first(10)
+                     .map { |u| { id: u.id, name: u.name } }
+    render json: list
   end
 
   def customers

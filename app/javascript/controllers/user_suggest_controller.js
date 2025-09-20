@@ -8,7 +8,7 @@ import { Controller } from "@hotwired/stimulus"
 //   <div class="form-text" data-user-suggest-target="hint"></div>
 // </div>
 export default class extends Controller {
-  static targets = ["input", "hint", "hidden"]
+  static targets = ["input", "hint", "hidden", "results"]
   static values = {
     url: { type: String, default: "/admin/users/suggest" },
     role: { type: String, default: "" }, // "customer" | "supplier"
@@ -19,7 +19,9 @@ export default class extends Controller {
   connect(){
     this._timer = null
     this._lastQuery = ""
-    this._renderInfo("Escribe para buscar…")
+  this._renderInfo("Escribe para buscar…")
+  this._suggested = null
+  this._activeIndex = -1
   }
 
   input(){
@@ -35,11 +37,24 @@ export default class extends Controller {
   }
 
   keydown(event){
-    if((event.key === 'Tab' || event.key === 'ArrowRight' || event.key === 'Enter') && this._suggested){
+    if(!this.hasResultsTarget) return
+    const items = Array.from(this.resultsTarget.querySelectorAll('[data-item]'))
+    const max = items.length - 1
+    if(event.key === 'ArrowDown'){
       event.preventDefault()
-      // Autocompletar texto al nombre sugerido
-      this.inputTarget.value = this._suggested.name
-      this._setSelection(this._suggested)
+      this._activeIndex = Math.min(this._activeIndex + 1, max)
+      this._highlight(items)
+    } else if(event.key === 'ArrowUp'){
+      event.preventDefault()
+      this._activeIndex = Math.max(this._activeIndex - 1, 0)
+      this._highlight(items)
+    } else if(event.key === 'Enter' || event.key === 'Tab' || event.key === 'ArrowRight'){
+      if(this._activeIndex >= 0 && items[this._activeIndex]){
+        event.preventDefault()
+        items[this._activeIndex].click()
+      }
+    } else if(event.key === 'Escape'){
+      this._clearResults()
     }
   }
 
@@ -53,19 +68,15 @@ export default class extends Controller {
       .then(data => {
         // Si el usuario ya cambió el texto, abortar render
         if(this._lastQuery !== this.inputTarget.value.trim()) return
-        if(data && data.id){
-          this._suggested = data
-          this._setSelection(data)
-          this._renderHint(`Coincidencia: <strong>${this._escapeHtml(data.name)}</strong>`) 
+        if(Array.isArray(data) && data.length){
+          this._renderList(data)
         } else {
-          this._suggested = null
-          this._setSelection(null)
+          this._clearResults()
           this._renderInfo("Sin coincidencias")
         }
       })
       .catch(() => {
-        this._suggested = null
-        this._setSelection(null)
+        this._clearResults()
         this._renderInfo("Error de búsqueda")
       })
   }
@@ -74,6 +85,43 @@ export default class extends Controller {
     if(this.hasHiddenTarget){
       this.hiddenTarget.value = user?.id || ""
     }
+  }
+
+  _renderList(users){
+    if(!this.hasResultsTarget){ return }
+    this.resultsTarget.innerHTML = ''
+    const list = document.createElement('div')
+    list.className = 'list-group position-absolute w-100 shadow-sm'
+    users.forEach((u, idx) => {
+      const a = document.createElement('button')
+      a.type = 'button'
+      a.className = 'list-group-item list-group-item-action'
+      a.setAttribute('data-item', '1')
+      a.textContent = u.name
+      a.addEventListener('click', () => {
+        this.inputTarget.value = u.name
+        this._setSelection(u)
+        this._clearResults()
+        this._renderHint(`Seleccionado: <strong>${this._escapeHtml(u.name)}</strong>`)
+      })
+      list.appendChild(a)
+    })
+    this.resultsTarget.appendChild(list)
+    this._activeIndex = 0
+    this._highlight(Array.from(this.resultsTarget.querySelectorAll('[data-item]')))
+  }
+
+  _highlight(items){
+    items.forEach((el, i) => {
+      el.classList.toggle('active', i === this._activeIndex)
+    })
+  }
+
+  _clearResults(){
+    if(this.hasResultsTarget){
+      this.resultsTarget.innerHTML = ''
+    }
+    this._activeIndex = -1
   }
 
   _renderInfo(text){

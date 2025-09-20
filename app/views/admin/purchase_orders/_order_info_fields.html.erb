@@ -2,10 +2,11 @@
   <!-- Supplier -->
   <div class="col-md-2">
     <%= f.label :user_id, "Supplier", class: "form-label-sm" %>
-    <div data-controller="user-suggest" data-user-suggest-role-value="supplier">
+    <div data-controller="user-suggest" data-user-suggest-role-value="supplier" class="position-relative">
       <input type="text" class="form-control form-control-sm" data-user-suggest-target="input" placeholder="Proveedor" data-action="input->user-suggest#input keydown->user-suggest#keydown">
       <%= f.hidden_field :user_id, data: { 'user-suggest-target': 'hidden' } %>
       <div class="form-text" data-user-suggest-target="hint"></div>
+      <div data-user-suggest-target="results" style="z-index: 1050;"></div>
     </div>
   </div>
 
