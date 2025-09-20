@@ -1081,3 +1081,10 @@ body.overlay-open { overflow:hidden; }
 main.page-main { position:relative; opacity:1; transition:opacity .18s ease; }
 main.page-main.is-leaving { opacity:0; }
 main.page-main.is-entering { opacity:1; }
+
+/* User suggest dropdown (typeahead) */
+.user-suggest-dropdown {
+  z-index: 1200; /* por encima de cards y navbar */
+  max-height: 280px; /* evitar crecer demasiado */
+  overflow: auto; /* permitir scroll si hay muchos resultados */
+}
