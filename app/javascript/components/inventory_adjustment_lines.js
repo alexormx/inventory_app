@@ -1,7 +1,6 @@
 function initInventoryAdjustmentLines(){
   const DEBUG = window?.APP_DEBUG === true; // activar poniendo window.APP_DEBUG = true en consola si se necesita
   if(window.__IA_LINES_LOADED){ if(DEBUG) console.log("[IA Lines] already initialized"); return; }
-  window.__IA_LINES_LOADED = true;
   if(DEBUG) console.log("[IA Lines] init invoked");
   const searchInput = document.querySelector("#inventory-adjustment-product-search");
   const resultsContainer = document.querySelector("#inventory-adjustment-product-results");
@@ -11,6 +10,8 @@ function initInventoryAdjustmentLines(){
   if (!resultsContainer) { if(DEBUG) console.log("[IA Lines] results container not found"); return; }
   if (!linesTableBody) { if(DEBUG) console.log("[IA Lines] lines body not found"); return; }
   if(DEBUG) console.log("[IA Lines] initialization OK");
+  // Marcar como inicializado solo cuando los elementos requeridos existen
+  window.__IA_LINES_LOADED = true;
 
   let debounceTimer = null;
   let lineIndex = linesTableBody.querySelectorAll("tr.line-row").length;
@@ -26,7 +27,8 @@ function initInventoryAdjustmentLines(){
       fetch(url, {
         headers: { "Accept": "application/json", "X-CSRF-Token": token }
       }).then(r => {
-  if(DEBUG) console.log("[IA Lines] response status", r.status);
+        if(DEBUG) console.log("[IA Lines] response status", r.status);
+        if(!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json();
       }).then(products => {
   if(DEBUG) console.log("[IA Lines] products returned", products.length);
@@ -41,7 +43,10 @@ function initInventoryAdjustmentLines(){
           btn.addEventListener("click", () => { addLineForProduct(p); resultsContainer.innerHTML = ""; searchInput.value = ""; });
           resultsContainer.appendChild(btn);
         });
-  }).catch(err => console.error("[IA Lines] fetch error", err));
+      }).catch(err => {
+        if(DEBUG) console.error("[IA Lines] fetch error", err);
+        resultsContainer.innerHTML = "";
+      });
     }, 300);
   });
 
