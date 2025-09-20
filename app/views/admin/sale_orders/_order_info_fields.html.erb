@@ -1,7 +1,7 @@
 <!-- Customer -->
 <div class="col-md-3">
   <%= f.label :user_id, "Customer", class: "form-label-sm" %>
-  <div data-controller="user-suggest" data-user-suggest-role-value="customer" class="position-relative">
+  <div data-controller="user-suggest" class="position-relative">
     <input type="text" class="form-control form-control-sm" data-user-suggest-target="input" placeholder="Cliente" data-action="input->user-suggest#input keydown->user-suggest#keydown">
     <%= f.hidden_field :user_id, data: { 'user-suggest-target': 'hidden' } %>
     <div class="form-text" data-user-suggest-target="hint"></div>
