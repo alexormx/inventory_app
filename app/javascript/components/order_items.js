@@ -83,16 +83,7 @@ document.addEventListener("turbo:load", () => {
 
   if (!resultsBox || !tbody) return;
 
-  // Handle product selection
-  resultsBox.addEventListener("click", (e) => {
-    const item = e.target.closest(".list-group-item");
-    if (!item) return;
-
-    // Check the context
-    const contextElement = document.querySelector(".order-context");
-    const context = contextElement?.dataset?.context || "default";
-
-    const product = JSON.parse(item.dataset.product);
+  function addProductToOrder(product) {
     const row = buildBlankPurchaseOrderItemRow(index);
 
     // Fill in product details
@@ -101,35 +92,51 @@ document.addEventListener("turbo:load", () => {
     row.querySelector(".item-qty").value = 1;
     row.querySelector(".item-unit-cost").value = 0;
 
-    if (context === "sale-order") {
-      row.querySelector(".item-unit-discount").value = 0;
-      row.querySelector(".item-unit-final-price").value = 0;
-    }
-
     // Fill volume and weight fields
-    const volume = product.length_cm * product.width_cm * product.height_cm;
+    const volume = (product.length_cm || 0) * (product.width_cm || 0) * (product.height_cm || 0);
 
     const volumeField = row.querySelector(".item-volume");
-    volumeField.value = volume;
-    volumeField.dataset.unitVolume = volume;
+    if (volumeField) {
+      volumeField.value = volume;
+      volumeField.dataset.unitVolume = volume;
+    }
 
     const weightField = row.querySelector(".item-weight");
-    weightField.value = product.weight_gr;
-    weightField.dataset.unitWeight = product.weight_gr;
+    if (weightField) {
+      weightField.value = product.weight_gr || 0;
+      weightField.dataset.unitWeight = product.weight_gr || 0;
+    }
 
-      // ✅ Remove placeholder row
+    // ✅ Remove placeholder row
     const placeholderRow = document.querySelector(".order-without-items");
     if (placeholderRow) placeholderRow.remove();
 
     tbody.appendChild(row);
     index++;
 
-    // Clear search
-    document.querySelector("#product-search").value = "";
+    // Clear search UI
+    const si = document.querySelector("#product-search");
+    if (si) si.value = "";
     resultsBox.innerHTML = "";
 
     // Trigger update of totals
     updateItemTotals();
+  }
+
+  // Handle product selection
+  resultsBox.addEventListener("click", (e) => {
+    const item = e.target.closest(".list-group-item");
+    if (!item) return;
+
+    const product = JSON.parse(item.dataset.product);
+    addProductToOrder(product);
+  });
+
+  // Bridge Stimulus product-search controller selection to add a row
+  document.addEventListener("product-search:selected", (ev) => {
+    const product = ev.detail;
+    if (!product) return;
+    addProductToOrder(product);
   });
 });
 
