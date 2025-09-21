@@ -41,8 +41,8 @@ class ProductsController < ApplicationController
     when "price_asc"  then scope.order(selling_price: :asc)
     when "price_desc" then scope.order(selling_price: :desc)
     when "name_asc"   then scope.order(Arel.sql("LOWER(product_name) ASC"))
-    else # newest
-      scope.order(created_at: :desc)
+    else # newest (deterministic)
+      scope.order(created_at: :desc, id: :desc)
     end
 
   # Preload de imágenes para evitar N+1 de ActiveStorage en la grilla

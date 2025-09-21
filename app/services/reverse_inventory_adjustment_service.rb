@@ -1,5 +1,8 @@
 class ReverseInventoryAdjustmentService
-	class NotReversible < StandardError; end
+
+
+
+  class NotReversible < StandardError; end
 	class NotApplied < StandardError; end
 
 	def initialize(adjustment, reversed_by: nil, now: Time.current)

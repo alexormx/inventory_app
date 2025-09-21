@@ -3,10 +3,11 @@
 FactoryBot.define do
   sequence(:sku_seq)       { |n| "SKU-#{n.to_s.rjust(5, '0')}" }
   sequence(:whatsapp_seq)  { |n| "WGT#{n.to_s.rjust(3, '0')}-#{SecureRandom.hex(2)}" }
+  sequence(:product_name_seq) { |n| "Sample Product #{n}" }
 
   factory :product do
     product_sku     { generate(:sku_seq) }
-    product_name    { 'Sample Product' }
+  product_name    { generate(:product_name_seq) }
     brand           { 'Tomica' }
 
     # Category/status – safe defaults
@@ -14,8 +15,8 @@ FactoryBot.define do
     status { 'active' }
 
     # Prices & discounts – keep valid relationship
-    minimum_price   { 99.99 }
-    selling_price   { 199.99 }
+  minimum_price   { 50.00 }
+  selling_price   { 199.99 }
     maximum_discount { 0 } # ✅ required numeric
 
     # Inventory-ish
@@ -37,6 +38,13 @@ FactoryBot.define do
     transient do
       skip_seed_inventory { false }
       seed_inventory_count { 5 }
+    end
+
+    # Garantizar validez de precios al construir (si el spec sobreescribe selling_price)
+    after(:build) do |product, _evaluator|
+      if product.minimum_price.present? && product.selling_price.present? && product.minimum_price > product.selling_price
+        product.minimum_price = product.selling_price
+      end
     end
 
     after(:create) do |product, evaluator|

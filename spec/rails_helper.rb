@@ -19,6 +19,9 @@ require 'devise'
 # Ensure Devise mappings are loaded (workaround if not automatically loaded in Rails 8 test env)
 Rails.application.reload_routes! if Devise.mappings.empty?
 
+# Load support files
+Dir[Rails.root.join('spec/support/**/*.rb')].sort.each { |f| require f }
+
 begin
   ActiveRecord::Migration.maintain_test_schema!
 rescue ActiveRecord::PendingMigrationError => e
@@ -78,6 +81,8 @@ RSpec.configure do |config|
 
   # Default URL options (for *_url helpers & Devise mailers)
   config.before(:suite) do
+    # Ensure routes are fully loaded for request specs
+    Rails.application.reload_routes!
     Rails.application.routes.default_url_options[:host] = 'localhost'
     Rails.application.routes.default_url_options[:protocol] = 'http'
     if defined?(ActionMailer)
