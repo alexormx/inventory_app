@@ -1,0 +1,15 @@
+<turbo-frame id="modal_frame">
+  <dialog id="address_modal">
+    <div class="modal-dialog">
+      <div class="modal-content p-3 shadow rounded">
+        <div class="modal-header position-relative">
+          <h5 class="modal-title">Nueva dirección</h5>
+          <button type="button" class="custom-close" id="closeModal" aria-label="Close">&times;</button>
+        </div>
+        <div class="modal-body" id="address-modal-body">
+          <%= render 'form' %>
+        </div>
+      </div>
+    </div>
+  </dialog>
+</turbo-frame>

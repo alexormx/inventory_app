@@ -64,6 +64,13 @@ dialog::backdrop {
   background: rgba(0, 0, 0, 0.5);
 }
 
+/* Estilo base de dialog para evitar borde/padding nativo (Chrome/Safari) */
+dialog {
+  border: none;
+  padding: 0;
+  background: transparent;
+}
+
 dialog.modal-dialog-centered {
   border: none;
   padding: 0;
@@ -83,8 +90,8 @@ dialog.modal-dialog-centered {
   position: absolute;
   top: 0.5rem;
   right: 0.5rem;
-  width: 2.5rem;
-  height: 2.5rem;
+  width: 2.75rem; /* target táctil mejorado */
+  height: 2.75rem;
   font-size: 1.5rem;
   font-weight: bold;
   color: #000;
@@ -95,12 +102,60 @@ dialog.modal-dialog-centered {
   background: transparent;
   border-radius: 0.5rem;
   cursor: pointer;
+  line-height: 1; /* evita zonas no clicables por altura de línea */
+  z-index: 20; /* por encima del header/título */
+  pointer-events: auto; /* asegurar clic en toda el área */
+  -webkit-tap-highlight-color: transparent; /* mejor tap en móvil */
+  touch-action: manipulation;
+  transition: background-color .18s ease, transform .12s ease, color .18s ease;
+}
+
+/* Cuando existe contenedor posicionado, el botón no necesita posicionamiento absoluto */
+.modal-close-container .custom-close { position: static; }
+
+/* Centrado y márgenes del contenedor del modal */
+dialog .modal-dialog { max-width: 640px; margin: 8vh auto 4vh; }
+.modal.show .modal-dialog { max-width: 640px; margin: 8vh auto 4vh; }
+
+@media (max-width: 575.98px) {
+  dialog .modal-dialog { margin: 6vh auto 3vh; }
+  .modal.show .modal-dialog { margin: 6vh auto 3vh; }
 }
 
 .custom-close:hover,
 .custom-close:focus {
-  background-color: rgba(0, 0, 0, 0.05);
-  outline: none;
+  color: var(--color-accent-hover);
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px; /* simula un margen visible alrededor del cuadro */
+  box-shadow: 0 0 0 3px var(--color-accent-soft);
+  transform: scale(1.04);
+}
+
+.custom-close:active {
+  transform: scale(0.96);
+}
+
+/* Unificar estética del contenedor visual del modal */
+.modal-content {
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 10px 28px -8px rgba(0,0,0,.35), 0 6px 16px -10px rgba(0,0,0,.25);
+  background: var(--color-surface);
+  overflow: hidden; /* respeta el radio en hijos */
+}
+
+/* Padding homogéneo por sección */
+dialog .modal-header, .modal.show .modal-header { padding: .75rem 1.25rem; }
+dialog .modal-body,   .modal.show .modal-body   { padding: 1.25rem; }
+dialog .modal-footer, .modal.show .modal-footer { padding: .75rem 1.25rem 1rem; background: var(--color-bg-elevated, #f8f9fa); }
+
+/* Footer interno para formularios cuando no usamos .modal-footer (dentro de .modal-body) */
+.modal-form-footer {
+  border-top: 1px solid var(--color-border);
+  background: var(--color-bg-elevated, #f8f9fa);
+  padding-top: .75rem;
+  padding-bottom: 1rem;
+  margin-top: .5rem;
 }
 .box-requirements {
   max-width: 330px; /* Adjust width */

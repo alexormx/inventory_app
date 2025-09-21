@@ -5,44 +5,82 @@ module Admin
 		before_action :set_address, only: [:edit, :update, :destroy, :make_default]
 
 		def index
-			@addresses = @user.shipping_addresses.order(created_at: :desc)
-			render plain: @addresses.map { |a| "#{a.id}: #{a.full_name} #{a.line1}" }.join("\n")
+			@addresses = @user.shipping_addresses.ordered
 		end
 
 		def new
 			@address = @user.shipping_addresses.new
-			render plain: "new address form placeholder"
+			if turbo_frame_request?
+				render :new_modal
+			else
+				render :new
+			end
 		end
 
 		def create
 			@address = @user.shipping_addresses.new(address_params)
 			if @address.save
-				redirect_to admin_user_shipping_address_path(@user, @address), notice: 'Dirección creada.'
+				respond_to do |format|
+					format.turbo_stream
+					format.html { redirect_to admin_user_shipping_addresses_path(@user), notice: 'Dirección creada.' }
+				end
 			else
-				render plain: @address.errors.full_messages.join(", "), status: :unprocessable_entity
+				respond_to do |format|
+					format.turbo_stream do
+						render turbo_stream: turbo_stream.replace(
+							"address-modal-body",
+							partial: "admin/user_shipping_addresses/form",
+							locals: { user: @user, address: @address }
+						)
+					end
+					format.html { render :new, status: :unprocessable_entity }
+				end
 			end
 		end
 
 		def edit
-			render plain: "edit address form placeholder"
+			if turbo_frame_request?
+				render :edit_modal
+			else
+				render :edit
+			end
 		end
 
 		def update
 			if @address.update(address_params)
-				redirect_to admin_user_shipping_address_path(@user, @address), notice: 'Dirección actualizada.'
+				respond_to do |format|
+					format.turbo_stream
+					format.html { redirect_to admin_user_shipping_addresses_path(@user), notice: 'Dirección actualizada.' }
+				end
 			else
-				render plain: @address.errors.full_messages.join(", "), status: :unprocessable_entity
+				respond_to do |format|
+					format.turbo_stream do
+						render turbo_stream: turbo_stream.replace(
+							"address-modal-body",
+							partial: "admin/user_shipping_addresses/form",
+							locals: { user: @user, address: @address }
+						)
+					end
+					format.html { render :edit, status: :unprocessable_entity }
+				end
 			end
 		end
 
 		def destroy
 			@address.destroy
-			redirect_to admin_user_shipping_addresses_path(@user), notice: 'Dirección eliminada.'
+			respond_to do |format|
+				format.turbo_stream
+				format.html { redirect_to admin_user_shipping_addresses_path(@user), notice: 'Dirección eliminada.' }
+			end
 		end
 
 		def show
 			set_address
-			render plain: "#{@address.full_name} - #{@address.line1}" if @address
+			if turbo_frame_request?
+				render :show_modal
+			else
+				render :show
+			end
 		end
 
 		def make_default
@@ -50,9 +88,18 @@ module Admin
 				@user.shipping_addresses.update_all(default: false)
 				@address.update!(default: true)
 			end
-			redirect_to admin_user_shipping_addresses_path(@user), notice: 'Dirección marcada como predeterminada.'
+			respond_to do |format|
+				format.turbo_stream
+				format.html { redirect_to admin_user_shipping_addresses_path(@user), notice: 'Dirección marcada como predeterminada.' }
+			end
 		rescue => e
-			redirect_to admin_user_shipping_addresses_path(@user), alert: "Error al marcar predeterminada: #{e.message}"
+			respond_to do |format|
+				format.turbo_stream do
+					flash.now[:alert] = "Error al marcar predeterminada: #{e.message}"
+					render :index, status: :unprocessable_entity
+				end
+				format.html { redirect_to admin_user_shipping_addresses_path(@user), alert: "Error al marcar predeterminada: #{e.message}" }
+			end
 		end
 
 		private
@@ -69,7 +116,7 @@ module Admin
 		end
 
 		def address_params
-			params.require(:shipping_address).permit(:label, :full_name, :line1, :line2, :city, :state, :postal_code, :country, :settlement, :municipality)
+			params.require(:shipping_address).permit(:label, :full_name, :line1, :line2, :city, :state, :postal_code, :country, :settlement, :municipality, :default)
 		end
 	end
 end

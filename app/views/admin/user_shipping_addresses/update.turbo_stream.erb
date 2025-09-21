@@ -1,0 +1,9 @@
+<%= turbo_stream.replace "addresses_table" do %>
+  <turbo-frame id="addresses_table">
+    <%= render partial: 'table', locals: { addresses: @user.shipping_addresses.ordered, user: @user } %>
+  </turbo-frame>
+<% end %>
+
+<%= turbo_stream.update "modal_frame" do %>
+  <template></template>
+<% end %>

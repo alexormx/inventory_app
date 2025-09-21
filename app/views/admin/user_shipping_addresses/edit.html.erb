@@ -1,0 +1,10 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+	<h1 class="h5 mb-0">Editar dirección de <%= @user.name %></h1>
+	<%= link_to 'Volver', admin_user_shipping_addresses_path(@user), class: 'btn btn-outline-secondary btn-sm' %>
+</div>
+
+<div class="card">
+	<div class="card-body">
+		<%= render 'form' %>
+	</div>
+</div>

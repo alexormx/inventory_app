@@ -1,0 +1,26 @@
+<turbo-frame id="modal_frame">
+  <dialog id="address_modal">
+    <div class="modal-dialog">
+  <div class="modal-content">
+        <div class="modal-header position-relative">
+          <h5 class="modal-title">Dirección</h5>
+          <div class="modal-close-container">
+            <button type="button" class="custom-close" id="closeModal" aria-label="Close" title="Cerrar" role="button">&times;</button>
+          </div>
+        </div>
+        <div class="modal-body">
+          <dl class="row mb-0">
+            <dt class="col-sm-3">Etiqueta</dt>
+            <dd class="col-sm-9"><%= @address.label %></dd>
+            <dt class="col-sm-3">Nombre</dt>
+            <dd class="col-sm-9"><%= @address.full_name %></dd>
+            <dt class="col-sm-3">Dirección</dt>
+            <dd class="col-sm-9"><%= @address.to_one_line %></dd>
+            <dt class="col-sm-3">Default</dt>
+            <dd class="col-sm-9"><%= @address.default? ? 'Sí' : 'No' %></dd>
+          </dl>
+        </div>
+      </div>
+    </div>
+  </dialog>
+</turbo-frame>

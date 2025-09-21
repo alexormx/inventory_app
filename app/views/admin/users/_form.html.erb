@@ -2,6 +2,11 @@
 <%= form_with model: [:admin, @user], local: true do |f| %>
   <div class="card">
     <div class="card-body">
+      <div class="d-flex justify-content-end mb-2">
+        <% if @user&.persisted? %>
+          <%= link_to 'Manage Addresses', admin_user_shipping_addresses_path(@user), class: 'btn btn-sm btn-outline-primary' %>
+        <% end %>
+      </div>
       <div class="row g-3">
         <div class="col-md-6">
           <%= f.label :name, class: 'form-label' %>

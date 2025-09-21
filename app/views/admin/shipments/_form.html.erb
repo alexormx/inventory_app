@@ -15,9 +15,11 @@
         <%= form_with model: [:admin, sale_order, shipment], 
                       data: { turbo_frame: "shipment_modal" },
                       local: false do |f| %>
-          <div class="modal-header">
+          <div class="modal-header position-relative">
             <h5 class="modal-title"><%= shipment.persisted? ? "Edit Shipment" : "Add Shipment" %></h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" onclick="document.getElementById('shipment_modal').innerHTML = ''"></button>
+            <div class="modal-close-container">
+              <button type="button" class="custom-close" id="closeShipmentModal" aria-label="Close" title="Cerrar" role="button" onclick="document.getElementById('shipment_modal').innerHTML = ''">&times;</button>
+            </div>
           </div>
           <div class="modal-body">
             <div class="mb-3">

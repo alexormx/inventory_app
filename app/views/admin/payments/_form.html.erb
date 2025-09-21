@@ -33,8 +33,8 @@
 
   <%= f.hidden_field :sale_order_id %>
 
-  <div class="col-12 d-flex justify-content-end">
-    <%= f.submit (payment.persisted? ? "Update" : "Add"), class: "btn btn-success me-2" %>
+  <div class="col-12 modal-form-footer d-flex justify-content-end gap-2">
+    <%= f.submit (payment.persisted? ? "Update" : "Add"), class: "btn btn-success" %>
     <button type="button" class="btn btn-secondary" id="cancelModal">Cancel</button>
   </div>
 <% end %>

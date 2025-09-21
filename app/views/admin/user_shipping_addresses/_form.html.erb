@@ -1,0 +1,45 @@
+<% user = local_assigns[:user] || @user %>
+<% address = local_assigns[:address] || @address %>
+<%= form_with model: [:admin, user, address] do |f| %>
+  <div class="row g-2">
+    <div class="col-6">
+      <%= f.label :label, 'Etiqueta' %>
+      <%= f.text_field :label, class: 'form-control', placeholder: 'Casa / Oficina' %>
+    </div>
+    <div class="col-6">
+      <%= f.label :full_name, 'Nombre' %>
+      <%= f.text_field :full_name, class: 'form-control', required: true %>
+    </div>
+    <div class="col-12">
+      <%= f.label :line1, 'Dirección (línea 1)' %>
+      <%= f.text_field :line1, class: 'form-control', required: true %>
+    </div>
+    <div class="col-12">
+      <%= f.label :line2, 'Dirección (línea 2)' %>
+      <%= f.text_field :line2, class: 'form-control' %>
+    </div>
+    <div class="col-6">
+      <%= f.label :city, 'Ciudad' %>
+      <%= f.text_field :city, class: 'form-control', required: true %>
+    </div>
+    <div class="col-6">
+      <%= f.label :state, 'Estado' %>
+      <%= f.text_field :state, class: 'form-control' %>
+    </div>
+    <div class="col-6">
+      <%= f.label :postal_code, 'CP' %>
+      <%= f.text_field :postal_code, class: 'form-control', required: true %>
+    </div>
+    <div class="col-6">
+      <%= f.label :country, 'País' %>
+      <%= f.text_field :country, class: 'form-control', value: 'MX', required: true %>
+    </div>
+    <div class="col-12 form-check mt-1">
+      <%= f.check_box :default, class: 'form-check-input', id: 'addr_default_admin' %>
+      <%= f.label :default, 'Establecer como predeterminada', class: 'form-check-label' %>
+    </div>
+  <div class="col-12 modal-form-footer d-flex justify-content-end gap-2">
+      <%= f.submit class: 'btn btn-primary' %>
+    </div>
+  </div>
+<% end %>

@@ -30,7 +30,8 @@
   <th><%= sort_link('Last Visit', :last_visit) %></th>
   <th><%= sort_link('Last Purchase', :last_purchase) %></th>
   <th><%= sort_link('Last Sale', :last_sale) %></th>
-        <th></th>
+  <th></th>
+  <th></th>
       </tr>
     </thead>
     <tbody>
@@ -122,6 +123,9 @@
             <% if edit_path %>
               <%= link_to "Edit", edit_path.call(u), class: "btn btn-outline-secondary btn-sm", data: { turbo_frame: "_top" } %>
             <% end %>
+          </td>
+          <td>
+            <%= link_to "Addresses", admin_user_shipping_addresses_path(u), class: "btn btn-outline-primary btn-sm" %>
           </td>
         </tr>
       <% end %>

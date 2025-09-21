@@ -1,0 +1,14 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+	<h1 class="h5 mb-0">Direcciones de <%= @user.name %></h1>
+	<div>
+		<%= link_to 'Volver a Usuarios', admin_users_path, class: 'btn btn-outline-secondary btn-sm' %>
+		<%= link_to 'Nueva dirección', new_admin_user_shipping_address_path(@user), data: { turbo_frame: 'modal_frame' }, class: 'btn btn-primary btn-sm' %>
+	</div>
+</div>
+
+<turbo-frame id="addresses_table">
+	<%= render partial: 'table', locals: { addresses: @addresses, user: @user } %>
+  
+</turbo-frame>
+
+<turbo-frame id="modal_frame"></turbo-frame>

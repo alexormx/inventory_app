@@ -1,0 +1,42 @@
+<div class="table-responsive">
+  <% if addresses.any? %>
+    <table class="table table-sm table-bordered align-middle">
+      <thead class="table-light">
+        <tr>
+          <th>Etiqueta</th>
+          <th>Nombre</th>
+          <th>Dirección</th>
+          <th>CP</th>
+          <th>Default</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% addresses.each do |addr| %>
+          <tr>
+            <td><%= addr.label %></td>
+            <td><%= addr.full_name %></td>
+            <td><small class="text-muted"><%= addr.to_one_line %></small></td>
+            <td><%= addr.postal_code %></td>
+            <td>
+              <% if addr.default? %>
+                <span class="badge bg-success">Sí</span>
+              <% else %>
+                <%= button_to 'Marcar default', make_default_admin_user_shipping_address_path(user, addr), method: :patch, data: { turbo_stream: true }, class: 'btn btn-sm btn-outline-primary' %>
+              <% end %>
+            </td>
+            <td class="text-end">
+              <div class="btn-group btn-group-sm">
+                <%= link_to 'Ver', admin_user_shipping_address_path(user, addr), data: { turbo_frame: 'modal_frame' }, class: 'btn btn-outline-secondary' %>
+                <%= link_to 'Editar', edit_admin_user_shipping_address_path(user, addr), data: { turbo_frame: 'modal_frame' }, class: 'btn btn-outline-primary' %>
+                <%= button_to 'Eliminar', admin_user_shipping_address_path(user, addr), method: :delete, data: { turbo_confirm: '¿Eliminar dirección?', turbo_stream: true }, class: 'btn btn-outline-danger' %>
+              </div>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% else %>
+    <div class="alert alert-info mb-0">No hay direcciones para este usuario.</div>
+  <% end %>
+</div>
