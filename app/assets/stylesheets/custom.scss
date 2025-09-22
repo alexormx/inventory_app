@@ -60,6 +60,20 @@ body:not(.app-ready) .btn[data-defer-until-ready] {
   overflow-wrap: anywhere;      /* rompe palabras largas sin espacios */
 }
 
+/* Neutralizar utilidades de line-clamp dentro del título del catálogo */
+#catalog .card-title,
+#catalog .card-title *,
+#catalog .card-title .line-clamp,
+#catalog .card-title .line-clamp-1,
+#catalog .card-title .line-clamp-2,
+#catalog .card-title .line-clamp-3 {
+  display: block !important;
+  -webkit-line-clamp: unset !important;
+  line-clamp: unset !important;
+  -webkit-box-orient: initial !important;
+  max-height: none !important;
+}
+
 /* Dropdown menu */
 
 .dropdown-menu.active {
