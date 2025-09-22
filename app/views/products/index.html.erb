@@ -204,15 +204,7 @@
   #catalog .catalog-item { transition: .18s ease-in-out; }
   #catalog .product-image { max-height: 150px; object-fit: contain; }
   #catalog .card-title { white-space: normal; overflow: visible; text-overflow: unset; }
-  /* Asegurar que el enlace del título también haga wrap y no trunque */
-  #catalog .card-title a {
-    display: block;
-    white-space: normal !important;
-    overflow: visible;
-    text-overflow: clip;
-    word-break: break-word;       /* compatibilidad amplia */
-    overflow-wrap: anywhere;      /* quiebra palabras largas sin espacios */
-  }
+  /* (Revertido) Permitimos que las utilidades globales controlen truncamiento en catálogo */
   @media (max-width: 575px) { #catalog .catalog-header { margin-bottom: .75rem; } }
   /* Sidebar de filtros */
   #catalog .catalog-sidebar-filters { position: sticky; top: calc(var(--nav-height-shrink, 52px) + 12px); }

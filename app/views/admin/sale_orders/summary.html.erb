@@ -1,0 +1,101 @@
+<%# Resumen compacto de Sale Order (Admin) %>
+<div class="compact-summary-wrapper so-wrapper mx-auto">
+	<h1 class="h5 mb-3">Resumen de Pedido <%= @sale_order.id %></h1>
+	<div class="mb-1 small text-muted">Cliente: <strong><%= @sale_order.user&.name || '—' %></strong></div>
+	<div class="mb-2 small text-muted">Fecha: <%= l(@sale_order.order_date, format: :long) %></div>
+
+	<table class="table table-sm table-bordered align-middle mb-2 so-summary-table">
+		<thead class="table-primary text-dark">
+			<tr>
+				<th style="width:42px">Cantid.</th>
+				<th style="width:264px">Producto</th>
+				<th style="width:60px" class="text-end">Costo unit</th>
+				<th style="width:66px" class="text-end">Costo Total</th>
+			</tr>
+		</thead>
+		<tbody>
+			<% total = 0.to_d %>
+			<% @sale_order.sale_order_items.includes(product: [product_images_attachments: :blob]).each do |item| %>
+				<% prod = item.product %>
+				<% line_total = item.total_line_cost.to_d %>
+				<% total += line_total %>
+				<tr>
+					<td class="text-center"><%= item.quantity %></td>
+					<td>
+						<div class="d-flex align-items-center gap-2">
+							<% if prod&.product_images&.attached? %>
+								<% image = prod.product_images.first %>
+								<%= image_tag image.variant(resize_to_fill: [36,36]).processed, class: "rounded border bg-white", alt: prod.product_name %>
+							<% else %>
+								<div class="placeholder rounded border bg-light d-flex align-items-center justify-content-center" style="width:36px;height:36px;font-size:.55rem;">N/A</div>
+							<% end %>
+							<div class="flex-grow-1 product-info">
+								<%# Nombre SIN truncamiento (wrap completo) %>
+								<strong class="small d-block" title="<%= prod&.product_name %>"><%= prod&.product_name || 'Producto eliminado' %></strong>
+								<%# Código/WhatsApp: puedes dejarlo truncado o completo; por ahora completo también %>
+								<span class="text-muted extra-small d-block"><%= prod&.whatsapp_code %></span>
+							</div>
+						</div>
+					</td>
+					<td class="text-end"><%= number_to_currency(item.unit_final_price) %></td>
+					<td class="text-end"><%= number_to_currency(line_total) %></td>
+				</tr>
+			<% end %>
+
+			<tr class="table-primary fw-semibold">
+				<td class="text-center"></td>
+				<td class="text-end">Sub-Total</td>
+				<td class="text-end"></td>
+				<td class="text-end"><%= number_to_currency(total) %></td>
+			</tr>
+
+			<% shipping = (@sale_order.shipping_cost || 0).to_d %>
+			<% grand_total = (total + shipping).round(2) %>
+			<% if shipping.positive? %>
+				<tr class="table-primary fw-semibold">
+					<td></td>
+					<td class="text-end">Envío</td>
+					<td></td>
+					<td class="text-end"><%= number_to_currency(shipping) %></td>
+				</tr>
+			<% end %>
+
+			<tr class="table-primary fw-bold">
+				<td></td>
+				<td class="text-end">Total</td>
+				<td></td>
+				<td class="text-end"><%= number_to_currency(grand_total) %></td>
+			</tr>
+		</tbody>
+	</table>
+
+	<% if @sale_order.shipment.present? %>
+		<div class="alert alert-warning py-1 px-2 small mb-2">
+			<i class="fa fa-truck me-1"></i>Envío por <strong><%= @sale_order.shipment.carrier %></strong>
+		</div>
+	<% else %>
+		<div class="alert alert-warning py-1 px-2 small mb-2">
+			<i class="fa fa-truck me-1"></i>Aún no se ha seleccionado un método de entrega.
+		</div>
+	<% end %>
+
+	<div class="d-flex gap-2 mt-3">
+		<%= link_to 'Ver detalle completo', admin_sale_order_path(@sale_order), class: 'btn btn-outline-secondary btn-sm' %>
+		<%= link_to 'Volver a listado', admin_sale_orders_path, class: 'btn btn-outline-primary btn-sm' %>
+	</div>
+</div>
+
+<style>
+.so-summary-table thead th { font-size:.72rem; letter-spacing:.4px; padding:.35rem .45rem; }
+.so-summary-table tbody td { font-size:.75rem; padding:.35rem .45rem; }
+.so-summary-table tbody td:first-child { font-weight:600; }
+.so-summary-table .extra-small { font-size:.6rem; }
+.so-summary-table img.rounded.border { background:#fff; }
+.so-summary-table .product-info { min-width:0; }
+/* Importante: sin truncamiento para nombre y código */
+.so-summary-table .product-info strong,
+.so-summary-table .product-info span { white-space: normal; overflow: visible; text-overflow: clip; }
+.compact-summary-wrapper.so-wrapper { width:60%; min-width:320px; }
+@media (max-width: 992px){ .compact-summary-wrapper.so-wrapper { width:100%; } }
+</style>
+
