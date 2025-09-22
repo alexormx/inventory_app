@@ -49,6 +49,17 @@ body:not(.app-ready) .btn[data-defer-until-ready] {
 }
 @import "bootstrap";
 
+/* Catálogo: evitar truncamiento de títulos de productos */
+#catalog .card-title,
+#catalog .card-title a,
+#catalog .card-title .text-truncate {
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  word-break: break-word;       /* compatibilidad amplia */
+  overflow-wrap: anywhere;      /* rompe palabras largas sin espacios */
+}
+
 /* Dropdown menu */
 
 .dropdown-menu.active {
