@@ -121,6 +121,11 @@ class SaleOrder < ApplicationRecord
 
   private
 
+  # ¿Esta orden está autorizada para usar crédito?
+  def credit_allowed?
+    (user&.respond_to?(:credit_enabled) && user.credit_enabled) || credit_override
+  end
+
   def ensure_payment_and_shipment_present
     # Solo validar al transicionar a un estado que exige pago/envío.
     return unless saved_change_to_status?
@@ -136,7 +141,10 @@ class SaleOrder < ApplicationRecord
       # Permitir 'In Transit' sin exigir pago, pero debe existir shipment
       errors.add(:shipment, "must exist to set in transit") unless shipment.present?
     when "Delivered"
-      errors.add(:payment, "must exist to deliver the order") unless total_order_value.to_f == 0.0 || payments.any?
+      # Si no hay crédito, exigir pago; si hay crédito, permitir sin pago
+      unless credit_allowed?
+        errors.add(:payment, "must exist to deliver the order") unless total_order_value.to_f == 0.0 || payments.any?
+      end
       errors.add(:shipment, "must exist to deliver the order") unless shipment.present?
     end
   end
@@ -223,6 +231,18 @@ class SaleOrder < ApplicationRecord
       rescue StandardError
         Rails.logger.error("Failed to create default shipment for SaleOrder ")
       end
+    end
+
+    # Asignar due_date si se permite crédito y aún no está definido
+    if credit_allowed? && due_date.blank?
+      base = shipment&.actual_delivery || shipment&.estimated_delivery || order_date || Date.today
+      days = case (credit_terms || user&.default_credit_terms || "none").to_s
+             when "net15" then 15
+             when "net30" then 30
+             when "net45" then 45
+             else 0
+             end
+      update_column(:due_date, base + days) if days > 0
     end
   end
 

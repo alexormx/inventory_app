@@ -56,6 +56,23 @@
       <p><%= number_with_precision(@sale_order.total_weight_gr / 1000.0, precision: 3) %></p>
     </div>
   </div>
+  <%# Credit info %>
+  <% credit_allowed = (@sale_order.user&.respond_to?(:credit_enabled) && @sale_order.user.credit_enabled) || @sale_order.credit_override %>
+  <% credit_terms = (@sale_order.credit_terms || @sale_order.user&.default_credit_terms).to_s %>
+  <% if credit_allowed && credit_terms != 'none' %>
+    <div class="alert alert-warning d-flex justify-content-between align-items-center py-2">
+      <div>
+        <strong>On Credit:</strong>
+        <span class="badge bg-warning text-dark"><%= credit_terms.titleize %></span>
+        <% if @sale_order.due_date.present? %>
+          <span class="ms-2">Due: <%= @sale_order.due_date %></span>
+        <% end %>
+      </div>
+      <% if @sale_order.due_date.present? && (@sale_order.total_order_value.to_d - @sale_order.total_paid.to_d) > 0 && Date.today > @sale_order.due_date %>
+        <span class="text-danger fw-bold">Overdue</span>
+      <% end %>
+    </div>
+  <% end %>
   <turbo-frame id="payment_balance">
     <div class="row g-3 mb-4">
       <div class="col-md-3">

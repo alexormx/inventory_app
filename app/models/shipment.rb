@@ -53,13 +53,27 @@ class Shipment < ApplicationRecord
         desired = so.fully_paid? ? "Confirmed" : "Pending"
         so.update!(status: desired) unless so.status == desired
       when "shipped"
-        # Mapeo a "In Transit"; si la orden está Cancelada/Devuelta no la reactivamos.
-        unless ["Canceled", "Returned"].include?(so.status)
-          so.update!(status: "In Transit") unless so.status == "In Transit"
+        # ESTRICTA B: si no hay pago y no hay crédito, no permitir pasar a In Transit
+        # Permitir si está totalmente pagada o si tiene crédito habilitado
+        credit_allowed = (so.user&.respond_to?(:credit_enabled) && so.user.credit_enabled) || so.credit_override
+        if so.fully_paid? || credit_allowed
+          unless ["Canceled", "Returned"].include?(so.status)
+            so.update!(status: "In Transit") unless so.status == "In Transit"
+          end
+        else
+          # revertir status del shipment a pending y registrar
+          update_column(:status, Shipment.statuses[:pending])
+          Rails.logger.warn "[Shipment#sync] Blocked shipped without payment or credit (sale_order_id=#{so.id})"
         end
       when "delivered"
-        # Marcar la orden como entregada; respetará validaciones (pago/shipment existentes)
-        so.update!(status: "Delivered") unless so.status == "Delivered"
+        # ESTRICTA B: si no hay pago y no hay crédito, no permitir Delivered
+        credit_allowed = (so.user&.respond_to?(:credit_enabled) && so.user.credit_enabled) || so.credit_override
+        if so.fully_paid? || credit_allowed
+          so.update!(status: "Delivered") unless so.status == "Delivered"
+        else
+          update_column(:status, Shipment.statuses[:shipped]) # mantén shipped si llegó aquí
+          Rails.logger.warn "[Shipment#sync] Blocked delivered without payment or credit (sale_order_id=#{so.id})"
+        end
       when "canceled"
         # Si el envío se cancela y la orden no estaba entregada, cancelar la orden
         so.update!(status: "Canceled") unless so.status == "Delivered" || so.status == "Canceled"
