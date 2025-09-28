@@ -17,5 +17,19 @@
     <%= f.label :status %>
   <%= f.select :status, SaleOrder.validators_on(:status).first.options[:in].map { |s| [s, s] }, {}, class: "form-select" %>
   </div>
+
+  <div class="mb-3">
+    <label class="form-label">Crédito para esta orden</label>
+    <div class="form-check form-switch">
+      <%= f.check_box :credit_override, class: "form-check-input", role: "switch" %>
+      <%= f.label :credit_override, "Habilitar crédito en esta orden", class: "form-check-label" %>
+    </div>
+  </div>
+
+  <div class="mb-3">
+    <%= f.label :credit_terms, "Términos de crédito" %>
+    <%= f.select :credit_terms, [["None", "none"], ["Net 15", "net15"], ["Net 30", "net30"], ["Net 45", "net45"]], { include_blank: true }, class: "form-select" %>
+    <div class="form-text">Si se deja en blanco, usa el valor del cliente (default). "None" desactiva crédito para esta orden.</div>
+  </div>
   <%= f.submit class: "btn btn-primary" %>
 <% end %>

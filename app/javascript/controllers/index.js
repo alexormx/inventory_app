@@ -17,6 +17,7 @@ import ModalController from "./modal_controller"
 import NavbarController from "./navbar_controller"
 import PaymentModalController from "./payment_modal_controller"
 import ProductMetaController from "./product_meta_controller"
+import ShipmentGuardController from "./shipment_guard_controller"
 import SimpleAccordionController from "./simple_accordion_controller"
 import SimpleTabsController from "./simple_tabs_controller"
 import SubtabsController from "./subtabs_controller"
@@ -40,6 +41,7 @@ application.register("modal", ModalController)
 application.register("navbar", NavbarController)
 application.register("payment-modal", PaymentModalController)
 application.register("product-meta", ProductMetaController)
+application.register("shipment-guard", ShipmentGuardController)
 application.register("simple-accordion", SimpleAccordionController)
 application.register("simple-tabs", SimpleTabsController)
 application.register("subtabs", SubtabsController)

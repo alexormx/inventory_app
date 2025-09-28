@@ -149,6 +149,8 @@ class Admin::SaleOrdersController < ApplicationController
       :user_id, :order_date, :subtotal, :tax_rate,
       :total_tax, :total_order_value, :discount,
       :status, :notes,
+      # Credit fields
+      :credit_override, :credit_terms,
       sale_order_items_attributes: [
         :id, :product_id, :quantity, :unit_cost, :unit_discount,
         :unit_final_price, :total_line_cost, :total_line_volume,

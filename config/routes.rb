@@ -92,6 +92,8 @@ Rails.application.routes.draw do
         get :cancellations
       end
     end
+    # Accounts Receivable simple report
+    resources :receivables, only: [:index]
     resources :settings, only: [:index] do
       collection do
         post :index # para guardar configuraciones simples (tax)

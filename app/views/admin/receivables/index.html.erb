@@ -1,0 +1,43 @@
+<div class="container mt-4">
+  <h2>Accounts Receivable</h2>
+  <div class="table-responsive mt-3">
+    <table class="table table-striped table-sm align-middle">
+      <thead>
+        <tr>
+          <th>SO ID</th>
+          <th>Customer</th>
+          <th>Status</th>
+          <th>Total</th>
+          <th>Paid</th>
+          <th>Balance</th>
+          <th>Due Date</th>
+          <th>Overdue</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @receivables.each do |so| %>
+          <% paid = so.total_paid %>
+          <% balance = so.total_order_value.to_d - paid.to_d %>
+          <tr>
+            <td><%= so.id %></td>
+            <td><%= so.user&.name || '—' %></td>
+            <td><%= so.status %></td>
+            <td>$<%= number_with_precision(so.total_order_value, precision: 2) %></td>
+            <td>$<%= number_with_precision(paid, precision: 2) %></td>
+            <td class="<%= balance > 0 ? 'text-danger fw-bold' : '' %>">$<%= number_with_precision(balance, precision: 2) %></td>
+            <td><%= so.due_date || '—' %></td>
+            <td>
+              <% if so.due_date.present? && balance > 0 && Date.today > so.due_date %>
+                <span class="badge bg-danger">Overdue</span>
+              <% else %>
+                <span class="badge bg-secondary">—</span>
+              <% end %>
+            </td>
+            <td><%= link_to 'Open', admin_sale_order_path(so), class: 'btn btn-sm btn-outline-primary' %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>

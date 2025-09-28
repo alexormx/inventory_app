@@ -254,7 +254,9 @@ class Admin::UsersController < ApplicationController
   def user_params
     params.require(:user).permit(
       :name, :email, :phone, :role, :discount_rate, :created_offline,
-      :password, :password_confirmation
+      :password, :password_confirmation,
+      # Credit fields
+      :credit_enabled, :default_credit_terms, :credit_limit
     )
   end
 end
