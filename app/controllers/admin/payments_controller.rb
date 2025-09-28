@@ -11,6 +11,13 @@ class Admin::PaymentsController < ApplicationController
     if @payment.save
       # Recarga la orden completamente con pagos actualizados
       @sale_order = SaleOrder.includes(:payments).find(@payment.sale_order_id)
+      # Forzar sincronización inmediata del estado (no depender del after_commit)
+      begin
+        @sale_order.update_status_if_fully_paid!
+        @sale_order.reload
+      rescue => e
+        Rails.logger.warn("[PaymentsController#create] could not update SaleOrder status: #{e.class} #{e.message}")
+      end
 
       respond_to do |format|
         format.turbo_stream
@@ -44,6 +51,12 @@ class Admin::PaymentsController < ApplicationController
 
     if @payment.update(payment_params)
       @sale_order = @payment.sale_order
+      begin
+        @sale_order.update_status_if_fully_paid!
+        @sale_order.reload
+      rescue => e
+        Rails.logger.warn("[PaymentsController#update] could not update SaleOrder status: #{e.class} #{e.message}")
+      end
 
       respond_to do |format|
         format.turbo_stream
@@ -69,6 +82,12 @@ class Admin::PaymentsController < ApplicationController
     @payment.destroy
 
     @sale_order = SaleOrder.includes(:payments).find(@sale_order.id) # 🔥 recarga para tener los pagos actualizados
+    begin
+      @sale_order.update_status_if_fully_paid!
+      @sale_order.reload
+    rescue => e
+      Rails.logger.warn("[PaymentsController#destroy] could not update SaleOrder status: #{e.class} #{e.message}")
+    end
 
     respond_to do |format|
       format.turbo_stream

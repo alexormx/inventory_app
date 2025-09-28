@@ -12,13 +12,15 @@ class Shipment < ApplicationRecord
 
   before_update :update_last_status_change
   after_save :update_sale_order_totals_if_shipping_changed
+  after_update :sync_sale_order_status_from_shipment, if: :saved_change_to_status?
 
   enum :status, [ :pending, :shipped, :delivered, :canceled, :returned ], default: :pending
 
   private
 
   def update_last_status_change
-    if status_changed?
+    # En before_update usamos will_save_change_to_* para detectar cambios pendientes
+    if will_save_change_to_status?
       self.last_update = Time.current
     end
   end
@@ -34,6 +36,38 @@ class Shipment < ApplicationRecord
     if saved_change_to_shipping_cost?
       sale_order.update!(shipping_cost: shipping_cost)
       sale_order.recalculate_totals!
+    end
+  end
+
+  # Cuando el estado del Shipment cambia, sincronizamos el SaleOrder relacionado
+  def sync_sale_order_status_from_shipment
+    so = sale_order
+    return unless so
+
+    current = status.to_s
+    begin
+      case current
+      when "pending"
+        # Si el envío se regresa a pendiente, degradamos la orden:
+        # - Si está totalmente pagada, a Confirmed; en otro caso, a Pending
+        desired = so.fully_paid? ? "Confirmed" : "Pending"
+        so.update!(status: desired) unless so.status == desired
+      when "shipped"
+        # Mapeo a "In Transit"; si la orden está Cancelada/Devuelta no la reactivamos.
+        unless ["Canceled", "Returned"].include?(so.status)
+          so.update!(status: "In Transit") unless so.status == "In Transit"
+        end
+      when "delivered"
+        # Marcar la orden como entregada; respetará validaciones (pago/shipment existentes)
+        so.update!(status: "Delivered") unless so.status == "Delivered"
+      when "canceled"
+        # Si el envío se cancela y la orden no estaba entregada, cancelar la orden
+        so.update!(status: "Canceled") unless so.status == "Delivered" || so.status == "Canceled"
+      when "returned"
+        so.update!(status: "Returned") unless so.status == "Returned"
+      end
+    rescue => e
+      Rails.logger.error "[Shipment#sync_sale_order_status_from_shipment] #{e.class}: #{e.message} (sale_order_id=#{so.id})"
     end
   end
 end
