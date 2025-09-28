@@ -1,3 +1,26 @@
-<%= turbo_stream.update "shipment_modal", "" %>
+<%= turbo_stream.update "shipment_modal" do %>
+	<template></template>
+<% end %>
+
 <%= turbo_stream.update "shipment_info", partial: "admin/shipments/info", locals: { sale_order: @sale_order } %>
 <%= turbo_stream.update "shipment_button", partial: "admin/shipments/button", locals: { sale_order: @sale_order } %>
+
+<%= turbo_stream.update "sale_order_status",
+		partial: "admin/sale_orders/status_badge",
+		locals: { sale_order: @sale_order } %>
+
+<%= turbo_stream.update "payment_balance" do %>
+	<div class="row g-3 mb-4">
+		<div class="col-md-3">
+			<strong>Total Paid:</strong>
+			<p>$<%= number_with_precision(@sale_order.total_paid, precision: 2) %></p>
+		</div>
+
+		<div class="col-md-3">
+			<strong>Balance Due:</strong>
+			<p class="<%= @sale_order.fully_paid? ? 'text-success' : 'text-danger' %>">
+				$<%= number_with_precision(@sale_order.total_order_value - @sale_order.total_paid, precision: 2) %>
+			</p>
+		</div>
+	</div>
+<% end %>

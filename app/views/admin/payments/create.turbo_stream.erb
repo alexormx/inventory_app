@@ -7,9 +7,9 @@
   <template></template> <!-- Limpia el contenido pero conserva el frame -->
 <% end %>
 
-<%= turbo_stream.update "sale_order_status" do %>
-  <span class="badge <%= status_badge_class(@sale_order.status) %> px-3 py-2"><%= @sale_order.status %></span>
-<% end %>
+<%= turbo_stream.update "sale_order_status",
+    partial: "admin/sale_orders/status_badge",
+    locals: { sale_order: @sale_order } %>
 
 <%= turbo_stream.update "payment_balance" do %>
   <div class="row g-3 mb-4">

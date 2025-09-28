@@ -264,9 +264,10 @@ class SaleOrder < ApplicationRecord
   end
 
   def broadcast_status_change
-    Turbo::StreamsChannel.broadcast_replace_to(
+    # Actualiza en vivo el badge dentro del frame con id "sale_order_status"
+    Turbo::StreamsChannel.broadcast_update_to(
       ["sale_order", id],
-      target: "sale_order_status_badge",
+      target: "sale_order_status",
       partial: "admin/sale_orders/status_badge",
       locals: { sale_order: self }
     )

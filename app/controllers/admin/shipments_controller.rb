@@ -36,6 +36,8 @@ class Admin::ShipmentsController < ApplicationController
 
   def update
     if @shipment.update(shipment_params)
+      # Recarga la orden para reflejar cambios de estado y totales
+      @sale_order.reload
       respond_to do |format|
         format.turbo_stream # 🚀 Rails usará views/admin/shipments/update.turbo_stream.erb
         format.html { redirect_to admin_sale_order_path(@sale_order), notice: "Shipment updated successfully" }

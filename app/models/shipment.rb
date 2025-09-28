@@ -47,10 +47,16 @@ class Shipment < ApplicationRecord
     current = status.to_s
     begin
       case current
+      when "pending"
+        # Si el envío se regresa a pendiente, degradamos la orden:
+        # - Si está totalmente pagada, a Confirmed; en otro caso, a Pending
+        desired = so.fully_paid? ? "Confirmed" : "Pending"
+        so.update!(status: desired) unless so.status == desired
       when "shipped"
-        # Promover la orden a "In Transit" si aún no está en un estado final
-        return if ["Delivered", "Canceled", "Returned"].include?(so.status)
-        so.update!(status: "In Transit") unless so.status == "In Transit"
+        # Mapeo a "In Transit"; si la orden está Cancelada/Devuelta no la reactivamos.
+        unless ["Canceled", "Returned"].include?(so.status)
+          so.update!(status: "In Transit") unless so.status == "In Transit"
+        end
       when "delivered"
         # Marcar la orden como entregada; respetará validaciones (pago/shipment existentes)
         so.update!(status: "Delivered") unless so.status == "Delivered"
