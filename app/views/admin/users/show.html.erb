@@ -24,6 +24,18 @@
           <th scope="row">Role:</th>
           <td><%= @user.role.capitalize %></td>
         </tr>
+        <tr>
+          <th scope="row">Crédito habilitado:</th>
+          <td><%= @user.respond_to?(:credit_enabled) && @user.credit_enabled ? "✅ Sí" : "❌ No" %></td>
+        </tr>
+        <tr>
+          <th scope="row">Términos de crédito por defecto:</th>
+          <td><%= @user.respond_to?(:default_credit_terms) ? (@user.default_credit_terms || 'none') : '—' %></td>
+        </tr>
+        <tr>
+          <th scope="row">Límite de crédito:</th>
+          <td><%= @user.respond_to?(:credit_limit) && @user.credit_limit.present? ? number_to_currency(@user.credit_limit) : '—' %></td>
+        </tr>
         <% if @user.role == "customer" %>
           <tr>
             <th scope="row">Discount Rate:</th>

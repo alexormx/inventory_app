@@ -16,6 +16,7 @@ class Admin::UsersController < ApplicationController
   @with_purchases  = ActiveModel::Type::Boolean.new.cast(params[:with_purchases])
   @active_recent   = ActiveModel::Type::Boolean.new.cast(params[:active_recent]) # últimas 30 días
   @inactive        = ActiveModel::Type::Boolean.new.cast(params[:inactive])      # sin visita o > 90 días
+  @with_credit     = ActiveModel::Type::Boolean.new.cast(params[:with_credit])   # con crédito habilitado
 
   users = User.all
   sort = params[:sort].presence
@@ -76,6 +77,9 @@ class Admin::UsersController < ApplicationController
     if @with_purchases
       users = users.where(Arel.sql("#{purchases_total_expr} > 0"))
     end
+    if @with_credit
+      users = users.where(credit_enabled: true)
+    end
     if @active_recent
       # En los últimos 30 días
       active_sql = User.sanitize_sql_array(["(#{last_visit_expr}) IS NOT NULL AND (#{last_visit_expr}) >= ?", 30.days.ago])
@@ -130,6 +134,9 @@ class Admin::UsersController < ApplicationController
     end
     if @with_purchases
       filtered_counts_scope = filtered_counts_scope.where(Arel.sql("#{purchases_total_expr} > 0"))
+    end
+    if @with_credit
+      filtered_counts_scope = filtered_counts_scope.where(credit_enabled: true)
     end
     if @active_recent
       active_sql = User.sanitize_sql_array(["(#{last_visit_expr}) IS NOT NULL AND (#{last_visit_expr}) >= ?", 30.days.ago])

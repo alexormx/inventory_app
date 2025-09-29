@@ -56,6 +56,10 @@
             <label class="form-check-label" for="with_purchases">Con compras</label>
           </div>
           <div class="form-check form-check-inline">
+            <%= check_box_tag :with_credit, 1, @with_credit, class: "form-check-input", id: "with_credit" %>
+            <label class="form-check-label" for="with_credit">Con crédito</label>
+          </div>
+          <div class="form-check form-check-inline">
             <%= check_box_tag :active_recent, 1, @active_recent, class: "form-check-input", id: "active_recent" %>
             <label class="form-check-label" for="active_recent">Activos (30d)</label>
           </div>

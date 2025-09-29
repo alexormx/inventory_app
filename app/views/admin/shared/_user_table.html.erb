@@ -20,6 +20,7 @@
         <th>Email</th>
         <th>Phone</th>
   <th>Role</th>
+  <th>Crédito</th>
         <% if include_offline_column %>
           <th>Offline</th>
         <% end %>
@@ -52,6 +53,10 @@
               else 'secondary'
             end %>
             <span class="badge text-bg-<%= role_class %>"><%= u.role %></span>
+          </td>
+          <td>
+            <% has_credit = (u.respond_to?(:credit_enabled) && u.credit_enabled) %>
+            <span class="badge <%= has_credit ? 'text-bg-success' : 'text-bg-light' %>"><%= has_credit ? 'Sí' : 'No' %></span>
           </td>
           <% if include_offline_column %>
             <td>
