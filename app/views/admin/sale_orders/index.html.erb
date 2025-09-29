@@ -9,7 +9,7 @@
   items: [
     ["Pending",   "Pending",   "bg-warning text-dark"],
     ["Confirmed", "Confirmed", "bg-info"],
-    ["Shipped",   "Shipped",   "bg-primary"],
+    ["In Transit", "In Transit", "bg-primary"],
     ["Delivered", "Delivered", "bg-success"],
     ["Canceled",  "Canceled",  "bg-danger"],
   ],
@@ -33,11 +33,11 @@
       </div>
   <div class="col-12 col-md-6 text-md-end">
         <% current_status = @status_filter.presence || "all" %>
-        <% outline_for = ->(s) do
+     <% outline_for = ->(s) do
              case s
              when "Pending" then "warning text-dark"
              when "Confirmed" then "info"
-             when "Shipped" then "primary"
+       when "In Transit" then "primary"
              when "Delivered" then "success"
              when "Canceled" then "danger"
              else "secondary"
@@ -48,7 +48,7 @@
           <%= button_tag "Todos", name: :status, value: "all", class: btnc.call("all", current_status) %>
           <%= button_tag "Pending", name: :status, value: "Pending", class: btnc.call("Pending", current_status) %>
           <%= button_tag "Confirmed", name: :status, value: "Confirmed", class: btnc.call("Confirmed", current_status) %>
-          <%= button_tag "Shipped", name: :status, value: "Shipped", class: btnc.call("Shipped", current_status) %>
+          <%= button_tag "In Transit", name: :status, value: "In Transit", class: btnc.call("In Transit", current_status) %>
           <%= button_tag "Delivered", name: :status, value: "Delivered", class: btnc.call("Delivered", current_status) %>
           <%= button_tag "Canceled", name: :status, value: "Canceled", class: btnc.call("Canceled", current_status) %>
         </div>
@@ -69,7 +69,7 @@
   items: [
     ["Pending",   "Pending",   "bg-warning text-dark"],
     ["Confirmed", "Confirmed", "bg-info"],
-    ["Shipped",   "Shipped",   "bg-primary"],
+    ["In Transit", "In Transit", "bg-primary"],
     ["Delivered", "Delivered", "bg-success"],
     ["Canceled",  "Canceled",  "bg-danger"],
   ],
