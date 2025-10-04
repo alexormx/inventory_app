@@ -29,7 +29,7 @@
   <!-- Financials -->
   <div class="col-md-3">
     <%= f.label :subtotal %>
-    <%= f.number_field :subtotal, step: 0.01, class: "form-control" %>
+    <div class="form-control-plaintext fw-semibold"><%= number_with_precision(purchase_order.subtotal, precision: 2) %></div>
   </div>
 
   <div class="col-md-3">
@@ -65,23 +65,23 @@
 
   <div class="col-md-3">
     <%= f.label :total_order_cost, "Total Order Cost" %>
-    <%= f.number_field :total_order_cost, class: "form-control", readonly: true, id: "total_order_cost" %>
+    <div class="form-control-plaintext fw-semibold" id="total_order_cost"><%= number_with_precision(purchase_order.total_order_cost, precision: 2) %></div>
   </div>
 
   <div class="col-md-3">
     <%= f.label :total_cost_mxn, "Total in MXN" %>
-    <%= f.number_field :total_cost_mxn, class: "form-control", readonly: true, id: "total_cost_mxn" %>
+    <div class="form-control-plaintext fw-semibold" id="total_cost_mxn"><%= number_with_precision(purchase_order.total_cost_mxn, precision: 2) %></div>
   </div>
 
   <!-- Add total volume and weight based on new columns created in last migration-->
   <div class="col-md-3">
     <%= f.label :total_volume, "Total Volume (cm³)" %>
-    <%= f.number_field :total_volume, class: "form-control", readonly: true, id: "total_volume" %>
+    <div class="form-control-plaintext" id="total_volume"><%= number_with_precision(purchase_order.total_volume, precision: 2) %></div>
   </div>
 
   <div class="col-md-3">
     <%= f.label :total_weight, "Total Weight (gr)" %>
-    <%= f.number_field :total_weight, class: "form-control", readonly: true, id: "total_weight" %>
+    <div class="form-control-plaintext" id="total_weight"><%= number_with_precision(purchase_order.total_weight, precision: 2) %></div>
   </div>
 
   <!-- Notes -->

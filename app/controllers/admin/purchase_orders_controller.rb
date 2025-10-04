@@ -148,9 +148,9 @@ class Admin::PurchaseOrdersController < ApplicationController
   def purchase_order_params
     params.require(:purchase_order).permit(
       :user_id, :order_date, :expected_delivery_date,
-      :subtotal, :tax_cost, :currency, :shipping_cost,
-      :other_cost, :discount, :status, :notes, :total_cost, :total_cost_mxn,
-      :actual_delivery_date, :exchange_rate, :total_order_cost, :total_volume, :total_weight,
+      :tax_cost, :currency, :shipping_cost,
+      :other_cost, :discount, :status, :notes,
+      :actual_delivery_date, :exchange_rate,
       purchase_order_items_attributes: [:id, :product_id, :quantity, :unit_cost,
       :unit_additional_cost, :unit_compose_cost, :unit_compose_cost_in_mxn, :total_line_cost, :total_line_volume,
       :total_line_weight, :total_line_cost_in_mxn, :_destroy]

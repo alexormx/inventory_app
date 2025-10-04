@@ -29,6 +29,10 @@ class PurchaseOrder < ApplicationRecord
 
   after_update :update_inventory_status_based_on_order_status
   before_destroy :ensure_inventories_safe_or_cleanup
+  
+  # Asegurar consistencia de totales antes de validar / guardar
+  before_validation :normalize_numeric_fields
+  before_validation :recalculate_totals
 
   def may_be_deleted?
     !%w[Delivered Closed].include?(status)
@@ -39,6 +43,51 @@ class PurchaseOrder < ApplicationRecord
   def expected_delivery_after_order_date
     if expected_delivery_date.present? && order_date.present? && expected_delivery_date < order_date
       errors.add(:expected_delivery_date, "must be after the order date")
+    end
+
+    # -------------------- Cálculo de totales --------------------
+    def normalize_numeric_fields
+      self.shipping_cost = to_decimal(shipping_cost)
+      self.tax_cost      = to_decimal(tax_cost)
+      self.other_cost    = to_decimal(other_cost)
+      self.subtotal      = to_decimal(subtotal)
+      self.exchange_rate = to_decimal(exchange_rate.presence || 1)
+      self.exchange_rate = 1 if currency == 'MXN'
+    end
+
+    def recalculate_totals
+      lines = purchase_order_items.reject(&:marked_for_destruction?)
+      # Subtotal: usar total_line_cost si existe, si no derivar de quantity * (unit_compose_cost || unit_cost)
+      computed_subtotal = lines.sum do |li|
+        (li.total_line_cost || begin
+          qty = li.quantity.to_d
+          unit = (li.unit_compose_cost || li.unit_cost || 0).to_d
+          qty * unit
+        end).to_d
+      end
+      self.subtotal = computed_subtotal.round(2)
+
+      # Total order cost (moneda original)
+      self.total_order_cost = (subtotal + shipping_cost + tax_cost + other_cost).round(2)
+
+      # Total MXN (si la moneda no es MXN aplicar tipo de cambio)
+      self.total_cost_mxn = if currency == 'MXN'
+        total_order_cost
+      else
+        (total_order_cost * exchange_rate).round(2)
+      end
+
+      # Volumen y peso agregados (si los campos de línea existen)
+      self.total_volume = lines.sum { |li| (li.respond_to?(:total_line_volume) && li.total_line_volume.present?) ? li.total_line_volume.to_d : 0 }.round(2)
+      self.total_weight = lines.sum { |li| (li.respond_to?(:total_line_weight) && li.total_line_weight.present?) ? li.total_line_weight.to_d : 0 }.round(2)
+    rescue => e
+      Rails.logger.error "[PurchaseOrder#recalculate_totals] #{e.class}: #{e.message}"
+    end
+
+    def to_decimal(value)
+      BigDecimal(value.to_s)
+    rescue ArgumentError, TypeError
+      0.to_d
     end
   end
 
