@@ -263,7 +263,10 @@ function updateItemTotals(fromTotals = false) {
   const totalAdditionalCost = shippingCost + taxCost + otherCost;
 
 
-  // Now calculate line totals and accumulate subtotal
+  // Now calculate line totals and accumulate subtotal.
+  // Subtotal se redefine a partir de unit_compose_cost (unit_cost + unit_additional_cost)
+  // para reflejar el costo real distribuido.
+  let subtotalBase = 0; // mantiene suma simple qty * unit_cost (referencia interna)
   document.querySelectorAll(".purchase-item-row").forEach(row => {
     const destroyInput = row.querySelector("input.item-destroy-flag");
     if (destroyInput?.value === "1") return;
@@ -302,12 +305,16 @@ function updateItemTotals(fromTotals = false) {
     const unitComposeCostMxnField = row.querySelector(".item-unit-compose-cost-mxn");
     if (unitComposeCostMxnField) unitComposeCostMxnField.value = unitComposeCostMXN.toFixed(2);
 
-    subtotal += qty * unitCost;
+    subtotalBase += qty * unitCost;
+    subtotal += lineTotal; // usar costo compuesto de la línea
   });
 
   // Update summary fields
   const subtotalField = fieldByName("subtotal");
-  if (subtotalField) subtotalField.value = subtotal.toFixed(2);
+  if (subtotalField) {
+    subtotalField.value = subtotal.toFixed(2);
+    subtotalField.dataset.baseSubtotal = subtotalBase.toFixed(2);
+  }
 
   const volumeField = document.querySelector("#total_volume");
   if (volumeField) volumeField.value = totalLinesVolume.toFixed(2);

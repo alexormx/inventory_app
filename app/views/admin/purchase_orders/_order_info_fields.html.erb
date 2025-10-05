@@ -29,7 +29,7 @@
   <!-- Financials -->
   <div class="col-md-2">
     <%= f.label :subtotal, class: "form-label-sm" %>
-    <%= f.number_field :subtotal, step: 0.01, id: "order_subtotal", class: "form-control form-control-sm" %>
+    <%= f.number_field :subtotal, step: 0.01, id: "order_subtotal", class: "form-control form-control-sm form-control-plaintext", readonly: true %>
   </div>
   <div class="col-md-2">
     <%= f.label :shipping_cost, class: "form-label-sm" %>

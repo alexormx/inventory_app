@@ -10,6 +10,7 @@ class InventoryEvent < ApplicationRecord
     status_change
     reconciliation_orphan_destroyed
     reconciliation_missing_created
+    product_dimensions_changed
   ].freeze
 
   validates :event_type, presence: true, inclusion: { in: EVENT_TYPES }
