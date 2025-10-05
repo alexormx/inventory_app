@@ -84,5 +84,6 @@ class Inventory < ApplicationRecord
   def clear_sale_order_for_free_status
     self.sale_order_id = nil
     self.sale_order_item_id = nil
+    self.sold_price = nil
   end
 end
