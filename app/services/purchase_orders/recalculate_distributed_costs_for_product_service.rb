@@ -93,8 +93,10 @@ module PurchaseOrders
         unit_volume = d[:unit_volume]
         qty = item.quantity.to_f
         unit_cost = item.unit_cost.to_d
-        volume_ratio = total_lines_volume.positive? ? (unit_volume / total_lines_volume) : 0.0
-        unit_additional_cost = (total_additional_cost * volume_ratio).round(2)
+  line_volume = qty * unit_volume
+  volume_ratio = total_lines_volume.positive? ? (line_volume / total_lines_volume) : 0.0
+  line_additional_cost = (total_additional_cost * volume_ratio)
+  unit_additional_cost = qty.positive? ? (line_additional_cost / qty).round(2) : 0
         unit_compose_cost = (unit_cost + unit_additional_cost).round(2)
         unit_compose_cost_mxn = (unit_compose_cost * exchange_rate).round(2)
         total_line_cost = (qty * unit_compose_cost).round(2)

@@ -261,9 +261,12 @@ function updateItemTotals(fromTotals = false) {
     const unitWeight = parseFloat(row.querySelector(".item-weight")?.dataset?.unitWeight) || 0;
     const unitCost = parseFloat(row.querySelector(".item-unit-cost")?.value) || 0;
 
-    const lineVolume = qty * unitVolume;
-    const volumeRate = totalLinesVolume > 0 ? (lineVolume / qty) / totalLinesVolume : 0;
-    const unitAdditionalCost = totalAdditionalCost * volumeRate;
+  const lineVolume = qty * unitVolume;
+  // Distribución correcta: costo adicional proporcional al VOLUMEN TOTAL DE LA LÍNEA
+  const volumeRate = totalLinesVolume > 0 ? (lineVolume / totalLinesVolume) : 0;
+  // unitAdditionalCost se define por unidad: dividir la porción de costo de la línea entre qty (si qty>0)
+  const lineAdditionalCostPortion = totalAdditionalCost * volumeRate;
+  const unitAdditionalCost = qty > 0 ? (lineAdditionalCostPortion / qty) : 0;
     const unitComposeCost = unitAdditionalCost + unitCost;
     const unitComposeCostMXN = unitComposeCost * exchangeRate;
     const lineTotal = qty * unitComposeCost;
