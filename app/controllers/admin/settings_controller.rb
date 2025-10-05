@@ -5,6 +5,17 @@ class Admin::SettingsController < ApplicationController
   def index
   # Tabla unificada de ejecuciones (todas), paginada (10 por página)
   @runs = MaintenanceRun.order(created_at: :desc).page(params[:page]).per(10)
+  # Métricas rápidas de reconciliación inventario
+  begin
+    @last_reconciliation_event = InventoryEvent.where(event_type: %w[reconciliation_orphan_destroyed reconciliation_missing_created])
+                                              .order(created_at: :desc).limit(1).first
+    window_from = 24.hours.ago
+    scope24 = InventoryEvent.where("created_at >= ? AND event_type IN (?)", window_from, %w[reconciliation_orphan_destroyed reconciliation_missing_created])
+    @recon_24_orphans = scope24.where(event_type: 'reconciliation_orphan_destroyed').count
+    @recon_24_created = scope24.where(event_type: 'reconciliation_missing_created').count
+  rescue => e
+    Rails.logger.warn "[Settings#index] reconciliation metrics error: #{e.class}: #{e.message}"
+  end
   if request.post? && params[:save_tax]
     SiteSetting.set('tax_enabled', params[:tax_enabled] == 'true', 'boolean')
     SiteSetting.set('tax_rate_percent', params[:tax_rate_percent].to_f.round(2), 'integer')
