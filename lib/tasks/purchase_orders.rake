@@ -63,9 +63,10 @@ namespace :purchase_orders do
 
   desc "Reconciliar inventario vs purchase_order_items (crea faltantes y elimina huérfanos)"
   task reconcile_inventory: :environment do
-    dry = ENV['DRY_RUN'] == '1'
-  service = ::InventoryReconciliation::ReconcilePurchaseOrderLinksService.new(dry_run: dry)
+  dry = ENV['DRY_RUN'] == '1'
+  mode = (ENV['MODE'] || 'all').to_sym
+  service = ::InventoryReconciliation::ReconcilePurchaseOrderLinksService.new(dry_run: dry, mode: mode)
     result = service.call
-    puts "[reconcile_inventory] destroyed_orphans=#{result.destroyed_orphans} created_missing=#{result.created_missing} errors=#{result.errors.inspect} dry_run=#{dry}"
+  puts "[reconcile_inventory] mode=#{mode} destroyed_orphans=#{result.destroyed_orphans} created_missing=#{result.created_missing} errors=#{result.errors.inspect} dry_run=#{dry}"
   end
 end

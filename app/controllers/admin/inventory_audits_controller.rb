@@ -3,8 +3,7 @@ module Admin
 		before_action :authorize_admin!
 
 		def index
-			# Placeholder simple. Podríamos agregar estadísticas básicas si es necesario.
-			render plain: "Inventory audit dashboard pending implementation", status: :ok
+			# Render vista con acciones de reconciliación
 		end
 
 		def fix_inconsistencies

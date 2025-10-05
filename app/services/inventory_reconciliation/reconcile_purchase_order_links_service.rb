@@ -3,10 +3,11 @@ module InventoryReconciliation
   class ReconcilePurchaseOrderLinksService
     Result = Struct.new(:destroyed_orphans, :created_missing, :errors, keyword_init: true)
 
-    def initialize(dry_run: false, limit: 10_000, logger: Rails.logger)
+    def initialize(dry_run: false, limit: 10_000, logger: Rails.logger, mode: :all)
       @dry_run = dry_run
       @limit = limit
       @logger = logger
+      @mode = (mode || :all).to_sym
     end
 
     def call
@@ -15,8 +16,8 @@ module InventoryReconciliation
       errors = []
 
       ActiveRecord::Base.transaction do
-        destroyed_orphans += destroy_orphans
-        created_missing  += create_missing
+        destroyed_orphans += destroy_orphans if process_orphans?
+        created_missing  += create_missing if process_missing?
         raise ActiveRecord::Rollback if @dry_run
       end
 
@@ -73,6 +74,14 @@ module InventoryReconciliation
         end
       end
       created
+    end
+
+    def process_orphans?
+      @mode == :all || @mode == :orphans
+    end
+
+    def process_missing?
+      @mode == :all || @mode == :missing
     end
   end
 end

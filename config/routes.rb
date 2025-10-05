@@ -23,6 +23,8 @@ Rails.application.routes.draw do
                                                  as: :inventory_audit_fix_missing_so_lines
   # Inventory Events (audit trail de cambios de costo / desvinculaciones)
   resources :inventory_events, only: [:index]
+  # Inventory reconciliation trigger
+  resources :inventory_reconciliations, only: [:create]
     # Preorders audit
     get  'preorders_audit', to: 'preorders_audits#index', as: :preorders_audit
     post 'preorders_audit/fix', to: 'preorders_audits#fix', as: :preorders_audits_fix
