@@ -1,5 +1,6 @@
 class Inventory < ApplicationRecord
   belongs_to :purchase_order, optional: true
+  belongs_to :purchase_order_item, optional: true
   belongs_to :sale_order, optional: true
   belongs_to :sale_order_item, optional: true
   belongs_to :product
