@@ -157,11 +157,12 @@ class SaleOrderItem < ApplicationRecord
       throw :abort
     end
 
-    # Libera las reservadas de esta línea
-  so_inventory.where(status: Inventory.statuses[:reserved]).update_all(
+    # Libera las reservadas de esta línea y limpia referencias + sold_price
+    so_inventory.where(status: Inventory.statuses[:reserved]).update_all(
       status: Inventory.statuses[:available],
       sale_order_id: nil,
-  sale_order_item_id: nil,
+      sale_order_item_id: nil,
+      sold_price: nil,
       status_changed_at: Time.current,
       updated_at: Time.current
     )
