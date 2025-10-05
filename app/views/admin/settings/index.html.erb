@@ -232,6 +232,23 @@
 	</div>
 </div>
 
+<div class="card mb-4">
+	<div class="card-header d-flex align-items-center gap-2">
+		<i class="fa fa-warehouse"></i>
+		<span>Auditoría de Inventario (PO ↔ Inventory)</span>
+	</div>
+	<div class="card-body">
+		<p class="mb-3 small">
+			Accede al panel de auditoría para ejecutar reconciliaciones entre piezas de inventario y líneas de Purchase Orders.
+			Primero realiza un <strong>Dry Run</strong> antes de aplicar cambios.
+		</p>
+		<div class="d-flex flex-wrap gap-2">
+			<%= link_to 'Abrir Inventory Audit', admin_inventory_audit_path, class: 'btn btn-outline-secondary btn-sm' %>
+			<%= link_to 'Ver Inventory Events', admin_inventory_events_path, class: 'btn btn-outline-primary btn-sm' %>
+		</div>
+	</div>
+</div>
+
 
 <div class="card">
 	<div class="card-header d-flex align-items-center gap-2">
