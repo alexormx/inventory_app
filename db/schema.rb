@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_09_28_113000) do
+ActiveRecord::Schema[8.0].define(version: 2025_10_05_121000) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -127,6 +127,24 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_28_113000) do
     t.index ["code"], name: "index_inventory_adjustments_on_code", unique: true
     t.index ["found_at"], name: "index_inventory_adjustments_on_found_at"
     t.index ["reversed_at"], name: "index_inventory_adjustments_on_reversed_at"
+  end
+
+  create_table "inventory_events", force: :cascade do |t|
+    t.bigint "inventory_id", null: false
+    t.integer "product_id", null: false
+    t.string "event_type", null: false
+    t.decimal "previous_purchase_cost", precision: 10, scale: 2
+    t.decimal "new_purchase_cost", precision: 10, scale: 2
+    t.decimal "previous_sold_price", precision: 10, scale: 2
+    t.decimal "new_sold_price", precision: 10, scale: 2
+    t.string "previous_sale_order_id"
+    t.string "new_sale_order_id"
+    t.json "metadata", default: {}, null: false
+    t.datetime "created_at", default: -> { "CURRENT_TIMESTAMP" }, null: false
+    t.index ["created_at"], name: "index_inventory_events_on_created_at"
+    t.index ["event_type"], name: "index_inventory_events_on_event_type"
+    t.index ["inventory_id"], name: "index_inventory_events_on_inventory_id"
+    t.index ["product_id"], name: "index_inventory_events_on_product_id"
   end
 
   create_table "maintenance_runs", force: :cascade do |t|
@@ -453,6 +471,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_28_113000) do
   add_foreign_key "inventories", "products"
   add_foreign_key "inventories", "purchase_orders"
   add_foreign_key "inventories", "sale_orders"
+  add_foreign_key "inventory_events", "inventories"
+  add_foreign_key "inventory_events", "products"
   add_foreign_key "order_shipping_addresses", "sale_orders"
   add_foreign_key "payments", "sale_orders"
   add_foreign_key "products", "users", column: "last_supplier_id"
