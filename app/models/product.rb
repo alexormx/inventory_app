@@ -218,6 +218,7 @@ class Product < ApplicationRecord
   def recalculate_purchase_orders_if_dimensions_changed
     if saved_change_to_weight_gr? || saved_change_to_length_cm? || saved_change_to_width_cm? || saved_change_to_height_cm?
       PurchaseOrders::RecalculateCostsForProductService.new(self).call
+      PurchaseOrders::RecalculateDistributedCostsForProductService.new(self).call
     end
   end
 end
