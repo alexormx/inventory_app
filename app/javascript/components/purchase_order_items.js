@@ -1,3 +1,15 @@
+// Adaptación: soportar formularios que usan prefijo "order_" (partial genérico)
+// además de los IDs originales con prefijo "purchase_order_". Sin esto
+// los campos no se encontraban y los costos compuestos quedaban en 0.
+function fieldByName(name) {
+  return document.querySelector(`#purchase_order_${name}`) || document.querySelector(`#order_${name}`);
+}
+
+function numField(name) {
+  const el = fieldByName(name);
+  return parseFloat(el?.value) || 0;
+}
+
 document.addEventListener("turbo:load", () => {
   const searchInput = document.querySelector("#product-search");
   const resultsContainer = document.querySelector("#product-search-results");
@@ -78,7 +90,7 @@ function buildProductSearchItem(product) {
 
 document.addEventListener("turbo:load", () => {
   const resultsBox = document.querySelector("#product-search-results");
-  const tbody = document.querySelector("#purchase-order-items-table tbody");
+  const tbody = document.querySelector("#purchase-order-items-table tbody") || document.querySelector("#order-items-table tbody");
   let index = tbody?.children.length || 0;
 
   if (!resultsBox || !tbody) return;
@@ -228,10 +240,10 @@ function updateItemTotals(fromTotals = false) {
   let subtotal = 0;
   let totalLinesVolume = 0;
   let totalLinesWeight = 0;
-  const shippingCost = parseFloat(document.querySelector("#purchase_order_shipping_cost")?.value) || 0;
-  const taxCost = parseFloat(document.querySelector("#purchase_order_tax_cost")?.value) || 0;
-  const otherCost = parseFloat(document.querySelector("#purchase_order_other_cost")?.value) || 0;
-  const exchangeRate = parseFloat(document.querySelector("#purchase_order_exchange_rate")?.value) || 1;
+  const shippingCost = numField("shipping_cost");
+  const taxCost = numField("tax_cost");
+  const otherCost = numField("other_cost");
+  const exchangeRate = numField("exchange_rate") || 1;
   const totalVolume = parseFloat(document.querySelector("#total_volume")?.value) || 0;
 
 
@@ -294,7 +306,7 @@ function updateItemTotals(fromTotals = false) {
   });
 
   // Update summary fields
-  const subtotalField = document.querySelector("#purchase_order_subtotal");
+  const subtotalField = fieldByName("subtotal");
   if (subtotalField) subtotalField.value = subtotal.toFixed(2);
 
   const volumeField = document.querySelector("#total_volume");
@@ -353,14 +365,14 @@ document.addEventListener("click", (e) => {
 
 // Update totals for the entire order
 function updateTotals() {
-  const subtotal = parseFloat(document.querySelector("#purchase_order_subtotal")?.value) || 0;
-  const shipping = parseFloat(document.querySelector("#purchase_order_shipping_cost")?.value) || 0;
-  const tax = parseFloat(document.querySelector("#purchase_order_tax_cost")?.value) || 0;
-  const other = parseFloat(document.querySelector("#purchase_order_other_cost")?.value) || 0;
-  const exchangeRate = parseFloat(document.querySelector("#purchase_order_exchange_rate")?.value) || 0;
+  const subtotal = numField("subtotal");
+  const shipping = numField("shipping_cost");
+  const tax = numField("tax_cost");
+  const other = numField("other_cost");
+  const exchangeRate = numField("exchange_rate");
 
   const total = subtotal + shipping + tax + other;
-  const totalMXN = total * exchangeRate;
+  const totalMXN = exchangeRate ? (total * exchangeRate) : 0;
 
   const totalCostInput = document.querySelector("#total_order_cost");
   const totalMXNInput = document.querySelector("#total_cost_mxn");
@@ -368,23 +380,20 @@ function updateTotals() {
   if (totalCostInput) totalCostInput.value = total.toFixed(2);
   if (totalMXNInput) totalMXNInput.value = exchangeRate ? totalMXN.toFixed(2) : "";
 
-  // ✅ Safely update items first (but prevent infinite loop)
-  updateItemTotals(true);
+  updateItemTotals(true); // evita loop
 }
 
 // Reattach listeners
 document.addEventListener("turbo:load", function () {
-  const subtotalInput = document.querySelector("#purchase_order_subtotal");
-  const shippingInput = document.querySelector("#purchase_order_shipping_cost");
-  const taxInput = document.querySelector("#purchase_order_tax_cost");
-  const otherInput = document.querySelector("#purchase_order_other_cost");
-  const exchangeInput = document.querySelector("#purchase_order_exchange_rate");
-
-  [subtotalInput, shippingInput, taxInput, otherInput, exchangeInput].forEach(input => {
-    input?.addEventListener("input", updateTotals);
-  });
-
-  updateTotals(); // initial run
+  const inputs = [
+    fieldByName("subtotal"),
+    fieldByName("shipping_cost"),
+    fieldByName("tax_cost"),
+    fieldByName("other_cost"),
+    fieldByName("exchange_rate")
+  ];
+  inputs.forEach(input => input?.addEventListener("input", updateTotals));
+  updateTotals();
 });
 
 function removeItemRow(row) {
