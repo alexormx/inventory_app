@@ -15,6 +15,8 @@ import "./components/purchase_order_items"
 import "./custom/navbar_shrink"
 // Navbar: hamburguesa/collapse sin Bootstrap JS
 import "./custom/navbar_toggle"
+// Admin navbar hamburger custom toggle
+import "./custom/admin_navbar_toggle"
 // Tema claro/oscuro (persistencia en localStorage)
 import "./custom/theme_toggle"
 // Tooltips (si hay data-bs-toggle="tooltip")
