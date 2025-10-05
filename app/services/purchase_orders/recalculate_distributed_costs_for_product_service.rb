@@ -133,6 +133,19 @@ module PurchaseOrders
           total_cost_mxn: total_cost_mxn,
           updated_at: Time.current
         )
+
+        # 4) Propagar costos unitarios compuestos (en MXN) a cada pieza de inventario asociada
+        #    para que las valuaciones de inventario reflejen la redistribución.
+        #    Nota: Se actualizan TODAS las piezas (incluidas vendidas/danadas) ya que el usuario
+        #    requiere ver reflejado el nuevo costo unitario; si se quisiera preservar historia
+        #    se podría limitar a estados libres y crear un ajuste diferencial.
+        inventory_cost_map = updates.to_h { |(id, attrs)| [id, attrs[:unit_compose_cost_in_mxn]] }
+        inventory_cost_map.each_slice(50) do |slice|
+          slice.each do |poi_id, new_cost_mxn|
+            next if new_cost_mxn.nil?
+            Inventory.where(purchase_order_item_id: poi_id).update_all(purchase_cost: new_cost_mxn, updated_at: Time.current)
+          end
+        end
       end
 
       @last_items_recalculated = (items_recalculated_ref + updates.size)

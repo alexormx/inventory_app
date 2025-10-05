@@ -29,5 +29,12 @@ RSpec.describe PurchaseOrders::RecalculateDistributedCostsForProductService, typ
     expect(line_a.unit_additional_cost).not_to be_nil
     expect(line_b.unit_additional_cost).not_to be_nil
     expect(line_a.unit_compose_cost).to eq(line_a.unit_cost + line_a.unit_additional_cost)
+
+    # Verifica propagación a piezas de inventario
+    inv_items = Inventory.where(purchase_order_item_id: line_a.id)
+    expect(inv_items.count).to eq(line_a.quantity)
+    inv_items.each do |inv|
+      expect(inv.purchase_cost.to_f).to eq(line_a.unit_compose_cost_in_mxn.to_f)
+    end
   end
 end
