@@ -12,11 +12,9 @@
   <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
     <div class="modal-dialog">
       <div class="modal-content">
-  <%= form_with model: [:admin, sale_order, shipment], 
-          data: { turbo_frame: "shipment_modal", controller: "shipment-guard", 
-            shipment_guard_paid_value: (sale_order.total_paid.to_d >= sale_order.total_order_value.to_d).to_s,
-            shipment_guard_credit_value: ((sale_order.user&.respond_to?(:credit_enabled) && sale_order.user.credit_enabled) || sale_order.credit_override).to_s },
-          local: false do |f| %>
+        <%= form_with model: [:admin, sale_order, shipment],
+                      data: { turbo_frame: "shipment_modal" },
+                      local: false do |f| %>
           <div class="modal-header position-relative">
             <h5 class="modal-title"><%= shipment.persisted? ? "Edit Shipment" : "Add Shipment" %></h5>
             <div class="modal-close-container">
@@ -34,8 +32,7 @@
             </div>
             <div class="mb-3">
               <%= f.label :status %>
-              <%= f.select :status, Shipment.statuses.keys.map { |s| [s.humanize, s] }, {}, class: "form-select", data: { action: "change->shipment-guard#onStatusChange" } %>
-              <div class="form-text text-danger d-none" data-shipment-guard-target="warning">No puedes marcar "Shipped" o "Delivered" sin pago completo o sin crédito habilitado.</div>
+              <%= f.select :status, Shipment.statuses.keys.map { |s| [s.humanize, s] }, {}, class: "form-select" %>
             </div>
             <div class="mb-3">
               <%= f.label :estimated_delivery %>

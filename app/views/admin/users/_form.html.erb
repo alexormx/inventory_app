@@ -40,19 +40,6 @@
           <%= f.label :password_confirmation, class: 'form-label' %>
           <%= f.password_field :password_confirmation, class: 'form-control', autocomplete: 'new-password' %>
         </div>
-
-        <div class="col-md-6 form-check mt-4">
-          <%= f.check_box :credit_enabled, class: 'form-check-input', id: 'user_credit_enabled' %>
-          <%= f.label :credit_enabled, 'Crédito habilitado', class: 'form-check-label' %>
-        </div>
-        <div class="col-md-6">
-          <%= f.label :default_credit_terms, 'Términos de crédito por defecto', class: 'form-label' %>
-          <%= f.select :default_credit_terms, [["None","none"],["Net 15","net15"],["Net 30","net30"],["Net 45","net45"]], {}, class: 'form-select' %>
-        </div>
-        <div class="col-md-6">
-          <%= f.label :credit_limit, 'Límite de crédito (MXN)', class: 'form-label' %>
-          <%= f.number_field :credit_limit, class: 'form-control', step: 0.01, min: 0 %>
-        </div>
       </div>
     </div>
     <div class="card-footer d-flex justify-content-end gap-2">
