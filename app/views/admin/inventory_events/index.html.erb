@@ -1,0 +1,39 @@
+<h1>Eventos de Inventario</h1>
+<p>Últimos 500 eventos (ordenados desc).</p>
+<table class="table table-sm">
+  <thead>
+    <tr>
+      <th>Fecha</th>
+      <th>Inventario</th>
+      <th>Producto</th>
+      <th>Tipo</th>
+      <th>Costos</th>
+      <th>Sale Order</th>
+      <th>Metadata</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @events.each do |ev| %>
+      <tr>
+        <td><%= ev.created_at.strftime('%Y-%m-%d %H:%M:%S') %></td>
+        <td>#<%= ev.inventory_id %></td>
+        <td><%= ev.product_id %></td>
+        <td><span class="badge bg-secondary"><%= ev.event_type %></span></td>
+        <td>
+          <% if ev.previous_purchase_cost || ev.new_purchase_cost %>
+            <small>PC: <%= ev.previous_purchase_cost || '-' %> → <%= ev.new_purchase_cost || '-' %></small><br>
+          <% end %>
+          <% if ev.previous_sold_price || ev.new_sold_price %>
+            <small>SP: <%= ev.previous_sold_price || '-' %> → <%= ev.new_sold_price || '-' %></small>
+          <% end %>
+        </td>
+        <td>
+          <% if ev.previous_sale_order_id || ev.new_sale_order_id %>
+            <small><%= ev.previous_sale_order_id || '-' %> → <%= ev.new_sale_order_id || '-' %></small>
+          <% end %>
+        </td>
+        <td><code style="font-size:11px"><%= ev.metadata.to_json.truncate(80) %></code></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

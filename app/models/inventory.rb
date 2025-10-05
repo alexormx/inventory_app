@@ -38,6 +38,7 @@ class Inventory < ApplicationRecord
   after_commit :update_product_stock_quantities, if: -> { saved_change_to_status? }
   after_commit :allocate_preorders_if_now_available, if: -> { saved_change_to_status? || saved_change_to_sale_order_id? }
   before_save :clear_sale_order_for_free_status, if: :will_change_status_to_free?
+  after_save  :log_sale_order_cleared_event, if: :sale_order_cleared?
 
   # inventory.rb
   scope :assignable, -> { where(status: [:available, :in_transit], sale_order_id: nil) }
@@ -82,8 +83,31 @@ class Inventory < ApplicationRecord
 
   # Cuando una pieza vuelve a estar libre (available o in_transit), se debe desasociar de la orden
   def clear_sale_order_for_free_status
+    @will_clear_sale_order = sale_order_id.present? || sale_order_item_id.present? || sold_price.present?
     self.sale_order_id = nil
     self.sale_order_item_id = nil
     self.sold_price = nil
+  end
+
+  def sale_order_cleared?
+    @will_clear_sale_order && sale_order_id.nil? && sale_order_item_id.nil?
+  end
+
+  def log_sale_order_cleared_event
+    return unless sale_order_cleared?
+    InventoryEvent.create!(
+      inventory: self,
+      product: product,
+      event_type: 'sale_order_link_cleared',
+      previous_sale_order_id: saved_change_to_sale_order_id&.first,
+      new_sale_order_id: nil,
+      previous_sold_price: saved_change_to_sold_price&.first,
+      new_sold_price: nil,
+      metadata: { reason: 'status_transition_to_free', new_status: status }
+    )
+  rescue => e
+    Rails.logger.error "[Inventory#log_sale_order_cleared_event] #{e.class}: #{e.message}"
+  ensure
+    @will_clear_sale_order = false
   end
 end

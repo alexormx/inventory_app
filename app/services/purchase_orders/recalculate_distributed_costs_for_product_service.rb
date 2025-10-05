@@ -143,7 +143,22 @@ module PurchaseOrders
         inventory_cost_map.each_slice(50) do |slice|
           slice.each do |poi_id, new_cost_mxn|
             next if new_cost_mxn.nil?
-            Inventory.where(purchase_order_item_id: poi_id).update_all(purchase_cost: new_cost_mxn, updated_at: Time.current)
+            Inventory.where(purchase_order_item_id: poi_id).find_each do |inv|
+              prev_cost = inv.purchase_cost
+              inv.update_columns(purchase_cost: new_cost_mxn, updated_at: Time.current)
+              begin
+                InventoryEvent.create!(
+                  inventory: inv,
+                  product_id: inv.product_id,
+                  event_type: 'distributed_cost_applied',
+                  previous_purchase_cost: prev_cost,
+                  new_purchase_cost: new_cost_mxn,
+                  metadata: { purchase_order_item_id: poi_id, purchase_order_id: po.id }
+                )
+              rescue => e
+                Rails.logger.error "[RecalculateDistributedCostsForProductService] event error inv=#{inv.id} #{e.class}: #{e.message}"
+              end
+            end
           end
         end
       end
