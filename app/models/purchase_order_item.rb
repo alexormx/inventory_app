@@ -12,6 +12,7 @@ class PurchaseOrderItem < ApplicationRecord
 
   before_update :ensure_free_units_for_quantity_reduction, if: :will_reduce_quantity?
   before_destroy :ensure_enough_free_inventory_to_remove
+  before_validation :compute_line_volume_and_weight, if: :should_compute_volume_weight?
 
   private
 
@@ -43,6 +44,18 @@ class PurchaseOrderItem < ApplicationRecord
       sale_order_id: nil,
       status: %w[available in_transit]
     )
+  end
+
+  def should_compute_volume_weight?
+    product.present? && quantity.present? && (
+      total_line_volume.blank? || total_line_weight.blank? || will_save_change_to_quantity?
+    )
+  end
+
+  def compute_line_volume_and_weight
+  unit_volume = product.unit_volume_cm3.to_f
+    self.total_line_volume = quantity.to_i * unit_volume
+    self.total_line_weight = quantity.to_i * product.weight_gr.to_f
   end
 
   def update_product_stats

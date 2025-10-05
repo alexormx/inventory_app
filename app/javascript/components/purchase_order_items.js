@@ -98,14 +98,15 @@ document.addEventListener("turbo:load", () => {
     row.querySelector(".item-unit-cost").value = 0;
 
     // Fill volume and weight fields
-    const volume = product.length_cm * product.width_cm * product.height_cm;
+  // Prefer server-calculated unit volume if backend adds it later; fallback manual
+  const volume = product.unit_volume_cm3 || (product.length_cm * product.width_cm * product.height_cm);
 
     const volumeField = row.querySelector(".item-volume");
-    volumeField.value = volume;
+  volumeField.value = volume.toFixed(2);
     volumeField.dataset.unitVolume = volume;
 
     const weightField = row.querySelector(".item-weight");
-    weightField.value = product.weight_gr;
+  weightField.value = (product.weight_gr || 0).toFixed(2);
     weightField.dataset.unitWeight = product.weight_gr;
 
       // ✅ Remove placeholder row

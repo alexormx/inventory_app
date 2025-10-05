@@ -122,6 +122,8 @@ module Admin
           length_cm: product.length_cm,
           width_cm: product.width_cm,
           height_cm: product.height_cm,
+          unit_volume_cm3: product.unit_volume_cm3.to_f,
+          unit_weight_gr: product.unit_weight_gr.to_f,
           thumbnail_url: thumb_url
         }
       }
