@@ -37,6 +37,7 @@ class Inventory < ApplicationRecord
   before_update :track_status_change
   after_commit :update_product_stock_quantities, if: -> { saved_change_to_status? }
   after_commit :allocate_preorders_if_now_available, if: -> { saved_change_to_status? || saved_change_to_sale_order_id? }
+  before_save :clear_sale_order_for_free_status, if: :will_change_status_to_free?
 
   # inventory.rb
   scope :assignable, -> { where(status: [:available, :in_transit], sale_order_id: nil) }
@@ -72,5 +73,16 @@ class Inventory < ApplicationRecord
     rescue => e
       Rails.logger.error "[Preorders] Allocation error for product=#{product_id} inv=#{id}: #{e.class} #{e.message}"
     end
+  end
+
+  def will_change_status_to_free?
+    return false unless will_save_change_to_status?
+    %w[available in_transit].include?(status.to_s)
+  end
+
+  # Cuando una pieza vuelve a estar libre (available o in_transit), se debe desasociar de la orden
+  def clear_sale_order_for_free_status
+    self.sale_order_id = nil
+    self.sale_order_item_id = nil
   end
 end
