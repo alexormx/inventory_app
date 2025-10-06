@@ -100,26 +100,34 @@ document.addEventListener("turbo:load", () => {
     const item = e.target.closest(".list-group-item");
     if (!item) return;
 
-    const product = JSON.parse(item.dataset.product);
-    const row = buildBlankPurchaseOrderItemRow(index);
+  const product = JSON.parse(item.dataset.product);
+  const row = buildBlankPurchaseOrderItemRow(index);
 
     // Fill in product details
     row.querySelector(".item-product-id").value = product.id;
     row.querySelector(".item-product-name").textContent = product.product_name;
-    row.querySelector(".item-qty").value = 1;
-    row.querySelector(".item-unit-cost").value = 0;
+  row.querySelector(".item-qty").value = 1;
+  // Unit cost inicial en blanco/0 hasta que el usuario lo defina (podríamos poblar último costo conocido en futura mejora)
+  row.querySelector(".item-unit-cost").value = 0;
 
     // Fill volume and weight fields
   // Prefer server-calculated unit volume if backend adds it later; fallback manual
-  const volume = product.unit_volume_cm3 || (product.length_cm * product.width_cm * product.height_cm);
+  // Volumen: si unit_volume_cm3 es null/undefined usamos multiplicación; evitamos NaN con coerción a 0
+  const volume = (product.unit_volume_cm3 ?? (product.length_cm * product.width_cm * product.height_cm)) || 0;
 
     const volumeField = row.querySelector(".item-volume");
   volumeField.value = volume.toFixed(2);
     volumeField.dataset.unitVolume = volume;
 
     const weightField = row.querySelector(".item-weight");
-  weightField.value = (product.weight_gr || 0).toFixed(2);
-    weightField.dataset.unitWeight = product.weight_gr;
+  const weight = (product.unit_weight_gr ?? product.weight_gr) || 0;
+  weightField.value = weight.toFixed(2);
+    weightField.dataset.unitWeight = weight;
+    if (volume === 0) {
+      row.classList.add("missing-volume");
+      volumeField.classList.add("text-warning");
+      volumeField.title = "Este producto tiene volumen 0; no recibirá distribución de costos adicionales.";
+    }
 
       // ✅ Remove placeholder row
     const placeholderRow = document.querySelector("#purchase-without-items");
@@ -333,21 +341,22 @@ function updateItemTotals(fromTotals = false) {
 function updateLineTotals(row) {
   const qty = parseFloat(row.querySelector(".item-qty")?.value) || 0;
   const unitCost = parseFloat(row.querySelector(".item-unit-cost")?.value) || 0;
-  const volume = parseFloat(row.querySelector(".item-volume")?.dataset?.unitVolume) || 0;
-  const weight = parseFloat(row.querySelector(".item-weight")?.dataset?.unitWeight) || 0;
+  const unitVolume = parseFloat(row.querySelector(".item-volume")?.dataset?.unitVolume) || 0;
+  const unitWeight = parseFloat(row.querySelector(".item-weight")?.dataset?.unitWeight) || 0;
 
-  const totalCost = qty * unitCost;
-  const totalVolume = qty * volume;
-  const totalWeight = qty * weight;
+  const totalVolume = qty * unitVolume;
+  const totalWeight = qty * unitWeight;
+  const lineBaseCost = qty * unitCost; // antes era .item-total (clase inexistente)
 
-  const totalField = row.querySelector(".item-total");
-  if (totalField) totalField.value = totalCost.toFixed(2);
-
+  // Actualiza campos de volumen y peso por línea
   const volumeField = row.querySelector(".item-volume");
   if (volumeField) volumeField.value = totalVolume.toFixed(2);
-
   const weightField = row.querySelector(".item-weight");
   if (weightField) weightField.value = totalWeight.toFixed(2);
+
+  // Campo de costo total base (sin adicionales): usamos .item-total-cost que sí existe
+  const totalCostField = row.querySelector(".item-total-cost");
+  if (totalCostField) totalCostField.value = lineBaseCost.toFixed(2);
 }
 
 // Event listeners for item quantity and unit cost changes
