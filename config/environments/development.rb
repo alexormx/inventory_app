@@ -73,7 +73,9 @@ Rails.application.configure do
   # config.generators.apply_rubocop_autocorrect_after_generate!
   config.assets.compile = true
   config.assets.digest = false
-  config.assets.debug = true
+  # In SCSS-first setups, debug mode can produce an empty application.debug.css because @import isn't expanded by Sprockets.
+  # Disable debug to serve the compiled stylesheet as a single file.
+  config.assets.debug = false
   config.public_file_server.headers = { 'Cache-Control' => 'public, max-age=3600' }
   # Opcional compresión en dev
   # config.middleware.use Rack::Deflater

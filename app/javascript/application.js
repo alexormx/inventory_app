@@ -1,6 +1,8 @@
 import "@hotwired/turbo-rails"
 import "./controllers"   // index.js arranca Stimulus y registra todo
 
+// noUiSlider styles
+
 // Legacy helpers still in vanilla
 import "./custom/cart_preview"
 import "./custom/cart_preview_dynamic"

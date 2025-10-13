@@ -25,6 +25,8 @@ import TabsController from "./tabs_controller"
 import ToggleInventoryController from "./toggle_inventory_controller"
 import ProductSearchController from "./product_search_controller"
 import UserSuggestController from "./user_suggest_controller"
+import CatalogFiltersController from "./catalog_filters_controller"
+import PriceRangeController from "./price_range_controller"
 
 application.register("audit-progress", AuditProgressController)
 application.register("cart-item", CartItemController)
@@ -49,6 +51,8 @@ application.register("tabs", TabsController)
 application.register("toggle-inventory", ToggleInventoryController)
 application.register("product-search", ProductSearchController)
 application.register("user-suggest", UserSuggestController)
+application.register("catalog-filters", CatalogFiltersController)
+application.register("price-range", PriceRangeController)
 
 // Export opcional para debugging
 window.Stimulus = application

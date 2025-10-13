@@ -10,6 +10,8 @@
  */
  @import "custom";
  @import "dashboard";
+ @import "vendor/nouislider";
+ @import "catalog";
 
  body {
   -webkit-text-size-adjust: 100%; /* Evita zoom automático en iOS y estandariza ajuste de tamaño */

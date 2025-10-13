@@ -10,22 +10,37 @@
 %>
 
 <div class="container mt-4" id="catalog">
-  <div class="catalog-header d-flex flex-column flex-lg-row align-items-lg-end justify-content-between gap-2 gap-lg-3 mb-2">
+  <%# Breadcrumbs %>
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb mb-0">
+      <% catalog_breadcrumbs.each_with_index do |crumb, index| %>
+        <li class="breadcrumb-item <%= 'active' if crumb[:url].nil? %>" <%= 'aria-current="page"'.html_safe if crumb[:url].nil? %>>
+          <% if crumb[:url] %>
+            <%= link_to crumb[:name], crumb[:url], class: "text-decoration-none" %>
+          <% else %>
+            <%= crumb[:name] %>
+          <% end %>
+        </li>
+      <% end %>
+    </ol>
+  </nav>
+
+  <div class="catalog-header d-flex flex-column flex-lg-row align-items-lg-end justify-content-between gap-2 gap-lg-3 mb-3">
     <div class="catalog-title-wrapper">
-      <h1 class="catalog-title fw-semibold">Catálogo</h1>
-      <p class="catalog-subtitle text-muted small">Productos activos disponibles para compra.</p>
+      <h1 class="catalog-title fw-semibold mb-1">Catálogo</h1>
+      <%= products_range_text(@products) %>
     </div>
-    <%= form_with url: catalog_path, method: :get, data: { 
+    <%= form_with url: catalog_path, method: :get, data: {
       turbo_frame: "products_grid",
       controller: "catalog-filters",
       action: "change->catalog-filters#submit"
-    }, class: "catalog-filters d-flex flex-column flex-sm-row flex-wrap gap-2 align-items-stretch w-100 w-lg-auto mb-0" do %>
+    }, class: "catalog-filters d-flex flex-column flex-sm-row flex-wrap gap-2 align-items-stretch w-100 w-lg-auto mb-0", id: "header-sort-form" do %>
       <% if @q.present? %>
         <input type="hidden" name="q" value="<%= @q %>">
         <div class="search-chip d-inline-flex align-items-center">
           <span class="chip-text" title="Criterio de búsqueda"><%= @q %></span>
-          <%= link_to catalog_path(request.query_parameters.except(:q, :page)), 
-                      class: "chip-clear", 
+          <%= link_to catalog_path(request.query_parameters.except(:q, :page)),
+                      class: "chip-clear",
                       "aria-label": "Limpiar búsqueda",
                       data: { turbo_frame: "products_grid" } do %>&times;<% end %>
         </div>
@@ -37,14 +52,13 @@
         <option value="name_asc" <%= 'selected' if @sort=='name_asc' %>>Nombre A-Z</option>
       </select>
       <% if @q.present? || params[:sort].present? %>
-        <%= link_to catalog_path, 
-                    class: "btn btn-outline-secondary btn-icon", 
+        <%= link_to catalog_path,
+                    class: "btn btn-outline-secondary btn-icon",
                     title: "Limpiar filtros",
                     data: { turbo_frame: "products_grid" } do %>
           <i class="fas fa-times"></i>
         <% end %>
       <% end %>
-      <button class="btn btn-danger btn-icon" type="submit" title="Aplicar filtros"><i class="fas fa-filter"></i></button>
     <% end %>
   </div>
 
@@ -122,8 +136,8 @@
     <!-- ✅ Botón flotante para abrir filtros en mobile -->
     <button class="btn btn-danger d-md-none filter-toggle-btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#filtersOffcanvas" aria-controls="filtersOffcanvas">
       <i class="fas fa-filter me-2"></i>Filtros
-      <% if has_filters %>
-        <span class="badge bg-white text-danger ms-2"><%= [selected_categories.size, selected_brands.size, (price_min || price_max ? 1 : 0), in_stock_only ? 1 : 0, backorder_only ? 1 : 0, preorder_only ? 1 : 0].sum %></span>
+      <% if active_filters_count > 0 %>
+        <span class="badge bg-white text-danger ms-2"><%= active_filters_count %></span>
       <% end %>
     </button>
 
@@ -152,138 +166,4 @@
   </div>
 </div>
 
-<!-- Estilos CSS -->
-<style>
-  #catalog { --catalog-gap-y: .75rem; }
-  #catalog .catalog-title { font-size: 1.85rem; line-height: 1.2; margin: 0 0 .25rem; }
-  #catalog .catalog-subtitle { margin: 0; }
-  #catalog .catalog-header .input-group { flex: 1 1 340px; min-width: 250px; }
-  #catalog .catalog-filters .sort-select { min-width: 125px; width: auto; }
-  #catalog .catalog-filters .btn-icon { display: inline-flex; align-items: center; justify-content: center; padding: .45rem .75rem; }
-  #catalog .catalog-item.hover-lift:hover { transform: translateY(-3px); box-shadow: 0 6px 18px rgba(0,0,0,0.12); }
-  #catalog .catalog-item { transition: .18s ease-in-out; }
-  #catalog .product-image { max-height: 150px; object-fit: contain; }
-  #catalog .card-title { white-space: normal; overflow: visible; text-overflow: unset; }
-  @media (max-width: 575px) { #catalog .catalog-header { margin-bottom: .75rem; } }
 
-  /* Sidebar de filtros */
-  #catalog .catalog-sidebar-filters { position: sticky; top: calc(var(--nav-height-shrink, 52px) + 12px); }
-  #catalog .catalog-sidebar-filters .filter-block .filter-scroll { max-height: 200px; overflow: auto; padding-right: 4px; }
-  #catalog .catalog-sidebar-filters .form-check { margin-bottom: .25rem; }
-  #catalog .catalog-sidebar-filters .input-group-text { min-width: 40px; justify-content: center; padding: .25rem .4rem; }
-  #catalog .catalog-sidebar-filters .form-control { padding: .25rem .4rem; }
-  #catalog .catalog-sidebar-filters { font-size: .85rem; }
-  #catalog .catalog-sidebar-filters h6 { font-size: .78rem; letter-spacing: .02em; }
-  #catalog .catalog-sidebar-filters .form-check-label,
-  #catalog .catalog-sidebar-filters .input-group-text { font-size: .85rem; }
-
-  /* Accordion colapsable headers */
-  #catalog .filter-block h6 a { cursor: pointer; transition: color .2s; }
-  #catalog .filter-block h6 a:hover { color: var(--bs-danger) !important; }
-  #catalog .filter-block h6 a i.fa-chevron-down { transition: transform .2s; font-size: .7rem; }
-  #catalog .filter-block h6 a[aria-expanded="true"] i.fa-chevron-down { transform: rotate(180deg); }
-
-  /* Chips de filtros activos */
-  .active-filters-chips { padding: .5rem 0; }
-  .filter-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: .35rem;
-    background: #f8f9fa;
-    border: 1px solid #dee2e6;
-    border-radius: 20px;
-    padding: .35rem .75rem;
-    font-size: .875rem;
-    color: #495057;
-    transition: all .2s;
-  }
-  .filter-chip:hover { background: #e9ecef; border-color: #adb5bd; }
-  .filter-chip i { font-size: .75rem; color: #6c757d; }
-  .filter-chip .chip-remove {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    background: #dc3545;
-    color: white;
-    text-decoration: none;
-    font-size: .85rem;
-    line-height: 1;
-    margin-left: .25rem;
-    transition: background .2s;
-  }
-  .filter-chip .chip-remove:hover { background: #c82333; transform: scale(1.1); }
-
-  /* Botón flotante para filtros (mobile) */
-  .filter-toggle-btn {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    z-index: 1000;
-    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
-    border-radius: 50px;
-    padding: .75rem 1.25rem;
-    font-weight: 600;
-  }
-  .filter-toggle-btn .badge {
-    font-size: .75rem;
-    padding: .25rem .5rem;
-    font-weight: 700;
-  }
-
-  /* Offcanvas ajustes */
-  #filtersOffcanvas .offcanvas-header { border-bottom: 1px solid #dee2e6; background: #f8f9fa; }
-  #filtersOffcanvas .offcanvas-title { font-weight: 600; color: #dc3545; }
-
-  /* Chip de búsqueda */
-  .search-chip { border:1px solid var(--color-border,#d5d7da); border-radius:18px; padding:.15rem .5rem .15rem .65rem; background:#fff; font-size:.9rem; gap:.4rem; }
-  .search-chip .chip-text { max-width: 220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .search-chip .chip-clear { display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:50%; text-decoration:none; color:#666; background:transparent; border:1px solid #ccc; line-height:1; font-size:1rem; }
-  .search-chip .chip-clear:hover { color:#a31221; border-color:#a31221; }
-
-  /* Loading indicator for Turbo Frame */
-  turbo-frame[busy] {
-    opacity: 0.6;
-    pointer-events: none;
-    position: relative;
-  }
-  
-  turbo-frame[busy]::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 40px;
-    height: 40px;
-    border: 4px solid #f3f3f3;
-    border-top: 4px solid #dc3545;
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-    z-index: 10;
-  }
-  
-  @keyframes spin {
-    0% { transform: translate(-50%, -50%) rotate(0deg); }
-    100% { transform: translate(-50%, -50%) rotate(360deg); }
-  }
-  
-  /* Smooth transitions for product cards */
-  .product-card-wrapper {
-    animation: fadeIn 0.3s ease-in;
-  }
-  
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  
-  /* Stagger animation for multiple cards */
-  .product-card-wrapper:nth-child(1) { animation-delay: 0.05s; }
-  .product-card-wrapper:nth-child(2) { animation-delay: 0.1s; }
-  .product-card-wrapper:nth-child(3) { animation-delay: 0.15s; }
-  .product-card-wrapper:nth-child(4) { animation-delay: 0.2s; }
-  .product-card-wrapper:nth-child(5) { animation-delay: 0.25s; }
-</style>

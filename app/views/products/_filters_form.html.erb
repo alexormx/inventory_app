@@ -16,6 +16,133 @@
   <input type="hidden" name="sort" value="<%= @sort %>">
   <% if @q.present? %><input type="hidden" name="q" value="<%= @q %>"><% end %>
 
+  <%# Chips inline dentro del formulario (prioridad mobile para evitar duplicación en desktop) %>
+  <%
+    has_filters = selected_categories.any? || selected_brands.any? || price_min || price_max || in_stock_only || backorder_only || preorder_only
+  %>
+  <% if suffix.to_s == 'Mobile' && has_filters %>
+    <div class="active-filters-chips mb-2 d-flex flex-wrap gap-2 align-items-center">
+      <span class="text-muted small fw-semibold">Seleccionado:</span>
+
+      <% selected_categories.each do |cat| %>
+        <% clear_url = catalog_path(request.query_parameters.merge(categories: selected_categories - [cat], page: nil)) %>
+        <span class="filter-chip">
+          <i class="fas fa-tag me-1"></i><%= cat %>
+          <%= link_to clear_url, class: "chip-remove", "aria-label": "Remover #{cat}", title: "Remover filtro", data: { turbo_frame: "products_grid" } do %>&times;<% end %>
+        </span>
+      <% end %>
+
+      <% selected_brands.each do |brand| %>
+        <% clear_url = catalog_path(request.query_parameters.merge(brands: selected_brands - [brand], page: nil)) %>
+        <span class="filter-chip">
+          <i class="fas fa-copyright me-1"></i><%= brand %>
+          <%= link_to clear_url, class: "chip-remove", "aria-label": "Remover #{brand}", title: "Remover filtro", data: { turbo_frame: "products_grid" } do %>&times;<% end %>
+        </span>
+      <% end %>
+
+      <% if price_min || price_max %>
+        <% clear_url = catalog_path(request.query_parameters.except(:price_min, :price_max).merge(page: nil)) %>
+        <span class="filter-chip">
+          <i class="fas fa-dollar-sign me-1"></i>
+          <% if price_min && price_max %>
+            $<%= price_min %> - $<%= price_max %>
+          <% elsif price_min %>
+            Desde $<%= price_min %>
+          <% else %>
+            Hasta $<%= price_max %>
+          <% end %>
+          <%= link_to clear_url, class: "chip-remove", "aria-label": "Remover filtro de precio", title: "Remover filtro", data: { turbo_frame: "products_grid" } do %>&times;<% end %>
+        </span>
+      <% end %>
+
+      <% if in_stock_only %>
+        <% clear_url = catalog_path(request.query_parameters.except(:in_stock).merge(page: nil)) %>
+        <span class="filter-chip">
+          <i class="fas fa-check-circle me-1"></i>En stock
+          <%= link_to clear_url, class: "chip-remove", "aria-label": "Remover filtro en stock", title: "Remover filtro", data: { turbo_frame: "products_grid" } do %>&times;<% end %>
+        </span>
+      <% end %>
+
+      <% if backorder_only %>
+        <% clear_url = catalog_path(request.query_parameters.except(:backorder).merge(page: nil)) %>
+        <span class="filter-chip">
+          <i class="fas fa-clock me-1"></i>Backorder
+          <%= link_to clear_url, class: "chip-remove", "aria-label": "Remover filtro backorder", title: "Remover filtro", data: { turbo_frame: "products_grid" } do %>&times;<% end %>
+        </span>
+      <% end %>
+
+      <% if preorder_only %>
+        <% clear_url = catalog_path(request.query_parameters.except(:preorder).merge(page: nil)) %>
+        <span class="filter-chip">
+          <i class="fas fa-calendar-alt me-1"></i>Preventa
+          <%= link_to clear_url, class: "chip-remove", "aria-label": "Remover filtro preventa", title: "Remover filtro", data: { turbo_frame: "products_grid" } do %>&times;<% end %>
+        </span>
+      <% end %>
+
+      <%= link_to catalog_path(sort: @sort, q: @q), class: "btn btn-outline-secondary btn-sm", data: { turbo_frame: "products_grid" } do %>
+        <i class="fas fa-times me-1"></i>Limpiar todos
+      <% end %>
+    </div>
+  <% end %>
+
+  <% if suffix.to_s != 'Mobile' && has_filters %>
+    <div class="active-filters-chips mb-2 d-flex flex-wrap gap-2 align-items-center">
+      <span class="text-muted small fw-semibold">Seleccionado:</span>
+      <% selected_categories.each do |cat| %>
+        <% clear_url = catalog_path(request.query_parameters.merge(categories: selected_categories - [cat], page: nil)) %>
+        <span class="filter-chip">
+          <i class="fas fa-tag me-1"></i><%= cat %>
+          <%= link_to clear_url, class: "chip-remove", "aria-label": "Remover #{cat}", title: "Remover filtro", data: { turbo_frame: "products_grid" } do %>&times;<% end %>
+        </span>
+      <% end %>
+      <% selected_brands.each do |brand| %>
+        <% clear_url = catalog_path(request.query_parameters.merge(brands: selected_brands - [brand], page: nil)) %>
+        <span class="filter-chip">
+          <i class="fas fa-copyright me-1"></i><%= brand %>
+          <%= link_to clear_url, class: "chip-remove", "aria-label": "Remover #{brand}", title: "Remover filtro", data: { turbo_frame: "products_grid" } do %>&times;<% end %>
+        </span>
+      <% end %>
+      <% if price_min || price_max %>
+        <% clear_url = catalog_path(request.query_parameters.except(:price_min, :price_max).merge(page: nil)) %>
+        <span class="filter-chip">
+          <i class="fas fa-dollar-sign me-1"></i>
+          <% if price_min && price_max %>
+            $<%= price_min %> - $<%= price_max %>
+          <% elsif price_min %>
+            Desde $<%= price_min %>
+          <% else %>
+            Hasta $<%= price_max %>
+          <% end %>
+          <%= link_to clear_url, class: "chip-remove", "aria-label": "Remover filtro de precio", title: "Remover filtro", data: { turbo_frame: "products_grid" } do %>&times;<% end %>
+        </span>
+      <% end %>
+      <% if in_stock_only %>
+        <% clear_url = catalog_path(request.query_parameters.except(:in_stock).merge(page: nil)) %>
+        <span class="filter-chip">
+          <i class="fas fa-check-circle me-1"></i>En stock
+          <%= link_to clear_url, class: "chip-remove", "aria-label": "Remover filtro en stock", title: "Remover filtro", data: { turbo_frame: "products_grid" } do %>&times;<% end %>
+        </span>
+      <% end %>
+      <% if backorder_only %>
+        <% clear_url = catalog_path(request.query_parameters.except(:backorder).merge(page: nil)) %>
+        <span class="filter-chip">
+          <i class="fas fa-clock me-1"></i>Backorder
+          <%= link_to clear_url, class: "chip-remove", "aria-label": "Remover filtro backorder", title: "Remover filtro", data: { turbo_frame: "products_grid" } do %>&times;<% end %>
+        </span>
+      <% end %>
+      <% if preorder_only %>
+        <% clear_url = catalog_path(request.query_parameters.except(:preorder).merge(page: nil)) %>
+        <span class="filter-chip">
+          <i class="fas fa-calendar-alt me-1"></i>Preventa
+          <%= link_to clear_url, class: "chip-remove", "aria-label": "Remover filtro preventa", title: "Remover filtro", data: { turbo_frame: "products_grid" } do %>&times;<% end %>
+        </span>
+      <% end %>
+      <%= link_to catalog_path(sort: @sort, q: @q), class: "btn btn-outline-secondary btn-sm", data: { turbo_frame: "products_grid" } do %>
+        <i class="fas fa-times me-1"></i>Limpiar todos
+      <% end %>
+    </div>
+  <% end %>
+
   <div class="filter-block mb-3">
     <h6 class="fw-semibold small text-uppercase text-muted mb-2">
       <a class="text-decoration-none text-muted d-flex align-items-center justify-content-between" data-bs-toggle="collapse" href="#filterAvailability<%= suffix %>" role="button" aria-expanded="true" aria-controls="filterAvailability<%= suffix %>">
@@ -73,13 +200,38 @@
       </a>
     </h6>
     <div class="collapse show" id="filterPrice<%= suffix %>">
-      <div class="input-group input-group-sm mb-2">
-        <span class="input-group-text">Min</span>
-        <input type="number" step="0.01" min="0" class="form-control" name="price_min" value="<%= params[:price_min] %>" data-debounce="true">
-      </div>
-      <div class="input-group input-group-sm">
-        <span class="input-group-text">Max</span>
-        <input type="number" step="0.01" min="0" class="form-control" name="price_max" value="<%= params[:price_max] %>" data-debounce="true">
+      <div data-controller="price-range"
+           data-price-range-min-value="<%= @price_range_min %>"
+           data-price-range-max-value="<%= @price_range_max %>"
+           data-price-range-current-min-value="<%= params[:price_min] || @price_range_min %>"
+           data-price-range-current-max-value="<%= params[:price_max] || @price_range_max %>">
+
+        <%# Slider visual %>
+        <div class="mb-3 px-2">
+          <div data-price-range-target="slider" class="price-slider"></div>
+        </div>
+
+        <%# Inputs numéricos ocultos que se actualizan con el slider %>
+        <input type="hidden"
+               name="price_min"
+               value="<%= params[:price_min] %>"
+               data-price-range-target="minInput"
+               data-debounce="true">
+        <input type="hidden"
+               name="price_max"
+               value="<%= params[:price_max] %>"
+               data-price-range-target="maxInput"
+               data-debounce="true">
+
+        <%# Displays opcionales para mostrar valores actuales %>
+        <div class="d-flex justify-content-between align-items-center text-muted small px-2">
+          <span>
+            <span data-price-range-target="minDisplay">$<%= params[:price_min] || @price_range_min %></span>
+          </span>
+          <span>
+            <span data-price-range-target="maxDisplay">$<%= params[:price_max] || @price_range_max %></span>
+          </span>
+        </div>
       </div>
     </div>
   </div>
@@ -147,7 +299,10 @@
   <% end %>
 
   <div class="d-grid gap-2">
-    <button class="btn btn-danger btn-sm" type="submit">Aplicar filtros</button>
+    <%# Ya hay autosubmit con Stimulus; no es necesario botón de 'Aplicar filtros' %>
+    <% if suffix.to_s == 'Mobile' %>
+      <button type="button" class="btn btn-danger btn-sm" data-bs-dismiss="offcanvas">Cerrar</button>
+    <% end %>
     <a href="<%= catalog_path %>" class="btn btn-outline-secondary btn-sm" data-turbo-frame="products_grid">Limpiar todo</a>
   </div>
 <% end %>

@@ -13,7 +13,7 @@ gem "pg", "~> 1.1"  # PostgreSQL as the database for Active Record
 gem "puma", ">= 5.0"  # Puma web server
 
 # ✅ Asset Pipeline & Frontend
-gem "propshaft"  # Modern asset pipeline for Rails
+# gem "propshaft"  # Disabled to use Sprockets + Sass pipeline for SCSS
 
 # ✅ Hotwire (Turbo + Stimulus)
 gem "importmap-rails"  # ESM import maps for JavaScript

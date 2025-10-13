@@ -3,10 +3,10 @@
 <!-- Customer -->
 <div class="col-md-6">
   <%= f.label :user_id, "Cliente", class: "form-label" %>
-  <div data-controller="user-suggest" class="position-relative">
+  <div data-controller="user-suggest" data-user-suggest-role-value="customer" class="position-relative">
     <div class="input-group">
       <span class="input-group-text"><i class="fa fa-user"></i></span>
-      <input type="text" class="form-control" data-user-suggest-target="input" placeholder="Buscar cliente..." data-action="input->user-suggest#input keydown->user-suggest#keydown">
+      <input type="text" class="form-control" data-user-suggest-target="input" placeholder="Buscar cliente..." value="<%= f.object.user&.name %>" data-action="input->user-suggest#input keydown->user-suggest#keydown">
     </div>
     <%= f.hidden_field :user_id, data: { 'user-suggest-target': 'hidden' } %>
     <div class="form-text" data-user-suggest-target="hint">

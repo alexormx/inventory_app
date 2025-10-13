@@ -14,6 +14,11 @@ class ProductsController < ApplicationController
     @all_categories = Product.publicly_visible.distinct.pluck(:category).compact.reject(&:blank?).sort_by { |c| c.to_s.downcase }
     @all_brands     = Product.publicly_visible.distinct.pluck(:brand).compact.reject(&:blank?).sort_by { |b| b.to_s.downcase }
 
+    # Calcular rango de precios para el slider
+    price_stats = Product.publicly_visible.pick(Arel.sql('MIN(selling_price) as min_price, MAX(selling_price) as max_price'))
+    @price_range_min = (price_stats&.first || 0).to_f.floor
+    @price_range_max = (price_stats&.last || 10000).to_f.ceil
+
     # Base scope (aplicar búsqueda primero para contadores precisos)
     base_scope = Product.publicly_visible
     if @q.present?

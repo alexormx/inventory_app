@@ -19,9 +19,19 @@ export default class extends Controller {
   connect(){
     this._timer = null
     this._lastQuery = ""
-  this._renderInfo("Escribe para buscar…")
+    this._renderInfo("Escribe para buscar…")
   this._suggested = null
   this._activeIndex = -1
+    // Si ya viene un valor precargado (editar), mostrar pista y respetar hidden
+    if(this.hasHiddenTarget && this.hiddenTarget.value){
+      // Si hay nombre visible, úsalo para la pista; si no, muéstralo como seleccionado
+      const name = this.hasInputTarget && this.inputTarget.value.trim().length ? this.inputTarget.value.trim() : null
+      if(name){
+        this._renderHint(`Seleccionado: <strong>${this._escapeHtml(name)}</strong>`)
+      } else {
+        this._renderHint(`Usuario seleccionado`)
+      }
+    }
   }
 
   input(){

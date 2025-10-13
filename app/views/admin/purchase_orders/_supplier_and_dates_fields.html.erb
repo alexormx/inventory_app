@@ -1,11 +1,12 @@
 <%# Parcial: Campos de proveedor y fechas %>
 <div class="col-md-6">
   <%= f.label :user_id, "Proveedor", class: "form-label" %>
-  <div data-controller="user-suggest" class="position-relative">
+  <div data-controller="user-suggest" data-user-suggest-role-value="supplier" class="position-relative">
     <input type="text"
            class="form-control"
            data-user-suggest-target="input"
            placeholder="Empieza a escribir el nombre del proveedor..."
+           value="<%= f.object.user&.name %>"
            data-action="input->user-suggest#input keydown->user-suggest#keydown">
     <%= f.hidden_field :user_id, data: { 'user-suggest-target': 'hidden' } %>
     <div class="form-text" data-user-suggest-target="hint">
