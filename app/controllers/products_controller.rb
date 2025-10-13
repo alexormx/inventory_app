@@ -10,17 +10,22 @@ class ProductsController < ApplicationController
     @q      = params[:q].to_s.strip
     @sort   = params[:sort].presence || "newest"
 
-  # Facetas básicas para filtros (ordenar en Ruby para evitar DISTINCT + ORDER BY en PG)
-  @all_categories = Product.publicly_visible.distinct.pluck(:category).compact.reject(&:blank?).sort_by { |c| c.to_s.downcase }
-  @all_brands     = Product.publicly_visible.distinct.pluck(:brand).compact.reject(&:blank?).sort_by { |b| b.to_s.downcase }
+    # Facetas básicas para filtros (ordenar en Ruby para evitar DISTINCT + ORDER BY en PG)
+    @all_categories = Product.publicly_visible.distinct.pluck(:category).compact.reject(&:blank?).sort_by { |c| c.to_s.downcase }
+    @all_brands     = Product.publicly_visible.distinct.pluck(:brand).compact.reject(&:blank?).sort_by { |b| b.to_s.downcase }
 
-    scope = Product.publicly_visible
+    # Base scope (aplicar búsqueda primero para contadores precisos)
+    base_scope = Product.publicly_visible
     if @q.present?
       pattern = "%#{@q.downcase}%"
-      scope = scope.where("LOWER(product_name) LIKE ? OR LOWER(category) LIKE ? OR LOWER(brand) LIKE ?", pattern, pattern, pattern)
+      base_scope = base_scope.where("LOWER(product_name) LIKE ? OR LOWER(category) LIKE ? OR LOWER(brand) LIKE ?", pattern, pattern, pattern)
     end
 
-    # Filtros desde sidebar
+    # Calcular contadores de facetas para el scope base
+    @facet_counts = calculate_facet_counts(base_scope)
+
+    # Aplicar filtros
+    scope = base_scope
     selected_categories = Array(params[:categories]).reject(&:blank?)
     selected_brands     = Array(params[:brands]).reject(&:blank?)
     price_min           = params[:price_min].presence
@@ -58,6 +63,16 @@ class ProductsController < ApplicationController
   end
 
   private
+
+  def calculate_facet_counts(scope)
+    {
+      categories: scope.where.not(category: [nil, '']).group(:category).count,
+      brands: scope.where.not(brand: [nil, '']).group(:brand).count,
+      in_stock: scope.joins(:inventories).where(inventories: { status: Inventory.statuses[:available] }).distinct.count,
+      backorder: scope.where(backorder_allowed: true).count,
+      preorder: scope.where(preorder_available: true).count
+    }
+  end
 
   def set_product
     @product = Product.friendly.find(params[:id])

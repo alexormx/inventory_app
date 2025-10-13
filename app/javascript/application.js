@@ -19,6 +19,8 @@ import "./custom/navbar_toggle"
 import "./custom/admin_navbar_toggle"
 // Sidebar (admin): hamburguesa que colapsa/expande el sidebar
 import "./modules/sidebar_toggle"
+// Customer layout: polyfills para collapse/offcanvas sin Bootstrap JS
+import "./custom/bootstrap_polyfills"
 // Tema claro/oscuro (persistencia en localStorage)
 import "./custom/theme_toggle"
 // Tooltips (si hay data-bs-toggle="tooltip")

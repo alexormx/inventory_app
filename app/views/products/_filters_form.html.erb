@@ -1,0 +1,153 @@
+<%
+  selected_categories = Array(params[:categories]).reject(&:blank?)
+  selected_brands = Array(params[:brands]).reject(&:blank?)
+  price_min = params[:price_min].presence
+  price_max = params[:price_max].presence
+  in_stock_only = ActiveModel::Type::Boolean.new.cast(params[:in_stock])
+  backorder_only = ActiveModel::Type::Boolean.new.cast(params[:backorder])
+  preorder_only = ActiveModel::Type::Boolean.new.cast(params[:preorder])
+%>
+
+<%= form_with url: catalog_path, method: :get, data: {
+  turbo_frame: "products_grid",
+  controller: "catalog-filters",
+  action: "change->catalog-filters#submit input->catalog-filters#debouncedSubmit"
+}, class: "catalog-sidebar-filters", id: form_id do %>
+  <input type="hidden" name="sort" value="<%= @sort %>">
+  <% if @q.present? %><input type="hidden" name="q" value="<%= @q %>"><% end %>
+
+  <div class="filter-block mb-3">
+    <h6 class="fw-semibold small text-uppercase text-muted mb-2">
+      <a class="text-decoration-none text-muted d-flex align-items-center justify-content-between" data-bs-toggle="collapse" href="#filterAvailability<%= suffix %>" role="button" aria-expanded="true" aria-controls="filterAvailability<%= suffix %>">
+        Disponibilidad
+        <% active_avail = [in_stock_only, backorder_only, preorder_only].count(true) %>
+        <span>
+          <% if active_avail > 0 %>
+            <span class="badge bg-danger rounded-pill me-1"><%= active_avail %></span>
+          <% end %>
+          <i class="fas fa-chevron-down"></i>
+        </span>
+      </a>
+    </h6>
+    <div class="collapse show" id="filterAvailability<%= suffix %>">
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" name="in_stock" value="1" id="f-in-stock<%= suffix %>" <%= 'checked' if in_stock_only %>>
+        <label class="form-check-label" for="f-in-stock<%= suffix %>">
+          En stock
+          <% if defined?(@facet_counts) && @facet_counts[:in_stock] %>
+            <span class="text-muted small">(<%= @facet_counts[:in_stock] %>)</span>
+          <% end %>
+        </label>
+      </div>
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" name="backorder" value="1" id="f-backorder<%= suffix %>" <%= 'checked' if backorder_only %>>
+        <label class="form-check-label" for="f-backorder<%= suffix %>">
+          Permite backorder
+          <% if defined?(@facet_counts) && @facet_counts[:backorder] %>
+            <span class="text-muted small">(<%= @facet_counts[:backorder] %>)</span>
+          <% end %>
+        </label>
+      </div>
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" name="preorder" value="1" id="f-preorder<%= suffix %>" <%= 'checked' if preorder_only %>>
+        <label class="form-check-label" for="f-preorder<%= suffix %>">
+          Disponible para preventa
+          <% if defined?(@facet_counts) && @facet_counts[:preorder] %>
+            <span class="text-muted small">(<%= @facet_counts[:preorder] %>)</span>
+          <% end %>
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <div class="filter-block mb-3">
+    <h6 class="fw-semibold small text-uppercase text-muted mb-2">
+      <a class="text-decoration-none text-muted d-flex align-items-center justify-content-between" data-bs-toggle="collapse" href="#filterPrice<%= suffix %>" role="button" aria-expanded="true" aria-controls="filterPrice<%= suffix %>">
+        Precio
+        <span>
+          <% if price_min || price_max %>
+            <span class="badge bg-danger rounded-pill me-1">1</span>
+          <% end %>
+          <i class="fas fa-chevron-down"></i>
+        </span>
+      </a>
+    </h6>
+    <div class="collapse show" id="filterPrice<%= suffix %>">
+      <div class="input-group input-group-sm mb-2">
+        <span class="input-group-text">Min</span>
+        <input type="number" step="0.01" min="0" class="form-control" name="price_min" value="<%= params[:price_min] %>" data-debounce="true">
+      </div>
+      <div class="input-group input-group-sm">
+        <span class="input-group-text">Max</span>
+        <input type="number" step="0.01" min="0" class="form-control" name="price_max" value="<%= params[:price_max] %>" data-debounce="true">
+      </div>
+    </div>
+  </div>
+
+  <% if @all_categories.present? %>
+  <div class="filter-block mb-3">
+    <h6 class="fw-semibold small text-uppercase text-muted mb-2">
+      <a class="text-decoration-none text-muted d-flex align-items-center justify-content-between" data-bs-toggle="collapse" href="#filterCategories<%= suffix %>" role="button" aria-expanded="false" aria-controls="filterCategories<%= suffix %>">
+        Categorías
+        <span>
+          <% if selected_categories.any? %>
+            <span class="badge bg-danger rounded-pill me-1"><%= selected_categories.size %></span>
+          <% end %>
+          <i class="fas fa-chevron-down"></i>
+        </span>
+      </a>
+    </h6>
+    <div class="collapse" id="filterCategories<%= suffix %>">
+      <div class="filter-scroll">
+        <% @all_categories.each do |c| %>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="categories[]" value="<%= c %>" id="cat<%= suffix %>-<%= c.parameterize %>" <%= 'checked' if selected_categories.include?(c) %>>
+            <label class="form-check-label" for="cat<%= suffix %>-<%= c.parameterize %>">
+              <%= c %>
+              <% if defined?(@facet_counts) && @facet_counts[:categories] && @facet_counts[:categories][c] %>
+                <span class="text-muted small">(<%= @facet_counts[:categories][c] %>)</span>
+              <% end %>
+            </label>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+  <% end %>
+
+  <% if @all_brands.present? %>
+  <div class="filter-block mb-3">
+    <h6 class="fw-semibold small text-uppercase text-muted mb-2">
+      <a class="text-decoration-none text-muted d-flex align-items-center justify-content-between" data-bs-toggle="collapse" href="#filterBrands<%= suffix %>" role="button" aria-expanded="false" aria-controls="filterBrands<%= suffix %>">
+        Marcas
+        <span>
+          <% if selected_brands.any? %>
+            <span class="badge bg-danger rounded-pill me-1"><%= selected_brands.size %></span>
+          <% end %>
+          <i class="fas fa-chevron-down"></i>
+        </span>
+      </a>
+    </h6>
+    <div class="collapse" id="filterBrands<%= suffix %>">
+      <div class="filter-scroll">
+        <% @all_brands.each do |b| %>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="brands[]" value="<%= b %>" id="brand<%= suffix %>-<%= b.parameterize %>" <%= 'checked' if selected_brands.include?(b) %>>
+            <label class="form-check-label" for="brand<%= suffix %>-<%= b.parameterize %>">
+              <%= b %>
+              <% if defined?(@facet_counts) && @facet_counts[:brands] && @facet_counts[:brands][b] %>
+                <span class="text-muted small">(<%= @facet_counts[:brands][b] %>)</span>
+              <% end %>
+            </label>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+  <% end %>
+
+  <div class="d-grid gap-2">
+    <button class="btn btn-danger btn-sm" type="submit">Aplicar filtros</button>
+    <a href="<%= catalog_path %>" class="btn btn-outline-secondary btn-sm" data-turbo-frame="products_grid">Limpiar todo</a>
+  </div>
+<% end %>
