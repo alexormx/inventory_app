@@ -91,57 +91,79 @@ function buildProductSearchItem(product) {
 document.addEventListener("turbo:load", () => {
   const resultsBox = document.querySelector("#product-search-results");
   const tbody = document.querySelector("#purchase-order-items-table tbody") || document.querySelector("#order-items-table tbody");
+  const contextElement = document.querySelector(".order-context");
+  const context = contextElement?.dataset?.context || "default";
   let index = tbody?.children.length || 0;
 
-  if (!resultsBox || !tbody) return;
+  if (!resultsBox || !tbody || context !== "purchase-order") return;
 
-  // Handle product selection
-  resultsBox.addEventListener("click", (e) => {
-    const item = e.target.closest(".list-group-item");
-    if (!item) return;
-
-  const product = JSON.parse(item.dataset.product);
-  const row = buildBlankPurchaseOrderItemRow(index);
+  // Helper para agregar producto a la tabla de PO
+  function addProductToPO(product) {
+    const row = buildBlankPurchaseOrderItemRow(index);
 
     // Fill in product details
     row.querySelector(".item-product-id").value = product.id;
     row.querySelector(".item-product-name").textContent = product.product_name;
-  row.querySelector(".item-qty").value = 1;
-  // Unit cost inicial en blanco/0 hasta que el usuario lo defina (podríamos poblar último costo conocido en futura mejora)
-  row.querySelector(".item-unit-cost").value = 0;
+    row.querySelector(".item-qty").value = 1;
+    // Unit cost inicial en blanco/0 hasta que el usuario lo defina
+    row.querySelector(".item-unit-cost").value = 0;
 
     // Fill volume and weight fields
-  // Prefer server-calculated unit volume if backend adds it later; fallback manual
-  // Volumen: si unit_volume_cm3 es null/undefined usamos multiplicación; evitamos NaN con coerción a 0
-  const volume = (product.unit_volume_cm3 ?? (product.length_cm * product.width_cm * product.height_cm)) || 0;
-
+    const volume = (product.unit_volume_cm3 ?? (product.length_cm * product.width_cm * product.height_cm)) || 0;
     const volumeField = row.querySelector(".item-volume");
-  volumeField.value = volume.toFixed(2);
-    volumeField.dataset.unitVolume = volume;
-
-    const weightField = row.querySelector(".item-weight");
-  const weight = (product.unit_weight_gr ?? product.weight_gr) || 0;
-  weightField.value = weight.toFixed(2);
-    weightField.dataset.unitWeight = weight;
-    if (volume === 0) {
-      row.classList.add("missing-volume");
-      volumeField.classList.add("text-warning");
-      volumeField.title = "Este producto tiene volumen 0; no recibirá distribución de costos adicionales.";
+    if (volumeField) {
+      volumeField.value = volume.toFixed(2);
+      volumeField.dataset.unitVolume = volume;
     }
 
-      // ✅ Remove placeholder row
+    const weightField = row.querySelector(".item-weight");
+    const weight = (product.unit_weight_gr ?? product.weight_gr) || 0;
+    if (weightField) {
+      weightField.value = weight.toFixed(2);
+      weightField.dataset.unitWeight = weight;
+    }
+
+    if (volume === 0) {
+      row.classList.add("missing-volume");
+      if (volumeField) {
+        volumeField.classList.add("text-warning");
+        volumeField.title = "Este producto tiene volumen 0; no recibirá distribución de costos adicionales.";
+      }
+    }
+
+    // Remove placeholder row si existe
     const placeholderRow = document.querySelector("#purchase-without-items");
     if (placeholderRow) placeholderRow.remove();
 
     tbody.appendChild(row);
     index++;
 
-    // Clear search
-    document.querySelector("#product-search").value = "";
+    // Clear search UI
+    const si = document.querySelector("#product-search");
+    if (si) si.value = "";
     resultsBox.innerHTML = "";
 
-    // Trigger update
+    // Trigger updates en orden
+    updateLineTotals(row);
     updateItemTotals();
+  }
+
+  // Nota: no adjuntamos listener de click directo aquí para evitar dobles inserciones.
+  // Usamos únicamente los eventos personalizados emitidos por el buscador.
+
+  // Soportar evento global product:selected (otros módulos de búsqueda)
+  document.addEventListener("product:selected", (ev) => {
+    const product = ev.detail;
+    if (!product) return;
+    addProductToPO(product);
+  });
+
+  // Soportar evento emitido por el controller Stimulus product-search
+  // Algunos componentes emiten 'product-search:selected' con detail = product
+  document.addEventListener("product-search:selected", (ev) => {
+    const product = ev.detail;
+    if (!product) return;
+    addProductToPO(product);
   });
 });
 
@@ -245,7 +267,6 @@ function buildInputTd(field, index, options = {}) {
 
 // Calculate totals (subtotal, weight, volume, and extended line costs)
 function updateItemTotals(fromTotals = false) {
-  let subtotal = 0;
   let totalLinesVolume = 0;
   let totalLinesWeight = 0;
   const shippingCost = numField("shipping_cost");
@@ -272,30 +293,38 @@ function updateItemTotals(fromTotals = false) {
 
 
   // Now calculate line totals and accumulate subtotal.
-  // Subtotal se redefine a partir de unit_compose_cost (unit_cost + unit_additional_cost)
-  // para reflejar el costo real distribuido.
-  let subtotalBase = 0; // mantiene suma simple qty * unit_cost (referencia interna)
+  // ✅ CORRECCIÓN: Subtotal = suma PURA de productos (qty * unit_cost), SIN extras
+  // Los extras se suman después en total_order_cost
+  let subtotal = 0; // suma qty * unit_cost (SOLO costo base de productos)
+  let itemCount = 0; // contador de líneas activas
+  let totalQty = 0; // suma de todas las cantidades
+
   document.querySelectorAll(".purchase-item-row").forEach(row => {
     const destroyInput = row.querySelector("input.item-destroy-flag");
     if (destroyInput?.value === "1") return;
+
+    itemCount++; // contar línea activa
 
     const qty = parseFloat(row.querySelector(".item-qty")?.value) || 0;
     const unitVolume = parseFloat(row.querySelector(".item-volume")?.dataset?.unitVolume) || 0;
     const unitWeight = parseFloat(row.querySelector(".item-weight")?.dataset?.unitWeight) || 0;
     const unitCost = parseFloat(row.querySelector(".item-unit-cost")?.value) || 0;
 
-  const lineVolume = qty * unitVolume;
-  // Distribución correcta: costo adicional proporcional al VOLUMEN TOTAL DE LA LÍNEA
-  const volumeRate = totalLinesVolume > 0 ? (lineVolume / totalLinesVolume) : 0;
-  // unitAdditionalCost se define por unidad: dividir la porción de costo de la línea entre qty (si qty>0)
-  const lineAdditionalCostPortion = totalAdditionalCost * volumeRate;
-  const unitAdditionalCost = qty > 0 ? (lineAdditionalCostPortion / qty) : 0;
+    totalQty += qty; // acumular cantidad total
+
+    const lineVolume = qty * unitVolume;
+    // Distribución correcta: costo adicional proporcional al VOLUMEN TOTAL DE LA LÍNEA
+    const volumeRate = totalLinesVolume > 0 ? (lineVolume / totalLinesVolume) : 0;
+    // unitAdditionalCost se define por unidad: dividir la porción de costo de la línea entre qty (si qty>0)
+    const lineAdditionalCostPortion = totalAdditionalCost * volumeRate;
+    const unitAdditionalCost = qty > 0 ? (lineAdditionalCostPortion / qty) : 0;
     const unitComposeCost = unitAdditionalCost + unitCost;
     const unitComposeCostMXN = unitComposeCost * exchangeRate;
     const lineTotal = qty * unitComposeCost;
     const lineTotalMXN = lineTotal * exchangeRate;
 
-
+    // ✅ Línea base sin extras (para mostrar desglose)
+    const lineBaseCost = qty * unitCost;
 
     // Update line fields
     const unitAdditionalCostField = row.querySelector(".item-unit-additional-cost");
@@ -313,22 +342,44 @@ function updateItemTotals(fromTotals = false) {
     const unitComposeCostMxnField = row.querySelector(".item-unit-compose-cost-mxn");
     if (unitComposeCostMxnField) unitComposeCostMxnField.value = unitComposeCostMXN.toFixed(2);
 
-    subtotalBase += qty * unitCost;
-    subtotal += lineTotal; // usar costo compuesto de la línea
+    // ✅ Acumular solo costo base en subtotal (sin extras)
+    subtotal += lineBaseCost;
   });
 
   // Update summary fields
   const subtotalField = fieldByName("subtotal");
   if (subtotalField) {
     subtotalField.value = subtotal.toFixed(2);
-    subtotalField.dataset.baseSubtotal = subtotalBase.toFixed(2);
+    subtotalField.dataset.baseSubtotal = subtotal.toFixed(2);
   }
 
-  const volumeField = document.querySelector("#total_volume");
+  // ✅ Actualizar también el display visual
+  const displaySubtotal = document.getElementById("display-subtotal");
+  if (displaySubtotal) displaySubtotal.textContent = `$${subtotal.toFixed(2)}`;
+
+  const summarySubtotal = document.getElementById("summary-subtotal");
+  if (summarySubtotal) summarySubtotal.textContent = `$${subtotal.toFixed(2)}`;
+
+  // ✅ Actualizar contador de items y cantidad total en sidebar
+  const summaryItemsCount = document.getElementById("summary-items-count");
+  if (summaryItemsCount) summaryItemsCount.textContent = itemCount;
+
+  const summaryTotalQty = document.getElementById("summary-total-qty");
+  if (summaryTotalQty) summaryTotalQty.textContent = totalQty;
+
+  const volumeField = fieldByName("total_volume");
   if (volumeField) volumeField.value = totalLinesVolume.toFixed(2);
 
-  const weightField = document.querySelector("#total_weight");
+  // ✅ Actualizar display de volumen
+  const displayVolume = document.getElementById("display-volume");
+  if (displayVolume) displayVolume.textContent = totalLinesVolume.toFixed(2);
+
+  const weightField = fieldByName("total_weight");
   if (weightField) weightField.value = totalLinesWeight.toFixed(2);
+
+  // ✅ Actualizar display de peso
+  const displayWeight = document.getElementById("display-weight");
+  if (displayWeight) displayWeight.textContent = totalLinesWeight.toFixed(2);
 
   // ✅ Only call updateTotals if we are NOT already coming from updateTotals
   if (!fromTotals) {
@@ -359,25 +410,33 @@ function updateLineTotals(row) {
   if (totalCostField) totalCostField.value = lineBaseCost.toFixed(2);
 }
 
-// Event listeners for item quantity and unit cost changes
-document.addEventListener("input", (e) => {
-  if (e.target.matches(".item-qty, .item-unit-cost")) {
-    const row = e.target.closest(".purchase-item-row");
-    if (row) {
-      updateLineTotals(row);
-      updateItemTotals();
+// ✅ Event listeners - registrar una sola vez con event delegation
+let itemListenersRegistered = false;
+
+if (!itemListenersRegistered) {
+  // Event listeners for item quantity and unit cost changes
+  document.addEventListener("input", (e) => {
+    if (e.target.matches(".item-qty, .item-unit-cost")) {
+      const row = e.target.closest(".purchase-item-row");
+      if (row) {
+        updateLineTotals(row);
+        updateItemTotals();
+      }
     }
-  }
-});
-// Event listener for remove button click
-document.addEventListener("click", (e) => {
-  if (e.target.matches(".remove-item, .remove-item *")) {
-    const row = e.target.closest(".purchase-item-row");
-    if (row) {
-      removeItemRow(row);
+  });
+
+  // Event listener for remove button click
+  document.addEventListener("click", (e) => {
+    if (e.target.matches(".remove-item, .remove-item *")) {
+      const row = e.target.closest(".purchase-item-row");
+      if (row) {
+        removeItemRow(row);
+      }
     }
-  }
-});
+  });
+
+  itemListenersRegistered = true;
+}
 
 // Update totals for the entire order
 function updateTotals() {
@@ -390,11 +449,34 @@ function updateTotals() {
   const total = subtotal + shipping + tax + other;
   const totalMXN = exchangeRate ? (total * exchangeRate) : 0;
 
-  const totalCostInput = document.querySelector("#total_order_cost");
-  const totalMXNInput = document.querySelector("#total_cost_mxn");
+  const totalCostInput = fieldByName("total_order_cost");
+  const totalMXNInput = fieldByName("total_cost_mxn");
 
   if (totalCostInput) totalCostInput.value = total.toFixed(2);
   if (totalMXNInput) totalMXNInput.value = exchangeRate ? totalMXN.toFixed(2) : "";
+
+  // ✅ Actualizar displays visuales
+  const displayTotal = document.getElementById("display-total");
+  if (displayTotal) displayTotal.textContent = `$${total.toFixed(2)}`;
+
+  const summaryTotal = document.getElementById("summary-total");
+  if (summaryTotal) summaryTotal.textContent = `$${total.toFixed(2)}`;
+
+  const displayTotalMxn = document.getElementById("display-total-mxn");
+  if (displayTotalMxn) displayTotalMxn.textContent = `$${totalMXN.toFixed(2)}`;
+
+  const summaryTotalMxn = document.getElementById("summary-total-mxn");
+  if (summaryTotalMxn) summaryTotalMxn.textContent = `$${totalMXN.toFixed(2)}`;
+
+  // ✅ Actualizar extras en sidebar
+  const summaryShipping = document.getElementById("summary-shipping");
+  if (summaryShipping) summaryShipping.textContent = `$${shipping.toFixed(2)}`;
+
+  const summaryTax = document.getElementById("summary-tax");
+  if (summaryTax) summaryTax.textContent = `$${tax.toFixed(2)}`;
+
+  const summaryOther = document.getElementById("summary-other");
+  if (summaryOther) summaryOther.textContent = `$${other.toFixed(2)}`;
 
   updateItemTotals(true); // evita loop
 }
@@ -409,6 +491,17 @@ document.addEventListener("turbo:load", function () {
     fieldByName("exchange_rate")
   ];
   inputs.forEach(input => input?.addEventListener("input", updateTotals));
+
+  // Actualizar etiqueta de tipo de cambio al cambiar moneda
+  const currencySelect = fieldByName("currency");
+  const exchangeLeftLabel = document.getElementById("exchange-rate-left-label");
+  const updateExchangeLabel = () => {
+    if (!exchangeLeftLabel || !currencySelect) return;
+    const cur = currencySelect.value || (currencySelect.options[currencySelect.selectedIndex]?.text) || "USD";
+    exchangeLeftLabel.textContent = `1 ${cur} =`;
+  };
+  currencySelect?.addEventListener("change", updateExchangeLabel);
+  updateExchangeLabel();
   updateTotals();
 });
 

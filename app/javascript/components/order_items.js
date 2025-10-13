@@ -1,48 +1,6 @@
 document.addEventListener("turbo:load", () => {
-  const searchInput = document.querySelector("#product-search");
-  const resultsContainer = document.querySelector("#product-search-results");
-
-  if (!searchInput || !resultsContainer) return;
-
-  let timeout = null;
-
-  searchInput.addEventListener("input", (e) => {
-    clearTimeout(timeout);
-    const query = e.target.value.trim();
-
-    if (query.length < 2) {
-      resultsContainer.innerHTML = "";
-      return;
-    }
-    const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-    timeout = setTimeout(() => {
-      fetch(`/admin/products/search?query=${encodeURIComponent(query)}`, {
-        method: "GET",
-        headers: {
-          "X-CSRF-Token": token,
-          "Accept": "application/json"
-        },
-        credentials: "same-origin"
-      })
-        .then(res => res.json())
-        .then(products => {
-          resultsContainer.innerHTML = "";
-
-          products.forEach(product => {
-            const item = buildProductSearchItem(product);
-
-            item.addEventListener("click", () => {
-              const event = new CustomEvent("product:selected", { detail: product });
-              document.dispatchEvent(event);
-              resultsContainer.innerHTML = "";
-              searchInput.value = "";
-            });
-
-            resultsContainer.appendChild(item);
-          });
-        });
-    }, 300); // debounce
-  });
+  // Este módulo ya no construye la búsqueda; escucha eventos de selección
+  // emitidos por el componente de búsqueda genérico.
 });
 
 function createElementWithClasses(tag, classes = [], options = {}) {
@@ -79,9 +37,12 @@ function buildProductSearchItem(product) {
 document.addEventListener("turbo:load", () => {
   const resultsBox = document.querySelector("#product-search-results");
   const tbody = document.querySelector("#order-items-table tbody");
+  const contextElement = document.querySelector(".order-context");
+  const context = contextElement?.dataset?.context || "default";
   let index = tbody?.children.length || 0;
 
-  if (!resultsBox || !tbody) return;
+  // Solo aplicar este manejador en el contexto de ventas para evitar choques con POs
+  if (!resultsBox || !tbody || context !== "sale-order") return;
 
   function addProductToOrder(product) {
     const row = buildBlankPurchaseOrderItemRow(index);
@@ -123,16 +84,12 @@ document.addEventListener("turbo:load", () => {
     updateItemTotals();
   }
 
-  // Handle product selection
-  resultsBox.addEventListener("click", (e) => {
-    const item = e.target.closest(".list-group-item");
-    if (!item) return;
-
-    const product = JSON.parse(item.dataset.product);
+  // Recibir selección desde buscador (eventos personalizados)
+  document.addEventListener("product:selected", (ev) => {
+    const product = ev.detail;
+    if (!product) return;
     addProductToOrder(product);
   });
-
-  // Bridge Stimulus product-search controller selection to add a row
   document.addEventListener("product-search:selected", (ev) => {
     const product = ev.detail;
     if (!product) return;
@@ -314,14 +271,21 @@ function updateItemTotals(fromTotals = false) {
 
 
   // Now calculate line totals and accumulate subtotal
+  let itemCount = 0; // contador de líneas activas
+  let totalQty = 0; // suma de todas las cantidades
+
   document.querySelectorAll(".item-row").forEach(row => {
     const destroyInput = row.querySelector("input.item-destroy-flag");
     if (destroyInput?.value === "1") return;
+
+    itemCount++; // contar línea activa
 
     const qty = parseFloat(row.querySelector(".item-qty")?.value) || 0;
     const unitVolume = parseFloat(row.querySelector(".item-volume")?.dataset?.unitVolume) || 0;
     const unitWeight = parseFloat(row.querySelector(".item-weight")?.dataset?.unitWeight) || 0;
     const unitCost = parseFloat(row.querySelector(".item-unit-cost")?.value) || 0;
+
+    totalQty += qty; // acumular cantidad total
 
 
     const lineVolume = qty * unitVolume;
@@ -369,8 +333,22 @@ function updateItemTotals(fromTotals = false) {
   });
 
   // Update summary fields
-  const subtotalField = document.querySelector("#order_subtotal");
+  const subtotalField = document.querySelector("#order_subtotal") || document.querySelector("#sale_order_subtotal");
   if (subtotalField) subtotalField.value = subtotal.toFixed(2);
+
+  // ✅ Actualizar displays visuales
+  const displaySubtotal = document.getElementById("display-subtotal");
+  if (displaySubtotal) displaySubtotal.textContent = `$${subtotal.toFixed(2)}`;
+
+  const summarySubtotal = document.getElementById("summary-subtotal");
+  if (summarySubtotal) summarySubtotal.textContent = `$${subtotal.toFixed(2)}`;
+
+  // ✅ Actualizar contador de items y cantidad total en sidebar
+  const summaryItemsCount = document.getElementById("summary-items-count");
+  if (summaryItemsCount) summaryItemsCount.textContent = itemCount;
+
+  const summaryTotalQty = document.getElementById("summary-total-qty");
+  if (summaryTotalQty) summaryTotalQty.textContent = totalQty;
 
   const volumeField = document.querySelector("#total_volume");
   if (volumeField) volumeField.value = totalLinesVolume.toFixed(2);
@@ -417,7 +395,7 @@ function updateLineTotals(row) {
 
 // Event listeners for item quantity and unit cost changes
 document.addEventListener("input", (e) => {
-  if (e.target.matches(".item-qty, .item-unit-cost")) {
+  if (e.target.matches(".item-qty, .item-unit-cost, .item-unit-discount")) {
     const row = e.target.closest(".item-row");
     if (row) {
       updateLineTotals(row);
@@ -457,6 +435,25 @@ function updateTotals() {
 
       const totalOrderValueInput = document.querySelector("#sale_order_total_order_value");
       if (totalOrderValueInput) totalOrderValueInput.value = total.toFixed(2);
+
+      // ✅ Actualizar displays visuales en Sale Order
+      const displayTotalTax = document.getElementById("display-total-tax");
+      if (displayTotalTax) displayTotalTax.textContent = `$${taxTotalValue.toFixed(2)}`;
+
+      const displayDiscount = document.getElementById("display-discount");
+      if (displayDiscount) displayDiscount.textContent = `$${discount.toFixed(2)}`;
+
+      const displayTotal = document.getElementById("display-total");
+      if (displayTotal) displayTotal.textContent = `$${total.toFixed(2)}`;
+
+      const summaryTotal = document.getElementById("summary-total");
+      if (summaryTotal) summaryTotal.textContent = `$${total.toFixed(2)}`;
+
+      const summaryTax = document.getElementById("summary-tax");
+      if (summaryTax) summaryTax.textContent = `$${taxTotalValue.toFixed(2)}`;
+
+      const summaryDiscount = document.getElementById("summary-discount");
+      if (summaryDiscount) summaryDiscount.textContent = `$${discount.toFixed(2)}`;
     }
 
   } else {

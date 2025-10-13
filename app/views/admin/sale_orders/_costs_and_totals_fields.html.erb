@@ -1,0 +1,83 @@
+<%# Parcial: Campos de impuestos, descuentos y totales %>
+<div class="col-12">
+  <h6 class="text-muted mb-3">
+    <i class="fa fa-calculator"></i> Cálculos Financieros
+  </h6>
+</div>
+
+<div class="col-md-4">
+  <%= f.label :tax_rate, "Tasa de Impuesto (%)", class: "form-label" %>
+  <div class="input-group input-group-sm">
+    <span class="input-group-text"><i class="fa fa-percent"></i></span>
+    <%= f.number_field :tax_rate, step: 0.01, class: "form-control" %>
+  </div>
+  <div class="form-text">
+    <i class="fa fa-info-circle"></i> Porcentaje de impuesto (IVA)
+  </div>
+</div>
+
+<div class="col-md-4">
+  <%= f.label :discount, "Descuento", class: "form-label" %>
+  <div class="input-group input-group-sm">
+    <span class="input-group-text"><i class="fa fa-tags"></i></span>
+    <%= f.number_field :discount, step: 0.01, class: "form-control" %>
+  </div>
+</div>
+
+<div class="col-md-4">
+  <div class="form-label small text-muted">Espacio</div>
+  <div class="py-2">&nbsp;</div>
+</div>
+
+<div class="col-12 mt-4">
+  <div class="row g-3">
+    <!-- Subtotal (solo productos) -->
+    <div class="col-md-3">
+      <%= f.label :subtotal, "Subtotal (Productos)", class: "form-label small text-muted" %>
+      <div class="alert alert-primary mb-0 py-2">
+        <div class="fs-5 fw-bold" id="display-subtotal">
+          <%= number_to_currency(sale_order.subtotal, precision: 2) %>
+        </div>
+        <small class="text-muted">Base de productos</small>
+      </div>
+    </div>
+
+    <!-- Total Tax -->
+    <div class="col-md-2">
+      <%= f.label :total_tax, "Impuesto Total", class: "form-label small text-muted" %>
+      <div class="bg-light border rounded p-2 text-center">
+        <div class="fw-semibold" id="display-total-tax">
+          <%= number_to_currency(sale_order.total_tax, precision: 2) %>
+        </div>
+        <small class="text-muted">IVA</small>
+      </div>
+    </div>
+
+    <!-- Discount Display -->
+    <div class="col-md-2">
+      <%= f.label :discount, "Descuento", class: "form-label small text-muted" %>
+      <div class="bg-light border rounded p-2 text-center">
+        <div class="fw-semibold" id="display-discount">
+          <%= number_to_currency(sale_order.discount, precision: 2) %>
+        </div>
+        <small class="text-muted">Rebaja</small>
+      </div>
+    </div>
+
+    <!-- Total Order Value -->
+    <div class="col-md-3">
+      <%= f.label :total_order_value, "Total Orden", class: "form-label small text-muted" %>
+      <div class="alert alert-success mb-0 py-2">
+        <div class="fs-4 fw-bold" id="display-total">
+          <%= number_to_currency(sale_order.total_order_value, precision: 2) %>
+        </div>
+        <small class="text-muted">Total a cobrar</small>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%# Hidden fields para que Rails reciba los valores %>
+<%= f.hidden_field :subtotal, id: "sale_order_subtotal" %>
+<%= f.hidden_field :total_tax %>
+<%= f.hidden_field :total_order_value %>

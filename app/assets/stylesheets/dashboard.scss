@@ -1,37 +1,27 @@
-// Dashboard specific tweaks
-.table-responsive.dashboard-scroll {
-  max-height: 360px;
-  overflow: auto;
+// Dashboard specific tweaks and design tokens
+:root {
+  --dash-gap: .75rem;
+  --dash-card-radius: .5rem;
 }
 
-thead th {
-  position: sticky;
-  top: 0;
-  z-index: 1;
-  background: var(--bs-body-bg, #fff);
-}
+.table-responsive.dashboard-scroll { max-height: 360px; overflow: auto; }
 
-// Numeric utilities
-.text-end-numeric {
-  text-align: right !important;
-}
+thead th { position: sticky; top: 0; z-index: 1; background: var(--bs-body-bg, #fff); }
 
-.text-negative {
-  color: var(--bs-danger, #dc3545) !important;
-}
-
-// Subtitles
-.small-subtitle {
-  font-weight: 600; // fw-semibold equivalent
-}
+// Utilities
+.text-end-numeric { text-align: right !important; }
+.text-negative { color: var(--bs-danger, #dc3545) !important; }
+.small-subtitle { font-weight: 600; }
 
 // Skeleton rows during Turbo load
-.table .placeholder-row td {
-  height: 36px;
-}
+.table .placeholder-row td { height: 36px; }
+.spinner-inline { display: inline-flex; align-items: center; gap: .5rem; }
 
-.spinner-inline {
-  display: inline-flex;
-  align-items: center;
-  gap: .5rem;
-}
+// KPI card polish
+.card.text-bg-success-subtle,
+.card.text-bg-primary-subtle,
+.card.text-bg-warning-subtle { border-radius: var(--dash-card-radius); }
+
+// Tab buttons compact
+.nav-tabs.nav-tabs-sm .nav-link { padding: .25rem .5rem; font-size: .85rem; }
+

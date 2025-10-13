@@ -1,0 +1,50 @@
+<%# Parcial: Campos de cliente, fecha, estado y notas %>
+
+<!-- Customer -->
+<div class="col-md-6">
+  <%= f.label :user_id, "Cliente", class: "form-label" %>
+  <div data-controller="user-suggest" class="position-relative">
+    <div class="input-group">
+      <span class="input-group-text"><i class="fa fa-user"></i></span>
+      <input type="text" class="form-control" data-user-suggest-target="input" placeholder="Buscar cliente..." data-action="input->user-suggest#input keydown->user-suggest#keydown">
+    </div>
+    <%= f.hidden_field :user_id, data: { 'user-suggest-target': 'hidden' } %>
+    <div class="form-text" data-user-suggest-target="hint">
+      <i class="fa fa-info-circle"></i> Escribe el nombre o email del cliente
+    </div>
+    <div data-user-suggest-target="results" style="z-index: 1050;"></div>
+  </div>
+</div>
+
+<!-- Order Date -->
+<div class="col-md-3">
+  <%= f.label :order_date, "Fecha de Orden", class: "form-label" %>
+  <div class="input-group">
+    <span class="input-group-text"><i class="fa fa-calendar"></i></span>
+    <%= f.date_field :order_date, class: "form-control" %>
+  </div>
+</div>
+
+<!-- Status -->
+<div class="col-md-3">
+  <%= f.label :status, "Estado", class: "form-label" %>
+  <div class="input-group">
+    <span class="input-group-text"><i class="fa fa-flag"></i></span>
+    <%= f.select :status,
+        SaleOrder::STATUSES.map { |s| [s, s] },
+        {},
+        class: "form-select" %>
+  </div>
+</div>
+
+<!-- Notes -->
+<div class="col-12">
+  <%= f.label :notes, "Notas", class: "form-label" %>
+  <div class="input-group">
+    <span class="input-group-text"><i class="fa fa-sticky-note"></i></span>
+    <%= f.text_area :notes, class: "form-control", rows: 3, placeholder: "Notas adicionales sobre esta orden de venta..." %>
+  </div>
+  <div class="form-text">
+    <i class="fa fa-info-circle"></i> Información adicional sobre el cliente o pedido
+  </div>
+</div>

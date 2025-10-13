@@ -1,5 +1,7 @@
 module Admin
   module DashboardHelper
+    include ActionView::Helpers::NumberHelper
+
     # Devuelve el emoji de bandera dado el nombre de país (en inglés o español común)
     def country_flag_emoji(country_name)
       return '' if country_name.blank?
@@ -12,6 +14,38 @@ module Admin
       chars.join
     rescue
       ''
+    end
+
+    # Formateadores compactos y consistentes
+    def fmt_currency(value, precision: 2, unit: '$')
+      value = value.to_d rescue 0.to_d
+      "#{unit} #{number_with_precision(value, precision: precision, delimiter: ',')}"
+    end
+
+    def fmt_number(value)
+      number_with_delimiter(value.to_i)
+    end
+
+    def fmt_percentage_ratio(ratio, precision: 1)
+      return '—' if ratio.nil?
+      number_to_percentage((ratio.to_f * 100.0), precision: precision)
+    end
+
+    # Badge para deltas (positivo/negativo)
+    def kpi_delta_badge(delta)
+      return content_tag(:span, '—', class: 'badge bg-secondary-subtle text-muted') if delta.nil?
+      positive = delta.to_f >= 0
+      klass = positive ? 'text-success bg-success-subtle' : 'text-danger bg-danger-subtle'
+      icon  = positive ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down'
+      content_tag(:span, class: "badge #{klass} d-inline-flex align-items-center gap-1") do
+        concat(content_tag(:i, '', class: "fa-solid #{icon}"))
+        concat(fmt_percentage_ratio(delta))
+      end
+    end
+
+    # Helper para filas skeleton en tablas (se usa en vistas)
+    def table_skeleton_rows(cols:, rows: 3)
+      render partial: 'admin/dashboard/table_skeleton', locals: { cols: cols, rows: rows }
     end
 
     private

@@ -30,6 +30,7 @@ end
 
 # --- Capybara + Selenium setup ---
 Capybara.default_max_wait_time = 7
+Capybara.javascript_driver = :selenium_chrome_headless
 
 Capybara.register_driver :selenium_chrome_headless do |app|
   options = Selenium::WebDriver::Chrome::Options.new
@@ -56,9 +57,8 @@ RSpec.configure do |config|
   config.use_transactional_fixtures = true
   config.filter_rails_from_backtrace!
 
-  # Skip system specs (and therefore Selenium/Chromedriver) for this stabilization branch
-  # This can be reverted later by removing this filter.
-  config.filter_run_excluding type: :system
+  # Skip system specs by default for CI stability; enable with RUN_SYSTEM_SPECS=1
+  config.filter_run_excluding type: :system unless ENV['RUN_SYSTEM_SPECS'] == '1'
 
   # Automatically tag specs based on their file location (e.g., spec/requests => type: :request)
   config.infer_spec_type_from_file_location!

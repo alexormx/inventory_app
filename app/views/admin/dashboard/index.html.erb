@@ -6,8 +6,8 @@
     <div class="col-md-4 col-lg-3">
       <%= render "kpi_card",
         title: "Ventas YTD (MXN)",
-        value: "$ #{number_with_precision(@sales_ytd, precision: 2, delimiter: ',')}",
-        ly: "$ #{number_with_precision(@sales_prev, precision: 2, delimiter: ',')}",
+        value: fmt_currency(@sales_ytd),
+        ly: fmt_currency(@sales_prev),
         delta: @kpi_deltas&.dig(:sales),
         spark_id: "sparkline-revenue",
         variant: "text-bg-success-subtle"
@@ -16,8 +16,8 @@
     <div class="col-md-4 col-lg-3">
       <%= render "kpi_card",
         title: "Ganancia YTD",
-        value: "$ #{number_with_precision(@profit_ytd, precision: 2, delimiter: ',')}",
-        ly: "$ #{number_with_precision(@profit_prev, precision: 2, delimiter: ',')}",
+        value: fmt_currency(@profit_ytd),
+        ly: fmt_currency(@profit_prev),
         delta: @kpi_deltas&.dig(:profit),
         variant: "text-bg-primary-subtle"
       %>
@@ -34,7 +34,7 @@
     <div class="col-md-4 col-lg-3">
       <%= render "kpi_card",
         title: "Compras totales en MXN (All Time)",
-        value: "$ #{number_with_precision(@purchases_total_mxn, precision: 2, delimiter: ',')}",
+        value: fmt_currency(@purchases_total_mxn),
         variant: "text-bg-warning-subtle"
       %>
     </div>
@@ -96,21 +96,7 @@
                               <th scope="col" class="text-end">Ingresos</th>
                             </tr>
                           </thead>
-                          <tbody>
-                            <tr>
-                              <td colspan="4" class="text-center py-3">
-                                <div class="d-inline-flex align-items-center gap-2">
-                                  <div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div>
-                                  <span class="text-muted">Cargando…</span>
-                                </div>
-                              </td>
-                            </tr>
-                            <% 3.times do %>
-                              <tr class="placeholder-row">
-                                <td colspan="4" class="placeholder-glow"><span class="placeholder col-12"></span></td>
-                              </tr>
-                            <% end %>
-                          </tbody>
+                          <%= table_skeleton_rows(cols: 4, rows: 3) %>
                         </table>
                       </div>
                     </turbo-frame>
@@ -127,21 +113,7 @@
                               <th scope="col" class="text-end">Ingresos</th>
                             </tr>
                           </thead>
-                          <tbody>
-                            <tr>
-                              <td colspan="4" class="text-center py-3">
-                                <div class="d-inline-flex align-items-center gap-2">
-                                  <div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div>
-                                  <span class="text-muted">Cargando…</span>
-                                </div>
-                              </td>
-                            </tr>
-                            <% 3.times do %>
-                              <tr class="placeholder-row">
-                                <td colspan="4" class="placeholder-glow"><span class="placeholder col-12"></span></td>
-                              </tr>
-                            <% end %>
-                          </tbody>
+                          <%= table_skeleton_rows(cols: 4, rows: 3) %>
                         </table>
                       </div>
                     </turbo-frame>
@@ -158,21 +130,7 @@
                               <th scope="col" class="text-end">Ingresos</th>
                             </tr>
                           </thead>
-                          <tbody>
-                            <tr>
-                              <td colspan="4" class="text-center py-3">
-                                <div class="d-inline-flex align-items-center gap-2">
-                                  <div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div>
-                                  <span class="text-muted">Cargando…</span>
-                                </div>
-                              </td>
-                            </tr>
-                            <% 3.times do %>
-                              <tr class="placeholder-row">
-                                <td colspan="4" class="placeholder-glow"><span class="placeholder col-12"></span></td>
-                              </tr>
-                            <% end %>
-                          </tbody>
+                          <%= table_skeleton_rows(cols: 4, rows: 3) %>
                         </table>
                       </div>
                     </turbo-frame>
@@ -194,21 +152,7 @@
                       <div class="table-responsive p-2 px-3">
                         <table class="table table-sm mb-0">
                           <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Ingresos</th><th class="text-end">COGS</th><th class="text-end">Utilidad</th></tr></thead>
-                          <tbody>
-                            <tr>
-                              <td colspan="5" class="text-center py-3">
-                                <div class="d-inline-flex align-items-center gap-2">
-                                  <div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div>
-                                  <span class="text-muted">Cargando…</span>
-                                </div>
-                              </td>
-                            </tr>
-                            <% 3.times do %>
-                              <tr class="placeholder-row">
-                                <td colspan="5" class="placeholder-glow"><span class="placeholder col-12"></span></td>
-                              </tr>
-                            <% end %>
-                          </tbody>
+                          <%= table_skeleton_rows(cols: 5, rows: 3) %>
                         </table>
                       </div>
                     </turbo-frame>
@@ -218,21 +162,7 @@
                       <div class="table-responsive p-2 px-3">
                         <table class="table table-sm mb-0">
                           <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Ingresos</th><th class="text-end">COGS</th><th class="text-end">Utilidad</th></tr></thead>
-                          <tbody>
-                            <tr>
-                              <td colspan="5" class="text-center py-3">
-                                <div class="d-inline-flex align-items-center gap-2">
-                                  <div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div>
-                                  <span class="text-muted">Cargando…</span>
-                                </div>
-                              </td>
-                            </tr>
-                            <% 3.times do %>
-                              <tr class="placeholder-row">
-                                <td colspan="5" class="placeholder-glow"><span class="placeholder col-12"></span></td>
-                              </tr>
-                            <% end %>
-                          </tbody>
+                          <%= table_skeleton_rows(cols: 5, rows: 3) %>
                         </table>
                       </div>
                     </turbo-frame>
@@ -242,21 +172,7 @@
                       <div class="table-responsive p-2 px-3">
                         <table class="table table-sm mb-0">
                           <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Ingresos</th><th class="text-end">COGS</th><th class="text-end">Utilidad</th></tr></thead>
-                          <tbody>
-                            <tr>
-                              <td colspan="5" class="text-center py-3">
-                                <div class="d-inline-flex align-items-center gap-2">
-                                  <div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div>
-                                  <span class="text-muted">Cargando…</span>
-                                </div>
-                              </td>
-                            </tr>
-                            <% 3.times do %>
-                              <tr class="placeholder-row">
-                                <td colspan="5" class="placeholder-glow"><span class="placeholder col-12"></span></td>
-                              </tr>
-                            <% end %>
-                          </tbody>
+                          <%= table_skeleton_rows(cols: 5, rows: 3) %>
                         </table>
                       </div>
                     </turbo-frame>
@@ -299,21 +215,7 @@
                     <turbo-frame id="frame-inventory-inv-value" src="<%= admin_dashboard_inventory_top_path(scope: 'inv', metric: 'value') %>">
                       <div class="table-responsive p-2 px-3">
                         <table class="table table-sm mb-0">
-                          <tbody>
-                            <tr>
-                              <td colspan="3" class="text-center py-3">
-                                <div class="d-inline-flex align-items-center gap-2">
-                                  <div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div>
-                                  <span class="text-muted">Cargando…</span>
-                                </div>
-                              </td>
-                            </tr>
-                            <% 3.times do %>
-                              <tr class="placeholder-row">
-                                <td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td>
-                              </tr>
-                            <% end %>
-                          </tbody>
+                          <%= table_skeleton_rows(cols: 3, rows: 3) %>
                         </table>
                       </div>
                     </turbo-frame>
@@ -321,10 +223,9 @@
                   <div class="tab-pane fade" id="ti-inv-qty" role="tabpanel" data-tabs-target="panel">
                     <turbo-frame id="frame-inventory-inv-qty" src="<%= admin_dashboard_inventory_top_path(scope: 'inv', metric: 'qty') %>">
                       <div class="table-responsive p-2 px-3">
-                        <table class="table table-sm mb-0"><tbody>
-                          <tr><td colspan="4" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
-                          <% 3.times do %><tr class="placeholder-row"><td colspan="4" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
-                        </tbody></table>
+                        <table class="table table-sm mb-0">
+                          <%= table_skeleton_rows(cols: 4, rows: 3) %>
+                        </table>
                       </div>
                     </turbo-frame>
                   </div>
@@ -341,18 +242,20 @@
                 <div class="tab-content">
                   <div class="tab-pane fade show active" id="ti-res-value" role="tabpanel" data-tabs-target="panel">
                     <turbo-frame id="frame-inventory-res-value" src="<%= admin_dashboard_inventory_top_path(scope: 'res', metric: 'value') %>">
-                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0"><tbody>
-                        <tr><td colspan="3" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
-                        <% 3.times do %><tr class="placeholder-row"><td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
-                      </tbody></table></div>
+                      <div class="table-responsive p-2 px-3">
+                        <table class="table table-sm mb-0">
+                          <%= table_skeleton_rows(cols: 3, rows: 3) %>
+                        </table>
+                      </div>
                     </turbo-frame>
                   </div>
                   <div class="tab-pane fade" id="ti-res-qty" role="tabpanel" data-tabs-target="panel">
                     <turbo-frame id="frame-inventory-res-qty" src="<%= admin_dashboard_inventory_top_path(scope: 'res', metric: 'qty') %>">
-                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0"><tbody>
-                        <tr><td colspan="4" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
-                        <% 3.times do %><tr class="placeholder-row"><td colspan="4" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
-                      </tbody></table></div>
+                      <div class="table-responsive p-2 px-3">
+                        <table class="table table-sm mb-0">
+                          <%= table_skeleton_rows(cols: 4, rows: 3) %>
+                        </table>
+                      </div>
                     </turbo-frame>
                   </div>
                 </div>
@@ -368,18 +271,20 @@
                 <div class="tab-content">
                   <div class="tab-pane fade show active" id="ti-all-value" role="tabpanel" data-tabs-target="panel">
                     <turbo-frame id="frame-inventory-all-value" src="<%= admin_dashboard_inventory_top_path(scope: 'all', metric: 'value') %>">
-                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0"><tbody>
-                        <tr><td colspan="3" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
-                        <% 3.times do %><tr class="placeholder-row"><td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
-                      </tbody></table></div>
+                      <div class="table-responsive p-2 px-3">
+                        <table class="table table-sm mb-0">
+                          <%= table_skeleton_rows(cols: 3, rows: 3) %>
+                        </table>
+                      </div>
                     </turbo-frame>
                   </div>
                   <div class="tab-pane fade" id="ti-all-qty" role="tabpanel" data-tabs-target="panel">
                     <turbo-frame id="frame-inventory-all-qty" src="<%= admin_dashboard_inventory_top_path(scope: 'all', metric: 'qty') %>">
-                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0"><tbody>
-                        <tr><td colspan="4" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
-                        <% 3.times do %><tr class="placeholder-row"><td colspan="4" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
-                      </tbody></table></div>
+                      <div class="table-responsive p-2 px-3">
+                        <table class="table table-sm mb-0">
+                          <%= table_skeleton_rows(cols: 4, rows: 3) %>
+                        </table>
+                      </div>
                     </turbo-frame>
                   </div>
                 </div>
@@ -395,15 +300,15 @@
     <div class="col-md-4 col-lg-4">
       <%= render "kpi_card",
         title: "Ventas totales en MXN (All Time)",
-        value: "$ #{number_with_precision(@sales_total_mxn, precision: 2, delimiter: ',')}",
+        value: fmt_currency(@sales_total_mxn),
         variant: "text-bg-success-subtle"
       %>
     </div>
     <div class="col-md-4 col-lg-4">
       <%= render "kpi_card",
         title: "Clientes activos",
-        value: number_with_delimiter(@active_customers_ytd),
-        ly: number_with_delimiter(@active_customers_prev),
+        value: fmt_number(@active_customers_ytd),
+        ly: fmt_number(@active_customers_prev),
         delta: @kpi_deltas&.dig(:customers),
         variant: "text-bg-primary-subtle"
       %>
@@ -411,7 +316,7 @@
     <div class="col-md-4 col-lg-4">
       <%= render "kpi_card",
         title: "Valor total de inventario (MXN)",
-        value: "$ #{number_with_precision(@inventory_total_value, precision: 2, delimiter: ',')}",
+        value: fmt_currency(@inventory_total_value),
         ly: (@inventory_turnover_ytd.nil? ? nil : "Rotación: #{number_with_precision(@inventory_turnover_ytd, precision: 2, delimiter: ',')}") ,
         variant: "text-bg-warning-subtle"
       %>
@@ -421,36 +326,16 @@
   <!-- KPIs tácticos (rápidos) -->
   <div class="row g-3 mb-3">
     <div class="col-md-2 col-6">
-      <div class="card h-100">
-        <div class="card-body py-2">
-          <div class="small text-muted">Ticket promedio</div>
-          <div class="fs-6 fw-bold">$ <%= number_with_precision(@avg_ticket_ytd, precision: 2, delimiter: ',') %></div>
-        </div>
-      </div>
+      <%= render 'kpi_stat', title: 'Ticket promedio', value: fmt_currency(@avg_ticket_ytd) %>
     </div>
     <div class="col-md-2 col-6">
-      <div class="card h-100">
-        <div class="card-body py-2">
-          <div class="small text-muted">Conversión</div>
-          <div class="fs-6 fw-bold"><%= @conversion_rate_ytd.nil? ? '—' : number_to_percentage(@conversion_rate_ytd * 100, precision: 2) %></div>
-        </div>
-      </div>
+      <%= render 'kpi_stat', title: 'Conversión', value: fmt_percentage_ratio(@conversion_rate_ytd, precision: 2) %>
     </div>
     <div class="col-md-2 col-6">
-      <div class="card h-100">
-        <div class="card-body py-2">
-          <div class="small text-muted">Stock crítico</div>
-          <div class="fs-6 fw-bold"><%= @critical_stock_count.nil? ? '—' : number_with_delimiter(@critical_stock_count) %></div>
-        </div>
-      </div>
+      <%= render 'kpi_stat', title: 'Stock crítico', value: (@critical_stock_count.nil? ? '—' : fmt_number(@critical_stock_count)) %>
     </div>
     <div class="col-md-2 col-6">
-      <div class="card h-100">
-        <div class="card-body py-2">
-          <div class="small text-muted">Recurrentes</div>
-          <div class="fs-6 fw-bold"><%= @recurring_customers_ratio.nil? ? '—' : number_to_percentage(@recurring_customers_ratio * 100, precision: 1) %></div>
-        </div>
-      </div>
+      <%= render 'kpi_stat', title: 'Recurrentes', value: fmt_percentage_ratio(@recurring_customers_ratio, precision: 1) %>
     </div>
   </div>
 
@@ -483,18 +368,16 @@
                 <div class="tab-content">
                   <div class="tab-pane fade show active" id="tc-ytd-rev" role="tabpanel" data-tabs-target="panel">
                     <turbo-frame id="frame-cats-ytd-rev" src="<%= admin_dashboard_categories_rank_path(period: 'ytd', metric: 'rev') %>">
-                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0"><tbody>
-                        <tr><td colspan="3" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
-                        <% 3.times do %><tr class="placeholder-row"><td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
-                      </tbody></table></div>
+                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0">
+                        <%= table_skeleton_rows(cols: 3, rows: 3) %>
+                      </table></div>
                     </turbo-frame>
                   </div>
                   <div class="tab-pane fade" id="tc-ytd-prof" role="tabpanel" data-tabs-target="panel">
                     <turbo-frame id="frame-cats-ytd-profit" src="<%= admin_dashboard_categories_rank_path(period: 'ytd', metric: 'profit') %>">
-                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0"><tbody>
-                        <tr><td colspan="3" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
-                        <% 3.times do %><tr class="placeholder-row"><td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
-                      </tbody></table></div>
+                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0">
+                        <%= table_skeleton_rows(cols: 3, rows: 3) %>
+                      </table></div>
                     </turbo-frame>
                   </div>
                 </div>
@@ -510,18 +393,16 @@
                 <div class="tab-content">
                   <div class="tab-pane fade show active" id="tc-ly-rev" role="tabpanel" data-tabs-target="panel">
                     <turbo-frame id="frame-cats-ly-rev" src="<%= admin_dashboard_categories_rank_path(period: 'ly', metric: 'rev') %>">
-                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0"><tbody>
-                        <tr><td colspan="3" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
-                        <% 3.times do %><tr class="placeholder-row"><td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
-                      </tbody></table></div>
+                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0">
+                        <%= table_skeleton_rows(cols: 3, rows: 3) %>
+                      </table></div>
                     </turbo-frame>
                   </div>
                   <div class="tab-pane fade" id="tc-ly-prof" role="tabpanel" data-tabs-target="panel">
                     <turbo-frame id="frame-cats-ly-profit" src="<%= admin_dashboard_categories_rank_path(period: 'ly', metric: 'profit') %>">
-                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0"><tbody>
-                        <tr><td colspan="3" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
-                        <% 3.times do %><tr class="placeholder-row"><td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
-                      </tbody></table></div>
+                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0">
+                        <%= table_skeleton_rows(cols: 3, rows: 3) %>
+                      </table></div>
                     </turbo-frame>
                   </div>
                 </div>
@@ -537,18 +418,16 @@
                 <div class="tab-content">
                   <div class="tab-pane fade show active" id="tc-all-rev" role="tabpanel" data-tabs-target="panel">
                     <turbo-frame id="frame-cats-all-rev" src="<%= admin_dashboard_categories_rank_path(period: 'all', metric: 'rev') %>">
-                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0"><tbody>
-                        <tr><td colspan="3" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
-                        <% 3.times do %><tr class="placeholder-row"><td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
-                      </tbody></table></div>
+                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0">
+                        <%= table_skeleton_rows(cols: 3, rows: 3) %>
+                      </table></div>
                     </turbo-frame>
                   </div>
                   <div class="tab-pane fade" id="tc-all-prof" role="tabpanel" data-tabs-target="panel">
                     <turbo-frame id="frame-cats-all-profit" src="<%= admin_dashboard_categories_rank_path(period: 'all', metric: 'profit') %>">
-                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0"><tbody>
-                        <tr><td colspan="3" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
-                        <% 3.times do %><tr class="placeholder-row"><td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
-                      </tbody></table></div>
+                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0">
+                        <%= table_skeleton_rows(cols: 3, rows: 3) %>
+                      </table></div>
                     </turbo-frame>
                   </div>
                 </div>
@@ -586,26 +465,23 @@
                 <div class="tab-content">
                   <div class="tab-pane fade show active" id="tcu-ytd-sales" role="tabpanel" data-tabs-target="panel">
                     <turbo-frame id="frame-cust-ytd-sales" src="<%= admin_dashboard_customers_rank_path(period: 'ytd', metric: 'sales') %>">
-                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0"><tbody>
-                        <tr><td colspan="3" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
-                        <% 3.times do %><tr class="placeholder-row"><td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
-                      </tbody></table></div>
+                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0">
+                        <%= table_skeleton_rows(cols: 3, rows: 3) %>
+                      </table></div>
                     </turbo-frame>
                   </div>
                   <div class="tab-pane fade" id="tcu-ytd-res" role="tabpanel" data-tabs-target="panel">
                     <turbo-frame id="frame-cust-ytd-reserved" src="<%= admin_dashboard_customers_rank_path(period: 'ytd', metric: 'reserved') %>">
-                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0"><tbody>
-                        <tr><td colspan="3" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
-                        <% 3.times do %><tr class="placeholder-row"><td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
-                      </tbody></table></div>
+                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0">
+                        <%= table_skeleton_rows(cols: 3, rows: 3) %>
+                      </table></div>
                     </turbo-frame>
                   </div>
                   <div class="tab-pane fade" id="tcu-ytd-comb" role="tabpanel" data-tabs-target="panel">
                     <turbo-frame id="frame-cust-ytd-combined" src="<%= admin_dashboard_customers_rank_path(period: 'ytd', metric: 'combined') %>">
-                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0"><tbody>
-                        <tr><td colspan="3" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
-                        <% 3.times do %><tr class="placeholder-row"><td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
-                      </tbody></table></div>
+                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0">
+                        <%= table_skeleton_rows(cols: 3, rows: 3) %>
+                      </table></div>
                     </turbo-frame>
                   </div>
                 </div>
@@ -622,26 +498,23 @@
                 <div class="tab-content">
                   <div class="tab-pane fade show active" id="tcu-ly-sales" role="tabpanel" data-tabs-target="panel">
                     <turbo-frame id="frame-cust-ly-sales" src="<%= admin_dashboard_customers_rank_path(period: 'ly', metric: 'sales') %>">
-                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0"><tbody>
-                        <tr><td colspan="3" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
-                        <% 3.times do %><tr class="placeholder-row"><td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
-                      </tbody></table></div>
+                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0">
+                        <%= table_skeleton_rows(cols: 3, rows: 3) %>
+                      </table></div>
                     </turbo-frame>
                   </div>
                   <div class="tab-pane fade" id="tcu-ly-res" role="tabpanel" data-tabs-target="panel">
                     <turbo-frame id="frame-cust-ly-reserved" src="<%= admin_dashboard_customers_rank_path(period: 'ly', metric: 'reserved') %>">
-                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0"><tbody>
-                        <tr><td colspan="3" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
-                        <% 3.times do %><tr class="placeholder-row"><td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
-                      </tbody></table></div>
+                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0">
+                        <%= table_skeleton_rows(cols: 3, rows: 3) %>
+                      </table></div>
                     </turbo-frame>
                   </div>
                   <div class="tab-pane fade" id="tcu-ly-comb" role="tabpanel" data-tabs-target="panel">
                     <turbo-frame id="frame-cust-ly-combined" src="<%= admin_dashboard_customers_rank_path(period: 'ly', metric: 'combined') %>">
-                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0"><tbody>
-                        <tr><td colspan="3" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
-                        <% 3.times do %><tr class="placeholder-row"><td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
-                      </tbody></table></div>
+                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0">
+                        <%= table_skeleton_rows(cols: 3, rows: 3) %>
+                      </table></div>
                     </turbo-frame>
                   </div>
                 </div>
@@ -658,26 +531,23 @@
                 <div class="tab-content">
                   <div class="tab-pane fade show active" id="tcu-all-sales" role="tabpanel" data-tabs-target="panel">
                     <turbo-frame id="frame-cust-all-sales" src="<%= admin_dashboard_customers_rank_path(period: 'all', metric: 'sales') %>">
-                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0"><tbody>
-                        <tr><td colspan="3" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
-                        <% 3.times do %><tr class="placeholder-row"><td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
-                      </tbody></table></div>
+                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0">
+                        <%= table_skeleton_rows(cols: 3, rows: 3) %>
+                      </table></div>
                     </turbo-frame>
                   </div>
                   <div class="tab-pane fade" id="tcu-all-res" role="tabpanel" data-tabs-target="panel">
                     <turbo-frame id="frame-cust-all-reserved" src="<%= admin_dashboard_customers_rank_path(period: 'all', metric: 'reserved') %>">
-                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0"><tbody>
-                        <tr><td colspan="3" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
-                        <% 3.times do %><tr class="placeholder-row"><td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
-                      </tbody></table></div>
+                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0">
+                        <%= table_skeleton_rows(cols: 3, rows: 3) %>
+                      </table></div>
                     </turbo-frame>
                   </div>
                   <div class="tab-pane fade" id="tcu-all-comb" role="tabpanel" data-tabs-target="panel">
                     <turbo-frame id="frame-cust-all-combined" src="<%= admin_dashboard_customers_rank_path(period: 'all', metric: 'combined') %>">
-                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0"><tbody>
-                        <tr><td colspan="3" class="text-center py-3"><div class="d-inline-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div><span class="text-muted">Cargando…</span></div></td></tr>
-                        <% 3.times do %><tr class="placeholder-row"><td colspan="3" class="placeholder-glow"><span class="placeholder col-12"></span></td></tr><% end %>
-                      </tbody></table></div>
+                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0">
+                        <%= table_skeleton_rows(cols: 3, rows: 3) %>
+                      </table></div>
                     </turbo-frame>
                   </div>
                 </div>

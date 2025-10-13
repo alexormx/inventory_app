@@ -1,0 +1,16 @@
+<%# Reusable skeleton rows for tables %>
+<tbody>
+  <tr>
+    <td colspan="<%= cols %>" class="text-center py-3">
+      <div class="spinner-inline text-muted">
+        <div class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></div>
+        <span>Cargando…</span>
+      </div>
+    </td>
+  </tr>
+  <% rows.times do %>
+    <tr class="placeholder-row">
+      <td colspan="<%= cols %>" class="placeholder-glow"><span class="placeholder col-12"></span></td>
+    </tr>
+  <% end %>
+</tbody>

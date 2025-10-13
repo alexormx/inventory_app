@@ -1,0 +1,130 @@
+<%# Parcial: Campos de costos adicionales y totales %>
+<div class="col-12">
+  <h6 class="text-muted mb-3">
+    <i class="fa fa-dollar-sign"></i> Costos Adicionales
+    <small class="text-muted">(se distribuyen proporcionalmente por volumen)</small>
+  </h6>
+</div>
+
+<div class="col-md-3">
+  <%= f.label :currency, "Moneda", class: "form-label" %>
+  <div class="input-group">
+    <%= f.select :currency,
+        PurchaseOrder::CURRENCIES.map { |c| [c, c] },
+        {},
+        class: "form-select" %>
+    <span class="input-group-text"><i class="fa fa-coins"></i></span>
+  </div>
+</div>
+
+<div class="col-md-3">
+  <%= f.label :exchange_rate, "Tipo de Cambio", class: "form-label" %>
+  <div class="input-group">
+    <span class="input-group-text" id="exchange-rate-left-label">1 <%= purchase_order.currency || "USD" %> =</span>
+    <%= f.number_field :exchange_rate,
+        step: 0.0001,
+        class: "form-control text-end",
+        placeholder: "17.5000" %>
+    <span class="input-group-text">MXN</span>
+  </div>
+  <div class="form-text">
+    <i class="fa fa-info-circle"></i> Tipo de cambio a pesos mexicanos
+  </div>
+</div>
+
+<div class="col-md-2">
+  <%= f.label :shipping_cost, "Envío", class: "form-label" %>
+  <div class="input-group input-group-sm">
+    <span class="input-group-text"><i class="fa fa-shipping-fast"></i></span>
+    <%= f.number_field :shipping_cost,
+        step: 0.01,
+        class: "form-control" %>
+  </div>
+</div>
+
+<div class="col-md-2">
+  <%= f.label :tax_cost, "Impuestos", class: "form-label" %>
+  <div class="input-group input-group-sm">
+    <span class="input-group-text"><i class="fa fa-receipt"></i></span>
+    <%= f.number_field :tax_cost,
+        step: 0.01,
+        class: "form-control" %>
+  </div>
+</div>
+
+<div class="col-md-2">
+  <%= f.label :other_cost, "Otros", class: "form-label" %>
+  <div class="input-group input-group-sm">
+    <span class="input-group-text"><i class="fa fa-ellipsis-h"></i></span>
+    <%= f.number_field :other_cost,
+        step: 0.01,
+        class: "form-control" %>
+  </div>
+</div>
+
+<div class="col-12 mt-4">
+  <div class="row g-3">
+    <!-- Subtotal (solo productos) -->
+    <div class="col-md-3">
+      <%= f.label :subtotal, "Subtotal (Productos)", class: "form-label small text-muted" %>
+      <div class="alert alert-primary mb-0 py-2">
+        <div class="fs-5 fw-bold" id="display-subtotal">
+          <%= number_to_currency(purchase_order.subtotal, precision: 2) %>
+        </div>
+        <small class="text-muted">Solo productos base</small>
+      </div>
+    </div>
+
+    <!-- Volumen Total -->
+    <div class="col-md-2">
+      <%= f.label :total_volume, "Volumen Total", class: "form-label small text-muted" %>
+      <div class="bg-light border rounded p-2 text-center">
+        <div class="fw-semibold" id="display-volume">
+          <%= number_with_precision(purchase_order.total_volume, precision: 2) %>
+        </div>
+        <small class="text-muted">cm³</small>
+      </div>
+    </div>
+
+    <!-- Peso Total -->
+    <div class="col-md-2">
+      <%= f.label :total_weight, "Peso Total", class: "form-label small text-muted" %>
+      <div class="bg-light border rounded p-2 text-center">
+        <div class="fw-semibold" id="display-weight">
+          <%= number_with_precision(purchase_order.total_weight, precision: 2) %>
+        </div>
+        <small class="text-muted">gr</small>
+      </div>
+    </div>
+
+    <!-- Total Orden (con extras) -->
+    <div class="col-md-3">
+      <%= f.label :total_order_cost, "Total Orden", class: "form-label small text-muted" %>
+      <div class="alert alert-success mb-0 py-2">
+        <div class="fs-4 fw-bold" id="display-total">
+          <%= number_to_currency(purchase_order.total_order_cost, precision: 2) %>
+        </div>
+        <small class="text-muted">Incluye todos los extras</small>
+      </div>
+    </div>
+
+    <!-- Total en MXN -->
+    <div class="col-md-2">
+      <%= f.label :total_cost_mxn, "Total MXN", class: "form-label small text-muted" %>
+      <div class="bg-light border rounded p-2 text-center">
+        <div class="fs-5 fw-semibold text-success" id="display-total-mxn">
+          <%= number_to_currency(purchase_order.total_cost_mxn, unit: "$", precision: 2) %>
+        </div>
+        <small class="text-muted">Pesos MX</small>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%# Hidden fields para que Rails reciba los valores %>
+<%# IMPORTANTE: Necesitamos AMBOS - el field principal (para JS fieldByName) Y el hidden (para sync) %>
+<%= f.hidden_field :subtotal %>
+<%= f.hidden_field :total_volume %>
+<%= f.hidden_field :total_weight %>
+<%= f.hidden_field :total_order_cost, id: "total_order_cost" %>
+<%= f.hidden_field :total_cost_mxn, id: "total_cost_mxn" %>

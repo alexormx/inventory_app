@@ -30,14 +30,6 @@ document.addEventListener("turbo:load", () => {
 
           products.forEach(product => {
             const item = buildProductSearchItem(product);
-
-            item.addEventListener("click", () => {
-              const event = new CustomEvent("product:selected", { detail: product });
-              document.dispatchEvent(event);
-              resultsContainer.innerHTML = "";
-              searchInput.value = "";
-            });
-
             resultsContainer.appendChild(item);
           });
         });

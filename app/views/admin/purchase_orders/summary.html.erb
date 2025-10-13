@@ -15,7 +15,8 @@
     <% subtotal = 0.to_d %>
     <% @purchase_order.purchase_order_items.includes(:product).each do |item| %>
       <% prod = item.product %>
-      <% line_total = item.total_line_cost.to_d %>
+      <%# ✅ CORRECCIÓN: line_total solo con costo base, sin extras %>
+      <% line_total = (item.quantity.to_d * item.unit_cost.to_d).round(2) %>
       <% subtotal += line_total %>
       <tr>
         <td class="text-center"><%= item.quantity %></td>

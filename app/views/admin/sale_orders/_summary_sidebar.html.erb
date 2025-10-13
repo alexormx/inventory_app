@@ -1,0 +1,81 @@
+<%# Parcial: Panel de resumen lateral flotante para Sale Orders %>
+<div class="card sticky-top shadow-sm" style="top: 20px;">
+  <div class="card-header bg-gradient text-white" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+    <h5 class="mb-0">
+      <i class="fa fa-receipt"></i> Resumen de Venta
+    </h5>
+  </div>
+  <div class="card-body">
+    <dl class="row mb-0 small">
+      <dt class="col-7 text-muted">
+        <i class="fa fa-box"></i> Productos:
+      </dt>
+      <dd class="col-5 text-end fw-bold" id="summary-items-count">
+        <%= sale_order.sale_order_items.count %>
+      </dd>
+
+      <dt class="col-7 text-muted">
+        <i class="fa fa-cubes"></i> Unidades:
+      </dt>
+      <dd class="col-5 text-end" id="summary-total-qty">
+        <%= sale_order.sale_order_items.sum(:quantity) %>
+      </dd>
+
+      <hr class="my-2">
+
+      <dt class="col-7">Subtotal:</dt>
+      <dd class="col-5 text-end fw-bold" id="summary-subtotal">
+        <%= number_to_currency(sale_order.subtotal, precision: 2) %>
+      </dd>
+
+      <dt class="col-7 small text-muted">
+        <i class="fa fa-percent"></i> Impuesto (<%= sale_order.tax_rate %>%):
+      </dt>
+      <dd class="col-5 text-end small text-muted" id="summary-tax">
+        <%= number_to_currency(sale_order.total_tax, precision: 2) %>
+      </dd>
+
+      <dt class="col-7 small text-muted">
+        <i class="fa fa-tags"></i> Descuento:
+      </dt>
+      <dd class="col-5 text-end small text-muted" id="summary-discount">
+        <%= number_to_currency(sale_order.discount, precision: 2) %>
+      </dd>
+
+      <hr class="my-2">
+
+      <dt class="col-7 border-top pt-2 fs-6">
+        <i class="fa fa-calculator"></i> Total:
+      </dt>
+      <dd class="col-5 text-end border-top pt-2 fs-5 fw-bold text-success" id="summary-total">
+        <%= number_to_currency(sale_order.total_order_value, precision: 2) %>
+      </dd>
+    </dl>
+  </div>
+
+  <div class="card-footer bg-light">
+    <div class="d-grid gap-2">
+      <%= f.submit "Guardar Orden", class: "btn btn-success btn-sm" %>
+      <%= link_to "Cancelar", admin_sale_orders_path, class: "btn btn-outline-secondary btn-sm" %>
+    </div>
+  </div>
+</div>
+
+<!-- Info adicional -->
+<div class="card mt-3">
+  <div class="card-header bg-light">
+    <h6 class="mb-0 small">
+      <i class="fa fa-info-circle"></i> Información
+    </h6>
+  </div>
+  <div class="card-body small text-muted">
+    <p class="mb-2">
+      <i class="fa fa-check-circle text-success"></i>
+      El subtotal se calcula sumando cantidad × precio unitario de cada producto.
+    </p>
+    <p class="mb-0">
+      <i class="fa fa-calculator text-primary"></i>
+      El total incluye impuestos y resta descuentos aplicados.
+    </p>
+  </div>
+</div>

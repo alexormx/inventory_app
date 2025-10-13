@@ -89,6 +89,43 @@ class SaleOrder < ApplicationRecord
     end
   end
 
+  # --- Scopes para cuentas por cobrar ---
+  BALANCE_SQL = <<~SQL.squish
+    (COALESCE(sale_orders.total_order_value,0) - (
+      SELECT COALESCE(SUM(amount),0)
+      FROM payments
+      WHERE payments.sale_order_id = sale_orders.id AND payments.status='Completed'
+    ))
+  SQL
+
+  # Adjunta la columna calculada balance en el SELECT
+  scope :with_balance, -> {
+    select("sale_orders.*, #{BALANCE_SQL} AS balance")
+  }
+
+  # Filtra órdenes con balance > 0 (cuentas por cobrar abiertas)
+  scope :open_receivables, -> {
+    where(Arel.sql("#{BALANCE_SQL} > 0"))
+  }
+
+  # Ordena por due_date con NULLS LAST y luego por created_at DESC, portable entre motores
+  scope :ordered_due_date_recent, -> {
+    if ActiveRecord::Base.connection.adapter_name.downcase.include?("postgres")
+      order(Arel.sql("due_date NULLS LAST, created_at DESC"))
+    else
+      order(Arel.sql("CASE WHEN due_date IS NULL THEN 1 ELSE 0 END, due_date ASC, created_at DESC"))
+    end
+  }
+
+  # Devuelve el balance ya cargado por with_balance o lo calcula on-the-fly
+  def balance
+    if has_attribute?(:balance) && self[:balance]
+      self[:balance].to_d
+    else
+      (total_order_value || 0).to_d - payments.where(status: "Completed").sum(:amount).to_d
+    end
+  end
+
   # Snapshot de totales calculados dinámicamente (sin mutar atributos)
   def compute_dynamic_totals
     return { subtotal: 0.to_d, tax: 0.to_d, total: 0.to_d } unless sale_order_items.exists?

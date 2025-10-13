@@ -1,0 +1,11 @@
+<%# Simple KPI stat card for tactical metrics %>
+<%# locals: title:, value:, help: nil %>
+<div class="card h-100">
+  <div class="card-body py-2">
+    <div class="small text-muted"><%= title %></div>
+    <div class="fs-6 fw-bold"><%= value %></div>
+    <% if local_assigns[:help].present? %>
+      <div class="text-muted" style="font-size: .8rem;"><%= help %></div>
+    <% end %>
+  </div>
+</div>
