@@ -26,71 +26,203 @@
   </div>
 
   <% if @q.present? %>
-    <p class="text-muted small mb-3">Resultados para "<strong><%= @q %></strong>": <%= @produ
-    cts.total_count %></p>
+    <p class="text-muted small mb-3">Resultados para "<strong><%= @q %></strong>": <%= @products.total_count %></p>
+  <% end %>
+
+  <!-- ✅ Chips de filtros activos -->
+  <%
+    selected_categories = Array(params[:categories]).reject(&:blank?)
+    selected_brands = Array(params[:brands]).reject(&:blank?)
+    price_min = params[:price_min].presence
+    price_max = params[:price_max].presence
+    in_stock_only = ActiveModel::Type::Boolean.new.cast(params[:in_stock])
+    backorder_only = ActiveModel::Type::Boolean.new.cast(params[:backorder])
+    preorder_only = ActiveModel::Type::Boolean.new.cast(params[:preorder])
+
+    has_filters = selected_categories.any? || selected_brands.any? || price_min || price_max || in_stock_only || backorder_only || preorder_only
+  %>
+
+  <% if has_filters %>
+    <div class="active-filters-chips mb-3 d-flex flex-wrap gap-2 align-items-center">
+      <span class="text-muted small fw-semibold">Filtros activos:</span>
+
+      <% selected_categories.each do |cat| %>
+        <% clear_url = catalog_path(request.query_parameters.merge(categories: selected_categories - [cat], page: nil)) %>
+        <span class="filter-chip">
+          <i class="fas fa-tag me-1"></i><%= cat %>
+          <a href="<%= clear_url %>" class="chip-remove" aria-label="Remover <%= cat %>" title="Remover filtro">&times;</a>
+        </span>
+      <% end %>
+
+      <% selected_brands.each do |brand| %>
+        <% clear_url = catalog_path(request.query_parameters.merge(brands: selected_brands - [brand], page: nil)) %>
+        <span class="filter-chip">
+          <i class="fas fa-copyright me-1"></i><%= brand %>
+          <a href="<%= clear_url %>" class="chip-remove" aria-label="Remover <%= brand %>" title="Remover filtro">&times;</a>
+        </span>
+      <% end %>
+
+      <% if price_min || price_max %>
+        <% clear_url = catalog_path(request.query_parameters.except(:price_min, :price_max).merge(page: nil)) %>
+        <span class="filter-chip">
+          <i class="fas fa-dollar-sign me-1"></i>
+          <% if price_min && price_max %>
+            $<%= price_min %> - $<%= price_max %>
+          <% elsif price_min %>
+            Desde $<%= price_min %>
+          <% else %>
+            Hasta $<%= price_max %>
+          <% end %>
+          <a href="<%= clear_url %>" class="chip-remove" aria-label="Remover filtro de precio" title="Remover filtro">&times;</a>
+        </span>
+      <% end %>
+
+      <% if in_stock_only %>
+        <% clear_url = catalog_path(request.query_parameters.except(:in_stock).merge(page: nil)) %>
+        <span class="filter-chip">
+          <i class="fas fa-check-circle me-1"></i>En stock
+          <a href="<%= clear_url %>" class="chip-remove" aria-label="Remover filtro en stock" title="Remover filtro">&times;</a>
+        </span>
+      <% end %>
+
+      <% if backorder_only %>
+        <% clear_url = catalog_path(request.query_parameters.except(:backorder).merge(page: nil)) %>
+        <span class="filter-chip">
+          <i class="fas fa-clock me-1"></i>Backorder
+          <a href="<%= clear_url %>" class="chip-remove" aria-label="Remover filtro backorder" title="Remover filtro">&times;</a>
+        </span>
+      <% end %>
+
+      <% if preorder_only %>
+        <% clear_url = catalog_path(request.query_parameters.except(:preorder).merge(page: nil)) %>
+        <span class="filter-chip">
+          <i class="fas fa-calendar-alt me-1"></i>Preventa
+          <a href="<%= clear_url %>" class="chip-remove" aria-label="Remover filtro preventa" title="Remover filtro">&times;</a>
+        </span>
+      <% end %>
+
+      <a href="<%= catalog_path(sort: @sort, q: @q) %>" class="btn btn-outline-secondary btn-sm">
+        <i class="fas fa-times me-1"></i>Limpiar todos
+      </a>
+    </div>
   <% end %>
 
   <div class="row g-3">
-    <!-- Sidebar filtros -->
-  <aside class="d-none d-md-block col-md-3 col-lg-2">
+    <!-- ✅ Botón flotante para abrir filtros en mobile -->
+    <button class="btn btn-danger d-md-none filter-toggle-btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#filtersOffcanvas" aria-controls="filtersOffcanvas">
+      <i class="fas fa-filter me-2"></i>Filtros
+      <% if has_filters %>
+        <span class="badge bg-white text-danger ms-2"><%= [selected_categories.size, selected_brands.size, (price_min || price_max ? 1 : 0), in_stock_only ? 1 : 0, backorder_only ? 1 : 0, preorder_only ? 1 : 0].sum %></span>
+      <% end %>
+    </button>
+
+    <!-- Sidebar filtros desktop + offcanvas mobile -->
+    <aside class="d-none d-md-block col-md-3 col-lg-2" id="desktopFilters">
       <form method="get" action="<%= catalog_path %>" class="catalog-sidebar-filters">
         <input type="hidden" name="sort" value="<%= @sort %>">
         <% if @q.present? %><input type="hidden" name="q" value="<%= @q %>"><% end %>
 
         <div class="filter-block mb-3">
-          <h6 class="fw-semibold small text-uppercase text-muted mb-2">Disponibilidad</h6>
-          <div class="form-check">
-            <input class="form-check-input" type="checkbox" name="in_stock" value="1" id="f-in-stock" <%= 'checked' if ActiveModel::Type::Boolean.new.cast(params[:in_stock]) %>>
-            <label class="form-check-label" for="f-in-stock">En stock</label>
-          </div>
-          <div class="form-check">
-            <input class="form-check-input" type="checkbox" name="backorder" value="1" id="f-backorder" <%= 'checked' if ActiveModel::Type::Boolean.new.cast(params[:backorder]) %>>
-            <label class="form-check-label" for="f-backorder">Permite backorder</label>
-          </div>
-          <div class="form-check">
-            <input class="form-check-input" type="checkbox" name="preorder" value="1" id="f-preorder" <%= 'checked' if ActiveModel::Type::Boolean.new.cast(params[:preorder]) %>>
-            <label class="form-check-label" for="f-preorder">Disponible para preventa</label>
+          <h6 class="fw-semibold small text-uppercase text-muted mb-2">
+            <a class="text-decoration-none text-muted d-flex align-items-center justify-content-between" data-bs-toggle="collapse" href="#filterAvailability" role="button" aria-expanded="true" aria-controls="filterAvailability">
+              Disponibilidad
+              <% active_avail = [in_stock_only, backorder_only, preorder_only].count(true) %>
+              <span>
+                <% if active_avail > 0 %>
+                  <span class="badge bg-danger rounded-pill me-1"><%= active_avail %></span>
+                <% end %>
+                <i class="fas fa-chevron-down"></i>
+              </span>
+            </a>
+          </h6>
+          <div class="collapse show" id="filterAvailability">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" name="in_stock" value="1" id="f-in-stock" <%= 'checked' if in_stock_only %>>
+              <label class="form-check-label" for="f-in-stock">En stock</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" name="backorder" value="1" id="f-backorder" <%= 'checked' if backorder_only %>>
+              <label class="form-check-label" for="f-backorder">Permite backorder</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" name="preorder" value="1" id="f-preorder" <%= 'checked' if preorder_only %>>
+              <label class="form-check-label" for="f-preorder">Disponible para preventa</label>
+            </div>
           </div>
         </div>
 
         <div class="filter-block mb-3">
-          <h6 class="fw-semibold small text-uppercase text-muted mb-2">Precio</h6>
-          <div class="input-group input-group-sm mb-2">
-            <span class="input-group-text">Min</span>
-            <input type="number" step="0.01" min="0" class="form-control" name="price_min" value="<%= params[:price_min] %>">
-          </div>
-          <div class="input-group input-group-sm">
-            <span class="input-group-text">Max</span>
-            <input type="number" step="0.01" min="0" class="form-control" name="price_max" value="<%= params[:price_max] %>">
+          <h6 class="fw-semibold small text-uppercase text-muted mb-2">
+            <a class="text-decoration-none text-muted d-flex align-items-center justify-content-between" data-bs-toggle="collapse" href="#filterPrice" role="button" aria-expanded="true" aria-controls="filterPrice">
+              Precio
+              <span>
+                <% if price_min || price_max %>
+                  <span class="badge bg-danger rounded-pill me-1">1</span>
+                <% end %>
+                <i class="fas fa-chevron-down"></i>
+              </span>
+            </a>
+          </h6>
+          <div class="collapse show" id="filterPrice">
+            <div class="input-group input-group-sm mb-2">
+              <span class="input-group-text">Min</span>
+              <input type="number" step="0.01" min="0" class="form-control" name="price_min" value="<%= params[:price_min] %>">
+            </div>
+            <div class="input-group input-group-sm">
+              <span class="input-group-text">Max</span>
+              <input type="number" step="0.01" min="0" class="form-control" name="price_max" value="<%= params[:price_max] %>">
+            </div>
           </div>
         </div>
 
         <% if @all_categories.present? %>
         <div class="filter-block mb-3">
-          <h6 class="fw-semibold small text-uppercase text-muted mb-2">Categorías</h6>
-          <% selected = Array(params[:categories]).reject(&:blank?) %>
-          <div class="filter-scroll">
-            <% @all_categories.each do |c| %>
-              <div class="form-check">
-                <input class="form-check-input" type="checkbox" name="categories[]" value="<%= c %>" id="cat-<%= c.parameterize %>" <%= 'checked' if selected.include?(c) %>>
-                <label class="form-check-label" for="cat-<%= c.parameterize %>"><%= c %></label>
-              </div>
-            <% end %>
+          <h6 class="fw-semibold small text-uppercase text-muted mb-2">
+            <a class="text-decoration-none text-muted d-flex align-items-center justify-content-between" data-bs-toggle="collapse" href="#filterCategories" role="button" aria-expanded="false" aria-controls="filterCategories">
+              Categorías
+              <span>
+                <% if selected_categories.any? %>
+                  <span class="badge bg-danger rounded-pill me-1"><%= selected_categories.size %></span>
+                <% end %>
+                <i class="fas fa-chevron-down"></i>
+              </span>
+            </a>
+          </h6>
+          <div class="collapse" id="filterCategories">
+            <div class="filter-scroll">
+              <% @all_categories.each do |c| %>
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" name="categories[]" value="<%= c %>" id="cat-<%= c.parameterize %>" <%= 'checked' if selected_categories.include?(c) %>>
+                  <label class="form-check-label" for="cat-<%= c.parameterize %>"><%= c %></label>
+                </div>
+              <% end %>
+            </div>
           </div>
         </div>
         <% end %>
 
         <% if @all_brands.present? %>
         <div class="filter-block mb-3">
-          <h6 class="fw-semibold small text-uppercase text-muted mb-2">Marcas</h6>
-          <% selected_b = Array(params[:brands]).reject(&:blank?) %>
-          <div class="filter-scroll">
-            <% @all_brands.each do |b| %>
-              <div class="form-check">
-                <input class="form-check-input" type="checkbox" name="brands[]" value="<%= b %>" id="brand-<%= b.parameterize %>" <%= 'checked' if selected_b.include?(b) %>>
-                <label class="form-check-label" for="brand-<%= b.parameterize %>"><%= b %></label>
-              </div>
-            <% end %>
+          <h6 class="fw-semibold small text-uppercase text-muted mb-2">
+            <a class="text-decoration-none text-muted d-flex align-items-center justify-content-between" data-bs-toggle="collapse" href="#filterBrands" role="button" aria-expanded="false" aria-controls="filterBrands">
+              Marcas
+              <span>
+                <% if selected_brands.any? %>
+                  <span class="badge bg-danger rounded-pill me-1"><%= selected_brands.size %></span>
+                <% end %>
+                <i class="fas fa-chevron-down"></i>
+              </span>
+            </a>
+          </h6>
+          <div class="collapse" id="filterBrands">
+            <div class="filter-scroll">
+              <% @all_brands.each do |b| %>
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" name="brands[]" value="<%= b %>" id="brand-<%= b.parameterize %>" <%= 'checked' if selected_brands.include?(b) %>>
+                  <label class="form-check-label" for="brand-<%= b.parameterize %>"><%= b %></label>
+                </div>
+              <% end %>
+            </div>
           </div>
         </div>
         <% end %>
@@ -101,6 +233,133 @@
         </div>
       </form>
     </aside>
+
+    <!-- ✅ Offcanvas mobile -->
+    <div class="offcanvas offcanvas-start" tabindex="-1" id="filtersOffcanvas" aria-labelledby="filtersOffcanvasLabel">
+      <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="filtersOffcanvasLabel">
+          <i class="fas fa-filter me-2"></i>Filtros
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Cerrar"></button>
+      </div>
+      <div class="offcanvas-body">
+        <form method="get" action="<%= catalog_path %>" class="catalog-sidebar-filters">
+          <input type="hidden" name="sort" value="<%= @sort %>">
+          <% if @q.present? %><input type="hidden" name="q" value="<%= @q %>"><% end %>
+
+          <!-- Reutilizar mismo HTML de filtros -->
+          <div class="filter-block mb-3">
+            <h6 class="fw-semibold small text-uppercase text-muted mb-2">
+              <a class="text-decoration-none text-muted d-flex align-items-center justify-content-between" data-bs-toggle="collapse" href="#filterAvailabilityMobile" role="button" aria-expanded="true" aria-controls="filterAvailabilityMobile">
+                Disponibilidad
+                <span>
+                  <% active_avail = [in_stock_only, backorder_only, preorder_only].count(true) %>
+                  <% if active_avail > 0 %>
+                    <span class="badge bg-danger rounded-pill me-1"><%= active_avail %></span>
+                  <% end %>
+                  <i class="fas fa-chevron-down"></i>
+                </span>
+              </a>
+            </h6>
+            <div class="collapse show" id="filterAvailabilityMobile">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="in_stock" value="1" id="f-in-stock-mobile" <%= 'checked' if in_stock_only %>>
+                <label class="form-check-label" for="f-in-stock-mobile">En stock</label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="backorder" value="1" id="f-backorder-mobile" <%= 'checked' if backorder_only %>>
+                <label class="form-check-label" for="f-backorder-mobile">Permite backorder</label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="preorder" value="1" id="f-preorder-mobile" <%= 'checked' if preorder_only %>>
+                <label class="form-check-label" for="f-preorder-mobile">Disponible para preventa</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="filter-block mb-3">
+            <h6 class="fw-semibold small text-uppercase text-muted mb-2">
+              <a class="text-decoration-none text-muted d-flex align-items-center justify-content-between" data-bs-toggle="collapse" href="#filterPriceMobile" role="button" aria-expanded="true" aria-controls="filterPriceMobile">
+                Precio
+                <span>
+                  <% if price_min || price_max %>
+                    <span class="badge bg-danger rounded-pill me-1">1</span>
+                  <% end %>
+                  <i class="fas fa-chevron-down"></i>
+                </span>
+              </a>
+            </h6>
+            <div class="collapse show" id="filterPriceMobile">
+              <div class="input-group input-group-sm mb-2">
+                <span class="input-group-text">Min</span>
+                <input type="number" step="0.01" min="0" class="form-control" name="price_min" value="<%= params[:price_min] %>">
+              </div>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text">Max</span>
+                <input type="number" step="0.01" min="0" class="form-control" name="price_max" value="<%= params[:price_max] %>">
+              </div>
+            </div>
+          </div>
+
+          <% if @all_categories.present? %>
+          <div class="filter-block mb-3">
+            <h6 class="fw-semibold small text-uppercase text-muted mb-2">
+              <a class="text-decoration-none text-muted d-flex align-items-center justify-content-between" data-bs-toggle="collapse" href="#filterCategoriesMobile" role="button" aria-expanded="false" aria-controls="filterCategoriesMobile">
+                Categorías
+                <span>
+                  <% if selected_categories.any? %>
+                    <span class="badge bg-danger rounded-pill me-1"><%= selected_categories.size %></span>
+                  <% end %>
+                  <i class="fas fa-chevron-down"></i>
+                </span>
+              </a>
+            </h6>
+            <div class="collapse" id="filterCategoriesMobile">
+              <div class="filter-scroll">
+                <% @all_categories.each do |c| %>
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="categories[]" value="<%= c %>" id="cat-mobile-<%= c.parameterize %>" <%= 'checked' if selected_categories.include?(c) %>>
+                    <label class="form-check-label" for="cat-mobile-<%= c.parameterize %>"><%= c %></label>
+                  </div>
+                <% end %>
+              </div>
+            </div>
+          </div>
+          <% end %>
+
+          <% if @all_brands.present? %>
+          <div class="filter-block mb-3">
+            <h6 class="fw-semibold small text-uppercase text-muted mb-2">
+              <a class="text-decoration-none text-muted d-flex align-items-center justify-content-between" data-bs-toggle="collapse" href="#filterBrandsMobile" role="button" aria-expanded="false" aria-controls="filterBrandsMobile">
+                Marcas
+                <span>
+                  <% if selected_brands.any? %>
+                    <span class="badge bg-danger rounded-pill me-1"><%= selected_brands.size %></span>
+                  <% end %>
+                  <i class="fas fa-chevron-down"></i>
+                </span>
+              </a>
+            </h6>
+            <div class="collapse" id="filterBrandsMobile">
+              <div class="filter-scroll">
+                <% @all_brands.each do |b| %>
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="brands[]" value="<%= b %>" id="brand-mobile-<%= b.parameterize %>" <%= 'checked' if selected_brands.include?(b) %>>
+                    <label class="form-check-label" for="brand-mobile-<%= b.parameterize %>"><%= b %></label>
+                  </div>
+                <% end %>
+              </div>
+            </div>
+          </div>
+          <% end %>
+
+          <div class="d-grid gap-2">
+            <button class="btn btn-danger btn-sm" type="submit">Aplicar filtros</button>
+            <a href="<%= catalog_path %>" class="btn btn-outline-secondary btn-sm">Limpiar todo</a>
+          </div>
+        </form>
+      </div>
+    </div>
 
     <div class="col-12 col-md-9 col-lg-10">
       <div class="row row-cols-2 row-cols-sm-3 row-cols-md-3 row-cols-lg-5 g-3">
@@ -206,6 +465,7 @@
   #catalog .card-title { white-space: normal; overflow: visible; text-overflow: unset; }
   /* (Revertido) Permitimos que las utilidades globales controlen truncamiento en catálogo */
   @media (max-width: 575px) { #catalog .catalog-header { margin-bottom: .75rem; } }
+
   /* Sidebar de filtros */
   #catalog .catalog-sidebar-filters { position: sticky; top: calc(var(--nav-height-shrink, 52px) + 12px); }
   #catalog .catalog-sidebar-filters .filter-block .filter-scroll { max-height: 200px; overflow: auto; padding-right: 4px; }
@@ -217,6 +477,66 @@
   #catalog .catalog-sidebar-filters h6 { font-size: .78rem; letter-spacing: .02em; }
   #catalog .catalog-sidebar-filters .form-check-label,
   #catalog .catalog-sidebar-filters .input-group-text { font-size: .85rem; }
+
+  /* ✅ Accordion colapsable headers */
+  #catalog .filter-block h6 a { cursor: pointer; transition: color .2s; }
+  #catalog .filter-block h6 a:hover { color: var(--bs-danger) !important; }
+  #catalog .filter-block h6 a i.fa-chevron-down { transition: transform .2s; font-size: .7rem; }
+  #catalog .filter-block h6 a[aria-expanded="true"] i.fa-chevron-down { transform: rotate(180deg); }
+
+  /* ✅ Chips de filtros activos */
+  .active-filters-chips { padding: .5rem 0; }
+  .filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 20px;
+    padding: .35rem .75rem;
+    font-size: .875rem;
+    color: #495057;
+    transition: all .2s;
+  }
+  .filter-chip:hover { background: #e9ecef; border-color: #adb5bd; }
+  .filter-chip i { font-size: .75rem; color: #6c757d; }
+  .filter-chip .chip-remove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #dc3545;
+    color: white;
+    text-decoration: none;
+    font-size: .85rem;
+    line-height: 1;
+    margin-left: .25rem;
+    transition: background .2s;
+  }
+  .filter-chip .chip-remove:hover { background: #c82333; transform: scale(1.1); }
+
+  /* ✅ Botón flotante para filtros (mobile) */
+  .filter-toggle-btn {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
+    border-radius: 50px;
+    padding: .75rem 1.25rem;
+    font-weight: 600;
+  }
+  .filter-toggle-btn .badge {
+    font-size: .75rem;
+    padding: .25rem .5rem;
+    font-weight: 700;
+  }
+
+  /* Offcanvas ajustes */
+  #filtersOffcanvas .offcanvas-header { border-bottom: 1px solid #dee2e6; background: #f8f9fa; }
+  #filtersOffcanvas .offcanvas-title { font-weight: 600; color: #dc3545; }
 </style>
 
 <style>
