@@ -70,7 +70,8 @@ gem 'geocoder'
 
 # 🔹 **Development & Testing Group**
 group :development, :test do
-  gem "debug", platforms: %i[mri windows], require: "debug/prelude"  # Debugging
+  # Debugging: habilitar en MRI y entornos Windows (mingw/mswin)
+  gem "debug", platforms: %i[mri mingw x64_mingw mswin], require: "debug/prelude"
   gem "brakeman", require: false  # Security vulnerability scanner
   gem "rubocop", require: false  # Ruby static code analyzer
   gem "rubocop-rails", require: false  # Ruby style guide
@@ -85,6 +86,7 @@ group :development do
   gem "overcommit" # Git hooks for code quality
   gem "web-console"  # Rails console in browser for debugging
   gem "letter_opener" # Preview email in the browser instead of sending
+  gem "foreman", require: false # Procfile runner for bin/dev
 end
 
 # 🔹 **Testing Group**

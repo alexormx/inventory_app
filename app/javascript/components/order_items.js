@@ -487,7 +487,14 @@ document.addEventListener("turbo:load", function () {
     input?.addEventListener("input", updateTotals);
   });
 
-  updateTotals(); // initial run
+  // Inicial: calcular desde las filas para poblar subtotal y luego totales
+  // Esto evita que los displays aparezcan vacíos hasta que el usuario edite algo.
+  try {
+    updateItemTotals();
+  } catch (e) {
+    // fallback seguro si no hay tabla de items presente
+    updateTotals();
+  }
 });
 
 function removeItemRow(row) {
