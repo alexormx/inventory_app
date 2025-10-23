@@ -64,6 +64,13 @@ class CheckoutsController < ApplicationController
     }.compact
     @selected_address = (current_user.shipping_addresses.find_by(id: @shipping_info[:address_id]) if @shipping_info[:address_id])
     Rails.logger.info "[Checkout] step3 session shipping_info: #{@shipping_info.inspect}; selected_address: #{@selected_address&.id}"
+
+    # Generar token de idempotencia si no existe
+    unless session[:checkout_token].present?
+      session[:checkout_token] = SecureRandom.urlsafe_base64(32)
+      Rails.logger.info "[Checkout] Generated checkout token: #{session[:checkout_token]}"
+    end
+
     return unless @shipping_info.blank? || @selected_address.nil? || @shipping_info[:method].blank?
 
     flash.now[:alert] = 'Faltan datos de envío (debug).'
@@ -72,6 +79,25 @@ class CheckoutsController < ApplicationController
 
   def complete
     payment_method = params[:payment_method]
+    checkout_token = params[:checkout_token]
+
+    # Validar token de idempotencia
+    if checkout_token.blank? || session[:checkout_token].blank? || checkout_token != session[:checkout_token]
+      Rails.logger.warn "[Checkout] Invalid checkout token. Params: #{checkout_token.inspect}, Session: #{session[:checkout_token].inspect}"
+      flash[:alert] = 'Sesión inválida. Por favor, inicia el proceso de compra nuevamente.'
+      redirect_to checkout_step1_path and return
+    end
+
+    # Verificar si ya existe una orden con este token (idempotencia)
+    existing_order = SaleOrder.by_idempotency_key(checkout_token, current_user).first
+    if existing_order
+      Rails.logger.info "[Checkout] Order already exists with token #{checkout_token}: #{existing_order.id}"
+      session[:checkout_token] = nil
+      session[:cart] = {}
+      flash[:notice] = 'Tu pedido ya fue procesado anteriormente.'
+      redirect_to checkout_thank_you_path and return
+    end
+
     if payment_method.blank?
       flash.now[:alert] = 'Selecciona un método de pago.'
       step3
@@ -118,7 +144,7 @@ class CheckoutsController < ApplicationController
       shipping_method: method,
       payment_method: payment_method,
       notes: session[:checkout_notes],
-      idempotency_key: nil
+      idempotency_key: checkout_token
     ).call
 
     unless result.success?
@@ -128,9 +154,14 @@ class CheckoutsController < ApplicationController
     end
 
     @sale_order = result.sale_order
+
+    # Limpiar sesión después de la compra exitosa
     session[:cart] = {}
+    session[:checkout_token] = nil
     session.delete(:checkout_notes)
     session.delete(:shipping_info)
+
+    flash[:notice] = 'Tu pedido ha sido procesado exitosamente.'
     redirect_to checkout_thank_you_path
   end
 

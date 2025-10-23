@@ -39,6 +39,10 @@ class SaleOrder < ApplicationRecord
   validates :total_tax, presence: true, numericality: { greater_than_or_equal_to: 0 }
   validates :total_order_value, presence: true, numericality: { greater_than_or_equal_to: 0 }
   validates :status, inclusion: { in: STATUSES }
+  validates :idempotency_key, uniqueness: { scope: :user_id, allow_nil: true }, if: :idempotency_key?
+
+  # Scope para buscar órdenes por idempotency_key
+  scope :by_idempotency_key, ->(key, user) { where(idempotency_key: key, user_id: user.id) }
   validate :ensure_payment_and_shipment_present
   validates :shipping_cost, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true
 

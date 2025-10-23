@@ -49,7 +49,8 @@ module Checkout
           shipping_cost: shipping_cost,
           total_order_value: 0,
           notes: @notes,
-          status: 'Pending'
+          status: 'Pending',
+          idempotency_key: @idempotency_key
         )
 
         @cart.items.each do |product, qty|

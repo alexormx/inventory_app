@@ -29,7 +29,7 @@ class PurchaseOrder < ApplicationRecord
 
   after_update :update_inventory_status_based_on_order_status
   before_destroy :ensure_inventories_safe_or_cleanup
-
+  
   # Asegurar consistencia de totales antes de validar / guardar
   before_validation :normalize_numeric_fields
   before_validation :recalculate_totals
@@ -58,17 +58,17 @@ class PurchaseOrder < ApplicationRecord
 
   def recalculate_totals
     lines = purchase_order_items.reject(&:marked_for_destruction?)
-
-    # ✅ CORRECCIÓN: Subtotal = suma PURA de productos (qty * unit_cost), SIN extras
-    # Los extras (shipping, tax, other) se suman después en total_order_cost
+    # Subtotal: usar total_line_cost si existe, si no derivar de quantity * (unit_compose_cost || unit_cost)
     computed_subtotal = lines.sum do |li|
-      qty = li.quantity.to_d
-      unit_cost = li.unit_cost.to_d
-      qty * unit_cost
+      (li.total_line_cost || begin
+        qty = li.quantity.to_d
+        unit = (li.unit_compose_cost || li.unit_cost || 0).to_d
+        qty * unit
+      end).to_d
     end
     self.subtotal = computed_subtotal.round(2)
 
-    # Total order cost (moneda original): subtotal + extras
+    # Total order cost (moneda original)
     self.total_order_cost = (subtotal + shipping_cost + tax_cost + other_cost).round(2)
 
     # Total MXN (si la moneda no es MXN aplicar tipo de cambio)
