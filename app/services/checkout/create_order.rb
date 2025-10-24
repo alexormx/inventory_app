@@ -30,7 +30,7 @@ module Checkout
 
       # Recalcular disponibilidad actual
       @cart.items.each do |product, qty|
-  split = InventoryServices::AvailabilitySplitter.new(product, qty).call
+        split = InventoryServices::AvailabilitySplitter.new(product, qty).call
         availability_map[product.id] = split
         # Caso: faltante sin permiso de preorder/backorder
         if split.pending.positive? && split.pending_type.nil?
@@ -39,8 +39,42 @@ module Checkout
       end
       return fail_with(errors) if errors.any?
 
-  sale_order = nil
+      # Segunda etapa: antes de crear la orden, revalidamos con bloqueo pesimista
+      # para evitar condiciones de carrera entre múltiples checkouts.
+      # Bloqueamos los productos involucrados para la duración de la transacción.
+      sale_order = nil
+      revalidation_errors = []
+
       ActiveRecord::Base.transaction do
+        # @cart.items devuelve [[product, qty], ...] no un hash
+        product_ids = @cart.items.map { |product, _qty| product.id }
+        # Cargamos y bloqueamos filas de producto (SELECT ... FOR UPDATE)
+        locked_products = Product.where(id: product_ids).lock.order(:id).to_a
+        locked_products_map = locked_products.index_by(&:id)
+
+        # Recalcular disponibilidad sobre los productos bloqueados
+        revalidated = {}
+        @cart.items.each do |product, qty|
+          # Usar el producto bloqueado
+          locked_product = locked_products_map[product.id]
+          unless locked_product
+            revalidation_errors << "Producto #{product.product_name} no encontrado durante revalidación"
+            next
+          end
+
+          split = InventoryServices::AvailabilitySplitter.new(locked_product, qty).call
+          revalidated[product.id] = split
+
+          if split.pending.positive? && split.pending_type.nil?
+            # Ya no hay disponibilidad suficiente y no permite preorder/backorder
+            revalidation_errors << "Producto #{locked_product.product_name} quedó sin stock suficiente durante el checkout (disponible: #{split.immediate}, solicitado: #{qty})"
+          end
+        end
+
+        # Si hay errores de revalidación, hacemos rollback y retornamos
+        if revalidation_errors.any?
+          raise ActiveRecord::Rollback
+        end
         sale_order = @user.sale_orders.create!(
           order_date: Date.today,
           subtotal: 0,
@@ -49,11 +83,12 @@ module Checkout
           shipping_cost: shipping_cost,
           total_order_value: 0,
           notes: @notes,
-          status: 'Pending'
+          status: 'Pending',
+          idempotency_key: @idempotency_key
         )
 
         @cart.items.each do |product, qty|
-          split = availability_map[product.id]
+          split = revalidated[product.id] || availability_map[product.id]
           soi = sale_order.sale_order_items.create!(
             product: product,
             quantity: qty,
@@ -98,6 +133,9 @@ module Checkout
           status: 'Pending'
         ) if sale_order.total_order_value.to_f > 0
       end
+
+      # Si hubo errores de revalidación después del rollback, retornarlos
+      return fail_with(revalidation_errors) if revalidation_errors.any?
 
       Result.new(sale_order: sale_order, errors: [], warnings: warnings, availability: availability_map)
     rescue => e

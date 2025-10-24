@@ -30,7 +30,7 @@
   </div>
 </div>
 
-<% session[:checkout_token] ||= SecureRandom.hex(8) %>
+<% session[:checkout_token] ||= SecureRandom.urlsafe_base64(32) %>
 <%= form_with url: checkout_complete_path, method: :post, local: true, html: { id: 'checkout-complete-form' } do %>
   <%= hidden_field_tag :checkout_token, session[:checkout_token] %>
   <% bank_account = SiteSetting.get('payment_bank_account', '0000000000') %>
