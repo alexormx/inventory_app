@@ -11,13 +11,13 @@ class OrderConfirmationMailerPreview < ActionMailer::Preview
         email: 'ejemplo@pasatiempos.com',
         password: 'password123'
       )
-      
+
       product = Product.first || Product.create!(
         name: 'Producto de Ejemplo',
         sku: 'EJEMPLO-001',
         selling_price: 100.0
       )
-      
+
       sale_order = user.sale_orders.create!(
         order_date: Date.today,
         subtotal: 200.0,
@@ -28,14 +28,14 @@ class OrderConfirmationMailerPreview < ActionMailer::Preview
         notes: 'Esta es una orden de ejemplo para preview',
         status: 'Pending'
       )
-      
+
       sale_order.sale_order_items.create!(
         product: product,
         quantity: 2,
         unit_cost: 100.0,
         total_line_cost: 200.0
       )
-      
+
       address = user.shipping_addresses.first || user.shipping_addresses.create!(
         recipient_name: 'Juan Pérez',
         street_address: 'Calle Principal 123',
@@ -47,7 +47,7 @@ class OrderConfirmationMailerPreview < ActionMailer::Preview
         phone: '555-1234',
         default: true
       )
-      
+
       OrderShippingAddress.create!(
         sale_order: sale_order,
         recipient_name: address.recipient_name,

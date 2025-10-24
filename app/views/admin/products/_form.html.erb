@@ -1,173 +1,463 @@
-<%= form_with model: [:admin, @product], local: false, class: "row g-3" do |f| %>
+<%= form_with model: [:admin, @product], local: false, data: { controller: "product-form" } do |f| %>
   <% req = ->(text){ raw("#{text} <span class=\"text-danger\">*</span>") } %>
-  <div class="col-md-3">
-    <%= f.label :product_name, req.call('Product name') %>
-    <%= f.text_field :product_name, class: "form-control", required: true %>
-  </div>
 
-  <div class="col-md-3">
-  <%= f.label :product_sku, req.call('SKU') %>
-  <%= f.text_field :product_sku, class: "form-control", required: true %>
-  </div>
+  <!-- Navigation Tabs -->
+  <ul class="nav nav-tabs mb-4" id="productFormTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link active" id="basic-tab" data-bs-toggle="tab" data-bs-target="#basic" type="button" role="tab">
+        <i class="fa-solid fa-info-circle me-1"></i>
+        <span class="d-none d-md-inline">Información Básica</span>
+        <span class="d-md-none">Básico</span>
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="pricing-tab" data-bs-toggle="tab" data-bs-target="#pricing" type="button" role="tab">
+        <i class="fa-solid fa-dollar-sign me-1"></i>
+        <span class="d-none d-md-inline">Precios</span>
+        <span class="d-md-none">$</span>
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="inventory-tab" data-bs-toggle="tab" data-bs-target="#inventory" type="button" role="tab">
+        <i class="fa-solid fa-boxes-stacked me-1"></i>
+        <span class="d-none d-md-inline">Inventario</span>
+        <span class="d-md-none">Stock</span>
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="media-tab" data-bs-toggle="tab" data-bs-target="#media" type="button" role="tab">
+        <i class="fa-solid fa-images me-1"></i>
+        <span class="d-none d-md-inline">Imágenes</span>
+        <span class="d-md-none">Media</span>
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="advanced-tab" data-bs-toggle="tab" data-bs-target="#advanced" type="button" role="tab">
+        <i class="fa-solid fa-gear me-1"></i>
+        <span class="d-none d-md-inline">Avanzado</span>
+        <span class="d-md-none">+</span>
+      </button>
+    </li>
+  </ul>
 
-  <div class="col-md-3">
-    <%= f.label :barcode %>
-    <%= f.text_field :barcode, class: "form-control" %>
-  </div>
+  <!-- Tab Content -->
+  <div class="tab-content" id="productFormTabContent">
 
-  <div class="col-md-3">
-    <%= f.label :supplier_product_code, "Supplier Product Code" %>
-    <%= f.text_field :supplier_product_code, class: "form-control" %>
-  </div>
+    <!-- TAB 1: INFORMACIÓN BÁSICA -->
+    <div class="tab-pane fade show active" id="basic" role="tabpanel">
+      <div class="row g-3">
+        <div class="col-12 col-md-6">
+          <%= f.label :product_name, req.call('Nombre del Producto') %>
+          <%= f.text_field :product_name, class: "form-control", required: true, placeholder: "Ej: LEGO Star Wars Millennium Falcon" %>
+        </div>
 
-  <div class="col-md-3">
-    <%= f.label :brand %>
-    <%= f.text_field :brand, class: "form-control" %>
-  </div>
+        <div class="col-12 col-md-6">
+          <%= f.label :product_sku, req.call('SKU') %>
+          <%= f.text_field :product_sku, class: "form-control", required: true, placeholder: "Ej: LEGO-SW-75192" %>
+          <small class="text-muted">Código único de producto</small>
+        </div>
 
-  <div class="col-md-3">
-    <%= f.label :category %>
-    <%= f.text_field :category, class: "form-control" %>
-  </div>
+        <div class="col-12 col-md-4">
+          <%= f.label :brand do %>
+            <i class="fa-solid fa-tag text-primary me-1"></i>
+            Marca
+          <% end %>
+          <%= f.text_field :brand, class: "form-control", placeholder: "Ej: LEGO" %>
+        </div>
 
-  <div class="col-md-2">
-    <%= f.label :reorder_point %>
-    <%= f.number_field :reorder_point, class: "form-control" %>
-  </div>
+        <div class="col-12 col-md-4">
+          <%= f.label :category do %>
+            <i class="fa-solid fa-folder text-warning me-1"></i>
+            Categoría
+          <% end %>
+          <%= f.text_field :category, class: "form-control", placeholder: "Ej: Juguetes" %>
+        </div>
 
-  <div class="col-md-2">
-  <%= f.label :selling_price, req.call('Selling price') %>
-  <%= f.number_field :selling_price, step: 0.01, class: "form-control", required: true, min: 0 %>
-  </div>
+        <div class="col-12 col-md-4">
+          <%= f.label :status do %>
+            <i class="fa-solid fa-circle-dot text-success me-1"></i>
+            Estado
+          <% end %>
+          <%= f.select :status,
+              Product.statuses.keys.map { |s| [s.titleize, s] },
+              {},
+              class: "form-select" %>
+        </div>
 
-  <div class="col-md-2">
-    <%= f.label :maximum_discount %>
-    <%= f.number_field :maximum_discount, step: 0.01, class: "form-control" %>
-  </div>
-
-  <div class="col-md-2">
-    <%= f.label :minimum_price %>
-    <%= f.number_field :minimum_price, step: 0.01, class: "form-control" %>
-  </div>
-
-  <div class="col-md-2">
-    <%= f.label :discount_limited_stock %>
-    <%= f.number_field :discount_limited_stock, class: "form-control" %>
-  </div>
-
-  <div class="col-md-2">
-    <%= f.label :status %>
-    <%= f.select :status,
-        Product.statuses.keys.map { |s| [s.titleize, s] },
-        {},
-        class: "form-select" %>
-  </div>
-
-  <div class="col-md-2">
-    <%= f.label :weight_grams, "Weight (grams)" %>
-    <%= f.number_field :weight_gr, class: "form-control", min: 0, step: 0.01 %>
-  </div>
-
-  <div class="col-md-2">
-    <%= f.label :length_cm, "Length (cm)" %>
-    <%= f.number_field :length_cm, class: "form-control", min: 0, step: 0.01 %>
-  </div>
-
-  <div class="col-md-2">
-    <%= f.label :width_cm, "Width (cm)" %>
-    <%= f.number_field :width_cm, class: "form-control", min: 0, step: 0.01 %>
-  </div>
-
-  <div class="col-md-2">
-    <%= f.label :height_cm, "Height (cm)" %>
-    <%= f.number_field :height_cm, class: "form-control", min: 0, step: 0.01 %>
-  </div>
-
-  <div class="col-md-2">
-    <%= f.label :backorder_allowed %>
-    <%= f.check_box :backorder_allowed %>
-  </div>
-
-  <div class="col-md-2">
-    <%= f.label :preorder_available %>
-    <%= f.check_box :preorder_available %>
-  </div>
-
-  <div class="col-md-3">
-    <%= f.label :launch_date, "Launch date (para ETA de preorden)" %>
-    <%= f.date_field :launch_date, class: "form-control" %>
-    <small class="text-muted">Usada para calcular ETA: si existe se usan <%= SiteSetting.get('preorder_eta_days',60) %> días; sin fecha se asume 90.</small>
-  </div>
-
-  <div class="col-md-12">
-    <%= f.label :description %>
-    <%= f.text_area :description, class: "form-control", rows: 2, placeholder: "Agregar o modificar la descripcion" %>
-  </div>
-
-  <div class="col-md-12">
-    <%= f.label :product_images, req.call('Fotos (requerido)') %>
-    <div class="border border-2 border-dashed rounded p-4 text-center bg-light" 
-         data-controller="dropzone" 
-         data-dropzone-accept-value="image/*"
-         data-dropzone-max-files-value="10">
-      <div class="mb-2 text-muted">
-        <i class="fa-regular fa-images me-1"></i>
-        Seleccionar o arrastrar los archivos aquí
+        <div class="col-12">
+          <%= f.label :description do %>
+            <i class="fa-solid fa-align-left text-info me-1"></i>
+            Descripción
+          <% end %>
+          <%= f.text_area :description, class: "form-control", rows: 4, placeholder: "Descripción detallada del producto para el cliente..." %>
+          <small class="text-muted">Describe las características principales y beneficios del producto</small>
+        </div>
       </div>
-      <small class="text-muted d-block">Sube máximo 10 fotos JPG, JPEG, PNG o WEBP. Recomendado: > 500px por lado, máximo 10MB.</small>
-      <%= f.file_field :product_images, multiple: true, direct_upload: true, class: "d-none", data: { dropzone_target: "input" }, accept: "image/*" %>
-      <ul class="list-group list-group-flush mt-3 text-start" data-dropzone-target="preview"></ul>
     </div>
-  </div>
 
-  <% if @product.persisted? && @product.product_images.attached? %>
-    <div class="col-md-12">
-      <label class="form-label">Current Images</label>
-      <div class="row g-2">
-        <% @product.product_images.each do |image| %>
-          <div id="image_<%= image.id %>" class="col-4 col-sm-3 col-md-2 position-relative">
-            <div class="border rounded p-1 text-center bg-light">
-              <%= image_tag image.variant(resize_to_limit: [100, 100]), class: "img-fluid rounded" %>
+    <!-- TAB 2: PRECIOS -->
+    <div class="tab-pane fade" id="pricing" role="tabpanel">
+      <div class="row g-3">
+        <div class="col-12 col-md-4">
+          <%= f.label :selling_price, req.call('Precio de Venta') %>
+          <div class="input-group">
+            <span class="input-group-text">$</span>
+            <%= f.number_field :selling_price, step: 0.01, class: "form-control", required: true, min: 0,
+                data: { product_form_target: "sellingPrice", action: "blur->product-form#calculateMargin" } %>
+            <span class="input-group-text">MXN</span>
+          </div>
+          <small class="text-muted">Precio al público</small>
+        </div>
 
-              <%= link_to admin_product_purge_image_path(@product, image_id: image.id),
-                          method: :delete,
-                          data: { turbo_confirm: "Remove this image?",
-                                 turbo_method: :delete },
-                          class: "btn btn-sm btn-danger position-absolute top-0 end-0 m-1" do %>
-                <i class="fa-solid fa-xmark"></i>
+        <div class="col-12 col-md-4">
+          <%= f.label :maximum_discount do %>
+            Descuento Máximo (%)
+            <i class="fa-solid fa-circle-question text-muted"
+               data-bs-toggle="tooltip"
+               title="Porcentaje máximo de descuento permitido para este producto"></i>
+          <% end %>
+          <div class="input-group">
+            <%= f.number_field :maximum_discount, step: 0.01, class: "form-control", min: 0, max: 100,
+                data: { product_form_target: "maxDiscount", action: "blur->product-form#calculateMargin" } %>
+            <span class="input-group-text">%</span>
+          </div>
+        </div>
+
+        <div class="col-12 col-md-4">
+          <%= f.label :minimum_price do %>
+            Precio Mínimo
+            <i class="fa-solid fa-circle-question text-muted"
+               data-bs-toggle="tooltip"
+               title="Precio más bajo al que se puede vender el producto"></i>
+          <% end %>
+          <div class="input-group">
+            <span class="input-group-text">$</span>
+            <%= f.number_field :minimum_price, step: 0.01, class: "form-control", min: 0,
+                data: { product_form_target: "minPrice", action: "blur->product-form#calculateMargin" } %>
+            <span class="input-group-text">MXN</span>
+          </div>
+        </div>
+
+        <div class="col-12">
+          <div class="alert alert-info d-flex align-items-center" data-product-form-target="marginIndicator">
+            <i class="fa-solid fa-calculator me-3 fs-4"></i>
+            <div>
+              <strong>Margen de ganancia:</strong>
+              <span class="fs-5 ms-2" data-product-form-target="marginValue">--</span>%
+              <br>
+              <small class="text-muted">Calculado automáticamente al ingresar precios</small>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12 col-md-6">
+          <%= f.label :discount_limited_stock do %>
+            Stock Límite para Descuento Automático
+            <i class="fa-solid fa-circle-question text-muted"
+               data-bs-toggle="tooltip"
+               title="Cuando el stock disponible sea menor o igual a este número, se aplicará automáticamente el descuento máximo para liquidar inventario"></i>
+          <% end %>
+          <%= f.number_field :discount_limited_stock, class: "form-control", min: 0, placeholder: "Ej: 5" %>
+          <small class="text-muted">Activar descuento automático cuando haya poco stock</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: INVENTARIO Y LOGÍSTICA -->
+    <div class="tab-pane fade" id="inventory" role="tabpanel">
+      <div class="row g-3">
+        <div class="col-12 col-md-6">
+          <%= f.label :reorder_point do %>
+            <i class="fa-solid fa-bell text-warning me-1"></i>
+            Punto de Reorden
+            <i class="fa-solid fa-circle-question text-muted"
+               data-bs-toggle="tooltip"
+               title="El sistema alertará cuando el stock llegue a este nivel"></i>
+          <% end %>
+          <%= f.number_field :reorder_point, class: "form-control", min: 0, placeholder: "Ej: 10" %>
+          <small class="text-muted">Cantidad mínima antes de reabastecer</small>
+        </div>
+
+        <div class="col-12 col-md-6">
+          <%= f.label :launch_date, "Fecha de Lanzamiento" %>
+          <%= f.date_field :launch_date, class: "form-control" %>
+          <small class="text-muted">Para cálculo de ETA en preórdenes (días: <%= SiteSetting.get('preorder_eta_days',60) %>)</small>
+        </div>
+
+        <div class="col-12 col-md-6">
+          <div class="card border-primary">
+            <div class="card-body">
+              <div class="form-check form-switch">
+                <%= f.check_box :backorder_allowed, class: "form-check-input", role: "switch", id: "backorderSwitch" %>
+                <%= f.label :backorder_allowed, "Permitir Backorder", class: "form-check-label fw-bold", for: "backorderSwitch" %>
+              </div>
+              <small class="text-muted d-block mt-2">
+                <i class="fa-solid fa-info-circle me-1"></i>
+                Permite vender sin stock y generar pedido al proveedor automáticamente
+              </small>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12 col-md-6">
+          <div class="card border-success">
+            <div class="card-body">
+              <div class="form-check form-switch">
+                <%= f.check_box :preorder_available, class: "form-check-input", role: "switch", id: "preorderSwitch" %>
+                <%= f.label :preorder_available, "Disponible para Preorden", class: "form-check-label fw-bold", for: "preorderSwitch" %>
+              </div>
+              <small class="text-muted d-block mt-2">
+                <i class="fa-solid fa-clock me-1"></i>
+                Permite que clientes reserven el producto antes de su lanzamiento
+              </small>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12">
+          <label class="form-label fw-bold">
+            <i class="fa-solid fa-box text-secondary me-2"></i>
+            Dimensiones y Peso
+          </label>
+          <div class="card">
+            <div class="card-body">
+              <div class="row g-2">
+                <div class="col-6 col-md-3">
+                  <%= f.label :length_cm, "Largo (cm)", class: "form-label small" %>
+                  <div class="input-group input-group-sm">
+                    <%= f.number_field :length_cm, class: "form-control", min: 0, step: 0.01, placeholder: "0.00" %>
+                    <span class="input-group-text">cm</span>
+                  </div>
+                </div>
+                <div class="col-6 col-md-3">
+                  <%= f.label :width_cm, "Ancho (cm)", class: "form-label small" %>
+                  <div class="input-group input-group-sm">
+                    <%= f.number_field :width_cm, class: "form-control", min: 0, step: 0.01, placeholder: "0.00" %>
+                    <span class="input-group-text">cm</span>
+                  </div>
+                </div>
+                <div class="col-6 col-md-3">
+                  <%= f.label :height_cm, "Alto (cm)", class: "form-label small" %>
+                  <div class="input-group input-group-sm">
+                    <%= f.number_field :height_cm, class: "form-control", min: 0, step: 0.01, placeholder: "0.00" %>
+                    <span class="input-group-text">cm</span>
+                  </div>
+                </div>
+                <div class="col-6 col-md-3">
+                  <%= f.label :weight_gr, "Peso (g)", class: "form-label small" %>
+                  <div class="input-group input-group-sm">
+                    <%= f.number_field :weight_gr, class: "form-control", min: 0, step: 0.01, placeholder: "0.00" %>
+                    <span class="input-group-text">g</span>
+                  </div>
+                </div>
+              </div>
+              <small class="text-muted d-block mt-2">
+                <i class="fa-solid fa-truck me-1"></i>
+                Datos necesarios para calcular costos de envío
+              </small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: IMÁGENES -->
+    <div class="tab-pane fade" id="media" role="tabpanel">
+      <div class="row g-3">
+        <div class="col-12">
+          <%= f.label :product_images, req.call('Imágenes del Producto') %>
+        </div>
+
+        <div class="col-md-6">
+          <div class="border border-2 border-primary border-dashed rounded-3 p-4 text-center"
+               data-controller="dropzone"
+               data-dropzone-accept-value="image/*"
+               data-dropzone-max-files-value="10"
+               style="min-height: 300px; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+
+            <i class="fa-regular fa-images fa-4x text-primary mb-3 d-block"></i>
+            <h5>Arrastra tus imágenes aquí</h5>
+            <p class="text-muted">o haz clic para seleccionar archivos</p>
+
+            <%= f.file_field :product_images, multiple: true, direct_upload: true, class: "d-none",
+                data: { dropzone_target: "input" }, accept: "image/jpeg,image/png,image/webp" %>
+
+            <div class="mt-3">
+              <small class="text-muted d-block">
+                <i class="fa-solid fa-info-circle me-1"></i>
+                Máximo 10 imágenes | JPG, PNG, WEBP | Max 10MB cada una
+              </small>
+            </div>
+
+            <ul class="list-group list-group-flush mt-3 text-start" data-dropzone-target="preview"></ul>
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <div class="alert alert-light border h-100">
+            <h6 class="alert-heading">
+              <i class="fa-solid fa-lightbulb text-warning me-2"></i>
+              Consejos para mejores resultados
+            </h6>
+            <ul class="mb-0">
+              <li>La <strong>primera imagen</strong> será la principal en el catálogo</li>
+              <li>Usa imágenes <strong>cuadradas</strong> para mejor presentación (mín. 800x800px)</li>
+              <li>Fondo <strong>blanco o transparente</strong> recomendado</li>
+              <li>Muestra el producto desde <strong>diferentes ángulos</strong></li>
+              <li>Incluye detalles importantes y <strong>escala de tamaño</strong></li>
+              <li>Buena <strong>iluminación</strong> y enfoque nítido</li>
+            </ul>
+          </div>
+        </div>
+
+        <% if @product.persisted? && @product.product_images.attached? %>
+          <div class="col-12">
+            <label class="form-label fw-bold">
+              <i class="fa-solid fa-images text-primary me-2"></i>
+              Imágenes Actuales
+            </label>
+            <div class="row g-2">
+              <% @product.product_images.each_with_index do |image, index| %>
+                <div id="image_<%= image.id %>" class="col-6 col-sm-4 col-md-3 col-lg-2">
+                  <div class="card position-relative">
+                    <%= image_tag image.variant(resize_to_limit: [200, 200]), class: "card-img-top" %>
+                    <div class="card-body p-2">
+                      <small class="text-muted">
+                        <% if index == 0 %>
+                          <i class="fa-solid fa-star text-warning me-1"></i>Principal
+                        <% else %>
+                          Imagen <%= index + 1 %>
+                        <% end %>
+                      </small>
+                    </div>
+                    <%= link_to admin_product_purge_image_path(@product, image_id: image.id),
+                                method: :delete,
+                                data: { turbo_confirm: "¿Eliminar esta imagen?",
+                                       turbo_method: :delete },
+                                class: "btn btn-sm btn-danger position-absolute top-0 end-0 m-1" do %>
+                      <i class="fa-solid fa-trash"></i>
+                    <% end %>
+                  </div>
+                </div>
               <% end %>
             </div>
           </div>
         <% end %>
       </div>
     </div>
-  <% end %>
 
-  <div class="col-md-12" data-controller="kv-editor"
-       data-kv-editor-initial-value-value='<%= (@product.parsed_custom_attributes || {}).to_json %>'>
-    <%= f.label :custom_attributes, "Custom attributes" %>
-    <div class="table-responsive">
-      <table class="table table-sm align-middle mb-2">
-        <thead>
-          <tr>
-            <th style="width: 35%">Key</th>
-            <th>Value</th>
-            <th style="width: 60px"></th>
-          </tr>
-        </thead>
-        <tbody data-kv-editor-target="rows"></tbody>
-      </table>
+    <!-- TAB 5: AVANZADO -->
+    <div class="tab-pane fade" id="advanced" role="tabpanel">
+      <div class="row g-3">
+        <div class="col-12 col-md-6">
+          <%= f.label :barcode do %>
+            <i class="fa-solid fa-barcode text-info me-1"></i>
+            Código de Barras
+          <% end %>
+          <%= f.text_field :barcode, class: "form-control", placeholder: "Ej: 7501234567890" %>
+          <small class="text-muted">EAN, UPC o código de barras del producto</small>
+        </div>
+
+        <div class="col-12 col-md-6">
+          <%= f.label :supplier_product_code, "Código del Proveedor" %>
+          <%= f.text_field :supplier_product_code, class: "form-control", placeholder: "Código usado por el proveedor" %>
+          <small class="text-muted">Facilita pedidos y seguimiento con proveedores</small>
+        </div>
+
+        <div class="col-12">
+          <div data-controller="kv-editor"
+               data-kv-editor-initial-value-value='<%= (@product.parsed_custom_attributes || {}).to_json %>'>
+            <%= f.label :custom_attributes do %>
+              <i class="fa-solid fa-tags text-warning me-1"></i>
+              Atributos Personalizados
+            <% end %>
+            <div class="card">
+              <div class="card-body">
+                <div class="table-responsive">
+                  <table class="table table-sm align-middle mb-2">
+                    <thead>
+                      <tr>
+                        <th style="width: 35%">Atributo</th>
+                        <th>Valor</th>
+                        <th style="width: 60px"></th>
+                      </tr>
+                    </thead>
+                    <tbody data-kv-editor-target="rows"></tbody>
+                  </table>
+                </div>
+                <div class="d-flex gap-2">
+                  <button type="button" class="btn btn-outline-primary btn-sm" data-action="kv-editor#addRow">
+                    <i class="fa-solid fa-plus me-1"></i>
+                    Agregar Atributo
+                  </button>
+                  <button type="button" class="btn btn-outline-secondary btn-sm" data-action="kv-editor#importJson">
+                    <i class="fa-solid fa-file-import me-1"></i>
+                    Importar JSON
+                  </button>
+                </div>
+                <%= f.hidden_field :custom_attributes, value: (@product.parsed_custom_attributes || {}).to_json, data: { kv_editor_target: "hidden" } %>
+              </div>
+            </div>
+            <small class="text-muted d-block mt-2">
+              <i class="fa-solid fa-info-circle me-1"></i>
+              Agrega características adicionales como color, material, talla, etc. Se guardará como JSON.
+            </small>
+          </div>
+        </div>
+
+        <div class="col-12">
+          <div class="alert alert-secondary">
+            <strong><i class="fa-solid fa-lightbulb me-2"></i>Ejemplos de atributos:</strong>
+            <div class="row mt-2">
+              <div class="col-md-4">
+                <small class="text-muted">• color: Rojo</small><br>
+                <small class="text-muted">• material: Plástico</small><br>
+                <small class="text-muted">• edad_minima: 8+</small>
+              </div>
+              <div class="col-md-4">
+                <small class="text-muted">• piezas: 1500</small><br>
+                <small class="text-muted">• origen: China</small><br>
+                <small class="text-muted">• garantia: 1 año</small>
+              </div>
+              <div class="col-md-4">
+                <small class="text-muted">• certificacion: CE</small><br>
+                <small class="text-muted">• idioma: Español</small><br>
+                <small class="text-muted">• incluye: Manual</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
-    <div class="d-flex gap-2">
-      <button type="button" class="btn btn-outline-primary btn-sm" data-action="kv-editor#addRow">Agregar atributo</button>
-      <button type="button" class="btn btn-outline-secondary btn-sm" data-action="kv-editor#importJson">Importar JSON</button>
-    </div>
-    <%= f.hidden_field :custom_attributes, value: (@product.parsed_custom_attributes || {}).to_json, data: { kv_editor_target: "hidden" } %>
-    <small class="text-muted d-block mt-1">Se guardará como JSON. Las claves se normalizan en minúsculas.</small>
   </div>
 
-  <div class="col-12">
-    <%= f.submit class: "btn btn-success" %>
-    <%= link_to "Cancel", admin_products_path, class: "btn btn-secondary" %>
+  <!-- Action Buttons -->
+  <div class="row mt-4">
+    <div class="col-12">
+      <div class="d-flex gap-2 justify-content-between">
+        <div>
+          <%= link_to admin_products_path, class: "btn btn-outline-secondary" do %>
+            <i class="fa-solid fa-arrow-left me-2"></i>
+            Cancelar
+          <% end %>
+        </div>
+        <div class="d-flex gap-2">
+          <%= f.submit "Guardar Producto", class: "btn btn-success btn-lg" do %>
+            <i class="fa-solid fa-save me-2"></i>
+            Guardar Producto
+          <% end %>
+        </div>
+      </div>
+    </div>
   </div>
 <% end %>
+
+<script>
+  // Inicializar tooltips de Bootstrap
+  document.addEventListener('DOMContentLoaded', function() {
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+      return new bootstrap.Tooltip(tooltipTriggerEl)
+    })
+  });
+</script>

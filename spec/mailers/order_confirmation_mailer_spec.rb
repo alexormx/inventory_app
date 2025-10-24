@@ -7,7 +7,7 @@ RSpec.describe OrderConfirmationMailer, type: :mailer do
     let(:user) { create(:user, email: 'customer@example.com') }
     let(:product) { create(:product, product_name: 'Test Product', product_sku: 'TEST-001', selling_price: 50.0) }
     let(:address) { create(:shipping_address, user: user, city: 'Mexico City') }
-    
+
     let(:sale_order) do
       create(:sale_order,
         user: user,

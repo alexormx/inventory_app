@@ -1,2 +1,12 @@
-<h1 class="h4 mb-4">New Product</h1>
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1 class="h3">
+    <i class="fa-solid fa-plus-circle text-success me-2"></i>
+    Nuevo Producto
+  </h1>
+  <div class="text-muted small">
+    <i class="fa-solid fa-info-circle me-1"></i>
+    Los campos marcados con <span class="text-danger">*</span> son requeridos
+  </div>
+</div>
+
 <%= render "form", product: @product %>
