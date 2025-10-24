@@ -15,16 +15,16 @@ RSpec.describe 'Checkout Idempotency Protection', type: :request do
   def setup_checkout_session
     # Agregar producto al carrito
     post cart_items_path, params: { product_id: product.id, quantity: 2 }
-    
+
     # Configurar dirección y método de envío (step 2)
     post checkout_step2_path, params: {
       selected_address_id: address.id,
       shipping_method: 'standard'
     }
-    
+
     # Visitar step3 para generar el token
     get checkout_step3_path
-    
+
     # Extraer el token generado de la sesión
     # En request specs, la sesión persiste entre requests
     @checkout_token = session[:checkout_token]
@@ -75,7 +75,7 @@ RSpec.describe 'Checkout Idempotency Protection', type: :request do
           checkout_token: @checkout_token,
           accept_pending: '1'
         }
-        
+
         expect(response).to redirect_to(checkout_thank_you_path)
         expect(flash[:notice]).to match(/ya fue procesad/i)
       end
@@ -163,49 +163,49 @@ RSpec.describe 'Checkout Idempotency Protection', type: :request do
         shipping_method: 'standard'
       }
       get checkout_step3_path
-      
+
       # Extraer el token de la sesión del usuario 2
       second_token = session[:checkout_token]
-      
+
       post checkout_complete_path, params: {
         payment_method: 'efectivo',  # Método de pago válido
         checkout_token: second_token,  # Usando el token generado para este usuario
         accept_pending: '1'
       }
-      
+
       expect(response).to redirect_to(checkout_thank_you_path)
-      
+
       second_order = SaleOrder.last
       expect(second_order.user).to eq(other_user)
       expect(second_order.idempotency_key).to eq(second_token)
       expect(second_token).not_to eq(first_token)  # Los tokens son diferentes
     end
-    
+
     it 'prevents creating duplicate orders even if another user has the same token value' do
       # Este caso es extremadamente improbable en producción (SecureRandom.urlsafe_base64(32))
       # pero lo probamos para verificar que la unicidad está scoped por user
-      
+
       # Usuario 1 crea orden con un token específico
       setup_checkout_session
       shared_token = 'manually-set-token-123'
-      
+
       # Crear orden manualmente con el token compartido
       create(:sale_order, user: user, idempotency_key: shared_token)
-      
+
       # Usuario 2 intenta crear una orden con el MISMO token
       sign_out user
       sign_in other_user
-      
+
       post cart_items_path, params: { product_id: product.id, quantity: 1 }
       post checkout_step2_path, params: {
         selected_address_id: other_address.id,
         shipping_method: 'standard'
       }
       get checkout_step3_path
-      
+
       # Crear orden manualmente para usuario 2 con el mismo token (simula coincidencia)
       order_2 = create(:sale_order, user: other_user, idempotency_key: shared_token)
-      
+
       # Verificar que ambas órdenes existen
       expect(SaleOrder.where(idempotency_key: shared_token).count).to eq(2)
       expect(SaleOrder.where(idempotency_key: shared_token).pluck(:user_id)).to match_array([user.id, other_user.id])

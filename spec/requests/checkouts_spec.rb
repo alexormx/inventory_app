@@ -13,7 +13,7 @@ RSpec.describe "Checkouts", type: :request do
 
   it "creates a sale order and clears the cart" do
     post cart_items_path, params: { product_id: product.id }
-    
+
     # Completar el flujo de checkout para generar el token
     post checkout_step2_path, params: {
       selected_address_id: address.id,
