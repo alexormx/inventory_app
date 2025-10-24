@@ -28,6 +28,7 @@ class SaleOrder < ApplicationRecord
   has_many :inventories, class_name: "Inventory", foreign_key: :sale_order_id
   has_many :payments, dependent: :restrict_with_error
   has_one :shipment, foreign_key: "sale_order_id", dependent: :restrict_with_error
+  has_one :order_shipping_address, dependent: :destroy
   has_many :sale_order_items, dependent: :destroy
   has_many :products, through: :sale_order_items
 

@@ -1,0 +1,63 @@
+¡Gracias por tu pedido!
+=====================================
+
+Hola <%= @user.email %>,
+
+Tu pedido ha sido recibido y está siendo procesado.
+
+PEDIDO #<%= @sale_order.id %>
+-------------------------------------
+Fecha: <%= @sale_order.order_date.strftime('%d/%m/%Y') %>
+Estado: <%= @sale_order.status %>
+
+ARTÍCULOS:
+<% @items.each do |item| %>
+- <%= item.product.product_name %>
+  SKU: <%= item.product.product_sku %>
+  Cantidad: <%= item.quantity %> x <%= number_to_currency(item.unit_cost, unit: "$") %> = <%= number_to_currency(item.total_line_cost, unit: "$") %>
+  <% if item.preorder_quantity > 0 %>
+  (Incluye <%= item.preorder_quantity %> en preventa)
+  <% end %>
+  <% if item.backordered_quantity > 0 %>
+  (Incluye <%= item.backordered_quantity %> en backorder)
+  <% end %>
+<% end %>
+
+RESUMEN:
+-------------------------------------
+Subtotal: <%= number_to_currency(@sale_order.subtotal, unit: "$") %>
+<% if @sale_order.shipping_cost > 0 %>
+Envío: <%= number_to_currency(@sale_order.shipping_cost, unit: "$") %>
+<% end %>
+<% if @sale_order.total_tax > 0 %>
+Impuestos: <%= number_to_currency(@sale_order.total_tax, unit: "$") %>
+<% end %>
+<% if @sale_order.discount && @sale_order.discount > 0 %>
+Descuento: -<%= number_to_currency(@sale_order.discount, unit: "$") %>
+<% end %>
+-------------------------------------
+TOTAL: <%= number_to_currency(@sale_order.total_order_value, unit: "$") %>
+
+<% if @shipping_address %>
+DIRECCIÓN DE ENVÍO:
+-------------------------------------
+<%= @shipping_address.full_name %>
+<%= @shipping_address.line1 %>
+<% if @shipping_address.line2.present? %>
+<%= @shipping_address.line2 %>
+<% end %>
+<%= @shipping_address.city %>, <%= @shipping_address.state %> <%= @shipping_address.postal_code %>
+<% end %>
+
+<% if @sale_order.notes.present? %>
+NOTAS:
+-------------------------------------
+<%= @sale_order.notes %>
+<% end %>
+
+Te notificaremos cuando tu pedido sea enviado.
+Si tienes alguna pregunta, no dudes en contactarnos.
+
+=====================================
+Pasatiempos - Tu tienda de confianza
+Este es un correo automático, por favor no respondas a este mensaje.
