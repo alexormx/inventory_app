@@ -7,6 +7,7 @@
     if(initialized) return; initialized = true;
     initCollapse();
     initOffcanvas();
+    initTabs();
   }
 
   function initCollapse(){
@@ -89,6 +90,47 @@
     if(panel.__onEsc){ document.removeEventListener('keydown', panel.__onEsc); panel.__onEsc = null; }
   }
 
+  function initTabs(){
+    const tabButtons = Array.from(document.querySelectorAll('[data-bs-toggle="tab"]'));
+    tabButtons.forEach((btn)=>{
+      if(btn.dataset.tabEnhanced === '1') return;
+      btn.dataset.tabEnhanced = '1';
+      btn.addEventListener('click', (e)=>{
+        e.preventDefault();
+        const targetSel = btn.getAttribute('data-bs-target');
+        if(!targetSel) return;
+        const targetPane = document.querySelector(targetSel);
+        if(!targetPane) return;
+
+        // Deactivate all tabs in the same tab group
+        const tabList = btn.closest('[role="tablist"]');
+        if(tabList) {
+          const allTabs = tabList.querySelectorAll('[data-bs-toggle="tab"]');
+          allTabs.forEach(tab => {
+            tab.classList.remove('active');
+            tab.setAttribute('aria-selected', 'false');
+          });
+        }
+
+        // Activate clicked tab
+        btn.classList.add('active');
+        btn.setAttribute('aria-selected', 'true');
+
+        // Hide all tab panes in the same tab content
+        const tabContent = targetPane.closest('.tab-content');
+        if(tabContent) {
+          const allPanes = tabContent.querySelectorAll('.tab-pane');
+          allPanes.forEach(pane => {
+            pane.classList.remove('show', 'active');
+          });
+        }
+
+        // Show target pane
+        targetPane.classList.add('show', 'active');
+      });
+    });
+  }
+
   document.addEventListener('turbo:load', ready);
-  document.addEventListener('turbo:render', ()=>{ initCollapse(); initOffcanvas(); });
+  document.addEventListener('turbo:render', ()=>{ initCollapse(); initOffcanvas(); initTabs(); });
 })();
