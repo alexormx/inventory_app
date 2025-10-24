@@ -20,7 +20,7 @@ RSpec.describe "Checkouts", type: :request do
       shipping_method: 'standard'
     }
     get checkout_step3_path
-    checkout_token = session[:checkout_token]
+    checkout_token = session['checkout_token']
 
     expect {
       post checkout_complete_path, params: {
@@ -30,7 +30,7 @@ RSpec.describe "Checkouts", type: :request do
       }
     }.to change(SaleOrder, :count).by(1)
 
-    expect(session[:cart]).to be_empty
+    expect(session['cart']).to be_empty
     sale_order = SaleOrder.last
     expect(sale_order.sale_order_items.count).to eq(1)
     expect(sale_order.subtotal).to eq(10.0)

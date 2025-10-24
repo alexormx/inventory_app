@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class CheckoutsController < ApplicationController
+  include CheckoutSessionHelper
+
   layout 'customer'
   before_action :authenticate_user!
   before_action :set_cart
@@ -11,13 +13,13 @@ class CheckoutsController < ApplicationController
   end
 
   def step1_submit
-    session[:checkout_notes] = params[:notes]
+    set_checkout_notes(params[:notes])
     redirect_to checkout_step2_path
   end
 
   def step2
     # Pre-cargar selección previa si el usuario vuelve del paso 3 o tras error
-    @shipping_info = session[:shipping_info] || {}
+    @shipping_info = checkout_shipping_info
   end
 
   # create the step 2 submit action
@@ -47,8 +49,8 @@ class CheckoutsController < ApplicationController
       render :step2, status: :unprocessable_entity and return
     end
 
-    session[:shipping_info] = { 'address_id' => addr.id, 'method' => method }
-    Rails.logger.info "[Checkout] Stored shipping_info in session: #{session[:shipping_info].inspect}"
+    set_checkout_shipping_info(address_id: addr.id, method: method)
+    Rails.logger.info "[Checkout] Stored shipping_info in session: #{checkout_shipping_info.inspect}"
     redirect_to checkout_step3_path
   end
 
@@ -56,19 +58,14 @@ class CheckoutsController < ApplicationController
   # here you can select the payment method and complete the order
   def step3
     # Mostrar confirmación + seleccionar método de pago
-    raw = session[:shipping_info] || {}
-    # Normalizar claves (symbols/strings)
-    @shipping_info = {
-      address_id: raw[:address_id] || raw['address_id'],
-      method: raw[:method] || raw['method']
-    }.compact
+    @shipping_info = checkout_shipping_info
     @selected_address = (current_user.shipping_addresses.find_by(id: @shipping_info[:address_id]) if @shipping_info[:address_id])
     Rails.logger.info "[Checkout] step3 session shipping_info: #{@shipping_info.inspect}; selected_address: #{@selected_address&.id}"
 
     # Generar token de idempotencia si no existe
-    unless session[:checkout_token].present?
-      session[:checkout_token] = SecureRandom.urlsafe_base64(32)
-      Rails.logger.info "[Checkout] Generated checkout token: #{session[:checkout_token]}"
+    unless checkout_token.present?
+      generate_checkout_token!
+      Rails.logger.info "[Checkout] Generated checkout token: #{checkout_token}"
     end
 
     return unless @shipping_info.blank? || @selected_address.nil? || @shipping_info[:method].blank?
@@ -78,91 +75,104 @@ class CheckoutsController < ApplicationController
   end
 
   def complete
+    checkout_token_param = params[:checkout_token]
+    stored_token = checkout_token
+
+    unless checkout_token_param.present?
+      flash[:alert] = 'Token de checkout faltante. Intenta nuevamente.'
+      redirect_to(checkout_step3_path) and return
+    end
+
+    unless stored_token.present?
+      flash[:alert] = 'Token de checkout expirado o faltante. Intenta nuevamente.'
+      redirect_to(checkout_step3_path) and return
+    end
+
+    unless ActiveSupport::SecurityUtils.secure_compare(checkout_token_param, stored_token)
+      flash[:alert] = 'Token de checkout inválido. Intenta nuevamente.'
+      redirect_to(checkout_step3_path) and return
+    end
+
+    # Validar shipping_info
+    shipping_info = checkout_shipping_info
+    unless shipping_info[:address_id].present? && shipping_info[:method].present?
+      flash[:alert] = 'Falta información de envío.'
+      redirect_to(checkout_step2_path) and return
+    end
+
+    # Resolver address
+    shipping_address = current_user.shipping_addresses.find_by(id: shipping_info[:address_id])
+    unless shipping_address
+      flash[:alert] = 'Dirección de envío no encontrada.'
+      redirect_to(checkout_step2_path) and return
+    end
+
+    # Validar carrito no vacío
+    unless @cart.present? && @cart.items.any?
+      flash[:alert] = 'Tu carrito está vacío.'
+      redirect_to(root_path) and return
+    end
+
+    # Validar método de pago
     payment_method = params[:payment_method]
-    checkout_token = params[:checkout_token]
-
-    # Validar token de idempotencia
-    if checkout_token.blank? || session[:checkout_token].blank? || checkout_token != session[:checkout_token]
-      Rails.logger.warn "[Checkout] Invalid checkout token. Params: #{checkout_token.inspect}, Session: #{session[:checkout_token].inspect}"
-      flash[:alert] = 'Sesión inválida. Por favor, inicia el proceso de compra nuevamente.'
-      redirect_to checkout_step1_path and return
+    valid_payment_methods = Payment.payment_methods.keys.map(&:to_s)
+    unless valid_payment_methods.include?(payment_method)
+      flash[:alert] = 'Método de pago inválido.'
+      redirect_to(checkout_step3_path) and return
     end
 
-    # Verificar si ya existe una orden con este token (idempotencia)
-    existing_order = SaleOrder.by_idempotency_key(checkout_token, current_user).first
-    if existing_order
-      Rails.logger.info "[Checkout] Order already exists with token #{checkout_token}: #{existing_order.id}"
-      session[:checkout_token] = nil
-      session[:cart] = {}
-      flash[:notice] = 'Tu pedido ya fue procesado anteriormente.'
-      redirect_to checkout_thank_you_path and return
-    end
-
-    if payment_method.blank?
-      flash.now[:alert] = 'Selecciona un método de pago.'
-      step3
-      render :step3, status: :unprocessable_entity and return
-    end
-
-    shipping_info = session[:shipping_info] || {}
-    # Normalizar claves (pueden ser strings en la sesión)
-    address_id = shipping_info[:address_id] || shipping_info['address_id']
-    method = shipping_info[:method] || shipping_info['method']
-
-    # Fallback: create a minimal address if none was selected (test env convenience)
-    if address_id.blank?
-      addr = current_user.shipping_addresses.create!(
-        full_name: current_user.email.split('@').first,
-        line1: 'Test Street 123',
-        city: 'Test City',
-        state: 'Test',
-        postal_code: '12345',
-        country: 'MX'
-      )
-      address_id = addr.id
-    end
-
-    # Validar aceptación de pendientes si aplica (lo revalida el servicio al recalcular availability)
-    if params[:accept_pending].blank?
-      # Checar rápido si existe algún pending potencial para pedir aceptación explícita
-      needs_accept = @cart.items.any? do |product, qty|
-        sp = product.split_immediate_and_pending(qty)
-        sp[:pending].positive? && %i[preorder backorder].include?(sp[:pending_type])
-      end
-      if needs_accept
-        flash.now[:alert] = 'Debes aceptar los tiempos extendidos de entrega para continuar.'
-        step3
-        render :step3, status: :unprocessable_entity and return
-      end
-    end
-
-    # (Futuro) idempotency_key = params[:checkout_token]
-    result = Checkout::CreateOrder.new(
+    # Preparar order_params
+    order_params = {
       user: current_user,
       cart: @cart,
-      shipping_address_id: address_id,
-      shipping_method: method,
+      shipping_address_id: shipping_address.id,
+      shipping_method: shipping_info[:method],
       payment_method: payment_method,
-      notes: session[:checkout_notes],
-      idempotency_key: checkout_token
-    ).call
+      notes: checkout_notes,
+      idempotency_key: stored_token
+    }
 
-    unless result.success?
-      flash.now[:alert] = result.errors.join('. ')
-      step3
-      render :step3, status: :unprocessable_entity and return
+    # Verificar si ya existe una orden con este token (idempotencia)
+    existing_order = current_user.sale_orders.find_by(idempotency_key: stored_token) if stored_token.present?
+    if existing_order
+      Rails.logger.info "[Checkout] Order already exists with token #{stored_token}"
+      clear_checkout_session!
+      flash[:notice] = 'Esta orden ya fue procesada anteriormente.'
+      redirect_to checkout_thank_you_path(order_id: existing_order.id)
+      return
     end
 
-    @sale_order = result.sale_order
+    # Intentar crear orden
+    begin
+      result = Checkout::CreateOrder.new(**order_params).call
 
-    # Limpiar sesión después de la compra exitosa
-    session[:cart] = {}
-    session[:checkout_token] = nil
-    session.delete(:checkout_notes)
-    session.delete(:shipping_info)
+      if result.success?
+        # Limpiar sesión exitosa
+        clear_checkout_session!
 
-    flash[:notice] = 'Tu pedido ha sido procesado exitosamente.'
-    redirect_to checkout_thank_you_path
+        flash[:notice] = "¡Gracias! Tu pedido ##{result.sale_order.id} fue creado exitosamente."
+        redirect_to checkout_thank_you_path(order_id: result.sale_order.id)
+      else
+        # Mostrar errores de validación de la orden
+        flash[:alert] = "No se pudo crear tu pedido: #{result.errors.join(', ')}"
+        redirect_to checkout_step3_path
+      end
+    rescue ActiveRecord::RecordNotUnique => e
+      # Clave duplicada: orden ya fue creada con este token (race condition)
+      if e.message.include?('sale_orders.index_sale_orders_on_user_and_idempotency')
+        flash[:notice] = 'Esta orden ya fue procesada anteriormente.'
+        # Intentar encontrar la orden existente
+        existing_order = current_user.sale_orders.find_by(idempotency_key: stored_token)
+        if existing_order
+          clear_checkout_session!
+          redirect_to checkout_thank_you_path(order_id: existing_order.id)
+        else
+          redirect_to checkout_step1_path
+        end
+      else
+        raise e
+      end
+    end
   end
 
   # Aquí podrías enviar un correo de confirmación o notificación

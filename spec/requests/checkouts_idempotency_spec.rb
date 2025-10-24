@@ -43,10 +43,10 @@ RSpec.describe 'Checkout Idempotency Protection', type: :request do
           }
         }.to change(SaleOrder, :count).by(1)
 
-        expect(response).to redirect_to(checkout_thank_you_path)
+        order = SaleOrder.last
+        expect(response).to redirect_to(checkout_thank_you_path(order_id: order.id))
         expect(flash[:notice]).to be_present
 
-        order = SaleOrder.last
         expect(order.idempotency_key).to eq(@checkout_token)
         expect(order.user).to eq(user)
       end
@@ -70,13 +70,14 @@ RSpec.describe 'Checkout Idempotency Protection', type: :request do
       end
 
       it 'redirects to thank you page with a notice' do
+        existing_order = SaleOrder.last
         post checkout_complete_path, params: {
           payment_method: 'transferencia_bancaria',
           checkout_token: @checkout_token,
           accept_pending: '1'
         }
 
-        expect(response).to redirect_to(checkout_thank_you_path)
+        expect(response).to redirect_to(checkout_thank_you_path(order_id: existing_order.id))
         expect(flash[:notice]).to match(/ya fue procesad/i)
       end
     end
@@ -91,8 +92,8 @@ RSpec.describe 'Checkout Idempotency Protection', type: :request do
           accept_pending: '1'
         }
 
-        expect(response).to redirect_to(checkout_step1_path)
-        expect(flash[:alert]).to match(/sesión inválida/i)
+        expect(response).to redirect_to(checkout_step3_path)
+        expect(flash[:alert]).to match(/inválid/i)
       end
     end
 
@@ -105,8 +106,8 @@ RSpec.describe 'Checkout Idempotency Protection', type: :request do
           accept_pending: '1'
         }
 
-        expect(response).to redirect_to(checkout_step1_path)
-        expect(flash[:alert]).to match(/sesión inválida/i)
+        expect(response).to redirect_to(checkout_step3_path)
+        expect(flash[:alert]).to match(/faltante/i)
       end
     end
 
@@ -173,9 +174,9 @@ RSpec.describe 'Checkout Idempotency Protection', type: :request do
         accept_pending: '1'
       }
 
-      expect(response).to redirect_to(checkout_thank_you_path)
-
       second_order = SaleOrder.last
+      expect(response).to redirect_to(checkout_thank_you_path(order_id: second_order.id))
+
       expect(second_order.user).to eq(other_user)
       expect(second_order.idempotency_key).to eq(second_token)
       expect(second_token).not_to eq(first_token)  # Los tokens son diferentes
