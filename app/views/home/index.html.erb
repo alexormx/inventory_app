@@ -38,8 +38,8 @@
         <div class="col">
           <div class="card h-100 border-0 shadow-sm hover-lift">
             <%= link_to product_path(product), class: "text-decoration-none" do %>
-              <% if product.images&.attached? %>
-                <%= image_tag product.images.first, class: "card-img-top", alt: product.name, style: "height: 200px; object-fit: cover;" %>
+              <% if product.product_images&.attached? %>
+                <%= image_tag product.product_images.first, class: "card-img-top", alt: product.name, style: "height: 200px; object-fit: cover;" %>
               <% else %>
                 <div class="card-img-top bg-secondary d-flex align-items-center justify-content-center text-white" style="height: 200px;">
                   <i class="fas fa-image fa-3x opacity-50"></i>
