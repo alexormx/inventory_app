@@ -70,9 +70,6 @@
 <body>
   <!-- Incluir el partial del banner (movido dentro de body) -->
   <%= render 'layouts/cookies_banner'%>
-  <div id="construction-banner" class="alert alert-warning text-center mb-0 rounded-0 construction-banner" role="alert" style="padding: 0.3rem 1rem; font-size: 0.9rem; position:fixed; top:0; left:0; right:0; z-index:1200;">
-    🚧 Bienvenido a <strong>Pasatiempos a Escala</strong> – Sitio en construcción. Muy pronto podrás ver nuestros autos coleccionables.
-  </div>
 
   <!-- ✅ NAVBAR -->
   <header id="site-header" data-turbo-permanent>
@@ -95,18 +92,15 @@
 
   <script>
     (function(){
-      if(window.__layoutSpacingInit) return; // evitar listeners duplicados por Turbo
+      if(window.__layoutSpacingInit) return;
       window.__layoutSpacingInit = true;
       function recalcLayout(){
-        const banner = document.getElementById('construction-banner');
         const nav = document.querySelector('.site-navbar');
-        if(!banner || !nav) return;
-        const bannerH = banner.offsetHeight;
-        document.documentElement.style.setProperty('--banner-height', bannerH + 'px');
+        if(!nav) return;
         requestAnimationFrame(()=>{
           const navH = nav.offsetHeight;
           document.documentElement.style.setProperty('--nav-height', navH + 'px');
-          document.body.style.paddingTop = (bannerH + navH) + 'px';
+          document.body.style.paddingTop = navH + 'px';
         });
       }
       ['turbo:load','turbo:render'].forEach(ev=>document.addEventListener(ev,recalcLayout));
