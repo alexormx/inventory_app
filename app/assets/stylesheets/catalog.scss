@@ -7,17 +7,143 @@
 #catalog .catalog-filters .btn-icon { display: inline-flex; align-items: center; justify-content: center; padding: .45rem .75rem; }
 
 /* Product cards with improved hover */
-#catalog .catalog-item { transition: all .25s cubic-bezier(.4,0,.2,1); }
-#catalog .catalog-item.hover-lift:hover {
-  transform: translateY(-4px) scale(1.02);
-  box-shadow: 0 8px 24px rgba(220,53,69,0.15), 0 4px 12px rgba(0,0,0,0.08);
-  z-index: 10;
+#catalog .catalog-item { 
+  transition: all .3s cubic-bezier(.4,0,.2,1);
+  border: 1px solid #e9ecef !important;
+  background: white;
 }
-#catalog .catalog-item:hover .btn { transform: scale(1.05); }
-#catalog .product-image { max-height: 150px; object-fit: contain; transition: transform .25s ease; }
-#catalog .catalog-item:hover .product-image { transform: scale(1.08); }
-#catalog .card-title { white-space: normal; overflow: visible; text-overflow: unset; }
-@media (max-width: 575px) { #catalog .catalog-header { margin-bottom: .75rem; } }
+#catalog .catalog-item.hover-lift:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 12px 28px rgba(220,53,69,0.18), 0 6px 16px rgba(0,0,0,0.12) !important;
+  z-index: 10;
+  border-color: rgba(220,53,69,0.3) !important;
+}
+#catalog .catalog-item:hover .btn { 
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(220,53,69,0.3);
+}
+#catalog .product-image { 
+  max-height: 180px;
+  min-height: 180px;
+  object-fit: contain;
+  transition: transform .3s ease;
+  padding: 1rem;
+  background: #f8f9fa;
+}
+#catalog .catalog-item:hover .product-image { 
+  transform: scale(1.1);
+}
+
+/* Product card content spacing */
+#catalog .card-body {
+  padding: 1rem !important;
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+#catalog .card-title { 
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+  font-size: 0.95rem;
+  line-height: 1.4;
+  min-height: 2.8em;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+#catalog .catalog-item:hover .card-title {
+  color: #dc3545;
+}
+
+/* Price styling */
+#catalog .card-text {
+  font-size: 1.1rem;
+  margin-bottom: 0.75rem;
+}
+
+/* Stock badges mejorados */
+#catalog .badge {
+  font-size: 0.75rem;
+  padding: 0.4em 0.75em;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+#catalog .badge.bg-success {
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%) !important;
+  box-shadow: 0 2px 4px rgba(40,167,69,0.2);
+}
+
+#catalog .badge.bg-warning {
+  background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%) !important;
+  box-shadow: 0 2px 4px rgba(255,193,7,0.2);
+  color: #000 !important;
+}
+
+#catalog .badge.bg-info {
+  background: linear-gradient(135deg, #17a2b8 0%, #138496 100%) !important;
+  box-shadow: 0 2px 4px rgba(23,162,184,0.2);
+}
+
+#catalog .badge.bg-secondary {
+  background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%) !important;
+  box-shadow: 0 2px 4px rgba(108,117,125,0.2);
+}
+
+/* Grid spacing mejorado */
+#catalog .row.g-3 {
+  gap: 1.5rem !important;
+}
+
+#catalog .product-card-wrapper {
+  margin-bottom: 0.5rem;
+}
+
+/* Button cart styling */
+#catalog .btn-danger {
+  background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+  border: none;
+  font-weight: 600;
+  padding: 0.5rem 1rem;
+  transition: all 0.3s ease;
+}
+
+#catalog .btn-danger:not(:disabled):hover {
+  background: linear-gradient(135deg, #c82333 0%, #bd2130 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(220,53,69,0.4);
+}
+
+#catalog .btn-danger:disabled {
+  background: #e9ecef;
+  color: #6c757d;
+  cursor: not-allowed;
+}
+
+/* Responsive adjustments */
+@media (min-width: 992px) {
+  #catalog .product-image {
+    max-height: 200px;
+    min-height: 200px;
+  }
+}
+
+@media (max-width: 575px) { 
+  #catalog .catalog-header { margin-bottom: .75rem; }
+  #catalog .product-image {
+    max-height: 140px;
+    min-height: 140px;
+  }
+  #catalog .card-body {
+    padding: 0.75rem !important;
+    min-height: 100px;
+  }
+}
 
 /* Sidebar de filtros */
 #catalog .catalog-sidebar-filters { position: sticky; top: calc(var(--nav-height-shrink, 52px) + 12px); }
