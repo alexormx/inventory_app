@@ -1,27 +1,165 @@
 <% content_for :title, t('home.index.meta.title') %>
 <% content_for :description, t('home.index.meta.description') %>
-<div class="container mt-5 text-center">
-  <h1 class="display-4 fw-bold mb-4"><%= raw t('home.index.heading_html') %></h1>
-  <p class="lead text-muted mb-5"><%= t('home.index.lead') %></p>
 
-  <div class="row row-cols-1 row-cols-md-2 g-4">
-    <%= render 'home/value_card', image: 'collection_shelf.jpg', alt: t('home.index.cards.collection.alt'), title: t('home.index.cards.collection.title'), text: t('home.index.cards.collection.text') %>
-    <%= render 'home/value_card', image: 'father_son_collecting.jpg', alt: t('home.index.cards.legacy.alt'), title: t('home.index.cards.legacy.title'), text: t('home.index.cards.legacy.text') %>
-    <%= render 'home/value_card', image: 'collector_friends.jpg', alt: t('home.index.cards.community.alt'), title: t('home.index.cards.community.title'), text: t('home.index.cards.community.text') %>
-    <%= render 'home/value_card', image: 'good_practices.jpg', alt: t('home.index.cards.practices.alt'), title: t('home.index.cards.practices.title'), text: t('home.index.cards.practices.text') %>
+<!-- ✨ HERO SECTION -->
+<section class="hero-section position-relative d-flex align-items-center text-white" style="min-height: 60vh; background: linear-gradient(135deg, #dc3545 0%, #6610f2 100%); overflow: hidden;">
+  <div class="hero-overlay position-absolute w-100 h-100" style="background: rgba(0,0,0,0.3); top: 0; left: 0;"></div>
+  <div class="container position-relative text-center" style="z-index: 2;">
+    <h1 class="display-3 fw-bold mb-4 animate__animated animate__fadeInDown"><%= raw t('home.index.heading_html') %></h1>
+    <p class="lead mb-5 fs-4 animate__animated animate__fadeInUp" style="max-width: 700px; margin: 0 auto;"><%= t('home.index.lead') %></p>
+    <div class="d-flex flex-column flex-sm-row justify-content-center gap-3 animate__animated animate__fadeInUp animate__delay-1s">
+      <% if user_signed_in? %>
+        <%= link_to catalog_path, class: "btn btn-light btn-lg px-5 py-3 shadow-sm" do %>
+          <i class="fas fa-store me-2"></i><%= t('home.index.explore_cta') %>
+        <% end %>
+      <% else %>
+        <%= link_to new_user_registration_path, class: "btn btn-light btn-lg px-5 py-3 shadow-sm" do %>
+          <i class="fas fa-user-plus me-2"></i><%= t('home.index.register_cta') %>
+        <% end %>
+        <%= link_to new_user_session_path, class: "btn btn-outline-light btn-lg px-5 py-3" do %>
+          <i class="fas fa-sign-in-alt me-2"></i><%= t('home.index.login_cta') %>
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+</section>
+
+<!-- 🌟 PRODUCTOS DESTACADOS -->
+<% if @products.present? %>
+<section class="featured-products py-5 bg-light">
+  <div class="container">
+    <div class="text-center mb-5">
+      <h2 class="display-5 fw-bold mb-3">Productos Destacados</h2>
+      <p class="lead text-muted">Descubre las últimas novedades de nuestra colección</p>
+    </div>
+    <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-4 mb-4">
+      <% @products.each do |product| %>
+        <div class="col">
+          <div class="card h-100 border-0 shadow-sm hover-lift">
+            <%= link_to product_path(product), class: "text-decoration-none" do %>
+              <% if product.images.attached? %>
+                <%= image_tag product.images.first, class: "card-img-top", alt: product.name, style: "height: 200px; object-fit: cover;" %>
+              <% else %>
+                <div class="card-img-top bg-secondary d-flex align-items-center justify-content-center text-white" style="height: 200px;">
+                  <i class="fas fa-image fa-3x opacity-50"></i>
+                </div>
+              <% end %>
+              <div class="card-body">
+                <h6 class="card-title text-dark mb-2 fw-semibold" style="font-size: 0.9rem;"><%= product.name %></h6>
+                <p class="text-danger fw-bold mb-0"><%= number_to_currency(product.price, locale: :es_MX) %></p>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+    <div class="text-center">
+      <%= link_to catalog_path, class: "btn btn-danger btn-lg px-5" do %>
+        Ver Catálogo Completo <i class="fas fa-arrow-right ms-2"></i>
+      <% end %>
+    </div>
+  </div>
+</section>
+<% end %>
+
+<!-- 💎 VALUE PROPOSITIONS -->
+<div class="container mt-5 py-5 text-center">
+
+<!-- 💎 VALUE PROPOSITIONS -->
+<div class="container py-5">
+  <div class="text-center mb-5">
+    <h2 class="display-5 fw-bold mb-3">¿Por qué Pasatiempos?</h2>
+    <p class="lead text-muted">Tu aliado en el mundo del coleccionismo</p>
   </div>
 
-  <hr class="my-5">
+  <div class="row row-cols-1 row-cols-md-2 g-4 mb-5">
+    <div class="col">
+      <div class="card border-0 shadow-sm h-100 hover-lift">
+        <div class="card-body text-center p-4">
+          <div class="mb-3">
+            <i class="fas fa-box-open text-danger fa-3x"></i>
+          </div>
+          <h5 class="card-title fw-bold mb-3"><%= t('home.index.cards.collection.title') %></h5>
+          <p class="card-text text-muted"><%= t('home.index.cards.collection.text') %></p>
+        </div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="card border-0 shadow-sm h-100 hover-lift">
+        <div class="card-body text-center p-4">
+          <div class="mb-3">
+            <i class="fas fa-users text-danger fa-3x"></i>
+          </div>
+          <h5 class="card-title fw-bold mb-3"><%= t('home.index.cards.community.title') %></h5>
+          <p class="card-text text-muted"><%= t('home.index.cards.community.text') %></p>
+        </div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="card border-0 shadow-sm h-100 hover-lift">
+        <div class="card-body text-center p-4">
+          <div class="mb-3">
+            <i class="fas fa-heart text-danger fa-3x"></i>
+          </div>
+          <h5 class="card-title fw-bold mb-3"><%= t('home.index.cards.legacy.title') %></h5>
+          <p class="card-text text-muted"><%= t('home.index.cards.legacy.text') %></p>
+        </div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="card border-0 shadow-sm h-100 hover-lift">
+        <div class="card-body text-center p-4">
+          <div class="mb-3">
+            <i class="fas fa-shield-alt text-danger fa-3x"></i>
+          </div>
+          <h5 class="card-title fw-bold mb-3"><%= t('home.index.cards.practices.title') %></h5>
+          <p class="card-text text-muted"><%= t('home.index.cards.practices.text') %></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
-  <h2 class="fw-bold text-danger"><%= t('home.index.join_title') %></h2>
-  <p class="lead"><%= t('home.index.join_lead') %></p>
+<!-- 📧 NEWSLETTER -->
+<section class="newsletter-section py-5 bg-danger text-white">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-lg-8 text-center">
+        <h2 class="display-6 fw-bold mb-3">¡Mantente Actualizado!</h2>
+        <p class="lead mb-4">Recibe las últimas novedades, ofertas exclusivas y lanzamientos directamente en tu correo.</p>
+        <form class="row g-3 justify-content-center" action="#" method="post">
+          <div class="col-12 col-md-7">
+            <input type="email" class="form-control form-control-lg" placeholder="Tu correo electrónico" required>
+          </div>
+          <div class="col-12 col-md-auto">
+            <button type="submit" class="btn btn-light btn-lg px-5 w-100">
+              <i class="fas fa-envelope me-2"></i>Suscribirse
+            </button>
+          </div>
+        </form>
+        <p class="small mt-3 opacity-75">
+          <i class="fas fa-lock me-1"></i>Tu privacidad es importante. No compartimos tu información.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 🚀 CALL TO ACTION -->
+<div class="container my-5 py-5 text-center">
+  <h2 class="fw-bold text-danger mb-3"><%= t('home.index.join_title') %></h2>
+  <p class="lead mb-4"><%= t('home.index.join_lead') %></p>
 
   <% if user_signed_in? %>
-    <%= link_to t('home.index.explore_cta'), catalog_path, class: "btn btn-danger btn-lg mt-3" %>
+    <%= link_to t('home.index.explore_cta'), catalog_path, class: "btn btn-danger btn-lg px-5 py-3" %>
   <% else %>
-    <div class="d-flex flex-column flex-sm-row justify-content-center gap-3 mt-3">
-      <%= link_to t('home.index.login_cta'), new_user_session_path, class: "btn btn-outline-danger btn-lg" %>
-      <%= link_to t('home.index.register_cta'), new_user_registration_path, class: "btn btn-danger btn-lg" %>
+    <div class="d-flex flex-column flex-sm-row justify-content-center gap-3">
+      <%= link_to new_user_session_path, class: "btn btn-outline-danger btn-lg px-5 py-3" do %>
+        <i class="fas fa-sign-in-alt me-2"></i><%= t('home.index.login_cta') %>
+      <% end %>
+      <%= link_to new_user_registration_path, class: "btn btn-danger btn-lg px-5 py-3" do %>
+        <i class="fas fa-user-plus me-2"></i><%= t('home.index.register_cta') %>
+      <% end %>
     </div>
   <% end %>
 </div>
