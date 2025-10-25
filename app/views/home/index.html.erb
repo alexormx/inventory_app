@@ -2,11 +2,11 @@
 <% content_for :description, t('home.index.meta.description') %>
 
 <!-- ✨ HERO SECTION -->
-<section class="hero-section position-relative d-flex align-items-center text-white" style="min-height: 60vh; background: linear-gradient(135deg, #dc3545 0%, #6610f2 100%); overflow: hidden;">
-  <div class="hero-overlay position-absolute w-100 h-100" style="background: rgba(0,0,0,0.3); top: 0; left: 0;"></div>
+<section class="hero-section position-relative d-flex align-items-center text-white" style="min-height: 60vh; background: linear-gradient(135deg, rgba(220,53,69,0.85) 0%, rgba(102,16,242,0.85) 100%), url('<%= asset_path('collection_shelf.jpg') %>') center/cover no-repeat; overflow: hidden;">
+  <div class="hero-overlay position-absolute w-100 h-100" style="background: rgba(0,0,0,0.4); top: 0; left: 0;"></div>
   <div class="container position-relative text-center" style="z-index: 2;">
-    <h1 class="display-3 fw-bold mb-4 animate__animated animate__fadeInDown"><%= raw t('home.index.heading_html') %></h1>
-    <p class="lead mb-5 fs-4 animate__animated animate__fadeInUp" style="max-width: 700px; margin: 0 auto;"><%= t('home.index.lead') %></p>
+    <h1 class="display-3 fw-bold mb-4 animate__animated animate__fadeInDown" style="text-shadow: 2px 2px 8px rgba(0,0,0,0.5);"><%= raw t('home.index.heading_html') %></h1>
+    <p class="lead mb-5 fs-4 animate__animated animate__fadeInUp" style="max-width: 700px; margin: 0 auto; text-shadow: 1px 1px 4px rgba(0,0,0,0.5);"><%= t('home.index.lead') %></p>
     <div class="d-flex flex-column flex-sm-row justify-content-center gap-3 animate__animated animate__fadeInUp animate__delay-1s">
       <% if user_signed_in? %>
         <%= link_to catalog_path, class: "btn btn-light btn-lg px-5 py-3 shadow-sm" do %>
