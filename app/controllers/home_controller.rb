@@ -2,10 +2,10 @@ class HomeController < ApplicationController
   layout "customer"
 
   def index
-    # Show 8 featured products (active, with stock, newest first)
+    # Show 8 featured products (active, newest first)
+    # Note: stock filtering happens in the view since current_on_hand is calculated
     @products = Product.active
-                      .where("stock_quantity > ?", 0)
                       .order(created_at: :desc)
-                      .limit(8)
+                      .limit(12) # Fetch more to ensure we have 8+ with stock
   end
 end

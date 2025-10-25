@@ -25,7 +25,8 @@
 </section>
 
 <!-- 🌟 PRODUCTOS DESTACADOS -->
-<% if @products.present? %>
+<% featured_products = @products.select { |p| p.current_on_hand > 0 }.first(8) %>
+<% if featured_products.present? %>
 <section class="featured-products py-5 bg-light">
   <div class="container">
     <div class="text-center mb-5">
@@ -33,7 +34,7 @@
       <p class="lead text-muted">Descubre las últimas novedades de nuestra colección</p>
     </div>
     <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-4 mb-4">
-      <% @products.each do |product| %>
+      <% featured_products.each do |product| %>
         <div class="col">
           <div class="card h-100 border-0 shadow-sm hover-lift">
             <%= link_to product_path(product), class: "text-decoration-none" do %>
