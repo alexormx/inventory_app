@@ -7,6 +7,8 @@
 #catalog .catalog-filters { position: relative; z-index: 1; }
 #catalog .catalog-filters .sort-select { min-width: 125px; width: auto; }
 #catalog .catalog-filters .btn-icon { display: inline-flex; align-items: center; justify-content: center; padding: .45rem .75rem; }
+/* Asegurar que la columna principal del grid no quede debajo del sidebar */
+#catalog .catalog-main { position: relative; z-index: 1; }
 
 /* Product cards with improved hover */
 #catalog .catalog-item {
@@ -162,6 +164,7 @@
 }
 
 /* Sidebar de filtros */
+#catalog #desktopFilters { background: #fff; border-right: 1px solid #e9ecef; }
 #catalog .catalog-sidebar-filters { position: sticky; top: calc(var(--nav-height-shrink, 52px) + 12px); }
 #catalog .catalog-sidebar-filters .filter-block .filter-scroll { max-height: 200px; overflow: auto; padding-right: 4px; }
 #catalog .catalog-sidebar-filters .form-check { margin-bottom: .25rem; }
@@ -490,10 +493,12 @@ turbo-frame[busy]::after {
 
 
 /* noUiSlider custom styling */
-.price-slider { height: 8px; margin: 20px 0; }
+.price-slider { height: 8px; margin: 8px 0 28px; }
 .price-slider .noUi-connect { background: #dc3545; }
 .price-slider .noUi-handle { width: 20px; height: 20px; border-radius: 50%; border: 2px solid #dc3545; background: white; box-shadow: 0 2px 6px rgba(0,0,0,0.15); cursor: pointer; }
 .price-slider .noUi-handle:before, .price-slider .noUi-handle:after { display: none; }
-.price-slider .noUi-tooltip { font-size: 0.75rem; padding: 2px 6px; border: none; background: #dc3545; color: white; border-radius: 4px; }
+.price-slider .noUi-tooltip { font-size: 0.75rem; padding: 2px 6px; border: none; background: #dc3545; color: white; border-radius: 4px; pointer-events: none; }
 .price-slider .noUi-horizontal { height: 8px; }
 .price-slider .noUi-horizontal .noUi-handle { width: 20px; height: 20px; right: -10px; top: -6px; }
+/* Mover tooltips debajo del slider para evitar que tapen el título */
+.price-slider .noUi-horizontal .noUi-tooltip { top: auto; bottom: -24px; }
