@@ -1065,17 +1065,25 @@ body.overlay-open { overflow:hidden; }
 }
 .site-navbar .navbar-collapse[hidden] { display:none !important; }
 @media (max-width: 991.98px) {
-  /* Animación suave para apertura/cierre en mobile */
+  /* Animación suave tipo slide-down para el menú móvil */
   #navbar-scroll {
-    transition: opacity .24s cubic-bezier(.4,0,.2,1), transform .24s cubic-bezier(.4,0,.2,1);
-    will-change: opacity, transform;
+    transition: opacity .24s cubic-bezier(.4,0,.2,1), transform .24s cubic-bezier(.4,0,.2,1), max-height .28s cubic-bezier(.4,0,.2,1);
+    will-change: opacity, transform, max-height;
     background: var(--color-bg-elevated);
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     border-radius: 8px;
     margin-top: 0.5rem;
+    display: block; /* mantener en flujo para animar altura */
+    overflow: hidden;
+    max-height: 0; /* colapsado */
+    opacity: 0;
+    transform: translateY(-6px);
   }
-  #navbar-scroll:not(.show) { display: none; }
-  #navbar-scroll.show { display: block; opacity: 1; transform: translateY(0); }
+  #navbar-scroll.show {
+    max-height: 75vh; /* límite seguro en móvil */
+    opacity: 1;
+    transform: translateY(0);
+  }
 
   /* Top search spacing inside mobile collapse */
   .navbar-top-search { padding: 0 .5rem; }
@@ -1086,7 +1094,7 @@ body.overlay-open { overflow:hidden; }
 
   /* Stagger suave de items (los delays se aplican inline desde JS) */
   #navbar-menu > li { transition: transform .24s cubic-bezier(.4,0,.2,1), opacity .24s cubic-bezier(.4,0,.2,1); }
-  #navbar-scroll:not(.show) #navbar-menu > li { transform: translateY(-4px); opacity: 0; }
+  #navbar-scroll #navbar-menu > li { transform: translateY(-4px); opacity: 0; }
   #navbar-scroll.show #navbar-menu > li { transform: translateY(0); opacity: 1; }
 }
 
