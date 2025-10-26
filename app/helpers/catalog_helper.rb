@@ -22,6 +22,16 @@ module CatalogHelper
     breadcrumbs
   end
 
+  # Genera breadcrumbs para la vista de producto individual
+  def product_breadcrumbs(product)
+    [
+      { name: "Inicio", url: root_path },
+      { name: "Catálogo", url: catalog_path },
+      { name: product.category, url: catalog_path(categories: [product.category]) },
+      { name: product.product_name, url: nil }
+    ]
+  end
+
   # Formato de rango de productos mostrados (ej: "Mostrando 1-12 de 45")
   def products_range_text(products)
     return "No hay productos" if products.total_count.zero?

@@ -7,7 +7,7 @@
 #catalog .catalog-filters .btn-icon { display: inline-flex; align-items: center; justify-content: center; padding: .45rem .75rem; }
 
 /* Product cards with improved hover */
-#catalog .catalog-item { 
+#catalog .catalog-item {
   transition: all .3s cubic-bezier(.4,0,.2,1);
   border: 1px solid #e9ecef !important;
   background: white;
@@ -18,11 +18,11 @@
   z-index: 10;
   border-color: rgba(220,53,69,0.3) !important;
 }
-#catalog .catalog-item:hover .btn { 
+#catalog .catalog-item:hover .btn {
   transform: scale(1.05);
   box-shadow: 0 4px 12px rgba(220,53,69,0.3);
 }
-#catalog .product-image { 
+#catalog .product-image {
   max-height: 180px;
   min-height: 180px;
   object-fit: contain;
@@ -30,7 +30,7 @@
   padding: 1rem;
   background: #f8f9fa;
 }
-#catalog .catalog-item:hover .product-image { 
+#catalog .catalog-item:hover .product-image {
   transform: scale(1.1);
 }
 
@@ -43,7 +43,7 @@
   gap: 0.5rem;
 }
 
-#catalog .card-title { 
+#catalog .card-title {
   white-space: normal;
   overflow: visible;
   text-overflow: unset;
@@ -133,7 +133,7 @@
   }
 }
 
-@media (max-width: 575px) { 
+@media (max-width: 575px) {
   #catalog .catalog-header { margin-bottom: .75rem; }
   #catalog .product-image {
     max-height: 140px;

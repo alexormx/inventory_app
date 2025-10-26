@@ -1,4 +1,19 @@
 <div class="container py-4 product-show" data-controller="productMeta">
+  <!-- Breadcrumbs -->
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb mb-0">
+      <% product_breadcrumbs(@product).each_with_index do |crumb, index| %>
+        <li class="breadcrumb-item <%= 'active' if crumb[:url].nil? %>" <%= 'aria-current="page"'.html_safe if crumb[:url].nil? %>>
+          <% if crumb[:url] %>
+            <%= link_to crumb[:name], crumb[:url], class: "text-decoration-none" %>
+          <% else %>
+            <%= crumb[:name] %>
+          <% end %>
+        </li>
+      <% end %>
+    </ol>
+  </nav>
+
   <div class="row gy-4">
     <div class="col-lg-6">
       <% if @product.product_images.attached? %>
