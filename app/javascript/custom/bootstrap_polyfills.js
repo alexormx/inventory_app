@@ -13,6 +13,8 @@
   function initCollapse(){
     const toggles = Array.from(document.querySelectorAll('[data-bs-toggle="collapse"]'));
     toggles.forEach((btn)=>{
+      // Permitir que ciertos toggles gestionen su propio comportamiento
+      if (btn.dataset.collapseSkip === 'true') return;
       if(btn.dataset.collapseEnhanced === '1') return;
       btn.dataset.collapseEnhanced = '1';
       btn.addEventListener('click', (e)=>{

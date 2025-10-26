@@ -1066,8 +1066,8 @@ body.overlay-open { overflow:hidden; }
 .site-navbar .navbar-collapse[hidden] { display:none !important; }
 @media (max-width: 991.98px) {
   /* Animación suave para apertura/cierre en mobile */
-  #navbar-scroll { 
-    transition: opacity .24s cubic-bezier(.4,0,.2,1), transform .24s cubic-bezier(.4,0,.2,1); 
+  #navbar-scroll {
+    transition: opacity .24s cubic-bezier(.4,0,.2,1), transform .24s cubic-bezier(.4,0,.2,1);
     will-change: opacity, transform;
     background: var(--color-bg-elevated);
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
