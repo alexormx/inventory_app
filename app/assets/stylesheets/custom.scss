@@ -1045,7 +1045,7 @@ body.overlay-open { overflow:hidden; }
 
 /* Improve collapse spacing on mobile */
 @media (max-width: 991.98px) { /* Bootstrap lg breakpoint */
-  .site-navbar .navbar-collapse { padding-top:.5rem; padding-bottom:.75rem; }
+  .site-navbar .navbar-collapse { padding-top:.5rem; padding-bottom:.75rem; background: var(--color-bg-elevated); }
   .site-navbar .nav-btn { width:100%; justify-content:flex-start; }
   /* Enlaces ocupan ancho completo dentro del menú colapsado */
   .site-navbar .navbar-collapse .nav-item-link { width: 100%; justify-content: flex-start; }
@@ -1066,9 +1066,16 @@ body.overlay-open { overflow:hidden; }
 .site-navbar .navbar-collapse[hidden] { display:none !important; }
 @media (max-width: 991.98px) {
   /* Animación suave para apertura/cierre en mobile */
-  #navbar-scroll { transition: opacity .24s cubic-bezier(.4,0,.2,1), transform .24s cubic-bezier(.4,0,.2,1); will-change: opacity, transform; }
-  #navbar-scroll[hidden] { opacity:0; transform:translateY(-6px); }
-  #navbar-scroll.is-open { opacity:1; transform:translateY(0); }
+  #navbar-scroll { 
+    transition: opacity .24s cubic-bezier(.4,0,.2,1), transform .24s cubic-bezier(.4,0,.2,1); 
+    will-change: opacity, transform;
+    background: var(--color-bg-elevated);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    border-radius: 8px;
+    margin-top: 0.5rem;
+  }
+  #navbar-scroll:not(.show) { display: none; }
+  #navbar-scroll.show { display: block; opacity: 1; transform: translateY(0); }
 
   /* Top search spacing inside mobile collapse */
   .navbar-top-search { padding: 0 .5rem; }
@@ -1079,8 +1086,8 @@ body.overlay-open { overflow:hidden; }
 
   /* Stagger suave de items (los delays se aplican inline desde JS) */
   #navbar-menu > li { transition: transform .24s cubic-bezier(.4,0,.2,1), opacity .24s cubic-bezier(.4,0,.2,1); }
-  #navbar-scroll[hidden] #navbar-menu > li { transform: translateY(-4px); opacity: 0; }
-  #navbar-scroll.is-open #navbar-menu > li { transform: translateY(0); opacity: 1; }
+  #navbar-scroll:not(.show) #navbar-menu > li { transform: translateY(-4px); opacity: 0; }
+  #navbar-scroll.show #navbar-menu > li { transform: translateY(0); opacity: 1; }
 }
 
 /* Alternar icono del toggler (≡ ↔ ×) con aria-expanded */

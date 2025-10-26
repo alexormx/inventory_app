@@ -493,14 +493,9 @@ turbo-frame[busy]::after {
 
 
 /* noUiSlider custom styling */
-.price-slider { height: 8px; margin: 8px 0 28px; }
+.price-slider { height: 8px; margin: 16px 0 12px; }
 .price-slider .noUi-connect { background: #dc3545; }
 .price-slider .noUi-handle { width: 20px; height: 20px; border-radius: 50%; border: 2px solid #dc3545; background: white; box-shadow: 0 2px 6px rgba(0,0,0,0.15); cursor: pointer; }
 .price-slider .noUi-handle:before, .price-slider .noUi-handle:after { display: none; }
-.price-slider .noUi-tooltip { font-size: 0.75rem; padding: 2px 6px; border: none; background: #dc3545; color: white; border-radius: 4px; pointer-events: none; }
 .price-slider .noUi-horizontal { height: 8px; }
 .price-slider .noUi-horizontal .noUi-handle { width: 20px; height: 20px; right: -10px; top: -6px; }
-/* Mover tooltips debajo del slider para evitar que tapen el título */
-/* Forzar tooltips por debajo del slider con alta especificidad */
-.price-slider.noUi-target .noUi-horizontal .noUi-tooltip { top: calc(100% + 6px) !important; bottom: auto !important; -webkit-transform: translate(-50%, 0) !important; transform: translate(-50%, 0) !important; }
-.price-slider.noUi-target .noUi-horizontal .noUi-origin > .noUi-tooltip { top: calc(100% + 6px) !important; bottom: auto !important; -webkit-transform: translate(50%, 0) !important; transform: translate(50%, 0) !important; }
