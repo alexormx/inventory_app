@@ -164,7 +164,7 @@
 }
 
 /* Sidebar de filtros */
-#catalog #desktopFilters { background: #fff; border-right: 1px solid #e9ecef; }
+#catalog #desktopFilters { background: #fff; border-right: 1px solid #e9ecef; position: relative; z-index: 30; }
 #catalog .catalog-sidebar-filters { position: sticky; top: calc(var(--nav-height-shrink, 52px) + 12px); }
 #catalog .catalog-sidebar-filters .filter-block .filter-scroll { max-height: 200px; overflow: auto; padding-right: 4px; }
 #catalog .catalog-sidebar-filters .form-check { margin-bottom: .25rem; }
