@@ -11,6 +11,7 @@
   transition: all .3s cubic-bezier(.4,0,.2,1);
   border: 1px solid #e9ecef !important;
   background: white;
+  position: relative; /* Needed so absolute badge anchors to card */
 }
 #catalog .catalog-item.hover-lift:hover {
   transform: translateY(-8px);
@@ -32,6 +33,20 @@
 }
 #catalog .catalog-item:hover .product-image {
   transform: scale(1.1);
+}
+
+/* Ensure status badge stays on top during hover/active/focus states */
+#catalog .catalog-item .badge {
+  position: absolute; /* bootstrap utility already sets absolute, this enforces specificity */
+  z-index: 20;         /* higher than link/image and card content */
+  pointer-events: none; /* allow clicking the card beneath without intercepting */
+}
+
+/* In our grid the badge sits inside an absolute wrapper (top-0 start-0 m-1).
+   Ensure that wrapper is also layered on top to avoid disappearing on click */
+#catalog .catalog-item > .position-absolute {
+  z-index: 20;
+  pointer-events: none;
 }
 
 /* Product card content spacing */
@@ -95,10 +110,9 @@
   box-shadow: 0 2px 4px rgba(108,117,125,0.2);
 }
 
-/* Grid spacing mejorado */
-#catalog .row.g-3 {
-  gap: 1.5rem !important;
-}
+/* Grid spacing: use Bootstrap gutter classes (g-*)
+   Do NOT override row with gap; it breaks the flex grid widths and
+   can push the product grid below the sidebar. */
 
 #catalog .product-card-wrapper {
   margin-bottom: 0.5rem;
