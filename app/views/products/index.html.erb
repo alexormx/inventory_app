@@ -133,37 +133,39 @@
   <% end %>
 
   <div class="row g-3">
-    <!-- ✅ Botón flotante para abrir filtros en mobile -->
-    <button class="btn btn-danger d-md-none filter-toggle-btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#filtersOffcanvas" aria-controls="filtersOffcanvas">
-      <i class="fas fa-filter me-2"></i>Filtros
-      <% if active_filters_count > 0 %>
-        <span class="badge bg-white text-danger ms-2"><%= active_filters_count %></span>
-      <% end %>
-    </button>
-
     <!-- Sidebar filtros desktop -->
     <aside class="d-none d-md-block col-md-3 col-lg-2" id="desktopFilters">
       <%= render 'filters_form', form_id: 'desktop-filters-form', suffix: '' %>
     </aside>
 
-    <!-- ✅ Offcanvas mobile -->
-    <div class="offcanvas offcanvas-start" tabindex="-1" id="filtersOffcanvas" aria-labelledby="filtersOffcanvasLabel">
-      <div class="offcanvas-header">
-        <h5 class="offcanvas-title" id="filtersOffcanvasLabel">
-          <i class="fas fa-filter me-2"></i>Filtros
-        </h5>
-        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Cerrar"></button>
-      </div>
-      <div class="offcanvas-body">
-        <%= render 'filters_form', form_id: 'mobile-filters-form', suffix: 'Mobile' %>
-      </div>
-    </div>
-
     <!-- Products Grid with Turbo Frame -->
-    <div class="col-12 col-md-9 col-lg-10">
+    <div class="col-12 col-md-9 col-lg-10 catalog-main">
       <%= render 'product_grid' %>
     </div>
   </div>
+
+  <!-- ✅ Botón flotante para abrir filtros en mobile (fuera del grid) -->
+  <button class="btn btn-danger d-md-none filter-toggle-btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#filtersOffcanvas" aria-controls="filtersOffcanvas">
+    <i class="fas fa-filter me-2"></i>Filtros
+    <% if active_filters_count > 0 %>
+      <span class="badge bg-white text-danger ms-2"><%= active_filters_count %></span>
+    <% end %>
+  </button>
+
+  <!-- ✅ Offcanvas mobile -->
+  <div class="offcanvas offcanvas-start" tabindex="-1" id="filtersOffcanvas" aria-labelledby="filtersOffcanvasLabel">
+    <div class="offcanvas-header">
+      <h5 class="offcanvas-title" id="filtersOffcanvasLabel">
+        <i class="fas fa-filter me-2"></i>Filtros
+      </h5>
+      <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Cerrar"></button>
+    </div>
+    <div class="offcanvas-body">
+      <%= render 'filters_form', form_id: 'mobile-filters-form', suffix: 'Mobile' %>
+    </div>
+  </div>
 </div>
+
+
 
 

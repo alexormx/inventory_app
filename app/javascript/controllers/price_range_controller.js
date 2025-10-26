@@ -54,10 +54,7 @@ export default class extends Controller {
         to: (value) => Math.round(value),
         from: (value) => Number(value)
       },
-      tooltips: [
-        { to: (value) => `$${Math.round(value)}` },
-        { to: (value) => `$${Math.round(value)}` }
-      ]
+      tooltips: false // Desactivado: usamos los displays debajo del slider
     })
 
     // Actualizar inputs cuando cambia el slider

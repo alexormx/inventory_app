@@ -1045,7 +1045,7 @@ body.overlay-open { overflow:hidden; }
 
 /* Improve collapse spacing on mobile */
 @media (max-width: 991.98px) { /* Bootstrap lg breakpoint */
-  .site-navbar .navbar-collapse { padding-top:.5rem; padding-bottom:.75rem; }
+  .site-navbar .navbar-collapse { padding-top:.5rem; padding-bottom:.75rem; background: var(--color-bg-elevated); }
   .site-navbar .nav-btn { width:100%; justify-content:flex-start; }
   /* Enlaces ocupan ancho completo dentro del menú colapsado */
   .site-navbar .navbar-collapse .nav-item-link { width: 100%; justify-content: flex-start; }
@@ -1065,10 +1065,25 @@ body.overlay-open { overflow:hidden; }
 }
 .site-navbar .navbar-collapse[hidden] { display:none !important; }
 @media (max-width: 991.98px) {
-  /* Animación suave para apertura/cierre en mobile */
-  #navbar-scroll { transition: opacity .24s cubic-bezier(.4,0,.2,1), transform .24s cubic-bezier(.4,0,.2,1); will-change: opacity, transform; }
-  #navbar-scroll[hidden] { opacity:0; transform:translateY(-6px); }
-  #navbar-scroll.is-open { opacity:1; transform:translateY(0); }
+  /* Animación suave tipo slide-down para el menú móvil */
+  #navbar-scroll {
+    transition: opacity .24s cubic-bezier(.4,0,.2,1), transform .24s cubic-bezier(.4,0,.2,1), max-height .28s cubic-bezier(.4,0,.2,1);
+    will-change: opacity, transform, max-height;
+    background: var(--color-bg-elevated);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    border-radius: 8px;
+    margin-top: 0.5rem;
+    display: block; /* mantener en flujo para animar altura */
+    overflow: hidden;
+    max-height: 0; /* colapsado */
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  #navbar-scroll.show {
+    max-height: 75vh; /* límite seguro en móvil */
+    opacity: 1;
+    transform: translateY(0);
+  }
 
   /* Top search spacing inside mobile collapse */
   .navbar-top-search { padding: 0 .5rem; }
@@ -1079,8 +1094,8 @@ body.overlay-open { overflow:hidden; }
 
   /* Stagger suave de items (los delays se aplican inline desde JS) */
   #navbar-menu > li { transition: transform .24s cubic-bezier(.4,0,.2,1), opacity .24s cubic-bezier(.4,0,.2,1); }
-  #navbar-scroll[hidden] #navbar-menu > li { transform: translateY(-4px); opacity: 0; }
-  #navbar-scroll.is-open #navbar-menu > li { transform: translateY(0); opacity: 1; }
+  #navbar-scroll #navbar-menu > li { transform: translateY(-4px); opacity: 0; }
+  #navbar-scroll.show #navbar-menu > li { transform: translateY(0); opacity: 1; }
 }
 
 /* Alternar icono del toggler (≡ ↔ ×) con aria-expanded */
@@ -1158,4 +1173,74 @@ main.page-main.is-entering { opacity:1; }
   z-index: 1200; /* por encima de cards y navbar */
   max-height: 280px; /* evitar crecer demasiado */
   overflow: auto; /* permitir scroll si hay muchos resultados */
+}
+
+/* ============================
+   HOMEPAGE UX IMPROVEMENTS
+   ============================ */
+
+/* Hero Section */
+.hero-section {
+  position: relative;
+  background: linear-gradient(135deg, #dc3545 0%, #6610f2 100%);
+  background-size: cover;
+  background-position: center;
+}
+
+/* Hover lift effect for cards */
+.hover-lift {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Featured Products Section */
+.featured-products {
+  background: #f8f9fa;
+}
+
+.featured-products .card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.featured-products .card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Value Cards Icon Styling */
+.card-body i {
+  transition: transform 0.3s ease, color 0.3s ease;
+}
+
+.card:hover i {
+  transform: scale(1.1);
+}
+
+/* Newsletter Section */
+.newsletter-section {
+  background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+}
+
+.newsletter-section .form-control:focus {
+  border-color: #fff;
+  box-shadow: 0 0 0 0.25rem rgba(255, 255, 255, 0.25);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .hero-section {
+    min-height: 50vh !important;
+  }
+
+  .hero-section h1 {
+    font-size: 2rem !important;
+  }
+
+  .hero-section .lead {
+    font-size: 1.1rem !important;
+  }
 }

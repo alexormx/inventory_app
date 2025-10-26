@@ -81,7 +81,7 @@
       <% end %>
     </div>
   <% end %>
-  <div class="row row-cols-2 row-cols-sm-3 row-cols-md-3 row-cols-lg-5 g-3" id="product-grid-content" role="list">
+  <div class="row row-cols-2 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 g-3" id="product-grid-content" role="list">
     <% @products.each do |product| %>
       <div class="col product-card-wrapper" data-product-id="<%= product.id %>" role="listitem">
         <article class="card h-100 border-0 shadow-sm d-flex flex-column catalog-item position-relative hover-lift">
@@ -93,7 +93,7 @@
             <span class="badge bg-secondary position-absolute top-0 start-0 m-1" role="status">No disp.</span>
           <% end %>
           <% if product.active? %>
-            <%= link_to product_path(product), class: "d-block p-2", aria: { label: "Ver detalles de #{product.product_name}" } do %>
+            <%= link_to product_path(product), class: "d-block p-2", aria: { label: "Ver detalles de #{product.product_name}" }, data: { turbo_frame: "_top" } do %>
               <% if product.product_images.attached? %>
                 <%= responsive_attachment_image product.product_images.first,
                   alt: product.product_name,
@@ -120,7 +120,7 @@
           <div class="card-body text-center p-2 d-flex flex-column w-100">
             <h2 class="card-title h6 mb-1" title="<%= product.product_name %>">
               <% if product.active? %>
-                <%= link_to product.product_name, product_path(product), class: "text-decoration-none text-dark" %>
+                <%= link_to product.product_name, product_path(product), class: "text-decoration-none text-dark", data: { turbo_frame: "_top" } %>
               <% else %>
                 <span class="text-muted" aria-disabled="true"><%= product.product_name %></span>
               <% end %>

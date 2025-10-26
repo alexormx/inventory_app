@@ -1,4 +1,19 @@
 <div class="container py-4 product-show" data-controller="productMeta">
+  <!-- Breadcrumbs -->
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb mb-0">
+      <% product_breadcrumbs(@product).each_with_index do |crumb, index| %>
+        <li class="breadcrumb-item <%= 'active' if crumb[:url].nil? %>" <%= 'aria-current="page"'.html_safe if crumb[:url].nil? %>>
+          <% if crumb[:url] %>
+            <%= link_to crumb[:name], crumb[:url], class: "text-decoration-none" %>
+          <% else %>
+            <%= crumb[:name] %>
+          <% end %>
+        </li>
+      <% end %>
+    </ol>
+  </nav>
+
   <div class="row gy-4">
     <div class="col-lg-6">
       <% if @product.product_images.attached? %>
@@ -14,27 +29,85 @@
 
   <div class="row mt-5 g-4">
     <div class="col-lg-8">
+      <!-- Información básica siempre visible -->
+      <div class="card border-0 shadow-sm mb-4" id="info-basica">
+        <div class="card-body">
+          <h2 class="h5 fw-semibold mb-3"><i class="fas fa-info-circle text-primary me-2"></i>Información del Producto</h2>
+          <div class="row g-3">
+            <div class="col-sm-6">
+              <div class="d-flex align-items-center">
+                <i class="fas fa-tag text-muted me-2"></i>
+                <div>
+                  <small class="text-muted d-block">Categoría</small>
+                  <strong><%= @product.category %></strong>
+                </div>
+              </div>
+            </div>
+            <div class="col-sm-6">
+              <div class="d-flex align-items-center">
+                <i class="fas fa-copyright text-muted me-2"></i>
+                <div>
+                  <small class="text-muted d-block">Marca</small>
+                  <strong><%= @product.brand %></strong>
+                </div>
+              </div>
+            </div>
+            <div class="col-sm-6">
+              <div class="d-flex align-items-center">
+                <i class="fas fa-barcode text-muted me-2"></i>
+                <div>
+                  <small class="text-muted d-block">SKU</small>
+                  <strong><%= @product.product_sku %></strong>
+                </div>
+              </div>
+            </div>
+            <% if @product.barcode.present? %>
+            <div class="col-sm-6">
+              <div class="d-flex align-items-center">
+                <i class="fas fa-qrcode text-muted me-2"></i>
+                <div>
+                  <small class="text-muted d-block">Código de Barras</small>
+                  <strong><%= @product.barcode %></strong>
+                </div>
+              </div>
+            </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+
       <div class="card border-0 shadow-sm" id="descripcion" data-product-description>
         <div class="card-body">
           <h2 class="h5 fw-semibold mb-3"><i class="fas fa-align-left text-primary me-2"></i>Descripción</h2>
-          <p class="text-muted mb-0"><%= @product.description.presence || 'Este producto no tiene una descripción disponible por el momento.' %></p>
+          <% if @product.description.present? %>
+            <p class="text-muted mb-0" style="white-space: pre-line;"><%= @product.description %></p>
+          <% else %>
+            <div class="alert alert-light border mb-0 text-center py-4">
+              <i class="fas fa-info-circle text-muted fa-2x mb-2"></i>
+              <p class="text-muted mb-0">Este producto aún no tiene una descripción detallada.</p>
+              <p class="text-muted small mb-0">Estamos trabajando para agregarlo pronto.</p>
+            </div>
+          <% end %>
         </div>
       </div>
 
       <div class="card border-0 shadow-sm mt-4" id="detalles">
         <div class="card-body">
-          <h2 class="h5 fw-semibold mb-3"><i class="fas fa-list-alt text-primary me-2"></i>Detalles</h2>
-          <% if @product.custom_attributes.present? %>
+          <h2 class="h5 fw-semibold mb-3"><i class="fas fa-list-alt text-primary me-2"></i>Detalles del Producto</h2>
+          <% if @product.custom_attributes.present? && @product.parsed_custom_attributes.any? %>
             <div class="row row-cols-1 row-cols-sm-2 g-3 small">
               <% @product.parsed_custom_attributes.each do |key, value| %>
                 <div class="col d-flex">
-                  <div class="w-50 text-muted text-capitalize"><%= key %></div>
-                  <div class="flex-grow-1 fw-medium"><%= value %></div>
+                  <div class="w-50 text-muted text-capitalize fw-semibold"><%= key.to_s.humanize %></div>
+                  <div class="flex-grow-1"><%= value %></div>
                 </div>
               <% end %>
             </div>
           <% else %>
-            <p class="text-muted small mb-0">No hay detalles adicionales.</p>
+            <div class="alert alert-light border mb-0 text-center py-3">
+              <i class="fas fa-box-open text-muted fa-lg mb-2"></i>
+              <p class="text-muted small mb-0">No hay atributos adicionales disponibles para este producto.</p>
+            </div>
           <% end %>
         </div>
       </div>
