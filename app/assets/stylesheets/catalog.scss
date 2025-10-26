@@ -2,7 +2,9 @@
 #catalog { --catalog-gap-y: .75rem; }
 #catalog .catalog-title { font-size: 1.85rem; line-height: 1.2; margin: 0; }
 #catalog .catalog-subtitle { margin: 0; }
+#catalog .catalog-header { position: relative; z-index: 1; }
 #catalog .catalog-header .input-group { flex: 1 1 340px; min-width: 250px; }
+#catalog .catalog-filters { position: relative; z-index: 1; }
 #catalog .catalog-filters .sort-select { min-width: 125px; width: auto; }
 #catalog .catalog-filters .btn-icon { display: inline-flex; align-items: center; justify-content: center; padding: .45rem .75rem; }
 
@@ -177,12 +179,25 @@
 #catalog .filter-block h6 a[aria-expanded="true"] i.fa-chevron-down { transform: rotate(180deg); }
 
 /* Chips de filtros activos */
-.active-filters-chips { padding: .5rem 0; }
-.filter-chip { display: inline-flex; align-items: center; gap: .35rem; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 20px; padding: .35rem .75rem; font-size: .875rem; color: #495057; transition: all .2s; }
+.active-filters-chips { padding: .5rem 0; position: relative; z-index: 2; display: flex; flex-wrap: wrap; gap: .5rem .5rem; }
+.filter-chip { display: inline-flex; align-items: center; gap: .35rem; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 20px; padding: .35rem .75rem; font-size: .875rem; color: #495057; transition: all .2s; white-space: nowrap; }
 .filter-chip:hover { background: #e9ecef; border-color: #adb5bd; }
 .filter-chip i { font-size: .75rem; color: #6c757d; }
-.filter-chip .chip-remove { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 50%; background: #dc3545; color: white; text-decoration: none; font-size: .85rem; line-height: 1; margin-left: .25rem; transition: background .2s; }
+.filter-chip .chip-remove { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 50%; background: #dc3545; color: white; text-decoration: none; font-size: .9rem; line-height: 1; margin-left: .25rem; transition: background .2s, transform .2s; }
 .filter-chip .chip-remove:hover { background: #c82333; transform: scale(1.1); }
+
+/* Chips: comportamiento responsive (evitar solapes en móviles) */
+@media (max-width: 575.98px) {
+  .active-filters-chips {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    gap: .5rem;
+  }
+  .active-filters-chips::-webkit-scrollbar { height: 6px; }
+  .active-filters-chips::-webkit-scrollbar-thumb { background: #ced4da; border-radius: 3px; }
+}
 
 /* Botón flotante para filtros (mobile) */
 .filter-toggle-btn {
@@ -244,6 +259,9 @@
 /* Offcanvas ajustes */
 #filtersOffcanvas .offcanvas-header { border-bottom: 1px solid #dee2e6; background: #f8f9fa; }
 #filtersOffcanvas .offcanvas-title { font-weight: 600; color: #dc3545; }
+#filtersOffcanvas .offcanvas-body { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 16px); }
+#filtersOffcanvas .catalog-sidebar-filters .filter-block { margin-bottom: 1rem; }
+#filtersOffcanvas .catalog-sidebar-filters .form-check { margin-bottom: .35rem; }
 
 /* Chip de búsqueda */
 .search-chip { border:1px solid var(--color-border,#d5d7da); border-radius:18px; padding:.15rem .5rem .15rem .65rem; background:#fff; font-size:.9rem; gap:.4rem; }
