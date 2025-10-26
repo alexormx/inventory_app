@@ -501,4 +501,6 @@ turbo-frame[busy]::after {
 .price-slider .noUi-horizontal { height: 8px; }
 .price-slider .noUi-horizontal .noUi-handle { width: 20px; height: 20px; right: -10px; top: -6px; }
 /* Mover tooltips debajo del slider para evitar que tapen el título */
-.price-slider .noUi-horizontal .noUi-tooltip { top: auto; bottom: -24px; }
+/* Forzar tooltips por debajo del slider con alta especificidad */
+.price-slider.noUi-target .noUi-horizontal .noUi-tooltip { top: calc(100% + 6px) !important; bottom: auto !important; -webkit-transform: translate(-50%, 0) !important; transform: translate(-50%, 0) !important; }
+.price-slider.noUi-target .noUi-horizontal .noUi-origin > .noUi-tooltip { top: calc(100% + 6px) !important; bottom: auto !important; -webkit-transform: translate(50%, 0) !important; transform: translate(50%, 0) !important; }
