@@ -139,9 +139,9 @@ class Api::V1::SalesOrdersController < ApplicationController
 
         # Ahora actualizamos el estado al deseado (ya existen payment/shipment si se requieren)
         if desired_status != "Pending"
-          # Recargar para asegurar que asociaciones persistan, y actualizar columna
+          # Recargar para asegurar que asociaciones persistan, y actualizar con callbacks/validaciones
           sales_order.reload
-          sales_order.update_columns(status: desired_status)
+          sales_order.update!(status: desired_status)
         end
 
         render json: { status: "success", sales_order: sales_order, extra: response_extra }, status: :created and return
@@ -287,7 +287,9 @@ class Api::V1::SalesOrdersController < ApplicationController
           end
 
           # Aplicar status deseado (si viene), sin validaciones
-          sales_order.update_columns(status: desired_status) if incoming_status.present? && desired_status != sales_order.status
+          if incoming_status.present? && desired_status != sales_order.status
+            sales_order.update!(status: desired_status)
+          end
         else
           # Flujo normal: actualizamos con validaciones y luego garantizamos payment/shipment si el estado deseado lo requiere
           sales_order.update!(update_attrs)
@@ -357,7 +359,7 @@ class Api::V1::SalesOrdersController < ApplicationController
           end
 
           if incoming_status.present? || desired_status != sales_order.status
-            sales_order.update_columns(status: desired_status)
+            sales_order.update!(status: desired_status)
           end
         end
 

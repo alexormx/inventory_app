@@ -79,6 +79,7 @@ group :development, :test do
   gem "rubocop-rails-omakase", require: false  # Omakase Ruby style guide
   gem "dotenv-rails"  # Manage environment variables securely
   gem "factory_bot_rails"  # Define test data
+  gem "sqlite3", "~> 2.2"
 end
 
 # 🔹 **Development Group**
@@ -97,7 +98,6 @@ group :test do
   gem "rails-controller-testing", "1.0.5"  # Helps test controllers
   gem "rspec-rails"  # RSpec testing framework
   gem "shoulda-matchers", "~> 5.0"  # Simplifies model testing
-  gem "sqlite3", "~> 2.2"
 end
 
 

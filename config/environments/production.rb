@@ -101,12 +101,21 @@ Rails.application.configure do
   # config.host_authorization = { exclude: ->(request) { request.path == "/up" } }
 
   if ENV["REDIS_URL"]
-    config.action_cable.url = "wss://pasatiempos.com.mx/cable"
+    frontend_cable_url = ENV.fetch("ACTION_CABLE_FRONTEND_URL", nil)
+    app_host = ENV.fetch("APP_HOST", nil)
+    config.action_cable.url =
+      frontend_cable_url.presence ||
+      (app_host.present? ? "wss://#{app_host}/cable" : nil)
 
-    config.action_cable.cable = {
-      adapter: 'redis',
-      url: ENV['REDIS_URL'],
-      ssl_params: { verify_mode: OpenSSL::SSL::VERIFY_NONE } # 👈 THIS FIXES THE CRASH
+    redis_config = {
+      adapter: "redis",
+      url: ENV["REDIS_URL"]
     }
+
+    if ENV["ACTION_CABLE_REDIS_SSL_MODE"] == "insecure"
+      redis_config[:ssl_params] = { verify_mode: OpenSSL::SSL::VERIFY_NONE }
+    end
+
+    config.action_cable.cable = redis_config
   end
 end

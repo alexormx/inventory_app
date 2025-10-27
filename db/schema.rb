@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_10_15_041237) do
+ActiveRecord::Schema[8.0].define(version: 2025_10_27_031654) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -358,7 +358,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_15_041237) do
     t.string "idempotency_key"
     t.index ["credit_override"], name: "index_sale_orders_on_credit_override"
     t.index ["due_date"], name: "index_sale_orders_on_due_date"
-    t.index ["idempotency_key"], name: "index_sale_orders_on_idempotency_key"
+    t.index ["user_id", "idempotency_key"], name: "index_sale_orders_on_user_and_idempotency", unique: true
     t.index ["user_id"], name: "index_sale_orders_on_user_id"
   end
 
