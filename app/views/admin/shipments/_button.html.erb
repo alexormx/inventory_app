@@ -6,7 +6,7 @@
   <%= button_to "🗑️ Delete Shipment",
       admin_sale_order_shipment_path(sale_order, sale_order.shipment),
       method: :delete,
-      form: { data: { turbo_confirm: "Are you sure you want to delete this shipment?" }, class: "d-inline-block ms-2" },
+      form: { data: { controller: 'confirm', action: 'submit->confirm#ask', confirm_message: '¿Estás seguro de eliminar este envío?' }, class: "d-inline-block ms-2" },
       class: "btn btn-outline-danger mb-3" %>
 <% else %>
   <%= link_to "➕ Add Shipment",

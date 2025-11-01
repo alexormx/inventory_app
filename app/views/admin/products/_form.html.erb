@@ -332,7 +332,9 @@
                     </div>
                     <%= link_to admin_product_purge_image_path(@product, image_id: image.id),
                                 method: :delete,
-                                data: { turbo_confirm: "¿Eliminar esta imagen?",
+                                data: { controller: 'confirm', 
+                                       action: 'click->confirm#ask',
+                                       confirm_message: '¿Eliminar esta imagen?',
                                        turbo_method: :delete },
                                 class: "btn btn-sm btn-danger position-absolute top-0 end-0 m-1" do %>
                       <i class="fa-solid fa-trash"></i>

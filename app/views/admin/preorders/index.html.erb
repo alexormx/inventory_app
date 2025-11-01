@@ -109,7 +109,7 @@
   <td class="text-end">
     <%# Cancelar preventa %>
     <%= button_to 'Cancelar', admin_preorder_path(res), method: :delete,
-    data: { turbo_confirm: '¿Cancelar esta preventa?' }, class: 'btn btn-sm btn-outline-danger' %>
+    data: { controller: 'confirm', action: 'click->confirm#ask', confirm_message: '¿Cancelar esta preventa?' }, class: 'btn btn-sm btn-outline-danger' %>
   </td>
       </tr>
     <% end %>

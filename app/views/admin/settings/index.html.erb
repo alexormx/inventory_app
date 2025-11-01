@@ -40,7 +40,7 @@
 		<%= button_to "Iniciar sincronización (temporal)", sync_inventory_statuses_admin_settings_path,
 									method: :post,
 									class: "btn btn-primary",
-									data: { turbo_confirm: "¿Confirmas iniciar la sincronización temporal?" } %>
+									data: { controller: 'confirm', action: 'click->confirm#ask', confirm_message: '¿Confirmas iniciar la sincronización temporal?' } %>
 	</div>
 </div>
 
@@ -73,7 +73,7 @@
 		<%= button_to "Iniciar backfill de Sale Orders", backfill_sale_orders_totals_admin_settings_path,
 									method: :post,
 									class: "btn btn-outline-primary",
-									data: { turbo_confirm: "¿Confirmas iniciar el backfill de Sale Orders?" } %>
+									data: { controller: 'confirm', action: 'click->confirm#ask', confirm_message: '¿Confirmas iniciar el backfill de Sale Orders?' } %>
 	</div>
 </div>
 

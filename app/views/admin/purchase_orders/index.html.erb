@@ -116,7 +116,7 @@
           <% end %>
           <%= button_to admin_purchase_order_path(po),
               method: :delete,
-              form: { data: { turbo_confirm: "Are you sure?" }, class: "d-inline" },
+              form: { data: { controller: 'confirm', action: 'submit->confirm#ask', confirm_message: '¿Estás seguro de eliminar esta orden de compra?' }, class: "d-inline" },
               class: "btn btn-sm btn-outline-danger" do %>
           <i class="fa fa-trash"></i>
         <% end %>

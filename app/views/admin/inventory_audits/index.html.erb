@@ -9,9 +9,12 @@
       <%= button_to 'Dry Run (all)', admin_inventory_reconciliations_path(mode: 'all', dry_run: '1'), method: :post, class: 'btn btn-outline-primary btn-sm' %>
       <%= button_to 'Dry Run (orphans)', admin_inventory_reconciliations_path(mode: 'orphans', dry_run: '1'), method: :post, class: 'btn btn-outline-warning btn-sm' %>
       <%= button_to 'Dry Run (missing)', admin_inventory_reconciliations_path(mode: 'missing', dry_run: '1'), method: :post, class: 'btn btn-outline-info btn-sm' %>
-      <%= button_to 'Aplicar (all)', admin_inventory_reconciliations_path(mode: 'all'), method: :post, class: 'btn btn-primary btn-sm', data: { turbo_confirm: '¿Aplicar reconciliación completa? Esto eliminará huérfanos y creará piezas faltantes.' } %>
-      <%= button_to 'Aplicar (solo orphans)', admin_inventory_reconciliations_path(mode: 'orphans'), method: :post, class: 'btn btn-warning btn-sm', data: { turbo_confirm: '¿Eliminar huérfanos? Operación irreversible.' } %>
-      <%= button_to 'Aplicar (solo missing)', admin_inventory_reconciliations_path(mode: 'missing'), method: :post, class: 'btn btn-success btn-sm', data: { turbo_confirm: '¿Crear piezas faltantes? Verifica antes en dry-run.' } %>
+      <%= button_to 'Aplicar (all)', admin_inventory_reconciliations_path(mode: 'all'), method: :post, class: 'btn btn-primary btn-sm', 
+                    data: { controller: 'confirm', action: 'click->confirm#ask', confirm_message: '¿Aplicar reconciliación completa? Esto eliminará huérfanos y creará piezas faltantes.' } %>
+      <%= button_to 'Aplicar (solo orphans)', admin_inventory_reconciliations_path(mode: 'orphans'), method: :post, class: 'btn btn-warning btn-sm', 
+                    data: { controller: 'confirm', action: 'click->confirm#ask', confirm_message: '¿Eliminar huérfanos? Operación irreversible.' } %>
+      <%= button_to 'Aplicar (solo missing)', admin_inventory_reconciliations_path(mode: 'missing'), method: :post, class: 'btn btn-success btn-sm', 
+                    data: { controller: 'confirm', action: 'click->confirm#ask', confirm_message: '¿Crear piezas faltantes? Verifica antes en dry-run.' } %>
     </div>
   </div>
 </div>

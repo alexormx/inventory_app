@@ -10,7 +10,9 @@
                       method: :post,
                       class: 'btn btn-sm btn-outline-danger',
                       data: {
-                        turbo_confirm: '¿Estás seguro? Esta acción liberará todos los inventarios reservados/vendidos y marcará la orden como cancelada.'
+                        controller: 'confirm',
+                        action: 'click->confirm#ask',
+                        confirm_message: '¿Estás seguro? Esta acción liberará todos los inventarios reservados/vendidos y marcará la orden como cancelada.'
                       } %>
       <% end %>
     </span>

@@ -17,7 +17,9 @@
               <% unless addr.default? %>
                 <%= button_to 'Default', make_default_shipping_address_path(addr), method: :patch, class: 'btn btn-sm btn-outline-primary' %>
               <% end %>
-              <%= button_to 'Eliminar', shipping_address_path(addr), method: :delete, data: { turbo_confirm: '¿Eliminar dirección?' }, class: 'btn btn-sm btn-outline-danger' %>
+              <%= button_to 'Eliminar', shipping_address_path(addr), method: :delete,
+                            data: { controller: 'confirm', action: 'click->confirm#ask', confirm_message: '¿Eliminar dirección?' },
+                            class: 'btn btn-sm btn-outline-danger' %>
             </div>
           </li>
         <% end %>
