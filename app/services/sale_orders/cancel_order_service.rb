@@ -32,6 +32,9 @@ module SaleOrders
         Rails.logger.info "[CancelOrderService] SO #{sale_order.id} canceled, #{@released_count} inventories released"
       end
 
+      # 5. Asignar inventario liberado a preorders pendientes (fuera de la transacción para evitar deadlocks)
+      allocate_to_pending_preorders!
+
       sale_order.reload
     end
 
@@ -88,6 +91,16 @@ module SaleOrders
       rescue ActiveRecord::RecordNotFound
         Rails.logger.warn "[CancelOrderService] Product #{product_id} not found for stats update"
       end
+    end
+
+    def allocate_to_pending_preorders!
+      return unless @product_ids.present?
+
+      Rails.logger.info "[CancelOrderService] Allocating released inventory to pending preorders for #{@product_ids.count} products"
+      results = Preorders::PreorderAllocator.batch_allocate(@product_ids)
+
+      success_count = results.values.count(true)
+      Rails.logger.info "[CancelOrderService] Preorder allocation completed: #{success_count}/#{@product_ids.count} products processed"
     end
   end
 end

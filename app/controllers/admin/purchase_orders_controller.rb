@@ -126,12 +126,26 @@ class Admin::PurchaseOrdersController < ApplicationController
 
   def confirm_receipt
     if @purchase_order.status == "In Transit"
+      # Guardar product_ids antes de hacer update_all
+      product_ids = Inventory.where(purchase_order_id: @purchase_order.id)
+                             .in_transit
+                             .pluck(:product_id)
+                             .uniq
+
+      # Marcar inventario como disponible
       Inventory.where(purchase_order_id: @purchase_order.id).in_transit.update_all(
         status: :available,
         updated_at: Time.current,
         status_changed_at: Time.current
       )
       @purchase_order.update!(status: "Delivered")
+
+      # Asignar inventario recibido a preorders pendientes
+      if product_ids.present?
+        Rails.logger.info "[PurchaseOrders] Allocating received inventory to preorders for #{product_ids.count} products"
+        Preorders::PreorderAllocator.batch_allocate(product_ids)
+      end
+
       flash[:notice] = "Recepción confirmada. Inventario actualizado."
     else
       flash[:alert] = "Solo se pueden confirmar órdenes 'In Transit'."

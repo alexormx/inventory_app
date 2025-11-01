@@ -332,7 +332,7 @@
                     </div>
                     <%= link_to admin_product_purge_image_path(@product, image_id: image.id),
                                 method: :delete,
-                                data: { controller: 'confirm', 
+                                data: { controller: 'confirm',
                                        action: 'click->confirm#ask',
                                        confirm_message: '¿Eliminar esta imagen?',
                                        turbo_method: :delete },

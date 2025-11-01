@@ -6,6 +6,29 @@ module Preorders
       @units   = newly_available_units
     end
 
+    # Método de clase para procesar múltiples productos
+    # @param product_ids [Array<Integer>] IDs de productos que tienen nuevo inventario disponible
+    # @return [Hash] { product_id => count_assigned }
+    def self.batch_allocate(product_ids)
+      return {} if product_ids.blank?
+
+      results = {}
+      product_ids.uniq.each do |product_id|
+        product = Product.find_by(id: product_id)
+        next unless product
+
+        begin
+          allocator = new(product)
+          allocator.call
+          results[product_id] = true
+        rescue => e
+          Rails.logger.error "[Preorders::PreorderAllocator] batch_allocate error for product #{product_id}: #{e.class} #{e.message}"
+          results[product_id] = false
+        end
+      end
+      results
+    end
+
     def call
       return unless @product
 
@@ -41,46 +64,30 @@ module Preorders
         soi.preorder_quantity = soi.preorder_quantity.to_i + qty
         soi.save!
 
-        # Asignar available primero como reserved
-        to_assign = qty
-        avl_items = Inventory.where(product_id: @product.id, sale_order_id: nil, status: :available).limit(to_assign)
-        avl_items.each do |inv|
-          inv.update!(
-            status: :reserved,
-            sale_order_id: so.id,
-            sale_order_item_id: soi.id,
-            status_changed_at: Time.current
+        # El callback sync_inventory_for_sale en SaleOrderItem ya asignará inventory automáticamente
+        # Verificar cuánto inventario fue efectivamente asignado
+        assigned_inventories = Inventory.where(product_id: @product.id, sale_order_id: so.id)
+        assigned_count = assigned_inventories.count
+
+        # Marcar asignación total o parcial y actualizar sale_order en reservation
+        if assigned_count >= qty
+          # Se asignó todo
+          reservation.update!(status: :assigned, assigned_at: Time.current, quantity: qty, sale_order: so)
+          remaining -= qty
+        elsif assigned_count > 0
+          # Asignación parcial: dividir reservation
+          reservation.update!(status: :assigned, assigned_at: Time.current, quantity: assigned_count, sale_order: so)
+          PreorderReservation.create!(
+            product: @product,
+            user: reservation.user,
+            sale_order: nil,
+            quantity: (qty - assigned_count),
+            status: :pending,
+            reserved_at: Time.current
           )
-          to_assign -= 1
+          remaining -= assigned_count
         end
-
-        # Luego asignar in_transit como pre_* según estado de la SO
-        if to_assign > 0
-          it_items = Inventory.where(product_id: @product.id, sale_order_id: nil, status: :in_transit).limit(to_assign)
-          it_items.each do |inv|
-            target_status = (so.status == "Confirmed") ? :pre_sold : :pre_reserved
-            inv.update!(
-              status: target_status,
-              sale_order_id: so.id,
-              sale_order_item_id: soi.id,
-              status_changed_at: Time.current
-            )
-            to_assign -= 1
-          end
-        end
-
-        # Marcar asignación total o parcial
-        assigned_amount = (qty - to_assign)
-        if assigned_amount > 0
-          reservation.update!(status: :assigned, assigned_at: Time.current, quantity: assigned_amount)
-          if to_assign > 0
-            # dividir: crear nueva reserva por el remanente no asignado
-            remaining_part = to_assign
-            PreorderReservation.create!(product: @product, user: reservation.user, sale_order: so, quantity: remaining_part, status: :pending, reserved_at: Time.current)
-          end
-        end
-
-        remaining -= (qty - to_assign)
+        # Si assigned_count == 0, no se asignó nada (no hay inventory disponible)
       end
     rescue => e
       Rails.logger.error "[Preorders::PreorderAllocator] #{e.class}: #{e.message}"

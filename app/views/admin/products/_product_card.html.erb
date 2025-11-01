@@ -48,8 +48,8 @@
   <%= link_to edit_admin_product_path(product), class: "btn btn-sm btn-outline-primary", title: "Edit", data: { turbo_frame: "_top" } do %>
         <i class="fas fa-edit"></i>
       <% end %>
-  <%= link_to admin_product_path(product), 
-              data: { controller: 'confirm', action: 'click->confirm#ask', confirm_message: '¿Estás seguro de eliminar este producto?', turbo_method: :delete, turbo_frame: "_top" }, 
+  <%= link_to admin_product_path(product),
+              data: { controller: 'confirm', action: 'click->confirm#ask', confirm_message: '¿Estás seguro de eliminar este producto?', turbo_method: :delete, turbo_frame: "_top" },
               class: "btn btn-sm btn-outline-danger", title: "Delete" do %>
         <i class="fa-solid fa-trash"></i>
       <% end %>

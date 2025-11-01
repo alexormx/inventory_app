@@ -180,5 +180,100 @@ RSpec.describe SaleOrders::CancelOrderService, type: :service do
         expect(inventory.sale_order_id).to eq(sale_order.id)
       end
     end
+
+    context 'automatic preorder allocation after cancellation' do
+      let!(:preorder_user) { create(:user, email: 'preorder@test.com') }
+      let!(:preorder1) { create(:preorder_reservation, product: product, user: preorder_user, quantity: 1, reserved_at: 2.days.ago) }
+      let!(:preorder2) { create(:preorder_reservation, product: product, user: preorder_user, quantity: 1, reserved_at: 1.day.ago) }
+
+      context 'when releasing inventory from canceled order' do
+        let!(:inventory1) { create(:inventory, product: product, status: :reserved, sale_order: sale_order) }
+        let!(:inventory2) { create(:inventory, product: product, status: :reserved, sale_order: sale_order) }
+
+        it 'automatically assigns released inventory to pending preorders in FIFO order' do
+          service = described_class.new(sale_order)
+          service.call
+
+          # Preorder más antigua (preorder1) debe recibir asignación primero
+          expect(preorder1.reload.status).to eq('assigned')
+          expect(preorder2.reload.status).to eq('assigned')
+        end
+
+        it 'creates sale order items for assigned preorders' do
+          service = described_class.new(sale_order)
+          service.call
+
+          # Verificar que se crearon sale_order_items
+          preorder_so = preorder1.reload.sale_order
+          expect(preorder_so).to be_present
+          expect(preorder_so.sale_order_items.where(product: product).sum(:quantity)).to be >= 1
+        end
+
+        it 'marks inventory as reserved for the preorder sale order' do
+          service = described_class.new(sale_order)
+          service.call
+
+          # Al menos un inventario debe estar asignado a la orden del preorder
+          preorder_so = preorder1.reload.sale_order
+          assigned_inventories = Inventory.where(product: product, sale_order: preorder_so, status: :reserved)
+          expect(assigned_inventories.count).to be > 0
+        end
+
+        it 'respects FIFO order when assigning inventory' do
+          # Crear preorder más reciente con más cantidad
+          preorder3 = create(:preorder_reservation, product: product, user: preorder_user, quantity: 10, reserved_at: Time.current)
+
+          service = described_class.new(sale_order)
+          service.call
+
+          # Solo las primeras 2 preorders (más antiguas) deben recibir asignación con 2 piezas disponibles
+          expect(preorder1.reload.status).to eq('assigned')
+          expect(preorder2.reload.status).to eq('assigned')
+          expect(preorder3.reload.status).to eq('pending') # No hay suficiente inventario para esta
+        end
+
+        it 'logs the allocation process' do
+          # Permitir todos los logs, pero verificar que se llaman los específicos de allocación
+          allow(Rails.logger).to receive(:info).and_call_original
+
+          expect(Rails.logger).to receive(:info).with(/Allocating released inventory/).and_call_original
+          expect(Rails.logger).to receive(:info).with(/Preorder allocation completed/).and_call_original
+
+          service = described_class.new(sale_order)
+          service.call
+        end
+      end
+
+      context 'when no pending preorders exist' do
+        before do
+          PreorderReservation.destroy_all
+        end
+
+        let!(:inventory) { create(:inventory, product: product, status: :reserved, sale_order: sale_order) }
+
+        it 'does not fail when allocating to empty preorder queue' do
+          service = described_class.new(sale_order)
+          expect { service.call }.not_to raise_error
+
+          expect(sale_order.reload.status).to eq('Canceled')
+          expect(inventory.reload.status).to eq('available')
+        end
+      end
+
+      context 'when preorder allocation fails' do
+        let!(:inventory) { create(:inventory, product: product, status: :reserved, sale_order: sale_order) }
+
+        it 'still cancels the order even if allocation fails' do
+          allow(Preorders::PreorderAllocator).to receive(:batch_allocate).and_raise(StandardError.new("Allocation error"))
+
+          service = described_class.new(sale_order)
+          expect { service.call }.to raise_error(StandardError, "Allocation error")
+
+          # La orden debe estar cancelada y el inventario liberado (transacción completó antes del allocate)
+          expect(sale_order.reload.status).to eq('Canceled')
+          expect(inventory.reload.status).to eq('available')
+        end
+      end
+    end
   end
 end
