@@ -9,6 +9,7 @@ class PurchaseOrderItem < ApplicationRecord
 
   after_save :sync_inventory_records
   after_commit :update_product_stats
+  after_commit :recalculate_parent_order_totals
 
   before_update :ensure_free_units_for_quantity_reduction, if: :will_reduce_quantity?
   before_destroy :ensure_enough_free_inventory_to_remove
@@ -62,6 +63,13 @@ class PurchaseOrderItem < ApplicationRecord
     Products::UpdateStatsService.new(product).call
   rescue => e
     Rails.logger.error "[POI#update_product_stats] #{e.class}: #{e.message}"
+  end
+
+  def recalculate_parent_order_totals
+    return unless purchase_order_id.present?
+    PurchaseOrder.find_by(id: purchase_order_id)&.recalculate_totals!(persist: true)
+  rescue => e
+    Rails.logger.error "[POI#recalculate_parent_order_totals] #{e.class}: #{e.message}"
   end
 
 end

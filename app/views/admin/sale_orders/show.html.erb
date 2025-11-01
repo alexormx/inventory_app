@@ -2,8 +2,17 @@
 <div class="container mt-4">
   <%= turbo_stream_from ["sale_order", @sale_order.id] %>
   <h2 class="d-flex align-items-center gap-2">Sale Order ##<%= @sale_order.id %>
-    <span class="ms-auto">
-  <%= link_to 'Vista compacta', summary_admin_sale_order_path(@sale_order), class: 'btn btn-sm btn-outline-primary' %>
+    <span class="ms-auto d-flex gap-2">
+      <%= link_to 'Vista compacta', summary_admin_sale_order_path(@sale_order), class: 'btn btn-sm btn-outline-primary' %>
+      <% unless @sale_order.status == "Canceled" %>
+        <%= button_to 'Cancel Order',
+                      cancel_admin_sale_order_path(@sale_order),
+                      method: :post,
+                      class: 'btn btn-sm btn-outline-danger',
+                      data: {
+                        turbo_confirm: '¿Estás seguro? Esta acción liberará todos los inventarios reservados/vendidos y marcará la orden como cancelada.'
+                      } %>
+      <% end %>
     </span>
   </h2>
 

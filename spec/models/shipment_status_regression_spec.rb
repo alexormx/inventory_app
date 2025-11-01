@@ -2,7 +2,7 @@ require 'rails_helper'
 
 RSpec.describe Shipment, type: :model do
   let(:user) { create(:user) }
-  let(:sale_order) { create(:sale_order, user: user, status: "Delivered", total_order_value: 0) }
+  let(:sale_order) { create(:sale_order, user: user, status: "Delivered", subtotal: 0, total_order_value: 0) }
 
   it "downgrades sale_order from Delivered to In Transit when shipment goes to shipped" do
     shipment = create(:shipment, sale_order: sale_order, status: :delivered)

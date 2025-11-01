@@ -2,7 +2,7 @@ require 'rails_helper'
 
 RSpec.describe Shipment, type: :model do
   let(:user) { create(:user) }
-  let(:sale_order) { create(:sale_order, user: user, status: "Pending", total_order_value: 0) }
+  let(:sale_order) { create(:sale_order, user: user, status: "Pending", subtotal: 0, total_order_value: 0) }
 
   it "promotes sale_order to In Transit when shipment becomes shipped" do
     shipment = create(:shipment, sale_order: sale_order, status: :pending)

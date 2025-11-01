@@ -5,7 +5,7 @@
 class Admin::SaleOrdersController < ApplicationController
   before_action :authenticate_user!
   before_action :authorize_admin!
-  before_action :set_sale_order, only: %i[show edit update destroy summary]
+  before_action :set_sale_order, only: %i[show edit update destroy summary cancel]
   before_action :load_counts, only: [:index]
 
   PER_PAGE = 20
@@ -129,6 +129,15 @@ class Admin::SaleOrdersController < ApplicationController
       redirect_to admin_sale_order_path(@sale_order),
         alert: @sale_order.errors.full_messages.to_sentence.presence || "No se pudo eliminar la orden."
     end
+  end
+
+  def cancel
+    SaleOrders::CancelOrderService.new(@sale_order).call
+    redirect_to admin_sale_order_path(@sale_order), 
+                notice: "Orden cancelada exitosamente. Inventarios liberados y disponibles."
+  rescue ActiveRecord::RecordInvalid => e
+    redirect_to admin_sale_order_path(@sale_order), 
+                alert: "No se pudo cancelar la orden: #{e.message}"
   end
 
   # Admin compact summary view: reuse customer summary template but under admin layout

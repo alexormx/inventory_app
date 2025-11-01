@@ -11,18 +11,47 @@ RSpec.describe PurchaseOrder, type: :model do
   describe "Validations" do
     it { should validate_presence_of(:order_date) }
     it { should validate_presence_of(:expected_delivery_date) }
-    it { should validate_presence_of(:subtotal) }
-    it { should validate_presence_of(:total_order_cost) }
-    it { should validate_presence_of(:shipping_cost) }
-    it { should validate_presence_of(:tax_cost) }
-    it { should validate_presence_of(:other_cost) }
     it { should validate_presence_of(:status) }
 
-    it { should validate_numericality_of(:subtotal).is_greater_than_or_equal_to(0) }
-    it { should validate_numericality_of(:total_order_cost).is_greater_than_or_equal_to(0) }
-    it { should validate_numericality_of(:shipping_cost).is_greater_than_or_equal_to(0) }
-    it { should validate_numericality_of(:tax_cost).is_greater_than_or_equal_to(0) }
-    it { should validate_numericality_of(:other_cost).is_greater_than_or_equal_to(0) }
+    # Los campos numéricos son normalizados a 0 y recalculados; no probamos presence/numericality directos
+  end
+
+  describe "Numeric normalization and totals" do
+    it "normalizes nil and invalid numeric fields to 0 and keeps provided totals when no items" do
+      po = PurchaseOrder.new(
+        order_date: Date.today,
+        expected_delivery_date: Date.today + 1,
+        currency: 'USD',
+        exchange_rate: '17.5',
+        subtotal: nil,
+        shipping_cost: 'abcd',
+        tax_cost: nil,
+        other_cost: nil,
+        total_order_cost: 117,
+        status: 'Delivered',
+        user: supplier
+      )
+      expect(po).to be_valid
+      po.save!
+      expect(po.subtotal.to_d).to eq(0)
+      expect(po.shipping_cost.to_d).to eq(0)
+      expect(po.tax_cost.to_d).to eq(0)
+      expect(po.other_cost.to_d).to eq(0)
+      # total_order_cost permanece tal cual al no haber líneas
+      expect(po.total_order_cost.to_d).to eq(117)
+      # total_cost_mxn calculado desde total_order_cost y tipo de cambio
+      expect(po.total_cost_mxn.to_d).to eq((117 * 17.5).to_d)
+    end
+
+    it "recalculates subtotal and totals from items when present" do
+      po = create(:purchase_order, user: supplier, currency: 'MXN', status: 'Pending')
+  create(:purchase_order_item, purchase_order: po, product: product, quantity: 2, unit_cost: 50, unit_additional_cost: 0)
+      po.reload
+      # subtotal 100, costos 0 por default
+      expect(po.subtotal.to_d).to eq(100)
+      expect(po.total_order_cost.to_d).to eq(100)
+      expect(po.total_cost_mxn.to_d).to eq(100)
+    end
   end
 
   describe "Custom Validations" do
@@ -43,7 +72,7 @@ RSpec.describe PurchaseOrder, type: :model do
       expect(purchase_order.errors[:actual_delivery_date]).to include("must be after or equal to expected delivery date")
     end
   end
-  
+
   it "deletes free inventories and destroys the PO" do
     po = create(:purchase_order, user: supplier)
     create(:purchase_order_item, purchase_order: po, product: product, quantity: 2)
@@ -69,7 +98,7 @@ RSpec.describe PurchaseOrder, type: :model do
     expect(locked.exists?).to be(true)
 
     # Destroy should be blocked; record remains; error present
-    po.reload 
+    po.reload
     expect(po.destroyed?).to be_falsey
     expect { po.destroy! }.to raise_error(ActiveRecord::RecordNotDestroyed)
     expect(po.persisted?).to be(true)

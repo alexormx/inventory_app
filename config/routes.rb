@@ -147,6 +147,7 @@ Rails.application.routes.draw do
       resources :shipments, only: %i[new create edit update destroy]
       member do
         get :summary
+        post :cancel
         post :force_pending, to: 'sale_orders_status#force_pending'
         post :force_delivered, to: 'sale_orders_status#force_delivered'
         post :cancel_reservations, to: 'sale_orders#cancel_reservations'
