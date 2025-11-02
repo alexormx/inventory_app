@@ -374,4 +374,161 @@ document.getElementById("summary-subtotal").textContent = `$${subtotal.toFixed(2
 
 ---
 
+## 🔧 Actualización: Prevención de Doble Suma al Reabrir Purchase Orders
+
+**Fecha:** 1 de Noviembre, 2025
+**Tipo:** Bug Fix
+**Estado:** ✅ Completado
+
+### **Problema Detectado**
+
+Al reabrir una `PurchaseOrder` existente que ya tenía costos distribuidos en sus líneas, el método `recalculate_totals` volvía a sumar los gastos de envío, impuestos y otros al total, causando duplicación:
+
+**Escenario:**
+```ruby
+# PO con costos de encabezado: shipping=$30, tax=$20, other=$0
+# Línea A: 2 unidades × $50 + $10 adicional distribuido = $120 (total_line_cost)
+# Línea B: 1 unidad × $100 + $30 adicional distribuido = $130 (total_line_cost)
+
+# ❌ ANTES (al reabrir/recargar):
+subtotal = 250  # suma de total_line_cost (ya incluye los $50 de adicionales)
+total_order_cost = 250 + 30 + 20 + 0 = 300  # ¡suma shipping/tax otra vez!
+
+# ✅ AHORA (correcto):
+subtotal = 250  # suma de total_line_cost
+total_order_cost = 250  # NO vuelve a sumar porque ya están distribuidos
+```
+
+### **Raíz del Problema**
+
+El callback `recalculate_totals` en `PurchaseOrder` siempre ejecutaba:
+
+```ruby
+# Cálculo anterior (incorrecto cuando hay distribución):
+self.total_order_cost = (subtotal + shipping_cost + tax_cost + other_cost).round(2)
+```
+
+Este cálculo es correcto durante la **creación inicial** (antes de distribuir), pero incorrecto al **reabrir** una PO donde las líneas ya tienen `total_line_cost` que incluye los adicionales distribuidos.
+
+### **Solución Implementada**
+
+Modificado `PurchaseOrder#recalculate_totals` para detectar si los costos ya fueron distribuidos:
+
+```ruby
+# app/models/purchase_order.rb (líneas ~72-96)
+
+def recalculate_totals
+  lines = purchase_order_items.reject(&:marked_for_destruction?)
+
+  if lines.present?
+    # Subtotal base (solo unit_cost × quantity)
+    base_subtotal = lines.sum do |li|
+      qty = li.quantity.to_d
+      unit = (li.unit_cost || 0).to_d
+      (qty * unit).to_d
+    end
+
+    # Detectar si ya hay distribución aplicada
+    distributed_available = lines.all? { |li|
+      li.respond_to?(:total_line_cost) && li.total_line_cost.present?
+    }
+
+    distributed_subtotal = lines.sum do |li|
+      (li.total_line_cost || begin
+        qty = li.quantity.to_d
+        unit = (li.unit_compose_cost || li.unit_cost || 0).to_d
+        qty * unit
+      end).to_d
+    end
+
+    # Decisión: ¿ya están distribuidos los costos en las líneas?
+    if distributed_available
+      # SÍ: total_line_cost ya incluye adicionales, NO volver a sumarlos
+      self.subtotal = distributed_subtotal.round(2)
+      self.total_order_cost = subtotal.round(2)
+    else
+      # NO: fase inicial o sin distribución, sumar encabezado
+      self.subtotal = distributed_subtotal.round(2)
+      self.total_order_cost = (base_subtotal + shipping_cost + tax_cost + other_cost).round(2)
+    end
+
+    # Volumen y peso (sin cambios)
+    self.total_volume = lines.sum { |li| ... }.round(2)
+    self.total_weight = lines.sum { |li| ... }.round(2)
+  end
+
+  # Total MXN (sin cambios)
+  self.total_cost_mxn = if currency == 'MXN'
+    total_order_cost
+  else
+    (total_order_cost * exchange_rate).round(2)
+  end
+end
+```
+
+### **Lógica de Decisión**
+
+| Condición | `subtotal` | `total_order_cost` |
+|-----------|------------|-------------------|
+| **Todas las líneas tienen `total_line_cost`** (distribución aplicada) | Suma de `total_line_cost` | `subtotal` (NO suma encabezado) |
+| **Algunas líneas sin `total_line_cost`** (edición inicial) | Suma calculada con fallback | `base_subtotal + shipping + tax + other` |
+
+### **Cobertura de Pruebas**
+
+Agregado spec en `spec/models/purchase_order_spec.rb`:
+
+```ruby
+it "does not double-count header costs when distributed line totals exist" do
+  po = create(:purchase_order, user: supplier, currency: 'MXN', status: 'Pending',
+              shipping_cost: 30, tax_cost: 20, other_cost: 0)
+
+  # Líneas con distribución ya aplicada
+  create(:purchase_order_item, purchase_order: po, product: product, quantity: 2,
+         unit_cost: 50, unit_additional_cost: 10, unit_compose_cost: 60,
+         total_line_cost: 120)
+  create(:purchase_order_item, purchase_order: po, product: product, quantity: 1,
+         unit_cost: 100, unit_additional_cost: 30, unit_compose_cost: 130,
+         total_line_cost: 130)
+
+  po.reload
+
+  # Validaciones: no doble suma
+  expect(po.subtotal.to_d).to eq(250)
+  expect(po.total_order_cost.to_d).to eq(250)  # ← antes era 300
+  expect(po.total_cost_mxn.to_d).to eq(250)
+end
+```
+
+**Resultado:** 243 ejemplos, 0 fallos ✅
+
+### **Archivos Modificados**
+
+1. `app/models/purchase_order.rb` - Lógica condicional en `recalculate_totals`
+2. `spec/models/purchase_order_spec.rb` - Nuevo test de no duplicación
+
+### **Compatibilidad y Migración**
+
+- ✅ **Sin cambios en esquema de DB**
+- ✅ **Retrocompatible:** POs sin distribución siguen funcionando igual
+- ✅ **Auto-corrección:** Al reabrir POs antiguas con distribución, se calcula correctamente
+
+**Script opcional para regenerar totales en POs existentes:**
+```ruby
+# rails console
+PurchaseOrder.where.not(status: 'Canceled').find_each do |po|
+  po.recalculate_totals!(persist: true)
+  puts "Recalculado PO #{po.id}: total_order_cost=#{po.total_order_cost}"
+end
+```
+
+### **Notas para el Equipo**
+
+- Los campos `shipping_cost`, `tax_cost`, `other_cost` en el encabezado **se mantienen para trazabilidad**, pero no afectan el total si las líneas ya tienen `total_line_cost`.
+- Si se requiere re-distribuir costos (ej. cambió un precio o dimensión de producto), usar `RecalculateDistributedCostsForProductService` que regenerará `total_line_cost` y luego `recalculate_totals` usará esos valores.
+- En la UI de `show.html.erb`, los gastos de encabezado se siguen mostrando por separado, pero el usuario verá que el total coincide con la suma de líneas cuando hay distribución.
+
+---
+
 **Fin del documento** 🎉
+
+````

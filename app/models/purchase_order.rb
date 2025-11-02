@@ -70,18 +70,33 @@ class PurchaseOrder < ApplicationRecord
     lines = purchase_order_items.reject(&:marked_for_destruction?)
 
     if lines.present?
-      # Subtotal: usar total_line_cost si existe, si no derivar de quantity * (unit_compose_cost || unit_cost)
-      computed_subtotal = lines.sum do |li|
+      # Subtotales base vs distribuidos
+      base_subtotal = lines.sum do |li|
+        qty = li.quantity.to_d
+        unit = (li.unit_cost || 0).to_d
+        (qty * unit).to_d
+      end
+
+      distributed_available = lines.all? { |li| li.respond_to?(:total_line_cost) && li.total_line_cost.present? }
+
+      distributed_subtotal = lines.sum do |li|
         (li.total_line_cost || begin
           qty = li.quantity.to_d
           unit = (li.unit_compose_cost || li.unit_cost || 0).to_d
           qty * unit
         end).to_d
       end
-      self.subtotal = computed_subtotal.round(2)
 
-      # Total order cost (moneda original) a partir de líneas y costos
-      self.total_order_cost = (subtotal + shipping_cost + tax_cost + other_cost).round(2)
+      # Si todas las líneas ya incluyen costos adicionales distribuidos, usar ese subtotal
+      # y NO volver a sumar shipping/tax/other para evitar doble conteo.
+      if distributed_available
+        self.subtotal = distributed_subtotal.round(2)
+        self.total_order_cost = subtotal.round(2)
+      else
+        # Caso edición temprana o sin distribución: usar base + costos encabezado
+        self.subtotal = distributed_subtotal.round(2)
+        self.total_order_cost = (base_subtotal + shipping_cost + tax_cost + other_cost).round(2)
+      end
 
       # Volumen y peso agregados (si los campos de línea existen)
       self.total_volume = lines.sum { |li| (li.respond_to?(:total_line_volume) && li.total_line_volume.present?) ? li.total_line_volume.to_d : 0 }.round(2)

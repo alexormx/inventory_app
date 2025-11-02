@@ -52,6 +52,23 @@ RSpec.describe PurchaseOrder, type: :model do
       expect(po.total_order_cost.to_d).to eq(100)
       expect(po.total_cost_mxn.to_d).to eq(100)
     end
+
+    it "does not double-count header costs when distributed line totals exist" do
+      # PO con costos de envío/impuestos en encabezado pero líneas ya distribuidas
+      po = create(:purchase_order, user: supplier, currency: 'MXN', status: 'Pending', shipping_cost: 30, tax_cost: 20, other_cost: 0)
+
+      # Dos líneas: A (2x50 con +10 adicional unitario) => 120; B (1x100 con +30 adicional unitario) => 130; total = 250
+      item_a = create(:purchase_order_item, purchase_order: po, product: product, quantity: 2, unit_cost: 50,
+                          unit_additional_cost: 10, unit_compose_cost: 60, total_line_cost: 120)
+      item_b = create(:purchase_order_item, purchase_order: po, product: product, quantity: 1, unit_cost: 100,
+                          unit_additional_cost: 30, unit_compose_cost: 130, total_line_cost: 130)
+
+      po.reload
+      # La suma de líneas ya incluye los 50 de adicionales; total_order_cost debe igualar subtotal, no sumar shipping/tax otra vez.
+      expect(po.subtotal.to_d).to eq(250)
+      expect(po.total_order_cost.to_d).to eq(250)
+      expect(po.total_cost_mxn.to_d).to eq(250)
+    end
   end
 
   describe "Custom Validations" do
