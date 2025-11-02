@@ -8,7 +8,12 @@ RSpec.describe Admin::PurchaseOrdersController, type: :controller do
   let!(:purchase_order) { create(:purchase_order, user: admin_user, status: 'In Transit') }
 
   before do
-    sign_in admin_user
+    # Necesario para Devise en controller specs
+    @request.env['devise.mapping'] = Devise.mappings[:user]
+    # Evitar dependencias de Warden en controller specs
+    allow(controller).to receive(:authenticate_user!).and_return(true)
+    allow(controller).to receive(:authorize_admin!).and_return(true)
+    allow(controller).to receive(:current_user).and_return(admin_user)
   end
 
   describe 'POST #confirm_receipt' do
@@ -97,7 +102,9 @@ RSpec.describe Admin::PurchaseOrdersController, type: :controller do
       end
 
       it 'logs the allocation process' do
-        expect(Rails.logger).to receive(:info).with(/Allocating received inventory to preorders/)
+        # Permitir otros logs de Rails y validar que el de asignación aparece
+        allow(Rails.logger).to receive(:info).and_call_original
+        expect(Rails.logger).to receive(:info).with(/Allocating received inventory to preorders/).and_call_original
 
         patch :confirm_receipt, params: { id: purchase_order.id }
       end
