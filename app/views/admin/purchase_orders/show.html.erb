@@ -1,5 +1,11 @@
 <div class="container mt-4">
-  <h2 class="d-flex align-items-center gap-2">Purchase Order ##<%= @purchase_order.id %>
+  <h2 class="d-flex align-items-center gap-2">
+    Purchase Order ##<%= @purchase_order.id %>
+    <% if @purchase_order.costs_distributed_at.present? %>
+      <span class="badge bg-success ms-2" title="Costos distribuidos el <%= @purchase_order.costs_distributed_at.strftime('%Y-%m-%d %H:%M') %>">
+        <i class="fa fa-check-circle"></i> Costos Distribuidos
+      </span>
+    <% end %>
     <span class="ms-auto">
       <%= link_to 'Vista compacta', summary_admin_purchase_order_path(@purchase_order), class: 'btn btn-sm btn-outline-primary' %>
     </span>
@@ -40,6 +46,20 @@
 
   <!-- Financial Summary -->
   <div class="row g-3 mb-4">
+    <div class="col-md-12 mb-2">
+      <% if @purchase_order.costs_distributed_at.present? %>
+        <div class="alert alert-info py-2 mb-0">
+          <i class="fa fa-info-circle"></i>
+          <strong>Costos distribuidos:</strong> Los gastos de envío, impuestos y otros ya están incluidos en el costo unitario de cada línea.
+          Distribuidos el <strong><%= @purchase_order.costs_distributed_at.strftime('%d/%m/%Y %H:%M') %></strong>
+        </div>
+      <% else %>
+        <div class="alert alert-warning py-2 mb-0">
+          <i class="fa fa-exclamation-triangle"></i>
+          <strong>Costos no distribuidos:</strong> Los totales incluyen subtotal + gastos de encabezado (shipping/tax/other).
+        </div>
+      <% end %>
+    </div>
     <div class="col-md-2">
       <strong>Subtotal:</strong>
       <p>$<%= number_with_precision(@purchase_order.subtotal, precision: 2) %></p>

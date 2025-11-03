@@ -617,7 +617,7 @@ def recalculate_totals
       self.subtotal = base_subtotal.round(2)
       self.total_order_cost = (base_subtotal + shipping_cost + tax_cost + other_cost).round(2)
     end
-    
+
     # ... (volumen, peso, total_cost_mxn sin cambios)
   end
 end
@@ -728,7 +728,7 @@ po.recalculate_totals!(persist: true)
    # Opción A: resetear flag y recalcular
    po.update_column(:costs_distributed_at, nil)
    po.recalculate_totals!(persist: true)
-   
+
    # Opción B: usar servicio (recomendado para cambios de dimensiones)
    PurchaseOrders::RecalculateDistributedCostsForProductService.new(product).call
    ```

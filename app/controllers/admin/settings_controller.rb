@@ -126,4 +126,84 @@ class Admin::SettingsController < ApplicationController
     flash[:notice] = "Recalculo masivo de alpha/compose costs encolado (##{run.id})."
     redirect_to admin_settings_path
   end
+
+  def mark_distributed_costs
+    run = MaintenanceRun.create!(job_name: "purchase_orders.mark_distributed_costs", status: :running, started_at: Time.current)
+    
+    dry_run = params[:dry_run] == 'true'
+    tolerance = (params[:tolerance].presence || '0.01').to_f
+    
+    begin
+      candidates = []
+      skipped = []
+      
+      PurchaseOrder.where(costs_distributed_at: nil).find_each do |po|
+        lines = po.purchase_order_items.to_a
+        
+        if lines.empty?
+          skipped << { id: po.id, reason: 'sin_lineas' }
+          next
+        end
+        
+        unless lines.all? { |li| li.total_line_cost.present? }
+          skipped << { id: po.id, reason: 'lineas_sin_total_line_cost' }
+          next
+        end
+        
+        sum_lines = lines.sum { |li| li.total_line_cost.to_d }
+        matches_total = (sum_lines - po.total_order_cost.to_d).abs <= tolerance
+        matches_subtotal = (sum_lines - po.subtotal.to_d).abs <= tolerance
+        
+        if matches_total || matches_subtotal
+          candidates << {
+            id: po.id,
+            sum_lines: sum_lines.to_f,
+            matched: matches_total ? 'total' : 'subtotal'
+          }
+        else
+          skipped << { 
+            id: po.id, 
+            reason: 'suma_no_coincide'
+          }
+        end
+      end
+      
+      marked_count = 0
+      unless dry_run
+        candidates.each do |c|
+          po = PurchaseOrder.find(c[:id])
+          po.update_column(:costs_distributed_at, po.updated_at || Time.current)
+          marked_count += 1
+        end
+      end
+      
+      result = {
+        dry_run: dry_run,
+        tolerance: tolerance,
+        candidates_count: candidates.count,
+        skipped_count: skipped.count,
+        marked_count: marked_count,
+        sample_candidates: candidates.first(5),
+        sample_skipped: skipped.first(5)
+      }
+      
+      run.update!(
+        status: "completed",
+        finished_at: Time.current,
+        stats: result
+      )
+      
+      if dry_run
+        flash[:notice] = "Dry run completado: #{candidates.count} candidatas, #{skipped.count} omitidas. No se aplicaron cambios."
+      else
+        flash[:notice] = "✅ Marcadas #{marked_count} Purchase Orders con costs_distributed_at."
+      end
+      
+    rescue => e
+      run.update!(status: "failed", finished_at: Time.current, error: "#{e.class}: #{e.message}")
+      flash[:alert] = "Error: #{e.message}"
+    end
+    
+    redirect_to admin_settings_path
+  end
 end

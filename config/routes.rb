@@ -110,6 +110,7 @@ Rails.application.routes.draw do
         get  :run_delivered_orders_debt_audit, to: redirect("/admin/settings/delivered_orders_debt_audit")
         post :reset_product_dimensions
         post :recalc_all_po_alpha_costs
+        post :mark_distributed_costs
       end
     end
 

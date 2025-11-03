@@ -67,7 +67,7 @@ RSpec.describe PurchaseOrder, type: :model do
       po.update_column(:costs_distributed_at, Time.current)
       po.recalculate_totals!
       po.reload
-      
+
       # La suma de líneas ya incluye los 50 de adicionales; total_order_cost debe igualar subtotal, no sumar shipping/tax otra vez.
       expect(po.subtotal.to_d).to eq(250)
       expect(po.total_order_cost.to_d).to eq(250)
