@@ -63,11 +63,31 @@ RSpec.describe PurchaseOrder, type: :model do
       item_b = create(:purchase_order_item, purchase_order: po, product: product, quantity: 1, unit_cost: 100,
                           unit_additional_cost: 30, unit_compose_cost: 130, total_line_cost: 130)
 
+      # Marcar que los costos fueron distribuidos y forzar recalculo
+      po.update_column(:costs_distributed_at, Time.current)
+      po.recalculate_totals!
       po.reload
+      
       # La suma de líneas ya incluye los 50 de adicionales; total_order_cost debe igualar subtotal, no sumar shipping/tax otra vez.
       expect(po.subtotal.to_d).to eq(250)
       expect(po.total_order_cost.to_d).to eq(250)
       expect(po.total_cost_mxn.to_d).to eq(250)
+    end
+
+    it "sums header costs when costs_distributed_at is nil" do
+      # PO sin distribución aplicada (costs_distributed_at = nil)
+      po = create(:purchase_order, user: supplier, currency: 'MXN', status: 'Pending',
+                  shipping_cost: 30, tax_cost: 20, other_cost: 0, costs_distributed_at: nil)
+
+      # Línea simple sin costos distribuidos
+      create(:purchase_order_item, purchase_order: po, product: product, quantity: 2, unit_cost: 50)
+
+      po.reload
+
+      # Sin distribución: subtotal = base (100), total = base + encabezado (100 + 50 = 150)
+      expect(po.subtotal.to_d).to eq(100)
+      expect(po.total_order_cost.to_d).to eq(150)
+      expect(po.total_cost_mxn.to_d).to eq(150)
     end
   end
 

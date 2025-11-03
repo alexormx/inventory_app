@@ -529,6 +529,216 @@ end
 
 ---
 
+## 🔧 Mejora de Robustez: Campo `costs_distributed_at` para Prevención Explícita de Doble Suma
+
+**Fecha:** 2 de Noviembre, 2025
+**Tipo:** Enhancement + Migration
+**Estado:** ✅ Completado
+
+### **Motivación**
+
+La solución anterior del 1 de noviembre usaba **inferencia** para detectar si los costos ya estaban distribuidos:
+```ruby
+# ❌ Inferencia (frágil):
+distributed_available = lines.all? { |li| li.total_line_cost.present? }
+```
+
+**Problemas con inferencia:**
+- Puede fallar si alguna línea no tiene `total_line_cost` por error de datos
+- No hay claridad sobre **cuándo** se distribuyeron los costos
+- Difícil de auditar y debuggear
+- No permite resetear la distribución fácilmente
+
+### **Solución Implementada**
+
+Agregamos un campo **explícito** `costs_distributed_at:datetime` a la tabla `purchase_orders`:
+
+```ruby
+# ✅ Timestamp explícito (robusto):
+if costs_distributed_at.present?
+  # Costos YA distribuidos → NO sumar encabezado
+  self.total_order_cost = subtotal
+else
+  # Costos NO distribuidos → sumar base + encabezado
+  self.total_order_cost = base_subtotal + shipping + tax + other
+end
+```
+
+### **Beneficios**
+
+| Aspecto | Antes (inferencia) | Ahora (timestamp) |
+|---------|-------------------|-------------------|
+| **Claridad** | Ambiguo | Explícito: `nil` = no distribuido, `present?` = distribuido |
+| **Auditoría** | Imposible saber cuándo se distribuyó | Timestamp exacto de distribución |
+| **Reseteo** | No hay forma clara de resetear | `update_column(:costs_distributed_at, nil)` |
+| **Debugging** | "¿Por qué no suma?" → revisar líneas una por una | Revisar campo único `costs_distributed_at` |
+| **Reportes** | N/A | Consultas como "POs distribuidas en octubre" |
+| **Migración datos** | N/A | Puede popularse retroactivamente si es necesario |
+
+### **Cambios en Código**
+
+#### 1. Migración de Base de Datos
+
+```ruby
+# db/migrate/20251102150936_add_costs_distributed_at_to_purchase_orders.rb
+class AddCostsDistributedAtToPurchaseOrders < ActiveRecord::Migration[8.0]
+  def change
+    add_column :purchase_orders, :costs_distributed_at, :datetime
+    add_index :purchase_orders, :costs_distributed_at
+  end
+end
+```
+
+**Ejecutar:**
+```bash
+bin/rails db:migrate
+RAILS_ENV=test bin/rails db:migrate
+```
+
+#### 2. Modelo `PurchaseOrder`
+
+```ruby
+# app/models/purchase_order.rb (método recalculate_totals)
+
+def recalculate_totals
+  lines = purchase_order_items.reject(&:marked_for_destruction?)
+
+  if lines.present?
+    base_subtotal = lines.sum { |li| (li.quantity.to_d * (li.unit_cost || 0).to_d) }
+    distributed_subtotal = lines.sum { |li| (li.total_line_cost || ...).to_d }
+
+    # ✅ Decisión basada en timestamp explícito
+    if costs_distributed_at.present?
+      # Costos YA distribuidos → NO volver a sumar
+      self.subtotal = distributed_subtotal.round(2)
+      self.total_order_cost = subtotal.round(2)
+    else
+      # Costos NO distribuidos → sumar base + encabezado
+      self.subtotal = base_subtotal.round(2)
+      self.total_order_cost = (base_subtotal + shipping_cost + tax_cost + other_cost).round(2)
+    end
+    
+    # ... (volumen, peso, total_cost_mxn sin cambios)
+  end
+end
+```
+
+#### 3. Servicio de Distribución
+
+```ruby
+# app/services/purchase_orders/recalculate_distributed_costs_for_product_service.rb
+
+po.update_columns(
+  subtotal: subtotal,
+  total_volume: total_lines_volume,
+  total_weight: total_lines_weight,
+  total_order_cost: total_order_cost,
+  total_cost_mxn: total_cost_mxn,
+  costs_distributed_at: Time.current,  # ✅ Marcar como distribuido
+  updated_at: Time.current
+)
+```
+
+#### 4. Batch Endpoint (API)
+
+```ruby
+# app/controllers/api/v1/purchase_order_items_controller.rb
+
+po.update!(
+  subtotal: po_subtotal,
+  total_volume: po_total_volume,
+  total_weight: po_total_weight,
+  total_order_cost: po_total_order_cost,
+  total_cost_mxn: po_total_cost_mxn,
+  costs_distributed_at: Time.current  # ✅ Marcar como distribuido
+)
+```
+
+### **Tests Actualizados**
+
+```ruby
+# spec/models/purchase_order_spec.rb
+
+it "does not double-count header costs when distributed line totals exist" do
+  po = create(:purchase_order, shipping_cost: 30, tax_cost: 20)
+  create(:purchase_order_item, purchase_order: po, total_line_cost: 120)
+  create(:purchase_order_item, purchase_order: po, total_line_cost: 130)
+
+  # ✅ Marcar explícitamente como distribuido
+  po.update_column(:costs_distributed_at, Time.current)
+  po.recalculate_totals!
+  po.reload
+
+  expect(po.subtotal.to_d).to eq(250)
+  expect(po.total_order_cost.to_d).to eq(250)  # NO suma shipping/tax
+end
+
+it "sums header costs when costs_distributed_at is nil" do
+  po = create(:purchase_order, shipping_cost: 30, tax_cost: 20, costs_distributed_at: nil)
+  create(:purchase_order_item, purchase_order: po, quantity: 2, unit_cost: 50)
+
+  po.reload
+
+  expect(po.subtotal.to_d).to eq(100)
+  expect(po.total_order_cost.to_d).to eq(150)  # SÍ suma shipping/tax
+end
+```
+
+**Resultado:** 244 ejemplos, 0 fallos ✅
+
+### **Archivos Modificados**
+
+1. `db/migrate/20251102150936_add_costs_distributed_at_to_purchase_orders.rb` - Nueva migración
+2. `app/models/purchase_order.rb` - Lógica basada en timestamp
+3. `app/services/purchase_orders/recalculate_distributed_costs_for_product_service.rb` - Setea timestamp
+4. `app/controllers/api/v1/purchase_order_items_controller.rb` - Setea timestamp en batch
+5. `spec/models/purchase_order_spec.rb` - Tests con ambos escenarios
+
+### **Uso en Consola**
+
+```ruby
+# Ver POs con costos distribuidos
+PurchaseOrder.where.not(costs_distributed_at: nil)
+
+# Ver POs pendientes de distribuir
+PurchaseOrder.where(costs_distributed_at: nil)
+
+# Re-distribuir costos de una PO (resetear primero)
+po = PurchaseOrder.find('PO-202511-001')
+po.update_column(:costs_distributed_at, nil)
+PurchaseOrders::RecalculateDistributedCostsForProductService.new(po.products.first).call
+
+# Forzar recalculo después de editar manualmente
+po.recalculate_totals!(persist: true)
+```
+
+### **Compatibilidad Retroactiva**
+
+- ✅ **POs existentes:** `costs_distributed_at` será `nil` → totales calculan con suma de encabezado (comportamiento original)
+- ✅ **Nuevas distribuciones:** Servicios y API setean el timestamp automáticamente
+- ✅ **Sin breaking changes:** Si no se distribuyen costos, funciona igual que antes
+
+### **Notas para el Equipo**
+
+1. **Al editar manualmente una PO:**
+   - Si `costs_distributed_at` está presente y editas shipping/tax/other, considera resetear el flag a `nil` para que se redistribuya.
+
+2. **Para re-distribuir costos:**
+   ```ruby
+   # Opción A: resetear flag y recalcular
+   po.update_column(:costs_distributed_at, nil)
+   po.recalculate_totals!(persist: true)
+   
+   # Opción B: usar servicio (recomendado para cambios de dimensiones)
+   PurchaseOrders::RecalculateDistributedCostsForProductService.new(product).call
+   ```
+
+3. **Reportes sugeridos:**
+   - POs con costos no distribuidos (pendientes de procesamiento)
+   - POs distribuidas por mes (auditoría)
+
+---
+
 **Fin del documento** 🎉
 
 ````

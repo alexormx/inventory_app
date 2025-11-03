@@ -70,15 +70,14 @@ class PurchaseOrder < ApplicationRecord
     lines = purchase_order_items.reject(&:marked_for_destruction?)
 
     if lines.present?
-      # Subtotales base vs distribuidos
+      # Subtotal base (solo unit_cost × quantity, sin adicionales)
       base_subtotal = lines.sum do |li|
         qty = li.quantity.to_d
         unit = (li.unit_cost || 0).to_d
         (qty * unit).to_d
       end
 
-      distributed_available = lines.all? { |li| li.respond_to?(:total_line_cost) && li.total_line_cost.present? }
-
+      # Subtotal distribuido (con total_line_cost si existe, o calculado con compose)
       distributed_subtotal = lines.sum do |li|
         (li.total_line_cost || begin
           qty = li.quantity.to_d
@@ -87,14 +86,14 @@ class PurchaseOrder < ApplicationRecord
         end).to_d
       end
 
-      # Si todas las líneas ya incluyen costos adicionales distribuidos, usar ese subtotal
-      # y NO volver a sumar shipping/tax/other para evitar doble conteo.
-      if distributed_available
+      # Decisión basada en el timestamp explícito costs_distributed_at
+      if costs_distributed_at.present?
+        # Costos YA distribuidos en las líneas → NO volver a sumar encabezado
         self.subtotal = distributed_subtotal.round(2)
         self.total_order_cost = subtotal.round(2)
       else
-        # Caso edición temprana o sin distribución: usar base + costos encabezado
-        self.subtotal = distributed_subtotal.round(2)
+        # Costos NO distribuidos → sumar base + encabezado
+        self.subtotal = base_subtotal.round(2)
         self.total_order_cost = (base_subtotal + shipping_cost + tax_cost + other_cost).round(2)
       end
 

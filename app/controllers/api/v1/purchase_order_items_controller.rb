@@ -136,7 +136,8 @@ module Api
             total_volume: po_total_volume,
             total_weight: po_total_weight,
             total_order_cost: po_total_order_cost,
-            total_cost_mxn: po_total_cost_mxn
+            total_cost_mxn: po_total_cost_mxn,
+            costs_distributed_at: Time.current
           )
         end
 

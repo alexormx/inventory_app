@@ -131,6 +131,7 @@ module PurchaseOrders
           total_weight: total_lines_weight,
           total_order_cost: total_order_cost,
           total_cost_mxn: total_cost_mxn,
+          costs_distributed_at: Time.current,
           updated_at: Time.current
         )
 
