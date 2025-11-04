@@ -159,7 +159,7 @@ RSpec.describe PurchaseOrder, type: :model do
       # Agregar nuevo item
       product2 = create(:product, product_sku: 'PROD-002')
       create(:purchase_order_item, purchase_order: po, product: product2, quantity: 1, unit_cost: 100)
-      
+
       po.reload
       expect(po.costs_distributed_at).to be_nil
     end
