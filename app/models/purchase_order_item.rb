@@ -67,7 +67,16 @@ class PurchaseOrderItem < ApplicationRecord
 
   def recalculate_parent_order_totals
     return unless purchase_order_id.present?
-    PurchaseOrder.find_by(id: purchase_order_id)&.recalculate_totals!(persist: true)
+    po = PurchaseOrder.find_by(id: purchase_order_id)
+    return unless po
+
+    # Si hay cambios en items y la PO tenía costos distribuidos, limpiar el timestamp
+    # porque los costos distribuidos en las líneas ya no son válidos
+    if po.costs_distributed_at.present?
+      po.update_column(:costs_distributed_at, nil)
+    end
+
+    po.recalculate_totals!(persist: true)
   rescue => e
     Rails.logger.error "[POI#recalculate_parent_order_totals] #{e.class}: #{e.message}"
   end

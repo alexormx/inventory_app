@@ -91,6 +91,95 @@ RSpec.describe PurchaseOrder, type: :model do
     end
   end
 
+  describe "costs_distributed_at clearing logic" do
+    it "clears costs_distributed_at when header costs change" do
+      po = create(:purchase_order, user: supplier, currency: 'MXN', status: 'Pending',
+                  shipping_cost: 30, tax_cost: 20, other_cost: 0)
+
+      # Simular que se distribuyeron costos
+      po.update_column(:costs_distributed_at, 1.hour.ago)
+      expect(po.costs_distributed_at).to be_present
+
+      # Cambiar shipping_cost debería limpiar el timestamp
+      po.update(shipping_cost: 50)
+      expect(po.costs_distributed_at).to be_nil
+    end
+
+    it "clears costs_distributed_at when tax_cost changes" do
+      po = create(:purchase_order, user: supplier, currency: 'MXN', status: 'Pending',
+                  shipping_cost: 30, tax_cost: 20, other_cost: 0)
+
+      po.update_column(:costs_distributed_at, 1.hour.ago)
+      po.update(tax_cost: 25)
+      expect(po.costs_distributed_at).to be_nil
+    end
+
+    it "clears costs_distributed_at when other_cost changes" do
+      po = create(:purchase_order, user: supplier, currency: 'MXN', status: 'Pending',
+                  shipping_cost: 30, tax_cost: 20, other_cost: 10)
+
+      po.update_column(:costs_distributed_at, 1.hour.ago)
+      po.update(other_cost: 15)
+      expect(po.costs_distributed_at).to be_nil
+    end
+
+    it "does not clear costs_distributed_at when other fields change" do
+      po = create(:purchase_order, user: supplier, currency: 'MXN', status: 'Pending',
+                  shipping_cost: 30, tax_cost: 20, other_cost: 0)
+
+      po.update_column(:costs_distributed_at, 1.hour.ago)
+      original_timestamp = po.costs_distributed_at
+
+      po.update(status: 'In Transit')
+      expect(po.costs_distributed_at).to eq(original_timestamp)
+    end
+  end
+
+  describe "costs_distributed_at clearing on item changes" do
+    it "clears costs_distributed_at when an item quantity changes" do
+      po = create(:purchase_order, user: supplier, currency: 'MXN', status: 'Pending')
+      item = create(:purchase_order_item, purchase_order: po, product: product, quantity: 2, unit_cost: 50)
+
+      # Simular distribución de costos
+      po.update_column(:costs_distributed_at, 1.hour.ago)
+      expect(po.costs_distributed_at).to be_present
+
+      # Cambiar cantidad del item
+      item.update(quantity: 3)
+      po.reload
+      expect(po.costs_distributed_at).to be_nil
+    end
+
+    it "clears costs_distributed_at when a new item is added" do
+      po = create(:purchase_order, user: supplier, currency: 'MXN', status: 'Pending')
+      create(:purchase_order_item, purchase_order: po, product: product, quantity: 2, unit_cost: 50)
+
+      po.update_column(:costs_distributed_at, 1.hour.ago)
+
+      # Agregar nuevo item
+      product2 = create(:product, product_sku: 'PROD-002')
+      create(:purchase_order_item, purchase_order: po, product: product2, quantity: 1, unit_cost: 100)
+      
+      po.reload
+      expect(po.costs_distributed_at).to be_nil
+    end
+
+    it "clears costs_distributed_at when an item is deleted" do
+      po = create(:purchase_order, user: supplier, currency: 'MXN', status: 'Pending')
+      item1 = create(:purchase_order_item, purchase_order: po, product: product, quantity: 2, unit_cost: 50)
+      product2 = create(:product, product_sku: 'PROD-002')
+      item2 = create(:purchase_order_item, purchase_order: po, product: product2, quantity: 1, unit_cost: 100)
+
+      po.update_column(:costs_distributed_at, 1.hour.ago)
+
+      # Eliminar un item
+      item2.destroy
+
+      po.reload
+      expect(po.costs_distributed_at).to be_nil
+    end
+  end
+
   describe "Custom Validations" do
     it "validates that actual_delivery_date is after expected_delivery_date" do
       purchase_order = PurchaseOrder.new(

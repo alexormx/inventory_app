@@ -31,6 +31,7 @@ class PurchaseOrder < ApplicationRecord
   before_destroy :ensure_inventories_safe_or_cleanup
 
   # Asegurar consistencia de totales antes de validar / guardar
+  before_validation :clear_distributed_timestamp_if_headers_changed
   before_validation :normalize_numeric_fields
   before_validation :recalculate_totals
 
@@ -57,6 +58,17 @@ class PurchaseOrder < ApplicationRecord
   end
 
   # -------------------- Cálculo de totales (callbacks) --------------------
+  def clear_distributed_timestamp_if_headers_changed
+    # Si los costos de encabezado cambian y había distribución, invalidarla
+    if costs_distributed_at.present? && (
+      will_save_change_to_shipping_cost? ||
+      will_save_change_to_tax_cost? ||
+      will_save_change_to_other_cost?
+    )
+      self.costs_distributed_at = nil
+    end
+  end
+
   def normalize_numeric_fields
     self.shipping_cost = to_decimal(shipping_cost)
     self.tax_cost      = to_decimal(tax_cost)
