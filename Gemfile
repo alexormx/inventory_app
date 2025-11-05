@@ -4,7 +4,7 @@ source "https://rubygems.org"
 ruby "3.2.3"
 
 # ✅ Core Rails Framework
-gem "rails", "~> 8.0.1"
+gem "rails", "~> 8.1.1"
 
 # ✅ Database
 gem "pg", "~> 1.1"  # PostgreSQL as the database for Active Record
