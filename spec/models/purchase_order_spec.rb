@@ -91,6 +91,8 @@ RSpec.describe PurchaseOrder, type: :model do
     end
   end
 
+
+
   describe "costs_distributed_at clearing logic" do
     it "clears costs_distributed_at when header costs change" do
       po = create(:purchase_order, user: supplier, currency: 'MXN', status: 'Pending',

@@ -17,7 +17,7 @@ El campo `costs_distributed_at` (tipo `datetime`) controla cómo se calculan los
 
 ### 1. **Creación Batch de Items con Distribución** (API Endpoint)
 
-**Archivo:** `app/controllers/api/v1/purchase_order_items_controller.rb`  
+**Archivo:** `app/controllers/api/v1/purchase_order_items_controller.rb`
 **Método:** `batch`
 
 Cuando se crean múltiples items via API con costos ya distribuidos:
@@ -42,7 +42,7 @@ POST /api/v1/purchase_order_items/batch
 
 ### 2. **Servicio de Recálculo de Costos Distribuidos**
 
-**Archivo:** `app/services/purchase_orders/recalculate_distributed_costs_for_product_service.rb`  
+**Archivo:** `app/services/purchase_orders/recalculate_distributed_costs_for_product_service.rb`
 **Método:** `call`
 
 Cuando se recalculan costos distribuidos para un producto específico:
@@ -63,7 +63,7 @@ service.call
 
 ### 3. **Rake Task de Marcado Masivo**
 
-**Archivo:** `lib/tasks/purchase_orders.rake`  
+**Archivo:** `lib/tasks/purchase_orders.rake`
 **Task:** `purchase_orders:mark_distributed_costs`
 
 Para marcar POs existentes que ya tienen costos distribuidos:
@@ -91,7 +91,7 @@ El timestamp se invalida automáticamente cuando los datos cambian, porque los c
 
 ### 1. **Cambios en Costos de Encabezado** (Callback en PurchaseOrder)
 
-**Archivo:** `app/models/purchase_order.rb`  
+**Archivo:** `app/models/purchase_order.rb`
 **Callback:** `before_validation :clear_distributed_timestamp_if_headers_changed`
 
 ```ruby
@@ -116,7 +116,7 @@ po.save                  # costs_distributed_at se limpia automáticamente → n
 
 ### 2. **Cambios en Items de la PO** (Callback en PurchaseOrderItem)
 
-**Archivo:** `app/models/purchase_order_item.rb`  
+**Archivo:** `app/models/purchase_order_item.rb`
 **Callback:** `after_commit :recalculate_parent_order_totals`
 
 ```ruby
@@ -154,7 +154,7 @@ item.save                # costs_distributed_at se limpia automáticamente → n
 
 ## Cómo Afecta el Cálculo de Totales
 
-**Archivo:** `app/models/purchase_order.rb`  
+**Archivo:** `app/models/purchase_order.rb`
 **Método:** `recalculate_totals`
 
 ### Caso 1: `costs_distributed_at` es `nil` (No distribuido)
@@ -280,7 +280,7 @@ po.total_order_cost   # => 1450.0 (ahora distribuido con nuevo shipping)
 
 ### 1. Admin UI para Marcar POs Distribuidas
 
-**Ubicación:** `/admin/settings`  
+**Ubicación:** `/admin/settings`
 **Controlador:** `Admin::SettingsController#mark_distributed_costs`
 
 **Características:**
@@ -311,8 +311,8 @@ po.total_order_cost   # => 1450.0 (ahora distribuido con nuevo shipping)
 
 2. **Alert Informativo:**
    ```
-   ℹ️ Esta orden tiene costos distribuidos (shipping, tax, other) incluidos 
-   en cada línea desde 2025-11-03 10:30. Los totales reflejan estos costos 
+   ℹ️ Esta orden tiene costos distribuidos (shipping, tax, other) incluidos
+   en cada línea desde 2025-11-03 10:30. Los totales reflejan estos costos
    sin sumar nuevamente los encabezados.
    ```
 
@@ -423,12 +423,12 @@ po.update(costs_distributed_at: Time.current)
 
 ```ruby
 it 'calculates totals with headers when costs_distributed_at is nil' do
-  po = create(:purchase_order, 
+  po = create(:purchase_order,
     shipping_cost: 100, tax_cost: 50, other_cost: 30,
     costs_distributed_at: nil
   )
   create(:purchase_order_item, purchase_order: po, quantity: 10, unit_cost: 50)
-  
+
   po.reload
   expect(po.costs_distributed_at).to be_nil
   expect(po.subtotal).to eq(500.0)
@@ -444,10 +444,10 @@ it 'uses distributed subtotal when costs_distributed_at is present' do
     shipping_cost: 100, tax_cost: 50, other_cost: 30,
     costs_distributed_at: Time.current
   )
-  create(:purchase_order_item, purchase_order: po, 
+  create(:purchase_order_item, purchase_order: po,
     quantity: 10, unit_cost: 50, total_line_cost: 680
   )
-  
+
   po.reload
   expect(po.costs_distributed_at).to be_present
   expect(po.subtotal).to eq(680.0)
@@ -459,11 +459,11 @@ end
 
 ```ruby
 it 'clears costs_distributed_at when header costs change' do
-  po = create(:purchase_order, 
+  po = create(:purchase_order,
     shipping_cost: 100,
     costs_distributed_at: Time.current
   )
-  
+
   po.update(shipping_cost: 200)
   expect(po.costs_distributed_at).to be_nil
 end
@@ -475,7 +475,7 @@ end
 it 'clears costs_distributed_at when items change' do
   po = create(:purchase_order, costs_distributed_at: Time.current)
   item = create(:purchase_order_item, purchase_order: po, quantity: 10)
-  
+
   item.update(quantity: 20)
   po.reload
   expect(po.costs_distributed_at).to be_nil
