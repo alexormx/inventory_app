@@ -16,11 +16,13 @@ default: &default
   adapter: postgresql
   encoding: unicode
   pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
-  host: localhost
+  # On Linux, PostgreSQL uses peer authentication via Unix socket by default
+  # No host/password needed for local development
 
 development:
   <<: *default
   database: inventory_app_development
+  username: alexor
 
   # The specified database role being used to connect to PostgreSQL.
   # To create additional roles in PostgreSQL see `$ createuser --help`.
@@ -55,6 +57,7 @@ development:
 test:
   <<: *default
   database: inventory_app_test
+  username: alexor
 
 # As with config/credentials.yml, you never want to store sensitive information,
 # like your database password, in your source code. If your source code is
