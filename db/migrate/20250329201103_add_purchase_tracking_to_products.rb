@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class AddPurchaseTrackingToProducts < ActiveRecord::Migration[8.0]
   def up
     # Remove old supplier reference

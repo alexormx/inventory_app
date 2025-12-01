@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class ChangeStatusToIntegerInInventories < ActiveRecord::Migration[8.0]
   def up
     # Paso 1: Renombra la columna antigua para no perder datos (opcional pero seguro)

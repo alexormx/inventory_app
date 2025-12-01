@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class AdjustUserColumns < ActiveRecord::Migration[8.0]
   def up
     #remove unwanted column contact_name

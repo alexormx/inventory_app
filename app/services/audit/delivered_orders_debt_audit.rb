@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 module Audit
   # Audit::DeliveredOrdersDebtAudit
   # Recorre las SaleOrders en estado Delivered y detecta discrepancias entre:

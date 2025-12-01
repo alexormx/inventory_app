@@ -1,5 +1,7 @@
+# frozen_string_literal: true
+
 class CartItemsController < ApplicationController
-    before_action :set_cart
+  before_action :set_cart
 
   def create
     @product = Product.find(params[:product_id])
@@ -7,9 +9,9 @@ class CartItemsController < ApplicationController
     @new_row = previous_qty.nil?
     unless @product.active?
       respond_to do |format|
-        format.turbo_stream { flash.now[:alert] = "Producto no disponible" }
-        format.html { redirect_back fallback_location: catalog_path, alert: "Producto no disponible" }
-        format.json { render json: { error: "Producto no disponible" }, status: :unprocessable_entity }
+        format.turbo_stream { flash.now[:alert] = 'Producto no disponible' }
+        format.html { redirect_back fallback_location: catalog_path, alert: 'Producto no disponible' }
+        format.json { render json: { error: 'Producto no disponible' }, status: :unprocessable_entity }
       end
       return
     end
@@ -29,7 +31,7 @@ class CartItemsController < ApplicationController
     flash.now[:notice] = "#{@product.product_name} fue agregado exitosamente" if request.format.turbo_stream?
     respond_to do |format|
       format.turbo_stream do
-        if request.referer&.include?("/cart")
+        if request.referer&.include?('/cart')
           render :create_row
         else
           render :create
@@ -51,15 +53,15 @@ class CartItemsController < ApplicationController
     unless @product.active?
       respond_to do |format|
         format.turbo_stream do
-          flash.now[:alert] = "Producto no disponible"
+          flash.now[:alert] = 'Producto no disponible'
         end
-        format.html { redirect_back fallback_location: cart_path, alert: "Producto no disponible" }
-        format.json { render json: { error: "Producto no disponible" }, status: :unprocessable_entity }
+        format.html { redirect_back fallback_location: cart_path, alert: 'Producto no disponible' }
+        format.json { render json: { error: 'Producto no disponible' }, status: :unprocessable_entity }
       end
       return
     end
     desired = params[:quantity].to_i
-    if desired > 0 && !@product.oversell_allowed? && desired > @product.current_on_hand
+    if desired.positive? && !@product.oversell_allowed? && desired > @product.current_on_hand
       respond_to do |format|
         msg = "No puedes agregar #{desired} unidades. Stock disponible: #{@product.current_on_hand}. Este producto no permite preventa ni sobre pedido."
         format.turbo_stream { flash.now[:alert] = msg }
@@ -72,7 +74,7 @@ class CartItemsController < ApplicationController
     respond_to do |format|
       format.turbo_stream do
         # Determinar si la solicitud viene desde la página de carrito (referer contiene /cart)
-        if request.referer&.include?("/cart")
+        if request.referer&.include?('/cart')
           render :update_row
         else
           render :update
@@ -118,13 +120,13 @@ class CartItemsController < ApplicationController
     @cart.remove(@product.id)
     respond_to do |format|
       format.turbo_stream do
-        if request.referer&.include?("/cart")
+        if request.referer&.include?('/cart')
           render :remove_row
         else
           render :destroy
         end
       end
-  format.html { redirect_to cart_path }
+      format.html { redirect_to cart_path }
       format.json do
         pending_totals = aggregate_pending
         render json: {
@@ -146,12 +148,14 @@ class CartItemsController < ApplicationController
   private
 
   def set_cart
-  session[:cart] ||= {}
-  @cart = Cart.new(session)
+    session[:cart] ||= {}
+    @cart = Cart.new(session)
   end
 
   def aggregate_pending
-    pending_total = 0; preorder_total = 0; backorder_total = 0
+    pending_total = 0
+    preorder_total = 0
+    backorder_total = 0
     @cart.items.each do |product, qty|
       s = product.split_immediate_and_pending(qty)
       pending_total += s[:pending]
@@ -160,5 +164,4 @@ class CartItemsController < ApplicationController
     end
     { pending_total: pending_total, preorder_total: preorder_total, backorder_total: backorder_total }
   end
-
 end

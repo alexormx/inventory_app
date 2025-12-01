@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module ImageHelper
   # Renderiza un <picture> con fuentes AVIF/WebP y fallback a la imagen dada.
   # - image: nombre del archivo fallback (jpg/png) dentro de app/assets/images

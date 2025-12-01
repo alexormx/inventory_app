@@ -15,7 +15,7 @@ module SaleOrders
     end
 
     def call
-      return sale_order if sale_order.status == "Canceled"
+      return sale_order if sale_order.status == 'Canceled'
 
       ActiveRecord::Base.transaction do
         # 1. Liberar inventarios y remover asociación PRIMERO
@@ -23,7 +23,7 @@ module SaleOrders
 
         # 2. Actualizar estado de la orden usando update! para respetar transacciones
         #    (el callback release_reserved_if_canceled no hará nada relevante luego de liberar arriba)
-        sale_order.update!(status: "Canceled")
+        sale_order.update!(status: 'Canceled')
 
         # 3. Actualizar product stats para los productos afectados
         update_product_stats!
@@ -51,15 +51,15 @@ module SaleOrders
       # Construir query de forma segura para manejar arrays vacíos
       inventories_to_release = Inventory.where(status: releasable_statuses)
 
-      if sale_order_item_ids.present?
-        inventories_to_release = inventories_to_release.where(
-          'sale_order_id = ? OR sale_order_item_id IN (?)',
-          sale_order.id,
-          sale_order_item_ids
-        )
-      else
-        inventories_to_release = inventories_to_release.where(sale_order_id: sale_order.id)
-      end
+      inventories_to_release = if sale_order_item_ids.present?
+                                 inventories_to_release.where(
+                                   'sale_order_id = ? OR sale_order_item_id IN (?)',
+                                   sale_order.id,
+                                   sale_order_item_ids
+                                 )
+                               else
+                                 inventories_to_release.where(sale_order_id: sale_order.id)
+                               end
 
       # Guardar product_ids antes de hacer update_all
       @product_ids = inventories_to_release.pluck(:product_id).uniq
@@ -84,7 +84,7 @@ module SaleOrders
     end
 
     def update_product_stats!
-      return unless @product_ids.present?
+      return if @product_ids.blank?
 
       @product_ids.each do |product_id|
         Products::UpdateStatsService.new(Product.find(product_id)).call
@@ -94,7 +94,7 @@ module SaleOrders
     end
 
     def allocate_to_pending_preorders!
-      return unless @product_ids.present?
+      return if @product_ids.blank?
 
       Rails.logger.info "[CancelOrderService] Allocating released inventory to pending preorders for #{@product_ids.count} products"
       results = Preorders::PreorderAllocator.batch_allocate(@product_ids)

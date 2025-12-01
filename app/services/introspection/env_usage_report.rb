@@ -1,39 +1,43 @@
+# frozen_string_literal: true
+
 module Introspection
-	class EnvUsageReport
-		REDACT_KEYS = /(key|secret|password|token|access)/i.freeze
+  class EnvUsageReport
+    REDACT_KEYS = /(key|secret|password|token|access)/i
 
-		def initialize(filter: nil)
-			@filter = filter
-		end
+    def initialize(filter: nil)
+      @filter = filter
+    end
 
-		def call
-			entries = ENV.to_h.sort_by { |k, _| k }.map do |k, v|
-				next if skip_key?(k)
-				next if @filter && k !~ /#{@filter}/i
-				{ key: k, value: redact(k, v), length: v.to_s.length }
-			end.compact
-			{
-				generated_at: Time.current.utc.iso8601,
-				total: entries.size,
-				entries: entries
-			}
-		end
+    def call
+      entries = ENV.to_h.sort_by { |k, _| k }.map do |k, v|
+        next if skip_key?(k)
+        next if @filter && k !~ /#{@filter}/i
 
-		def to_json(*_args)
-			call.to_json
-		end
+        { key: k, value: redact(k, v), length: v.to_s.length }
+      end.compact
+      {
+        generated_at: Time.current.utc.iso8601,
+        total: entries.size,
+        entries: entries
+      }
+    end
 
-		private
+    def to_json(*_args)
+      call.to_json
+    end
 
-		def skip_key?(k)
-			k.start_with?("BUNDLE_", "RUBY_", "GEM_")
-		end
+    private
 
-		def redact(k, v)
-			return v unless k =~ REDACT_KEYS
-			return "" if v.nil?
-			"***REDACTED(#{[v.length, 3].max})***"
-		end
-	end
+    def skip_key?(k)
+      k.start_with?('BUNDLE_', 'RUBY_', 'GEM_')
+    end
+
+    def redact(k, v)
+      return v unless k =~ REDACT_KEYS
+      return '' if v.nil?
+
+      "***REDACTED(#{[v.length, 3].max})***"
+    end
+  end
 end
 

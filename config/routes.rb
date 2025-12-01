@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 Rails.application.routes.draw do
+  mount Rswag::Ui::Engine => '/api-docs'
+  mount Rswag::Api::Engine => '/api-docs'
   get "pages/privacy_notice"
   get "carts/show"
   get "products/index"
@@ -21,10 +23,10 @@ Rails.application.routes.draw do
     post 'inventory_audit/fix', to: 'inventory_audits#fix_inconsistencies', as: :inventory_audit_fix
     post 'inventory_audit/fix_missing_so_lines', to: 'inventory_audits#fix_missing_so_lines',
                                                  as: :inventory_audit_fix_missing_so_lines
-  # Inventory Events (audit trail de cambios de costo / desvinculaciones)
-  resources :inventory_events, only: [:index]
-  # Inventory reconciliation trigger
-  resources :inventory_reconciliations, only: [:create]
+    # Inventory Events (audit trail de cambios de costo / desvinculaciones)
+    resources :inventory_events, only: [:index]
+    # Inventory reconciliation trigger
+    resources :inventory_reconciliations, only: [:create]
     # Preorders audit
     get  'preorders_audit', to: 'preorders_audits#index', as: :preorders_audit
     post 'preorders_audit/fix', to: 'preorders_audits#fix', as: :preorders_audits_fix
@@ -118,12 +120,12 @@ Rails.application.routes.draw do
     resources :system_variables, only: %i[index create update]
 
     # General user management (admin-facing) con tabs
-  resources :users, only: %i[index new create edit update] do
+    resources :users, only: %i[index new create edit update] do
       collection do
         get :customers
         get :suppliers
         get :admins
-    get :suggest
+        get :suggest
       end
       resources :shipping_addresses, controller: 'user_shipping_addresses' do
         member do

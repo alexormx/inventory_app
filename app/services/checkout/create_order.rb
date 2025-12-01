@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Checkout
   class CreateOrder
     Result = Struct.new(:sale_order, :errors, :warnings, :availability, keyword_init: true) do
@@ -20,7 +22,7 @@ module Checkout
       warnings = []
       availability_map = {}
 
-      return fail_with(['Carrito vacío']) if @cart.nil? || @cart.empty?
+      return fail_with(['Carrito vacío']) if @cart.blank?
 
       source_address = @user.shipping_addresses.find_by(id: @shipping_address_id)
       return fail_with(['Dirección no encontrada']) unless source_address
@@ -72,11 +74,10 @@ module Checkout
         end
 
         # Si hay errores de revalidación, hacemos rollback y retornamos
-        if revalidation_errors.any?
-          raise ActiveRecord::Rollback
-        end
+        raise ActiveRecord::Rollback if revalidation_errors.any?
+
         sale_order = @user.sale_orders.create!(
-          order_date: Date.today,
+          order_date: Time.zone.today,
           subtotal: 0,
           tax_rate: 0,
           total_tax: 0,
@@ -97,17 +98,17 @@ module Checkout
             preorder_quantity: (split.pending_type == :preorder ? split.pending : 0),
             backordered_quantity: (split.pending_type == :backorder ? split.pending : 0)
           )
-          if split.pending_type == :preorder && split.pending.positive?
-            PreorderReservation.create!(
-              product: product,
-              user: @user,
-              quantity: split.pending,
-              status: :pending,
-              reserved_at: Time.current,
-              sale_order: nil,
-              notes: "Generada desde checkout servicio SO=#{sale_order.id} SOI=#{soi.id}"
-            )
-          end
+          next unless split.pending_type == :preorder && split.pending.positive?
+
+          PreorderReservation.create!(
+            product: product,
+            user: @user,
+            quantity: split.pending,
+            status: :pending,
+            reserved_at: Time.current,
+            sale_order: nil,
+            notes: "Generada desde checkout servicio SO=#{sale_order.id} SOI=#{soi.id}"
+          )
         end
 
         # Snapshot dirección
@@ -122,28 +123,28 @@ module Checkout
           postal_code: source_address.postal_code,
           country: source_address.country,
           shipping_method: @shipping_method,
-          raw_address_json: source_address.attributes.slice('id','full_name','line1','line2','city','state','postal_code','country','label','default')
+          raw_address_json: source_address.attributes.slice('id', 'full_name', 'line1', 'line2', 'city', 'state', 'postal_code', 'country', 'label', 'default')
         )
         # Recalcular totales ahora que ya tenemos líneas y snapshot
         sale_order.recalculate_totals!(persist: true)
         # Crear pago con el monto final (evita RecordInvalid por amount=0)
-        sale_order.payments.create!(
-          amount: sale_order.total_order_value,
-          payment_method: @payment_method,
-          status: 'Pending'
-        ) if sale_order.total_order_value.to_f > 0
+        if sale_order.total_order_value.to_f.positive?
+          sale_order.payments.create!(
+            amount: sale_order.total_order_value,
+            payment_method: @payment_method,
+            status: 'Pending'
+          )
+        end
       end
 
       # Si hubo errores de revalidación después del rollback, retornarlos
       return fail_with(revalidation_errors) if revalidation_errors.any?
 
       Result.new(sale_order: sale_order, errors: [], warnings: warnings, availability: availability_map)
-    rescue => e
+    rescue StandardError => e
       # Logging detallado
       Rails.logger.error "[Checkout::CreateOrder] ERROR #{e.class}: #{e.message}"
-      if sale_order&.errors&.any?
-        Rails.logger.error "[Checkout::CreateOrder] SaleOrder errors: #{sale_order.errors.full_messages.join('; ')}"
-      end
+      Rails.logger.error "[Checkout::CreateOrder] SaleOrder errors: #{sale_order.errors.full_messages.join('; ')}" if sale_order&.errors&.any?
       fail_with(["Exception #{e.class}: #{e.message}"])
     end
 

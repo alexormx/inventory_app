@@ -1,5 +1,7 @@
-class Admin::PurchaseOrderItemsController < ApplicationController
+# frozen_string_literal: true
 
+module Admin
+  class PurchaseOrderItemsController < ApplicationController
 
-
+  end
 end

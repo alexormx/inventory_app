@@ -1,9 +1,11 @@
+# frozen_string_literal: true
+
 class CreateInventoryAdjustments < ActiveRecord::Migration[8.0]
   def change
     create_table :inventory_adjustments do |t|
       t.string  :code
-      t.string  :status, null: false, default: "draft"
-      t.string  :adjustment_type, null: false, default: "audit"
+      t.string  :status, null: false, default: 'draft'
+      t.string  :adjustment_type, null: false, default: 'audit'
       t.datetime :found_at
       t.string  :reference
       t.text    :note

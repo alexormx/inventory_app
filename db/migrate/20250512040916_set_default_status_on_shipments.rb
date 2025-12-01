@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class SetDefaultStatusOnShipments < ActiveRecord::Migration[8.0]
   def up
     # Rename the existing string column
@@ -7,7 +9,7 @@ class SetDefaultStatusOnShipments < ActiveRecord::Migration[8.0]
     add_column :shipments, :status, :integer
 
     # Map string values to integer enum values
-    execute <<-SQL
+    execute <<-SQL.squish
       UPDATE shipments
       SET status = CASE status_old
         WHEN 'pending' THEN 0
@@ -28,7 +30,7 @@ class SetDefaultStatusOnShipments < ActiveRecord::Migration[8.0]
     add_column :shipments, :status_old, :string
 
     # Convert back from integer to string
-    execute <<-SQL
+    execute <<-SQL.squish
       UPDATE shipments
       SET status_old = CASE status
         WHEN 0 THEN 'pending'

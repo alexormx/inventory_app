@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class VisitorLog < ApplicationRecord
   belongs_to :user, optional: true
 

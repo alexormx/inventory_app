@@ -4,8 +4,8 @@ class DeviseCreateUsers < ActiveRecord::Migration[8.0]
   def change
     create_table :users do |t|
       ## Database authenticatable
-      t.string :email, null: false, default: ""
-      t.string :encrypted_password, null: false, default: ""
+      t.string :email, null: false, default: ''
+      t.string :encrypted_password, null: false, default: ''
 
       ## Recoverable
       t.string   :reset_password_token
@@ -33,7 +33,7 @@ class DeviseCreateUsers < ActiveRecord::Migration[8.0]
       # t.datetime :locked_at
 
       ## Custom Fields
-      t.string :role, null: false, default: "customer"
+      t.string :role, null: false, default: 'customer'
       t.string :name, null: false
       t.string :contact_name, null: false
       t.string :phone, null: false
@@ -43,7 +43,6 @@ class DeviseCreateUsers < ActiveRecord::Migration[8.0]
       t.decimal :discount_rate, precision: 5, scale: 2
 
       t.text :notes
-
 
       t.timestamps null: false
     end

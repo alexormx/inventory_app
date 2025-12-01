@@ -1,6 +1,7 @@
-class PagesController < ApplicationController
-  layout "customer"
+# frozen_string_literal: true
 
-  def privacy_notice
-  end
+class PagesController < ApplicationController
+  layout 'customer'
+
+  def privacy_notice; end
 end

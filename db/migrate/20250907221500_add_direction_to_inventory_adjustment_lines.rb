@@ -1,25 +1,25 @@
+# frozen_string_literal: true
+
 class AddDirectionToInventoryAdjustmentLines < ActiveRecord::Migration[8.0]
-	def up
-		return unless table_exists?(:inventory_adjustment_lines)
+  def up
+    return unless table_exists?(:inventory_adjustment_lines)
 
-		unless column_exists?(:inventory_adjustment_lines, :direction)
-			add_column :inventory_adjustment_lines, :direction, :string, null: false, default: "increase"
-		end
+    add_column :inventory_adjustment_lines, :direction, :string, null: false, default: 'increase' unless column_exists?(:inventory_adjustment_lines, :direction)
 
-		unless index_exists?(:inventory_adjustment_lines, :direction)
-			add_index :inventory_adjustment_lines, :direction
-		end
-	end
+    return if index_exists?(:inventory_adjustment_lines, :direction)
 
-	def down
-		return unless table_exists?(:inventory_adjustment_lines)
+    add_index :inventory_adjustment_lines, :direction
+    
+  end
 
-		if index_exists?(:inventory_adjustment_lines, :direction)
-			remove_index :inventory_adjustment_lines, :direction
-		end
-		if column_exists?(:inventory_adjustment_lines, :direction)
-			remove_column :inventory_adjustment_lines, :direction
-		end
-	end
+  def down
+    return unless table_exists?(:inventory_adjustment_lines)
+
+    remove_index :inventory_adjustment_lines, :direction if index_exists?(:inventory_adjustment_lines, :direction)
+    return unless column_exists?(:inventory_adjustment_lines, :direction)
+
+    remove_column :inventory_adjustment_lines, :direction
+    
+  end
 end
 

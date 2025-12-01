@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module InventoryServices
   # Calcula desglose de disponibilidad inmediata vs pendiente (preorder/backorder futuro).
   # Retorna struct con: requested, on_hand, immediate, pending, pending_type
@@ -11,11 +13,12 @@ module InventoryServices
 
     def call
       return empty if @requested <= 0 || @product.nil?
+
       on_hand = @product.respond_to?(:current_on_hand) ? @product.current_on_hand.to_i : 0
       immediate = [@requested, on_hand].min
       pending = @requested - immediate
       pending_type = nil
-      if pending > 0
+      if pending.positive?
         if @product.respond_to?(:preorder_available) && @product.preorder_available
           pending_type = :preorder
         elsif @product.respond_to?(:backorder_allowed) && @product.backorder_allowed

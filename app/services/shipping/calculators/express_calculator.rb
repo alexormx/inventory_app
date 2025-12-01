@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Shipping
   module Calculators
     class ExpressCalculator < BaseCalculator

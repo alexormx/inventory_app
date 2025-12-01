@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class CreateProducts < ActiveRecord::Migration[8.0]
   def change
     create_table :products do |t|
@@ -16,9 +18,9 @@ class CreateProducts < ActiveRecord::Migration[8.0]
       t.decimal :minimum_price, precision: 10, scale: 2, null: false
       t.boolean :backorder_allowed, default: false
       t.boolean :preorder_available, default: false
-      t.string :status, null: false, default: "Active"
+      t.string :status, null: false, default: 'Active'
       t.text :product_images
-      if ActiveRecord::Base.connection.adapter_name.downcase.starts_with?("sqlite")
+      if ActiveRecord::Base.connection.adapter_name.downcase.starts_with?('sqlite')
         t.text :custom_attributes
       else
         t.jsonb :custom_attributes, default: {}
@@ -28,6 +30,5 @@ class CreateProducts < ActiveRecord::Migration[8.0]
     end
     # ✅ Ensure product_sku is unique
     add_index :products, :product_sku, unique: true
-
   end
 end

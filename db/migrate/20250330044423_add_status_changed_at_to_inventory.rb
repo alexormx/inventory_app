@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class AddStatusChangedAtToInventory < ActiveRecord::Migration[8.0]
   def up
     add_column :inventories, :status_changed_at, :datetime, default: -> { 'CURRENT_TIMESTAMP' }, null: false

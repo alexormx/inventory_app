@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class SiteSetting < ApplicationRecord
   TYPES = %w[string boolean integer json].freeze
 
@@ -6,13 +8,14 @@ class SiteSetting < ApplicationRecord
 
   scope :by_key, ->(k) { where(key: k).limit(1) }
 
-  def self.get(key, default=nil)
+  def self.get(key, default = nil)
     rec = by_key(key).first
     return default unless rec
+
     rec.cast_value
   end
 
-  def self.set(key, value, value_type=nil)
+  def self.set(key, value, value_type = nil)
     value_type ||= infer_type(value)
     rec = find_or_initialize_by(key: key)
     rec.value_type = value_type
@@ -25,7 +28,11 @@ class SiteSetting < ApplicationRecord
     case value_type
     when 'boolean' then ActiveModel::Type::Boolean.new.cast(value)
     when 'integer' then value.to_i
-    when 'json'    then JSON.parse(value || 'null') rescue nil
+    when 'json'    then begin
+      JSON.parse(value || 'null')
+    rescue StandardError
+      nil
+    end
     else value
     end
   end

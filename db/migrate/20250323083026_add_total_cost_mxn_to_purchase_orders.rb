@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class AddTotalCostMxnToPurchaseOrders < ActiveRecord::Migration[8.0]
   def up
     add_column :purchase_orders, :total_cost, :decimal, precision: 10, scale: 2, null: false, default: 0.0
