@@ -1,8 +1,20 @@
 <%# Simple KPI stat card for tactical metrics %>
-<%# locals: title:, value:, help: nil %>
-<div class="card h-100">
+<%# locals: title:, value:, help: nil, tooltip: nil, health: nil %>
+<% health_class = case local_assigns[:health]
+                  when 'good' then 'border-success border-2'
+                  when 'warning' then 'border-warning border-2'
+                  when 'danger' then 'border-danger border-2'
+                  else ''
+                  end %>
+<div class="card h-100 <%= health_class %>"
+     <%= "data-bs-toggle=tooltip data-bs-placement=top title=#{local_assigns[:tooltip].inspect}" if local_assigns[:tooltip].present? %>>
   <div class="card-body py-2">
-    <div class="small text-muted"><%= title %></div>
+    <div class="small text-muted d-flex align-items-center gap-1">
+      <%= title %>
+      <% if local_assigns[:tooltip].present? %>
+        <i class="fa-solid fa-circle-info" style="font-size: 0.65rem; opacity: 0.5;"></i>
+      <% end %>
+    </div>
     <div class="fs-6 fw-bold"><%= value %></div>
     <% if local_assigns[:help].present? %>
       <div class="text-muted" style="font-size: .8rem;"><%= help %></div>

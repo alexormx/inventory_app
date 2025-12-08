@@ -7,12 +7,26 @@
     - delta: Numeric opcional (ratio -1..1); colorea verde/rojo
     - variant: String (Bootstrap card variant e.g. text-bg-success-subtle)
     - spark_id: String opcional (id para sparkline)
+    - tooltip: String opcional (texto de ayuda)
+    - health: String opcional ('good', 'warning', 'danger') para indicador de salud
 %>
-<div class="card <%= variant.presence || 'text-bg-light' %> h-100">
+<% health_class = case local_assigns[:health]
+                  when 'good' then 'border-success border-2'
+                  when 'warning' then 'border-warning border-2'
+                  when 'danger' then 'border-danger border-2'
+                  else ''
+                  end %>
+<div class="card <%= variant.presence || 'text-bg-light' %> h-100 <%= health_class %>" 
+     <%= "data-bs-toggle=tooltip data-bs-placement=top title=#{local_assigns[:tooltip].inspect}" if local_assigns[:tooltip].present? %>>
   <div class="card-body">
     <div class="d-flex justify-content-between align-items-start gap-2">
       <div>
-        <div class="small text-muted"><%= title %></div>
+        <div class="small text-muted d-flex align-items-center gap-1">
+          <%= title %>
+          <% if local_assigns[:tooltip].present? %>
+            <i class="fa-solid fa-circle-info text-muted" style="font-size: 0.7rem; opacity: 0.6;"></i>
+          <% end %>
+        </div>
         <div class="fs-4 fw-bold">
           <%= value %>
           <% if local_assigns[:ly].present? %>
@@ -20,9 +34,12 @@
           <% end %>
         </div>
         <% if defined?(delta) && !delta.nil? %>
-          <div class="small <%= delta.to_f >= 0 ? 'text-success' : 'text-danger' %>">Δ vs LY: <%= number_to_percentage(delta.to_f * 100, precision: 1) %></div>
+          <div class="small <%= delta.to_f >= 0 ? 'text-success' : 'text-danger' %>">
+            <i class="fa-solid <%= delta.to_f >= 0 ? 'fa-arrow-up' : 'fa-arrow-down' %>"></i>
+            vs LY: <%= number_to_percentage(delta.to_f * 100, precision: 1) %>
+          </div>
         <% else %>
-          <div class="small text-muted">Δ vs LY: —</div>
+          <div class="small text-muted">vs LY: —</div>
         <% end %>
       </div>
       <% if local_assigns[:spark_id].present? %>

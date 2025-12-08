@@ -1,0 +1,31 @@
+<% # Collapsible Section Card
+   # Locals: id (string), title (string), icon (string), collapsed (boolean), &block
+   collapsed ||= false
+   icon ||= 'fa-chart-bar'
+%>
+<div class="card mb-4">
+  <div class="card-header d-flex justify-content-between align-items-center"
+       data-bs-toggle="collapse"
+       data-bs-target="#collapse-<%= id %>"
+       aria-expanded="<%= !collapsed %>"
+       aria-controls="collapse-<%= id %>"
+       style="cursor: pointer;">
+    <span><i class="fa-solid <%= icon %> me-2"></i><%= title %></span>
+    <i class="fa-solid fa-chevron-down collapse-indicator"
+       style="transition: transform 0.2s ease-in-out; <%= 'transform: rotate(-180deg);' unless collapsed %>"></i>
+  </div>
+  <div class="collapse <%= 'show' unless collapsed %>" id="collapse-<%= id %>">
+    <div class="card-body">
+      <%= yield %>
+    </div>
+  </div>
+</div>
+
+<style>
+  [data-bs-toggle="collapse"][aria-expanded="true"] .collapse-indicator {
+    transform: rotate(-180deg);
+  }
+  [data-bs-toggle="collapse"][aria-expanded="false"] .collapse-indicator {
+    transform: rotate(0deg);
+  }
+</style>
