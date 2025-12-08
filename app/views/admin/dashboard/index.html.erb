@@ -1,5 +1,63 @@
 <div class="container-fluid">
-  <h2 class="mb-3"><i class="fa-solid fa-chart-line"></i> Dashboard</h2>
+  <!-- ========== HEADER CON FILTRO DE FECHAS ========== -->
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+    <h2 class="mb-0"><i class="fa-solid fa-chart-line"></i> Dashboard</h2>
+    
+    <!-- Filtro de rango de fechas -->
+    <div class="d-flex align-items-center gap-2 mt-2 mt-md-0">
+      <span class="text-muted small">Periodo:</span>
+      <%= form_with url: admin_dashboard_path, method: :get, local: true, class: "d-flex align-items-center gap-2", data: { controller: "date-filter", turbo: false } do %>
+        <div class="btn-group" role="group" aria-label="Rango de fechas">
+          <%= link_to "YTD", admin_dashboard_path(range: 'ytd'), 
+              class: "btn btn-sm #{@range_key == 'ytd' ? 'btn-primary' : 'btn-outline-primary'}" %>
+          <%= link_to "30D", admin_dashboard_path(range: 'last_30'), 
+              class: "btn btn-sm #{@range_key == 'last_30' ? 'btn-primary' : 'btn-outline-primary'}" %>
+          <%= link_to "90D", admin_dashboard_path(range: 'last_90'), 
+              class: "btn btn-sm #{@range_key == 'last_90' ? 'btn-primary' : 'btn-outline-primary'}" %>
+          <button type="button" class="btn btn-sm <%= @range_key == 'custom' ? 'btn-primary' : 'btn-outline-primary' %>" 
+                  data-bs-toggle="collapse" data-bs-target="#custom-date-range" aria-expanded="false">
+            <i class="fa-solid fa-calendar-days"></i>
+          </button>
+        </div>
+      <% end %>
+    </div>
+  </div>
+  
+  <!-- Panel de rango personalizado (colapsable) -->
+  <div class="collapse <%= 'show' if @range_key == 'custom' %> mb-3" id="custom-date-range">
+    <div class="card card-body bg-light">
+      <%= form_with url: admin_dashboard_path, method: :get, local: true, class: "row g-3 align-items-end", data: { turbo: false } do %>
+        <%= hidden_field_tag :range, 'custom' %>
+        <div class="col-auto">
+          <label for="start_date" class="form-label small mb-1">Desde</label>
+          <%= date_field_tag :start_date, @start_date&.to_date, class: "form-control form-control-sm", style: "width: 150px" %>
+        </div>
+        <div class="col-auto">
+          <label for="end_date" class="form-label small mb-1">Hasta</label>
+          <%= date_field_tag :end_date, @end_date&.to_date, class: "form-control form-control-sm", style: "width: 150px" %>
+        </div>
+        <div class="col-auto">
+          <%= submit_tag "Aplicar", class: "btn btn-sm btn-primary" %>
+          <%= link_to "Limpiar", admin_dashboard_path, class: "btn btn-sm btn-outline-secondary" %>
+        </div>
+        <div class="col-auto">
+          <span class="badge bg-secondary">
+            <%= @start_date&.strftime('%d/%m/%Y') %> - <%= @end_date&.strftime('%d/%m/%Y') %>
+          </span>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <!-- Leyenda de indicadores de salud -->
+  <div class="d-flex align-items-center gap-3 mb-3 small text-muted">
+    <span><i class="fa-solid fa-circle text-success"></i> Buen rendimiento</span>
+    <span><i class="fa-solid fa-circle text-warning"></i> Atención</span>
+    <span><i class="fa-solid fa-circle text-danger"></i> Crítico</span>
+    <span class="ms-auto" data-bs-toggle="tooltip" title="Los bordes coloreados indican el estado de cada métrica según umbrales predefinidos.">
+      <i class="fa-solid fa-circle-question"></i> ¿Qué significan los colores?
+    </span>
+  </div>
 
   <!-- ========== SECCIÓN 1: KPIs Ejecutivos ========== -->
   <div class="row g-3 mb-3">
@@ -52,7 +110,8 @@
         ly: number_with_delimiter(@po_count_prev),
         delta: @kpi_deltas&.dig(:po_count),
         variant: "text-bg-primary-subtle",
-        tooltip: "Cantidad de Purchase Orders creadas este año."
+        tooltip: "Cantidad de Purchase Orders creadas este año.",
+        health: @kpi_deltas&.dig(:po_count).to_f >= 0 ? 'good' : nil
       %>
     </div>
     <div class="col-md-4 col-lg-3">
@@ -62,7 +121,8 @@
         ly: number_with_delimiter(@orders_prev),
         delta: @kpi_deltas&.dig(:orders),
         variant: "text-bg-primary-subtle",
-        tooltip: "Cantidad de Sale Orders confirmadas este año."
+        tooltip: "Cantidad de Sale Orders confirmadas este año.",
+        health: @kpi_deltas&.dig(:orders).to_f >= 0 ? 'good' : 'warning'
       %>
     </div>
   </div>
@@ -319,7 +379,9 @@
         value: fmt_number(@active_customers_ytd),
         ly: fmt_number(@active_customers_prev),
         delta: @kpi_deltas&.dig(:customers),
-        variant: "text-bg-primary-subtle"
+        variant: "text-bg-primary-subtle",
+        tooltip: "Clientes activos = clientes con al menos una orden en el periodo.",
+        health: @kpi_deltas&.dig(:customers).to_f >= 0 ? 'good' : 'warning'
       %>
     </div>
     <div class="col-md-4 col-lg-4">
@@ -327,7 +389,9 @@
         title: "Valor total de inventario (MXN)",
         value: fmt_currency(@inventory_total_value),
         ly: (@inventory_turnover_ytd.nil? ? nil : "Rotación: #{number_with_precision(@inventory_turnover_ytd, precision: 2, delimiter: ',')}") ,
-        variant: "text-bg-warning-subtle"
+        variant: "text-bg-warning-subtle",
+        tooltip: "Valor del inventario disponible. Rotación = COGS / Inventario promedio.",
+        health: @inventory_turnover_ytd.to_f >= 2 ? 'good' : (@inventory_turnover_ytd.to_f >= 1 ? 'warning' : 'danger')
       %>
     </div>
   </div>
@@ -335,16 +399,16 @@
   <!-- ========== SECCIÓN 3: KPIs Operativos ========== -->
   <div class="row g-3 mb-3">
     <div class="col-md-2 col-6">
-      <%= render 'kpi_stat', title: 'Ticket promedio', value: fmt_currency(@avg_ticket_ytd), tooltip: 'Valor promedio por orden de venta.' %>
+      <%= render 'kpi_stat', title: 'Ticket promedio', value: fmt_currency(@avg_ticket_ytd), tooltip: 'Valor promedio por orden de venta.', health: @avg_ticket_ytd.to_f >= 500 ? 'good' : (@avg_ticket_ytd.to_f >= 200 ? nil : 'warning') %>
     </div>
     <div class="col-md-2 col-6">
-      <%= render 'kpi_stat', title: 'Conversión', value: fmt_percentage_ratio(@conversion_rate_ytd, precision: 2), tooltip: 'Porcentaje de visitas que se convierten en órdenes.' %>
+      <%= render 'kpi_stat', title: 'Conversión', value: fmt_percentage_ratio(@conversion_rate_ytd, precision: 2), tooltip: 'Porcentaje de visitas que se convierten en órdenes.', health: @conversion_rate_ytd.to_f >= 0.03 ? 'good' : (@conversion_rate_ytd.to_f >= 0.01 ? 'warning' : 'danger') %>
     </div>
     <div class="col-md-2 col-6">
       <%= render 'kpi_stat', title: 'Stock crítico', value: (@critical_stock_count.nil? ? '—' : fmt_number(@critical_stock_count)), tooltip: 'Productos por debajo del punto de reorden.', health: @critical_stock_count.to_i > 5 ? 'danger' : (@critical_stock_count.to_i > 0 ? 'warning' : 'good') %>
     </div>
     <div class="col-md-2 col-6">
-      <%= render 'kpi_stat', title: 'Recurrentes', value: fmt_percentage_ratio(@recurring_customers_ratio, precision: 1), tooltip: 'Clientes que han comprado más de una vez.' %>
+      <%= render 'kpi_stat', title: 'Recurrentes', value: fmt_percentage_ratio(@recurring_customers_ratio, precision: 1), tooltip: 'Clientes que han comprado más de una vez.', health: @recurring_customers_ratio.to_f >= 0.3 ? 'good' : (@recurring_customers_ratio.to_f >= 0.15 ? 'warning' : nil) %>
     </div>
   </div>
 
