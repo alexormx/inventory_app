@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
 namespace :purchase_orders do
-  desc "Recalcula costos compose/alpha para todas las PurchaseOrderItems de todos los productos"
+  desc 'Recalcula costos compose/alpha para todas las PurchaseOrderItems de todos los productos'
   task recalc_all_costs: :environment do
-    puts "[PO] Recalculando costos globales..."
+    puts '[PO] Recalculando costos globales...'
     result = PurchaseOrders::RecalculateAllCostsService.new.call
     puts "Productos escaneados: #{result.products_scanned}"
     puts "Items escaneados:    #{result.items_scanned}"
@@ -11,17 +11,17 @@ namespace :purchase_orders do
     if result.errors.any?
       puts "Errores (#{result.errors.size}):"
       result.errors.first(20).each { |e| puts "  - #{e}" }
-      puts "(Mostrando primeros 20)" if result.errors.size > 20
+      puts '(Mostrando primeros 20)' if result.errors.size > 20
     else
-      puts "Sin errores"
+      puts 'Sin errores'
     end
-    puts "Listo"
+    puts 'Listo'
   end
 
-  desc "Recalcula distribución proporcional de costos (volumen/peso) para un producto específico: PRODUCT_ID=123"
+  desc 'Recalcula distribución proporcional de costos (volumen/peso) para un producto específico: PRODUCT_ID=123'
   task recalc_distributed_for_product: :environment do
-    pid = ENV["PRODUCT_ID"]
-    abort "Debe proporcionar PRODUCT_ID" if pid.blank?
+    pid = ENV.fetch('PRODUCT_ID', nil)
+    abort 'Debe proporcionar PRODUCT_ID' if pid.blank?
     product = Product.find_by(id: pid) or abort "Producto #{pid} no encontrado"
     puts "[PO] Recalculando distribución para producto #{product.id}..."
     result = PurchaseOrders::RecalculateDistributedCostsForProductService.new(product).call
@@ -31,13 +31,13 @@ namespace :purchase_orders do
       puts "Errores (#{result.errors.size}):"
       result.errors.each { |e| puts "  - #{e}" }
     else
-      puts "Sin errores"
+      puts 'Sin errores'
     end
   end
 
-  desc "Recalcula distribución proporcional para TODOS los productos (puede tardar)"
+  desc 'Recalcula distribución proporcional para TODOS los productos (puede tardar)'
   task recalc_distributed_all: :environment do
-    puts "[PO] Recalculando distribución para todos los productos..."
+    puts '[PO] Recalculando distribución para todos los productos...'
     total_po = 0
     total_items = 0
     errors = []
@@ -54,23 +54,23 @@ namespace :purchase_orders do
     if errors.any?
       puts "Errores (#{errors.size}):"
       errors.first(30).each { |e| puts "  - #{e}" }
-      puts "(Mostrando primeros 30)" if errors.size > 30
+      puts '(Mostrando primeros 30)' if errors.size > 30
     else
-      puts "Sin errores"
+      puts 'Sin errores'
     end
-    puts "Listo"
+    puts 'Listo'
   end
 
-  desc "Reconciliar inventario vs purchase_order_items (crea faltantes y elimina huérfanos)"
+  desc 'Reconciliar inventario vs purchase_order_items (crea faltantes y elimina huérfanos)'
   task reconcile_inventory: :environment do
-  dry = ENV['DRY_RUN'] == '1'
-  mode = (ENV['MODE'] || 'all').to_sym
-  service = ::InventoryReconciliation::ReconcilePurchaseOrderLinksService.new(dry_run: dry, mode: mode)
+    dry = ENV['DRY_RUN'] == '1'
+    mode = (ENV['MODE'] || 'all').to_sym
+    service = InventoryReconciliation::ReconcilePurchaseOrderLinksService.new(dry_run: dry, mode: mode)
     result = service.call
-  puts "[reconcile_inventory] mode=#{mode} destroyed_orphans=#{result.destroyed_orphans} created_missing=#{result.created_missing} errors=#{result.errors.inspect} dry_run=#{dry}"
+    puts "[reconcile_inventory] mode=#{mode} destroyed_orphans=#{result.destroyed_orphans} created_missing=#{result.created_missing} errors=#{result.errors.inspect} dry_run=#{dry}"
   end
 
-  desc "Marca POs con costs_distributed_at basándose en evidencias (líneas con total_line_cost y suma coincide)"
+  desc 'Marca POs con costs_distributed_at basándose en evidencias (líneas con total_line_cost y suma coincide)'
   task mark_distributed_costs: :environment do
     dry_run = ENV['DRY_RUN'] == '1'
     tolerance = (ENV['TOLERANCE'] || '0.01').to_f
@@ -78,7 +78,7 @@ namespace :purchase_orders do
     candidates = []
     skipped = []
 
-    puts "[mark_distributed_costs] Escaneando Purchase Orders..."
+    puts '[mark_distributed_costs] Escaneando Purchase Orders...'
     puts "DRY_RUN: #{dry_run}"
     puts "Tolerancia: #{tolerance}"
 
@@ -148,7 +148,7 @@ namespace :purchase_orders do
 
     if dry_run
       puts "\n=== DRY RUN: No se aplicaron cambios ==="
-      puts "Ejecuta con DRY_RUN=0 para aplicar los cambios."
+      puts 'Ejecuta con DRY_RUN=0 para aplicar los cambios.'
     else
       puts "\n=== APLICANDO CAMBIOS ==="
       count = 0

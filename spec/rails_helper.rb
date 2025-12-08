@@ -120,6 +120,25 @@ RSpec.configure do |config|
   end
 end
 
+# --- RSwag stability for write-heavy request examples ---
+RSpec.configure do |config|
+  # Para ejemplos de rswag (definidos por metadata :rswag o path en spec/requests/api/v1/* con swagger_helper),
+  # desactivar transacción automática y limpiar BD manualmente para evitar PG::InFailedSqlTransaction.
+  config.around(:each, :rswag) do |example|
+    prev = defined?(Bullet) ? Bullet.enabled? : nil
+    Bullet.enable = false if defined?(Bullet)
+
+    ActiveRecord::Base.connection.begin_transaction(joinable: false)
+    begin
+      example.run
+    ensure
+      # rollback para limpiar todo lo creado en el ejemplo
+      ActiveRecord::Base.connection.rollback_transaction
+      Bullet.enable = prev if defined?(Bullet) && !prev.nil?
+    end
+  end
+end
+
 # Shoulda Matchers
 Shoulda::Matchers.configure do |shoulda|
   shoulda.integrate do |with|

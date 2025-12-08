@@ -1,11 +1,13 @@
+# frozen_string_literal: true
+
 class Product < ApplicationRecord
   extend FriendlyId
   friendly_id :product_name, use: :slugged
 
-  belongs_to :preferred_supplier, class_name: "User", optional: true
-  belongs_to :last_supplier, class_name: "User", optional: true
+  belongs_to :preferred_supplier, class_name: 'User', optional: true
+  belongs_to :last_supplier, class_name: 'User', optional: true
 
-  has_many :inventories, class_name: "Inventory", foreign_key: :product_id, inverse_of: :product, dependent: :nullify
+  has_many :inventories, class_name: 'Inventory', inverse_of: :product, dependent: :nullify
   has_many :canceled_order_items, dependent: :restrict_with_error
   has_many :purchase_order_items
   has_many :purchase_orders, through: :purchase_order_items
@@ -17,20 +19,20 @@ class Product < ApplicationRecord
   after_initialize :set_default_financial_fields, if: :new_record?
   after_initialize :set_api_fallback_defaults,    if: :new_record?
 
+  before_validation :normalize_custom_attributes
+  before_validation :ensure_whatsapp_code
   # --- Stats update on create (your logic) ---
   after_commit :recalculate_stats_if_needed, on: [:create]
   after_commit :recalculate_purchase_orders_if_dimensions_changed, on: [:update]
 
   # --- Custom attributes: always a JSON Hash ---
-  attribute :custom_attributes, :json, default: {}
-  before_validation :normalize_custom_attributes
-  before_validation :ensure_whatsapp_code
+  attribute :custom_attributes, :json, default: -> { {} }
   validate :custom_attributes_must_be_object
 
   # --- Create enums for the product status ---
   enum :status,
-      { draft: 'draft', active: 'active', inactive: 'inactive' },
-      default: :draft
+       { draft: 'draft', active: 'active', inactive: 'inactive' },
+       default: :draft
 
   # --- Validations ---
   validates :product_sku, presence: true, uniqueness: true
@@ -62,26 +64,23 @@ class Product < ApplicationRecord
     ident = identifier.to_s.strip
     # Preferir slug/SKU/whatsapp antes que ID para evitar colisiones cuando el slug inicia con números
     record = nil
-    if column_names.include?("slug")
-      record = find_by(slug: ident)
-    end
+    record = find_by(slug: ident) if column_names.include?('slug')
     record ||= find_by(product_sku: ident)
     record ||= find_by(whatsapp_code: ident)
     # Fallback: nombre normalizado a slug simple
     record ||= where("LOWER(REPLACE(product_name, ' ', '-')) = ?", ident.downcase).first
     # Solo usar ID si el identificador es estrictamente numérico
-    if record.nil? && ident.match?(/\A\d+\z/)
-      record = find_by(id: ident.to_i)
-    end
+    record = find_by(id: ident.to_i) if record.nil? && ident.match?(/\A\d+\z/)
     record || (raise ActiveRecord::RecordNotFound)
   end
 
   private
 
   def minimum_price_not_exceed_selling_price
-    if minimum_price.present? && selling_price.present? && minimum_price > selling_price
-      errors.add(:minimum_price, "cannot be higher than the selling price")
-    end
+    return unless minimum_price.present? && selling_price.present? && minimum_price > selling_price
+
+    errors.add(:minimum_price, 'cannot be higher than the selling price')
+    
   end
 
   def recalculate_stats_if_needed
@@ -110,28 +109,28 @@ class Product < ApplicationRecord
   end
 
   def set_api_fallback_defaults
-  self.backorder_allowed       = false if self.backorder_allowed.nil?
-  self.preorder_available      = false if self.preorder_available.nil?
-  self.status                ||= "draft"
-  self.discount_limited_stock ||= 0
-  self.reorder_point          ||= 0
-  # Defaults físicos (asegurar tras migración)
-  self.weight_gr  = 50.0 if self.weight_gr.nil? || self.weight_gr.to_f <= 0
-  self.length_cm  = 8.0  if self.length_cm.nil? || self.length_cm.to_f <= 0
-  self.width_cm   = 4.0  if self.width_cm.nil? || self.width_cm.to_f <= 0
-  self.height_cm  = 4.0  if self.height_cm.nil? || self.height_cm.to_f <= 0
+    self.backorder_allowed = false if backorder_allowed.nil?
+    self.preorder_available      = false if preorder_available.nil?
+    self.status                ||= 'draft'
+    self.discount_limited_stock ||= 0
+    self.reorder_point          ||= 0
+    # Defaults físicos (asegurar tras migración)
+    self.weight_gr  = 50.0 if weight_gr.nil? || weight_gr.to_f <= 0
+    self.length_cm  = 8.0  if length_cm.nil? || length_cm.to_f <= 0
+    self.width_cm   = 4.0  if width_cm.nil? || width_cm.to_f <= 0
+    self.height_cm  = 4.0  if height_cm.nil? || height_cm.to_f <= 0
   end
 
   # === The single source of truth for normalization ===
   def normalize_custom_attributes
-    h = self.custom_attributes
+    h = custom_attributes
 
     # 1) Strings -> Hash
     if h.is_a?(String)
       begin
         h = JSON.parse(h)
       rescue JSON::ParserError
-        h = { "raw" => h } # preserve if unparseable
+        h = { 'raw' => h } # preserve if unparseable
       end
     end
 
@@ -155,6 +154,7 @@ class Product < ApplicationRecord
     when String
       s = obj.strip
       return nil if s.empty? || s.casecmp('nan').zero?
+
       obj
     else
       obj
@@ -167,6 +167,7 @@ class Product < ApplicationRecord
 
   def ensure_whatsapp_code
     return if whatsapp_code.present?
+
     self.whatsapp_code = SecureRandom.alphanumeric(6).upcase
   end
 
@@ -174,8 +175,8 @@ class Product < ApplicationRecord
 
   # ---- Stock helpers para carrito / preorders ----
   def current_on_hand
-  # Consulta simple; en vistas de lista se puede precomputar vía preload y pasar override
-  @current_on_hand ||= Inventory.where(product_id: id, status: [:available]).count
+    # Consulta simple; en vistas de lista se puede precomputar vía preload y pasar override
+    @current_on_hand ||= Inventory.where(product_id: id, status: [:available]).count
   end
 
   def oversell_allowed?
@@ -185,14 +186,15 @@ class Product < ApplicationRecord
   def supply_mode
     return :preorder if preorder_available
     return :backorder if backorder_allowed
+
     :stock
   end
 
   # Desglose de cantidades inmediata vs pendiente según flags
   def split_immediate_and_pending(requested_qty)
-  splitter = InventoryServices::AvailabilitySplitter.new(self, requested_qty)
-  r = splitter.call
-  { requested: r.requested, on_hand: r.on_hand, immediate: r.immediate, pending: r.pending, pending_type: r.pending_type }
+    splitter = InventoryServices::AvailabilitySplitter.new(self, requested_qty)
+    r = splitter.call
+    { requested: r.requested, on_hand: r.on_hand, immediate: r.immediate, pending: r.pending, pending_type: r.pending_type }
   end
 
   # ---- Dimensiones / Peso helpers ----
@@ -214,18 +216,20 @@ class Product < ApplicationRecord
   def unit_weight_gr
     return 0.to_d unless respond_to?(:weight_gr)
     return 0.to_d if weight_gr.blank?
+
     weight_gr.to_d
   end
 
   def recalculate_purchase_orders_if_dimensions_changed
-    if saved_change_to_weight_gr? || saved_change_to_length_cm? || saved_change_to_width_cm? || saved_change_to_height_cm?
-      if defined?(PurchaseOrders::RecalculateAllCostsForProductService)
-        PurchaseOrders::RecalculateAllCostsForProductService.new(self, dimension_change: true).call
-      else
-        # Fallback legacy
-        PurchaseOrders::RecalculateCostsForProductService.new(self).call
-        PurchaseOrders::RecalculateDistributedCostsForProductService.new(self).call
-      end
+    return unless saved_change_to_weight_gr? || saved_change_to_length_cm? || saved_change_to_width_cm? || saved_change_to_height_cm?
+
+    if defined?(PurchaseOrders::RecalculateAllCostsForProductService)
+      PurchaseOrders::RecalculateAllCostsForProductService.new(self, dimension_change: true).call
+    else
+      # Fallback legacy
+      PurchaseOrders::RecalculateCostsForProductService.new(self).call
+      PurchaseOrders::RecalculateDistributedCostsForProductService.new(self).call
     end
+    
   end
 end

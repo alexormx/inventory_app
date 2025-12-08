@@ -1,23 +1,25 @@
+# frozen_string_literal: true
+
 module ApplicationHelper
   def bootstrap_class_for(flash_type)
     case flash_type.to_sym
-    when :notice then "alert-success"
-    when :alert then "alert-danger"
-    when :error then "alert-danger"
-    when :warning then "alert-warning"
-    else "alert-info"
+    when :notice then 'alert-success'
+    when :alert then 'alert-danger'
+    when :error then 'alert-danger'
+    when :warning then 'alert-warning'
+    else 'alert-info'
     end
   end
 
   def currency_symbol_for(code)
     {
-      "MXN" => "$",
-      "USD" => "$",
-      "EUR" => "€",
-      "JPY" => "¥",
-      "GBP" => "£",
-      "CNY" => "¥",
-      "KRW" => "₩"
+      'MXN' => '$',
+      'USD' => '$',
+      'EUR' => '€',
+      'JPY' => '¥',
+      'GBP' => '£',
+      'CNY' => '¥',
+      'KRW' => '₩'
     }[code] || code
   end
 
@@ -30,17 +32,22 @@ module ApplicationHelper
   end
 
   def user_initials(user)
-    return "?" unless user&.respond_to?(:name) && user.name.present?
+    return '?' unless user.respond_to?(:name) && user.name.present?
+
     parts = user.name.split
-    (parts.first[0] + (parts.size > 1 ? parts.last[0] : "")).upcase
+    (parts.first[0] + (parts.size > 1 ? parts.last[0] : '')).upcase
   end
 
   # Comprueba si un asset precompilado o en pipeline existe (no lanza excepciones)
   def asset_exists?(logical_path)
+    
     Rails.application.assets&.find_asset(logical_path) || (
-      Rails.application.config.assets.compile == false &&
-      Rails.application.assets_manifest&.assets&.key?(logical_path)
-    ) rescue false
+    Rails.application.config.assets.compile == false &&
+    Rails.application.assets_manifest&.assets&.key?(logical_path)
+  )
+  rescue StandardError
+    false
+    
   end
 
   # Preload simplificado para la imagen LCP de home (collection_shelf-960w.*)
@@ -55,14 +62,17 @@ module ApplicationHelper
     }.each do |mime, ext|
       file = "#{base}.#{ext}"
       next unless asset_exists?(file)
-      tags << tag.link(rel: 'preload', as: 'image', href: asset_path(file), fetchpriority: 'high', imagesrcset: "#{asset_path(file)} 960w", imagesizes: '(max-width: 960px) 100vw, 960px', type: mime)
+
+      tags << tag.link(rel: 'preload', as: 'image', href: asset_path(file), fetchpriority: 'high', imagesrcset: "#{asset_path(file)} 960w", 
+                       imagesizes: '(max-width: 960px) 100vw, 960px', type: mime)
     end
     safe_join(tags)
   end
 
   # Preload LCP para página de producto (usa ActiveStorage). Pre-carga variantes 600x600.
   def lcp_preload_product_image(product)
-    return '' unless product&.respond_to?(:product_images) && product.product_images.attached?
+    return '' unless product.respond_to?(:product_images) && product.product_images.attached?
+
     attachment = product.product_images.first
     tags = []
     {
@@ -70,25 +80,25 @@ module ApplicationHelper
       'image/webp' => :webp,
       'image/jpeg' => nil
     }.each do |mime, fmt|
-      begin
-        variant_opts = { resize_to_limit: [600, 600] }
-        variant_opts[:format] = fmt if fmt
-        url = url_for(attachment.variant(**variant_opts))
-        if I18n.locale && I18n.locale != I18n.default_locale
-          url = url.sub(%r{/#{I18n.locale}/rails/active_storage}, '/rails/active_storage')
-          if url.include?('locale=')
-            begin
-              uri = URI.parse(url)
-              params = URI.decode_www_form(uri.query).reject { |k,_| k=='locale' }
-              uri.query = params.empty? ? nil : URI.encode_www_form(params)
-              url = uri.to_s
-            rescue; end
-          end
+      
+      variant_opts = { resize_to_limit: [600, 600] }
+      variant_opts[:format] = fmt if fmt
+      url = url_for(attachment.variant(**variant_opts))
+      if I18n.locale && I18n.locale != I18n.default_locale
+        url = url.sub(%r{/#{I18n.locale}/rails/active_storage}, '/rails/active_storage')
+        if url.include?('locale=')
+          begin
+            uri = URI.parse(url)
+            params = URI.decode_www_form(uri.query).except('locale')
+            uri.query = params.empty? ? nil : URI.encode_www_form(params)
+            url = uri.to_s
+          rescue StandardError; end
         end
-        tags << tag.link(rel: 'preload', as: 'image', href: url, fetchpriority: 'high', type: mime)
-      rescue => e
-        Rails.logger.debug("[lcp_preload_product_image] fallo variante #{mime}: #{e.message}")
       end
+      tags << tag.link(rel: 'preload', as: 'image', href: url, fetchpriority: 'high', type: mime)
+    rescue StandardError => e
+      Rails.logger.debug { "[lcp_preload_product_image] fallo variante #{mime}: #{e.message}" }
+      
     end
     safe_join(tags)
   end

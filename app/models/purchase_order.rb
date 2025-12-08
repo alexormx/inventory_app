@@ -1,14 +1,20 @@
+# frozen_string_literal: true
+
 class PurchaseOrder < ApplicationRecord
   include CustomIdGenerator
 
   belongs_to :user
+  # Asegurar consistencia de totales antes de validar / guardar
+  before_validation :clear_distributed_timestamp_if_headers_changed
+  before_validation :normalize_numeric_fields
+  before_validation :recalculate_totals
   before_create :generate_custom_id
 
   has_many :purchase_order_items, dependent: :destroy, inverse_of: :purchase_order
   has_many :products, through: :purchase_order_items
 
   # Direct link by purchase_order_id to allow safe cascade deletes
-  has_many :inventories, foreign_key: :purchase_order_id
+  has_many :inventories
 
   accepts_nested_attributes_for :purchase_order_items, allow_destroy: true
 
@@ -23,28 +29,24 @@ class PurchaseOrder < ApplicationRecord
   validates :tax_cost, presence: true, numericality: { greater_than_or_equal_to: 0 }
   validates :other_cost, presence: true, numericality: { greater_than_or_equal_to: 0 }
   validates :currency, inclusion: { in: CURRENCIES }
-  validates :status, presence: true, inclusion: { in: ["Pending", "In Transit", "Delivered", "Canceled"]  }
+  validates :status, presence: true, inclusion: { in: ['Pending', 'In Transit', 'Delivered', 'Canceled'] }
   validate :expected_delivery_after_order_date
   validate :actual_delivery_after_expected_delivery
 
   after_update :update_inventory_status_based_on_order_status
   before_destroy :ensure_inventories_safe_or_cleanup
 
-  # Asegurar consistencia de totales antes de validar / guardar
-  before_validation :clear_distributed_timestamp_if_headers_changed
-  before_validation :normalize_numeric_fields
-  before_validation :recalculate_totals
-
   def may_be_deleted?
-    !%w[Delivered Closed].include?(status)
+    %w[Delivered Closed].exclude?(status)
   end
 
   private
 
   def expected_delivery_after_order_date
-    if expected_delivery_date.present? && order_date.present? && expected_delivery_date < order_date
-      errors.add(:expected_delivery_date, "must be after the order date")
-    end
+    return unless expected_delivery_date.present? && order_date.present? && expected_delivery_date < order_date
+
+    errors.add(:expected_delivery_date, 'must be after the order date')
+    
   end
 
   public
@@ -110,17 +112,17 @@ class PurchaseOrder < ApplicationRecord
       end
 
       # Volumen y peso agregados (si los campos de línea existen)
-      self.total_volume = lines.sum { |li| (li.respond_to?(:total_line_volume) && li.total_line_volume.present?) ? li.total_line_volume.to_d : 0 }.round(2)
-      self.total_weight = lines.sum { |li| (li.respond_to?(:total_line_weight) && li.total_line_weight.present?) ? li.total_line_weight.to_d : 0 }.round(2)
+      self.total_volume = lines.sum { |li| li.respond_to?(:total_line_volume) && li.total_line_volume.present? ? li.total_line_volume.to_d : 0 }.round(2)
+      self.total_weight = lines.sum { |li| li.respond_to?(:total_line_weight) && li.total_line_weight.present? ? li.total_line_weight.to_d : 0 }.round(2)
     end
 
     # Total MXN (si la moneda no es MXN aplicar tipo de cambio). Siempre lo recalculamos a partir del total_order_cost actual.
     self.total_cost_mxn = if currency == 'MXN'
-      total_order_cost
+                            total_order_cost
     else
       (total_order_cost * exchange_rate).round(2)
     end
-  rescue => e
+  rescue StandardError => e
     Rails.logger.error "[PurchaseOrder#recalculate_totals] #{e.class}: #{e.message}"
   end
 
@@ -133,13 +135,14 @@ class PurchaseOrder < ApplicationRecord
   def actual_delivery_after_expected_delivery
     return if actual_delivery_date.nil? || expected_delivery_date.nil?
 
-    if actual_delivery_date < expected_delivery_date
-      errors.add(:actual_delivery_date, "must be after or equal to expected delivery date")
-    end
+    return unless actual_delivery_date < expected_delivery_date
+
+    errors.add(:actual_delivery_date, 'must be after or equal to expected delivery date')
+    
   end
 
   def generate_custom_id
-    self.id = generate_unique_id("PO") if id.blank?
+    self.id = generate_unique_id('PO') if id.blank?
   end
 
   def update_inventory_status_based_on_order_status
@@ -148,22 +151,22 @@ class PurchaseOrder < ApplicationRecord
     # No sobreescribir estados terminales ni manuales
     terminal = %i[sold reserved damaged lost returned scrap marketing pre_reserved pre_sold]
 
-    scope = Inventory.where(purchase_order_id: self.id)
+    scope = Inventory.where(purchase_order_id: id)
     case status
-    when "Delivered"
+    when 'Delivered'
       # Solo mover a available aquellos que están en tránsito o available
-      scope.where(status: [:in_transit, :available]).update_all(
+      scope.where(status: %i[in_transit available]).update_all(
         status: Inventory.statuses[:available],
         status_changed_at: Time.current,
         updated_at: Time.current
       )
-    when "Pending", "In Transit"
-      scope.where(status: [:available, :in_transit]).update_all(
+    when 'Pending', 'In Transit'
+      scope.where(status: %i[available in_transit]).update_all(
         status: Inventory.statuses[:in_transit],
         status_changed_at: Time.current,
         updated_at: Time.current
       )
-    when "Canceled"
+    when 'Canceled'
       scope.where.not(status: terminal).update_all(
         status: Inventory.statuses[:scrap],
         status_changed_at: Time.current,
@@ -175,19 +178,18 @@ class PurchaseOrder < ApplicationRecord
   # Block if any locked; otherwise delete only free and allow destroy
   def ensure_inventories_safe_or_cleanup
     # ⬇️ plain relation, no association cache
-    scope  = Inventory.where(purchase_order_id: self.id)
+    scope  = Inventory.where(purchase_order_id: id)
 
-    locked = scope.where(status: [:reserved, :sold])
+    locked = scope.where(status: %i[reserved sold])
                   .or(scope.where.not(sale_order_id: nil))
 
     if locked.exists?
       errors.add(:base,
-        "Cannot delete this purchase order: #{locked.count} inventory item(s) are reserved/sold or linked to a sale."
-      )
+                 "Cannot delete this purchase order: #{locked.count} inventory item(s) are reserved/sold or linked to a sale.")
       return false
     end
 
-    scope.where(status: [:available, :in_transit], sale_order_id: nil).delete_all
+    scope.where(status: %i[available in_transit], sale_order_id: nil).delete_all
   end
 
 end

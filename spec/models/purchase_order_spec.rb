@@ -5,7 +5,7 @@ RSpec.describe PurchaseOrder, type: :model do
   let(:product)  { create(:product) }
   describe "Associations" do
     it { should belong_to(:user) }
-    it { should have_many(:inventories).with_foreign_key("purchase_order_id") }
+    it { should have_many(:inventories) }
   end
 
   describe "Validations" do

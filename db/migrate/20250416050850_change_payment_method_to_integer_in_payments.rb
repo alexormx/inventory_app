@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class ChangePaymentMethodToIntegerInPayments < ActiveRecord::Migration[8.0]
   def up
     # Primero: renombra la columna antigua para preservar datos si fuera necesario
@@ -7,7 +9,7 @@ class ChangePaymentMethodToIntegerInPayments < ActiveRecord::Migration[8.0]
     add_column :payments, :payment_method, :integer
 
     # Tercero: intenta mapear los valores antiguos (si fueran strings válidas)
-    execute <<-SQL
+    execute <<-SQL.squish
       UPDATE payments
       SET payment_method = CASE payment_method_old
         WHEN 'tarjeta_de_credito' THEN 0
@@ -26,7 +28,7 @@ class ChangePaymentMethodToIntegerInPayments < ActiveRecord::Migration[8.0]
     add_column :payments, :payment_method_old, :string
 
     # Mapea los valores del enum de vuelta a texto
-    execute <<-SQL
+    execute <<-SQL.squish
       UPDATE payments
       SET payment_method_old = CASE payment_method
         WHEN 0 THEN 'tarjeta_de_credito'

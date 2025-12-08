@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module PurchaseOrders
   # Servicio para recalcular costos y métricas dependientes de producto
   # para TODAS las PurchaseOrderItems de todos los productos. Útil tras
@@ -32,7 +34,7 @@ module PurchaseOrders
             items_scanned += r.items_scanned
             items_updated += r.items_updated
             errors.concat(r.errors) if r.errors.any?
-          rescue => e
+          rescue StandardError => e
             Rails.logger.error("[RecalculateAllCostsService] product=#{product.id} #{e.class}: #{e.message}")
             errors << "product #{product.id}: #{e.class}: #{e.message}"
           end

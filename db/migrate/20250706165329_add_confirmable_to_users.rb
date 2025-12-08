@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class AddConfirmableToUsers < ActiveRecord::Migration[8.0]
   def up
     add_column :users, :confirmation_token, :string
@@ -11,7 +13,7 @@ class AddConfirmableToUsers < ActiveRecord::Migration[8.0]
   end
 
   def down
-    remove_index  :users, :confirmation_token
+    remove_index :users, :confirmation_token
     remove_columns :users, :confirmation_token, :confirmed_at, :confirmation_sent_at, :unconfirmed_email
   end
 end

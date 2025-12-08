@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Admin
   class InventoryReconciliationsController < ApplicationController
     before_action :authorize_admin!
@@ -8,7 +10,7 @@ module Admin
       service = ::InventoryReconciliation::ReconcilePurchaseOrderLinksService.new(dry_run: dry, mode: mode)
       result = service.call
       flash[:notice] = "Reconciliación (mode=#{mode}, dry_run=#{dry}) => huérfanos: #{result.destroyed_orphans}, creados: #{result.created_missing}"
-    rescue => e
+    rescue StandardError => e
       flash[:alert] = "Error en reconciliación: #{e.message}"
     ensure
       redirect_back fallback_location: admin_inventory_audit_path

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module PurchaseOrders
   # Recalcula volúmenes, pesos y distribución proporcional de costos adicionales (shipping, tax, other)
   # para TODAS las PurchaseOrderItems de un producto y las otras líneas que conviven en las mismas POs.
@@ -28,8 +30,8 @@ module PurchaseOrders
     end
 
     def call
-      return empty_result("nil product") unless @product
-      return empty_result("no id") unless @product.id
+      return empty_result('nil product') unless @product
+      return empty_result('no id') unless @product.id
 
       po_ids = PurchaseOrderItem.where(product_id: @product.id).distinct.pluck(:purchase_order_id)
       return empty_result if po_ids.empty?
@@ -44,7 +46,7 @@ module PurchaseOrders
           recalc_for_purchase_order(po, items_recalculated_ref: items_recalculated)
           # items_recalculated updated inside method (pass by ref via return)
           items_recalculated = @last_items_recalculated
-        rescue => e
+        rescue StandardError => e
           Rails.logger.error("[RecalculateDistributedCostsForProductService] po=#{po.id} #{e.class}: #{e.message}")
           errors << "po #{po.id}: #{e.class}: #{e.message}"
         end
@@ -74,7 +76,7 @@ module PurchaseOrders
         {
           item: item,
           unit_volume: unit_volume,
-            unit_weight: unit_weight,
+          unit_weight: unit_weight,
           total_line_volume: total_line_volume,
           total_line_weight: total_line_weight
         }
@@ -93,10 +95,10 @@ module PurchaseOrders
         unit_volume = d[:unit_volume]
         qty = item.quantity.to_f
         unit_cost = item.unit_cost.to_d
-  line_volume = qty * unit_volume
-  volume_ratio = total_lines_volume.positive? ? (line_volume / total_lines_volume) : 0.0
-  line_additional_cost = (total_additional_cost * volume_ratio)
-  unit_additional_cost = qty.positive? ? (line_additional_cost / qty).round(2) : 0
+        line_volume = qty * unit_volume
+        volume_ratio = total_lines_volume.positive? ? (line_volume / total_lines_volume) : 0.0
+        line_additional_cost = (total_additional_cost * volume_ratio)
+        unit_additional_cost = qty.positive? ? (line_additional_cost / qty).round(2) : 0
         unit_compose_cost = (unit_cost + unit_additional_cost).round(2)
         unit_compose_cost_mxn = (unit_compose_cost * exchange_rate).round(2)
         total_line_cost = (qty * unit_compose_cost).round(2)
@@ -144,6 +146,7 @@ module PurchaseOrders
         inventory_cost_map.each_slice(50) do |slice|
           slice.each do |poi_id, new_cost_mxn|
             next if new_cost_mxn.nil?
+
             Inventory.where(purchase_order_item_id: poi_id).find_each do |inv|
               prev_cost = inv.purchase_cost
               inv.update_columns(purchase_cost: new_cost_mxn, updated_at: Time.current)
@@ -156,7 +159,7 @@ module PurchaseOrders
                   new_purchase_cost: new_cost_mxn,
                   metadata: { purchase_order_item_id: poi_id, purchase_order_id: po.id }
                 )
-              rescue => e
+              rescue StandardError => e
                 Rails.logger.error "[RecalculateDistributedCostsForProductService] event error inv=#{inv.id} #{e.class}: #{e.message}"
               end
             end

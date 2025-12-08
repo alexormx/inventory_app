@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class RemoveStockAndReservedFromProducts < ActiveRecord::Migration[8.0]
   def up
     remove_column :products, :stock_quantity, :integer

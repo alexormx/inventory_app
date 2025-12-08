@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "active_support/core_ext/integer/time"
 
 Rails.application.configure do
@@ -35,8 +37,8 @@ Rails.application.configure do
   # config.ssl_options = { redirect: { exclude: ->(request) { request.path == "/up" } } }
 
   # Log to STDOUT with the current request id as a default log tag.
-  config.log_tags = [ :request_id ]
-  config.logger   = ActiveSupport::TaggedLogging.logger(STDOUT)
+  config.log_tags = [:request_id]
+  config.logger   = ActiveSupport::TaggedLogging.logger($stdout)
 
   # Change to "debug" to log everything (including potentially personally-identifiable information!)
   config.log_level = ENV.fetch("RAILS_LOG_LEVEL", "info")
@@ -66,11 +68,10 @@ Rails.application.configure do
     port: "587",
     domain: "pasatiempos.com.mx",
     user_name: "93616f001@smtp-brevo.com",
-    password: ENV["BREVO_SMTP_PASSWORD"],
+    password: ENV.fetch("BREVO_SMTP_PASSWORD", nil),
     authentication: :login,
     enable_starttls_auto: true
   }
-
 
   # Specify outgoing SMTP server. Remember to add smtp/* credentials via rails credentials:edit.
   # config.action_mailer.smtp_settings = {
@@ -89,7 +90,7 @@ Rails.application.configure do
   config.active_record.dump_schema_after_migration = false
 
   # Only use :id for inspections in production.
-  config.active_record.attributes_for_inspect = [ :id ]
+  config.active_record.attributes_for_inspect = [:id]
 
   # Enable DNS rebinding protection and other `Host` header attacks.
   # config.hosts = [
@@ -112,9 +113,7 @@ Rails.application.configure do
       url: ENV["REDIS_URL"]
     }
 
-    if ENV["ACTION_CABLE_REDIS_SSL_MODE"] == "insecure"
-      redis_config[:ssl_params] = { verify_mode: OpenSSL::SSL::VERIFY_NONE }
-    end
+    redis_config[:ssl_params] = { verify_mode: OpenSSL::SSL::VERIFY_NONE } if ENV["ACTION_CABLE_REDIS_SSL_MODE"] == "insecure"
 
     config.action_cable.cable = redis_config
   end

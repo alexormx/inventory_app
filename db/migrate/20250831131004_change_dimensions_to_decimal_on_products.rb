@@ -1,4 +1,5 @@
+# frozen_string_literal: true
+
 class ChangeDimensionsToDecimalOnProducts < ActiveRecord::Migration[8.0]
-  def change
-  end
+  def change; end
 end

@@ -1,7 +1,9 @@
+# frozen_string_literal: true
+
 class CreatePurchaseOrders < ActiveRecord::Migration[8.0]
   def change
-    create_table :purchase_orders, id: false do |t|  # Disable default 'id' column
-      t.string :id, primary_key: true  # Define custom primary key
+    create_table :purchase_orders, id: false do |t| # Disable default 'id' column
+      t.string :id, primary_key: true # Define custom primary key
       t.references :user, null: false, foreign_key: true
       t.date :order_date, null: false
       t.date :expected_delivery_date, null: false

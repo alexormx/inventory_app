@@ -373,20 +373,64 @@ Implications for tests:
 Prerrequisitos:
 - Ruby 3.2.3 y Bundler
 - Node.js 18+ y npm o yarn
-- PostgreSQL (prod) y SQLite (dev/test)
+- **PostgreSQL 12+** (requerido para todos los entornos)
 
-Instalación:
-- bundle install
-- npm install  # o yarn install
-- bin/rails db:setup
+### Instalación de PostgreSQL
+
+**macOS (Homebrew):**
+```bash
+brew install postgresql@16
+brew services start postgresql@16
+```
+
+**Ubuntu/Debian:**
+```bash
+sudo apt-get update
+sudo apt-get install postgresql postgresql-contrib
+sudo systemctl start postgresql
+```
+
+**Windows:**
+- Descargar desde [postgresql.org](https://www.postgresql.org/download/windows/)
+- Instalar y configurar con el instalador
+
+### Instalación del proyecto:
+```bash
+# Instalar dependencias Ruby
+bundle install
+
+# Instalar dependencias JavaScript
+npm install  # o yarn install
+
+# Crear y configurar bases de datos PostgreSQL
+bin/rails db:create
+bin/rails db:migrate
+bin/rails db:seed
+```
 
 Ejecutar en desarrollo:
-- bin/dev  # levanta Puma y el watcher de esbuild
+```bash
+bin/dev  # levanta Puma y el watcher de esbuild
+```
 
 Solución de problemas comunes:
-- Error esbuild not found → correr npm install (o yarn install)
-- Advertencia stringio duplicado → gem cleanup stringio
-- Verificar autoload → bin/rails zeitwerk:check
+- **Error:** `database "inventory_app_development" does not exist`
+  - Solución: `bin/rails db:create`
+- **Error:** `PG::ConnectionBad: could not connect to server`
+  - Solución: Verificar que PostgreSQL esté corriendo: `pg_isready`
+- **Error:** esbuild not found
+  - Solución: `npm install` (o `yarn install`)
+- **Advertencia:** stringio duplicado
+  - Solución: `gem cleanup stringio`
+- **Verificar autoload:** `bin/rails zeitwerk:check`
+
+### N+1 Query Detection (Bullet Gem)
+
+El proyecto incluye Bullet para detectar consultas N+1:
+- **Desarrollo:** Alertas en navegador y logs
+- **Tests:** Errores si se detectan N+1 queries
 
 Pruebas:
-- bundle exec rspec
+```bash
+bundle exec rspec  # Los specs fallarán si hay N+1 queries
+```

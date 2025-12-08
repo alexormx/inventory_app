@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class AddGeolocationToVisitorLogs < ActiveRecord::Migration[8.0]
   def change
     add_column :visitor_logs, :country, :string

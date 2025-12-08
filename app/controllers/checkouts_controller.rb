@@ -63,7 +63,7 @@ class CheckoutsController < ApplicationController
     Rails.logger.info "[Checkout] step3 session shipping_info: #{@shipping_info.inspect}; selected_address: #{@selected_address&.id}"
 
     # Generar token de idempotencia si no existe
-    unless checkout_token.present?
+    if checkout_token.blank?
       generate_checkout_token!
       Rails.logger.info "[Checkout] Generated checkout token: #{checkout_token}"
     end
@@ -78,12 +78,12 @@ class CheckoutsController < ApplicationController
     checkout_token_param = params[:checkout_token]
     stored_token = checkout_token
 
-    unless checkout_token_param.present?
+    if checkout_token_param.blank?
       flash[:alert] = 'Token de checkout faltante. Intenta nuevamente.'
       redirect_to(checkout_step3_path) and return
     end
 
-    unless stored_token.present?
+    if stored_token.blank?
       flash[:alert] = 'Token de checkout expirado o faltante. Intenta nuevamente.'
       redirect_to(checkout_step3_path) and return
     end
@@ -159,19 +159,20 @@ class CheckoutsController < ApplicationController
       end
     rescue ActiveRecord::RecordNotUnique => e
       # Clave duplicada: orden ya fue creada con este token (race condition)
-      if e.message.include?('sale_orders.index_sale_orders_on_user_and_idempotency')
-        flash[:notice] = 'Esta orden ya fue procesada anteriormente.'
-        # Intentar encontrar la orden existente
-        existing_order = current_user.sale_orders.find_by(idempotency_key: stored_token)
-        if existing_order
-          clear_checkout_session!
-          redirect_to checkout_thank_you_path(order_id: existing_order.id)
-        else
-          redirect_to checkout_step1_path
-        end
+      raise e unless e.message.include?('sale_orders.index_sale_orders_on_user_and_idempotency')
+
+      flash[:notice] = 'Esta orden ya fue procesada anteriormente.'
+      # Intentar encontrar la orden existente
+      existing_order = current_user.sale_orders.find_by(idempotency_key: stored_token)
+      if existing_order
+        clear_checkout_session!
+        redirect_to checkout_thank_you_path(order_id: existing_order.id)
       else
-        raise e
+        redirect_to checkout_step1_path
       end
+      
+        
+      
     end
   end
 

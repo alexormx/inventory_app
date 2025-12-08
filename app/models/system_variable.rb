@@ -1,7 +1,9 @@
+# frozen_string_literal: true
+
 class SystemVariable < ApplicationRecord
   validates :name, presence: true, uniqueness: true
 
-  def self.get(name, default=nil)
+  def self.get(name, default = nil)
     find_by(name: name)&.value.presence || default
   end
 

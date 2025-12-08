@@ -1,5 +1,7 @@
+# frozen_string_literal: true
+
 class CanceledOrderItem < ApplicationRecord
-  belongs_to :sale_order, foreign_key: "sale_order_id", primary_key: "id"
+  belongs_to :sale_order, primary_key: 'id'
   belongs_to :purchase_order
   belongs_to :product
 

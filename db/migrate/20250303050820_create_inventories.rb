@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class CreateInventories < ActiveRecord::Migration[8.0]
   def change
     create_table :inventories do |t|
@@ -6,7 +8,7 @@ class CreateInventories < ActiveRecord::Migration[8.0]
       t.references :sale_order, null: true, foreign_key: true, type: :string
       t.decimal :purchase_cost, precision: 10, scale: 2, null: false
       t.decimal :sold_price, precision: 10, scale: 2
-      t.string :status, null: false, default: "Available"
+      t.string :status, null: false, default: 'Available'
       t.timestamp :last_status_change, null: false, default: -> { 'CURRENT_TIMESTAMP' }
       t.text :notes
 

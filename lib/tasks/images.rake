@@ -7,11 +7,19 @@
 #   bin/rails images:convert[force]       # fuerza recreación aunque existan
 #   bin/rails images:report               # lista tamaños y ahorro estimado
 
-require 'image_processing/vips' rescue nil
-require 'image_processing/mini_magick' rescue nil
+begin
+  require 'image_processing/vips'
+rescue StandardError
+  nil
+end
+begin
+  require 'image_processing/mini_magick'
+rescue StandardError
+  nil
+end
 
 namespace :images do
-  IMAGE_DIR = Rails.root.join('app', 'assets', 'images')
+  IMAGE_DIR = Rails.root.join('app/assets/images')
   SOURCE_EXT = %w[.jpg .jpeg .png].freeze
 
   def avif_enabled?
@@ -37,6 +45,7 @@ namespace :images do
       proc.convert('webp').saver(quality: quality).call(destination: dest_path)
     when :avif
       return unless avif_enabled?
+
       # Para AVIF con vips: saver(quality: 45); con mini_magick intentamos convert y rescatamos si no está soportado
       begin
         if defined?(ImageProcessing::Vips)
@@ -44,7 +53,7 @@ namespace :images do
         else
           proc.convert('avif').call(destination: dest_path)
         end
-      rescue => e
+      rescue StandardError => e
         warn "[images] AVIF no soportado en este entorno: #{e.message}. Se omite."
       end
     else
@@ -67,18 +76,20 @@ namespace :images do
     force = args[:force].to_s == 'force'
     Dir.glob(IMAGE_DIR.join('**', '*')).each do |path|
       next unless SOURCE_EXT.include?(File.extname(path).downcase)
-      base = path.sub(/\.(jpg|jpeg|png)$/i, '')
-      webp = base + '.webp'
-      avif = base + '.avif'
 
-  targets = [[:webp, webp]]
-  targets << [:avif, avif] if avif_enabled?
-  targets.each do |fmt, dest|
+      base = path.sub(/\.(jpg|jpeg|png)$/i, '')
+      webp = "#{base}.webp"
+      avif = "#{base}.avif"
+
+      targets = [[:webp, webp]]
+      targets << [:avif, avif] if avif_enabled?
+      targets.each do |fmt, dest|
         next if File.exist?(dest) && !force
+
         puts "→ #{File.basename(path)} -> #{File.basename(dest)}"
         begin
           convert_one(path, dest, format: fmt)
-        rescue => e
+        rescue StandardError => e
           warn "Error convirtiendo #{path} a #{fmt}: #{e.message}"
         end
       end
@@ -86,19 +97,20 @@ namespace :images do
   end
 
   desc 'Reporte de tamaños y ahorro estimado (si .webp/.avif existen)'
-  task :report => :environment do
+  task report: :environment do
     summary = []
     Dir.glob(IMAGE_DIR.join('**', '*')).each do |path|
       next unless SOURCE_EXT.include?(File.extname(path).downcase)
+
       base = path.sub(/\.(jpg|jpeg|png)$/i, '')
-      webp = base + '.webp'
-      avif = base + '.avif'
+      webp = "#{base}.webp"
+      avif = "#{base}.avif"
       orig = File.size?(path) || 0
       webp_size = File.size?(webp) || 0
       avif_size = avif_enabled? ? (File.size?(avif) || 0) : 0
       best = [webp_size, avif_size].reject(&:zero?).min || 0
       saving = [orig - best, 0].max
-      summary << [path.sub(IMAGE_DIR.to_s + '/', ''), orig, webp_size, avif_size, saving]
+      summary << [path.sub("#{IMAGE_DIR}/", ''), orig, webp_size, avif_size, saving]
     end
 
     total_orig = summary.sum { |r| r[1] }
@@ -117,7 +129,7 @@ namespace :images do
 end
 
 # Ejecutar conversión automáticamente durante el build (assets:precompile)
-Rake::Task["assets:precompile"].enhance do
-  puts "[images] Ejecutando conversión a WebP/AVIF durante assets:precompile"
-  Rake::Task["images:convert"].invoke
+Rake::Task['assets:precompile'].enhance do
+  puts '[images] Ejecutando conversión a WebP/AVIF durante assets:precompile'
+  Rake::Task['images:convert'].invoke
 end

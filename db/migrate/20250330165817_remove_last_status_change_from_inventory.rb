@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class RemoveLastStatusChangeFromInventory < ActiveRecord::Migration[8.0]
   def up
     remove_column :inventories, :last_status_change

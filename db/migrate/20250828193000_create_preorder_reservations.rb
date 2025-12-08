@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class CreatePreorderReservations < ActiveRecord::Migration[8.0]
   def change
     create_table :preorder_reservations do |t|
@@ -14,7 +16,7 @@ class CreatePreorderReservations < ActiveRecord::Migration[8.0]
       t.text :notes
       t.timestamps
     end
-    add_index :preorder_reservations, [:product_id, :status, :reserved_at], name: "idx_preorders_fifo"
+    add_index :preorder_reservations, %i[product_id status reserved_at], name: 'idx_preorders_fifo'
     add_index :preorder_reservations, :sale_order_id
     add_foreign_key :preorder_reservations, :sale_orders, column: :sale_order_id
   end

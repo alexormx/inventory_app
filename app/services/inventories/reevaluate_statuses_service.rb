@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Inventories
   class ReevaluateStatusesService
     # Recalcula el status de cada Inventory basado en:
@@ -24,10 +26,10 @@ module Inventories
       @relation.in_batches(of: 1000) do |batch|
         updates = []
         now = Time.current
-        batch.includes(:purchase_order, :sale_order).each do |inv|
+        batch.includes(:purchase_order, :sale_order).find_each do |inv|
           current = inv.status.to_s
           if TERMINAL_STATUSES.include?(current)
-            @stats["skipped_terminal"] += 1
+            @stats['skipped_terminal'] += 1
             next
           end
 
@@ -58,34 +60,35 @@ module Inventories
     def compute_status(current, po_status, so_status)
       # Reglas base por estado de PO
       case po_status
-      when "Pending", "In Transit"
+      when 'Pending', 'In Transit'
         # En tránsito
         if so_status.present?
-          return :pre_reserved if so_status == "Pending"
+          return :pre_reserved if so_status == 'Pending'
           return :pre_sold if %w[Confirmed Shipped Delivered].include?(so_status)
         end
-        return :in_transit
-      when "Delivered"
+        :in_transit
+      when 'Delivered'
         # Ya entregado a almacén
         if so_status.present?
-          return :reserved if so_status == "Pending"
+          return :reserved if so_status == 'Pending'
           return :sold if %w[Confirmed Shipped Delivered].include?(so_status)
         end
-        return :available
-      when "Canceled"
+        :available
+      when 'Canceled'
         # Si el PO fue cancelado y el item no es terminal, márcalo como scrap
-        return :scrap
+        :scrap
       else
         # Sin PO: mantener si está disponible/reservado/in_transit
-        return current.to_sym if %w[available reserved in_transit].include?(current)
+        current.to_sym if %w[available reserved in_transit].include?(current)
       end
     end
 
     def bulk_update_status(rows)
-      ids = rows.map { |r| r[:id] }
+      ids = rows.pluck(:id)
       return if ids.empty?
+
       # Generar cláusulas CASE para status y status_changed_at
-      status_cases = rows.map { |r| "WHEN id=#{r[:id]} THEN #{r[:status]}" }.join(" ")
+      status_cases = rows.map { |r| "WHEN id=#{r[:id]} THEN #{r[:status]}" }.join(' ')
       time = rows.first[:status_changed_at]
       ts = ActiveRecord::Base.connection.quote(time)
       sql = <<-SQL.squish

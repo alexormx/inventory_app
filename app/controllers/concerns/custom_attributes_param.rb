@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module CustomAttributesParam
   extend ActiveSupport::Concern
 
@@ -30,7 +32,7 @@ module CustomAttributesParam
     end
 
     # Last resort: preserve raw
-    p[:custom_attributes] = { "raw" => s }
+    p[:custom_attributes] = { 'raw' => s }
     p
   end
 end

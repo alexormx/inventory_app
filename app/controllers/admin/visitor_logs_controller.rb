@@ -1,14 +1,18 @@
-class Admin::VisitorLogsController < ApplicationController
-  before_action :authenticate_user!
-  before_action :authorize_admin!
+# frozen_string_literal: true
 
-  def index
-    @visitor_logs = VisitorLog.includes(:user).order(created_at: :desc).limit(200)
-  end
+module Admin
+  class VisitorLogsController < ApplicationController
+    before_action :authenticate_user!
+    before_action :authorize_admin!
 
-  private
+    def index
+      @visitor_logs = VisitorLog.includes(:user).order(created_at: :desc).limit(200)
+    end
 
-  def require_admin!
-    redirect_to root_path unless current_user.admin?
+    private
+
+    def require_admin!
+      redirect_to root_path unless current_user.admin?
+    end
   end
 end

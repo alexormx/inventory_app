@@ -1,10 +1,12 @@
+# frozen_string_literal: true
+
 module CustomIdGenerator
   extend ActiveSupport::Concern
 
   # Método para generar un ID único con prefijo, año y mes
   def generate_unique_id(prefix, date_column = :order_date)
-    date = self.send(date_column)
-    return unless date.present?
+    date = send(date_column)
+    return if date.blank?
 
     year  = date.year
     month = date.month
@@ -14,6 +16,7 @@ module CustomIdGenerator
     loop do
       candidate_id = "#{prefix_str}-%03d" % sequence
       return candidate_id unless self.class.exists?(id: candidate_id)
+
       sequence += 1
     end
   end

@@ -1,13 +1,15 @@
+# frozen_string_literal: true
+
 class ChangePreorderReservationsSaleOrderIdToString < ActiveRecord::Migration[8.0]
   def up
     if sqlite?
       # Detectar tipo actual
-      col = execute("PRAGMA table_info(preorder_reservations)").to_a.find { |r| r[1] == "sale_order_id" }
+      col = execute('PRAGMA table_info(preorder_reservations)').to_a.find { |r| r[1] == 'sale_order_id' }
       current_type = col && col[2]
       return if current_type && current_type.downcase == 'text'
 
       # Recrear la tabla para cambiar tipo en SQLite
-      execute <<~SQL
+      execute <<~SQL.squish
         PRAGMA foreign_keys=OFF;
         BEGIN TRANSACTION;
         CREATE TABLE preorder_reservations_new (
@@ -52,11 +54,11 @@ class ChangePreorderReservationsSaleOrderIdToString < ActiveRecord::Migration[8.
   def down
     if sqlite?
       # Volver a integer solo si actualmente es text
-      col = execute("PRAGMA table_info(preorder_reservations)").to_a.find { |r| r[1] == "sale_order_id" }
+      col = execute('PRAGMA table_info(preorder_reservations)').to_a.find { |r| r[1] == 'sale_order_id' }
       current_type = col && col[2]
       return if current_type && current_type.downcase == 'integer'
 
-      execute <<~SQL
+      execute <<~SQL.squish
         PRAGMA foreign_keys=OFF;
         BEGIN TRANSACTION;
         CREATE TABLE preorder_reservations_new (
@@ -96,7 +98,8 @@ class ChangePreorderReservationsSaleOrderIdToString < ActiveRecord::Migration[8.
   end
 
   private
+
   def sqlite?
-    ActiveRecord::Base.connection.adapter_name.downcase.include?("sqlite")
+    ActiveRecord::Base.connection.adapter_name.downcase.include?('sqlite')
   end
 end

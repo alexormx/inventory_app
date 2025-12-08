@@ -28,10 +28,10 @@ Devise.setup do |config|
 
   # Configure the class responsible to send e-mails.
   # config.mailer = 'Devise::Mailer'
-  #config.mailer = 'Users::DeviseMailer'
+  # config.mailer = 'Users::DeviseMailer'
 
   # Configure the parent class responsible to send e-mails.
-  #config.parent_mailer = 'ActionMailer::Base'
+  # config.parent_mailer = 'ActionMailer::Base'
   config.parent_mailer = 'ApplicationMailer'
 
   # ==> ORM configuration
@@ -314,5 +314,5 @@ Devise.setup do |config|
   # config.sign_in_after_change_password = true
 
   # Prevent Devise from wrapping input fields in "field_with_errors"
-  Rails.application.config.action_view.field_error_proc = Proc.new { |html_tag, instance| html_tag.html_safe }
+  Rails.application.config.action_view.field_error_proc = proc { |html_tag, _instance| html_tag.html_safe }
 end

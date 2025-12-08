@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 module InventoryReconciliation
   class ReconcilePurchaseOrderLinksService
     Result = Struct.new(:destroyed_orphans, :created_missing, :errors, keyword_init: true)
@@ -17,12 +18,12 @@ module InventoryReconciliation
 
       ActiveRecord::Base.transaction do
         destroyed_orphans += destroy_orphans if process_orphans?
-        created_missing  += create_missing if process_missing?
+        created_missing += create_missing if process_missing?
         raise ActiveRecord::Rollback if @dry_run
       end
 
       Result.new(destroyed_orphans: destroyed_orphans, created_missing: created_missing, errors: errors)
-    rescue => e
+    rescue StandardError => e
       @logger.error "[ReconcilePurchaseOrderLinksService] #{e.class}: #{e.message}"
       Result.new(destroyed_orphans: 0, created_missing: 0, errors: [e.message])
     end
@@ -31,16 +32,22 @@ module InventoryReconciliation
 
     def destroy_orphans
       orphan_scope = ::Inventory.where.not(purchase_order_id: nil)
-                                .where("purchase_order_item_id IS NULL OR NOT EXISTS (SELECT 1 FROM purchase_order_items poi WHERE poi.id = inventories.purchase_order_item_id)")
+                                .where('purchase_order_item_id IS NULL OR NOT EXISTS (SELECT 1 FROM purchase_order_items poi WHERE poi.id = inventories.purchase_order_item_id)')
       count = 0
       orphan_scope.limit(@limit).find_each do |inv|
         count += 1
         next if @dry_run
+
         begin
           inv_id = inv.id
           inv.destroy!
-          ::InventoryEvent.create!(inventory_id: inv_id, product_id: inv.product_id, event_type: 'reconciliation_orphan_destroyed', metadata: { purchase_order_id: inv.purchase_order_id }) rescue nil
-        rescue => e
+          begin
+            ::InventoryEvent.create!(inventory_id: inv_id, product_id: inv.product_id, event_type: 'reconciliation_orphan_destroyed', 
+                                     metadata: { purchase_order_id: inv.purchase_order_id })
+          rescue StandardError
+            nil
+          end
+        rescue StandardError => e
           @logger.error "[ReconcilePurchaseOrderLinksService#destroy_orphans] inv=#{inv.id} #{e.class}: #{e.message}"
         end
       end
@@ -53,10 +60,12 @@ module InventoryReconciliation
         existing = ::Inventory.where(purchase_order_item_id: poi.id).count
         needed = poi.quantity.to_i - existing
         next if needed <= 0
+
         needed.times do
           created += 1
           break if created >= @limit
           next if @dry_run
+
           begin
             inv = ::Inventory.create!(
               product_id: poi.product_id,
@@ -67,8 +76,13 @@ module InventoryReconciliation
               status_changed_at: Time.current,
               source: 'po_regular'
             )
-            ::InventoryEvent.create!(inventory_id: inv.id, product_id: poi.product_id, event_type: 'reconciliation_missing_created', metadata: { purchase_order_id: poi.purchase_order_id, purchase_order_item_id: poi.id }) rescue nil
-          rescue => e
+            begin
+              ::InventoryEvent.create!(inventory_id: inv.id, product_id: poi.product_id, event_type: 'reconciliation_missing_created', 
+                                       metadata: { purchase_order_id: poi.purchase_order_id, purchase_order_item_id: poi.id })
+            rescue StandardError
+              nil
+            end
+          rescue StandardError => e
             @logger.error "[ReconcilePurchaseOrderLinksService#create_missing] poi=#{poi.id} #{e.class}: #{e.message}"
           end
         end

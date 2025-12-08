@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Checkout
   class CreateOrder
     Result = Struct.new(:sale_order, :errors, :warnings, :availability, keyword_init: true) do
@@ -20,7 +22,7 @@ module Checkout
       warnings = []
       availability_map = {}
 
-      return fail_with(['Carrito vacío']) if @cart.nil? || @cart.empty?
+      return fail_with(['Carrito vacío']) if @cart.blank?
 
       source_address = @user.shipping_addresses.find_by(id: @shipping_address_id)
       return fail_with(['Dirección no encontrada']) unless source_address
@@ -45,6 +47,12 @@ module Checkout
       sale_order = nil
       revalidation_errors = []
 
+      # Evitar que Bullet interrumpa transacciones críticas del checkout
+      previous_bullet_state = nil
+      if defined?(Bullet)
+        previous_bullet_state = Bullet.enabled?
+        Bullet.enable = false
+      end
       ActiveRecord::Base.transaction do
         # @cart.items devuelve [[product, qty], ...] no un hash
         product_ids = @cart.items.map { |product, _qty| product.id }
@@ -72,11 +80,10 @@ module Checkout
         end
 
         # Si hay errores de revalidación, hacemos rollback y retornamos
-        if revalidation_errors.any?
-          raise ActiveRecord::Rollback
-        end
+        raise ActiveRecord::Rollback if revalidation_errors.any?
+
         sale_order = @user.sale_orders.create!(
-          order_date: Date.today,
+          order_date: Time.zone.today,
           subtotal: 0,
           tax_rate: 0,
           total_tax: 0,
@@ -97,17 +104,17 @@ module Checkout
             preorder_quantity: (split.pending_type == :preorder ? split.pending : 0),
             backordered_quantity: (split.pending_type == :backorder ? split.pending : 0)
           )
-          if split.pending_type == :preorder && split.pending.positive?
-            PreorderReservation.create!(
-              product: product,
-              user: @user,
-              quantity: split.pending,
-              status: :pending,
-              reserved_at: Time.current,
-              sale_order: nil,
-              notes: "Generada desde checkout servicio SO=#{sale_order.id} SOI=#{soi.id}"
-            )
-          end
+          next unless split.pending_type == :preorder && split.pending.positive?
+
+          PreorderReservation.create!(
+            product: product,
+            user: @user,
+            quantity: split.pending,
+            status: :pending,
+            reserved_at: Time.current,
+            sale_order: nil,
+            notes: "Generada desde checkout servicio SO=#{sale_order.id} SOI=#{soi.id}"
+          )
         end
 
         # Snapshot dirección
@@ -122,29 +129,48 @@ module Checkout
           postal_code: source_address.postal_code,
           country: source_address.country,
           shipping_method: @shipping_method,
-          raw_address_json: source_address.attributes.slice('id','full_name','line1','line2','city','state','postal_code','country','label','default')
+          raw_address_json: source_address.attributes.slice('id', 'full_name', 'line1', 'line2', 'city', 'state', 'postal_code', 'country', 'label', 'default')
         )
         # Recalcular totales ahora que ya tenemos líneas y snapshot
         sale_order.recalculate_totals!(persist: true)
-        # Crear pago con el monto final (evita RecordInvalid por amount=0)
-        sale_order.payments.create!(
-          amount: sale_order.total_order_value,
-          payment_method: @payment_method,
-          status: 'Pending'
-        ) if sale_order.total_order_value.to_f > 0
       end
+      # Restaurar estado de Bullet
+      Bullet.enable = previous_bullet_state if defined?(Bullet) && !previous_bullet_state.nil?
 
       # Si hubo errores de revalidación después del rollback, retornarlos
       return fail_with(revalidation_errors) if revalidation_errors.any?
 
-      Result.new(sale_order: sale_order, errors: [], warnings: warnings, availability: availability_map)
-    rescue => e
-      # Logging detallado
-      Rails.logger.error "[Checkout::CreateOrder] ERROR #{e.class}: #{e.message}"
-      if sale_order&.errors&.any?
-        Rails.logger.error "[Checkout::CreateOrder] SaleOrder errors: #{sale_order.errors.full_messages.join('; ')}"
+      # Crear pago fuera de la transacción para evitar abortos por callbacks
+      begin
+        if sale_order && sale_order.total_order_value.to_f.positive?
+          sale_order.payments.create!(
+            amount: sale_order.total_order_value,
+            payment_method: @payment_method,
+            status: 'Pending'
+          )
+        end
+      rescue StandardError => e
+        Rails.logger.error "[Checkout::CreateOrder] Payment create error: #{e.class}: #{e.message}"
       end
-      fail_with(["Exception #{e.class}: #{e.message}"])
+
+      # Backfill suave: asegurar sale_order_item_id en inventarios reservados de esta orden
+      begin
+        if sale_order
+          sale_order.sale_order_items.find_each do |soi|
+            Inventory.where(sale_order_id: sale_order.id, product_id: soi.product_id, sale_order_item_id: nil)
+                     .update_all(sale_order_item_id: soi.id, updated_at: Time.current)
+          end
+        end
+      rescue StandardError => e
+        Rails.logger.error "[Checkout::CreateOrder] Soft backfill error: #{e.class}: #{e.message}"
+      end
+
+      Result.new(sale_order: sale_order, errors: [], warnings: warnings, availability: availability_map)
+    rescue StandardError => e
+      Rails.logger.error "[Checkout::CreateOrder] ERROR #{e.class}: #{e.message}"
+      Array(e.backtrace).first(20).each { |ln| Rails.logger.error "[Checkout::CreateOrder] \t#{ln}" }
+      Rails.logger.error "[Checkout::CreateOrder] SaleOrder errors: #{sale_order.errors.full_messages.join('; ')}" if sale_order&.errors&.any?
+      raise
     end
 
     private

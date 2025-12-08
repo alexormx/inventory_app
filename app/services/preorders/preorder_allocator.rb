@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Preorders
   class PreorderAllocator
     # Si newly_available_units no se pasa, intentará asignar todas las piezas libres (available + in_transit)
@@ -21,7 +23,7 @@ module Preorders
           allocator = new(product)
           allocator.call
           results[product_id] = true
-        rescue => e
+        rescue StandardError => e
           Rails.logger.error "[Preorders::PreorderAllocator] batch_allocate error for product #{product_id}: #{e.class} #{e.message}"
           results[product_id] = false
         end
@@ -35,7 +37,7 @@ module Preorders
       remaining = if @units
                     @units.to_i
                   else
-                    Inventory.where(product_id: @product.id, status: [:available, :in_transit], sale_order_id: nil).count
+                    Inventory.where(product_id: @product.id, status: %i[available in_transit], sale_order_id: nil).count
                   end
       return if remaining <= 0
 
@@ -50,12 +52,12 @@ module Preorders
         # Asegurar SO y línea
         so = reservation.sale_order || SaleOrder.create!(
           user: reservation.user,
-          order_date: Date.today,
+          order_date: Time.zone.today,
           tax_rate: 0,
           subtotal: 0,
           total_tax: 0,
           total_order_value: 0,
-          status: "Pending"
+          status: 'Pending'
         )
         soi = so.sale_order_items.find_or_initialize_by(product_id: @product.id)
         soi.quantity = soi.quantity.to_i + qty
@@ -74,7 +76,7 @@ module Preorders
           # Se asignó todo
           reservation.update!(status: :assigned, assigned_at: Time.current, quantity: qty, sale_order: so)
           remaining -= qty
-        elsif assigned_count > 0
+        elsif assigned_count.positive?
           # Asignación parcial: dividir reservation
           reservation.update!(status: :assigned, assigned_at: Time.current, quantity: assigned_count, sale_order: so)
           PreorderReservation.create!(
@@ -89,7 +91,7 @@ module Preorders
         end
         # Si assigned_count == 0, no se asignó nada (no hay inventory disponible)
       end
-    rescue => e
+    rescue StandardError => e
       Rails.logger.error "[Preorders::PreorderAllocator] #{e.class}: #{e.message}"
     end
   end

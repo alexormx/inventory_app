@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class CreateShippingAddresses < ActiveRecord::Migration[8.0]
   def change
     create_table :shipping_addresses do |t|
@@ -13,6 +15,6 @@ class CreateShippingAddresses < ActiveRecord::Migration[8.0]
       t.boolean :default, null: false, default: false
       t.timestamps
     end
-    add_index :shipping_addresses, [:user_id, :default]
+    add_index :shipping_addresses, %i[user_id default]
   end
 end

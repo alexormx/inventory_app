@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class Cart
   FREE_SHIPPING_THRESHOLD = 1500
   SHIPPING_FLAT = 99
@@ -24,7 +26,7 @@ class Cart
   end
 
   def items
-    @_items ||= @session[:cart].map do |product_id, quantity|
+    @items ||= @session[:cart].map do |product_id, quantity|
       product = Product.find_by(id: product_id)
       [product, quantity.to_i] if product
     end.compact
@@ -44,13 +46,15 @@ class Cart
   end
 
   def tax_amount
-  return 0 unless tax_enabled?
-  return 0 if subtotal.zero?
-  (subtotal * tax_rate).round(2)
+    return 0 unless tax_enabled?
+    return 0 if subtotal.zero?
+
+    (subtotal * tax_rate).round(2)
   end
 
   def shipping_cost
     return 0 if subtotal.zero? || subtotal >= FREE_SHIPPING_THRESHOLD
+
     SHIPPING_FLAT
   end
 
@@ -59,7 +63,7 @@ class Cart
   end
 
   def tax_enabled?
-    SiteSetting.get('tax_enabled', 'true') == true || SiteSetting.get('tax_enabled', 'true') == 'true'
+    [true, 'true'].include?(SiteSetting.get('tax_enabled', 'true'))
   end
 
   def tax_rate_percent

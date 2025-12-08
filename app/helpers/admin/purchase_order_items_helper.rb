@@ -1,2 +1,6 @@
-module Admin::PurchaseOrderItemsHelper
+# frozen_string_literal: true
+
+module Admin
+  module PurchaseOrderItemsHelper
+  end
 end

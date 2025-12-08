@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class PreorderMailer < ApplicationMailer
   default from: 'notificaciones@tienda.test'
 

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class ApplicationController < ActionController::Base
   include ApiTokenAuthenticatable
   # Only allow modern browsers supporting webp images, web push, badges, import maps, CSS nesting, and CSS :has.
@@ -9,6 +11,7 @@ class ApplicationController < ActionController::Base
   helper Admin::SortHelper if defined?(Admin::SortHelper)
 
   protected
+
   def after_sign_in_path_for(resource)
     if resource.admin?
       admin_dashboard_path
@@ -18,28 +21,30 @@ class ApplicationController < ActionController::Base
   end
 
   private
+
   def set_layout
     if current_user&.admin?
-      "admin"
+      'admin'
     else
-      "customer"
+      'customer'
     end
   end
 
   def authorize_admin!
-    unless current_user.admin?
-      flash[:alert] = "Acceso denegado: Solo los administradores pueden acceder a esta sección."
-      redirect_to root_path
-    end
+    return if current_user.admin?
+
+    flash[:alert] = 'Acceso denegado: Solo los administradores pueden acceder a esta sección.'
+    redirect_to root_path
+    
   end
 
   def track_visitor
-    return if request.path.starts_with?("/assets", "/cable")
+    return if request.path.starts_with?('/assets', '/cable')
     return if request.xhr?
-    return if !request.format.html?
+    return unless request.format.html?
     return if request.path.in?([
-      "/favicon.ico", "/robots.txt", "/sitemap.xml"
-    ])
+                                 '/favicon.ico', '/robots.txt', '/sitemap.xml'
+                               ])
 
     ip = real_ip_from_cloudflare || request.remote_ip
 
@@ -49,28 +54,27 @@ class ApplicationController < ActionController::Base
       path: request.fullpath,
       user: current_user
     )
-  rescue => e
+  rescue StandardError => e
     Rails.logger.warn("IP tracking error: #{e.message}")
   end
 
   def real_ip_from_cloudflare
-    request.headers["CF-Connecting-IP"] ||
-    request.headers["X-Forwarded-For"]&.split(",")&.first&.strip
+    request.headers['CF-Connecting-IP'] ||
+      request.headers['X-Forwarded-For']&.split(',')&.first&.strip
   end
 
   def ensure_confirmed_user!
-    if current_user && !current_user.confirmed?
-      sign_out current_user
-      flash[:alert] = "Debes confirmar tu correo electrónico antes de continuar."
-      redirect_to new_user_session_path
-    end
+    return unless current_user && !current_user.confirmed?
+
+    sign_out current_user
+    flash[:alert] = 'Debes confirmar tu correo electrónico antes de continuar.'
+    redirect_to new_user_session_path
+    
   end
 
   def set_locale
     chosen = params[:locale]&.to_sym
-    if chosen && I18n.available_locales.include?(chosen)
-      session[:locale] = chosen
-    end
+    session[:locale] = chosen if chosen && I18n.available_locales.include?(chosen)
     I18n.locale = session[:locale] || I18n.default_locale
   end
 

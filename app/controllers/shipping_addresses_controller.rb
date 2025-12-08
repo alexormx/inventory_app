@@ -1,7 +1,9 @@
+# frozen_string_literal: true
+
 class ShippingAddressesController < ApplicationController
-  layout "customer"
+  layout 'customer'
   before_action :authenticate_user!
-  before_action :set_address, only: [:edit, :update, :destroy, :make_default]
+  before_action :set_address, only: %i[edit update destroy make_default]
 
   def index
     @addresses = current_user.shipping_addresses.ordered
@@ -11,6 +13,8 @@ class ShippingAddressesController < ApplicationController
   def new
     @address = ShippingAddress.new
   end
+
+  def edit; end
 
   def create
     @address = current_user.shipping_addresses.build(address_params)
@@ -26,8 +30,6 @@ class ShippingAddressesController < ApplicationController
       render :index, status: :unprocessable_entity
     end
   end
-
-  def edit; end
 
   def update
     if @address.update(address_params)
@@ -60,10 +62,12 @@ class ShippingAddressesController < ApplicationController
   end
 
   private
+
   def set_address
     @address = current_user.shipping_addresses.find(params[:id])
   end
+
   def address_params
-    params.require(:shipping_address).permit(:label, :full_name, :line1, :line2, :city, :state, :postal_code, :country, :default)
+    params.expect(shipping_address: %i[label full_name line1 line2 city state postal_code country default])
   end
 end
