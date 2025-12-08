@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'rails_helper'
 require 'rswag/specs'
 
 RSpec.configure do |config|

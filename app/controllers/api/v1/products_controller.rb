@@ -6,7 +6,7 @@ module Api
       include CustomAttributesParam
       skip_before_action :verify_authenticity_token
       before_action :authenticate_with_token!
-      before_action :fix_custom_attributes_param, only: %i[create update]
+      before_action :fix_custom_attributes_param, only: %i[create]
 
       def create
         @product = Product.new(product_params.except(:product_images))

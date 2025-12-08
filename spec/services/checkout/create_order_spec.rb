@@ -20,6 +20,10 @@ RSpec.describe Checkout::CreateOrder, type: :service do
   context 'happy path sin pendientes' do
     it 'crea sale_order, items, snapshot y payment' do
   allow(product).to receive(:current_on_hand).and_return(5)
+  # Asegurar inventario físico disponible para evitar abortos en callbacks
+  2.times do
+    Inventory.create!(product: product, status: :available, purchase_cost: 10.0)
+  end
   cart = build_cart({ product => 2 })
 
       result = described_class.new(

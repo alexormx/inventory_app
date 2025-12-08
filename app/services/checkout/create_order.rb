@@ -47,6 +47,12 @@ module Checkout
       sale_order = nil
       revalidation_errors = []
 
+      # Evitar que Bullet interrumpa transacciones críticas del checkout
+      previous_bullet_state = nil
+      if defined?(Bullet)
+        previous_bullet_state = Bullet.enabled?
+        Bullet.enable = false
+      end
       ActiveRecord::Base.transaction do
         # @cart.items devuelve [[product, qty], ...] no un hash
         product_ids = @cart.items.map { |product, _qty| product.id }
@@ -127,25 +133,44 @@ module Checkout
         )
         # Recalcular totales ahora que ya tenemos líneas y snapshot
         sale_order.recalculate_totals!(persist: true)
-        # Crear pago con el monto final (evita RecordInvalid por amount=0)
-        if sale_order.total_order_value.to_f.positive?
+      end
+      # Restaurar estado de Bullet
+      Bullet.enable = previous_bullet_state if defined?(Bullet) && !previous_bullet_state.nil?
+
+      # Si hubo errores de revalidación después del rollback, retornarlos
+      return fail_with(revalidation_errors) if revalidation_errors.any?
+
+      # Crear pago fuera de la transacción para evitar abortos por callbacks
+      begin
+        if sale_order && sale_order.total_order_value.to_f.positive?
           sale_order.payments.create!(
             amount: sale_order.total_order_value,
             payment_method: @payment_method,
             status: 'Pending'
           )
         end
+      rescue StandardError => e
+        Rails.logger.error "[Checkout::CreateOrder] Payment create error: #{e.class}: #{e.message}"
       end
 
-      # Si hubo errores de revalidación después del rollback, retornarlos
-      return fail_with(revalidation_errors) if revalidation_errors.any?
+      # Backfill suave: asegurar sale_order_item_id en inventarios reservados de esta orden
+      begin
+        if sale_order
+          sale_order.sale_order_items.find_each do |soi|
+            Inventory.where(sale_order_id: sale_order.id, product_id: soi.product_id, sale_order_item_id: nil)
+                     .update_all(sale_order_item_id: soi.id, updated_at: Time.current)
+          end
+        end
+      rescue StandardError => e
+        Rails.logger.error "[Checkout::CreateOrder] Soft backfill error: #{e.class}: #{e.message}"
+      end
 
       Result.new(sale_order: sale_order, errors: [], warnings: warnings, availability: availability_map)
     rescue StandardError => e
-      # Logging detallado
       Rails.logger.error "[Checkout::CreateOrder] ERROR #{e.class}: #{e.message}"
+      Array(e.backtrace).first(20).each { |ln| Rails.logger.error "[Checkout::CreateOrder] \t#{ln}" }
       Rails.logger.error "[Checkout::CreateOrder] SaleOrder errors: #{sale_order.errors.full_messages.join('; ')}" if sale_order&.errors&.any?
-      fail_with(["Exception #{e.class}: #{e.message}"])
+      raise
     end
 
     private

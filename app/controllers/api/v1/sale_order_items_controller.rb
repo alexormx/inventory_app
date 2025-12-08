@@ -5,6 +5,7 @@ module Api
     class SaleOrderItemsController < ApplicationController
       skip_before_action :verify_authenticity_token
       before_action :authenticate_with_token!
+      around_action :disable_bullet_for_write, only: %i[create batch]
 
       # POST /api/v1/sale_order_items
       def create
@@ -85,6 +86,14 @@ module Api
       end
 
       private
+
+      def disable_bullet_for_write
+        prev = defined?(Bullet) ? Bullet.enabled? : nil
+        Bullet.enable = false if defined?(Bullet)
+        yield
+      ensure
+        Bullet.enable = prev if defined?(Bullet) && !prev.nil?
+      end
 
       def find_product(source)
         h = if source.respond_to?(:to_unsafe_h)

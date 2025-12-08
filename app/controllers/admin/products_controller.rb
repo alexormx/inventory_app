@@ -158,7 +158,7 @@ module Admin
     # --- Vistas por estado ---
     def drafts
       @q = params[:q].to_s.strip
-      scope = Product.where(status: 'draft')
+      scope = Product.where(status: 'draft').includes(:product_images_attachments)
       if @q.present?
         term = "%#{@q.downcase}%"
         scope = scope.where('LOWER(product_name) LIKE ? OR LOWER(product_sku) LIKE ?', term, term)
@@ -172,7 +172,7 @@ module Admin
 
     def active
       @q = params[:q].to_s.strip
-      scope = Product.where(status: 'active')
+      scope = Product.where(status: 'active').includes(:product_images_attachments)
       if @q.present?
         term = "%#{@q.downcase}%"
         scope = scope.where('LOWER(product_name) LIKE ? OR LOWER(product_sku) LIKE ?', term, term)
@@ -186,7 +186,7 @@ module Admin
 
     def inactive
       @q = params[:q].to_s.strip
-      scope = Product.where(status: 'inactive')
+      scope = Product.where(status: 'inactive').includes(:product_images_attachments)
       if @q.present?
         term = "%#{@q.downcase}%"
         scope = scope.where('LOWER(product_name) LIKE ? OR LOWER(product_sku) LIKE ?', term, term)

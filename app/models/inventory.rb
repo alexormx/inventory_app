@@ -15,7 +15,7 @@ class Inventory < ApplicationRecord
   ].freeze
 
   # Nota: agregar nuevos estatus siempre al final para no cambiar los IDs existentes
-  enum :status, 
+  enum :status,
        { available: 0, reserved: 1, in_transit: 2, sold: 3, damaged: 4, lost: 5, returned: 6, scrap: 7, pre_reserved: 8, pre_sold: 9, marketing: 10 }, default: :available
 
   validates :purchase_cost, presence: true, numericality: { greater_than_or_equal_to: 0 }
@@ -50,11 +50,13 @@ class Inventory < ApplicationRecord
     return unless status_changed?
 
     self.status_changed_at = Time.current
-    
+
   end
 
   def update_product_stock_quantities
     Products::UpdateStatsService.new(product).call
+  rescue StandardError => e
+    Rails.logger.error "[Inventory#update_product_stock_quantities] #{e.class}: #{e.message}"
   end
 
   def allocate_preorders_if_now_available

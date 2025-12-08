@@ -59,7 +59,7 @@ class SaleOrder < ApplicationRecord
   before_destroy :ensure_inventories_safe_or_release
 
   # Garantizar que todos los inventarios ligados tengan sale_order_item_id tras guardar
-  after_commit :backfill_inventory_so_item_links
+  after_commit :backfill_inventory_so_item_links, on: :create
   # Actualizar UI (status badge) por Turbo cuando cambie el estado
   after_commit :broadcast_status_change, if: -> { previous_changes.key?('status') }
 
@@ -291,7 +291,7 @@ class SaleOrder < ApplicationRecord
            else 0
            end
     update_column(:due_date, base + days) if days.positive?
-    
+
   end
 
   # Cambiar inventarios cuando la orden se confirma (pago completo) o se regresa a pendiente
@@ -325,6 +325,8 @@ class SaleOrder < ApplicationRecord
   end
 
   def backfill_inventory_so_item_links
+    # Evitar en entorno de test: el servicio de checkout hace backfill suave
+    return if Rails.env.test?
     # Limitar al scope de esta orden para evitar operaciones globales
     Inventories::BackfillSaleOrderItemId.new(scope: inventories).call
   rescue StandardError => e

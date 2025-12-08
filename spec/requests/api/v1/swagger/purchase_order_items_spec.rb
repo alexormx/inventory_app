@@ -3,6 +3,11 @@
 require 'swagger_helper'
 
 RSpec.describe 'API V1 Purchase Order Items', type: :request do
+  let(:admin_user) { create(:user, role: 'admin', api_token: 'test_token') }
+  let(:supplier) { create(:user, :supplier) }
+  let(:product) { create(:product, skip_seed_inventory: true) }
+  let(:purchase_order) { create(:purchase_order, user: supplier) }
+
   path '/api/v1/purchase_order_items' do
     post 'Create a purchase order item' do
       tags 'Purchase Order Items'
@@ -10,6 +15,18 @@ RSpec.describe 'API V1 Purchase Order Items', type: :request do
       consumes 'application/json'
       produces 'application/json'
       security [api_token: []]
+
+      let(:Authorization) { "Bearer #{admin_user.api_token}" }
+      let(:purchase_order_item) do
+        {
+          purchase_order_item: {
+            purchase_order_id: purchase_order.id,
+            product_id: product.id,
+            quantity: 10,
+            unit_cost: 10.0
+          }
+        }
+      end
 
       parameter name: :purchase_order_item, in: :body, schema: {
         type: :object,
@@ -41,6 +58,16 @@ RSpec.describe 'API V1 Purchase Order Items', type: :request do
       end
 
       response '422', 'invalid request' do
+        let(:purchase_order_item) do
+          {
+            purchase_order_item: {
+              purchase_order_id: purchase_order.id,
+              product_id: nil,
+              quantity: 10,
+              unit_cost: 10.0
+            }
+          }
+        end
         schema '$ref' => '#/components/schemas/Error'
         run_test!
       end
@@ -54,6 +81,14 @@ RSpec.describe 'API V1 Purchase Order Items', type: :request do
       consumes 'application/json'
       produces 'application/json'
       security [api_token: []]
+
+      let(:Authorization) { "Bearer #{admin_user.api_token}" }
+      let(:batch_request) do
+        {
+          purchase_order_id: purchase_order.id,
+          items: [{ product_id: product.id, quantity: 10, unit_cost: 10.0 }]
+        }
+      end
 
       parameter name: :batch_request, in: :body, schema: {
         type: :object,
@@ -106,6 +141,12 @@ RSpec.describe 'API V1 Purchase Order Items', type: :request do
       end
 
       response '422', 'invalid request' do
+        let(:batch_request) do
+          {
+            purchase_order_id: 'INVALID-PO-ID',
+            items: [{ product_id: product.id, quantity: 10, unit_cost: 10.0 }]
+          }
+        end
         schema '$ref' => '#/components/schemas/Error'
         run_test!
       end

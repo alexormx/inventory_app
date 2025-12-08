@@ -36,10 +36,11 @@ if defined?(Bullet)
     # Log to test log
     Bullet.rails_logger = true
 
-    # Detect N+1 queries
+    # Detect N+1 queries (most important check)
     Bullet.n_plus_one_query_enable = true
 
-    # Detect unused eager loading
-    Bullet.unused_eager_loading_enable = true
+    # Disable unused eager loading detection in tests (causes false positives
+    # because test requests often don't render full HTML where associations are used)
+    Bullet.unused_eager_loading_enable = false
   end
 end

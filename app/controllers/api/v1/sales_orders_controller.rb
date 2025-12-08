@@ -10,7 +10,7 @@ module Api
       def create
         user = User.find_by(email: sales_order_params[:email])
         unless user
-          render json: { status: 'error', message: "User not found for email #{sales_order_params[:email]}" }, 
+          render json: { status: 'error', message: "User not found for email #{sales_order_params[:email]}" },
                  status: :unprocessable_entity and return
         end
 
@@ -140,13 +140,13 @@ module Api
               sales_order.reload
               sales_order.update!(status: desired_status)
             end
-
-            render json: { status: 'success', sales_order: sales_order, extra: response_extra }, status: :created and return
+            render_success(sales_order, response_extra)
+            return
           end
         rescue ActiveRecord::RecordInvalid => e
-          render json: { status: 'error', errors: e.record.errors.full_messages }, status: :unprocessable_entity and return
+          render_unprocessable_entity(e)
         rescue StandardError => e
-          render json: { status: 'error', message: e.message }, status: :internal_server_error and return
+          render_internal_error(e)
         end
       end
 
@@ -279,7 +279,7 @@ module Api
               # Flujo normal: actualizamos con validaciones y luego garantizamos payment/shipment si el estado deseado lo requiere
               sales_order.update!(update_attrs)
 
-              if %w[Confirmed 
+              if %w[Confirmed
                     Delivered].include?(desired_status) && (sales_order.total_order_value.to_f > 0.0 && sales_order.total_paid < sales_order.total_order_value)
                 pm_param = params.dig(:sales_order, :payment_method).presence
                 pm_mapped = if pm_param && Payment.payment_methods.keys.include?(pm_param.to_s)
@@ -346,6 +346,23 @@ module Api
         end
       end
 
+        private
+
+        def render_success(sales_order, extra)
+          return if performed?
+          render json: { status: 'success', sales_order: sales_order, extra: extra }, status: :created
+        end
+
+        def render_unprocessable_entity(exception)
+          return if performed?
+          render json: { status: 'error', errors: exception.record.errors.full_messages }, status: :unprocessable_entity
+        end
+
+        def render_internal_error(exception)
+          return if performed?
+          render json: { status: 'error', message: exception.message }, status: :internal_server_error
+        end
+
       # POST /api/v1/sales_orders/:id/recalculate_and_pay
       # Recalcula totales desde las líneas y crea el pago faltante (Completed) y shipment (si Delivered) evitando bloqueos.
       def recalculate_and_pay
@@ -373,7 +390,7 @@ module Api
                 sales_order.reload
               end
             end
-            Rails.logger.info({ at: 'Api::V1::SalesOrdersController#recalculate_and_pay:recalc', id: sales_order.id, before_total: before_total&.to_s, 
+            Rails.logger.info({ at: 'Api::V1::SalesOrdersController#recalculate_and_pay:recalc', id: sales_order.id, before_total: before_total&.to_s,
                                 after_total: sales_order.total_order_value.to_s, items_count: items_count }.to_json)
             response_extra[:recalculated] = { before: before_total, after: sales_order.total_order_value, items: items_count }
 
@@ -401,11 +418,11 @@ module Api
                 paid_at: paid_at_ts
               )
               response_extra[:payment] = payment
-              Rails.logger.info({ at: 'Api::V1::SalesOrdersController#recalculate_and_pay:payment_created', id: sales_order.id, 
+              Rails.logger.info({ at: 'Api::V1::SalesOrdersController#recalculate_and_pay:payment_created', id: sales_order.id,
                                   amount: missing.to_s }.to_json)
             else
               response_extra[:payment] = { skipped: true, reason: 'already_fully_paid_or_zero_total' }
-              Rails.logger.info({ at: 'Api::V1::SalesOrdersController#recalculate_and_pay:payment_skipped', id: sales_order.id, 
+              Rails.logger.info({ at: 'Api::V1::SalesOrdersController#recalculate_and_pay:payment_skipped', id: sales_order.id,
                                   total: sales_order.total_order_value.to_s, total_paid: sales_order.total_paid.to_s }.to_json)
             end
 

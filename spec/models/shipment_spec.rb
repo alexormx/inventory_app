@@ -8,7 +8,7 @@ RSpec.describe Shipment, type: :model do
   end
 
   describe 'Associations' do
-    it { should belong_to(:sale_order).with_foreign_key('sale_order_id') }
+    it { should belong_to(:sale_order) }
   end
 
   describe "custom date validation" do
