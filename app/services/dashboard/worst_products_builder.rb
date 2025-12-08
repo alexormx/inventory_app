@@ -94,7 +94,7 @@ module Dashboard
         cogs = data[:cogs]
         inv_count = data[:inv_count]
         inv_cost = data[:inv_total_cost]
-        apc = product.avg_purchase_cost.to_d
+        apc = product.average_purchase_cost.to_d
 
         profit = revenue - cogs
         margin_pct = revenue.positive? ? ((profit / revenue) * 100).round(2) : nil

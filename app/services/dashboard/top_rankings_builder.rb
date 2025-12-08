@@ -48,11 +48,11 @@ module Dashboard
             'products.name',
             'products.sku',
             'products.current_stock',
-            'products.avg_purchase_cost',
+            'products.average_purchase_cost',
             'COUNT(inventories.id) AS inv_count',
-            'products.current_stock * products.avg_purchase_cost AS inv_value'
+            'products.current_stock * products.average_purchase_cost AS inv_value'
           )
-          .order(Arel.sql('products.current_stock * products.avg_purchase_cost DESC'))
+          .order(Arel.sql('products.current_stock * products.average_purchase_cost DESC'))
           .limit(limit)
           .map do |p|
             {
@@ -60,7 +60,7 @@ module Dashboard
               name: p.name,
               sku: p.sku,
               stock: p.current_stock,
-              avg_cost: p.avg_purchase_cost.to_d,
+              avg_cost: p.average_purchase_cost.to_d,
               value: p.inv_value.to_d
             }
           end
