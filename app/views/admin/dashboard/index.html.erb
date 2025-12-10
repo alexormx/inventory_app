@@ -833,7 +833,7 @@
                       <tr>
                         <td class="text-muted">#<%= idx + 1 %></td>
                         <td>
-                          <div class="small fw-semibold"><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></div>
+                          <div class="small fw-semibold"><%= link_to r[:name], edit_admin_product_path(r[:id]) %></div>
                           <div class="text-muted" style="font-size: .75rem;">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
                         </td>
                         <td class="text-end"><%= r[:margin_pct].nil? ? '—' : number_to_percentage(r[:margin_pct] * 100, precision: 1) %></td>
@@ -855,7 +855,7 @@
                       <tr>
                         <td class="text-muted">#<%= idx + 1 %></td>
                         <td>
-                          <div class="small fw-semibold"><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></div>
+                          <div class="small fw-semibold"><%= link_to r[:name], edit_admin_product_path(r[:id]) %></div>
                           <div class="text-muted" style="font-size: .75rem;">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
                         </td>
                         <td class="text-end"><%= r[:rotation].nil? ? '—' : number_with_precision(r[:rotation], precision: 2, delimiter: ',') %></td>
@@ -877,7 +877,7 @@
                       <tr>
                         <td class="text-muted">#<%= idx + 1 %></td>
                         <td>
-                          <div class="small fw-semibold"><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></div>
+                          <div class="small fw-semibold"><%= link_to r[:name], edit_admin_product_path(r[:id]) %></div>
                           <div class="text-muted" style="font-size: .75rem;">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
                         </td>
                         <td class="text-end"><%= r[:doh].infinite? ? '∞' : number_with_precision(r[:doh], precision: 1, delimiter: ',') %></td>
@@ -899,7 +899,7 @@
                       <tr>
                         <td class="text-muted">#<%= idx + 1 %></td>
                         <td>
-                          <div class="small fw-semibold"><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></div>
+                          <div class="small fw-semibold"><%= link_to r[:name], edit_admin_product_path(r[:id]) %></div>
                           <div class="text-muted" style="font-size: .75rem;">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
                         </td>
                         <td class="text-end">$ <%= number_with_precision(r[:immobilized_capital], precision: 2, delimiter: ',') %></td>
@@ -921,7 +921,7 @@
                       <tr>
                         <td class="text-muted">#<%= idx + 1 %></td>
                         <td>
-                          <div class="small fw-semibold"><%= link_to r[:name], edit_admin_product_path(r[:product_id]) %></div>
+                          <div class="small fw-semibold"><%= link_to r[:name], edit_admin_product_path(r[:id]) %></div>
                           <div class="text-muted" style="font-size: .75rem;">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
                         </td>
                         <td class="text-end"><%= number_with_precision(r[:worst_score], precision: 3, delimiter: ',') %></td>
