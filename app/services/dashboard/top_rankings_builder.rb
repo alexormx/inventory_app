@@ -71,11 +71,10 @@ module Dashboard
     def top_categories
       @top_categories ||= begin
         base_items
-          .joins(product: :category)
-          .group('categories.id', 'categories.name')
+          .joins(:product)
+          .group('products.category')
           .select(
-            'categories.id',
-            'categories.name',
+            'products.category AS category_name',
             Arel.sql("#{REV_SQL} AS revenue"),
             Arel.sql("#{COGS_SQL} AS cogs"),
             Arel.sql("#{UNITS_SQL} AS units")
@@ -89,8 +88,8 @@ module Dashboard
             margin = revenue.positive? ? ((profit / revenue) * 100).round(2) : 0
 
             {
-              id: row.id,
-              name: row.name,
+              id: row.category_name,
+              name: row.category_name,
               revenue: revenue,
               cogs: cogs,
               profit: profit,
@@ -143,11 +142,11 @@ module Dashboard
 
       base_items
         .joins(:product)
-        .group('products.id', 'products.name', 'products.sku')
+        .group('products.id', 'products.product_name', 'products.product_sku')
         .select(
           'products.id',
-          'products.name',
-          'products.sku',
+          'products.product_name',
+          'products.product_sku',
           Arel.sql("#{REV_SQL} AS revenue"),
           Arel.sql("#{COGS_SQL} AS cogs"),
           Arel.sql("#{UNITS_SQL} AS units")
@@ -162,8 +161,8 @@ module Dashboard
 
           {
             id: row.id,
-            name: row.name,
-            sku: row.sku,
+            name: row.product_name,
+            sku: row.product_sku,
             revenue: revenue,
             cogs: cogs,
             profit: profit,
