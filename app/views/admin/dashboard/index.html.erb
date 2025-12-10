@@ -59,8 +59,8 @@
     </span>
   </div>
 
-  <!-- ========== SECCIÓN 1: KPIs Ejecutivos ========== -->
-  <div class="row g-3 mb-3">
+  <!-- ========== SECCIÓN 1: KPIs Ejecutivos (Consolidados) ========== -->
+  <div class="row g-3 mb-2">
     <div class="col-md-4 col-lg-3">
       <%= render "kpi_card",
         title: "Ingresos YTD",
@@ -97,21 +97,31 @@
     </div>
     <div class="col-md-4 col-lg-3">
       <%= render "kpi_card",
-        title: "Inversión Total (All Time)",
+        title: "Valor de Inventario",
+        value: fmt_currency(@inventory_total_value),
+        ly: (@inventory_turnover_ytd.nil? ? nil : "Rotación: #{number_with_precision(@inventory_turnover_ytd, precision: 2, delimiter: ',')}"),
+        variant: "text-bg-info-subtle",
+        tooltip: "Valor del inventario disponible. Rotación = COGS / Inventario promedio.",
+        health: @inventory_turnover_ytd.to_f >= 2 ? 'good' : (@inventory_turnover_ytd.to_f >= 1 ? 'warning' : 'danger')
+      %>
+    </div>
+  </div>
+  
+  <div class="row g-3 mb-3">
+    <div class="col-md-4 col-lg-3">
+      <%= render "kpi_card",
+        title: "Inversión Total (Histórico)",
         value: fmt_currency(@purchases_total_mxn),
-        variant: "text-bg-warning-subtle",
+        variant: "text-bg-secondary-subtle",
         tooltip: "Total invertido en compras de mercancía desde el inicio."
       %>
     </div>
     <div class="col-md-4 col-lg-3">
       <%= render "kpi_card",
-        title: "Órdenes de Compra YTD",
-        value: number_with_delimiter(@po_count_ytd),
-        ly: number_with_delimiter(@po_count_prev),
-        delta: @kpi_deltas&.dig(:po_count),
-        variant: "text-bg-primary-subtle",
-        tooltip: "Cantidad de Purchase Orders creadas este año.",
-        health: @kpi_deltas&.dig(:po_count).to_f >= 0 ? 'good' : nil
+        title: "Ventas Históricas",
+        value: fmt_currency(@sales_total_mxn),
+        variant: "text-bg-success-subtle",
+        tooltip: "Total de ventas acumuladas desde el inicio de operaciones."
       %>
     </div>
     <div class="col-md-4 col-lg-3">
@@ -125,18 +135,53 @@
         health: @kpi_deltas&.dig(:orders).to_f >= 0 ? 'good' : 'warning'
       %>
     </div>
+    <div class="col-md-4 col-lg-3">
+      <%= render "kpi_card",
+        title: "Clientes Activos",
+        value: fmt_number(@active_customers_ytd),
+        ly: fmt_number(@active_customers_prev),
+        delta: @kpi_deltas&.dig(:customers),
+        variant: "text-bg-primary-subtle",
+        tooltip: "Clientes con al menos una orden en el periodo YTD.",
+        health: @kpi_deltas&.dig(:customers).to_f >= 0 ? 'good' : 'warning'
+      %>
+    </div>
   </div>
 
-  <!-- ========== SECCIÓN 2: Productos (Top Sellers + Inventario) ========== -->
+  <!-- ========== SECCIÓN 2: KPIs Operativos (métricas tácticas) ========== -->
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-md-3 col-xl">
+      <%= render 'kpi_stat', title: 'Ticket Promedio', value: fmt_currency(@avg_ticket_ytd), tooltip: 'Valor promedio por orden de venta.', health: @avg_ticket_ytd.to_f >= 500 ? 'good' : (@avg_ticket_ytd.to_f >= 200 ? nil : 'warning') %>
+    </div>
+    <div class="col-6 col-md-3 col-xl">
+      <%= render 'kpi_stat', title: 'Conversión', value: fmt_percentage_ratio(@conversion_rate_ytd, precision: 2), tooltip: 'Porcentaje de visitas que se convierten en órdenes.', health: @conversion_rate_ytd.to_f >= 0.03 ? 'good' : (@conversion_rate_ytd.to_f >= 0.01 ? 'warning' : 'danger') %>
+    </div>
+    <div class="col-6 col-md-3 col-xl">
+      <%= render 'kpi_stat', title: 'Stock Crítico', value: (@critical_stock_count.nil? ? '—' : fmt_number(@critical_stock_count)), tooltip: 'Productos por debajo del punto de reorden.', health: @critical_stock_count.to_i > 5 ? 'danger' : (@critical_stock_count.to_i > 0 ? 'warning' : 'good') %>
+    </div>
+    <div class="col-6 col-md-3 col-xl">
+      <%= render 'kpi_stat', title: 'Clientes Recurrentes', value: fmt_percentage_ratio(@recurring_customers_ratio, precision: 1), tooltip: 'Clientes que han comprado más de una vez.', health: @recurring_customers_ratio.to_f >= 0.3 ? 'good' : (@recurring_customers_ratio.to_f >= 0.15 ? 'warning' : nil) %>
+    </div>
+    <div class="col-6 col-md-3 col-xl">
+      <%= render 'kpi_stat', title: 'Órdenes Compra YTD', value: number_with_delimiter(@po_count_ytd), tooltip: 'Purchase Orders creadas este año.', health: @kpi_deltas&.dig(:po_count).to_f >= 0 ? 'good' : nil %>
+    </div>
+  </div>
+
+  <!-- ========== SECCIÓN 3: Productos (Top Sellers + Inventario) ========== -->
   <div class="row g-3 mt-2">
     <div class="col-xl-8">
       <div class="card h-100" data-controller="tabs">
         <div class="card-header d-flex justify-content-between align-items-center">
           <span><i class="fa-solid fa-box"></i> Top Productos</span>
-          <ul class="nav nav-tabs nav-tabs-sm card-header-tabs d-none d-md-flex" role="tablist">
-            <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-sellers" type="button" role="tab" aria-controls="tp-sellers" aria-selected="true">Vendedores</button></li>
-            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-profit" type="button" role="tab" aria-controls="tp-profit">Rentables</button></li>
-          </ul>
+          <div class="d-flex align-items-center gap-2">
+            <ul class="nav nav-tabs nav-tabs-sm card-header-tabs d-none d-md-flex" role="tablist">
+              <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-sellers" type="button" role="tab" aria-controls="tp-sellers" aria-selected="true">Vendedores</button></li>
+              <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-profit" type="button" role="tab" aria-controls="tp-profit">Rentables</button></li>
+            </ul>
+            <%= link_to admin_products_path, class: 'btn btn-sm btn-outline-primary ms-2 d-none d-lg-inline-block' do %>
+              <i class="fa-solid fa-list"></i> Ver todos
+            <% end %>
+          </div>
           <select class="form-select form-select-sm d-md-none w-auto" aria-label="Seleccionar grupo" data-action="change->tabs#select">
             <option value="#tp-sellers" selected>Vendedores</option>
             <option value="#tp-profit">Rentables</option>
@@ -365,53 +410,6 @@
     </div>
   </div>
 
-  <div class="row g-3 mb-3">
-    <div class="col-md-4 col-lg-4">
-      <%= render "kpi_card",
-        title: "Ventas totales en MXN (All Time)",
-        value: fmt_currency(@sales_total_mxn),
-        variant: "text-bg-success-subtle"
-      %>
-    </div>
-    <div class="col-md-4 col-lg-4">
-      <%= render "kpi_card",
-        title: "Clientes activos",
-        value: fmt_number(@active_customers_ytd),
-        ly: fmt_number(@active_customers_prev),
-        delta: @kpi_deltas&.dig(:customers),
-        variant: "text-bg-primary-subtle",
-        tooltip: "Clientes activos = clientes con al menos una orden en el periodo.",
-        health: @kpi_deltas&.dig(:customers).to_f >= 0 ? 'good' : 'warning'
-      %>
-    </div>
-    <div class="col-md-4 col-lg-4">
-      <%= render "kpi_card",
-        title: "Valor total de inventario (MXN)",
-        value: fmt_currency(@inventory_total_value),
-        ly: (@inventory_turnover_ytd.nil? ? nil : "Rotación: #{number_with_precision(@inventory_turnover_ytd, precision: 2, delimiter: ',')}") ,
-        variant: "text-bg-warning-subtle",
-        tooltip: "Valor del inventario disponible. Rotación = COGS / Inventario promedio.",
-        health: @inventory_turnover_ytd.to_f >= 2 ? 'good' : (@inventory_turnover_ytd.to_f >= 1 ? 'warning' : 'danger')
-      %>
-    </div>
-  </div>
-
-  <!-- ========== SECCIÓN 3: KPIs Operativos ========== -->
-  <div class="row g-3 mb-3">
-    <div class="col-md-2 col-6">
-      <%= render 'kpi_stat', title: 'Ticket promedio', value: fmt_currency(@avg_ticket_ytd), tooltip: 'Valor promedio por orden de venta.', health: @avg_ticket_ytd.to_f >= 500 ? 'good' : (@avg_ticket_ytd.to_f >= 200 ? nil : 'warning') %>
-    </div>
-    <div class="col-md-2 col-6">
-      <%= render 'kpi_stat', title: 'Conversión', value: fmt_percentage_ratio(@conversion_rate_ytd, precision: 2), tooltip: 'Porcentaje de visitas que se convierten en órdenes.', health: @conversion_rate_ytd.to_f >= 0.03 ? 'good' : (@conversion_rate_ytd.to_f >= 0.01 ? 'warning' : 'danger') %>
-    </div>
-    <div class="col-md-2 col-6">
-      <%= render 'kpi_stat', title: 'Stock crítico', value: (@critical_stock_count.nil? ? '—' : fmt_number(@critical_stock_count)), tooltip: 'Productos por debajo del punto de reorden.', health: @critical_stock_count.to_i > 5 ? 'danger' : (@critical_stock_count.to_i > 0 ? 'warning' : 'good') %>
-    </div>
-    <div class="col-md-2 col-6">
-      <%= render 'kpi_stat', title: 'Recurrentes', value: fmt_percentage_ratio(@recurring_customers_ratio, precision: 1), tooltip: 'Clientes que han comprado más de una vez.', health: @recurring_customers_ratio.to_f >= 0.3 ? 'good' : (@recurring_customers_ratio.to_f >= 0.15 ? 'warning' : nil) %>
-    </div>
-  </div>
-
   <!-- ========== SECCIÓN 4: Categorías y Clientes ========== -->
   <div class="row mt-4 g-3">
     <div class="col-xl-6">
@@ -632,21 +630,32 @@
     </div>
   </div>
 
-  <!-- Otras tablas: Geografía -->
+  <!-- ========== SECCIÓN: Geografía (Colapsable) ========== -->
   <div class="row mt-4">
-    <div class="col-xl-8">
-      <div class="card h-100" data-controller="tabs">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center" style="cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#geo-section" aria-expanded="false">
+          <span><i class="fa-solid fa-globe"></i> Análisis Geográfico</span>
+          <span class="text-muted small"><i class="fa-solid fa-chevron-down"></i> Click para expandir</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="collapse" id="geo-section">
+    <div class="row mt-2 g-3">
+      <div class="col-xl-8">
+        <div class="card h-100" data-controller="tabs">
         <div class="card-header d-flex justify-content-between align-items-center">
           <span><i class="fa-solid fa-flag"></i> Ventas por Estado (México)</span>
           <ul class="nav nav-tabs nav-tabs-sm card-header-tabs d-none d-md-flex" role="tablist">
             <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#mx-ytd" type="button" role="tab" aria-controls="mx-ytd" aria-selected="true">YTD</button></li>
-            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#mx-ly" type="button" role="tab" aria-controls="mx-ly">Last Year</button></li>
-            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#mx-all" type="button" role="tab" aria-controls="mx-all">All Time</button></li>
+            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#mx-ly" type="button" role="tab" aria-controls="mx-ly">Año Anterior</button></li>
+            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#mx-all" type="button" role="tab" aria-controls="mx-all">Histórico</button></li>
           </ul>
           <select class="form-select form-select-sm d-md-none w-auto" aria-label="Seleccionar periodo" data-action="change->tabs#select">
             <option value="#mx-ytd" selected>YTD</option>
-            <option value="#mx-ly">Last Year</option>
-            <option value="#mx-all">All Time</option>
+            <option value="#mx-ly">Año Anterior</option>
+            <option value="#mx-all">Histórico</option>
           </select>
         </div>
         <div class="card-body p-0">
@@ -718,13 +727,13 @@
           <span><i class="fa-solid fa-table"></i> Distribución de Ventas por País</span>
           <ul class="nav nav-tabs nav-tabs-sm card-header-tabs d-none d-md-flex" role="tablist">
             <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#cty-ytd" type="button" role="tab" aria-controls="cty-ytd" aria-selected="true">YTD</button></li>
-            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#cty-ly" type="button" role="tab" aria-controls="cty-ly">Last Year</button></li>
-            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#cty-all" type="button" role="tab" aria-controls="cty-all">All Time</button></li>
+            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#cty-ly" type="button" role="tab" aria-controls="cty-ly">Año Anterior</button></li>
+            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#cty-all" type="button" role="tab" aria-controls="cty-all">Histórico</button></li>
           </ul>
           <select class="form-select form-select-sm d-md-none w-auto" aria-label="Seleccionar periodo" data-action="change->tabs#select">
             <option value="#cty-ytd" selected>YTD</option>
-            <option value="#cty-ly">Last Year</option>
-            <option value="#cty-all">All Time</option>
+            <option value="#cty-ly">Año Anterior</option>
+            <option value="#cty-all">Histórico</option>
           </select>
         </div>
         <div class="card-body p-0">
@@ -794,148 +803,139 @@
       </div>
     </div>
   </div>
+  </div>
 
-  <!-- Gráficos -->
-  <!-- Worst Products KPIs -->
+  <!-- ========== SECCIÓN: Productos Problemáticos ========== -->
   <div class="row mt-4 g-3">
     <div class="col-lg-12">
-      <div class="card h-100">
-        <div class="card-header d-flex justify-content-between align-items-center">
-          <span><i class="fa-solid fa-triangle-exclamation"></i> Worst Products</span>
-          <div class="small text-muted">w1=0.4, w2=0.2, w3=0.2, w4=0.2 (ajustables por query params)</div>
+      <div class="card h-100 border-danger">
+        <div class="card-header d-flex justify-content-between align-items-center bg-danger-subtle">
+          <span><i class="fa-solid fa-triangle-exclamation"></i> Productos Problemáticos</span>
+          <div class="d-flex align-items-center gap-2">
+            <%= link_to admin_products_path(sort: 'margin_asc'), class: 'btn btn-sm btn-outline-danger' do %>
+              <i class="fa-solid fa-list"></i> Ver todos
+            <% end %>
+            <span class="badge bg-danger" data-bs-toggle="tooltip" title="Productos con bajo margen, poca rotación o capital inmovilizado. Score ponderado automático.">Requiere atención</span>
+          </div>
         </div>
         <div class="card-body">
+          <!-- KPIs resumen -->
           <div class="row text-center mb-3">
-            <div class="col-md-3">
-              <div class="small text-muted">Capital inmovilizado</div>
-              <div class="fs-5 fw-bold">$ <%= number_with_precision(@worst_global_total_immobilized_capital, precision: 2, delimiter: ',') %></div>
+            <div class="col-6 col-md-3">
+              <div class="small text-muted">Capital Inmovilizado</div>
+              <div class="fs-5 fw-bold text-danger">$ <%= number_with_precision(@worst_global_total_immobilized_capital, precision: 2, delimiter: ',') %></div>
             </div>
-            <div class="col-md-3">
-              <div class="small text-muted">Margen promedio</div>
+            <div class="col-6 col-md-3">
+              <div class="small text-muted">Margen Promedio</div>
               <div class="fs-5 fw-bold"><%= @worst_global_avg_margin_pct.nil? ? '—' : number_to_percentage(@worst_global_avg_margin_pct * 100, precision: 1) %></div>
             </div>
-            <div class="col-md-3">
-              <div class="small text-muted">Rotación promedio</div>
+            <div class="col-6 col-md-3">
+              <div class="small text-muted">Rotación Promedio</div>
               <div class="fs-5 fw-bold"><%= @worst_global_avg_rotation.nil? ? '—' : number_with_precision(@worst_global_avg_rotation, precision: 2, delimiter: ',') %></div>
             </div>
-            <div class="col-md-3">
-              <div class="small text-muted">DOH promedio</div>
+            <div class="col-6 col-md-3">
+              <div class="small text-muted">Días de Inventario (DOH)</div>
               <div class="fs-5 fw-bold"><%= @worst_global_avg_doh.nil? ? '—' : number_with_precision(@worst_global_avg_doh, precision: 1, delimiter: ',') %></div>
             </div>
           </div>
-          <div class="row g-3">
-            <div class="col-xl-6">
-              <div class="table-responsive">
-                <table class="table table-sm mb-0">
-                  <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Margen</th></tr></thead>
-                  <tbody>
-                    <% @worst_margin_products&.each_with_index do |r, idx| %>
-                      <tr>
-                        <td class="text-muted">#<%= idx + 1 %></td>
-                        <td>
-                          <div class="small fw-semibold"><%= link_to r[:name], edit_admin_product_path(r[:id]) %></div>
-                          <div class="text-muted" style="font-size: .75rem;">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
-                        </td>
-                        <td class="text-end"><%= r[:margin_pct].nil? ? '—' : number_to_percentage(r[:margin_pct] * 100, precision: 1) %></td>
-                      </tr>
-                    <% end %>
-                    <% if @worst_margin_products.blank? %>
-                      <tr><td colspan="3" class="text-center text-muted py-3">Sin datos</td></tr>
-                    <% end %>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-            <div class="col-xl-6">
-              <div class="table-responsive">
-                <table class="table table-sm mb-0">
-                  <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Rotación</th></tr></thead>
-                  <tbody>
-                    <% @worst_rotation_products&.each_with_index do |r, idx| %>
-                      <tr>
-                        <td class="text-muted">#<%= idx + 1 %></td>
-                        <td>
-                          <div class="small fw-semibold"><%= link_to r[:name], edit_admin_product_path(r[:id]) %></div>
-                          <div class="text-muted" style="font-size: .75rem;">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
-                        </td>
-                        <td class="text-end"><%= r[:rotation].nil? ? '—' : number_with_precision(r[:rotation], precision: 2, delimiter: ',') %></td>
-                      </tr>
-                    <% end %>
-                    <% if @worst_rotation_products.blank? %>
-                      <tr><td colspan="3" class="text-center text-muted py-3">Sin datos</td></tr>
-                    <% end %>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-            <div class="col-xl-6">
-              <div class="table-responsive">
-                <table class="table table-sm mb-0">
-                  <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">DOH</th></tr></thead>
-                  <tbody>
-                    <% @top_doh_products&.each_with_index do |r, idx| %>
-                      <tr>
-                        <td class="text-muted">#<%= idx + 1 %></td>
-                        <td>
-                          <div class="small fw-semibold"><%= link_to r[:name], edit_admin_product_path(r[:id]) %></div>
-                          <div class="text-muted" style="font-size: .75rem;">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
-                        </td>
-                        <td class="text-end"><%= r[:doh].infinite? ? '∞' : number_with_precision(r[:doh], precision: 1, delimiter: ',') %></td>
-                      </tr>
-                    <% end %>
-                    <% if @top_doh_products.blank? %>
-                      <tr><td colspan="3" class="text-center text-muted py-3">Sin datos</td></tr>
-                    <% end %>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-            <div class="col-xl-6">
-              <div class="table-responsive">
-                <table class="table table-sm mb-0">
-                  <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Capital inmovilizado</th></tr></thead>
-                  <tbody>
-                    <% @top_immobilized_products&.each_with_index do |r, idx| %>
-                      <tr>
-                        <td class="text-muted">#<%= idx + 1 %></td>
-                        <td>
-                          <div class="small fw-semibold"><%= link_to r[:name], edit_admin_product_path(r[:id]) %></div>
-                          <div class="text-muted" style="font-size: .75rem;">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
-                        </td>
-                        <td class="text-end">$ <%= number_with_precision(r[:immobilized_capital], precision: 2, delimiter: ',') %></td>
-                      </tr>
-                    <% end %>
-                    <% if @top_immobilized_products.blank? %>
-                      <tr><td colspan="3" class="text-center text-muted py-3">Sin datos</td></tr>
-                    <% end %>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-            <div class="col-xl-12">
-              <div class="table-responsive">
-                <table class="table table-sm mb-0">
-                  <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Worst Score</th><th class="text-end">Margen</th><th class="text-end">Rotación</th><th class="text-end">DOH</th><th class="text-end">Capital</th></tr></thead>
-                  <tbody>
-                    <% @worst_score_products&.each_with_index do |r, idx| %>
-                      <tr>
-                        <td class="text-muted">#<%= idx + 1 %></td>
-                        <td>
-                          <div class="small fw-semibold"><%= link_to r[:name], edit_admin_product_path(r[:id]) %></div>
-                          <div class="text-muted" style="font-size: .75rem;">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
-                        </td>
-                        <td class="text-end"><%= number_with_precision(r[:worst_score], precision: 3, delimiter: ',') %></td>
-                        <td class="text-end"><%= r[:margin_pct].nil? ? '—' : number_to_percentage(r[:margin_pct] * 100, precision: 1) %></td>
-                        <td class="text-end"><%= r[:rotation].nil? ? '—' : number_with_precision(r[:rotation], precision: 2, delimiter: ',') %></td>
-                        <td class="text-end"><%= r[:doh].infinite? ? '∞' : number_with_precision(r[:doh], precision: 1, delimiter: ',') %></td>
-                        <td class="text-end">$ <%= number_with_precision(r[:immobilized_capital], precision: 2, delimiter: ',') %></td>
-                      </tr>
-                    <% end %>
-                    <% if @worst_score_products.blank? %>
-                      <tr><td colspan="7" class="text-center text-muted py-3">Sin datos</td></tr>
-                    <% end %>
-                  </tbody>
-                </table>
+          
+          <!-- Ranking Principal (siempre visible) -->
+          <div class="table-responsive">
+            <table class="table table-sm mb-0 table-hover">
+              <thead class="table-light"><tr><th style="width:60px">Rank</th><th>Producto</th><th class="text-end">Score</th><th class="text-end d-none d-md-table-cell">Margen</th><th class="text-end d-none d-md-table-cell">Rotación</th><th class="text-end d-none d-lg-table-cell">DOH</th><th class="text-end">Capital</th></tr></thead>
+              <tbody>
+                <% @worst_score_products&.first(10)&.each_with_index do |r, idx| %>
+                  <tr>
+                    <td class="text-muted">#<%= idx + 1 %></td>
+                    <td>
+                      <div class="small fw-semibold"><%= link_to r[:name], edit_admin_product_path(r[:id]) %></div>
+                      <div class="text-muted d-none d-sm-block" style="font-size: .75rem;">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
+                    </td>
+                    <td class="text-end"><span class="badge bg-secondary"><%= number_with_precision(r[:worst_score], precision: 2, delimiter: ',') %></span></td>
+                    <td class="text-end d-none d-md-table-cell <%= r[:margin_pct].to_f < 0.15 ? 'text-danger fw-bold' : '' %>"><%= r[:margin_pct].nil? ? '—' : number_to_percentage(r[:margin_pct] * 100, precision: 1) %></td>
+                    <td class="text-end d-none d-md-table-cell <%= r[:rotation].to_f < 1 ? 'text-warning fw-bold' : '' %>"><%= r[:rotation].nil? ? '—' : number_with_precision(r[:rotation], precision: 2, delimiter: ',') %></td>
+                    <td class="text-end d-none d-lg-table-cell"><%= r[:doh].infinite? ? '∞' : number_with_precision(r[:doh], precision: 0, delimiter: ',') %></td>
+                    <td class="text-end text-danger">$ <%= number_with_precision(r[:immobilized_capital], precision: 0, delimiter: ',') %></td>
+                  </tr>
+                <% end %>
+                <% if @worst_score_products.blank? %>
+                  <tr><td colspan="7" class="text-center text-muted py-3">Sin datos</td></tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+          
+          <!-- Detalle por métrica (colapsable) -->
+          <div class="mt-3">
+            <button class="btn btn-sm btn-outline-secondary w-100" type="button" data-bs-toggle="collapse" data-bs-target="#worst-details" aria-expanded="false">
+              <i class="fa-solid fa-chevron-down"></i> Ver desglose por métrica
+            </button>
+            <div class="collapse mt-3" id="worst-details">
+              <div class="row g-3">
+                <div class="col-md-6 col-xl-3">
+                  <div class="card">
+                    <div class="card-header py-2 small fw-semibold"><i class="fa-solid fa-percent text-danger"></i> Peor Margen</div>
+                    <div class="card-body p-0">
+                      <ul class="list-group list-group-flush small">
+                        <% @worst_margin_products&.first(5)&.each do |r| %>
+                          <li class="list-group-item d-flex justify-content-between align-items-center py-1">
+                            <%= link_to r[:name].truncate(25), edit_admin_product_path(r[:id]), class: 'text-decoration-none' %>
+                            <span class="badge bg-danger"><%= r[:margin_pct].nil? ? '—' : number_to_percentage(r[:margin_pct] * 100, precision: 0) %></span>
+                          </li>
+                        <% end %>
+                        <% if @worst_margin_products.blank? %><li class="list-group-item text-muted text-center py-2">Sin datos</li><% end %>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-6 col-xl-3">
+                  <div class="card">
+                    <div class="card-header py-2 small fw-semibold"><i class="fa-solid fa-rotate text-warning"></i> Peor Rotación</div>
+                    <div class="card-body p-0">
+                      <ul class="list-group list-group-flush small">
+                        <% @worst_rotation_products&.first(5)&.each do |r| %>
+                          <li class="list-group-item d-flex justify-content-between align-items-center py-1">
+                            <%= link_to r[:name].truncate(25), edit_admin_product_path(r[:id]), class: 'text-decoration-none' %>
+                            <span class="badge bg-warning text-dark"><%= r[:rotation].nil? ? '—' : number_with_precision(r[:rotation], precision: 2) %></span>
+                          </li>
+                        <% end %>
+                        <% if @worst_rotation_products.blank? %><li class="list-group-item text-muted text-center py-2">Sin datos</li><% end %>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-6 col-xl-3">
+                  <div class="card">
+                    <div class="card-header py-2 small fw-semibold"><i class="fa-solid fa-clock text-info"></i> Mayor DOH</div>
+                    <div class="card-body p-0">
+                      <ul class="list-group list-group-flush small">
+                        <% @top_doh_products&.first(5)&.each do |r| %>
+                          <li class="list-group-item d-flex justify-content-between align-items-center py-1">
+                            <%= link_to r[:name].truncate(25), edit_admin_product_path(r[:id]), class: 'text-decoration-none' %>
+                            <span class="badge bg-info text-dark"><%= r[:doh].infinite? ? '∞' : number_with_precision(r[:doh], precision: 0) %> días</span>
+                          </li>
+                        <% end %>
+                        <% if @top_doh_products.blank? %><li class="list-group-item text-muted text-center py-2">Sin datos</li><% end %>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-6 col-xl-3">
+                  <div class="card">
+                    <div class="card-header py-2 small fw-semibold"><i class="fa-solid fa-money-bill-wave text-danger"></i> Mayor Capital</div>
+                    <div class="card-body p-0">
+                      <ul class="list-group list-group-flush small">
+                        <% @top_immobilized_products&.first(5)&.each do |r| %>
+                          <li class="list-group-item d-flex justify-content-between align-items-center py-1">
+                            <%= link_to r[:name].truncate(25), edit_admin_product_path(r[:id]), class: 'text-decoration-none' %>
+                            <span class="badge bg-danger">$ <%= number_with_precision(r[:immobilized_capital], precision: 0, delimiter: ',') %></span>
+                          </li>
+                        <% end %>
+                        <% if @top_immobilized_products.blank? %><li class="list-group-item text-muted text-center py-2">Sin datos</li><% end %>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -944,13 +944,12 @@
     </div>
   </div>
 
-  <!-- High-impact charts row 1 -->
+  <!-- Gráficos de tendencias -->
   <div class="row mt-4 g-3">
     <div class="col-lg-12">
       <div class="card h-100">
         <div class="card-header d-flex justify-content-between align-items-center">
-          <span><i class="fa-solid fa-chart-line"></i> Sales Comparison (12 months)</span>
-          <!-- Botón "Ver detalle" removido a solicitud -->
+          <span><i class="fa-solid fa-chart-line"></i> Comparativa de Ventas (Últimos 12 meses)</span>
         </div>
         <div class="card-body">
           <div
@@ -969,11 +968,11 @@
     </div>
   </div>
 
-  <!-- High-impact charts row 2 -->
+  <!-- Gráfico de ventas por categoría -->
   <div class="row mt-4 g-3">
     <div class="col-lg-12">
       <div class="card h-100">
-        <div class="card-header"><i class="fa-solid fa-chart-column"></i> Sales by Month (stacked by category)</div>
+        <div class="card-header"><i class="fa-solid fa-chart-column"></i> Ventas por Mes (apilado por categoría)</div>
         <div class="card-body">
           <div
             data-controller="chart"
@@ -987,11 +986,11 @@
     </div>
   </div>
 
-  <!-- High-impact charts row 3: Category Profitability -->
+  <!-- Gráficos de rentabilidad -->
   <div class="row mt-4 g-3">
     <div class="col-lg-6">
       <div class="card h-100">
-        <div class="card-header"><i class="fa-solid fa-city"></i> Brand Profitability</div>
+        <div class="card-header"><i class="fa-solid fa-city"></i> Rentabilidad por Marca</div>
         <div class="card-body">
           <div
             data-controller="chart"
@@ -1005,7 +1004,7 @@
     </div>
     <div class="col-lg-6">
       <div class="card h-100">
-        <div class="card-header"><i class="fa-solid fa-tags"></i> Category Profitability</div>
+        <div class="card-header"><i class="fa-solid fa-tags"></i> Rentabilidad por Categoría</div>
         <div class="card-body">
           <div
             data-controller="chart"
