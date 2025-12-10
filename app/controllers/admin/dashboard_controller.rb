@@ -165,15 +165,16 @@ module Admin
     end
 
     def period_scope_for(period)
+      now = @now || Time.zone.now
       so_scope = SaleOrder.where.not(status: 'Canceled')
       case period
       when 'ly'
-        ly_start = @now.beginning_of_year - 1.year
+        ly_start = now.beginning_of_year - 1.year
         so_scope.where(order_date: ly_start..ly_start.end_of_year)
       when 'all'
         so_scope
       else
-        so_scope.where(order_date: @now.beginning_of_year..@now.end_of_day)
+        so_scope.where(order_date: now.beginning_of_year..now.end_of_day)
       end
     end
 
