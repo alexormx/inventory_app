@@ -105,8 +105,8 @@ module Dashboard
 
         {
           id: product_id,
-          name: product.name,
-          sku: product.sku,
+          name: product.product_name,
+          sku: product.product_sku,
           units_sold: units_sold,
           revenue: revenue,
           cogs: cogs,

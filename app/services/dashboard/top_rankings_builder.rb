@@ -45,8 +45,8 @@ module Dashboard
           .group('products.id')
           .select(
             'products.id',
-            'products.name',
-            'products.sku',
+            'products.product_name',
+            'products.product_sku',
             'products.current_stock',
             'products.average_purchase_cost',
             'COUNT(inventories.id) AS inv_count',
@@ -57,8 +57,8 @@ module Dashboard
           .map do |p|
             {
               id: p.id,
-              name: p.name,
-              sku: p.sku,
+              name: p.product_name,
+              sku: p.product_sku,
               stock: p.current_stock,
               avg_cost: p.average_purchase_cost.to_d,
               value: p.inv_value.to_d
