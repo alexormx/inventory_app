@@ -51,7 +51,7 @@
               <i class="fa-solid fa-receipt text-success"></i>
               <span class="text-muted">Última venta:</span>
               <% if @last_sale %>
-                <%= link_to @last_sale.order_number, edit_admin_sale_order_path(@last_sale), class: 'fw-semibold text-decoration-none' %>
+                <%= link_to @last_sale.id, edit_admin_sale_order_path(@last_sale), class: 'fw-semibold text-decoration-none' %>
                 <span class="text-muted">(<%= time_ago_in_words(@last_sale.created_at) %>)</span>
               <% else %>
                 <span class="text-muted">—</span>
@@ -61,7 +61,7 @@
               <i class="fa-solid fa-box text-primary"></i>
               <span class="text-muted">Última compra recibida:</span>
               <% if @last_purchase_received %>
-                <%= link_to @last_purchase_received.po_number, edit_admin_purchase_order_path(@last_purchase_received), class: 'fw-semibold text-decoration-none' %>
+                <%= link_to @last_purchase_received.id, edit_admin_purchase_order_path(@last_purchase_received), class: 'fw-semibold text-decoration-none' %>
                 <span class="text-muted">(<%= time_ago_in_words(@last_purchase_received.updated_at) %>)</span>
               <% else %>
                 <span class="text-muted">—</span>
@@ -71,7 +71,7 @@
               <i class="fa-solid fa-truck text-warning"></i>
               <span class="text-muted">Próximo envío:</span>
               <% if @next_shipment %>
-                <%= link_to @next_shipment.order_number, edit_admin_sale_order_path(@next_shipment), class: 'fw-semibold text-decoration-none' %>
+                <%= link_to @next_shipment.id, edit_admin_sale_order_path(@next_shipment), class: 'fw-semibold text-decoration-none' %>
                 <span class="text-muted">(pendiente desde <%= @next_shipment.order_date&.strftime('%d/%m') %>)</span>
               <% else %>
                 <span class="text-success">Sin pendientes</span>
