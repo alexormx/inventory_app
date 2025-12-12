@@ -77,7 +77,7 @@ module Admin
 
     def items
       # Buscar producto por slug/SKU antes que ID para evitar colisiones cuando el slug inicia con números
-      @product = Product.find_by!(identifier: params[:id])
+      @product = Product.find_by_identifier!(params[:id])
       # Consulta directa (evita efectos colaterales del proxy de asociación) y quitar límites ocultos
       status_filter = params[:status].to_s
       valid_statuses = Inventory.statuses.keys
