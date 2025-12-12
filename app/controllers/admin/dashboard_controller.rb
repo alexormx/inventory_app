@@ -20,6 +20,7 @@ module Admin
       setup_base_scopes
       load_kpis
       load_comparisons
+      load_alerts_and_activity
       load_top_products
       load_top_users
       load_status_counts
@@ -273,6 +274,82 @@ module Admin
 
     def pct_delta(curr, prev)
       prev.to_d.positive? ? ((curr.to_d - prev.to_d) / prev.to_d) : nil
+    end
+
+    # === Alerts & Recent Activity ===
+    def load_alerts_and_activity
+      load_alerts
+      load_recent_activity
+    end
+
+    def load_alerts
+      @alerts = []
+      
+      # Stock crítico
+      if @critical_stock_count.to_i > 0
+        @alerts << {
+          type: 'danger',
+          icon: 'fa-box-open',
+          message: "#{@critical_stock_count} productos con stock crítico",
+          link: admin_products_path(filter: 'low_stock'),
+          link_text: 'Ver productos'
+        }
+      end
+      
+      # Órdenes pendientes de envío
+      pending_shipments = SaleOrder.where(status: 'Confirmed').count
+      if pending_shipments > 0
+        @alerts << {
+          type: 'warning',
+          icon: 'fa-truck',
+          message: "#{pending_shipments} órdenes pendientes de envío",
+          link: admin_sale_orders_path(status: 'Confirmed'),
+          link_text: 'Ver órdenes'
+        }
+      end
+      
+      # Órdenes de compra en tránsito
+      in_transit_pos = PurchaseOrder.where(status: 'In Transit').count
+      if in_transit_pos > 0
+        @alerts << {
+          type: 'info',
+          icon: 'fa-ship',
+          message: "#{in_transit_pos} compras en tránsito",
+          link: admin_purchase_orders_path(status: 'In Transit'),
+          link_text: 'Ver compras'
+        }
+      end
+      
+      # Productos sin stock (agotados)
+      out_of_stock = Product.where(current_stock_sellable: 0).where(status: 'Active').count rescue 0
+      if out_of_stock > 5
+        @alerts << {
+          type: 'warning',
+          icon: 'fa-exclamation-triangle',
+          message: "#{out_of_stock} productos agotados",
+          link: admin_products_path(filter: 'out_of_stock'),
+          link_text: 'Ver productos'
+        }
+      end
+    rescue StandardError => e
+      Rails.logger.error "Dashboard alerts error: #{e.message}"
+      @alerts = []
+    end
+
+    def load_recent_activity
+      # Última venta
+      @last_sale = SaleOrder.where.not(status: 'Canceled').order(created_at: :desc).first
+      
+      # Última compra recibida
+      @last_purchase_received = PurchaseOrder.where(status: 'Received').order(updated_at: :desc).first
+      
+      # Última compra creada
+      @last_purchase_created = PurchaseOrder.order(created_at: :desc).first
+      
+      # Próximo envío (orden confirmada más antigua)
+      @next_shipment = SaleOrder.where(status: 'Confirmed').order(order_date: :asc).first
+    rescue StandardError => e
+      Rails.logger.error "Dashboard activity error: #{e.message}"
     end
 
     # === Top Products Loading ===

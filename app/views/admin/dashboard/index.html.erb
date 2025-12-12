@@ -1,10 +1,85 @@
 <div class="container-fluid">
   <!-- ========== HEADER ========== -->
-  <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
     <h2 class="mb-0"><i class="fa-solid fa-chart-line"></i> Dashboard</h2>
     <div class="d-flex align-items-center gap-2">
       <span class="badge bg-secondary"><i class="fa-solid fa-calendar"></i> YTD <%= Time.zone.now.year %></span>
-      <span class="text-muted small">Actualizado: <%= Time.zone.now.strftime('%d/%m/%Y %H:%M') %></span>
+      <span class="text-muted small d-none d-md-inline">Actualizado: <%= Time.zone.now.strftime('%d/%m/%Y %H:%M') %></span>
+    </div>
+  </div>
+
+  <!-- ========== ACCIONES RÁPIDAS ========== -->
+  <div class="d-flex flex-wrap gap-2 mb-3">
+    <%= link_to new_admin_sale_order_path, class: 'btn btn-success btn-sm' do %>
+      <i class="fa-solid fa-plus"></i> Nueva Venta
+    <% end %>
+    <%= link_to new_admin_purchase_order_path, class: 'btn btn-primary btn-sm' do %>
+      <i class="fa-solid fa-plus"></i> Nueva Compra
+    <% end %>
+    <%= link_to admin_products_path(filter: 'low_stock'), class: 'btn btn-outline-danger btn-sm' do %>
+      <i class="fa-solid fa-box-open"></i> Stock Crítico
+    <% end %>
+    <%= link_to admin_sale_orders_path(status: 'Confirmed'), class: 'btn btn-outline-warning btn-sm' do %>
+      <i class="fa-solid fa-truck"></i> Pendientes Envío
+    <% end %>
+  </div>
+
+  <!-- ========== ALERTAS ACTIVAS ========== -->
+  <% if @alerts.present? %>
+    <div class="row mb-3">
+      <div class="col-12">
+        <div class="d-flex flex-wrap gap-2">
+          <% @alerts.each do |alert| %>
+            <div class="alert alert-<%= alert[:type] %> py-2 px-3 mb-0 d-flex align-items-center gap-2 small" role="alert">
+              <i class="fa-solid <%= alert[:icon] %>"></i>
+              <span><%= alert[:message] %></span>
+              <%= link_to alert[:link_text], alert[:link], class: "alert-link ms-2 fw-semibold" %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- ========== ACTIVIDAD RECIENTE ========== -->
+  <div class="row mb-3">
+    <div class="col-12">
+      <div class="card bg-light border-0">
+        <div class="card-body py-2">
+          <div class="d-flex flex-wrap gap-4 small">
+            <div class="d-flex align-items-center gap-2">
+              <i class="fa-solid fa-receipt text-success"></i>
+              <span class="text-muted">Última venta:</span>
+              <% if @last_sale %>
+                <%= link_to @last_sale.order_number, edit_admin_sale_order_path(@last_sale), class: 'fw-semibold text-decoration-none' %>
+                <span class="text-muted">(<%= time_ago_in_words(@last_sale.created_at) %>)</span>
+              <% else %>
+                <span class="text-muted">—</span>
+              <% end %>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <i class="fa-solid fa-box text-primary"></i>
+              <span class="text-muted">Última compra recibida:</span>
+              <% if @last_purchase_received %>
+                <%= link_to @last_purchase_received.po_number, edit_admin_purchase_order_path(@last_purchase_received), class: 'fw-semibold text-decoration-none' %>
+                <span class="text-muted">(<%= time_ago_in_words(@last_purchase_received.updated_at) %>)</span>
+              <% else %>
+                <span class="text-muted">—</span>
+              <% end %>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <i class="fa-solid fa-truck text-warning"></i>
+              <span class="text-muted">Próximo envío:</span>
+              <% if @next_shipment %>
+                <%= link_to @next_shipment.order_number, edit_admin_sale_order_path(@next_shipment), class: 'fw-semibold text-decoration-none' %>
+                <span class="text-muted">(pendiente desde <%= @next_shipment.order_date&.strftime('%d/%m') %>)</span>
+              <% else %>
+                <span class="text-success">Sin pendientes</span>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -123,6 +198,100 @@
     </div>
     <div class="col-6 col-md-3 col-xl">
       <%= render 'kpi_stat', title: 'Órdenes Compra YTD', value: number_with_delimiter(@po_count_ytd), tooltip: 'Purchase Orders creadas este año.', health: @kpi_deltas&.dig(:po_count).to_f >= 0 ? 'good' : nil %>
+    </div>
+  </div>
+
+  <!-- ========== SECCIÓN: Comparativa YTD vs Año Anterior ========== -->
+  <div class="row g-3 mb-4">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header py-2">
+          <span class="fw-semibold"><i class="fa-solid fa-scale-balanced"></i> Comparativa YTD vs Año Anterior</span>
+        </div>
+        <div class="card-body py-3">
+          <div class="row g-3">
+            <!-- Ventas -->
+            <div class="col-md-4">
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <span class="small text-muted">Ventas</span>
+                <span class="small fw-semibold <%= @kpi_deltas&.dig(:sales).to_f >= 0 ? 'text-success' : 'text-danger' %>">
+                  <% if @kpi_deltas&.dig(:sales) %>
+                    <i class="fa-solid fa-arrow-<%= @kpi_deltas&.dig(:sales).to_f >= 0 ? 'up' : 'down' %>"></i>
+                    <%= number_to_percentage(@kpi_deltas&.dig(:sales).to_f * 100, precision: 1) %>
+                  <% else %>
+                    —
+                  <% end %>
+                </span>
+              </div>
+              <div class="progress" style="height: 24px;">
+                <% sales_pct_ytd = @sales_prev.to_f.positive? ? [(@sales_ytd.to_f / [@sales_prev.to_f * 1.5, @sales_ytd.to_f].max) * 100, 100].min : 50 %>
+                <% sales_pct_ly = @sales_prev.to_f.positive? ? [(@sales_prev.to_f / [@sales_prev.to_f * 1.5, @sales_ytd.to_f].max) * 100, 100].min : 50 %>
+                <div class="progress-bar bg-success" role="progressbar" style="width: <%= sales_pct_ytd %>%">
+                  <span class="small">YTD: <%= fmt_currency(@sales_ytd) %></span>
+                </div>
+              </div>
+              <div class="progress mt-1" style="height: 18px;">
+                <div class="progress-bar bg-secondary" role="progressbar" style="width: <%= sales_pct_ly %>%">
+                  <span class="small">LY: <%= fmt_currency(@sales_prev) %></span>
+                </div>
+              </div>
+            </div>
+            <!-- Utilidad -->
+            <div class="col-md-4">
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <span class="small text-muted">Utilidad Bruta</span>
+                <span class="small fw-semibold <%= @kpi_deltas&.dig(:profit).to_f >= 0 ? 'text-success' : 'text-danger' %>">
+                  <% if @kpi_deltas&.dig(:profit) %>
+                    <i class="fa-solid fa-arrow-<%= @kpi_deltas&.dig(:profit).to_f >= 0 ? 'up' : 'down' %>"></i>
+                    <%= number_to_percentage(@kpi_deltas&.dig(:profit).to_f * 100, precision: 1) %>
+                  <% else %>
+                    —
+                  <% end %>
+                </span>
+              </div>
+              <div class="progress" style="height: 24px;">
+                <% profit_pct_ytd = @profit_prev.to_f.positive? ? [(@profit_ytd.to_f / [@profit_prev.to_f * 1.5, @profit_ytd.to_f].max) * 100, 100].min : 50 %>
+                <% profit_pct_ly = @profit_prev.to_f.positive? ? [(@profit_prev.to_f / [@profit_prev.to_f * 1.5, @profit_ytd.to_f].max) * 100, 100].min : 50 %>
+                <div class="progress-bar bg-primary" role="progressbar" style="width: <%= profit_pct_ytd %>%">
+                  <span class="small">YTD: <%= fmt_currency(@profit_ytd) %></span>
+                </div>
+              </div>
+              <div class="progress mt-1" style="height: 18px;">
+                <div class="progress-bar bg-secondary" role="progressbar" style="width: <%= profit_pct_ly %>%">
+                  <span class="small">LY: <%= fmt_currency(@profit_prev) %></span>
+                </div>
+              </div>
+            </div>
+            <!-- Órdenes -->
+            <div class="col-md-4">
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <span class="small text-muted">Órdenes de Venta</span>
+                <span class="small fw-semibold <%= @kpi_deltas&.dig(:orders).to_f >= 0 ? 'text-success' : 'text-danger' %>">
+                  <% if @kpi_deltas&.dig(:orders) %>
+                    <i class="fa-solid fa-arrow-<%= @kpi_deltas&.dig(:orders).to_f >= 0 ? 'up' : 'down' %>"></i>
+                    <%= number_to_percentage(@kpi_deltas&.dig(:orders).to_f * 100, precision: 1) %>
+                  <% else %>
+                    —
+                  <% end %>
+                </span>
+              </div>
+              <div class="progress" style="height: 24px;">
+                <% orders_max = [@orders_count_ytd.to_f, @orders_prev.to_f].max %>
+                <% orders_pct_ytd = orders_max.positive? ? (@orders_count_ytd.to_f / orders_max) * 100 : 50 %>
+                <% orders_pct_ly = orders_max.positive? ? (@orders_prev.to_f / orders_max) * 100 : 50 %>
+                <div class="progress-bar bg-info" role="progressbar" style="width: <%= orders_pct_ytd %>%">
+                  <span class="small">YTD: <%= number_with_delimiter(@orders_count_ytd) %></span>
+                </div>
+              </div>
+              <div class="progress mt-1" style="height: 18px;">
+                <div class="progress-bar bg-secondary" role="progressbar" style="width: <%= orders_pct_ly %>%">
+                  <span class="small">LY: <%= number_with_delimiter(@orders_prev) %></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
