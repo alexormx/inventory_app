@@ -21,9 +21,16 @@ module Admin
         term = "%#{@q.downcase}%"
         scope = scope.where('LOWER(product_name) LIKE ? OR LOWER(product_sku) LIKE ?', term, term)
       end
-      @sort = params[:sort].presence
+      @sort = params[:sort].presence || 'recent'
       scope = apply_sort(scope, @sort)
       @products = scope.page(params[:page]).per(PER_PAGE)
+      
+      # Pre-cargar conteos de inventario para evitar N+1 queries
+      product_ids = @products.map(&:id)
+      @inventory_counts = Inventory.where(product_id: product_ids)
+                                   .group(:product_id, :status)
+                                   .count
+      
       compute_counts
     end
 
@@ -310,12 +317,21 @@ module Admin
 
     def apply_sort(scope, sort_param)
       case sort_param
+      when 'name_asc'        then scope.order(Arel.sql('LOWER(product_name) ASC'))
+      when 'name_desc'       then scope.order(Arel.sql('LOWER(product_name) DESC'))
       when 'name'            then scope.order(Arel.sql('LOWER(product_name) ASC'))
+      when 'sku'             then scope.order(Arel.sql('LOWER(product_sku) ASC'))
+      when 'price_asc'       then scope.order(selling_price: :asc)
+      when 'price_desc'      then scope.order(selling_price: :desc)
+      when 'stock_asc'       then scope.order(total_purchase_quantity: :asc)
+      when 'stock_desc'      then scope.order(total_purchase_quantity: :desc)
       when 'purchase_qty'    then scope.order(total_purchase_quantity: :desc)
       when 'purchase_value'  then scope.order(total_purchase_value: :desc)
       when 'sales_value'     then scope.order(total_sales_value: :desc)
       when 'inventory_value' then scope.order(current_inventory_value: :desc)
       when 'profit'          then scope.order(current_profit: :desc)
+      when 'recent'          then scope.order(created_at: :desc)
+      when 'oldest'          then scope.order(created_at: :asc)
       else
         scope.order(created_at: :desc)
       end

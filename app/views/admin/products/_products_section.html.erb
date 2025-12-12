@@ -2,7 +2,7 @@
   <div class="row g-3">
   <% products.each do |product| %>
     <div class="col-md-6 col-lg-4">
-  <%= render partial: 'product_card', locals: { product: product, current_tab: (local_assigns[:current_tab] || 'active') } %>
+  <%= render partial: 'product_card', locals: { product: product, current_tab: (local_assigns[:current_tab] || 'active'), inventory_counts: (local_assigns[:inventory_counts] || {}) } %>
     </div>
   <% end %>
   </div>

@@ -17,14 +17,33 @@
 <div class="card mb-4">
   <div class="card-body py-2">
     <%= form_with url: admin_products_path, method: :get, local: true, class: "row g-2 align-items-center" do %>
-      <div class="col-12 col-md-6">
+      <div class="col-12 col-md-4">
         <div class="input-group input-group-sm">
           <%= text_field_tag :q, params[:q], class: "form-control", placeholder: "Buscar por nombre o SKU…", aria: { label: "Buscar productos" } %>
           <button class="btn btn-outline-secondary btn-clear-search" type="button" title="Limpiar búsqueda">Limpiar</button>
           <button class="btn btn-primary" type="submit" name="commit" value="search" title="Buscar">Buscar</button>
         </div>
       </div>
-      <div class="col-12 col-md-6 text-md-end">
+      <div class="col-12 col-md-3">
+        <% current_sort = params[:sort].presence || "recent" %>
+        <div class="input-group input-group-sm">
+          <label class="input-group-text" for="sort"><i class="fa fa-sort"></i></label>
+          <%= select_tag :sort, options_for_select([
+            ["Más recientes", "recent"],
+            ["Más antiguos", "oldest"],
+            ["Nombre A-Z", "name_asc"],
+            ["Nombre Z-A", "name_desc"],
+            ["SKU", "sku"],
+            ["Precio ↑", "price_asc"],
+            ["Precio ↓", "price_desc"],
+            ["Stock ↑", "stock_asc"],
+            ["Stock ↓", "stock_desc"],
+            ["Más vendidos", "sales_value"],
+            ["Mayor ganancia", "profit"]
+          ], current_sort), class: "form-select form-select-sm", onchange: "this.form.submit()" %>
+        </div>
+      </div>
+      <div class="col-12 col-md-5 text-md-end">
         <% current_status = params[:status].presence || "all" %>
         <% outline_for = ->(st) do
              case st
@@ -37,12 +56,12 @@
         <% btnc = ->(st, cur) { ["btn", "btn-outline-#{outline_for.call(st)}", (cur == st ? "active" : nil)].compact.join(" ") } %>
         <div class="btn-group btn-group-sm me-2" role="group" aria-label="Filtro de status de producto">
           <%= button_tag "Todos", name: :status, value: "all", class: btnc.call("all", current_status) %>
-          <%= button_tag "Drafts", name: :status, value: "draft", class: btnc.call("draft", current_status) %>
-          <%= button_tag "Active", name: :status, value: "active", class: btnc.call("active", current_status) %>
-          <%= button_tag "Inactive", name: :status, value: "inactive", class: btnc.call("inactive", current_status) %>
+          <%= button_tag "Borradores", name: :status, value: "draft", class: btnc.call("draft", current_status) %>
+          <%= button_tag "Activos", name: :status, value: "active", class: btnc.call("active", current_status) %>
+          <%= button_tag "Inactivos", name: :status, value: "inactive", class: btnc.call("inactive", current_status) %>
         </div>
         <%= hidden_field_tag :status, current_status %>
-        <%= link_to "Limpiar filtros", admin_products_path, class: "btn btn-sm btn-outline-secondary ms-2", title: "Quitar búsqueda y status" %>
+        <%= link_to "Limpiar", admin_products_path, class: "btn btn-sm btn-outline-secondary ms-2", title: "Quitar búsqueda y status" %>
       </div>
     <% end %>
   </div>
@@ -63,5 +82,5 @@
 } %>
 
 <div id="products_section">
-  <%= render partial: 'products_section', locals: { products: @products, current_tab: (params[:status] || 'all') } %>
+  <%= render partial: 'products_section', locals: { products: @products, current_tab: (params[:status] || 'all'), inventory_counts: @inventory_counts } %>
 </div>

@@ -1,39 +1,60 @@
 <div class="card shadow-sm mb-3 h-100 product-card">
   <div class="card-body">
     <div class="d-flex align-items-center mb-2">
-      <% if product.product_images.attached? %>
-        <%= image_tag product.product_images.first.variant(resize_to_fill: [64, 64]), class: "img-thumbnail me-2" %>
-      <% else %>
-        <%= image_tag "placeholder.png", class: "img-thumbnail me-2", size: "64x64" %>
-      <% end %>
-      <div>
+      <div class="position-relative me-2">
+        <% if product.product_images.attached? %>
+          <%= image_tag product.product_images.first.variant(resize_to_fill: [64, 64]), class: "img-thumbnail" %>
+          <% if product.product_images.count > 1 %>
+            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-secondary" style="font-size: 0.65rem;">
+              +<%= product.product_images.count - 1 %>
+            </span>
+          <% end %>
+        <% else %>
+          <%= image_tag "placeholder.png", class: "img-thumbnail", size: "64x64" %>
+        <% end %>
+      </div>
+      <div class="flex-grow-1">
         <strong class="product-title line-clamp-1"><%= product.product_name %></strong><br>
-        <span class="text-muted">SKU: <%= product.product_sku %></span>
+        <span class="text-muted small">SKU: <%= product.product_sku %></span>
         <% if product.supplier_product_code.present? %>
-          <span class="text-muted ms-2">SPC: <%= product.supplier_product_code %></span>
+          <span class="text-muted small ms-2">SPC: <%= product.supplier_product_code %></span>
         <% end %>
       </div>
     </div>
-    <div class="mb-1 product-desc line-clamp-3">
-      <%= product.description %>
+    
+    <%# Precio destacado %>
+    <div class="mb-2">
+      <span class="fs-5 fw-bold text-success"><%= number_to_currency(product.selling_price) %></span>
+      <% if product.minimum_price.present? && product.minimum_price < product.selling_price %>
+        <span class="text-muted small ms-2">(mín. <%= number_to_currency(product.minimum_price) %>)</span>
+      <% end %>
     </div>
-  <div class="mb-2 text-muted small">
-      <% purchased = (product.respond_to?(:total_purchase_quantity) && product.total_purchase_quantity).to_i %>
-      <% sold      = (product.respond_to?(:total_units_sold) && product.total_units_sold).to_i.presence || (product.respond_to?(:total_sales_quantity) && product.total_sales_quantity).to_i %>
-      <% stock_on_hand = product.inventories.available.count %>
-  <% reserved = product.inventories.where(status: :reserved).count %>
-      <span>Comprado: <strong><%= purchased %></strong></span>
-      ·
-      <span>Vendido: <strong><%= sold %></strong></span>
-      ·
-      <span>Stock: <strong><%= stock_on_hand %></strong></span>
-  ·
-  <span>Apartados: <strong><%= reserved %></strong></span>
+    
+    <div class="mb-1 product-desc line-clamp-2 small text-muted">
+      <%= product.description.presence || "Sin descripción" %>
     </div>
+    
+    <%# Usar inventory_counts pre-cargados si están disponibles %>
+    <% inv_counts = local_assigns[:inventory_counts] || {} %>
+    <% purchased = product.total_purchase_quantity.to_i %>
+    <% sold = product.total_sales_quantity.to_i %>
+    <% stock_on_hand = inv_counts[[product.id, 'available']].to_i %>
+    <% reserved = inv_counts[[product.id, 'reserved']].to_i %>
+    
+    <div class="mb-2 small">
+      <span class="badge bg-light text-dark border" title="Comprados"><i class="fa fa-shopping-cart text-primary"></i> <%= purchased %></span>
+      <span class="badge bg-light text-dark border" title="Vendidos"><i class="fa fa-check text-success"></i> <%= sold %></span>
+      <span class="badge bg-success" title="Disponibles"><i class="fa fa-box"></i> <%= stock_on_hand %></span>
+      <% if reserved > 0 %>
+        <span class="badge bg-warning text-dark" title="Apartados"><i class="fa fa-bookmark"></i> <%= reserved %></span>
+      <% end %>
+    </div>
+    
     <%= turbo_frame_tag "product_badge_#{product.id}" do %>
       <%= render partial: 'status_badge', locals: { product: product } %>
     <% end %>
-    <div class="d-flex justify-content-between align-items-center gap-2">
+    
+    <div class="d-flex justify-content-between align-items-center gap-2 mt-2">
       <div>
         <%= turbo_frame_tag "product_actions_#{product.id}" do %>
           <%= render partial: 'status_actions', locals: { product: product, current_tab: (local_assigns[:current_tab] || params[:source_tab]) } %>
@@ -41,21 +62,21 @@
       </div>
 
       <%# Acciones CRUD %>
-      <div class="d-flex justify-content-end gap-2">
-  <%= link_to admin_product_path(product), class: "btn btn-sm btn-outline-success", title: "View", data: { turbo_frame: "_top" } do %>
-        <i class="fa-solid fa-eye"></i>
-      <% end %>
-  <%= link_to edit_admin_product_path(product), class: "btn btn-sm btn-outline-primary", title: "Edit", data: { turbo_frame: "_top" } do %>
-        <i class="fas fa-edit"></i>
-      <% end %>
-  <%= link_to admin_product_path(product),
-              data: { controller: 'confirm', action: 'click->confirm#ask', confirm_message: '¿Estás seguro de eliminar este producto?', turbo_method: :delete, turbo_frame: "_top" },
-              class: "btn btn-sm btn-outline-danger", title: "Delete" do %>
-        <i class="fa-solid fa-trash"></i>
-      <% end %>
-      <% if local_assigns[:extra_actions] %>
-        <%= extra_actions %>
-      <% end %>
+      <div class="d-flex justify-content-end gap-1">
+        <%= link_to admin_product_path(product), class: "btn btn-sm btn-outline-success", title: "Ver detalle", data: { turbo_frame: "_top" } do %>
+          <i class="fa-solid fa-eye"></i>
+        <% end %>
+        <%= link_to edit_admin_product_path(product), class: "btn btn-sm btn-outline-primary", title: "Editar", data: { turbo_frame: "_top" } do %>
+          <i class="fas fa-edit"></i>
+        <% end %>
+        <%= link_to admin_product_path(product),
+                data: { controller: 'confirm', action: 'click->confirm#ask', confirm_message: '¿Estás seguro de eliminar este producto?', turbo_method: :delete, turbo_frame: "_top" },
+                class: "btn btn-sm btn-outline-danger", title: "Eliminar" do %>
+          <i class="fa-solid fa-trash"></i>
+        <% end %>
+        <% if local_assigns[:extra_actions] %>
+          <%= extra_actions %>
+        <% end %>
       </div>
     </div>
   </div>
