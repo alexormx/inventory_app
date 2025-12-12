@@ -10,7 +10,8 @@ module Admin
 
     # SQL constants for revenue and COGS calculations (shared across controller)
     REV_SQL = 'COALESCE(sale_order_items.unit_final_price, 0) * COALESCE(sale_order_items.quantity, 0)'
-    COGS_SQL = 'COALESCE(sale_order_items.unit_cost, 0) * COALESCE(sale_order_items.quantity, 0)'
+    # COGS uses product's average_purchase_cost (the actual acquisition cost, not sale_order_items.unit_cost which incorrectly stores the sale price)
+    COGS_SQL = 'COALESCE(products.average_purchase_cost, 0) * COALESCE(sale_order_items.quantity, 0)'
     UNITS_SQL = 'COALESCE(sale_order_items.quantity, 0)'
     PAID_STATUSES = %w[Confirmed Shipped Delivered].freeze
 
@@ -191,7 +192,7 @@ module Admin
       @purchases_ytd = @po_ytd.sum(:total_cost_mxn).to_d
       @purchases_ytd = @po_ytd.sum(:total_order_cost).to_d if @purchases_ytd.zero?
 
-      @cogs_ytd = SaleOrderItem.joins(:sale_order).merge(@so_ytd).sum(cogs_sql_arel).to_d
+      @cogs_ytd = SaleOrderItem.joins(:sale_order, :product).merge(@so_ytd).sum(cogs_sql_arel).to_d
       @profit_ytd = @sales_ytd - @cogs_ytd
       @margin_ytd = @sales_ytd.positive? ? (@profit_ytd / @sales_ytd) : 0.to_d
 
@@ -255,7 +256,7 @@ module Admin
       po_prev_range = @po_scope.where(order_date: range_prev_start..range_prev_end)
 
       @sales_prev = SaleOrderItem.joins(:sale_order).merge(so_prev_range).sum(rev_sql_arel).to_d
-      @cogs_prev = SaleOrderItem.joins(:sale_order).merge(so_prev_range).sum(cogs_sql_arel).to_d
+      @cogs_prev = SaleOrderItem.joins(:sale_order, :product).merge(so_prev_range).sum(cogs_sql_arel).to_d
       @profit_prev = @sales_prev - @cogs_prev
       @margin_prev = @sales_prev.positive? ? (@profit_prev / @sales_prev) : 0.to_d
       @orders_prev = so_prev_range.count
@@ -468,7 +469,7 @@ module Admin
       cogs_sql_arel = Arel.sql(COGS_SQL)
 
       sales_monthly = @so_ytd.group(Arel.sql(so_month_key)).sum(:total_order_value)
-      cogs_monthly = SaleOrderItem.joins(:sale_order).merge(@so_ytd).group(Arel.sql(so_month_key)).sum(cogs_sql_arel)
+      cogs_monthly = SaleOrderItem.joins(:sale_order, :product).merge(@so_ytd).group(Arel.sql(so_month_key)).sum(cogs_sql_arel)
       purchases_monthly = @po_ytd.group(Arel.sql(po_month_key)).sum(:total_cost_mxn)
 
       sales_m_map = sales_monthly.transform_keys { |k| extract_month_index(k) }
@@ -495,7 +496,7 @@ module Admin
       cogs_sql_arel = Arel.sql(COGS_SQL)
 
       sales_yearly = so_5y.group(Arel.sql(so_year_key)).sum(:total_order_value)
-      cogs_yearly = SaleOrderItem.joins(:sale_order).merge(so_5y).group(Arel.sql(so_year_key)).sum(cogs_sql_arel)
+      cogs_yearly = SaleOrderItem.joins(:sale_order, :product).merge(so_5y).group(Arel.sql(so_year_key)).sum(cogs_sql_arel)
       purchases_yearly = po_5y.group(Arel.sql(po_year_key)).sum(:total_cost_mxn)
 
       sales_y_map = sales_yearly.transform_keys { |k| extract_year_index(k) }
@@ -524,7 +525,7 @@ module Admin
                                .merge(@so_scope.where(order_date: trend_range))
                                .group(Arel.sql(month_key_expr))
                                .sum(rev_sql_arel)
-      trend_cogs = SaleOrderItem.joins(:sale_order)
+      trend_cogs = SaleOrderItem.joins(:sale_order, :product)
                                 .merge(@so_scope.where(order_date: trend_range))
                                 .group(Arel.sql(month_key_expr))
                                 .sum(cogs_sql_arel)
