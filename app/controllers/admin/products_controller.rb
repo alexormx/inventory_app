@@ -102,6 +102,12 @@ module Admin
                  .order(:product_name)
                  .limit(20)
 
+      # Pre-fetch inventory counts to avoid N+1
+      product_ids = products.map(&:id)
+      inventory_counts = Inventory.where(product_id: product_ids)
+                                  .group(:product_id, :status)
+                                  .count
+
       render json: products.map { |product|
         thumb_url = if product.product_images.attached?
                       begin
@@ -114,6 +120,12 @@ module Admin
                       helpers.asset_path('placeholder.png')
                     end
 
+        # Calculate inventory stats for this product
+        available = inventory_counts[[product.id, 'available']].to_i
+        reserved = inventory_counts[[product.id, 'reserved']].to_i
+        in_transit = inventory_counts[[product.id, 'in_transit']].to_i
+        pre_reserved = inventory_counts[[product.id, 'pre_reserved']].to_i
+
         {
           id: product.id,
           product_name: product.product_name,
@@ -124,7 +136,13 @@ module Admin
           height_cm: product.height_cm,
           unit_volume_cm3: product.unit_volume_cm3.to_f,
           unit_weight_gr: product.unit_weight_gr.to_f,
-          thumbnail_url: thumb_url
+          thumbnail_url: thumb_url,
+          # Inventory info
+          stock_available: available,
+          stock_reserved: reserved,
+          stock_in_transit: in_transit,
+          stock_pre_reserved: pre_reserved,
+          stock_sellable: available + in_transit  # What can potentially be sold
         }
       }
     end

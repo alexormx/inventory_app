@@ -53,6 +53,20 @@ document.addEventListener("turbo:load", () => {
     row.querySelector(".item-qty").value = 1;
     row.querySelector(".item-unit-cost").value = 0;
 
+    // Fill stock info (for sale orders)
+    const stockCell = row.querySelector(".item-stock-cell");
+    if (stockCell && product.stock_available !== undefined) {
+      const availableClass = product.stock_available > 0 ? 'success' : 'danger';
+      let stockHtml = `<span class="badge bg-${availableClass}" title="Disponible">${product.stock_available}</span>`;
+      if (product.stock_reserved > 0) {
+        stockHtml += ` <span class="badge bg-warning text-dark" title="Apartado">${product.stock_reserved}</span>`;
+      }
+      if (product.stock_in_transit > 0) {
+        stockHtml += ` <span class="badge bg-info" title="En tránsito">${product.stock_in_transit}</span>`;
+      }
+      stockCell.innerHTML = stockHtml;
+    }
+
     // Fill volume and weight fields
     const volume = (product.length_cm || 0) * (product.width_cm || 0) * (product.height_cm || 0);
 
@@ -114,6 +128,14 @@ function buildBlankPurchaseOrderItemRow(index) {
 
   productCell.append(hiddenInput, productName);
   tr.appendChild(productCell);
+
+  // --- Stock info (only for sale orders) ---
+  if (context === "sale-order") {
+    const stockCell = document.createElement("td");
+    stockCell.className = "text-center item-stock-cell";
+    stockCell.innerHTML = '<span class="text-muted">—</span>';
+    tr.appendChild(stockCell);
+  }
 
   // TODO: Need to fix the sales order save
   // --- Quantity ---

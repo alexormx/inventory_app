@@ -1,9 +1,33 @@
 <% @sale_order.sale_order_items.each_with_index do |item, index| %>
+  <%
+    # Get inventory counts for this product
+    inv_counts = Inventory.where(product_id: item.product_id).group(:status).count
+    stock_available = inv_counts['available'].to_i
+    stock_in_transit = inv_counts['in_transit'].to_i
+    stock_reserved = inv_counts['reserved'].to_i + inv_counts['pre_reserved'].to_i
+    stock_class = stock_available > 0 ? 'text-success' : (stock_in_transit > 0 ? 'text-warning' : 'text-danger')
+  %>
   <tr class="sale_item_row item-row">
     <td>
       <input type="hidden" name="sale_order[sale_order_items_attributes][<%= index %>][id]" value="<%= item.id %>">
       <input type="hidden" name="sale_order[sale_order_items_attributes][<%= index %>][product_id]" value="<%= item.product_id %>" class="item-product-id">
       <span class="item-product-name text-muted small"><%= item.product&.product_name || "—" %></span>
+    </td>
+
+    <td class="text-center">
+      <span class="badge <%= stock_class %> bg-opacity-10 border <%= stock_class.gsub('text-', 'border-') %>" 
+            data-bs-toggle="tooltip" 
+            data-bs-html="true"
+            title="<strong>Disponible:</strong> <%= stock_available %><br><strong>En tránsito:</strong> <%= stock_in_transit %><br><strong>Reservado:</strong> <%= stock_reserved %>">
+        <span class="<%= stock_class %>"><%= stock_available %></span>
+        <span class="text-muted">/</span>
+        <span class="text-warning"><%= stock_in_transit %></span>
+        <span class="text-muted">/</span>
+        <span class="text-secondary"><%= stock_reserved %></span>
+      </span>
+      <input type="hidden" class="item-stock-available" value="<%= stock_available %>">
+      <input type="hidden" class="item-stock-in-transit" value="<%= stock_in_transit %>">
+      <input type="hidden" class="item-stock-reserved" value="<%= stock_reserved %>">
     </td>
 
     <td>
@@ -43,6 +67,6 @@
 
 <% if @sale_order.sale_order_items.empty? %>
   <tr id="sale-without-items" class="order-without-items">
-    <td colspan="9" class="text-center text-muted">No items added yet.</td>
+    <td colspan="10" class="text-center text-muted">No items added yet.</td>
   </tr>
 <% end %>

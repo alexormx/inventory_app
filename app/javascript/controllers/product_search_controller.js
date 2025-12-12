@@ -45,7 +45,18 @@ export default class extends Controller {
       const btn = document.createElement('button')
       btn.type = 'button'
       btn.className = 'list-group-item list-group-item-action'
-      btn.innerHTML = `<div class='d-flex align-items-center'>${p.thumbnail_url ? `<img src='${p.thumbnail_url}' class='me-2 rounded' width='40' height='40'/>` : ''}<div><strong>${p.product_name}</strong><br><small class='text-muted'>SKU: ${p.product_sku}</small></div></div>`
+      
+      // Build stock info if available (for sale orders)
+      let stockInfo = ''
+      if (p.stock_available !== undefined) {
+        const stockClass = p.stock_available > 0 ? 'text-success' : 'text-danger'
+        stockInfo = `<span class="ms-2 small ${stockClass}"><i class="bi bi-box-seam"></i> ${p.stock_available} disp.</span>`
+        if (p.stock_reserved > 0) {
+          stockInfo += `<span class="ms-1 small text-warning"><i class="bi bi-bookmark"></i> ${p.stock_reserved} apt.</span>`
+        }
+      }
+      
+      btn.innerHTML = `<div class='d-flex align-items-center'>${p.thumbnail_url ? `<img src='${p.thumbnail_url}' class='me-2 rounded' width='40' height='40'/>` : ''}<div class="flex-grow-1"><strong>${p.product_name}</strong>${stockInfo}<br><small class='text-muted'>SKU: ${p.product_sku}</small></div></div>`
       btn.addEventListener('click', ()=>{
         this.dispatch('selected', { detail: p })
         this.resultsTarget.innerHTML = ''

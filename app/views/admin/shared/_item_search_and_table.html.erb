@@ -19,6 +19,9 @@
             <thead class="table-light">
               <tr>
                 <th>Product</th>
+                <% if context == "sale" %>
+                  <th class="text-center" data-bs-toggle="tooltip" title="Disponible / En Tránsito / Reservado">Stock</th>
+                <% end %>
                 <th>Qty</th>
                 <th>Unit Cost</th>
                 <% if context == "sale" %>
