@@ -118,14 +118,18 @@
             <div class="text-muted small lh-1">SKU: <%= product.product_sku %></div>
           </div>
         </div>
-        <div>
+        <% cache_buster = product.updated_at&.to_i || Time.now.to_i %>
+        <div data-controller="toggle-inventory" 
+             data-toggle-inventory-url-value="<%= items_admin_inventory_path(product, status: filtered_status, _ts: cache_buster) %>"
+             data-toggle-inventory-count-value="<%= total_items %>">
           <% if total_items > 0 %>
-              <% cache_buster = product.updated_at&.to_i || Time.now.to_i %>
-              <%= link_to "👁 Ver piezas (#{total_items})", items_admin_inventory_path(product, status: filtered_status, _ts: cache_buster),
-                        data: { turbo_frame: "inventory-items-frame-#{product.id}" },
-                        class: "btn btn-sm btn-outline-primary inventory-toggle",
-                        id: "inventory-toggle-#{product.id}",
-                        role: "button" %>
+              <button type="button"
+                      data-toggle-inventory-target="button"
+                      data-action="click->toggle-inventory#toggle"
+                      class="btn btn-sm btn-outline-primary inventory-toggle"
+                      id="inventory-toggle-<%= product.id %>">
+                👁 Ver piezas (<%= total_items %>)
+              </button>
           <% else %>
             <button class="btn btn-sm btn-outline-secondary" disabled>Sin piezas</button>
           <% end %>
@@ -134,7 +138,9 @@
 
       <%= render partial: "admin/inventory/summary", locals: { product: product } %>
 
-      <turbo-frame id="inventory-items-frame-<%= product.id %>" class="mt-2">
+      <turbo-frame id="inventory-items-frame-<%= product.id %>" 
+                   data-toggle-inventory-target="frame"
+                   class="mt-2">
         <div class="inventory-loader d-none text-center text-muted py-3">
           <div class="spinner-border spinner-border-sm text-primary" role="status" aria-hidden="true"></div>
           <span class="ms-2">Cargando piezas…</span>
