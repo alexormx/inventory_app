@@ -161,7 +161,7 @@
     <table class="table table-hover align-middle mb-0">
       <thead class="table-light">
         <tr>
-          <th style="width: 60px;">#</th>
+          <th style="width: 45px;">#</th>
           <th><%= sort_link('Cliente', :customer) %></th>
           <th><%= sort_link('Fecha', :date) %></th>
           <th>Estado</th>
@@ -169,7 +169,7 @@
           <th class="text-end"><%= sort_link('Total', :total_mxn) %></th>
           <th class="text-end"><%= sort_link('Pagado', :paid) %></th>
           <th class="text-end"><%= sort_link('Adeudo', :balance) %></th>
-          <th class="text-end" style="width: 100px;">Acciones</th>
+          <th class="text-end" style="width: 90px;">Acciones</th>
         </tr>
       </thead>
       <tbody>
@@ -251,13 +251,17 @@
               <% end %>
             </td>
             
-            <%# Acciones dropdown %>
+            <%# Acciones %>
             <td class="text-end">
-              <div class="dropdown">
-                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                  <i class="fa fa-ellipsis-v"></i>
-                </button>
-                <ul class="dropdown-menu dropdown-menu-end">
+              <div class="btn-group btn-group-sm" role="group">
+                <%= link_to admin_sale_order_path(so), class: "btn btn-outline-primary", title: "Ver detalle" do %>
+                  <i class="fa fa-eye"></i>
+                <% end %>
+                <div class="dropdown">
+                  <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fa fa-ellipsis-v"></i>
+                  </button>
+                  <ul class="dropdown-menu dropdown-menu-end">
                   <li>
                     <%= link_to admin_sale_order_path(so), class: "dropdown-item" do %>
                       <i class="fa fa-eye me-2 text-muted"></i>Ver detalle
@@ -298,6 +302,7 @@
                     <% end %>
                   </li>
                 </ul>
+                </div>
               </div>
             </td>
           </tr>
