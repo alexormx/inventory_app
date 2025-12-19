@@ -279,13 +279,13 @@
           </tr>
         </thead>
         <tbody>
-          <% @purchase_order.purchase_order_items.includes(product: { images_attachments: :blob }).each do |item| %>
+          <% @purchase_order.purchase_order_items.includes(product: { product_images_attachments: :blob }).each do |item| %>
             <tr>
               <%# Thumbnail %>
               <td class="text-center">
-                <% if item.product&.images&.attached? %>
+                <% if item.product&.product_images&.attached? %>
                   <%= link_to admin_product_path(item.product), title: "Ver producto" do %>
-                    <%= image_tag item.product.images.first.variant(resize_to_fill: [40, 40]), class: "rounded border", style: "width: 40px; height: 40px; object-fit: cover;" %>
+                    <%= image_tag item.product.product_images.first.variant(resize_to_fill: [40, 40]), class: "rounded border", style: "width: 40px; height: 40px; object-fit: cover;" %>
                   <% end %>
                 <% else %>
                   <div class="rounded bg-light d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
