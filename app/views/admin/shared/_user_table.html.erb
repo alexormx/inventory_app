@@ -37,9 +37,9 @@
         <% total_sales = (u.attributes["sales_total_mxn"] || sstat[:total_value] || 0).to_d %>
         <% balance_due = (u.attributes["balance_due_mxn"] || 0).to_d %>
         <% lv_raw = u.attributes["last_visit_at"] || last_visit %>
-        <% lv_time = lv_raw.is_a?(String) ? Time.zone.parse(lv_raw) rescue nil : lv_raw %>
+        <% lv_time = lv_raw.is_a?(String) ? (Time.zone.parse(lv_raw) rescue nil) : lv_raw %>
         <% days_since_visit = lv_time ? ((Time.zone.now - lv_time) / 1.day).floor : nil %>
-        <% days_since_created = ((Time.zone.now - u.created_at) / 1.day).floor rescue 999 %>
+        <% days_since_created = (Time.zone.now - u.created_at).to_i / 1.day rescue 999 %>
         <% is_vip = total_sales >= 10000 %>
         <% is_new = days_since_created <= 14 %>
         <% is_inactive = days_since_visit.nil? || days_since_visit > 90 %>
