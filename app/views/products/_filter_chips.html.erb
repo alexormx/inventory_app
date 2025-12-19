@@ -1,0 +1,86 @@
+<%# Partial reutilizable para mostrar chips de filtros activos %>
+<%# Usa filter_state del FilterParamsHelper para obtener el estado %>
+<% if filter_state.has_filters %>
+  <div class="active-filters-chips mb-3 d-flex flex-wrap gap-2 align-items-center" style="position: relative; z-index: 10;">
+    <span class="text-muted small fw-semibold"><%= local_assigns[:label] || 'Filtros activos:' %></span>
+
+    <%# Chips de categorías %>
+    <% filter_state.selected_categories.each do |cat| %>
+      <span class="filter-chip">
+        <i class="fas fa-tag me-1"></i><%= cat %>
+        <%= link_to clear_category_url(cat),
+                    class: "chip-remove",
+                    "aria-label": "Remover #{cat}",
+                    title: "Remover filtro",
+                    data: { turbo_frame: "products_grid" } do %>&times;<% end %>
+      </span>
+    <% end %>
+
+    <%# Chips de marcas %>
+    <% filter_state.selected_brands.each do |brand| %>
+      <span class="filter-chip">
+        <i class="fas fa-copyright me-1"></i><%= brand %>
+        <%= link_to clear_brand_url(brand),
+                    class: "chip-remove",
+                    "aria-label": "Remover #{brand}",
+                    title: "Remover filtro",
+                    data: { turbo_frame: "products_grid" } do %>&times;<% end %>
+      </span>
+    <% end %>
+
+    <%# Chip de precio %>
+    <% if filter_state.price_min || filter_state.price_max %>
+      <span class="filter-chip">
+        <i class="fas fa-dollar-sign me-1"></i><%= price_filter_text %>
+        <%= link_to clear_price_url,
+                    class: "chip-remove",
+                    "aria-label": "Remover filtro de precio",
+                    title: "Remover filtro",
+                    data: { turbo_frame: "products_grid" } do %>&times;<% end %>
+      </span>
+    <% end %>
+
+    <%# Chip de En stock %>
+    <% if filter_state.in_stock_only %>
+      <span class="filter-chip">
+        <i class="fas fa-check-circle me-1"></i>En stock
+        <%= link_to clear_availability_url(:in_stock),
+                    class: "chip-remove",
+                    "aria-label": "Remover filtro en stock",
+                    title: "Remover filtro",
+                    data: { turbo_frame: "products_grid" } do %>&times;<% end %>
+      </span>
+    <% end %>
+
+    <%# Chip de Backorder %>
+    <% if filter_state.backorder_only %>
+      <span class="filter-chip">
+        <i class="fas fa-clock me-1"></i>Backorder
+        <%= link_to clear_availability_url(:backorder),
+                    class: "chip-remove",
+                    "aria-label": "Remover filtro backorder",
+                    title: "Remover filtro",
+                    data: { turbo_frame: "products_grid" } do %>&times;<% end %>
+      </span>
+    <% end %>
+
+    <%# Chip de Preventa %>
+    <% if filter_state.preorder_only %>
+      <span class="filter-chip">
+        <i class="fas fa-calendar-alt me-1"></i>Preventa
+        <%= link_to clear_availability_url(:preorder),
+                    class: "chip-remove",
+                    "aria-label": "Remover filtro preventa",
+                    title: "Remover filtro",
+                    data: { turbo_frame: "products_grid" } do %>&times;<% end %>
+      </span>
+    <% end %>
+
+    <%# Botón limpiar todos (opcional, se puede ocultar con local_assigns[:hide_clear_all]) %>
+    <% unless local_assigns[:hide_clear_all] %>
+      <%= link_to clear_all_filters_url, class: "btn btn-outline-secondary btn-sm", data: { turbo_frame: "products_grid" } do %>
+        <i class="fas fa-times me-1"></i>Limpiar todos
+      <% end %>
+    <% end %>
+  </div>
+<% end %>

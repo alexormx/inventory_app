@@ -1,13 +1,4 @@
-<%
-  selected_categories = Array(params[:categories]).reject(&:blank?)
-  selected_brands = Array(params[:brands]).reject(&:blank?)
-  price_min = params[:price_min].presence
-  price_max = params[:price_max].presence
-  in_stock_only = ActiveModel::Type::Boolean.new.cast(params[:in_stock])
-  backorder_only = ActiveModel::Type::Boolean.new.cast(params[:backorder])
-  preorder_only = ActiveModel::Type::Boolean.new.cast(params[:preorder])
-  has_filters = selected_categories.any? || selected_brands.any? || price_min || price_max || in_stock_only || backorder_only || preorder_only
-%>
+<%# La lógica de filtros ahora está centralizada en FilterParamsHelper#filter_state %>
 
 <div class="container mt-4" id="catalog">
   <%# Breadcrumbs %>
@@ -66,71 +57,8 @@
     <p class="text-muted small mb-3">Resultados para "<strong><%= @q %></strong>": <%= @products.total_count %></p>
   <% end %>
 
-  <!-- ✅ Chips de filtros activos -->
-  <% if has_filters %>
-    <div class="active-filters-chips mb-3 d-flex flex-wrap gap-2 align-items-center">
-      <span class="text-muted small fw-semibold">Filtros activos:</span>
-
-      <% selected_categories.each do |cat| %>
-        <% clear_url = catalog_path(request.query_parameters.merge(categories: selected_categories - [cat], page: nil)) %>
-        <span class="filter-chip">
-          <i class="fas fa-tag me-1"></i><%= cat %>
-          <%= link_to clear_url, class: "chip-remove", "aria-label": "Remover #{cat}", title: "Remover filtro", data: { turbo_frame: "products_grid" } do %>&times;<% end %>
-        </span>
-      <% end %>
-
-      <% selected_brands.each do |brand| %>
-        <% clear_url = catalog_path(request.query_parameters.merge(brands: selected_brands - [brand], page: nil)) %>
-        <span class="filter-chip">
-          <i class="fas fa-copyright me-1"></i><%= brand %>
-          <%= link_to clear_url, class: "chip-remove", "aria-label": "Remover #{brand}", title: "Remover filtro", data: { turbo_frame: "products_grid" } do %>&times;<% end %>
-        </span>
-      <% end %>
-
-      <% if price_min || price_max %>
-        <% clear_url = catalog_path(request.query_parameters.except(:price_min, :price_max).merge(page: nil)) %>
-        <span class="filter-chip">
-          <i class="fas fa-dollar-sign me-1"></i>
-          <% if price_min && price_max %>
-            $<%= price_min %> - $<%= price_max %>
-          <% elsif price_min %>
-            Desde $<%= price_min %>
-          <% else %>
-            Hasta $<%= price_max %>
-          <% end %>
-          <%= link_to clear_url, class: "chip-remove", "aria-label": "Remover filtro de precio", title: "Remover filtro", data: { turbo_frame: "products_grid" } do %>&times;<% end %>
-        </span>
-      <% end %>
-
-      <% if in_stock_only %>
-        <% clear_url = catalog_path(request.query_parameters.except(:in_stock).merge(page: nil)) %>
-        <span class="filter-chip">
-          <i class="fas fa-check-circle me-1"></i>En stock
-          <%= link_to clear_url, class: "chip-remove", "aria-label": "Remover filtro en stock", title: "Remover filtro", data: { turbo_frame: "products_grid" } do %>&times;<% end %>
-        </span>
-      <% end %>
-
-      <% if backorder_only %>
-        <% clear_url = catalog_path(request.query_parameters.except(:backorder).merge(page: nil)) %>
-        <span class="filter-chip">
-          <i class="fas fa-clock me-1"></i>Backorder
-          <%= link_to clear_url, class: "chip-remove", "aria-label": "Remover filtro backorder", title: "Remover filtro", data: { turbo_frame: "products_grid" } do %>&times;<% end %>
-        </span>
-      <% end %>
-
-      <% if preorder_only %>
-        <% clear_url = catalog_path(request.query_parameters.except(:preorder).merge(page: nil)) %>
-        <span class="filter-chip">
-          <i class="fas fa-calendar-alt me-1"></i>Preventa
-          <%= link_to clear_url, class: "chip-remove", "aria-label": "Remover filtro preventa", title: "Remover filtro", data: { turbo_frame: "products_grid" } do %>&times;<% end %>
-        </span>
-      <% end %>
-
-      <%= link_to catalog_path(sort: @sort, q: @q), class: "btn btn-outline-secondary btn-sm", data: { turbo_frame: "products_grid" } do %>
-        <i class="fas fa-times me-1"></i>Limpiar todos
-      <% end %>
-    </div>
-  <% end %>
+  <!-- ✅ Chips de filtros activos (usando partial reutilizable) -->
+  <%= render 'filter_chips' %>
 
   <div class="row g-3">
     <!-- Sidebar filtros desktop -->

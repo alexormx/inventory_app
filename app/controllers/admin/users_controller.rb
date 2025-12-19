@@ -28,7 +28,8 @@ module Admin
       users = users.where(role: @role_filter) if @role_filter.present? && @role_filter != 'all'
       if @q.present?
         term = "%#{@q.downcase}%"
-        users = users.where('LOWER(name) LIKE ?', term)
+        # Buscar en nombre, email y teléfono
+        users = users.where('LOWER(name) LIKE ? OR LOWER(email) LIKE ? OR phone LIKE ?', term, term, "%#{@q}%")
       end
 
       # Subconsultas para estadísticos por usuario (expresiones reutilizables)
@@ -179,6 +180,33 @@ module Admin
       @users = User.where(role: 'admin').order(created_at: :desc).page(params[:page]).per(PER_PAGE)
       @purchase_stats, @sales_stats, @last_visits = compute_stats(@users.map(&:id))
       render :admins, layout: false
+    end
+
+    def show
+      @user = User.find(params[:id])
+      
+      # Estadísticas del usuario
+      @total_purchases = PurchaseOrder.where(user_id: @user.id).sum(:total_cost_mxn)
+      @total_sales = SaleOrder.where(user_id: @user.id).sum(:total_order_value)
+      @purchase_count = PurchaseOrder.where(user_id: @user.id).count
+      @sale_count = SaleOrder.where(user_id: @user.id).count
+      
+      # Adeudo pendiente
+      @balance_due = SaleOrder.where(user_id: @user.id).sum do |so|
+        paid = so.payments.where(status: 'Completed').sum(:amount)
+        [so.total_order_value - paid, 0].max
+      end
+      
+      # Últimas órdenes
+      @recent_sales = SaleOrder.where(user_id: @user.id).order(created_at: :desc).limit(5)
+      @recent_purchases = PurchaseOrder.where(user_id: @user.id).order(created_at: :desc).limit(5)
+      
+      # Última visita
+      @last_visit = VisitorLog.where(user_id: @user.id).maximum(:last_visited_at)
+      @visit_count = VisitorLog.where(user_id: @user.id).sum(:visit_count)
+      
+      # Direcciones
+      @shipping_addresses = @user.shipping_addresses.order(is_default: :desc, created_at: :desc).limit(3) if @user.respond_to?(:shipping_addresses)
     end
 
     def new

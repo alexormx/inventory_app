@@ -1,85 +1,157 @@
 <div class="d-flex align-items-center justify-content-between mb-3">
-  <h2 class="mb-0 d-flex align-items-center gap-2"><i class="fa fa-users"></i> Users</h2>
-  <%= link_to "New User", new_admin_user_path, class: "btn btn-primary btn-sm" %>
+  <h2 class="mb-0 d-flex align-items-center gap-2"><i class="fa fa-users"></i> Usuarios</h2>
+  <div class="d-flex gap-2">
+    <%= link_to admin_users_path(format: :csv, q: @q, role: @role_filter, with_sales: @with_sales, with_purchases: @with_purchases, with_credit: @with_credit, active_recent: @active_recent, inactive: @inactive), class: "btn btn-outline-success btn-sm", title: "Exportar CSV" do %>
+      <i class="fa fa-download"></i> CSV
+    <% end %>
+    <%= link_to new_admin_user_path, class: "btn btn-primary btn-sm" do %>
+      <i class="fa fa-plus"></i> Nuevo Usuario
+    <% end %>
   </div>
+</div>
 
 <%# Contadores superiores (globales, no cambian con filtros) %>
 <%= render partial: "admin/shared/status_counters", locals: {
   counts: @role_counts_global,
   items: [
-    [:customers, "Customers", "bg-success"],
-    [:suppliers, "Suppliers", "bg-primary"],
+    [:customers, "Clientes", "bg-success"],
+    [:suppliers, "Proveedores", "bg-primary"],
     [:admins,    "Admins",    "bg-secondary"],
   ],
   extra_class: "mb-2",
-  title: "Resumen"
+  title: "Resumen Global"
 } %>
 
-<%# Barra de búsqueda + filtros por rol (estilo similar a Inventario) %>
-<div class="card mb-4">
+<%# Barra de búsqueda + filtros por rol %>
+<div class="card mb-3">
   <div class="card-body py-2">
   <%= form_with url: admin_users_path, method: :get, local: true, class: "row g-2 align-items-center" do %>
       <%= hidden_field_tag :sort, params[:sort] %>
       <%= hidden_field_tag :dir, params[:dir] %>
-      <div class="col-12 col-md-6">
+      <div class="col-12 col-md-5">
         <div class="input-group input-group-sm">
-          <%= text_field_tag :q, @q, class: "form-control", placeholder: "Buscar por nombre…", aria: { label: "Buscar usuarios" } %>
-          <button class="btn btn-outline-secondary btn-clear-search" type="button" title="Limpiar búsqueda">Limpiar</button>
-          <button class="btn btn-primary" type="submit" name="commit" value="search" title="Buscar">Buscar</button>
+          <span class="input-group-text"><i class="fa fa-search"></i></span>
+          <%= text_field_tag :q, @q, class: "form-control", placeholder: "Buscar por nombre, email o teléfono…", aria: { label: "Buscar usuarios" } %>
+          <% if @q.present? %>
+            <%= link_to admin_users_path(role: @role_filter, with_sales: @with_sales, with_purchases: @with_purchases, with_credit: @with_credit, active_recent: @active_recent, inactive: @inactive), class: "btn btn-outline-secondary", title: "Limpiar búsqueda" do %>
+              <i class="fa fa-times"></i>
+            <% end %>
+          <% end %>
+          <button class="btn btn-primary" type="submit" title="Buscar"><i class="fa fa-search"></i></button>
         </div>
       </div>
-  <div class="col-12 col-md-6 text-md-end">
-        <% current_role = @role_filter.presence || "all" %>
-        <% role_outline = ->(role) do
-             case role
-             when "customer" then "success"
-             when "supplier" then "primary"
-             when "admin"    then "secondary"
-             else "secondary"
-             end
-           end %>
-        <% btn_classes = ->(role, current) { ["btn", "btn-outline-#{role_outline.call(role)}", (current == role ? "active" : nil)].compact.join(" ") } %>
-        <div class="btn-group btn-group-sm me-2" role="group" aria-label="Filtro de rol">
-          <%= button_tag "Todos", name: :role, value: "all", class: btn_classes.call("all", current_role) %>
-          <%= button_tag "Customers", name: :role, value: "customer", class: btn_classes.call("customer", current_role) %>
-          <%= button_tag "Suppliers", name: :role, value: "supplier", class: btn_classes.call("supplier", current_role) %>
-          <%= button_tag "Admins", name: :role, value: "admin", class: btn_classes.call("admin", current_role) %>
+      <div class="col-12 col-md-7">
+        <div class="d-flex flex-wrap align-items-center gap-2 justify-content-md-end">
+          <%# Filtros de rol como botones %>
+          <% current_role = @role_filter.presence || "all" %>
+          <div class="btn-group btn-group-sm" role="group" aria-label="Filtro de rol">
+            <%= button_tag name: :role, value: "all", class: "btn btn-outline-secondary #{current_role == 'all' ? 'active' : ''}", title: "Todos los roles" do %>
+              <i class="fa fa-users"></i> Todos
+            <% end %>
+            <%= button_tag name: :role, value: "customer", class: "btn btn-outline-success #{current_role == 'customer' ? 'active' : ''}", title: "Solo clientes" do %>
+              <i class="fa fa-user"></i> Clientes
+            <% end %>
+            <%= button_tag name: :role, value: "supplier", class: "btn btn-outline-primary #{current_role == 'supplier' ? 'active' : ''}", title: "Solo proveedores" do %>
+              <i class="fa fa-truck"></i> Proveedores
+            <% end %>
+            <%= button_tag name: :role, value: "admin", class: "btn btn-outline-secondary #{current_role == 'admin' ? 'active' : ''}", title: "Solo admins" do %>
+              <i class="fa fa-user-shield"></i> Admins
+            <% end %>
+          </div>
+          <%# Dropdown para filtros adicionales %>
+          <div class="dropdown">
+            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <i class="fa fa-filter"></i> Más filtros
+              <% active_filters = [@with_sales, @with_purchases, @with_credit, @active_recent, @inactive].count { |f| f } %>
+              <% if active_filters > 0 %>
+                <span class="badge text-bg-primary"><%= active_filters %></span>
+              <% end %>
+            </button>
+            <div class="dropdown-menu dropdown-menu-end p-3" style="min-width: 200px;">
+              <div class="form-check mb-2">
+                <%= check_box_tag :with_sales, 1, @with_sales, class: "form-check-input", id: "with_sales" %>
+                <label class="form-check-label" for="with_sales"><i class="fa fa-shopping-cart text-success"></i> Con ventas</label>
+              </div>
+              <div class="form-check mb-2">
+                <%= check_box_tag :with_purchases, 1, @with_purchases, class: "form-check-input", id: "with_purchases" %>
+                <label class="form-check-label" for="with_purchases"><i class="fa fa-truck text-primary"></i> Con compras</label>
+              </div>
+              <div class="form-check mb-2">
+                <%= check_box_tag :with_credit, 1, @with_credit, class: "form-check-input", id: "with_credit" %>
+                <label class="form-check-label" for="with_credit"><i class="fa fa-credit-card text-info"></i> Con crédito</label>
+              </div>
+              <hr class="my-2">
+              <div class="form-check mb-2">
+                <%= check_box_tag :active_recent, 1, @active_recent, class: "form-check-input", id: "active_recent" %>
+                <label class="form-check-label" for="active_recent"><i class="fa fa-bolt text-success"></i> Activos (30d)</label>
+              </div>
+              <div class="form-check mb-2">
+                <%= check_box_tag :inactive, 1, @inactive, class: "form-check-input", id: "inactive" %>
+                <label class="form-check-label" for="inactive"><i class="fa fa-moon text-secondary"></i> Inactivos (90d)</label>
+              </div>
+              <hr class="my-2">
+              <button type="submit" class="btn btn-sm btn-primary w-100">Aplicar filtros</button>
+            </div>
+          </div>
         </div>
-        <%= hidden_field_tag :current_role, current_role %>
-        <div class="d-inline-block align-middle ms-2">
-          <div class="form-check form-check-inline">
-            <%= check_box_tag :with_sales, 1, @with_sales, class: "form-check-input", id: "with_sales" %>
-            <label class="form-check-label" for="with_sales">Con ventas</label>
-          </div>
-          <div class="form-check form-check-inline">
-            <%= check_box_tag :with_purchases, 1, @with_purchases, class: "form-check-input", id: "with_purchases" %>
-            <label class="form-check-label" for="with_purchases">Con compras</label>
-          </div>
-          <div class="form-check form-check-inline">
-            <%= check_box_tag :with_credit, 1, @with_credit, class: "form-check-input", id: "with_credit" %>
-            <label class="form-check-label" for="with_credit">Con crédito</label>
-          </div>
-          <div class="form-check form-check-inline">
-            <%= check_box_tag :active_recent, 1, @active_recent, class: "form-check-input", id: "active_recent" %>
-            <label class="form-check-label" for="active_recent">Activos (30d)</label>
-          </div>
-          <div class="form-check form-check-inline">
-            <%= check_box_tag :inactive, 1, @inactive, class: "form-check-input", id: "inactive" %>
-            <label class="form-check-label" for="inactive">Inactivos (90d)</label>
-          </div>
-        </div>
-        <%= link_to "Limpiar filtros", admin_users_path, class: "btn btn-sm btn-outline-secondary ms-2", title: "Quitar búsqueda y rol" %>
       </div>
     <% end %>
   </div>
 </div>
 
-<%# Contadores inferiores (dependen de búsqueda + filtro; ocultar cero) %>
+<%# Filter chips - mostrar filtros activos %>
+<% has_active_filters = @q.present? || (@role_filter.present? && @role_filter != 'all') || @with_sales || @with_purchases || @with_credit || @active_recent || @inactive %>
+<% if has_active_filters %>
+  <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+    <span class="text-muted small">Filtros activos:</span>
+    <% if @q.present? %>
+      <%= link_to admin_users_path(role: @role_filter, with_sales: @with_sales, with_purchases: @with_purchases, with_credit: @with_credit, active_recent: @active_recent, inactive: @inactive), class: "badge text-bg-secondary text-decoration-none" do %>
+        <i class="fa fa-search"></i> "<%= @q %>" <i class="fa fa-times ms-1"></i>
+      <% end %>
+    <% end %>
+    <% if @role_filter.present? && @role_filter != 'all' %>
+      <% role_label = { 'customer' => 'Clientes', 'supplier' => 'Proveedores', 'admin' => 'Admins' }[@role_filter] %>
+      <%= link_to admin_users_path(q: @q, role: 'all', with_sales: @with_sales, with_purchases: @with_purchases, with_credit: @with_credit, active_recent: @active_recent, inactive: @inactive), class: "badge text-bg-info text-decoration-none" do %>
+        <i class="fa fa-user"></i> <%= role_label %> <i class="fa fa-times ms-1"></i>
+      <% end %>
+    <% end %>
+    <% if @with_sales %>
+      <%= link_to admin_users_path(q: @q, role: @role_filter, with_purchases: @with_purchases, with_credit: @with_credit, active_recent: @active_recent, inactive: @inactive), class: "badge text-bg-success text-decoration-none" do %>
+        <i class="fa fa-shopping-cart"></i> Con ventas <i class="fa fa-times ms-1"></i>
+      <% end %>
+    <% end %>
+    <% if @with_purchases %>
+      <%= link_to admin_users_path(q: @q, role: @role_filter, with_sales: @with_sales, with_credit: @with_credit, active_recent: @active_recent, inactive: @inactive), class: "badge text-bg-primary text-decoration-none" do %>
+        <i class="fa fa-truck"></i> Con compras <i class="fa fa-times ms-1"></i>
+      <% end %>
+    <% end %>
+    <% if @with_credit %>
+      <%= link_to admin_users_path(q: @q, role: @role_filter, with_sales: @with_sales, with_purchases: @with_purchases, active_recent: @active_recent, inactive: @inactive), class: "badge text-bg-info text-decoration-none" do %>
+        <i class="fa fa-credit-card"></i> Con crédito <i class="fa fa-times ms-1"></i>
+      <% end %>
+    <% end %>
+    <% if @active_recent %>
+      <%= link_to admin_users_path(q: @q, role: @role_filter, with_sales: @with_sales, with_purchases: @with_purchases, with_credit: @with_credit, inactive: @inactive), class: "badge text-bg-success text-decoration-none" do %>
+        <i class="fa fa-bolt"></i> Activos (30d) <i class="fa fa-times ms-1"></i>
+      <% end %>
+    <% end %>
+    <% if @inactive %>
+      <%= link_to admin_users_path(q: @q, role: @role_filter, with_sales: @with_sales, with_purchases: @with_purchases, with_credit: @with_credit, active_recent: @active_recent), class: "badge text-bg-secondary text-decoration-none" do %>
+        <i class="fa fa-moon"></i> Inactivos (90d) <i class="fa fa-times ms-1"></i>
+      <% end %>
+    <% end %>
+    <%= link_to admin_users_path, class: "btn btn-sm btn-outline-danger" do %>
+      <i class="fa fa-times"></i> Limpiar todo
+    <% end %>
+  </div>
+<% end %>
+
+<%# Contadores de resultados filtrados %>
 <%= render partial: "admin/shared/status_counters", locals: {
   counts: @role_counts,
   items: [
-    [:customers, "Customers", "bg-success"],
-    [:suppliers, "Suppliers", "bg-primary"],
+    [:customers, "Clientes", "bg-success"],
+    [:suppliers, "Proveedores", "bg-primary"],
     [:admins,    "Admins",    "bg-secondary"],
   ],
   hide_zero: true,

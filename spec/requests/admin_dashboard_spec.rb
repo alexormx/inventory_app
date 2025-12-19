@@ -1,10 +1,10 @@
 require 'rails_helper'
 
 RSpec.describe "Admin::Dashboard", type: :request do
-  let(:user) { create(:user, email: "user@example.com", password: "password123", role: :admin) }
+  let(:user) { create(:user, role: :admin) }
 
   before do
-    sign_in user  # Ensure authentication
+    sign_in user
   end
 
   describe "GET /admin/dashboard" do

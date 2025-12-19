@@ -21,7 +21,7 @@
         <% end %>
       </div>
     </div>
-    
+
     <%# Precio destacado %>
     <div class="mb-2">
       <span class="fs-5 fw-bold text-success"><%= number_to_currency(product.selling_price) %></span>
@@ -29,18 +29,18 @@
         <span class="text-muted small ms-2">(mín. <%= number_to_currency(product.minimum_price) %>)</span>
       <% end %>
     </div>
-    
+
     <div class="mb-1 product-desc line-clamp-2 small text-muted">
       <%= product.description.presence || "Sin descripción" %>
     </div>
-    
+
     <%# Usar inventory_counts pre-cargados si están disponibles %>
     <% inv_counts = local_assigns[:inventory_counts] || {} %>
     <% purchased = product.total_purchase_quantity.to_i %>
     <% sold = product.total_sales_quantity.to_i %>
     <% stock_on_hand = inv_counts[[product.id, 'available']].to_i %>
     <% reserved = inv_counts[[product.id, 'reserved']].to_i %>
-    
+
     <div class="mb-2 small">
       <span class="badge bg-light text-dark border" title="Comprados"><i class="fa fa-shopping-cart text-primary"></i> <%= purchased %></span>
       <span class="badge bg-light text-dark border" title="Vendidos"><i class="fa fa-check text-success"></i> <%= sold %></span>
@@ -49,11 +49,11 @@
         <span class="badge bg-warning text-dark" title="Apartados"><i class="fa fa-bookmark"></i> <%= reserved %></span>
       <% end %>
     </div>
-    
+
     <%= turbo_frame_tag "product_badge_#{product.id}" do %>
       <%= render partial: 'status_badge', locals: { product: product } %>
     <% end %>
-    
+
     <div class="d-flex justify-content-between align-items-center gap-2 mt-2">
       <div>
         <%= turbo_frame_tag "product_actions_#{product.id}" do %>

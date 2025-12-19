@@ -24,13 +24,13 @@ module Admin
       @sort = params[:sort].presence || 'recent'
       scope = apply_sort(scope, @sort)
       @products = scope.page(params[:page]).per(PER_PAGE)
-      
+
       # Pre-cargar conteos de inventario para evitar N+1 queries
       product_ids = @products.map(&:id)
       @inventory_counts = Inventory.where(product_id: product_ids)
                                    .group(:product_id, :status)
                                    .count
-      
+
       compute_counts
     end
 

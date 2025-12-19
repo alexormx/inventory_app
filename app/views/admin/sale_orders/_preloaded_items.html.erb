@@ -15,8 +15,8 @@
     </td>
 
     <td class="text-center">
-      <span class="badge <%= stock_class %> bg-opacity-10 border <%= stock_class.gsub('text-', 'border-') %>" 
-            data-bs-toggle="tooltip" 
+      <span class="badge <%= stock_class %> bg-opacity-10 border <%= stock_class.gsub('text-', 'border-') %>"
+            data-bs-toggle="tooltip"
             data-bs-html="true"
             title="<strong>Disponible:</strong> <%= stock_available %><br><strong>En tránsito:</strong> <%= stock_in_transit %><br><strong>Reservado:</strong> <%= stock_reserved %>">
         <span class="<%= stock_class %>"><%= stock_available %></span>

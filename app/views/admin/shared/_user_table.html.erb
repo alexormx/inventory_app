@@ -13,25 +13,18 @@
 
 <div class="table-responsive">
   <table class="table table-sm table-hover align-middle">
-    <thead>
+    <thead class="table-light">
       <tr>
-  <th><%= sort_link('ID', :created) %></th>
-  <th><%= sort_link('Name', :name) %></th>
-        <th>Email</th>
-        <th>Phone</th>
-  <th>Role</th>
-        <% if include_offline_column %>
-          <th>Offline</th>
-        <% end %>
-  <th>Activity</th>
-  <th class="text-end"><%= sort_link('Total Purchases', :total_purchases) %></th>
-  <th class="text-end"><%= sort_link('Total Sales', :total_sales) %></th>
-  <th class="text-end"><%= sort_link('Adeudo', :debt) %></th>
-  <th><%= sort_link('Last Visit', :last_visit) %></th>
-  <th><%= sort_link('Last Purchase', :last_purchase) %></th>
-  <th><%= sort_link('Last Sale', :last_sale) %></th>
-  <th></th>
-  <th></th>
+        <th><%= sort_link('ID', :created) %></th>
+        <th><%= sort_link('Usuario', :name) %></th>
+        <th>Contacto</th>
+        <th>Rol</th>
+        <th>Estado</th>
+        <th class="text-end"><%= sort_link('Compras', :total_purchases) %></th>
+        <th class="text-end"><%= sort_link('Ventas', :total_sales) %></th>
+        <th class="text-end"><%= sort_link('Adeudo', :debt) %></th>
+        <th><%= sort_link('Última Actividad', :last_visit) %></th>
+        <th class="text-center">Acciones</th>
       </tr>
     </thead>
     <tbody>
@@ -39,93 +32,187 @@
         <% pstat = (purchase_stats || {})[u.id] || {} %>
         <% sstat = (sales_stats || {})[u.id] || {} %>
         <% last_visit = (last_visits || {})[u.id] %>
-        <tr>
-          <td class="text-muted"><%= u.id %></td>
-          <td><%= u.name %></td>
-          <td><%= u.email %></td>
-          <td><%= u.phone %></td>
+        <%# Calcular métricas %>
+        <% total_purch = (u.attributes["purchases_total_mxn"] || pstat[:total_value] || 0).to_d %>
+        <% total_sales = (u.attributes["sales_total_mxn"] || sstat[:total_value] || 0).to_d %>
+        <% balance_due = (u.attributes["balance_due_mxn"] || 0).to_d %>
+        <% lv_raw = u.attributes["last_visit_at"] || last_visit %>
+        <% lv_time = lv_raw.is_a?(String) ? Time.zone.parse(lv_raw) rescue nil : lv_raw %>
+        <% days_since_visit = lv_time ? ((Time.zone.now - lv_time) / 1.day).floor : nil %>
+        <% days_since_created = ((Time.zone.now - u.created_at) / 1.day).floor rescue 999 %>
+        <% is_vip = total_sales >= 10000 %>
+        <% is_new = days_since_created <= 14 %>
+        <% is_inactive = days_since_visit.nil? || days_since_visit > 90 %>
+        <% has_debt = balance_due > 0 %>
+        <tr class="<%= 'table-warning' if has_debt && balance_due > 1000 %>">
+          <%# ID %>
+          <td class="text-muted small"><%= u.id %></td>
+          
+          <%# Usuario: Nombre + iniciales/avatar %>
+          <td>
+            <div class="d-flex align-items-center gap-2">
+              <div class="rounded-circle bg-<%= u.role == 'admin' ? 'secondary' : u.role == 'supplier' ? 'primary' : 'success' %> text-white d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; font-size: 0.75rem;">
+                <%= u.name.to_s.split.map(&:first).join.upcase.first(2) %>
+              </div>
+              <div>
+                <div class="fw-medium"><%= u.name %></div>
+                <% if is_new %>
+                  <span class="badge text-bg-info" style="font-size: 0.65rem;">🆕 Nuevo</span>
+                <% end %>
+                <% if is_vip %>
+                  <span class="badge text-bg-warning" style="font-size: 0.65rem;">⭐ VIP</span>
+                <% end %>
+              </div>
+            </div>
+          </td>
+          
+          <%# Contacto: Email + Phone como iconos %>
+          <td>
+            <div class="d-flex flex-column gap-1">
+              <% if u.email.present? %>
+                <a href="mailto:<%= u.email %>" class="text-decoration-none small" title="<%= u.email %>">
+                  <i class="fa fa-envelope text-muted"></i>
+                  <span class="text-truncate" style="max-width: 120px; display: inline-block; vertical-align: middle;"><%= u.email.split('@').first %></span>
+                </a>
+              <% end %>
+              <% if u.phone.present? %>
+                <a href="tel:<%= u.phone %>" class="text-decoration-none small" title="<%= u.phone %>">
+                  <i class="fa fa-phone text-muted"></i>
+                  <%= u.phone %>
+                </a>
+              <% end %>
+            </div>
+          </td>
+          
+          <%# Rol %>
           <td>
             <% role_class = case u.role.to_s
               when 'customer' then 'success'
               when 'supplier' then 'primary'
-              when 'admin'    then 'secondary'
+              when 'admin' then 'secondary'
               else 'secondary'
             end %>
-            <span class="badge text-bg-<%= role_class %>"><%= u.role %></span>
-          </td>
-          <% if include_offline_column %>
-            <td>
-              <% if u.created_offline? %>
-                <span class="badge text-bg-warning">Yes</span>
-              <% else %>
-                <span class="badge text-bg-light">No</span>
-              <% end %>
-            </td>
-          <% end %>
-          <td>
-            <% total_purch = (u.attributes["purchases_total_mxn"] || pstat[:total_value] || 0).to_d %>
-            <% total_sales = (u.attributes["sales_total_mxn"]     || sstat[:total_value]   || 0).to_d %>
-            <% if total_sales > 0 %>
-              <span class="badge text-bg-success" title="Tiene ventas">
-                Ventas
-              </span>
+            <span class="badge text-bg-<%= role_class %>"><%= u.role.to_s.capitalize %></span>
+            <% if u.respond_to?(:created_offline?) && u.created_offline? %>
+              <span class="badge text-bg-warning" title="Cliente offline">📴</span>
             <% end %>
+            <% if u.respond_to?(:credit_enabled) && u.credit_enabled %>
+              <span class="badge text-bg-info" title="Crédito habilitado">💳</span>
+            <% end %>
+          </td>
+          
+          <%# Estado: Badges de actividad %>
+          <td>
+            <div class="d-flex flex-wrap gap-1">
+              <% if has_debt %>
+                <span class="badge text-bg-danger" title="Adeudo pendiente">⚠️ Debe</span>
+              <% end %>
+              <% if is_inactive %>
+                <span class="badge text-bg-secondary" title="Sin actividad > 90 días">💤 Inactivo</span>
+              <% elsif total_sales > 0 || total_purch > 0 %>
+                <span class="badge text-bg-success" title="Usuario activo">✓ Activo</span>
+              <% else %>
+                <span class="badge text-bg-light" title="Sin transacciones">Sin actividad</span>
+              <% end %>
+            </div>
+          </td>
+          
+          <%# Compras %>
+          <td class="text-end">
             <% if total_purch > 0 %>
-              <span class="badge text-bg-primary" title="Tiene compras">
-                Compras
-              </span>
-            <% end %>
-            <% if total_sales == 0 && total_purch == 0 %>
-              <span class="badge text-bg-secondary" title="Sin actividad">Sin actividad</span>
+              <span class="fw-medium"><%= number_to_currency(total_purch, precision: 0) %></span>
+            <% else %>
+              <span class="text-muted">—</span>
             <% end %>
           </td>
-          <td class="text-end"><%= number_to_currency(total_purch) %></td>
-          <td class="text-end"><%= number_to_currency(total_sales) %></td>
-          <td class="text-end"><%= number_to_currency((u.attributes["balance_due_mxn"] || 0).to_d) %></td>
+          
+          <%# Ventas %>
+          <td class="text-end">
+            <% if total_sales > 0 %>
+              <span class="fw-medium text-success"><%= number_to_currency(total_sales, precision: 0) %></span>
+            <% else %>
+              <span class="text-muted">—</span>
+            <% end %>
+          </td>
+          
+          <%# Adeudo %>
+          <td class="text-end">
+            <% if has_debt %>
+              <span class="fw-bold text-danger"><%= number_to_currency(balance_due, precision: 0) %></span>
+            <% else %>
+              <span class="text-muted">—</span>
+            <% end %>
+          </td>
+          
+          <%# Última Actividad (combinada) %>
           <td>
-            <% lv_raw = u.attributes["last_visit_at"] || last_visit %>
-            <% if lv_raw.present? %>
-              <% lv_time = begin
-                lv_raw.is_a?(String) ? Time.zone.parse(lv_raw) : lv_raw
-              rescue
-                nil
-              end %>
-              <% if lv_time.present? %>
-                <% days_ago = ((Time.zone.now - lv_time) / 1.day).floor rescue nil %>
-                <% label_class = if days_ago.nil?
-                  'text-bg-secondary'
-                elsif days_ago <= 30
-                  'text-bg-success'
-                elsif days_ago <= 90
-                  'text-bg-warning'
-                else
-                  'text-bg-secondary'
-                end %>
-                <span class="badge <%= label_class %>" title="<%= lv_time&.strftime('%Y-%m-%d %H:%M:%S') %>">
-                  hace <%= distance_of_time_in_words_to_now(lv_time, include_seconds: false) %>
-                </span>
-              <% else %>
-                <span class="badge text-bg-secondary"><%= lv_raw.to_s %></span>
-              <% end %>
+            <% if lv_time.present? %>
+              <% visit_class = days_since_visit <= 30 ? 'text-bg-success' : days_since_visit <= 90 ? 'text-bg-warning' : 'text-bg-secondary' %>
+              <span class="badge <%= visit_class %>" title="<%= lv_time.strftime('%Y-%m-%d %H:%M') %>">
+                <i class="fa fa-clock"></i> <%= distance_of_time_in_words_to_now(lv_time) %>
+              </span>
             <% else %>
               <span class="badge text-bg-light">Nunca</span>
             <% end %>
-          </td>
-          <td>
+            <%# Mostrar última compra/venta en tooltip %>
             <% ld = u.attributes["last_purchase_date"] || pstat[:last_date] %>
-            <%= ld.is_a?(String) ? ld : ld&.strftime('%Y-%m-%d') %>
-          </td>
-          <td>
             <% sd = u.attributes["last_sale_date"] || sstat[:last_date] %>
-            <%= sd.is_a?(String) ? sd : sd&.strftime('%Y-%m-%d') %>
-          </td>
-          <td class="text-end">
-            <% if edit_path %>
-              <%= link_to "Edit", edit_path.call(u), class: "btn btn-outline-secondary btn-sm", data: { turbo_frame: "_top" } %>
+            <% if ld || sd %>
+              <div class="small text-muted mt-1">
+                <% if sd %><span title="Última venta">🛒 <%= sd.is_a?(String) ? sd : sd.strftime('%d/%m') %></span><% end %>
+                <% if ld %><span title="Última compra" class="ms-1">📦 <%= ld.is_a?(String) ? ld : ld.strftime('%d/%m') %></span><% end %>
+              </div>
             <% end %>
           </td>
-          <td>
-            <%= link_to "Addresses", admin_user_shipping_addresses_path(u), class: "btn btn-outline-primary btn-sm" %>
+          
+          <%# Acciones: Dropdown con quick actions %>
+          <td class="text-center">
+            <div class="btn-group">
+              <% if edit_path %>
+                <%= link_to edit_path.call(u), class: "btn btn-outline-secondary btn-sm", data: { turbo_frame: "_top" }, title: "Editar" do %>
+                  <i class="fa fa-edit"></i>
+                <% end %>
+              <% end %>
+              <button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+                <span class="visually-hidden">Toggle Dropdown</span>
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end">
+                <li>
+                  <%= link_to admin_user_path(u), class: "dropdown-item" do %>
+                    <i class="fa fa-eye text-muted"></i> Ver detalle
+                  <% end %>
+                </li>
+                <li>
+                  <%= link_to admin_user_shipping_addresses_path(u), class: "dropdown-item" do %>
+                    <i class="fa fa-map-marker-alt text-muted"></i> Direcciones
+                  <% end %>
+                </li>
+                <% if u.role == 'customer' %>
+                  <li><hr class="dropdown-divider"></li>
+                  <li>
+                    <%= link_to admin_sale_orders_path(user_id: u.id), class: "dropdown-item" do %>
+                      <i class="fa fa-shopping-cart text-success"></i> Ver ventas
+                    <% end %>
+                  </li>
+                <% end %>
+                <% if u.role == 'supplier' %>
+                  <li><hr class="dropdown-divider"></li>
+                  <li>
+                    <%= link_to admin_purchase_orders_path(supplier_id: u.id), class: "dropdown-item" do %>
+                      <i class="fa fa-truck text-primary"></i> Ver compras
+                    <% end %>
+                  </li>
+                <% end %>
+                <% if u.email.present? %>
+                  <li><hr class="dropdown-divider"></li>
+                  <li>
+                    <a href="mailto:<%= u.email %>" class="dropdown-item">
+                      <i class="fa fa-envelope text-muted"></i> Enviar email
+                    </a>
+                  </li>
+                <% end %>
+              </ul>
+            </div>
           </td>
         </tr>
       <% end %>

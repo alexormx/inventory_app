@@ -107,7 +107,7 @@
         end %>
       <% cache_buster = product.updated_at&.to_i || Time.now.to_i %>
   <div class="card mb-3 shadow-sm main-inventory-card inventory-card"
-       data-controller="toggle-inventory" 
+       data-controller="toggle-inventory"
        data-toggle-inventory-url-value="<%= items_admin_inventory_path(product, status: filtered_status, _ts: cache_buster) %>"
        data-toggle-inventory-count-value="<%= total_items %>">
       <div class="card-header d-flex justify-content-between align-items-center bg-light">
@@ -139,7 +139,7 @@
 
       <%= render partial: "admin/inventory/summary", locals: { product: product } %>
 
-      <turbo-frame id="inventory-items-frame-<%= product.id %>" 
+      <turbo-frame id="inventory-items-frame-<%= product.id %>"
                    data-toggle-inventory-target="frame"
                    class="mt-2">
         <div class="inventory-loader d-none text-center text-muted py-3">

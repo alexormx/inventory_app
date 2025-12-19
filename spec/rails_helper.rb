@@ -63,6 +63,19 @@ RSpec.configure do |config|
   # Automatically tag specs based on their file location (e.g., spec/requests => type: :request)
   config.infer_spec_type_from_file_location!
 
+  # Deshabilitar Bullet para tests marcados con :skip_bullet
+  # Útil para tests de dashboard y otras vistas complejas con muchas queries
+  config.around(:each, :skip_bullet) do |example|
+    if defined?(Bullet)
+      prev_bullet = Bullet.enable?
+      Bullet.enable = false
+      example.run
+      Bullet.enable = prev_bullet
+    else
+      example.run
+    end
+  end
+
   # Helpers
   config.include Rails.application.routes.url_helpers
   config.include FactoryBot::Syntax::Methods

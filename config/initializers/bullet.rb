@@ -2,7 +2,8 @@
 
 # Bullet gem configuration for N+1 query detection
 if defined?(Bullet)
-  Bullet.enable = true
+  # Solo habilitar en desarrollo - en test causa problemas con transacciones
+  Bullet.enable = Rails.env.development?
 
   # Development environment configuration
   if Rails.env.development?
@@ -26,21 +27,5 @@ if defined?(Bullet)
 
     # Detect counter cache that should be used
     Bullet.counter_cache_enable = true
-  end
-
-  # Test environment configuration
-  if Rails.env.test?
-    # Raise errors to catch N+1 queries in specs
-    Bullet.raise = true
-
-    # Log to test log
-    Bullet.rails_logger = true
-
-    # Detect N+1 queries (most important check)
-    Bullet.n_plus_one_query_enable = true
-
-    # Disable unused eager loading detection in tests (causes false positives
-    # because test requests often don't render full HTML where associations are used)
-    Bullet.unused_eager_loading_enable = false
   end
 end

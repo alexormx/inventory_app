@@ -285,7 +285,7 @@ module Admin
 
     def load_alerts
       @alerts = []
-      
+
       # Stock crítico
       if @critical_stock_count.to_i > 0
         @alerts << {
@@ -296,7 +296,7 @@ module Admin
           link_text: 'Ver productos'
         }
       end
-      
+
       # Órdenes pendientes de envío
       pending_shipments = SaleOrder.where(status: 'Confirmed').count
       if pending_shipments > 0
@@ -308,7 +308,7 @@ module Admin
           link_text: 'Ver órdenes'
         }
       end
-      
+
       # Órdenes de compra en tránsito
       in_transit_pos = PurchaseOrder.where(status: 'In Transit').count
       if in_transit_pos > 0
@@ -320,9 +320,11 @@ module Admin
           link_text: 'Ver compras'
         }
       end
-      
-      # Productos sin stock (agotados)
-      out_of_stock = Product.where(current_stock_sellable: 0).where(status: 'Active').count rescue 0
+
+      # Productos sin stock (agotados) - productos activos sin inventario disponible
+      # Usamos subquery para evitar N+1 y contar solo productos sin inventario available
+      products_with_stock = Inventory.where(status: :available).select(:product_id).distinct
+      out_of_stock = Product.active.where.not(id: products_with_stock).count rescue 0
       if out_of_stock > 5
         @alerts << {
           type: 'warning',
@@ -340,13 +342,13 @@ module Admin
     def load_recent_activity
       # Última venta
       @last_sale = SaleOrder.where.not(status: 'Canceled').order(created_at: :desc).first
-      
+
       # Última compra recibida
       @last_purchase_received = PurchaseOrder.where(status: 'Received').order(updated_at: :desc).first
-      
+
       # Última compra creada
       @last_purchase_created = PurchaseOrder.order(created_at: :desc).first
-      
+
       # Próximo envío (orden confirmada más antigua)
       @next_shipment = SaleOrder.where(status: 'Confirmed').order(order_date: :asc).first
     rescue StandardError => e

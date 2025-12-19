@@ -1,12 +1,4 @@
-<%
-  selected_categories = Array(params[:categories]).reject(&:blank?)
-  selected_brands = Array(params[:brands]).reject(&:blank?)
-  price_min = params[:price_min].presence
-  price_max = params[:price_max].presence
-  in_stock_only = ActiveModel::Type::Boolean.new.cast(params[:in_stock])
-  backorder_only = ActiveModel::Type::Boolean.new.cast(params[:backorder])
-  preorder_only = ActiveModel::Type::Boolean.new.cast(params[:preorder])
-%>
+<%# La lógica de filtros ahora está centralizada en FilterParamsHelper#filter_state %>
 
 <%= form_with url: catalog_path, method: :get, data: {
   turbo_frame: "products_grid",
@@ -16,138 +8,14 @@
   <input type="hidden" name="sort" value="<%= @sort %>">
   <% if @q.present? %><input type="hidden" name="q" value="<%= @q %>"><% end %>
 
-  <%# Chips inline dentro del formulario (prioridad mobile para evitar duplicación en desktop) %>
-  <%
-    has_filters = selected_categories.any? || selected_brands.any? || price_min || price_max || in_stock_only || backorder_only || preorder_only
-  %>
-  <% if suffix.to_s == 'Mobile' && has_filters %>
-    <div class="active-filters-chips mb-2 d-flex flex-wrap gap-2 align-items-center">
-      <span class="text-muted small fw-semibold">Seleccionado:</span>
-
-      <% selected_categories.each do |cat| %>
-        <% clear_url = catalog_path(request.query_parameters.merge(categories: selected_categories - [cat], page: nil)) %>
-        <span class="filter-chip">
-          <i class="fas fa-tag me-1"></i><%= cat %>
-          <%= link_to clear_url, class: "chip-remove", "aria-label": "Remover #{cat}", title: "Remover filtro", data: { turbo_frame: "products_grid" } do %>&times;<% end %>
-        </span>
-      <% end %>
-
-      <% selected_brands.each do |brand| %>
-        <% clear_url = catalog_path(request.query_parameters.merge(brands: selected_brands - [brand], page: nil)) %>
-        <span class="filter-chip">
-          <i class="fas fa-copyright me-1"></i><%= brand %>
-          <%= link_to clear_url, class: "chip-remove", "aria-label": "Remover #{brand}", title: "Remover filtro", data: { turbo_frame: "products_grid" } do %>&times;<% end %>
-        </span>
-      <% end %>
-
-      <% if price_min || price_max %>
-        <% clear_url = catalog_path(request.query_parameters.except(:price_min, :price_max).merge(page: nil)) %>
-        <span class="filter-chip">
-          <i class="fas fa-dollar-sign me-1"></i>
-          <% if price_min && price_max %>
-            $<%= price_min %> - $<%= price_max %>
-          <% elsif price_min %>
-            Desde $<%= price_min %>
-          <% else %>
-            Hasta $<%= price_max %>
-          <% end %>
-          <%= link_to clear_url, class: "chip-remove", "aria-label": "Remover filtro de precio", title: "Remover filtro", data: { turbo_frame: "products_grid" } do %>&times;<% end %>
-        </span>
-      <% end %>
-
-      <% if in_stock_only %>
-        <% clear_url = catalog_path(request.query_parameters.except(:in_stock).merge(page: nil)) %>
-        <span class="filter-chip">
-          <i class="fas fa-check-circle me-1"></i>En stock
-          <%= link_to clear_url, class: "chip-remove", "aria-label": "Remover filtro en stock", title: "Remover filtro", data: { turbo_frame: "products_grid" } do %>&times;<% end %>
-        </span>
-      <% end %>
-
-      <% if backorder_only %>
-        <% clear_url = catalog_path(request.query_parameters.except(:backorder).merge(page: nil)) %>
-        <span class="filter-chip">
-          <i class="fas fa-clock me-1"></i>Backorder
-          <%= link_to clear_url, class: "chip-remove", "aria-label": "Remover filtro backorder", title: "Remover filtro", data: { turbo_frame: "products_grid" } do %>&times;<% end %>
-        </span>
-      <% end %>
-
-      <% if preorder_only %>
-        <% clear_url = catalog_path(request.query_parameters.except(:preorder).merge(page: nil)) %>
-        <span class="filter-chip">
-          <i class="fas fa-calendar-alt me-1"></i>Preventa
-          <%= link_to clear_url, class: "chip-remove", "aria-label": "Remover filtro preventa", title: "Remover filtro", data: { turbo_frame: "products_grid" } do %>&times;<% end %>
-        </span>
-      <% end %>
-
-      <%= link_to catalog_path(sort: @sort, q: @q), class: "btn btn-outline-secondary btn-sm", data: { turbo_frame: "products_grid" } do %>
-        <i class="fas fa-times me-1"></i>Limpiar todos
-      <% end %>
-    </div>
-  <% end %>
-
-  <% if suffix.to_s != 'Mobile' && has_filters %>
-    <div class="active-filters-chips mb-2 d-flex flex-wrap gap-2 align-items-center">
-      <span class="text-muted small fw-semibold">Seleccionado:</span>
-      <% selected_categories.each do |cat| %>
-        <% clear_url = catalog_path(request.query_parameters.merge(categories: selected_categories - [cat], page: nil)) %>
-        <span class="filter-chip">
-          <i class="fas fa-tag me-1"></i><%= cat %>
-          <%= link_to clear_url, class: "chip-remove", "aria-label": "Remover #{cat}", title: "Remover filtro", data: { turbo_frame: "products_grid" } do %>&times;<% end %>
-        </span>
-      <% end %>
-      <% selected_brands.each do |brand| %>
-        <% clear_url = catalog_path(request.query_parameters.merge(brands: selected_brands - [brand], page: nil)) %>
-        <span class="filter-chip">
-          <i class="fas fa-copyright me-1"></i><%= brand %>
-          <%= link_to clear_url, class: "chip-remove", "aria-label": "Remover #{brand}", title: "Remover filtro", data: { turbo_frame: "products_grid" } do %>&times;<% end %>
-        </span>
-      <% end %>
-      <% if price_min || price_max %>
-        <% clear_url = catalog_path(request.query_parameters.except(:price_min, :price_max).merge(page: nil)) %>
-        <span class="filter-chip">
-          <i class="fas fa-dollar-sign me-1"></i>
-          <% if price_min && price_max %>
-            $<%= price_min %> - $<%= price_max %>
-          <% elsif price_min %>
-            Desde $<%= price_min %>
-          <% else %>
-            Hasta $<%= price_max %>
-          <% end %>
-          <%= link_to clear_url, class: "chip-remove", "aria-label": "Remover filtro de precio", title: "Remover filtro", data: { turbo_frame: "products_grid" } do %>&times;<% end %>
-        </span>
-      <% end %>
-      <% if in_stock_only %>
-        <% clear_url = catalog_path(request.query_parameters.except(:in_stock).merge(page: nil)) %>
-        <span class="filter-chip">
-          <i class="fas fa-check-circle me-1"></i>En stock
-          <%= link_to clear_url, class: "chip-remove", "aria-label": "Remover filtro en stock", title: "Remover filtro", data: { turbo_frame: "products_grid" } do %>&times;<% end %>
-        </span>
-      <% end %>
-      <% if backorder_only %>
-        <% clear_url = catalog_path(request.query_parameters.except(:backorder).merge(page: nil)) %>
-        <span class="filter-chip">
-          <i class="fas fa-clock me-1"></i>Backorder
-          <%= link_to clear_url, class: "chip-remove", "aria-label": "Remover filtro backorder", title: "Remover filtro", data: { turbo_frame: "products_grid" } do %>&times;<% end %>
-        </span>
-      <% end %>
-      <% if preorder_only %>
-        <% clear_url = catalog_path(request.query_parameters.except(:preorder).merge(page: nil)) %>
-        <span class="filter-chip">
-          <i class="fas fa-calendar-alt me-1"></i>Preventa
-          <%= link_to clear_url, class: "chip-remove", "aria-label": "Remover filtro preventa", title: "Remover filtro", data: { turbo_frame: "products_grid" } do %>&times;<% end %>
-        </span>
-      <% end %>
-      <%= link_to catalog_path(sort: @sort, q: @q), class: "btn btn-outline-secondary btn-sm", data: { turbo_frame: "products_grid" } do %>
-        <i class="fas fa-times me-1"></i>Limpiar todos
-      <% end %>
-    </div>
-  <% end %>
+  <%# Chips inline dentro del formulario usando partial reutilizable %>
+  <%= render 'filter_chips', label: 'Seleccionado:', hide_clear_all: false %>
 
   <div class="filter-block mb-3">
     <h6 class="fw-semibold small text-uppercase text-muted mb-2">
       <a class="text-decoration-none text-muted d-flex align-items-center justify-content-between" data-bs-toggle="collapse" href="#filterAvailability<%= suffix %>" role="button" aria-expanded="true" aria-controls="filterAvailability<%= suffix %>">
         Disponibilidad
-        <% active_avail = [in_stock_only, backorder_only, preorder_only].count(true) %>
+        <% active_avail = [filter_state.in_stock_only, filter_state.backorder_only, filter_state.preorder_only].count(true) %>
         <span>
           <% if active_avail > 0 %>
             <span class="badge bg-danger rounded-pill me-1"><%= active_avail %></span>
@@ -158,7 +26,7 @@
     </h6>
     <div class="collapse show" id="filterAvailability<%= suffix %>">
       <div class="form-check">
-        <input class="form-check-input" type="checkbox" name="in_stock" value="1" id="f-in-stock<%= suffix %>" <%= 'checked' if in_stock_only %>>
+        <input class="form-check-input" type="checkbox" name="in_stock" value="1" id="f-in-stock<%= suffix %>" <%= 'checked' if filter_state.in_stock_only %>>
         <label class="form-check-label" for="f-in-stock<%= suffix %>">
           En stock
           <% if defined?(@facet_counts) && @facet_counts[:in_stock] %>
@@ -167,7 +35,7 @@
         </label>
       </div>
       <div class="form-check">
-        <input class="form-check-input" type="checkbox" name="backorder" value="1" id="f-backorder<%= suffix %>" <%= 'checked' if backorder_only %>>
+        <input class="form-check-input" type="checkbox" name="backorder" value="1" id="f-backorder<%= suffix %>" <%= 'checked' if filter_state.backorder_only %>>
         <label class="form-check-label" for="f-backorder<%= suffix %>">
           Permite backorder
           <% if defined?(@facet_counts) && @facet_counts[:backorder] %>
@@ -176,7 +44,7 @@
         </label>
       </div>
       <div class="form-check">
-        <input class="form-check-input" type="checkbox" name="preorder" value="1" id="f-preorder<%= suffix %>" <%= 'checked' if preorder_only %>>
+        <input class="form-check-input" type="checkbox" name="preorder" value="1" id="f-preorder<%= suffix %>" <%= 'checked' if filter_state.preorder_only %>>
         <label class="form-check-label" for="f-preorder<%= suffix %>">
           Disponible para preventa
           <% if defined?(@facet_counts) && @facet_counts[:preorder] %>
@@ -192,7 +60,7 @@
       <a class="text-decoration-none text-muted d-flex align-items-center justify-content-between" data-bs-toggle="collapse" href="#filterPrice<%= suffix %>" role="button" aria-expanded="true" aria-controls="filterPrice<%= suffix %>">
         Precio
         <span>
-          <% if price_min || price_max %>
+          <% if filter_state.price_min || filter_state.price_max %>
             <span class="badge bg-danger rounded-pill me-1">1</span>
           <% end %>
           <i class="fas fa-chevron-down"></i>
@@ -242,8 +110,8 @@
       <a class="text-decoration-none text-muted d-flex align-items-center justify-content-between" data-bs-toggle="collapse" href="#filterCategories<%= suffix %>" role="button" aria-expanded="false" aria-controls="filterCategories<%= suffix %>">
         Categorías
         <span>
-          <% if selected_categories.any? %>
-            <span class="badge bg-danger rounded-pill me-1"><%= selected_categories.size %></span>
+          <% if filter_state.selected_categories.any? %>
+            <span class="badge bg-danger rounded-pill me-1"><%= filter_state.selected_categories.size %></span>
           <% end %>
           <i class="fas fa-chevron-down"></i>
         </span>
@@ -253,7 +121,7 @@
       <div class="filter-scroll">
         <% @all_categories.each do |c| %>
           <div class="form-check">
-            <input class="form-check-input" type="checkbox" name="categories[]" value="<%= c %>" id="cat<%= suffix %>-<%= c.parameterize %>" <%= 'checked' if selected_categories.include?(c) %>>
+            <input class="form-check-input" type="checkbox" name="categories[]" value="<%= c %>" id="cat<%= suffix %>-<%= c.parameterize %>" <%= 'checked' if filter_state.selected_categories.include?(c) %>>
             <label class="form-check-label" for="cat<%= suffix %>-<%= c.parameterize %>">
               <%= c %>
               <% if defined?(@facet_counts) && @facet_counts[:categories] && @facet_counts[:categories][c] %>
@@ -273,8 +141,8 @@
       <a class="text-decoration-none text-muted d-flex align-items-center justify-content-between" data-bs-toggle="collapse" href="#filterBrands<%= suffix %>" role="button" aria-expanded="false" aria-controls="filterBrands<%= suffix %>">
         Marcas
         <span>
-          <% if selected_brands.any? %>
-            <span class="badge bg-danger rounded-pill me-1"><%= selected_brands.size %></span>
+          <% if filter_state.selected_brands.any? %>
+            <span class="badge bg-danger rounded-pill me-1"><%= filter_state.selected_brands.size %></span>
           <% end %>
           <i class="fas fa-chevron-down"></i>
         </span>
@@ -284,7 +152,7 @@
       <div class="filter-scroll">
         <% @all_brands.each do |b| %>
           <div class="form-check">
-            <input class="form-check-input" type="checkbox" name="brands[]" value="<%= b %>" id="brand<%= suffix %>-<%= b.parameterize %>" <%= 'checked' if selected_brands.include?(b) %>>
+            <input class="form-check-input" type="checkbox" name="brands[]" value="<%= b %>" id="brand<%= suffix %>-<%= b.parameterize %>" <%= 'checked' if filter_state.selected_brands.include?(b) %>>
             <label class="form-check-label" for="brand<%= suffix %>-<%= b.parameterize %>">
               <%= b %>
               <% if defined?(@facet_counts) && @facet_counts[:brands] && @facet_counts[:brands][b] %>

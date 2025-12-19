@@ -16,7 +16,7 @@ export default class extends Controller {
 
   toggle(event) {
     event.preventDefault()
-    
+
     if (this.expanded) {
       this.collapse()
     } else {
@@ -28,7 +28,7 @@ export default class extends Controller {
     // Load content via Turbo
     const frame = this.frameTarget
     frame.src = this.urlValue
-    
+
     // Update button state
     this.expanded = true
     this.updateButton()
@@ -39,7 +39,7 @@ export default class extends Controller {
     const frame = this.frameTarget
     frame.innerHTML = ""
     frame.removeAttribute("src")
-    
+
     // Update button state
     this.expanded = false
     this.updateButton()
@@ -48,7 +48,7 @@ export default class extends Controller {
   updateButton() {
     const btn = this.buttonTarget
     const countText = this.countValue > 0 ? ` (${this.countValue})` : ""
-    
+
     if (this.expanded) {
       btn.textContent = this.hideTextValue + countText
       btn.classList.remove("btn-outline-primary")

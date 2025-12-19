@@ -1,15 +1,5 @@
 <%= turbo_frame_tag "products_grid" do %>
   <%# Chips de filtros activos dentro del frame para actualizar en cada request %>
-  <%
-    selected_categories = Array(params[:categories]).reject(&:blank?)
-    selected_brands = Array(params[:brands]).reject(&:blank?)
-    price_min = params[:price_min].presence
-    price_max = params[:price_max].presence
-    in_stock_only = ActiveModel::Type::Boolean.new.cast(params[:in_stock])
-    backorder_only = ActiveModel::Type::Boolean.new.cast(params[:backorder])
-    preorder_only = ActiveModel::Type::Boolean.new.cast(params[:preorder])
-    has_filters = selected_categories.any? || selected_brands.any? || price_min || price_max || in_stock_only || backorder_only || preorder_only
-  %>
 
   <% if @q.present? %>
     <p class="text-muted small mb-2">Resultados para "<strong><%= @q %></strong>": <%= @products.total_count %></p>
@@ -17,70 +7,9 @@
     <p class="text-muted small mb-2">Productos encontrados: <%= @products.total_count %></p>
   <% end %>
 
-  <% if has_filters %>
-    <div class="active-filters-chips mb-3 d-flex flex-wrap gap-2 align-items-center" style="position: relative; z-index: 10;">
-      <span class="text-muted small fw-semibold">Filtros activos:</span>
+  <%# Chips de filtros usando partial reutilizable %>
+  <%= render 'filter_chips' %>
 
-      <% selected_categories.each do |cat| %>
-        <% clear_url = catalog_path(request.query_parameters.merge(categories: selected_categories - [cat], page: nil)) %>
-        <span class="filter-chip">
-          <i class="fas fa-tag me-1"></i><%= cat %>
-          <%= link_to clear_url, class: "chip-remove", "aria-label": "Remover #{cat}", title: "Remover filtro", data: { turbo_frame: "products_grid" } do %>&times;<% end %>
-        </span>
-      <% end %>
-
-      <% selected_brands.each do |brand| %>
-        <% clear_url = catalog_path(request.query_parameters.merge(brands: selected_brands - [brand], page: nil)) %>
-        <span class="filter-chip">
-          <i class="fas fa-copyright me-1"></i><%= brand %>
-          <%= link_to clear_url, class: "chip-remove", "aria-label": "Remover #{brand}", title: "Remover filtro", data: { turbo_frame: "products_grid" } do %>&times;<% end %>
-        </span>
-      <% end %>
-
-      <% if price_min || price_max %>
-        <% clear_url = catalog_path(request.query_parameters.except(:price_min, :price_max).merge(page: nil)) %>
-        <span class="filter-chip">
-          <i class="fas fa-dollar-sign me-1"></i>
-          <% if price_min && price_max %>
-            $<%= price_min %> - $<%= price_max %>
-          <% elsif price_min %>
-            Desde $<%= price_min %>
-          <% else %>
-            Hasta $<%= price_max %>
-          <% end %>
-          <%= link_to clear_url, class: "chip-remove", "aria-label": "Remover filtro de precio", title: "Remover filtro", data: { turbo_frame: "products_grid" } do %>&times;<% end %>
-        </span>
-      <% end %>
-
-      <% if in_stock_only %>
-        <% clear_url = catalog_path(request.query_parameters.except(:in_stock).merge(page: nil)) %>
-        <span class="filter-chip">
-          <i class="fas fa-check-circle me-1"></i>En stock
-          <%= link_to clear_url, class: "chip-remove", "aria-label": "Remover filtro en stock", title: "Remover filtro", data: { turbo_frame: "products_grid" } do %>&times;<% end %>
-        </span>
-      <% end %>
-
-      <% if backorder_only %>
-        <% clear_url = catalog_path(request.query_parameters.except(:backorder).merge(page: nil)) %>
-        <span class="filter-chip">
-          <i class="fas fa-clock me-1"></i>Backorder
-          <%= link_to clear_url, class: "chip-remove", "aria-label": "Remover filtro backorder", title: "Remover filtro", data: { turbo_frame: "products_grid" } do %>&times;<% end %>
-        </span>
-      <% end %>
-
-      <% if preorder_only %>
-        <% clear_url = catalog_path(request.query_parameters.except(:preorder).merge(page: nil)) %>
-        <span class="filter-chip">
-          <i class="fas fa-calendar-alt me-1"></i>Preventa
-          <%= link_to clear_url, class: "chip-remove", "aria-label": "Remover filtro preventa", title: "Remover filtro", data: { turbo_frame: "products_grid" } do %>&times;<% end %>
-        </span>
-      <% end %>
-
-      <%= link_to catalog_path(sort: @sort, q: @q), class: "btn btn-outline-secondary btn-sm", data: { turbo_frame: "products_grid" } do %>
-        <i class="fas fa-times me-1"></i>Limpiar todos
-      <% end %>
-    </div>
-  <% end %>
   <div class="row row-cols-2 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 g-3" id="product-grid-content" role="list">
     <% @products.each do |product| %>
       <div class="col product-card-wrapper" data-product-id="<%= product.id %>" role="listitem">
@@ -91,6 +20,12 @@
             <span class="position-absolute top-0 start-0 m-1" role="status" aria-live="polite"><%= stock_badge(product, on_hand_override: on_hand_cached) %></span>
           <% else %>
             <span class="badge bg-secondary position-absolute top-0 start-0 m-1" role="status">No disp.</span>
+          <% end %>
+          <%# Badge "Nuevo" para productos recientes (últimos 14 días) %>
+          <% if product.created_at > 14.days.ago %>
+            <span class="badge bg-info position-absolute top-0 end-0 m-1" role="status" title="Agregado recientemente">
+              <i class="fas fa-sparkles me-1" aria-hidden="true"></i>Nuevo
+            </span>
           <% end %>
           <% if product.active? %>
             <%= link_to product_path(product), class: "d-block p-2", aria: { label: "Ver detalles de #{product.product_name}" }, data: { turbo_frame: "_top" } do %>

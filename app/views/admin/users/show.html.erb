@@ -1,53 +1,342 @@
-<h1 class="h4 mb-4">Customer Details</h1>
-
-<div class="card">
-  <div class="card-body">
-    <table class="table table-sm table-borderless">
-      <tbody>
-        <tr>
-          <th scope="row">Name:</th>
-          <td><%= @user.name %></td>
-        </tr>
-        <tr>
-          <th scope="row">Email:</th>
-          <td><%= @user.email.presence || "—" %></td>
-        </tr>
-        <tr>
-          <th scope="row">Phone:</th>
-          <td><%= @user.phone.presence || "—" %></td>
-        </tr>
-        <tr>
-          <th scope="row">Address:</th>
-          <td><%= @user.address.presence || "—" %></td>
-        </tr>
-        <tr>
-          <th scope="row">Role:</th>
-          <td><%= @user.role.capitalize %></td>
-        </tr>
-        <% if @user.role == "customer" %>
-          <tr>
-            <th scope="row">Discount Rate:</th>
-            <td><%= number_to_percentage(@user.discount_rate, precision: 0) if @user.discount_rate %></td>
-          </tr>
-          <tr>
-            <th scope="row">Offline Created:</th>
-            <td><%= @user.created_offline? ? "✅ Yes" : "❌ No" %></td>
-          </tr>
+<%# Header con nombre y badges %>
+<div class="d-flex align-items-center justify-content-between mb-4">
+  <div class="d-flex align-items-center gap-3">
+    <%# Avatar %>
+    <% 
+      initials = @user.name.to_s.split.map(&:first).join.upcase[0,2]
+      avatar_colors = { 'admin' => 'bg-danger', 'supplier' => 'bg-info', 'customer' => 'bg-primary' }
+      avatar_class = avatar_colors[@user.role] || 'bg-secondary'
+    %>
+    <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold <%= avatar_class %>" style="width: 60px; height: 60px; font-size: 1.5rem;">
+      <%= initials.presence || '?' %>
+    </div>
+    
+    <div>
+      <h1 class="h3 mb-1"><%= @user.name %></h1>
+      <div class="d-flex gap-2 flex-wrap">
+        <span class="badge <%= @user.role == 'admin' ? 'bg-danger' : @user.role == 'supplier' ? 'bg-info' : 'bg-primary' %>">
+          <i class="fa fa-<%= @user.role == 'admin' ? 'shield-alt' : @user.role == 'supplier' ? 'truck' : 'user' %> me-1"></i>
+          <%= @user.role.capitalize %>
+        </span>
+        <% if @user.role == 'customer' && @user.credit_enabled %>
+          <span class="badge bg-success" title="Crédito habilitado"><i class="fa fa-credit-card me-1"></i>Crédito</span>
         <% end %>
-        <tr>
-          <th scope="row">Notes:</th>
-          <td><%= simple_format(@user.notes) if @user.notes.present? %></td>
-        </tr>
-        <tr>
-          <th scope="row">Created At:</th>
-          <td><%= l(@user.created_at, format: :short) %></td>
-        </tr>
-      </tbody>
-    </table>
+        <% if @user.role == 'customer' && @total_sales.to_f >= 10000 %>
+          <span class="badge bg-warning text-dark"><i class="fa fa-star me-1"></i>VIP</span>
+        <% end %>
+        <% if @balance_due.to_f > 0 %>
+          <span class="badge bg-danger"><i class="fa fa-exclamation-triangle me-1"></i>Con Adeudo</span>
+        <% end %>
+        <% if @user.created_at > 14.days.ago %>
+          <span class="badge bg-success"><i class="fa fa-sparkles me-1"></i>Nuevo</span>
+        <% end %>
+      </div>
+    </div>
+  </div>
+  
+  <div class="d-flex gap-2">
+    <%= link_to edit_admin_user_path(@user), class: "btn btn-outline-primary" do %>
+      <i class="fa fa-edit me-1"></i>Editar
+    <% end %>
+    <%= link_to admin_users_path, class: "btn btn-secondary" do %>
+      <i class="fa fa-arrow-left me-1"></i>Volver
+    <% end %>
   </div>
 </div>
 
-<div class="mt-3">
-  <%= link_to "Back to Users", admin_users_path, class: "btn btn-secondary" %>
-  <%= link_to "Manage Addresses", admin_user_shipping_addresses_path(@user), class: "btn btn-outline-primary ms-2" %>
+<%# Cards de estadísticas %>
+<div class="row g-3 mb-4">
+  <% if @user.role == 'customer' %>
+    <div class="col-md-3 col-sm-6">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <div class="text-muted small">Total Ventas</div>
+              <div class="h4 mb-0 text-primary"><%= number_to_currency(@total_sales, unit: '$', precision: 0) %></div>
+              <div class="small text-muted"><%= @sale_count %> órdenes</div>
+            </div>
+            <div class="text-primary opacity-25"><i class="fa fa-shopping-cart fa-2x"></i></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+      <div class="card border-0 shadow-sm h-100 <%= @balance_due.to_f > 0 ? 'border-danger border-2' : '' %>">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <div class="text-muted small">Adeudo Pendiente</div>
+              <div class="h4 mb-0 <%= @balance_due.to_f > 0 ? 'text-danger' : 'text-success' %>">
+                <%= number_to_currency(@balance_due, unit: '$', precision: 0) %>
+              </div>
+              <div class="small <%= @balance_due.to_f > 0 ? 'text-danger' : 'text-success' %>">
+                <%= @balance_due.to_f > 0 ? 'Pendiente de pago' : 'Sin adeudo' %>
+              </div>
+            </div>
+            <div class="<%= @balance_due.to_f > 0 ? 'text-danger' : 'text-success' %> opacity-25"><i class="fa fa-wallet fa-2x"></i></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% end %>
+  
+  <% if @user.role == 'supplier' %>
+    <div class="col-md-3 col-sm-6">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <div class="text-muted small">Total Compras</div>
+              <div class="h4 mb-0 text-info"><%= number_to_currency(@total_purchases, unit: '$', precision: 0) %></div>
+              <div class="small text-muted"><%= @purchase_count %> órdenes</div>
+            </div>
+            <div class="text-info opacity-25"><i class="fa fa-boxes fa-2x"></i></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% end %>
+  
+  <div class="col-md-3 col-sm-6">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <div class="text-muted small">Última Visita</div>
+            <div class="h5 mb-0">
+              <% if @last_visit %>
+                <%= time_ago_in_words(@last_visit) %>
+              <% else %>
+                <span class="text-muted">Sin visitas</span>
+              <% end %>
+            </div>
+            <div class="small text-muted"><%= @visit_count %> visitas totales</div>
+          </div>
+          <div class="text-secondary opacity-25"><i class="fa fa-clock fa-2x"></i></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-md-3 col-sm-6">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <div class="text-muted small">Cliente desde</div>
+            <div class="h5 mb-0"><%= l(@user.created_at, format: :short) %></div>
+            <div class="small text-muted"><%= time_ago_in_words(@user.created_at) %></div>
+          </div>
+          <div class="text-secondary opacity-25"><i class="fa fa-calendar fa-2x"></i></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <%# Columna izquierda - Información de contacto %>
+  <div class="col-lg-4">
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-header bg-white border-0">
+        <h5 class="mb-0"><i class="fa fa-id-card me-2 text-primary"></i>Información de Contacto</h5>
+      </div>
+      <div class="card-body">
+        <div class="mb-3">
+          <div class="small text-muted">Email</div>
+          <% if @user.email.present? %>
+            <a href="mailto:<%= @user.email %>" class="text-decoration-none">
+              <i class="fa fa-envelope me-1 text-muted"></i><%= @user.email %>
+            </a>
+          <% else %>
+            <span class="text-muted">— No especificado</span>
+          <% end %>
+        </div>
+        
+        <div class="mb-3">
+          <div class="small text-muted">Teléfono</div>
+          <% if @user.phone.present? %>
+            <a href="tel:<%= @user.phone %>" class="text-decoration-none">
+              <i class="fa fa-phone me-1 text-muted"></i><%= @user.phone %>
+            </a>
+          <% else %>
+            <span class="text-muted">— No especificado</span>
+          <% end %>
+        </div>
+        
+        <div class="mb-3">
+          <div class="small text-muted">Dirección Principal</div>
+          <% if @user.address.present? %>
+            <i class="fa fa-map-marker-alt me-1 text-muted"></i><%= @user.address %>
+          <% else %>
+            <span class="text-muted">— No especificada</span>
+          <% end %>
+        </div>
+        
+        <% if @user.role == 'customer' %>
+          <hr>
+          <div class="mb-3">
+            <div class="small text-muted">Descuento</div>
+            <div><%= @user.discount_rate.to_i > 0 ? number_to_percentage(@user.discount_rate, precision: 0) : '0%' %></div>
+          </div>
+          <div class="mb-3">
+            <div class="small text-muted">Creado en tienda</div>
+            <div><%= @user.created_offline? ? '<span class="badge bg-secondary">Sí</span>'.html_safe : '<span class="badge bg-light text-dark">No</span>'.html_safe %></div>
+          </div>
+        <% end %>
+        
+        <% if @user.notes.present? %>
+          <hr>
+          <div class="small text-muted mb-1">Notas</div>
+          <div class="small"><%= simple_format(@user.notes) %></div>
+        <% end %>
+      </div>
+    </div>
+    
+    <%# Direcciones de envío %>
+    <% if @user.role == 'customer' && @shipping_addresses&.any? %>
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center">
+          <h5 class="mb-0"><i class="fa fa-truck me-2 text-primary"></i>Direcciones de Envío</h5>
+          <%= link_to admin_user_shipping_addresses_path(@user), class: "btn btn-sm btn-outline-primary" do %>
+            Ver todas <i class="fa fa-arrow-right ms-1"></i>
+          <% end %>
+        </div>
+        <div class="card-body">
+          <% @shipping_addresses.each do |address| %>
+            <div class="mb-3 pb-3 <%= address != @shipping_addresses.last ? 'border-bottom' : '' %>">
+              <div class="d-flex justify-content-between">
+                <strong><%= address.recipient_name %></strong>
+                <% if address.is_default %>
+                  <span class="badge bg-success">Principal</span>
+                <% end %>
+              </div>
+              <div class="small text-muted">
+                <%= address.street_address %><br>
+                <%= [address.city, address.state, address.zip_code].compact.join(', ') %>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+  
+  <%# Columna derecha - Órdenes recientes %>
+  <div class="col-lg-8">
+    <% if @user.role == 'customer' && @recent_sales.any? %>
+      <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center">
+          <h5 class="mb-0"><i class="fa fa-shopping-cart me-2 text-primary"></i>Ventas Recientes</h5>
+          <%= link_to admin_sale_orders_path(user_id: @user.id), class: "btn btn-sm btn-outline-primary" do %>
+            Ver todas <i class="fa fa-arrow-right ms-1"></i>
+          <% end %>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Orden</th>
+                  <th>Fecha</th>
+                  <th>Estado</th>
+                  <th class="text-end">Total</th>
+                  <th class="text-end">Pagado</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% @recent_sales.each do |order| %>
+                  <% 
+                    paid = order.payments.where(status: 'Completed').sum(:amount) rescue 0
+                    pending = [order.total_order_value - paid, 0].max
+                  %>
+                  <tr>
+                    <td>
+                      <%= link_to admin_sale_order_path(order), class: "text-decoration-none fw-medium" do %>
+                        #<%= order.id %>
+                      <% end %>
+                    </td>
+                    <td class="text-muted"><%= l(order.created_at, format: :short) %></td>
+                    <td>
+                      <% status_colors = { 'pending' => 'warning', 'confirmed' => 'info', 'shipped' => 'primary', 'delivered' => 'success', 'cancelled' => 'danger' } %>
+                      <span class="badge bg-<%= status_colors[order.status] || 'secondary' %>"><%= order.status.humanize %></span>
+                    </td>
+                    <td class="text-end"><%= number_to_currency(order.total_order_value, unit: '$', precision: 0) %></td>
+                    <td class="text-end">
+                      <% if pending > 0 %>
+                        <span class="text-danger" title="Pendiente: <%= number_to_currency(pending, unit: '$', precision: 0) %>">
+                          <%= number_to_currency(paid, unit: '$', precision: 0) %>
+                          <i class="fa fa-exclamation-circle ms-1"></i>
+                        </span>
+                      <% else %>
+                        <span class="text-success"><%= number_to_currency(paid, unit: '$', precision: 0) %></span>
+                      <% end %>
+                    </td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    <% end %>
+    
+    <% if @user.role == 'supplier' && @recent_purchases.any? %>
+      <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center">
+          <h5 class="mb-0"><i class="fa fa-boxes me-2 text-info"></i>Compras Recientes</h5>
+          <%= link_to admin_purchase_orders_path(supplier_id: @user.id), class: "btn btn-sm btn-outline-info" do %>
+            Ver todas <i class="fa fa-arrow-right ms-1"></i>
+          <% end %>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Orden</th>
+                  <th>Fecha</th>
+                  <th>Estado</th>
+                  <th class="text-end">Total MXN</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% @recent_purchases.each do |order| %>
+                  <tr>
+                    <td>
+                      <%= link_to admin_purchase_order_path(order), class: "text-decoration-none fw-medium" do %>
+                        #<%= order.id %>
+                      <% end %>
+                    </td>
+                    <td class="text-muted"><%= l(order.created_at, format: :short) %></td>
+                    <td>
+                      <% status_colors = { 'draft' => 'secondary', 'ordered' => 'warning', 'in_transit' => 'info', 'received' => 'success', 'cancelled' => 'danger' } %>
+                      <span class="badge bg-<%= status_colors[order.status] || 'secondary' %>"><%= order.status.humanize %></span>
+                    </td>
+                    <td class="text-end"><%= number_to_currency(order.total_cost_mxn, unit: '$', precision: 0) %></td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    <% end %>
+    
+    <%# Si no hay órdenes mostrar un placeholder %>
+    <% if (@user.role == 'customer' && @recent_sales.empty?) || (@user.role == 'supplier' && @recent_purchases.empty?) %>
+      <div class="card border-0 shadow-sm">
+        <div class="card-body text-center py-5">
+          <div class="text-muted mb-3">
+            <i class="fa fa-inbox fa-3x opacity-25"></i>
+          </div>
+          <h5 class="text-muted">Sin órdenes aún</h5>
+          <p class="text-muted small mb-0">
+            Este <%= @user.role == 'customer' ? 'cliente' : 'proveedor' %> no tiene órdenes registradas.
+          </p>
+        </div>
+      </div>
+    <% end %>
+  </div>
 </div>
