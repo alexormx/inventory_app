@@ -301,7 +301,7 @@
                   <%= "—" unless item.product %>
                 </div>
                 <div class="small text-muted">
-                  <span class="me-2"><i class="fa fa-barcode me-1"></i><%= item.product&.sku %></span>
+                  <span class="me-2"><i class="fa fa-barcode me-1"></i><%= item.product&.product_sku %></span>
                   <% if item.total_line_weight.to_f > 0 %>
                     <span><i class="fa fa-weight me-1"></i><%= number_with_precision(item.total_line_weight, precision: 2) %> kg</span>
                   <% end %>
