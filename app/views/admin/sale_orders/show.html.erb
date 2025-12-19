@@ -1,131 +1,310 @@
-<!-- app/views/admin/sale_orders/show.html.erb -->
-<div class="container mt-4">
+<%
+  # Calcular métricas
+  items_count = @sale_order.sale_order_items.sum(:quantity)
+  products_count = @sale_order.sale_order_items.count
+  balance = @sale_order.total_order_value - @sale_order.total_paid
+  is_fully_paid = balance <= 0
+  
+  # Credit info
+  credit_allowed = (@sale_order.user&.respond_to?(:credit_enabled) && @sale_order.user.credit_enabled) || @sale_order.credit_override
+  credit_terms = (@sale_order.credit_terms || @sale_order.user&.default_credit_terms).to_s
+  has_credit = credit_allowed && credit_terms != 'none'
+  is_overdue = @sale_order.due_date.present? && balance > 0 && Date.today > @sale_order.due_date
+  days_overdue = is_overdue ? (Date.today - @sale_order.due_date).to_i : 0
+  
+  status_icons = { 'Pending' => 'clock', 'Confirmed' => 'check', 'In Transit' => 'shipping-fast', 'Delivered' => 'check-circle', 'Canceled' => 'times-circle' }
+  status_labels = { 'Pending' => 'Pendiente', 'Confirmed' => 'Confirmada', 'In Transit' => 'En Tránsito', 'Delivered' => 'Entregada', 'Canceled' => 'Cancelada' }
+%>
+
+<div class="container-fluid px-0">
   <%= turbo_stream_from ["sale_order", @sale_order.id] %>
-  <h2 class="d-flex align-items-center gap-2">Sale Order ##<%= @sale_order.id %>
-    <span class="ms-auto d-flex gap-2">
-      <%= link_to 'Vista compacta', summary_admin_sale_order_path(@sale_order), class: 'btn btn-sm btn-outline-primary' %>
+  
+  <%# Header con navegación %>
+  <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+    <h2 class="mb-0 d-flex align-items-center gap-2 flex-wrap">
+      <i class="fa fa-shopping-cart text-primary"></i> Orden de Venta #<%= @sale_order.id %>
+      <turbo-frame id="sale_order_status">
+        <span class="badge <%= status_badge_class(@sale_order.status) %> d-inline-flex align-items-center gap-1">
+          <i class="fa fa-<%= status_icons[@sale_order.status] %>"></i>
+          <%= status_labels[@sale_order.status] %>
+        </span>
+      </turbo-frame>
+      <% if is_fully_paid %>
+        <span class="badge bg-success"><i class="fa fa-check me-1"></i>Pagada</span>
+      <% elsif is_overdue %>
+        <span class="badge bg-danger"><i class="fa fa-exclamation-triangle me-1"></i>Vencida <%= days_overdue %>d</span>
+      <% end %>
+    </h2>
+    <div class="d-flex gap-2 flex-wrap">
+      <%= link_to admin_sale_orders_path, class: "btn btn-outline-secondary btn-sm" do %>
+        <i class="fa fa-arrow-left"></i> Volver
+      <% end %>
+      <%= link_to summary_admin_sale_order_path(@sale_order), class: "btn btn-outline-info btn-sm" do %>
+        <i class="fa fa-file-alt"></i> Vista Compacta
+      <% end %>
+      <%= link_to edit_admin_sale_order_path(@sale_order), class: "btn btn-primary btn-sm" do %>
+        <i class="fa fa-edit"></i> Editar
+      <% end %>
       <% unless @sale_order.status == "Canceled" %>
-        <%= button_to 'Cancel Order',
-                      cancel_admin_sale_order_path(@sale_order),
+        <%= button_to cancel_admin_sale_order_path(@sale_order),
                       method: :post,
-                      class: 'btn btn-sm btn-outline-danger',
+                      class: 'btn btn-outline-danger btn-sm',
                       data: {
                         controller: 'confirm',
                         action: 'click->confirm#ask',
                         confirm_message: '¿Estás seguro? Esta acción liberará todos los inventarios reservados/vendidos y marcará la orden como cancelada.'
-                      } %>
+                      } do %>
+          <i class="fa fa-times"></i> Cancelar
+        <% end %>
       <% end %>
-    </span>
-  </h2>
-
-  <!-- Order Info -->
-  <div class="row g-3 mb-4">
-    <div class="col-md-3">
-      <strong>Customer:</strong>
-      <p><%= @sale_order.user&.name || "N/A" %></p>
-    </div>
-    <div class="col-md-3">
-      <strong>Status:</strong>
-      <turbo-frame id="sale_order_status">
-        <%= render "admin/sale_orders/status_badge", sale_order: @sale_order %>
-      </turbo-frame>
-    </div>
-    <div class="col-md-3">
-      <strong>Order Date:</strong>
-      <p><%= @sale_order.order_date %></p>
     </div>
   </div>
 
-  <!-- Financial Summary -->
-  <div class="row g-3 mb-4">
-    <div class="col-md-3">
-      <strong>Subtotal:</strong>
-      <p>$<%= number_with_precision(@sale_order.subtotal, precision: 2) %></p>
-    </div>
-    <div class="col-md-3">
-      <strong>Tax Rate:</strong>
-      <p><%= @sale_order.tax_rate.to_i %>%</p>
-    </div>
-    <div class="col-md-3">
-      <strong>Tax Total:</strong>
-      <p>$<%= number_with_precision(@sale_order.total_tax, precision: 2) %></p>
-    </div>
-    <div class="col-md-3">
-      <strong>Shipping Cost:</strong>
-      <p>$<%= number_with_precision(@sale_order.shipping_cost || 0, precision: 2) %></p>
-    </div>
-    <div class="col-md-3">
-      <strong>Total Order Value:</strong>
-      <p>$<%= number_with_precision(@sale_order.total_order_value, precision: 2) %></p>
-    </div>
-    <div class="col-md-3">
-      <strong>Total Volume (cm³):</strong>
-      <p><%= number_with_precision(@sale_order.total_volume_cm3, precision: 2) %></p>
-    </div>
-    <div class="col-md-3">
-      <strong>Total Weight (kg):</strong>
-      <p><%= number_with_precision(@sale_order.total_weight_gr / 1000.0, precision: 3) %></p>
-    </div>
-  </div>
-  <%# Credit info %>
-  <% credit_allowed = (@sale_order.user&.respond_to?(:credit_enabled) && @sale_order.user.credit_enabled) || @sale_order.credit_override %>
-  <% credit_terms = (@sale_order.credit_terms || @sale_order.user&.default_credit_terms).to_s %>
-  <% if credit_allowed && credit_terms != 'none' %>
-    <div class="alert alert-warning d-flex justify-content-between align-items-center py-2">
-      <div>
-        <strong>On Credit:</strong>
-        <span class="badge bg-warning text-dark"><%= credit_terms.titleize %></span>
-        <% if @sale_order.due_date.present? %>
-          <span class="ms-2">Due: <%= @sale_order.due_date %></span>
+  <%# Progress timeline %>
+  <div class="card mb-4 border-0 shadow-sm">
+    <div class="card-body py-3">
+      <div class="d-flex justify-content-between align-items-center position-relative">
+        <%
+          statuses = ['Pending', 'Confirmed', 'In Transit', 'Delivered']
+          status_position = statuses.index(@sale_order.status) || 0
+          progress_percent = @sale_order.status == 'Canceled' ? 0 : ((status_position.to_f / 3) * 100)
+        %>
+        <div class="progress position-absolute w-100" style="height: 4px; z-index: 0;">
+          <div class="progress-bar bg-success" style="width: <%= progress_percent %>%"></div>
+        </div>
+
+        <% statuses.each_with_index do |st, idx| %>
+          <%
+            is_completed = statuses.index(@sale_order.status).to_i >= idx
+            is_current = @sale_order.status == st
+            is_canceled = @sale_order.status == 'Canceled'
+          %>
+          <div class="text-center position-relative" style="z-index: 1;">
+            <div class="rounded-circle d-inline-flex align-items-center justify-content-center <%= is_canceled ? 'bg-secondary' : (is_completed ? 'bg-success' : 'bg-light border') %> text-white" style="width: 40px; height: 40px;">
+              <% if is_canceled && idx == 0 %>
+                <i class="fa fa-times <%= is_canceled ? 'text-white' : '' %>"></i>
+              <% elsif is_completed %>
+                <i class="fa fa-check"></i>
+              <% else %>
+                <i class="fa fa-<%= status_icons[st] %> text-muted"></i>
+              <% end %>
+            </div>
+            <div class="small mt-1 <%= is_current ? 'fw-bold text-primary' : 'text-muted' %>"><%= status_labels[st] %></div>
+          </div>
         <% end %>
       </div>
-      <% if @sale_order.due_date.present? && (@sale_order.total_order_value.to_d - @sale_order.total_paid.to_d) > 0 && Date.today > @sale_order.due_date %>
-        <span class="text-danger fw-bold">Overdue</span>
+
+      <% if @sale_order.status == 'Canceled' %>
+        <div class="text-center mt-3">
+          <span class="badge bg-danger"><i class="fa fa-times-circle me-1"></i>Orden Cancelada</span>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <%# Métricas cards %>
+  <div class="row g-3 mb-4">
+    <div class="col-md-3 col-sm-6">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body text-center py-3">
+          <div class="text-muted small text-uppercase">Total</div>
+          <div class="h4 mb-0 text-primary"><%= number_to_currency(@sale_order.total_order_value, unit: '$', precision: 2) %></div>
+          <% if @sale_order.discount.to_i > 0 %>
+            <div class="small text-muted">Desc: <%= @sale_order.discount %>%</div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body text-center py-3">
+          <div class="text-muted small text-uppercase">Items</div>
+          <div class="h4 mb-0"><%= items_count %> piezas</div>
+          <div class="small text-muted"><%= products_count %> productos</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body text-center py-3">
+          <div class="text-muted small text-uppercase">Peso / Volumen</div>
+          <div class="h4 mb-0"><%= number_with_precision(@sale_order.total_weight_gr / 1000.0, precision: 2) %> kg</div>
+          <div class="small text-muted"><%= number_with_precision(@sale_order.total_volume_cm3 / 1_000_000.0, precision: 4) %> m³</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+      <turbo-frame id="payment_balance">
+        <div class="card border-0 shadow-sm h-100 <%= 'border-danger border-2' if is_overdue %>">
+          <div class="card-body text-center py-3">
+            <div class="text-muted small text-uppercase">Saldo</div>
+            <% if is_fully_paid %>
+              <div class="h4 mb-0 text-success"><i class="fa fa-check-circle"></i> Pagada</div>
+            <% else %>
+              <div class="h4 mb-0 text-danger"><%= number_to_currency(balance, unit: '$', precision: 2) %></div>
+              <div class="small text-muted">de <%= number_to_currency(@sale_order.total_order_value, unit: '$', precision: 0) %></div>
+            <% end %>
+          </div>
+        </div>
+      </turbo-frame>
+    </div>
+  </div>
+
+  <%# Info del cliente y detalles %>
+  <div class="row g-3 mb-4">
+    <div class="col-lg-6">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-header bg-transparent border-0 pb-0">
+          <h6 class="mb-0"><i class="fa fa-user text-muted me-2"></i>Cliente</h6>
+        </div>
+        <div class="card-body">
+          <div class="d-flex align-items-center gap-3">
+            <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; font-size: 1rem;">
+              <%= @sale_order.user&.name.to_s.split.map(&:first).join.upcase.first(2).presence || '?' %>
+            </div>
+            <div>
+              <div class="fw-bold"><%= @sale_order.user&.name || "Sin cliente" %></div>
+              <% if @sale_order.user&.email.present? %>
+                <div class="small text-muted">
+                  <a href="mailto:<%= @sale_order.user.email %>" class="text-decoration-none">
+                    <i class="fa fa-envelope me-1"></i><%= @sale_order.user.email %>
+                  </a>
+                </div>
+              <% end %>
+              <% if @sale_order.user&.phone.present? %>
+                <div class="small text-muted">
+                  <i class="fa fa-phone me-1"></i><%= @sale_order.user.phone %>
+                </div>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-header bg-transparent border-0 pb-0">
+          <h6 class="mb-0"><i class="fa fa-calendar text-muted me-2"></i>Fechas</h6>
+        </div>
+        <div class="card-body">
+          <div class="row g-2">
+            <div class="col-4">
+              <div class="small text-muted">Orden</div>
+              <div class="fw-medium"><%= l(@sale_order.order_date, format: :long) %></div>
+            </div>
+            <% if has_credit && @sale_order.due_date.present? %>
+              <div class="col-4">
+                <div class="small text-muted">Vencimiento</div>
+                <div class="fw-medium <%= 'text-danger' if is_overdue %>">
+                  <%= l(@sale_order.due_date, format: :long) %>
+                  <% if is_overdue %>
+                    <span class="badge bg-danger ms-1">Vencida</span>
+                  <% end %>
+                </div>
+              </div>
+            <% end %>
+            <div class="col-4">
+              <div class="small text-muted">Creada</div>
+              <div class="fw-medium"><%= @sale_order.created_at.strftime("%d/%m/%Y") %></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%# Alerta de crédito %>
+  <% if has_credit %>
+    <div class="alert <%= is_overdue ? 'alert-danger' : 'alert-warning' %> d-flex justify-content-between align-items-center py-2 mb-4">
+      <div>
+        <i class="fa fa-credit-card me-2"></i>
+        <strong>Venta a Crédito:</strong>
+        <span class="badge bg-warning text-dark ms-1"><%= credit_terms.titleize %></span>
+        <% if @sale_order.due_date.present? %>
+          <span class="ms-2">Vence: <strong><%= l(@sale_order.due_date, format: :long) %></strong></span>
+        <% end %>
+      </div>
+      <% if is_overdue %>
+        <span class="badge bg-danger"><i class="fa fa-exclamation-triangle me-1"></i>Vencida hace <%= days_overdue %> días</span>
       <% end %>
     </div>
   <% end %>
-  <turbo-frame id="payment_balance">
-    <div class="row g-3 mb-4">
-      <div class="col-md-3">
-        <strong>Total Paid:</strong>
-        <p>$<%= number_with_precision(@sale_order.total_paid, precision: 2) %></p>
-      </div>
 
-      <div class="col-md-3">
-        <strong>Balance Due:</strong>
-        <p class="<%= @sale_order.fully_paid? ? 'text-success' : 'text-danger' %>">
-          $<%= number_with_precision(@sale_order.total_order_value - @sale_order.total_paid, precision: 2) %>
-        </p>
+  <%# Resumen financiero %>
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
+      <h6 class="mb-0"><i class="fa fa-calculator text-muted me-2"></i>Resumen Financiero</h6>
+    </div>
+    <div class="card-body">
+      <div class="row g-3 text-center">
+        <div class="col">
+          <div class="small text-muted">Subtotal</div>
+          <div class="h6 mb-0"><%= number_to_currency(@sale_order.subtotal, unit: '$', precision: 2) %></div>
+        </div>
+        <div class="col">
+          <div class="small text-muted">IVA (<%= @sale_order.tax_rate.to_i %>%)</div>
+          <div class="h6 mb-0"><%= number_to_currency(@sale_order.total_tax, unit: '$', precision: 2) %></div>
+        </div>
+        <div class="col">
+          <div class="small text-muted">Envío</div>
+          <div class="h6 mb-0"><%= number_to_currency(@sale_order.shipping_cost || 0, unit: '$', precision: 2) %></div>
+        </div>
+        <div class="col border-start">
+          <div class="small text-muted">Total</div>
+          <div class="h5 mb-0 text-primary"><%= number_to_currency(@sale_order.total_order_value, unit: '$', precision: 2) %></div>
+        </div>
+        <div class="col border-start">
+          <div class="small text-muted">Pagado</div>
+          <div class="h5 mb-0 text-success"><%= number_to_currency(@sale_order.total_paid, unit: '$', precision: 2) %></div>
+        </div>
+        <div class="col border-start">
+          <div class="small text-muted">Adeudo</div>
+          <div class="h5 mb-0 <%= is_fully_paid ? 'text-success' : 'text-danger' %>">
+            <%= is_fully_paid ? '✓ $0.00' : number_to_currency(balance, unit: '$', precision: 2) %>
+          </div>
+        </div>
       </div>
     </div>
-  </turbo-frame>
+  </div>
 
-  <!-- Items Table -->
+  <%# Tabla de items %>
   <turbo-frame id="sale_order_items">
     <%= render 'admin/sale_orders/items_table', sale_order: @sale_order %>
   </turbo-frame>
 
-  <!-- Add Payment Button -->
-  <%= link_to "Add Payment",
-      new_admin_sale_order_payment_path(@sale_order),
-      data: { turbo_frame: "modal_frame" },
-      class: "btn btn-outline-primary mb-3" %>
+  <%# Botón de pago y pagos registrados %>
+  <div class="d-flex gap-2 mb-3">
+    <%= link_to new_admin_sale_order_payment_path(@sale_order),
+        data: { turbo_frame: "modal_frame" },
+        class: "btn btn-success" do %>
+      <i class="fa fa-credit-card me-1"></i> Registrar Pago
+    <% end %>
+    <% if @sale_order.user&.email.present? %>
+      <a href="mailto:<%= @sale_order.user.email %>?subject=Orden %23<%= @sale_order.id %>" class="btn btn-outline-secondary">
+        <i class="fa fa-envelope me-1"></i> Contactar Cliente
+      </a>
+    <% end %>
+  </div>
 
-  <!-- Payment Modal -->
   <turbo-frame id="modal_frame"></turbo-frame>
 
   <turbo-frame id="payments_table">
     <%= render "admin/payments/payment_table", payments: @sale_order.payments %>
   </turbo-frame>
 
-  <!-- 📦 Shipment Section -->
+  <%# Sección de envío %>
   <turbo-frame id="shipment_modal"></turbo-frame>
 
   <turbo-frame id="shipment_info">
     <% if @sale_order.shipment.present? %>
       <%= render "admin/shipments/info", sale_order: @sale_order %>
     <% else %>
-      <p class="text-muted">No shipment assigned.</p>
+      <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body text-center py-4">
+          <i class="fa fa-shipping-fast fa-2x text-muted mb-2"></i>
+          <p class="text-muted mb-0">No hay envío asignado</p>
+        </div>
+      </div>
     <% end %>
   </turbo-frame>
 
@@ -133,21 +312,24 @@
     <%= render "admin/shipments/button", sale_order: @sale_order %>
   </turbo-frame>
 
-  <!-- Notes -->
+  <%# Notas %>
   <% if @sale_order.notes.present? %>
-    <div class="card mb-3">
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-header bg-transparent border-0">
+        <h6 class="mb-0"><i class="fa fa-sticky-note text-muted me-2"></i>Notas</h6>
+      </div>
       <div class="card-body">
-        <strong>📝 Notes:</strong>
         <% @sale_order.notes.to_s.split("\n").each do |line| %>
-          <p class="mb-1 text-danger"><%= line %></p>
+          <p class="mb-1"><%= line %></p>
         <% end %>
       </div>
     </div>
   <% end %>
 
-  <!-- Metadata -->
+  <%# Metadata %>
   <div class="text-muted small">
-    Created at: <%= @sale_order.created_at.strftime("%F %T") %> |
-    Updated at: <%= @sale_order.updated_at.strftime("%F %T") %>
+    <i class="fa fa-clock me-1"></i>
+    Creada: <%= @sale_order.created_at.strftime("%d/%m/%Y %H:%M") %> |
+    Actualizada: <%= @sale_order.updated_at.strftime("%d/%m/%Y %H:%M") %>
   </div>
 </div>

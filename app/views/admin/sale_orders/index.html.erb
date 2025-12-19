@@ -1,140 +1,327 @@
-<h2 class="mb-3 d-flex align-items-center gap-2"><i class="fa fa-shopping-cart"></i> Sales Orders
-  <span class="ms-auto d-inline-flex gap-2">
-    <%= link_to "Export CSV", admin_sale_orders_path(request.query_parameters.merge(format: :csv)), class: "btn btn-sm btn-outline-secondary" %>
-  </span>
-</h2>
+<%
+  # Calcular métricas destacadas
+  pending_total = @sale_orders.select { |so| so.status == 'Pending' }.sum(&:total_order_value)
+  with_balance_count = @sale_orders.count { |so| so.attributes["balance_due_value"].to_d > 0 }
+  total_balance_due = @sale_orders.sum { |so| so.attributes["balance_due_value"].to_d }
+  this_month_count = @sale_orders.count { |so| so.order_date >= Date.current.beginning_of_month }
+  overdue_count = @sale_orders.count { |so| so.due_date.present? && so.due_date < Date.current && so.attributes["balance_due_value"].to_d > 0 }
+  
+  status_icons = { 'Pending' => 'clock', 'Confirmed' => 'check', 'In Transit' => 'shipping-fast', 'Delivered' => 'check-circle', 'Canceled' => 'times-circle' }
+  status_labels = { 'Pending' => 'Pendiente', 'Confirmed' => 'Confirmada', 'In Transit' => 'En Tránsito', 'Delivered' => 'Entregada', 'Canceled' => 'Cancelada' }
+%>
 
-<%= render partial: "admin/shared/status_counters", locals: {
-  counts: @counts_global,
-  items: [
-    ["Pending",   "Pending",   "bg-warning text-dark"],
-    ["Confirmed", "Confirmed", "bg-info"],
-    ["In Transit", "In Transit", "bg-primary"],
-    ["Delivered", "Delivered", "bg-success"],
-    ["Canceled",  "Canceled",  "bg-danger"],
-  ],
-  title: "Resumen",
-  cta_label: "New Sale Order",
-  cta_path: new_admin_sale_order_path
-} %>
+<%# Header con navegación %>
+<div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+  <h2 class="mb-0 d-flex align-items-center gap-2">
+    <i class="fa fa-shopping-cart text-primary"></i> Órdenes de Venta
+  </h2>
+  <div class="d-flex gap-2 flex-wrap">
+    <%= link_to admin_sale_orders_path(request.query_parameters.merge(format: :csv)), class: "btn btn-outline-secondary btn-sm" do %>
+      <i class="fa fa-download"></i> Exportar CSV
+    <% end %>
+    <%= link_to new_admin_sale_order_path, class: "btn btn-primary btn-sm" do %>
+      <i class="fa fa-plus"></i> Nueva Orden
+    <% end %>
+  </div>
+</div>
 
-<%# Barra de búsqueda + filtros por estatus (estilo Inventario) %>
-<div class="card mb-4">
-  <div class="card-body py-2">
+<%# Cards de métricas destacadas %>
+<div class="row g-3 mb-4">
+  <div class="col-md-3 col-sm-6">
+    <div class="card border-0 shadow-sm h-100 border-start border-warning border-4">
+      <div class="card-body py-3">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <div class="text-muted small text-uppercase">Pendientes</div>
+            <div class="h4 mb-0 text-warning"><%= number_to_currency(pending_total, unit: '$', precision: 0) %></div>
+            <div class="small text-muted"><%= @counts_global['Pending'] || 0 %> órdenes</div>
+          </div>
+          <div class="rounded-circle bg-warning bg-opacity-10 p-2">
+            <i class="fa fa-clock text-warning"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3 col-sm-6">
+    <div class="card border-0 shadow-sm h-100 border-start border-danger border-4">
+      <div class="card-body py-3">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <div class="text-muted small text-uppercase">Adeudo Total</div>
+            <div class="h4 mb-0 text-danger"><%= number_to_currency(total_balance_due, unit: '$', precision: 0) %></div>
+            <div class="small text-muted"><%= with_balance_count %> con saldo</div>
+          </div>
+          <div class="rounded-circle bg-danger bg-opacity-10 p-2">
+            <i class="fa fa-exclamation-triangle text-danger"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3 col-sm-6">
+    <div class="card border-0 shadow-sm h-100 border-start border-info border-4">
+      <div class="card-body py-3">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <div class="text-muted small text-uppercase">Vencidas</div>
+            <div class="h4 mb-0 text-info"><%= overdue_count %></div>
+            <div class="small text-muted">requieren atención</div>
+          </div>
+          <div class="rounded-circle bg-info bg-opacity-10 p-2">
+            <i class="fa fa-calendar-times text-info"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3 col-sm-6">
+    <div class="card border-0 shadow-sm h-100 border-start border-success border-4">
+      <div class="card-body py-3">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <div class="text-muted small text-uppercase">Este Mes</div>
+            <div class="h4 mb-0 text-success"><%= this_month_count %></div>
+            <div class="small text-muted"><%= Date.current.strftime('%B %Y') %></div>
+          </div>
+          <div class="rounded-circle bg-success bg-opacity-10 p-2">
+            <i class="fa fa-calendar-check text-success"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%# Filtros y búsqueda %>
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-body py-3">
     <%= form_with url: admin_sale_orders_path, method: :get, local: true, class: "row g-2 align-items-center" do %>
       <%= hidden_field_tag :sort, params[:sort] %>
       <%= hidden_field_tag :dir, params[:dir] %>
-      <div class="col-12 col-md-6">
+      
+      <div class="col-12 col-lg-4">
         <div class="input-group input-group-sm">
-          <%= text_field_tag :q, @q, class: "form-control", placeholder: "Buscar por ID o cliente…", aria: { label: "Buscar sale orders" } %>
-          <button class="btn btn-outline-secondary btn-clear-search" type="button" title="Limpiar búsqueda">Limpiar</button>
-          <button class="btn btn-primary" type="submit" name="commit" value="search" title="Buscar">Buscar</button>
+          <span class="input-group-text bg-light border-end-0"><i class="fa fa-search text-muted"></i></span>
+          <%= text_field_tag :q, @q, class: "form-control border-start-0", placeholder: "Buscar por ID, cliente…" %>
+          <button class="btn btn-primary" type="submit"><i class="fa fa-search"></i></button>
         </div>
       </div>
-  <div class="col-12 col-md-6 text-md-end">
-        <% current_status = @status_filter.presence || "all" %>
-     <% outline_for = ->(s) do
-             case s
-             when "Pending" then "warning text-dark"
-             when "Confirmed" then "info"
-       when "In Transit" then "primary"
-             when "Delivered" then "success"
-             when "Canceled" then "danger"
-             else "secondary"
-             end
-           end %>
-        <% btnc = ->(s, cur) { ["btn", "btn-outline-#{outline_for.call(s)}", (cur == s ? "active" : nil)].compact.join(" ") } %>
-        <div class="btn-group btn-group-sm me-2" role="group" aria-label="Filtro de status">
-          <%= button_tag "Todos", name: :status, value: "all", class: btnc.call("all", current_status) %>
-          <%= button_tag "Pending", name: :status, value: "Pending", class: btnc.call("Pending", current_status) %>
-          <%= button_tag "Confirmed", name: :status, value: "Confirmed", class: btnc.call("Confirmed", current_status) %>
-          <%= button_tag "In Transit", name: :status, value: "In Transit", class: btnc.call("In Transit", current_status) %>
-          <%= button_tag "Delivered", name: :status, value: "Delivered", class: btnc.call("Delivered", current_status) %>
-          <%= button_tag "Canceled", name: :status, value: "Canceled", class: btnc.call("Canceled", current_status) %>
+      
+      <div class="col-12 col-lg-8">
+        <div class="d-flex flex-wrap gap-2 justify-content-lg-end align-items-center">
+          <% current_status = @status_filter.presence || "all" %>
+          
+          <%# Filter chips style %>
+          <div class="btn-group btn-group-sm" role="group">
+            <% 
+              chip_styles = {
+                'all' => 'outline-secondary',
+                'Pending' => 'outline-warning',
+                'Confirmed' => 'outline-info',
+                'In Transit' => 'outline-primary',
+                'Delivered' => 'outline-success',
+                'Canceled' => 'outline-danger'
+              }
+            %>
+            <% ['all', 'Pending', 'Confirmed', 'In Transit', 'Delivered', 'Canceled'].each do |st| %>
+              <% is_active = current_status == st %>
+              <% count = st == 'all' ? @sale_orders.total_count : (@counts_global[st] || 0) %>
+              <%= button_tag name: :status, value: st, 
+                  class: "btn btn-#{chip_styles[st]} #{'active' if is_active}",
+                  title: st == 'all' ? 'Todas' : status_labels[st] do %>
+                <% if st != 'all' %><i class="fa fa-<%= status_icons[st] %> me-1"></i><% end %>
+                <%= st == 'all' ? 'Todas' : status_labels[st] %>
+                <span class="badge bg-light text-dark ms-1"><%= count %></span>
+              <% end %>
+            <% end %>
+          </div>
+          
+          <div class="form-check form-check-inline mb-0">
+            <%= check_box_tag :due, 1, @due_filter, class: "form-check-input", id: "dueFilter" %>
+            <label class="form-check-label small" for="dueFilter">
+              <i class="fa fa-exclamation-circle text-danger me-1"></i>Con adeudo
+            </label>
+          </div>
+          
+          <% if @q.present? || (@status_filter.present? && @status_filter != 'all') || @due_filter %>
+            <%= link_to admin_sale_orders_path, class: "btn btn-sm btn-outline-secondary" do %>
+              <i class="fa fa-times"></i> Limpiar
+            <% end %>
+          <% end %>
         </div>
-        <%= hidden_field_tag :current_status, current_status %>
-        <div class="form-check form-check-inline align-middle ms-2">
-          <%= check_box_tag :due, 1, @due_filter, class: "form-check-input", id: "dueFilter" %>
-          <label class="form-check-label" for="dueFilter">Con adeudo</label>
-        </div>
-  <%= link_to "Limpiar filtros", admin_sale_orders_path(request.query_parameters.slice(:sort, :dir)), class: "btn btn-sm btn-outline-secondary ms-2", title: "Quitar búsqueda y status" %>
       </div>
     <% end %>
   </div>
 </div>
 
-<%# Contadores inferiores dependientes de búsqueda+filtro (ocultando ceros) %>
-<%= render partial: "admin/shared/status_counters", locals: {
-  counts: @counts,
-  items: [
-    ["Pending",   "Pending",   "bg-warning text-dark"],
-    ["Confirmed", "Confirmed", "bg-info"],
-    ["In Transit", "In Transit", "bg-primary"],
-    ["Delivered", "Delivered", "bg-success"],
-    ["Canceled",  "Canceled",  "bg-danger"],
-  ],
-  hide_zero: true,
-  extra_class: "mb-2",
-  title: "Resultados"
-} %>
-
-<table class="table table-sm table-hover align-middle">
-  <thead class="table-light">
-    <tr>
-      <th scope="col">#</th>
-  <th scope="col"><%= sort_link('Customer', :customer) %></th>
-  <th scope="col"><%= sort_link('Order Date', :date) %></th>
-  <th scope="col">Status</th>
-  <th scope="col" class="text-end"><%= sort_link('Items', :items) %></th>
-  <th scope="col" class="text-end"><%= sort_link('Total', :total_mxn) %></th>
-  <th scope="col" class="text-end"><%= sort_link('Pagado', :paid) %></th>
-  <th scope="col" class="text-end"><%= sort_link('Adeudo', :balance) %></th>
-      <th scope="col" class="text-end">Discount</th>
-      <th scope="col" class="text-end">Actions</th>
-    </tr>
-  </thead>
-  <tbody>
-    <% @sale_orders.each do |so| %>
-      <tr>
-        <td><%= so.id %></td>
-  <td><%= so.user&.name || "—" %></td>
-        <td><%= l(so.order_date, format: :short) %></td>
-  <td>
-          <span class="badge <%= status_badge_class(so.status) %>">
-            <%= so.status %>
-          </span>
-        </td>
-  <td class="text-end"><%= so.attributes["items_count"].to_i %></td>
-  <td class="text-end"><%= number_to_currency(so.total_order_value, unit: "$") %></td>
-  <td class="text-end"><%= number_to_currency(so.attributes["total_paid_value"].to_d, unit: "$") %></td>
-        <% balance = so.attributes["balance_due_value"].to_d %>
-        <td class="text-end">
-          <% if balance > 0 %>
-            <span class="badge bg-danger"> <%= number_to_currency(balance, unit: "$") %> </span>
-          <% else %>
-            <span class="badge bg-success"> <%= number_to_currency(0, unit: "$") %> </span>
-          <% end %>
-        </td>
-        <td class="text-end"><%= "#{so.discount}%" if so.discount.present? %></td>
-        <td class="text-end">
-          <%= link_to admin_sale_order_path(so), class: "btn btn-sm btn-outline-secondary" do %>
-            <i class="fa fa-eye"></i>
-          <% end %>
-          <%= link_to edit_admin_sale_order_path(so), class: "btn btn-sm btn-outline-primary" do %>
-            <i class="fa fa-edit"></i>
-          <% end %>
-          <%= button_to admin_sale_order_path(so),
-                        method: :delete,
-                        form: { data: { controller: 'confirm', action: 'submit->confirm#ask', confirm_message: '¿Estás seguro de eliminar esta orden de venta?' }, class: "d-inline" },
-                        class: "btn btn-sm btn-outline-danger" do %>
-            <i class="fa fa-trash"></i>
-          <% end %>
-        </td>
-      </tr>
-    <% end %>
-  </tbody>
-</table>
-
-<div class="d-flex justify-content-center mt-3">
-  <%= paginate @sale_orders %>
+<%# Tabla de órdenes %>
+<div class="card border-0 shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th style="width: 60px;">#</th>
+          <th><%= sort_link('Cliente', :customer) %></th>
+          <th><%= sort_link('Fecha', :date) %></th>
+          <th>Estado</th>
+          <th class="text-center"><%= sort_link('Items', :items) %></th>
+          <th class="text-end"><%= sort_link('Total', :total_mxn) %></th>
+          <th class="text-end"><%= sort_link('Pagado', :paid) %></th>
+          <th class="text-end"><%= sort_link('Adeudo', :balance) %></th>
+          <th class="text-end" style="width: 100px;">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @sale_orders.each do |so| %>
+          <%
+            balance = so.attributes["balance_due_value"].to_d
+            has_balance = balance > 0
+            is_overdue = so.due_date.present? && so.due_date < Date.current && has_balance
+            days_overdue = is_overdue ? (Date.current - so.due_date).to_i : 0
+          %>
+          <tr class="<%= 'table-danger bg-opacity-10' if is_overdue %>">
+            <%# ID con indicador %>
+            <td>
+              <div class="d-flex align-items-center gap-1">
+                <span class="fw-medium">#<%= so.id %></span>
+                <% if is_overdue %>
+                  <span class="badge bg-danger rounded-pill" title="Vencida hace <%= days_overdue %> días">
+                    <i class="fa fa-exclamation"></i>
+                  </span>
+                <% end %>
+              </div>
+            </td>
+            
+            <%# Cliente con avatar %>
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center flex-shrink-0" style="width: 32px; height: 32px; font-size: 0.75rem;">
+                  <%= so.user&.name.to_s.split.map(&:first).join.upcase.first(2).presence || '?' %>
+                </div>
+                <div class="text-truncate" style="max-width: 150px;">
+                  <div class="fw-medium text-truncate"><%= so.user&.name || "—" %></div>
+                  <% if so.due_date.present? && has_balance %>
+                    <div class="small <%= is_overdue ? 'text-danger' : 'text-muted' %>">
+                      <i class="fa fa-calendar-alt me-1"></i>Vence: <%= l(so.due_date, format: :short) %>
+                    </div>
+                  <% end %>
+                </div>
+              </div>
+            </td>
+            
+            <%# Fecha %>
+            <td>
+              <div class="small"><%= l(so.order_date, format: :short) %></div>
+            </td>
+            
+            <%# Estado %>
+            <td>
+              <span class="badge <%= status_badge_class(so.status) %> d-inline-flex align-items-center gap-1">
+                <i class="fa fa-<%= status_icons[so.status] %>"></i>
+                <%= status_labels[so.status] %>
+              </span>
+            </td>
+            
+            <%# Items %>
+            <td class="text-center">
+              <span class="badge bg-light text-dark border"><%= so.attributes["items_count"].to_i %></span>
+            </td>
+            
+            <%# Total %>
+            <td class="text-end fw-medium">
+              <%= number_to_currency(so.total_order_value, unit: "$", precision: 0) %>
+            </td>
+            
+            <%# Pagado %>
+            <td class="text-end">
+              <span class="text-success"><%= number_to_currency(so.attributes["total_paid_value"].to_d, unit: "$", precision: 0) %></span>
+            </td>
+            
+            <%# Adeudo %>
+            <td class="text-end">
+              <% if has_balance %>
+                <span class="badge bg-danger">
+                  <%= number_to_currency(balance, unit: "$", precision: 0) %>
+                </span>
+              <% else %>
+                <span class="badge bg-success">
+                  <i class="fa fa-check"></i> Pagada
+                </span>
+              <% end %>
+            </td>
+            
+            <%# Acciones dropdown %>
+            <td class="text-end">
+              <div class="dropdown">
+                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  <i class="fa fa-ellipsis-v"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                  <li>
+                    <%= link_to admin_sale_order_path(so), class: "dropdown-item" do %>
+                      <i class="fa fa-eye me-2 text-muted"></i>Ver detalle
+                    <% end %>
+                  </li>
+                  <li>
+                    <%= link_to edit_admin_sale_order_path(so), class: "dropdown-item" do %>
+                      <i class="fa fa-edit me-2 text-muted"></i>Editar
+                    <% end %>
+                  </li>
+                  <li>
+                    <%= link_to summary_admin_sale_order_path(so), class: "dropdown-item" do %>
+                      <i class="fa fa-file-alt me-2 text-muted"></i>Vista compacta
+                    <% end %>
+                  </li>
+                  <% if has_balance %>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                      <%= link_to new_admin_sale_order_payment_path(so), class: "dropdown-item text-success" do %>
+                        <i class="fa fa-credit-card me-2"></i>Registrar pago
+                      <% end %>
+                    </li>
+                  <% end %>
+                  <% if so.user&.email.present? %>
+                    <li>
+                      <a href="mailto:<%= so.user.email %>?subject=Orden %23<%= so.id %>" class="dropdown-item">
+                        <i class="fa fa-envelope me-2 text-muted"></i>Contactar cliente
+                      </a>
+                    </li>
+                  <% end %>
+                  <li><hr class="dropdown-divider"></li>
+                  <li>
+                    <%= button_to admin_sale_order_path(so),
+                                  method: :delete,
+                                  form: { data: { controller: 'confirm', action: 'submit->confirm#ask', confirm_message: '¿Estás seguro de eliminar esta orden de venta?' }, class: "d-inline w-100" },
+                                  class: "dropdown-item text-danger" do %>
+                      <i class="fa fa-trash me-2"></i>Eliminar
+                    <% end %>
+                  </li>
+                </ul>
+              </div>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
   </div>
+  
+  <%# Paginación %>
+  <% if @sale_orders.total_pages > 1 %>
+    <div class="card-footer bg-transparent border-0 d-flex justify-content-center py-3">
+      <%= paginate @sale_orders %>
+    </div>
+  <% end %>
+</div>
+
+<%# Empty state %>
+<% if @sale_orders.empty? %>
+  <div class="text-center py-5">
+    <i class="fa fa-shopping-cart fa-3x text-muted mb-3"></i>
+    <h5 class="text-muted">No hay órdenes de venta</h5>
+    <p class="text-muted">Ajusta los filtros o crea una nueva orden</p>
+    <%= link_to new_admin_sale_order_path, class: "btn btn-primary" do %>
+      <i class="fa fa-plus"></i> Nueva Orden
+    <% end %>
+  </div>
+<% end %>
