@@ -47,7 +47,7 @@
         <tr class="<%= 'table-warning' if has_debt && balance_due > 1000 %>">
           <%# ID %>
           <td class="text-muted small"><%= u.id %></td>
-          
+
           <%# Usuario: Nombre + iniciales/avatar %>
           <td>
             <div class="d-flex align-items-center gap-2">
@@ -65,7 +65,7 @@
               </div>
             </div>
           </td>
-          
+
           <%# Contacto: Email + Phone como iconos %>
           <td>
             <div class="d-flex flex-column gap-1">
@@ -83,7 +83,7 @@
               <% end %>
             </div>
           </td>
-          
+
           <%# Rol %>
           <td>
             <% role_class = case u.role.to_s
@@ -100,7 +100,7 @@
               <span class="badge text-bg-info" title="Crédito habilitado">💳</span>
             <% end %>
           </td>
-          
+
           <%# Estado: Badges de actividad %>
           <td>
             <div class="d-flex flex-wrap gap-1">
@@ -116,7 +116,7 @@
               <% end %>
             </div>
           </td>
-          
+
           <%# Compras %>
           <td class="text-end">
             <% if total_purch > 0 %>
@@ -125,7 +125,7 @@
               <span class="text-muted">—</span>
             <% end %>
           </td>
-          
+
           <%# Ventas %>
           <td class="text-end">
             <% if total_sales > 0 %>
@@ -134,7 +134,7 @@
               <span class="text-muted">—</span>
             <% end %>
           </td>
-          
+
           <%# Adeudo %>
           <td class="text-end">
             <% if has_debt %>
@@ -143,7 +143,7 @@
               <span class="text-muted">—</span>
             <% end %>
           </td>
-          
+
           <%# Última Actividad (combinada) %>
           <td>
             <% if lv_time.present? %>
@@ -164,7 +164,7 @@
               </div>
             <% end %>
           </td>
-          
+
           <%# Acciones: Dropdown con quick actions %>
           <td class="text-center">
             <div class="btn-group">

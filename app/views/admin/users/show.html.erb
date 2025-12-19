@@ -2,7 +2,7 @@
 <div class="d-flex align-items-center justify-content-between mb-4">
   <div class="d-flex align-items-center gap-3">
     <%# Avatar %>
-    <% 
+    <%
       initials = @user.name.to_s.split.map(&:first).join.upcase[0,2]
       avatar_colors = { 'admin' => 'bg-danger', 'supplier' => 'bg-info', 'customer' => 'bg-primary' }
       avatar_class = avatar_colors[@user.role] || 'bg-secondary'
@@ -10,7 +10,7 @@
     <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold <%= avatar_class %>" style="width: 60px; height: 60px; font-size: 1.5rem;">
       <%= initials.presence || '?' %>
     </div>
-    
+
     <div>
       <h1 class="h3 mb-1"><%= @user.name %></h1>
       <div class="d-flex gap-2 flex-wrap">
@@ -33,7 +33,7 @@
       </div>
     </div>
   </div>
-  
+
   <div class="d-flex gap-2">
     <%= link_to edit_admin_user_path(@user), class: "btn btn-outline-primary" do %>
       <i class="fa fa-edit me-1"></i>Editar
@@ -80,7 +80,7 @@
       </div>
     </div>
   <% end %>
-  
+
   <% if @user.role == 'supplier' %>
     <div class="col-md-3 col-sm-6">
       <div class="card border-0 shadow-sm h-100">
@@ -97,7 +97,7 @@
       </div>
     </div>
   <% end %>
-  
+
   <div class="col-md-3 col-sm-6">
     <div class="card border-0 shadow-sm h-100">
       <div class="card-body">
@@ -118,7 +118,7 @@
       </div>
     </div>
   </div>
-  
+
   <div class="col-md-3 col-sm-6">
     <div class="card border-0 shadow-sm h-100">
       <div class="card-body">
@@ -153,7 +153,7 @@
             <span class="text-muted">— No especificado</span>
           <% end %>
         </div>
-        
+
         <div class="mb-3">
           <div class="small text-muted">Teléfono</div>
           <% if @user.phone.present? %>
@@ -164,7 +164,7 @@
             <span class="text-muted">— No especificado</span>
           <% end %>
         </div>
-        
+
         <div class="mb-3">
           <div class="small text-muted">Dirección Principal</div>
           <% if @user.address.present? %>
@@ -173,7 +173,7 @@
             <span class="text-muted">— No especificada</span>
           <% end %>
         </div>
-        
+
         <% if @user.role == 'customer' %>
           <hr>
           <div class="mb-3">
@@ -185,7 +185,7 @@
             <div><%= @user.created_offline? ? '<span class="badge bg-secondary">Sí</span>'.html_safe : '<span class="badge bg-light text-dark">No</span>'.html_safe %></div>
           </div>
         <% end %>
-        
+
         <% if @user.notes.present? %>
           <hr>
           <div class="small text-muted mb-1">Notas</div>
@@ -193,7 +193,7 @@
         <% end %>
       </div>
     </div>
-    
+
     <%# Direcciones de envío %>
     <% if @user.role == 'customer' && @shipping_addresses&.any? %>
       <div class="card border-0 shadow-sm">
@@ -222,7 +222,7 @@
       </div>
     <% end %>
   </div>
-  
+
   <%# Columna derecha - Órdenes recientes %>
   <div class="col-lg-8">
     <% if @user.role == 'customer' && @recent_sales.any? %>
@@ -247,7 +247,7 @@
               </thead>
               <tbody>
                 <% @recent_sales.each do |order| %>
-                  <% 
+                  <%
                     paid = order.payments.where(status: 'Completed').sum(:amount) rescue 0
                     pending = [order.total_order_value - paid, 0].max
                   %>
@@ -281,7 +281,7 @@
         </div>
       </div>
     <% end %>
-    
+
     <% if @user.role == 'supplier' && @recent_purchases.any? %>
       <div class="card border-0 shadow-sm mb-4">
         <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center">
@@ -323,7 +323,7 @@
         </div>
       </div>
     <% end %>
-    
+
     <%# Si no hay órdenes mostrar un placeholder %>
     <% if (@user.role == 'customer' && @recent_sales.empty?) || (@user.role == 'supplier' && @recent_purchases.empty?) %>
       <div class="card border-0 shadow-sm">

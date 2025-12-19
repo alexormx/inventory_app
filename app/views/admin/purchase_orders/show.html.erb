@@ -1,150 +1,388 @@
-<div class="container mt-4">
-  <h2 class="d-flex align-items-center gap-2">
-    Purchase Order ##<%= @purchase_order.id %>
+<%
+  days_to_delivery = @purchase_order.expected_delivery_date ? (@purchase_order.expected_delivery_date - Date.current).to_i : nil
+  is_overdue = days_to_delivery && days_to_delivery < 0 && !['Delivered', 'Canceled'].include?(@purchase_order.status)
+  is_near_due = days_to_delivery && days_to_delivery.between?(0, 3) && !['Delivered', 'Canceled'].include?(@purchase_order.status)
+  items_count = @purchase_order.purchase_order_items.sum(:quantity)
+  products_count = @purchase_order.purchase_order_items.count
+  status_icons = { 'Pending' => 'clock', 'In Transit' => 'shipping-fast', 'Delivered' => 'check-circle', 'Canceled' => 'times-circle' }
+  status_labels = { 'Pending' => 'Pendiente', 'In Transit' => 'En Tránsito', 'Delivered' => 'Entregado', 'Canceled' => 'Cancelado' }
+%>
+
+<%# Header con navegación %>
+<div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+  <h2 class="mb-0 d-flex align-items-center gap-2 flex-wrap">
+    <i class="fa fa-truck"></i> Orden de Compra #<%= @purchase_order.id %>
+    <span class="badge <%= status_badge_class(@purchase_order.status) %>">
+      <i class="fa fa-<%= status_icons[@purchase_order.status] %> me-1"></i><%= status_labels[@purchase_order.status] %>
+    </span>
     <% if @purchase_order.costs_distributed_at.present? %>
-      <span class="badge bg-success ms-2" title="Costos distribuidos el <%= @purchase_order.costs_distributed_at.strftime('%Y-%m-%d %H:%M') %>">
-        <i class="fa fa-check-circle"></i> Costos Distribuidos
+      <span class="badge bg-info" title="Distribuidos el <%= @purchase_order.costs_distributed_at.strftime('%d/%m/%Y %H:%M') %>">
+        <i class="fa fa-check me-1"></i>Costos Distribuidos
       </span>
     <% end %>
-    <span class="ms-auto">
-      <%= link_to 'Vista compacta', summary_admin_purchase_order_path(@purchase_order), class: 'btn btn-sm btn-outline-primary' %>
-    </span>
+    <% if is_overdue %>
+      <span class="badge bg-danger"><i class="fa fa-exclamation-triangle me-1"></i>Retrasada <%= days_to_delivery.abs %> días</span>
+    <% end %>
   </h2>
-
-  <!-- Order Info -->
-  <div class="row g-3 mb-4">
-    <div class="col-md-3">
-      <strong>Supplier:</strong>
-      <p><%= @purchase_order.user&.name || "N/A" %></p>
-    </div>
-    <div class="col-md-3">
-      <strong>Status:</strong>
-      <p><%= @purchase_order.status %></p>
-    </div>
-    <div class="col-md-3">
-      <strong>Currency:</strong>
-      <p><%= @purchase_order.currency %></p>
-    </div>
-    <div class="col-md-3">
-      <strong>Exchange Rate:</strong>
-      <p><%= @purchase_order.exchange_rate %></p>
-    </div>
-
-    <div class="col-md-3">
-      <strong>Order Date:</strong>
-      <p><%= @purchase_order.order_date %></p>
-    </div>
-    <div class="col-md-3">
-      <strong>Expected Delivery:</strong>
-      <p><%= @purchase_order.expected_delivery_date %></p>
-    </div>
-    <div class="col-md-3">
-      <strong>Actual Delivery:</strong>
-      <p><%= @purchase_order.actual_delivery_date || "—" %></p>
-    </div>
+  <div class="d-flex gap-2 flex-wrap">
+    <%= link_to admin_purchase_orders_path, class: "btn btn-outline-secondary btn-sm" do %>
+      <i class="fa fa-arrow-left"></i> Volver
+    <% end %>
+    <%= link_to summary_admin_purchase_order_path(@purchase_order), class: "btn btn-outline-info btn-sm" do %>
+      <i class="fa fa-file-alt"></i> Vista Compacta
+    <% end %>
+    <%= link_to edit_admin_purchase_order_path(@purchase_order), class: "btn btn-primary btn-sm" do %>
+      <i class="fa fa-edit"></i> Editar
+    <% end %>
   </div>
+</div>
 
-  <!-- Financial Summary -->
-  <div class="row g-3 mb-4">
-    <div class="col-md-12 mb-2">
-      <% if @purchase_order.costs_distributed_at.present? %>
-        <div class="alert alert-info py-2 mb-0">
-          <i class="fa fa-info-circle"></i>
-          <strong>Costos distribuidos:</strong> Los gastos de envío, impuestos y otros ya están incluidos en el costo unitario de cada línea.
-          Distribuidos el <strong><%= @purchase_order.costs_distributed_at.strftime('%d/%m/%Y %H:%M') %></strong>
-        </div>
-      <% else %>
-        <div class="alert alert-warning py-2 mb-0">
-          <i class="fa fa-exclamation-triangle"></i>
-          <strong>Costos no distribuidos:</strong> Los totales incluyen subtotal + gastos de encabezado (shipping/tax/other).
+<%# Progress timeline %>
+<div class="card mb-4 border-0 shadow-sm">
+  <div class="card-body py-3">
+    <div class="d-flex justify-content-between align-items-center position-relative">
+      <%
+        statuses = ['Pending', 'In Transit', 'Delivered']
+        status_position = statuses.index(@purchase_order.status) || 0
+        status_position = 2 if @purchase_order.status == 'Delivered'
+        progress_percent = @purchase_order.status == 'Canceled' ? 0 : ((status_position.to_f / 2) * 100)
+      %>
+      <div class="progress position-absolute w-100" style="height: 4px; z-index: 0;">
+        <div class="progress-bar bg-success" style="width: <%= progress_percent %>%"></div>
+      </div>
+
+      <% statuses.each_with_index do |st, idx| %>
+        <%
+          is_completed = statuses.index(@purchase_order.status).to_i >= idx
+          is_current = @purchase_order.status == st
+          is_canceled = @purchase_order.status == 'Canceled'
+        %>
+        <div class="text-center position-relative" style="z-index: 1;">
+          <div class="rounded-circle d-inline-flex align-items-center justify-content-center <%= is_canceled ? 'bg-secondary' : (is_completed ? 'bg-success' : 'bg-light border') %> text-white" style="width: 40px; height: 40px;">
+            <% if is_canceled && idx == 0 %>
+              <i class="fa fa-times <%= is_canceled ? 'text-white' : '' %>"></i>
+            <% elsif is_completed %>
+              <i class="fa fa-check"></i>
+            <% else %>
+              <i class="fa fa-<%= status_icons[st] %> text-muted"></i>
+            <% end %>
+          </div>
+          <div class="small mt-1 <%= is_current ? 'fw-bold text-primary' : 'text-muted' %>"><%= status_labels[st] %></div>
         </div>
       <% end %>
     </div>
-    <div class="col-md-2">
-      <strong>Subtotal:</strong>
-      <p>$<%= number_with_precision(@purchase_order.subtotal, precision: 2) %></p>
-    </div>
-    <div class="col-md-2">
-      <strong>Shipping:</strong>
-      <p>$<%= number_with_precision(@purchase_order.shipping_cost, precision: 2) %></p>
-    </div>
-    <div class="col-md-2">
-      <strong>Tax:</strong>
-      <p>$<%= number_with_precision(@purchase_order.tax_cost, precision: 2) %></p>
-    </div>
-    <div class="col-md-2">
-      <strong>Other:</strong>
-      <p>$<%= number_with_precision(@purchase_order.other_cost, precision: 2) %></p>
-    </div>
-    <div class="col-md-2">
-      <strong>Total:</strong>
-      <p>$<%= number_with_precision(@purchase_order.total_order_cost, precision: 2) %></p>
-    </div>
-    <div class="col-md-2">
-      <strong>Total MXN:</strong>
-      <p>$<%= number_with_precision(@purchase_order.total_cost_mxn, precision: 2) %></p>
+
+    <% if @purchase_order.status == 'Canceled' %>
+      <div class="text-center mt-3">
+        <span class="badge bg-danger"><i class="fa fa-times-circle me-1"></i>Orden Cancelada</span>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<%# Métricas cards %>
+<div class="row g-3 mb-4">
+  <div class="col-md-3 col-sm-6">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body text-center py-3">
+        <div class="text-muted small text-uppercase">Total MXN</div>
+        <div class="h4 mb-0 text-success"><%= number_to_currency(@purchase_order.total_cost_mxn, unit: '$', precision: 0) %></div>
+        <% if @purchase_order.currency != 'MXN' %>
+          <div class="small text-muted"><%= number_to_currency(@purchase_order.total_order_cost, unit: currency_symbol_for(@purchase_order.currency), precision: 2) %></div>
+        <% end %>
+      </div>
     </div>
   </div>
-
-  <% if (@purchase_order.status == "In Transit" || @purchase_order.status == "Pending") %>
-  <%= button_to "Confirmar recepción", confirm_receipt_admin_purchase_order_path(@purchase_order),
-                method: :patch, class: "btn btn-success mb-3",
-                data: { controller: 'confirm', action: 'click->confirm#ask', confirm_message: '¿Confirmas que ya recibiste todos los productos?' } %>
-  <% end %>
-
-  <!-- Items Table -->
-  <div class="card mb-4">
-    <div class="card-body">
-      <h5 class="card-title">Purchase Order Items</h5>
-      <div class="table-responsive">
-        <table class="table table-bordered table-sm align-middle">
-          <thead class="table-light">
-            <tr>
-              <th>Product</th>
-              <th>Qty</th>
-              <th>Unit Cost</th>
-              <th>Line Volume</th>
-              <th>Line Weight</th>
-              <th>Unit Add. Cost</th>
-              <th>Unit Comp. Cost</th>
-              <th>Unit Comp. MXN</th>
-              <th>Total Line Cost</th>
-              <th>Total MXN</th>
-            </tr>
-          </thead>
-          <tbody>
-            <% @purchase_order.purchase_order_items.each do |item| %>
-              <tr>
-                <td><%= item.product&.product_name || "—" %></td>
-                <td><%= item.quantity %></td>
-                <td><%= number_with_precision(item.unit_cost, precision: 2) %></td>
-                <td><%= number_with_precision(item.total_line_volume, precision: 2) %></td>
-                <td><%= number_with_precision(item.total_line_weight, precision: 2) %></td>
-                <td><%= number_with_precision(item.unit_additional_cost, precision: 2) %></td>
-                <td><%= number_with_precision(item.unit_compose_cost, precision: 2) %></td>
-                <td><%= number_with_precision(item.unit_compose_cost_in_mxn, precision: 2) %></td>
-                <td><%= number_with_precision(item.total_line_cost, precision: 2) %></td>
-                <td><%= number_with_precision(item.total_line_cost_in_mxn, precision: 2) %></td>
-              </tr>
+  <div class="col-md-3 col-sm-6">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body text-center py-3">
+        <div class="text-muted small text-uppercase">Items</div>
+        <div class="h4 mb-0"><%= items_count %> piezas</div>
+        <div class="small text-muted"><%= products_count %> productos</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3 col-sm-6">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body text-center py-3">
+        <div class="text-muted small text-uppercase">Peso / Volumen</div>
+        <div class="h4 mb-0"><%= number_with_precision(@purchase_order.total_weight, precision: 2) %> kg</div>
+        <div class="small text-muted"><%= number_with_precision(@purchase_order.total_volume, precision: 3) %> m³</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3 col-sm-6">
+    <div class="card border-0 shadow-sm h-100 <%= 'border-danger border-2' if is_overdue %>">
+      <div class="card-body text-center py-3">
+        <div class="text-muted small text-uppercase">Entrega Esperada</div>
+        <% if days_to_delivery %>
+          <div class="h4 mb-0 <%= is_overdue ? 'text-danger' : (is_near_due ? 'text-warning' : 'text-success') %>">
+            <% if @purchase_order.status == 'Delivered' %>
+              <i class="fa fa-check-circle text-success"></i> Recibido
+            <% elsif is_overdue %>
+              <i class="fa fa-exclamation-triangle"></i> <%= days_to_delivery.abs %>d tarde
+            <% elsif days_to_delivery == 0 %>
+              <i class="fa fa-clock"></i> Hoy
+            <% else %>
+              <i class="fa fa-calendar"></i> en <%= days_to_delivery %>d
             <% end %>
-          </tbody>
-        </table>
+          </div>
+        <% else %>
+          <div class="h4 mb-0 text-muted">—</div>
+        <% end %>
+        <div class="small text-muted"><%= l(@purchase_order.expected_delivery_date, format: :long) if @purchase_order.expected_delivery_date %></div>
       </div>
     </div>
   </div>
+</div>
 
-  <!-- Notes & Metadata -->
-  <% if @purchase_order.notes.present? %>
-    <div class="card mb-3">
+<%# Info del proveedor y detalles %>
+<div class="row g-3 mb-4">
+  <div class="col-lg-6">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-transparent border-0 pb-0">
+        <h6 class="mb-0"><i class="fa fa-user text-muted me-2"></i>Proveedor</h6>
+      </div>
       <div class="card-body">
-        <strong>Notes:</strong>
-        <p><%= @purchase_order.notes %></p>
+        <div class="d-flex align-items-center gap-3">
+          <div class="rounded-circle bg-info text-white d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; font-size: 1rem;">
+            <%= @purchase_order.user&.name.to_s.split.map(&:first).join.upcase.first(2) %>
+          </div>
+          <div>
+            <div class="fw-bold"><%= @purchase_order.user&.name || "Sin proveedor" %></div>
+            <% if @purchase_order.user&.email.present? %>
+              <div class="small text-muted">
+                <a href="mailto:<%= @purchase_order.user.email %>" class="text-decoration-none">
+                  <i class="fa fa-envelope me-1"></i><%= @purchase_order.user.email %>
+                </a>
+              </div>
+            <% end %>
+          </div>
+        </div>
       </div>
     </div>
-  <% end %>
+  </div>
+  <div class="col-lg-6">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-transparent border-0 pb-0">
+        <h6 class="mb-0"><i class="fa fa-calendar text-muted me-2"></i>Fechas</h6>
+      </div>
+      <div class="card-body">
+        <div class="row g-2">
+          <div class="col-4">
+            <div class="small text-muted">Pedido</div>
+            <div class="fw-medium"><%= l(@purchase_order.order_date, format: :long) %></div>
+          </div>
+          <div class="col-4">
+            <div class="small text-muted">Esperado</div>
+            <div class="fw-medium <%= 'text-danger' if is_overdue %>">
+              <%= @purchase_order.expected_delivery_date ? l(@purchase_order.expected_delivery_date, format: :long) : '—' %>
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="small text-muted">Recibido</div>
+            <div class="fw-medium text-success">
+              <%= @purchase_order.actual_delivery_date ? l(@purchase_order.actual_delivery_date, format: :long) : '—' %>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
-  <div class="text-muted small">
-    Created at: <%= @purchase_order.created_at.strftime("%F %T") %> |
-    Updated at: <%= @purchase_order.updated_at.strftime("%F %T") %>
+<%# Resumen financiero %>
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
+    <h6 class="mb-0"><i class="fa fa-calculator text-muted me-2"></i>Resumen Financiero</h6>
+    <span class="badge bg-secondary"><%= @purchase_order.currency %> · TC: <%= @purchase_order.exchange_rate %></span>
+  </div>
+  <div class="card-body">
+    <% if @purchase_order.costs_distributed_at.present? %>
+      <div class="alert alert-info py-2 mb-3">
+        <i class="fa fa-info-circle me-1"></i>
+        Los gastos de envío, impuestos y otros ya están incluidos en el costo unitario de cada línea.
+        <span class="small text-muted ms-2">Distribuidos: <%= @purchase_order.costs_distributed_at.strftime('%d/%m/%Y %H:%M') %></span>
+      </div>
+    <% else %>
+      <div class="alert alert-warning py-2 mb-3">
+        <i class="fa fa-exclamation-triangle me-1"></i>
+        Los costos adicionales aún no han sido distribuidos a las líneas de producto.
+      </div>
+    <% end %>
+
+    <div class="row g-3 text-center">
+      <div class="col">
+        <div class="small text-muted">Subtotal</div>
+        <div class="h6 mb-0"><%= number_to_currency(@purchase_order.subtotal, unit: currency_symbol_for(@purchase_order.currency), precision: 2) %></div>
+      </div>
+      <div class="col">
+        <div class="small text-muted">Envío</div>
+        <div class="h6 mb-0"><%= number_to_currency(@purchase_order.shipping_cost, unit: currency_symbol_for(@purchase_order.currency), precision: 2) %></div>
+      </div>
+      <div class="col">
+        <div class="small text-muted">Impuestos</div>
+        <div class="h6 mb-0"><%= number_to_currency(@purchase_order.tax_cost, unit: currency_symbol_for(@purchase_order.currency), precision: 2) %></div>
+      </div>
+      <div class="col">
+        <div class="small text-muted">Otros</div>
+        <div class="h6 mb-0"><%= number_to_currency(@purchase_order.other_cost, unit: currency_symbol_for(@purchase_order.currency), precision: 2) %></div>
+      </div>
+      <div class="col border-start">
+        <div class="small text-muted">Total <%= @purchase_order.currency %></div>
+        <div class="h5 mb-0 text-primary"><%= number_to_currency(@purchase_order.total_order_cost, unit: currency_symbol_for(@purchase_order.currency), precision: 2) %></div>
+      </div>
+      <div class="col border-start">
+        <div class="small text-muted">Total MXN</div>
+        <div class="h5 mb-0 text-success"><%= number_to_currency(@purchase_order.total_cost_mxn, unit: '$', precision: 2) %></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%# Botón de confirmar recepción %>
+<% if ['In Transit', 'Pending'].include?(@purchase_order.status) %>
+  <div class="d-flex gap-2 mb-4">
+    <%= button_to confirm_receipt_admin_purchase_order_path(@purchase_order),
+                  method: :patch,
+                  class: "btn btn-success",
+                  data: { controller: 'confirm', action: 'click->confirm#ask', confirm_message: '¿Confirmas que recibiste todos los productos? Esto cambiará el estado del inventario a "disponible".' } do %>
+      <i class="fa fa-check-circle me-1"></i> Confirmar Recepción
+    <% end %>
+    <% if @purchase_order.user&.email.present? %>
+      <a href="mailto:<%= @purchase_order.user.email %>?subject=Seguimiento Orden %23<%= @purchase_order.id %>" class="btn btn-outline-secondary">
+        <i class="fa fa-envelope me-1"></i> Contactar Proveedor
+      </a>
+    <% end %>
+  </div>
+<% end %>
+
+<%# Tabla de items %>
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
+    <h6 class="mb-0"><i class="fa fa-boxes text-muted me-2"></i>Productos (<%= products_count %>)</h6>
+    <span class="badge bg-light text-dark border"><%= items_count %> unidades totales</span>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th style="width: 50px;"></th>
+            <th>Producto</th>
+            <th class="text-center">Cantidad</th>
+            <th class="text-end">Costo Unit.</th>
+            <th class="text-end">+ Adicional</th>
+            <th class="text-end">= Compuesto</th>
+            <th class="text-end">Total Línea</th>
+            <th class="text-end">Total MXN</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @purchase_order.purchase_order_items.includes(product: { images_attachments: :blob }).each do |item| %>
+            <tr>
+              <%# Thumbnail %>
+              <td class="text-center">
+                <% if item.product&.images&.attached? %>
+                  <%= link_to admin_product_path(item.product), title: "Ver producto" do %>
+                    <%= image_tag item.product.images.first.variant(resize_to_fill: [40, 40]), class: "rounded border", style: "width: 40px; height: 40px; object-fit: cover;" %>
+                  <% end %>
+                <% else %>
+                  <div class="rounded bg-light d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                    <i class="fa fa-image text-muted"></i>
+                  </div>
+                <% end %>
+              </td>
+
+              <%# Producto %>
+              <td>
+                <div class="fw-medium">
+                  <%= link_to item.product&.product_name || "—", admin_product_path(item.product), class: "text-decoration-none" if item.product %>
+                  <%= "—" unless item.product %>
+                </div>
+                <div class="small text-muted">
+                  <span class="me-2"><i class="fa fa-barcode me-1"></i><%= item.product&.sku %></span>
+                  <% if item.total_line_weight.to_f > 0 %>
+                    <span><i class="fa fa-weight me-1"></i><%= number_with_precision(item.total_line_weight, precision: 2) %> kg</span>
+                  <% end %>
+                </div>
+              </td>
+
+              <%# Cantidad %>
+              <td class="text-center">
+                <span class="badge bg-light text-dark border fs-6"><%= item.quantity %></span>
+              </td>
+
+              <%# Costo unitario %>
+              <td class="text-end">
+                <div><%= number_to_currency(item.unit_cost, unit: currency_symbol_for(@purchase_order.currency), precision: 2) %></div>
+              </td>
+
+              <%# Adicional %>
+              <td class="text-end">
+                <div class="text-muted"><%= number_to_currency(item.unit_additional_cost, unit: currency_symbol_for(@purchase_order.currency), precision: 2) %></div>
+              </td>
+
+              <%# Compuesto %>
+              <td class="text-end">
+                <div class="fw-medium"><%= number_to_currency(item.unit_compose_cost, unit: currency_symbol_for(@purchase_order.currency), precision: 2) %></div>
+                <div class="small text-muted"><%= number_to_currency(item.unit_compose_cost_in_mxn, unit: '$', precision: 2) %> MXN</div>
+              </td>
+
+              <%# Total línea %>
+              <td class="text-end">
+                <div><%= number_to_currency(item.total_line_cost, unit: currency_symbol_for(@purchase_order.currency), precision: 2) %></div>
+              </td>
+
+              <%# Total MXN %>
+              <td class="text-end">
+                <div class="fw-bold text-success"><%= number_to_currency(item.total_line_cost_in_mxn, unit: '$', precision: 2) %></div>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+        <tfoot class="table-light">
+          <tr class="fw-bold">
+            <td colspan="2">Totales</td>
+            <td class="text-center"><%= items_count %></td>
+            <td colspan="3"></td>
+            <td class="text-end"><%= number_to_currency(@purchase_order.subtotal, unit: currency_symbol_for(@purchase_order.currency), precision: 2) %></td>
+            <td class="text-end text-success"><%= number_to_currency(@purchase_order.purchase_order_items.sum(&:total_line_cost_in_mxn), unit: '$', precision: 2) %></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+</div>
+
+<%# Notas %>
+<% if @purchase_order.notes.present? %>
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-transparent border-0">
+      <h6 class="mb-0"><i class="fa fa-sticky-note text-muted me-2"></i>Notas</h6>
+    </div>
+    <div class="card-body">
+      <p class="mb-0"><%= simple_format(@purchase_order.notes) %></p>
+    </div>
+  </div>
+<% end %>
+
+<%# Metadata %>
+<div class="text-muted small d-flex justify-content-between align-items-center">
+  <div>
+    <i class="fa fa-clock me-1"></i>Creada: <%= @purchase_order.created_at.strftime("%d/%m/%Y %H:%M") %>
+    <span class="mx-2">|</span>
+    Actualizada: <%= @purchase_order.updated_at.strftime("%d/%m/%Y %H:%M") %>
+  </div>
+  <div class="d-flex gap-2">
+    <%= link_to edit_admin_purchase_order_path(@purchase_order), class: "btn btn-sm btn-outline-primary" do %>
+      <i class="fa fa-edit"></i> Editar
+    <% end %>
+    <%= button_to admin_purchase_order_path(@purchase_order),
+                  method: :delete,
+                  class: "btn btn-sm btn-outline-danger",
+                  form: { data: { controller: 'confirm', action: 'submit->confirm#ask', confirm_message: '¿Estás seguro de eliminar esta orden?' } } do %>
+      <i class="fa fa-trash"></i> Eliminar
+    <% end %>
   </div>
 </div>
