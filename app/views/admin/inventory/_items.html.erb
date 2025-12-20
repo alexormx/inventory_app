@@ -1,64 +1,116 @@
-<turbo-frame id="<%= (local_assigns[:frame_id].presence || "inventory-items-frame-#{product.id}") %>" class="mt-3">
-  <div class="mx-3 inventory-items">
-  <!-- Adds horizontal margin -->
+<turbo-frame id="<%= (local_assigns[:frame_id].presence || "inventory-items-frame-#{product.id}") %>">
+  <div class="card-body border-top">
     <% selected_status = params[:status].presence || 'all' %>
-    <div class="d-flex justify-content-between small text-muted mb-2">
-      <div>
+    
+    <%# Header info %>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <div class="small">
         <% if selected_status != 'all' %>
-          Mostrando piezas con estado: <strong><%= inventory_status_label(selected_status) %></strong>
-        <% else %>
-          Mostrando todas las piezas
+          <span class="badge bg-<%= inventory_status_color(selected_status) %> me-2">
+            <%= inventory_status_label(selected_status) %>
+          </span>
         <% end %>
+        <span class="text-muted">
+          Mostrando <strong><%= items.size %></strong> piezas
+        </span>
       </div>
-      <div>
-        Renderizadas: <strong><%= items.size %></strong>
-        <% if product.respond_to?(:inventories) %>
-          · Esperadas (status actual):
-          <strong>
-            <% if selected_status != 'all' %>
-              <%= product.inventories.where(status: selected_status).count %>
-            <% else %>
-              <%= product.inventories.count %>
-            <% end %>
-          </strong>
-        <% end %>
-      </div>
+      <button type="button" class="btn btn-sm btn-outline-secondary" 
+              data-action="click->toggle-inventory#toggle">
+        <i class="fa fa-times"></i> Cerrar
+      </button>
     </div>
-    <table class="table table-sm  table-hover align-middle">
-      <thead class="table-light">
-        <tr>
-          <th>ID</th>
-          <th>Status</th>
-          <th>Purchase Order</th>
-          <th>Line</th>
-          <th>Sale Order</th>
-          <th>Adj Ref</th>
-          <th>Purchase Cost</th>
-          <th>Sale Price</th>
-          <th>Updated</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% items.each do |item| %>
-          <tr id="inventory-item-<%= item.id %>">
-            <td><%= item.id %></td>
-            <td>
-              <turbo-frame id="inventory_status_<%= item.id %>">
-                <%= render partial: "admin/inventory/status_badge", locals: { item: item } %>
-              </turbo-frame>
-            </td>
-            <td><%= item.purchase_order_id || "—" %></td>
-            <td><%= item.purchase_order_item_id || "—" %></td>
-            <td><%= item.sale_order_id || "—" %></td>
-            <td><%= item.adjustment_reference || "—" %></td>
-            <td><%= number_to_currency(item.purchase_cost) %></td>
-            <td><%= number_to_currency(item.sold_price) %></td>
-            <td><%= item.status_changed_at&.strftime("%F") %></td>
+    
+    <%# Tabla de items %>
+    <div class="table-responsive">
+      <table class="table table-sm table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th style="width: 60px;">ID</th>
+            <th>Estado</th>
+            <th>Origen</th>
+            <th>Destino</th>
+            <th class="text-end">Costo</th>
+            <th class="text-end">Precio Venta</th>
+            <th style="width: 100px;">Actualizado</th>
           </tr>
-        <% end %>
-      </tbody>
-    </table>
-    <!-- Sin paginación: se renderizan todas las piezas -->
+        </thead>
+        <tbody>
+          <% items.each do |item| %>
+            <tr id="inventory-item-<%= item.id %>">
+              <%# ID %>
+              <td>
+                <span class="badge bg-light text-dark border"><%= item.id %></span>
+              </td>
+              
+              <%# Estado con edición inline %>
+              <td>
+                <turbo-frame id="inventory_status_<%= item.id %>">
+                  <%= render partial: "admin/inventory/status_badge", locals: { item: item } %>
+                </turbo-frame>
+              </td>
+              
+              <%# Origen (PO) %>
+              <td>
+                <% if item.purchase_order_id.present? %>
+                  <%= link_to admin_purchase_order_path(item.purchase_order_id), class: "text-decoration-none" do %>
+                    <i class="fa fa-truck text-muted me-1"></i>PO #<%= item.purchase_order_id %>
+                  <% end %>
+                  <% if item.purchase_order_item_id.present? %>
+                    <span class="text-muted small ms-1">(línea <%= item.purchase_order_item_id %>)</span>
+                  <% end %>
+                <% elsif item.adjustment_reference.present? %>
+                  <span class="text-info">
+                    <i class="fa fa-sliders-h me-1"></i><%= item.adjustment_reference %>
+                  </span>
+                <% else %>
+                  <span class="text-muted">—</span>
+                <% end %>
+              </td>
+              
+              <%# Destino (SO) %>
+              <td>
+                <% if item.sale_order_id.present? %>
+                  <%= link_to admin_sale_order_path(item.sale_order_id), class: "text-decoration-none" do %>
+                    <i class="fa fa-shopping-cart text-muted me-1"></i>SO #<%= item.sale_order_id %>
+                  <% end %>
+                <% else %>
+                  <span class="text-muted">—</span>
+                <% end %>
+              </td>
+              
+              <%# Costo %>
+              <td class="text-end">
+                <% if item.purchase_cost.to_f > 0 %>
+                  <%= number_to_currency(item.purchase_cost, unit: '$', precision: 2) %>
+                <% else %>
+                  <span class="text-muted">—</span>
+                <% end %>
+              </td>
+              
+              <%# Precio venta %>
+              <td class="text-end">
+                <% if item.sold_price.to_f > 0 %>
+                  <span class="text-success fw-medium"><%= number_to_currency(item.sold_price, unit: '$', precision: 2) %></span>
+                <% else %>
+                  <span class="text-muted">—</span>
+                <% end %>
+              </td>
+              
+              <%# Fecha actualización %>
+              <td class="small text-muted">
+                <%= item.status_changed_at&.strftime("%d/%m/%y") || item.updated_at&.strftime("%d/%m/%y") %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
     </div>
+    
+    <% if items.empty? %>
+      <div class="text-center py-4 text-muted">
+        <i class="fa fa-inbox fa-2x mb-2"></i>
+        <p class="mb-0">No hay piezas con este estado</p>
+      </div>
+    <% end %>
   </div>
 </turbo-frame>
