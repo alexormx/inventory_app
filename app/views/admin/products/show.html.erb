@@ -1,134 +1,450 @@
-<h1 class="h4 mb-4"><%= @product.product_name %></h1>
+<%
+  # Calcular métricas
+  available_count = @product.inventories.available.count
+  reserved_count = @product.inventories.reserved.count
+  in_transit_count = @product.inventories.in_transit.count
+  sold_count = @product.inventories.sold.count
+  total_inventory = @product.inventories.count
+  
+  # Calcular valor del inventario disponible
+  available_value = @product.inventories.available.sum(:purchase_cost)
+  
+  # Calcular margen de ganancia
+  margin_percent = if @product.average_purchase_cost.to_f > 0
+    ((@product.selling_price - @product.average_purchase_cost) / @product.average_purchase_cost * 100).round(1)
+  else
+    0
+  end
+  
+  # Status info
+  status_icons = { 'draft' => 'file', 'active' => 'check-circle', 'inactive' => 'pause-circle' }
+  status_colors = { 'draft' => 'warning', 'active' => 'success', 'inactive' => 'secondary' }
+  status_labels = { 'draft' => 'Borrador', 'active' => 'Activo', 'inactive' => 'Inactivo' }
+  
+  # Alertas
+  low_stock = available_count <= @product.reorder_point.to_i && available_count > 0
+  no_stock = available_count == 0
+%>
 
-<div class="row">
-  <!-- Left: Main image -->
-  <div class="col-md-4 mb-4">
-    <% if @product.product_images.attached? %>
-      <%= image_tag @product.product_images.first.variant(resize_to_limit: [400, 400]), class: "img-fluid rounded border" %>
-    <% else %>
-      <div class="text-muted text-center p-4 border bg-light">No image available</div>
+<%# Header con navegación %>
+<div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+  <h2 class="mb-0 d-flex align-items-center gap-2 flex-wrap">
+    <i class="fa fa-box text-primary"></i> 
+    <span class="text-truncate" style="max-width: 400px;"><%= @product.product_name %></span>
+    <span class="badge bg-<%= status_colors[@product.status] %>">
+      <i class="fa fa-<%= status_icons[@product.status] %> me-1"></i><%= status_labels[@product.status] %>
+    </span>
+    <% if no_stock %>
+      <span class="badge bg-danger"><i class="fa fa-exclamation-triangle me-1"></i>Sin Stock</span>
+    <% elsif low_stock %>
+      <span class="badge bg-warning text-dark"><i class="fa fa-exclamation-circle me-1"></i>Stock Bajo</span>
+    <% end %>
+  </h2>
+  <div class="d-flex gap-2 flex-wrap">
+    <%= link_to admin_products_path, class: "btn btn-outline-secondary btn-sm" do %>
+      <i class="fa fa-arrow-left"></i> Volver
+    <% end %>
+    <%= link_to product_path(@product), class: "btn btn-outline-info btn-sm", target: "_blank" do %>
+      <i class="fa fa-eye"></i> Ver Público
+    <% end %>
+    <%= link_to edit_admin_product_path(@product), class: "btn btn-primary btn-sm" do %>
+      <i class="fa fa-edit"></i> Editar
     <% end %>
   </div>
+</div>
 
-  <!-- Right: Info blocks -->
-  <div class="col-md-8 bg-secondary-subtle rounded border">
-    <div class="row g-3">
-
-      <!-- 📌 Basic Info -->
-      <div class="col-md-6">
-        <h6 class="fw-bold mb-2">📌 Basic Info</h6>
-        <dl class="row mb-0">
-          <dt class="col-sm-6">SKU:</dt><dd class="col-sm-6"><%= @product.product_sku %></dd>
-          <dt class="col-sm-6">Brand:</dt><dd class="col-sm-6"><%= @product.brand %></dd>
-          <dt class="col-sm-6">Category:</dt><dd class="col-sm-6"><%= @product.category %></dd>
-          <dt class="col-sm-6">Status:</dt><dd class="col-sm-6"><%= @product.status %></dd>
-          <dt class="col-sm-6">Preferred Supplier:</dt><dd class="col-sm-6"><%= @product.preferred_supplier&.name || "—" %></dd>
-          <dt class="col-sm-6">Last Supplier:</dt><dd class="col-sm-6"><%= @product.last_supplier&.name || "—" %></dd>
-        </dl>
+<%# Métricas cards %>
+<div class="row g-3 mb-4">
+  <div class="col-md-3 col-sm-6">
+    <div class="card border-0 shadow-sm h-100 border-start border-success border-4">
+      <div class="card-body py-3">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <div class="text-muted small text-uppercase">Disponible</div>
+            <div class="h4 mb-0 text-success"><%= available_count %> <small class="text-muted fw-normal">pzas</small></div>
+            <div class="small text-muted"><%= number_to_currency(available_value, unit: '$', precision: 0) %> valor</div>
+          </div>
+          <div class="rounded-circle bg-success bg-opacity-10 p-2">
+            <i class="fa fa-check-circle text-success"></i>
+          </div>
+        </div>
       </div>
-
-      <!-- 📦 Inventory & Pricing -->
-      <div class="col-md-6">
-        <h6 class="fw-bold mb-2">📦 Inventory & Pricing</h6>
-        <dl class="row mb-0">
-          <dt class="col-sm-6">Available:</dt><dd class="col-sm-6"><%= @product.inventories.available.count %> units</dd>
-          <dt class="col-sm-6">Reserved:</dt><dd class="col-sm-6"><%= @product.inventories.reserved.count %> units</dd>
-          <dt class="col-sm-6">In Transit:</dt><dd class="col-sm-6"><%= @product.inventories.in_transit.count %> units</dd>
-          <dt class="col-sm-6">Damaged/Cancel:</dt><dd class="col-sm-6"><%= @product.inventories.damaged.count %> units</dd>
-          <dt class="col-sm-6">Lost:</dt><dd class="col-sm-6"><%= @product.inventories.lost.count %> units</dd>
-          <dt class="col-sm-6">Returned:</dt><dd class="col-sm-6"><%= @product.inventories.returned.count %> units</dd>
-          <dt class="col-sm-6">Reorder Point:</dt><dd class="col-sm-6"><%= @product.reorder_point %></dd>
-          <dt class="col-sm-6">Selling Price:</dt><dd class="col-sm-6"><%= number_to_currency(@product.selling_price) %></dd>
-          <dt class="col-sm-6">Min. Price:</dt><dd class="col-sm-6"><%= number_to_currency(@product.minimum_price) %></dd>
-          <dt class="col-sm-6">Max. Discount:</dt><dd class="col-sm-6"><%= number_to_percentage(@product.maximum_discount, precision: 0) %></dd>
-          <dt class="col-sm-6">Discount Stock:</dt><dd class="col-sm-6"><%= @product.discount_limited_stock %></dd>
-        </dl>
+    </div>
+  </div>
+  <div class="col-md-3 col-sm-6">
+    <div class="card border-0 shadow-sm h-100 border-start border-info border-4">
+      <div class="card-body py-3">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <div class="text-muted small text-uppercase">Reservado</div>
+            <div class="h4 mb-0 text-info"><%= reserved_count %> <small class="text-muted fw-normal">pzas</small></div>
+            <div class="small text-muted"><%= in_transit_count %> en tránsito</div>
+          </div>
+          <div class="rounded-circle bg-info bg-opacity-10 p-2">
+            <i class="fa fa-bookmark text-info"></i>
+          </div>
+        </div>
       </div>
-
-      <!-- 📏 Dimensions -->
-      <div class="col-md-6">
-        <h6 class="fw-bold mt-3 mb-2">📏 Dimensions</h6>
-        <dl class="row mb-0">
-          <dt class="col-sm-6">Weight (g):</dt><dd class="col-sm-6"><%= @product.weight_gr %> g</dd>
-          <dt class="col-sm-6">Length:</dt><dd class="col-sm-6"><%= @product.length_cm %> cm</dd>
-          <dt class="col-sm-6">Width:</dt><dd class="col-sm-6"><%= @product.width_cm %> cm</dd>
-          <dt class="col-sm-6">Height:</dt><dd class="col-sm-6"><%= @product.height_cm %> cm</dd>
-          <dt class="col-sm-6">Volume:</dt><dd class="col-sm-6"><%= @product.length_cm * @product.width_cm * @product.height_cm %> cm³</dd>
-        </dl>
+    </div>
+  </div>
+  <div class="col-md-3 col-sm-6">
+    <div class="card border-0 shadow-sm h-100 border-start border-primary border-4">
+      <div class="card-body py-3">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <div class="text-muted small text-uppercase">Precio Venta</div>
+            <div class="h4 mb-0 text-primary"><%= number_to_currency(@product.selling_price, unit: '$', precision: 0) %></div>
+            <div class="small text-muted">Min: <%= number_to_currency(@product.minimum_price, unit: '$', precision: 0) %></div>
+          </div>
+          <div class="rounded-circle bg-primary bg-opacity-10 p-2">
+            <i class="fa fa-tag text-primary"></i>
+          </div>
+        </div>
       </div>
-
-      <!-- 🧾 Purchase Tracking -->
-      <div class="col-md-6">
-        <h6 class="fw-bold mt-3 mb-2">🧾 Purchase Tracking</h6>
-        <dl class="row mb-0">
-          <dt class="col-sm-6">Total Purchased:</dt><dd class="col-sm-6"><%= @product.total_purchase_quantity %> units</dd>
-          <dt class="col-sm-6">Total Value:</dt><dd class="col-sm-6"><%= number_to_currency(@product.total_purchase_value) %></dd>
-          <dt class="col-sm-6">Avg. Cost:</dt><dd class="col-sm-6"><%= number_to_currency(@product.average_purchase_cost) %></dd>
-          <dt class="col-sm-6">Last Cost:</dt><dd class="col-sm-6"><%= number_to_currency(@product.last_purchase_cost) %></dd>
-          <dt class="col-sm-6">Last Date:</dt><dd class="col-sm-6"><%= @product.last_purchase_date || "—" %></dd>
-          <dt class="col-sm-6">Total PO:</dt><dd class="col-sm-6"><%= @product.total_purchase_order %></dd>
-        </dl>
-      </div>
-
-      <!-- 💰 Sales Tracking -->
-      <div class="col-md-6">
-        <h6 class="fw-bold mt-3 mb-2">💰 Sales Tracking</h6>
-        <dl class="row mb-0">
-          <dt class="col-sm-6">Total Sold:</dt><dd class="col-sm-6"><%= @product.total_sales_quantity %> units</dd>
-          <dt class="col-sm-6">Avg. Price:</dt><dd class="col-sm-6"><%= number_to_currency(@product.average_sales_price) %></dd>
-          <dt class="col-sm-6">Last Price:</dt><dd class="col-sm-6"><%= number_to_currency(@product.last_sales_price) %></dd>
-          <dt class="col-sm-6">Last Date:</dt><dd class="col-sm-6"><%= @product.last_sales_date || "—" %></dd>
-          <dt class="col-sm-6">Total Sales Value:</dt><dd class="col-sm-6"><%= number_to_currency(@product.total_sales_value) %></dd>
-          <dt class="col-sm-6">Total SO:</dt><dd class="col-sm-6"><%= @product.total_sales_order %></dd>
-        </dl>
-      </div>
-
-      <!-- 📊 Financial Summary -->
-      <div class="col-md-6">
-        <h6 class="fw-bold mb-2">📊 Financial Summary</h6>
-        <dl class="row mb-0">
-          <dt class="col-sm-6">Current Profit:</dt>
-          <dd class="col-sm-6">
-            <%= number_to_currency(@product.current_profit) %>
-          </dd>
-
-          <dt class="col-sm-6">Current Value:</dt>
-          <dd class="col-sm-6">
-            <%= number_to_currency(@product.current_inventory_value) %>
-          </dd>
-
-          <dt class="col-sm-6">Projected Sales Value:</dt>
-          <dd class="col-sm-6">
-            <%= number_to_currency(@product.projected_sales_value) %>
-          </dd>
-
-          <dt class="col-sm-6">Projected Profit:</dt>
-          <dd class="col-sm-6">
-            <%= number_to_currency(@product.projected_profit) %>
-          </dd>
-        </dl>
+    </div>
+  </div>
+  <div class="col-md-3 col-sm-6">
+    <div class="card border-0 shadow-sm h-100 border-start border-<%= margin_percent >= 30 ? 'success' : (margin_percent >= 15 ? 'warning' : 'danger') %> border-4">
+      <div class="card-body py-3">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <div class="text-muted small text-uppercase">Margen</div>
+            <div class="h4 mb-0 text-<%= margin_percent >= 30 ? 'success' : (margin_percent >= 15 ? 'warning' : 'danger') %>"><%= margin_percent %>%</div>
+            <div class="small text-muted">Costo: <%= number_to_currency(@product.average_purchase_cost, unit: '$', precision: 2) %></div>
+          </div>
+          <div class="rounded-circle bg-<%= margin_percent >= 30 ? 'success' : (margin_percent >= 15 ? 'warning' : 'danger') %> bg-opacity-10 p-2">
+            <i class="fa fa-chart-line text-<%= margin_percent >= 30 ? 'success' : (margin_percent >= 15 ? 'warning' : 'danger') %>"></i>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Gallery -->
-<% if @product.product_images.attached? && @product.product_images.many? %>
-  <div class="mt-4">
-    <h5>📸 Gallery</h5>
-    <div class="row">
-      <% @product.product_images.each_with_index do |image, index| %>
-        <% next if index == 0 %>
-        <div class="col-6 col-md-3 mb-2">
-          <%= image_tag image.variant(resize_to_limit: [200, 200]), class: "img-thumbnail" %>
+<div class="row g-4">
+  <%# Columna izquierda: Imágenes %>
+  <div class="col-lg-4">
+    <%# Imagen principal %>
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-body p-3">
+        <% if @product.product_images.attached? %>
+          <%= image_tag @product.product_images.first.variant(resize_to_limit: [400, 400]), 
+              class: "img-fluid rounded w-100", 
+              style: "object-fit: contain; max-height: 350px;" %>
+        <% else %>
+          <div class="text-center py-5 bg-light rounded">
+            <i class="fa fa-image fa-3x text-muted mb-2"></i>
+            <p class="text-muted mb-0">Sin imagen</p>
+          </div>
+        <% end %>
+      </div>
+      
+      <%# Galería de miniaturas %>
+      <% if @product.product_images.attached? && @product.product_images.count > 1 %>
+        <div class="card-footer bg-transparent border-top-0 pt-0">
+          <div class="d-flex gap-2 flex-wrap">
+            <% @product.product_images.each_with_index do |image, index| %>
+              <%= image_tag image.variant(resize_to_fill: [60, 60]), 
+                  class: "rounded border #{'border-primary border-2' if index == 0}", 
+                  style: "width: 60px; height: 60px; object-fit: cover; cursor: pointer;" %>
+            <% end %>
+          </div>
         </div>
       <% end %>
     </div>
+    
+    <%# Info básica card %>
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-transparent border-0 py-3">
+        <h6 class="mb-0 fw-semibold"><i class="fa fa-info-circle text-primary me-2"></i>Información Básica</h6>
+      </div>
+      <div class="card-body pt-0">
+        <div class="d-flex justify-content-between py-2 border-bottom">
+          <span class="text-muted">SKU</span>
+          <span class="fw-medium font-monospace"><%= @product.product_sku %></span>
+        </div>
+        <div class="d-flex justify-content-between py-2 border-bottom">
+          <span class="text-muted">Código WA</span>
+          <span class="fw-medium"><%= @product.whatsapp_code || '—' %></span>
+        </div>
+        <div class="d-flex justify-content-between py-2 border-bottom">
+          <span class="text-muted">Marca</span>
+          <span class="fw-medium"><%= @product.brand.presence || '—' %></span>
+        </div>
+        <div class="d-flex justify-content-between py-2 border-bottom">
+          <span class="text-muted">Categoría</span>
+          <span class="fw-medium"><%= @product.category.presence || '—' %></span>
+        </div>
+        <div class="d-flex justify-content-between py-2 border-bottom">
+          <span class="text-muted">Proveedor Preferido</span>
+          <span class="fw-medium"><%= @product.preferred_supplier&.name || '—' %></span>
+        </div>
+        <div class="d-flex justify-content-between py-2">
+          <span class="text-muted">Último Proveedor</span>
+          <span class="fw-medium"><%= @product.last_supplier&.name || '—' %></span>
+        </div>
+      </div>
+    </div>
   </div>
-<% end %>
+  
+  <%# Columna derecha: Detalles %>
+  <div class="col-lg-8">
+    <%# Inventario detallado %>
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-header bg-transparent border-0 py-3 d-flex justify-content-between align-items-center">
+        <h6 class="mb-0 fw-semibold"><i class="fa fa-cubes text-primary me-2"></i>Inventario Detallado</h6>
+        <%= link_to admin_inventory_path(q: @product.product_sku), class: "btn btn-sm btn-outline-primary" do %>
+          <i class="fa fa-search me-1"></i>Ver en Inventario
+        <% end %>
+      </div>
+      <div class="card-body pt-0">
+        <div class="row g-3">
+          <div class="col-6 col-md-4 col-lg-3">
+            <div class="text-center p-3 rounded bg-success bg-opacity-10">
+              <div class="h5 mb-0 text-success"><%= available_count %></div>
+              <div class="small text-muted">Disponible</div>
+            </div>
+          </div>
+          <div class="col-6 col-md-4 col-lg-3">
+            <div class="text-center p-3 rounded bg-info bg-opacity-10">
+              <div class="h5 mb-0 text-info"><%= reserved_count %></div>
+              <div class="small text-muted">Reservado</div>
+            </div>
+          </div>
+          <div class="col-6 col-md-4 col-lg-3">
+            <div class="text-center p-3 rounded bg-primary bg-opacity-10">
+              <div class="h5 mb-0 text-primary"><%= in_transit_count %></div>
+              <div class="small text-muted">En Tránsito</div>
+            </div>
+          </div>
+          <div class="col-6 col-md-4 col-lg-3">
+            <div class="text-center p-3 rounded bg-secondary bg-opacity-10">
+              <div class="h5 mb-0"><%= sold_count %></div>
+              <div class="small text-muted">Vendido</div>
+            </div>
+          </div>
+          <div class="col-6 col-md-4 col-lg-3">
+            <div class="text-center p-3 rounded bg-warning bg-opacity-10">
+              <div class="h5 mb-0 text-warning"><%= @product.inventories.damaged.count %></div>
+              <div class="small text-muted">Dañado</div>
+            </div>
+          </div>
+          <div class="col-6 col-md-4 col-lg-3">
+            <div class="text-center p-3 rounded bg-danger bg-opacity-10">
+              <div class="h5 mb-0 text-danger"><%= @product.inventories.lost.count %></div>
+              <div class="small text-muted">Perdido</div>
+            </div>
+          </div>
+          <div class="col-6 col-md-4 col-lg-3">
+            <div class="text-center p-3 rounded bg-light">
+              <div class="h5 mb-0"><%= @product.inventories.returned.count %></div>
+              <div class="small text-muted">Devuelto</div>
+            </div>
+          </div>
+          <div class="col-6 col-md-4 col-lg-3">
+            <div class="text-center p-3 rounded bg-dark bg-opacity-10">
+              <div class="h5 mb-0"><%= total_inventory %></div>
+              <div class="small text-muted">Total</div>
+            </div>
+          </div>
+        </div>
+        
+        <% if @product.reorder_point.to_i > 0 %>
+          <div class="mt-3 pt-3 border-top">
+            <div class="d-flex align-items-center gap-2">
+              <span class="text-muted">Punto de reorden:</span>
+              <span class="badge bg-<%= available_count <= @product.reorder_point ? 'danger' : 'secondary' %>">
+                <%= @product.reorder_point %> unidades
+              </span>
+              <% if available_count <= @product.reorder_point %>
+                <span class="text-danger small"><i class="fa fa-exclamation-triangle me-1"></i>¡Reabastecer!</span>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+    
+    <div class="row g-4">
+      <%# Precios y descuentos %>
+      <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-header bg-transparent border-0 py-3">
+            <h6 class="mb-0 fw-semibold"><i class="fa fa-dollar-sign text-primary me-2"></i>Precios y Descuentos</h6>
+          </div>
+          <div class="card-body pt-0">
+            <div class="d-flex justify-content-between py-2 border-bottom">
+              <span class="text-muted">Precio de Venta</span>
+              <span class="fw-bold text-success"><%= number_to_currency(@product.selling_price) %></span>
+            </div>
+            <div class="d-flex justify-content-between py-2 border-bottom">
+              <span class="text-muted">Precio Mínimo</span>
+              <span class="fw-medium"><%= number_to_currency(@product.minimum_price) %></span>
+            </div>
+            <div class="d-flex justify-content-between py-2 border-bottom">
+              <span class="text-muted">Descuento Máximo</span>
+              <span class="fw-medium"><%= number_to_percentage(@product.maximum_discount, precision: 0) %></span>
+            </div>
+            <div class="d-flex justify-content-between py-2">
+              <span class="text-muted">Stock p/Descuento</span>
+              <span class="fw-medium"><%= @product.discount_limited_stock %> unidades</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <%# Dimensiones %>
+      <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-header bg-transparent border-0 py-3">
+            <h6 class="mb-0 fw-semibold"><i class="fa fa-ruler-combined text-primary me-2"></i>Dimensiones</h6>
+          </div>
+          <div class="card-body pt-0">
+            <div class="d-flex justify-content-between py-2 border-bottom">
+              <span class="text-muted">Peso</span>
+              <span class="fw-medium"><%= number_with_precision(@product.weight_gr.to_f / 1000, precision: 3) %> kg</span>
+            </div>
+            <div class="d-flex justify-content-between py-2 border-bottom">
+              <span class="text-muted">Largo × Ancho × Alto</span>
+              <span class="fw-medium"><%= @product.length_cm %> × <%= @product.width_cm %> × <%= @product.height_cm %> cm</span>
+            </div>
+            <div class="d-flex justify-content-between py-2">
+              <span class="text-muted">Volumen</span>
+              <span class="fw-medium"><%= number_with_precision((@product.length_cm.to_f * @product.width_cm.to_f * @product.height_cm.to_f) / 1_000_000, precision: 6) %> m³</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <%# Historial de compras y ventas %>
+    <div class="row g-4 mt-0">
+      <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-header bg-transparent border-0 py-3 d-flex justify-content-between align-items-center">
+            <h6 class="mb-0 fw-semibold"><i class="fa fa-truck text-primary me-2"></i>Historial de Compras</h6>
+            <span class="badge bg-primary rounded-pill"><%= @product.total_purchase_order %> OC</span>
+          </div>
+          <div class="card-body pt-0">
+            <div class="d-flex justify-content-between py-2 border-bottom">
+              <span class="text-muted">Total Comprado</span>
+              <span class="fw-medium"><%= @product.total_purchase_quantity %> unidades</span>
+            </div>
+            <div class="d-flex justify-content-between py-2 border-bottom">
+              <span class="text-muted">Valor Total</span>
+              <span class="fw-medium"><%= number_to_currency(@product.total_purchase_value) %></span>
+            </div>
+            <div class="d-flex justify-content-between py-2 border-bottom">
+              <span class="text-muted">Costo Promedio</span>
+              <span class="fw-medium"><%= number_to_currency(@product.average_purchase_cost) %></span>
+            </div>
+            <div class="d-flex justify-content-between py-2 border-bottom">
+              <span class="text-muted">Último Costo</span>
+              <span class="fw-medium"><%= number_to_currency(@product.last_purchase_cost) %></span>
+            </div>
+            <div class="d-flex justify-content-between py-2">
+              <span class="text-muted">Última Compra</span>
+              <span class="fw-medium"><%= @product.last_purchase_date&.strftime('%d/%m/%Y') || '—' %></span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-header bg-transparent border-0 py-3 d-flex justify-content-between align-items-center">
+            <h6 class="mb-0 fw-semibold"><i class="fa fa-shopping-cart text-primary me-2"></i>Historial de Ventas</h6>
+            <span class="badge bg-success rounded-pill"><%= @product.total_sales_order %> OV</span>
+          </div>
+          <div class="card-body pt-0">
+            <div class="d-flex justify-content-between py-2 border-bottom">
+              <span class="text-muted">Total Vendido</span>
+              <span class="fw-medium"><%= @product.total_sales_quantity %> unidades</span>
+            </div>
+            <div class="d-flex justify-content-between py-2 border-bottom">
+              <span class="text-muted">Valor Total</span>
+              <span class="fw-medium text-success"><%= number_to_currency(@product.total_sales_value) %></span>
+            </div>
+            <div class="d-flex justify-content-between py-2 border-bottom">
+              <span class="text-muted">Precio Promedio</span>
+              <span class="fw-medium"><%= number_to_currency(@product.average_sales_price) %></span>
+            </div>
+            <div class="d-flex justify-content-between py-2 border-bottom">
+              <span class="text-muted">Último Precio</span>
+              <span class="fw-medium"><%= number_to_currency(@product.last_sales_price) %></span>
+            </div>
+            <div class="d-flex justify-content-between py-2">
+              <span class="text-muted">Última Venta</span>
+              <span class="fw-medium"><%= @product.last_sales_date&.strftime('%d/%m/%Y') || '—' %></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <%# Resumen financiero %>
+    <div class="card border-0 shadow-sm mt-4">
+      <div class="card-header bg-transparent border-0 py-3">
+        <h6 class="mb-0 fw-semibold"><i class="fa fa-chart-pie text-primary me-2"></i>Resumen Financiero</h6>
+      </div>
+      <div class="card-body pt-0">
+        <div class="row g-3">
+          <div class="col-sm-6 col-lg-3">
+            <div class="text-center p-3 rounded bg-success bg-opacity-10">
+              <div class="small text-muted mb-1">Ganancia Actual</div>
+              <div class="h5 mb-0 text-success"><%= number_to_currency(@product.current_profit, precision: 0) %></div>
+            </div>
+          </div>
+          <div class="col-sm-6 col-lg-3">
+            <div class="text-center p-3 rounded bg-info bg-opacity-10">
+              <div class="small text-muted mb-1">Valor Inventario</div>
+              <div class="h5 mb-0 text-info"><%= number_to_currency(@product.current_inventory_value, precision: 0) %></div>
+            </div>
+          </div>
+          <div class="col-sm-6 col-lg-3">
+            <div class="text-center p-3 rounded bg-primary bg-opacity-10">
+              <div class="small text-muted mb-1">Venta Proyectada</div>
+              <div class="h5 mb-0 text-primary"><%= number_to_currency(@product.projected_sales_value, precision: 0) %></div>
+            </div>
+          </div>
+          <div class="col-sm-6 col-lg-3">
+            <div class="text-center p-3 rounded bg-warning bg-opacity-10">
+              <div class="small text-muted mb-1">Ganancia Proyectada</div>
+              <div class="h5 mb-0 text-warning"><%= number_to_currency(@product.projected_profit, precision: 0) %></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
-<!-- Actions -->
-<div class="mt-4">
-  <%= link_to "Edit", edit_admin_product_path(@product), class: "btn btn-outline-primary me-2" %>
-  <%= link_to "Back to Products", admin_products_path, class: "btn btn-secondary" %>
+<%# Acciones fijas en footer %>
+<div class="card border-0 shadow-sm mt-4">
+  <div class="card-body py-3">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <div class="d-flex gap-2">
+        <%= link_to edit_admin_product_path(@product), class: "btn btn-primary" do %>
+          <i class="fa fa-edit me-1"></i> Editar Producto
+        <% end %>
+        <%= link_to admin_inventory_path(q: @product.product_sku), class: "btn btn-outline-info" do %>
+          <i class="fa fa-cubes me-1"></i> Ver Inventario
+        <% end %>
+      </div>
+      <div class="d-flex gap-2">
+        <% if @product.active? %>
+          <%= button_to deactivate_admin_product_path(@product), method: :patch, class: "btn btn-outline-warning", form: { data: { turbo_confirm: "¿Desactivar este producto?" } } do %>
+            <i class="fa fa-pause me-1"></i> Desactivar
+          <% end %>
+        <% else %>
+          <%= button_to activate_admin_product_path(@product), method: :patch, class: "btn btn-outline-success" do %>
+            <i class="fa fa-play me-1"></i> Activar
+          <% end %>
+        <% end %>
+        <%= link_to admin_products_path, class: "btn btn-outline-secondary" do %>
+          <i class="fa fa-arrow-left me-1"></i> Volver a Lista
+        <% end %>
+      </div>
+    </div>
+  </div>
 </div>
