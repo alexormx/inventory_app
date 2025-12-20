@@ -246,15 +246,26 @@ aside#sidebar {
 
 /* Contenedor interno: dar aire y separar del borde */
 aside#sidebar .sidebar-inner {
-  padding: 16px 14px;
+  padding: 8px 6px;
 }
 
-/* Links del sidebar: hover y activo */
+/* Ocultar scrollbar pero permitir scroll si es necesario */
+aside#sidebar .sidebar-nav {
+  overflow-y: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+aside#sidebar .sidebar-nav::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
+
+/* Links del sidebar: hover y activo - más compactos */
 aside#sidebar .nav-link {
   color: var(--sidebar-text);
-  border-radius: 0.35rem;
-  padding: 0.55rem 0.75rem;
-  margin: 4px 6px; /* mayor separación vertical */
+  border-radius: 0.3rem;
+  padding: 0.4rem 0.6rem;
+  margin: 1px 4px;
+  font-size: 0.85rem;
   transition: background-color 0.15s ease, color 0.15s ease;
 }
 aside#sidebar .nav-link:hover {
