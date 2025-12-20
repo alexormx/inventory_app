@@ -1,11 +1,9 @@
 <div class="sidebar-inner vh-100 d-flex flex-column">
-  <%# Header con logo %>
+  <%# Header minimalista %>
   <div class="sidebar-header px-3 py-3 border-bottom border-secondary">
     <div class="d-flex justify-content-between align-items-center">
       <a href="<%= admin_dashboard_path %>" class="text-decoration-none d-flex align-items-center gap-2">
-        <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
-          <i class="fa fa-store text-white"></i>
-        </div>
+        <i class="fa fa-store text-white"></i>
         <span class="sidebar-label fw-bold text-white">PASATIEMPOS</span>
       </a>
       <button class="sidebar-toggle-btn btn btn-sm btn-outline-light d-md-inline d-none js-sidebar-toggle" aria-label="Toggle sidebar" data-sidebar-toggle>
@@ -18,66 +16,45 @@
   <nav class="sidebar-nav flex-grow-1 overflow-auto py-2">
     <ul class="nav flex-column">
       
-      <%# Dashboard - siempre visible %>
       <li class="nav-item px-2 mb-1">
         <%= admin_sidebar_link 'Dashboard', admin_dashboard_path, icon: 'fa-chart-line' %>
       </li>
 
-      <%# Sección: Operaciones %>
-      <li class="sidebar-section px-3 pt-3 pb-1">
-        <span class="text-uppercase small text-secondary fw-semibold sidebar-label">
-          <i class="fa fa-briefcase me-1 opacity-50"></i> Operaciones
-        </span>
-      </li>
-      
+      <li class="text-secondary my-2" role="separator" aria-hidden="true"><hr class="m-0"></li>
+
       <li class="nav-item px-2">
         <%= admin_sidebar_link 'Órdenes de Compra', admin_purchase_orders_path, icon: 'fa-truck-loading' %>
       </li>
       <li class="nav-item px-2">
         <%= admin_sidebar_link 'Órdenes de Venta', admin_sale_orders_path, icon: 'fa-cash-register' %>
       </li>
-      <li class="nav-item px-2">
+      <li class="nav-item px-2 mb-1">
         <%= admin_sidebar_link 'Preórdenes', admin_preorders_path, icon: 'fa-hourglass-half' %>
       </li>
 
-      <%# Sección: Inventario %>
-      <li class="sidebar-section px-3 pt-3 pb-1">
-        <span class="text-uppercase small text-secondary fw-semibold sidebar-label">
-          <i class="fa fa-boxes-stacked me-1 opacity-50"></i> Inventario
-        </span>
-      </li>
-      
+      <li class="text-secondary my-2" role="separator" aria-hidden="true"><hr class="m-0"></li>
+
       <li class="nav-item px-2">
         <%= admin_sidebar_link 'Productos', admin_products_path, icon: 'fa-box-open' %>
       </li>
       <li class="nav-item px-2">
         <%= admin_sidebar_link 'Inventario', admin_inventory_path, icon: 'fa-warehouse', section: true %>
       </li>
-      <li class="nav-item px-2">
+      <li class="nav-item px-2 mb-1">
         <%= admin_sidebar_link 'Ajustes', admin_inventory_adjustments_path, icon: 'fa-scale-balanced' %>
       </li>
 
-      <%# Sección: Finanzas %>
-      <li class="sidebar-section px-3 pt-3 pb-1">
-        <span class="text-uppercase small text-secondary fw-semibold sidebar-label">
-          <i class="fa fa-coins me-1 opacity-50"></i> Finanzas
-        </span>
-      </li>
-      
+      <li class="text-secondary my-2" role="separator" aria-hidden="true"><hr class="m-0"></li>
+
       <li class="nav-item px-2">
         <%= admin_sidebar_link 'Cuentas por Cobrar', admin_receivables_path, icon: 'fa-hand-holding-dollar' %>
       </li>
-      <li class="nav-item px-2">
+      <li class="nav-item px-2 mb-1">
         <%= admin_sidebar_link 'Reportes', admin_reports_path, icon: 'fa-chart-pie' %>
       </li>
 
-      <%# Sección: Administración %>
-      <li class="sidebar-section px-3 pt-3 pb-1">
-        <span class="text-uppercase small text-secondary fw-semibold sidebar-label">
-          <i class="fa fa-cog me-1 opacity-50"></i> Administración
-        </span>
-      </li>
-      
+      <li class="text-secondary my-2" role="separator" aria-hidden="true"><hr class="m-0"></li>
+
       <li class="nav-item px-2">
         <%= admin_sidebar_link 'Usuarios', admin_users_path, icon: 'fa-users' %>
       </li>
