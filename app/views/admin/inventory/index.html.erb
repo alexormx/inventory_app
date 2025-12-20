@@ -161,11 +161,14 @@
             <% end %>
             
             <%# Dropdown para otros estados %>
-            <div class="dropdown d-inline-block">
-              <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="otrosDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+            <div class="dropdown d-inline-block" data-controller="dropdown">
+              <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" 
+                      data-dropdown-target="button"
+                      data-action="click->dropdown#toggle"
+                      aria-expanded="false">
                 <i class="fa fa-ellipsis-h"></i> Otros
               </button>
-              <ul class="dropdown-menu dropdown-menu-end">
+              <ul class="dropdown-menu dropdown-menu-end" data-dropdown-target="menu">
                 <% other_statuses.each do |st| %>
                   <% count = @inventory_counts_global[st.to_sym] || 0 %>
                   <li>
