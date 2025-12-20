@@ -349,6 +349,28 @@ aside#sidebar .sidebar-toggle-btn:focus {
   display: none !important;
 }
 
+/* Footer usuario: centrar avatar cuando está colapsado */
+.sidebar-collapsed aside#sidebar .sidebar-footer {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+.sidebar-collapsed aside#sidebar .sidebar-user-link {
+  justify-content: center;
+}
+.sidebar-collapsed aside#sidebar .sidebar-user-avatar {
+  margin: 0 auto;
+}
+
+/* Hover en el link de usuario */
+aside#sidebar .sidebar-user-link {
+  border-radius: 0.3rem;
+  padding: 0.3rem;
+  transition: background-color 0.15s ease;
+}
+aside#sidebar .sidebar-user-link:hover {
+  background-color: rgba(255, 255, 255, 0.12);
+}
+
 /* Seguridad: cuando el layout está colapsado, evita scroll horizontal global */
 .sidebar-collapsed body { overflow-x: hidden; }
 

@@ -71,17 +71,17 @@
   </nav>
 
   <%# Footer con usuario %>
-  <div class="sidebar-footer border-top border-secondary px-3 py-3 mt-auto">
+  <div class="sidebar-footer border-top border-secondary px-2 py-2 mt-auto">
     <% if current_user %>
-      <div class="d-flex align-items-center gap-2">
-        <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 32px; height: 32px;">
+      <%= link_to edit_admin_user_path(current_user), class: "text-decoration-none d-flex align-items-center gap-2 sidebar-user-link" do %>
+        <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 mx-auto sidebar-user-avatar" style="width: 32px; height: 32px;">
           <i class="fa fa-user text-white small"></i>
         </div>
         <div class="sidebar-label overflow-hidden">
           <div class="text-white small fw-medium text-truncate"><%= current_user.name || current_user.email.split('@').first %></div>
           <div class="text-secondary small text-truncate"><%= current_user.role&.capitalize %></div>
         </div>
-      </div>
+      <% end %>
     <% end %>
   </div>
 </div>
