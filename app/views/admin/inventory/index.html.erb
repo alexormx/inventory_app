@@ -6,8 +6,11 @@
   sold_count = @inventory_counts_global[:sold] || 0
   total_count = @inventory_counts_global.values.sum
   
-  # Calcular valor estimado del inventario disponible
-  available_value = Inventory.where(status: :available).joins(:product).sum('inventories.purchase_cost') rescue 0
+  # Calcular valores estimados del inventario por estado
+  available_value = Inventory.where(status: :available).sum(:purchase_cost) rescue 0
+  reserved_value = Inventory.where(status: :reserved).sum(:purchase_cost) rescue 0
+  in_transit_value = Inventory.where(status: :in_transit).sum(:purchase_cost) rescue 0
+  total_value = Inventory.sum(:purchase_cost) rescue 0
   
   status_icons = { 
     'available' => 'check-circle', 'reserved' => 'bookmark', 'in_transit' => 'truck',
@@ -63,7 +66,7 @@
           <div>
             <div class="text-muted small text-uppercase">Reservado</div>
             <div class="h4 mb-0 text-info"><%= number_with_delimiter(reserved_count) %></div>
-            <div class="small text-muted">piezas apartadas</div>
+            <div class="small text-muted"><%= number_to_currency(reserved_value, unit: '$', precision: 0) %> valor</div>
           </div>
           <div class="rounded-circle bg-info bg-opacity-10 p-2">
             <i class="fa fa-bookmark text-info"></i>
@@ -79,7 +82,7 @@
           <div>
             <div class="text-muted small text-uppercase">En Tránsito</div>
             <div class="h4 mb-0 text-primary"><%= number_with_delimiter(in_transit_count) %></div>
-            <div class="small text-muted">por llegar</div>
+            <div class="small text-muted"><%= number_to_currency(in_transit_value, unit: '$', precision: 0) %> valor</div>
           </div>
           <div class="rounded-circle bg-primary bg-opacity-10 p-2">
             <i class="fa fa-truck text-primary"></i>
@@ -95,7 +98,7 @@
           <div>
             <div class="text-muted small text-uppercase">Total Piezas</div>
             <div class="h4 mb-0"><%= number_with_delimiter(total_count) %></div>
-            <div class="small text-muted"><%= @products_with_inventory.total_count %> productos</div>
+            <div class="small text-muted"><%= number_to_currency(total_value, unit: '$', precision: 0) %> valor</div>
           </div>
           <div class="rounded-circle bg-secondary bg-opacity-10 p-2">
             <i class="fa fa-cubes text-secondary"></i>
@@ -158,8 +161,8 @@
             <% end %>
             
             <%# Dropdown para otros estados %>
-            <div class="dropdown">
-              <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+            <div class="dropdown d-inline-block">
+              <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="otrosDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                 <i class="fa fa-ellipsis-h"></i> Otros
               </button>
               <ul class="dropdown-menu dropdown-menu-end">

@@ -5,8 +5,6 @@ export default class extends Controller {
   static targets = ["button", "frame"]
   static values = {
     url: String,
-    showText: { type: String, default: "👁 Ver piezas" },
-    hideText: { type: String, default: "🙈 Ocultar piezas" },
     count: { type: Number, default: 0 }
   }
 
@@ -28,6 +26,10 @@ export default class extends Controller {
     // Load content via Turbo
     const frame = this.frameTarget
     frame.src = this.urlValue
+    
+    // Show the frame (remove Bootstrap collapse class)
+    frame.classList.remove("collapse")
+    frame.classList.add("show")
 
     // Update button state
     this.expanded = true
@@ -35,8 +37,12 @@ export default class extends Controller {
   }
 
   collapse() {
-    // Clear the frame content
+    // Hide the frame
     const frame = this.frameTarget
+    frame.classList.add("collapse")
+    frame.classList.remove("show")
+    
+    // Clear the frame content
     frame.innerHTML = ""
     frame.removeAttribute("src")
 
@@ -47,14 +53,14 @@ export default class extends Controller {
 
   updateButton() {
     const btn = this.buttonTarget
-    const countText = this.countValue > 0 ? ` (${this.countValue})` : ""
+    const countBadge = this.countValue > 0 ? `<span class="badge bg-primary text-white ms-1">${this.countValue}</span>` : ""
 
     if (this.expanded) {
-      btn.textContent = this.hideTextValue + countText
+      btn.innerHTML = `<i class="fa fa-eye-slash me-1"></i> Ocultar ${countBadge}`
       btn.classList.remove("btn-outline-primary")
       btn.classList.add("btn-outline-secondary")
     } else {
-      btn.textContent = this.showTextValue + countText
+      btn.innerHTML = `<i class="fa fa-eye me-1"></i> Ver piezas ${countBadge}`
       btn.classList.remove("btn-outline-secondary")
       btn.classList.add("btn-outline-primary")
     }
