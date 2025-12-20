@@ -1,3 +1,33 @@
+<%
+  # Breadcrumb dinámico basado en controller/action
+  controller_name_human = {
+    'dashboard' => 'Dashboard',
+    'products' => 'Productos',
+    'purchase_orders' => 'Órdenes de Compra',
+    'sale_orders' => 'Órdenes de Venta',
+    'inventory' => 'Inventario',
+    'inventory_adjustments' => 'Ajustes de Inventario',
+    'users' => 'Usuarios',
+    'suppliers' => 'Proveedores',
+    'customers' => 'Clientes',
+    'categories' => 'Categorías',
+    'system_variables' => 'Variables del Sistema',
+    'site_settings' => 'Configuración',
+    'inventory_audits' => 'Auditoría Inventario',
+    'sale_orders_audits' => 'Auditoría Ventas',
+    'inventory_events' => 'Eventos Inventario',
+    'preorders' => 'Pre-órdenes'
+  }[controller.controller_name] || controller.controller_name.titleize
+
+  action_name_human = {
+    'index' => nil,
+    'show' => 'Detalle',
+    'new' => 'Nuevo',
+    'edit' => 'Editar',
+    'create' => 'Nuevo',
+    'update' => 'Editar'
+  }[action_name] || action_name.titleize
+%>
 <nav class="navbar navbar-expand-lg admin-navbar">
   <div class="container-fluid">
 
@@ -6,44 +36,101 @@
       <button id="sidebarToggle" class="sidebar-toggle-btn d-inline d-lg-none js-sidebar-toggle" aria-label="Toggle sidebar" data-sidebar-toggle>
         <i class="fa-solid fa-bars"></i>
       </button>
-      <%= link_to "Admin Panel", admin_dashboard_path, class: "navbar-brand mb-0 h6" %>
+      
+      <!-- Breadcrumb -->
+      <nav aria-label="breadcrumb" class="admin-breadcrumb d-none d-md-block">
+        <ol class="breadcrumb mb-0">
+          <li class="breadcrumb-item">
+            <%= link_to admin_dashboard_path do %>
+              <i class="fa-solid fa-house-chimney"></i>
+            <% end %>
+          </li>
+          <% if controller.controller_name != 'dashboard' %>
+            <li class="breadcrumb-item <%= action_name == 'index' ? 'active' : '' %>">
+              <% index_path = send("admin_#{controller.controller_name}_path") rescue nil %>
+              <% if action_name == 'index' || index_path.nil? %>
+                <%= controller_name_human %>
+              <% else %>
+                <%= link_to controller_name_human, index_path %>
+              <% end %>
+            </li>
+            <% if action_name_human.present? %>
+              <li class="breadcrumb-item active"><%= action_name_human %></li>
+            <% end %>
+          <% end %>
+        </ol>
+      </nav>
+      
+      <!-- Mobile: Solo título de sección -->
+      <span class="navbar-brand mb-0 h6 d-md-none"><%= controller_name_human %></span>
+    </div>
+
+    <!-- Búsqueda global -->
+    <div class="navbar-search d-none d-lg-flex flex-grow-1 justify-content-center px-4">
+      <%= form_with url: admin_products_path, method: :get, local: true, class: "w-100", style: "max-width: 400px;" do %>
+        <div class="input-group input-group-sm">
+          <span class="input-group-text bg-transparent border-end-0">
+            <i class="fa-solid fa-magnifying-glass text-muted"></i>
+          </span>
+          <%= text_field_tag :q, params[:q], 
+              class: "form-control border-start-0 ps-0", 
+              placeholder: "Buscar productos...",
+              autocomplete: "off" %>
+        </div>
+      <% end %>
     </div>
 
     <!-- Navbar toggler for actions menu (mobile) -->
     <button class="navbar-toggler ms-auto d-lg-none" id="admin-hamburger" type="button" aria-controls="admin-navbar" aria-expanded="false" aria-label="Toggle navigation">
-      <i class="fa-solid fa-bars"></i>
+      <i class="fa-solid fa-ellipsis-vertical"></i>
     </button>
 
-    <!-- Collapsible Navbar Menu -->
+    <!-- Acciones -->
     <div class="collapse navbar-collapse justify-content-end" id="admin-navbar">
-      <ul class="navbar-nav align-items-center">
+      <ul class="navbar-nav align-items-center gap-1">
+        <!-- Búsqueda mobile -->
+        <li class="nav-item d-lg-none w-100 px-2 py-2">
+          <%= form_with url: admin_products_path, method: :get, local: true do %>
+            <div class="input-group input-group-sm">
+              <span class="input-group-text bg-white border-end-0">
+                <i class="fa-solid fa-magnifying-glass text-muted"></i>
+              </span>
+              <%= text_field_tag :q, params[:q], 
+                  class: "form-control border-start-0 ps-0", 
+                  placeholder: "Buscar productos..." %>
+            </div>
+          <% end %>
+        </li>
+        
+        <!-- Ver tienda -->
+        <li class="nav-item">
+          <%= link_to root_path, class: "nav-link", title: "Ver tienda", target: "_blank" do %>
+            <i class="fa-solid fa-store"></i>
+            <span class="d-lg-none ms-2">Ver Tienda</span>
+          <% end %>
+        </li>
+        
         <% if current_user %>
           <% user_label = current_user.name.presence || current_user.email %>
           <% initials = user_label.to_s.split.map { |p| p[0] }.join.upcase[0,2] %>
-          <li class="nav-item me-2">
-            <span class="nav-link user-chip">Welcome
+          <!-- Usuario -->
+          <li class="nav-item">
+            <%= link_to edit_admin_user_path(current_user), class: "nav-link user-chip", title: "Mi perfil" do %>
               <span class="user-initials"><%= initials %></span>
-              <span class="user-name d-none d-md-inline"><%= user_label %>!</span>
-            </span>
+              <span class="user-name d-none d-xl-inline"><%= user_label %></span>
+            <% end %>
           </li>
         <% end %>
+        
+        <!-- Logout -->
         <li class="nav-item">
-          <%= link_to "New Product", new_admin_product_path, class: "nav-link" %>
-        </li>
-        <li class="nav-item">
-          <%= link_to "New PO", new_admin_purchase_order_path, class: "nav-link" %>
-        </li>
-        <li class="nav-item">
-          <%= link_to "New SO", new_admin_sale_order_path, class: "nav-link" %>
-        </li>
-        <li class="nav-item">
-          <%= link_to "Frontend Store", root_path, class: "nav-link" %>
-        </li>
-        <li class="nav-item">
-          <%= link_to "Logout", destroy_user_session_path, data: { "turbo-method": :delete }, class: "nav-link" %>
+          <%= link_to destroy_user_session_path, data: { "turbo-method": :delete }, class: "nav-link nav-link-logout", title: "Cerrar sesión" do %>
+            <i class="fa-solid fa-right-from-bracket"></i>
+            <span class="d-lg-none ms-2">Cerrar sesión</span>
+          <% end %>
         </li>
       </ul>
     </div>
 
   </div>
-  </nav>
+</nav>
