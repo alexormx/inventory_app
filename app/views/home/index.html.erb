@@ -27,23 +27,26 @@
 <!-- 📊 ESTADÍSTICAS -->
 <section class="stats-section py-4 bg-dark text-white">
   <div class="container">
-    <div class="row text-center">
-      <div class="col-4 col-md-4">
+    <div class="row text-center justify-content-center">
+      <div class="col-4 col-md-3">
         <div class="stat-item">
+          <i class="fas fa-box-open text-danger mb-2" style="font-size: 1.5rem;"></i>
           <div class="fs-2 fw-bold text-danger"><%= number_with_delimiter(@stats[:products]) %>+</div>
-          <div class="small text-muted">Productos</div>
+          <div class="small text-white-50 text-uppercase" style="letter-spacing: 1px;">Productos</div>
         </div>
       </div>
-      <div class="col-4 col-md-4">
+      <div class="col-4 col-md-3">
         <div class="stat-item">
+          <i class="fas fa-users text-danger mb-2" style="font-size: 1.5rem;"></i>
           <div class="fs-2 fw-bold text-danger"><%= number_with_delimiter(@stats[:customers]) %>+</div>
-          <div class="small text-muted">Clientes</div>
+          <div class="small text-white-50 text-uppercase" style="letter-spacing: 1px;">Clientes Felices</div>
         </div>
       </div>
-      <div class="col-4 col-md-4">
+      <div class="col-4 col-md-3">
         <div class="stat-item">
+          <i class="fas fa-award text-danger mb-2" style="font-size: 1.5rem;"></i>
           <div class="fs-2 fw-bold text-danger"><%= @stats[:years] %>+</div>
-          <div class="small text-muted">Años</div>
+          <div class="small text-white-50 text-uppercase" style="letter-spacing: 1px;">Años de Experiencia</div>
         </div>
       </div>
     </div>
