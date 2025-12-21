@@ -24,10 +24,72 @@
   </div>
 </section>
 
+<!-- 📊 ESTADÍSTICAS -->
+<section class="stats-section py-4 bg-dark text-white">
+  <div class="container">
+    <div class="row text-center">
+      <div class="col-4 col-md-4">
+        <div class="stat-item">
+          <div class="fs-2 fw-bold text-danger"><%= number_with_delimiter(@stats[:products]) %>+</div>
+          <div class="small text-muted">Productos</div>
+        </div>
+      </div>
+      <div class="col-4 col-md-4">
+        <div class="stat-item">
+          <div class="fs-2 fw-bold text-danger"><%= number_with_delimiter(@stats[:customers]) %>+</div>
+          <div class="small text-muted">Clientes</div>
+        </div>
+      </div>
+      <div class="col-4 col-md-4">
+        <div class="stat-item">
+          <div class="fs-2 fw-bold text-danger"><%= @stats[:years] %>+</div>
+          <div class="small text-muted">Años</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 🏷️ CATEGORÍAS DESTACADAS -->
+<section class="categories-section py-5 bg-light">
+  <div class="container">
+    <div class="text-center mb-4">
+      <h2 class="display-6 fw-bold mb-2">Explora por Categoría</h2>
+      <p class="text-muted">Encuentra exactamente lo que buscas</p>
+    </div>
+    <div class="row row-cols-2 row-cols-md-3 row-cols-lg-6 g-3">
+      <%
+        categories = [
+          { name: 'Autos a Escala', icon: 'fa-car', color: 'danger', query: 'diecast' },
+          { name: 'Figuras', icon: 'fa-chess-knight', color: 'primary', query: 'figuras' },
+          { name: 'Coleccionables', icon: 'fa-gem', color: 'warning', query: 'coleccionables' },
+          { name: 'Juguetes', icon: 'fa-puzzle-piece', color: 'success', query: 'juguetes' },
+          { name: 'Cartas', icon: 'fa-clone', color: 'info', query: 'cartas' },
+          { name: 'Otros', icon: 'fa-ellipsis-h', color: 'secondary', query: '' }
+        ]
+      %>
+      <% categories.each do |cat| %>
+        <div class="col">
+          <%= link_to catalog_path(q: cat[:query]), class: "text-decoration-none" do %>
+            <div class="card border-0 shadow-sm h-100 text-center hover-lift">
+              <div class="card-body py-4">
+                <div class="mb-2">
+                  <i class="fas <%= cat[:icon] %> fa-2x text-<%= cat[:color] %>"></i>
+                </div>
+                <h6 class="card-title mb-0 fw-semibold text-dark small"><%= cat[:name] %></h6>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</section>
+
 <!-- 🌟 PRODUCTOS DESTACADOS -->
 <% featured_products = @products.select { |p| p.current_on_hand > 0 }.first(8) %>
 <% if featured_products.present? %>
-<section class="featured-products py-5 bg-light">
+<section class="featured-products py-5">
   <div class="container">
     <div class="text-center mb-5">
       <h2 class="display-5 fw-bold mb-3">Productos Destacados</h2>
@@ -39,7 +101,7 @@
           <div class="card h-100 border-0 shadow-sm hover-lift">
             <%= link_to product_path(product), class: "text-decoration-none" do %>
               <% if product.product_images&.attached? %>
-                <%= image_tag product.product_images.first, class: "card-img-top", alt: product.product_name, style: "height: 200px; object-fit: cover;" %>
+                <%= image_tag product.product_images.first, class: "card-img-top", alt: product.product_name, style: "height: 200px; object-fit: cover;", loading: "lazy" %>
               <% else %>
                 <div class="card-img-top bg-secondary d-flex align-items-center justify-content-center text-white" style="height: 200px;">
                   <i class="fas fa-image fa-3x opacity-50"></i>
@@ -63,8 +125,41 @@
 </section>
 <% end %>
 
-<!-- 💎 VALUE PROPOSITIONS -->
-<div class="container mt-5 py-5 text-center">
+<!-- ✅ TRUST BADGES -->
+<section class="trust-section py-5 bg-light">
+  <div class="container">
+    <div class="row row-cols-2 row-cols-md-4 g-4 text-center">
+      <div class="col">
+        <div class="trust-badge">
+          <i class="fas fa-truck fa-2x text-danger mb-3"></i>
+          <h6 class="fw-bold mb-1">Envío Seguro</h6>
+          <p class="small text-muted mb-0">Empaque profesional</p>
+        </div>
+      </div>
+      <div class="col">
+        <div class="trust-badge">
+          <i class="fas fa-shield-alt fa-2x text-danger mb-3"></i>
+          <h6 class="fw-bold mb-1">Pago Protegido</h6>
+          <p class="small text-muted mb-0">Transacciones seguras</p>
+        </div>
+      </div>
+      <div class="col">
+        <div class="trust-badge">
+          <i class="fas fa-certificate fa-2x text-danger mb-3"></i>
+          <h6 class="fw-bold mb-1">100% Original</h6>
+          <p class="small text-muted mb-0">Garantía de autenticidad</p>
+        </div>
+      </div>
+      <div class="col">
+        <div class="trust-badge">
+          <i class="fas fa-headset fa-2x text-danger mb-3"></i>
+          <h6 class="fw-bold mb-1">Soporte</h6>
+          <p class="small text-muted mb-0">Atención personalizada</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
 
 <!-- 💎 VALUE PROPOSITIONS -->
 <div class="container py-5">
@@ -128,16 +223,14 @@
       <div class="col-lg-8 text-center">
         <h2 class="display-6 fw-bold mb-3">¡Mantente Actualizado!</h2>
         <p class="lead mb-4">Recibe las últimas novedades, ofertas exclusivas y lanzamientos directamente en tu correo.</p>
-        <form class="row g-3 justify-content-center" action="#" method="post">
+        <%= form_with model: NewsletterSubscriber.new, url: newsletter_subscribers_path, class: "row g-3 justify-content-center" do |f| %>
           <div class="col-12 col-md-7">
-            <input type="email" class="form-control form-control-lg" placeholder="Tu correo electrónico" required>
+            <%= f.email_field :email, class: "form-control form-control-lg", placeholder: "Tu correo electrónico", required: true %>
           </div>
           <div class="col-12 col-md-auto">
-            <button type="submit" class="btn btn-light btn-lg px-5 w-100">
-              <i class="fas fa-envelope me-2"></i>Suscribirse
-            </button>
+            <%= f.submit "Suscribirse", class: "btn btn-light btn-lg px-5 w-100" %>
           </div>
-        </form>
+        <% end %>
         <p class="small mt-3 opacity-75">
           <i class="fas fa-lock me-1"></i>Tu privacidad es importante. No compartimos tu información.
         </p>
@@ -147,20 +240,17 @@
 </section>
 
 <!-- 🚀 CALL TO ACTION -->
+<% unless user_signed_in? %>
 <div class="container my-5 py-5 text-center">
   <h2 class="fw-bold text-danger mb-3"><%= t('home.index.join_title') %></h2>
   <p class="lead mb-4"><%= t('home.index.join_lead') %></p>
-
-  <% if user_signed_in? %>
-    <%= link_to t('home.index.explore_cta'), catalog_path, class: "btn btn-danger btn-lg px-5 py-3" %>
-  <% else %>
-    <div class="d-flex flex-column flex-sm-row justify-content-center gap-3">
-      <%= link_to new_user_session_path, class: "btn btn-outline-danger btn-lg px-5 py-3" do %>
-        <i class="fas fa-sign-in-alt me-2"></i><%= t('home.index.login_cta') %>
-      <% end %>
-      <%= link_to new_user_registration_path, class: "btn btn-danger btn-lg px-5 py-3" do %>
-        <i class="fas fa-user-plus me-2"></i><%= t('home.index.register_cta') %>
-      <% end %>
-    </div>
-  <% end %>
+  <div class="d-flex flex-column flex-sm-row justify-content-center gap-3">
+    <%= link_to new_user_session_path, class: "btn btn-outline-danger btn-lg px-5 py-3" do %>
+      <i class="fas fa-sign-in-alt me-2"></i><%= t('home.index.login_cta') %>
+    <% end %>
+    <%= link_to new_user_registration_path, class: "btn btn-danger btn-lg px-5 py-3" do %>
+      <i class="fas fa-user-plus me-2"></i><%= t('home.index.register_cta') %>
+    <% end %>
+  </div>
 </div>
+<% end %>

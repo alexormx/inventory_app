@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_02_150936) do
+ActiveRecord::Schema[8.0].define(version: 2025_12_21_002443) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -162,6 +162,15 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_02_150936) do
     t.index ["created_at"], name: "index_maintenance_runs_on_created_at"
     t.index ["job_name"], name: "index_maintenance_runs_on_job_name"
     t.index ["status"], name: "index_maintenance_runs_on_status"
+  end
+
+  create_table "newsletter_subscribers", force: :cascade do |t|
+    t.string "email"
+    t.datetime "subscribed_at"
+    t.datetime "unsubscribed_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["email"], name: "index_newsletter_subscribers_on_email", unique: true
   end
 
   create_table "order_shipping_addresses", force: :cascade do |t|
