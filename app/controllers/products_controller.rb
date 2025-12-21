@@ -67,6 +67,18 @@ class ProductsController < ApplicationController
 
   def show
     # @product ya cargado y validado por before_action
+    # Productos relacionados: misma categoría o marca, excluyendo el actual
+    @related_products = Product.publicly_visible
+                               .where.not(id: @product.id)
+                               .where('category = ? OR brand = ?', @product.category, @product.brand)
+                               .with_attached_product_images
+                               .order(Arel.sql('RANDOM()'))
+                               .limit(4)
+
+    # Precalcular stock para productos relacionados
+    related_ids = @related_products.map(&:id)
+    @related_on_hand = Inventory.where(product_id: related_ids, status: :available)
+                                .group(:product_id).count
   end
 
   private

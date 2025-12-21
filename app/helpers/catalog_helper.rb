@@ -1,6 +1,42 @@
 # frozen_string_literal: true
 
 module CatalogHelper
+  # Genera título dinámico basado en filtros activos
+  def catalog_dynamic_title
+    parts = []
+
+    if params[:q].present?
+      return "Resultados para \"#{params[:q]}\""
+    end
+
+    categories = Array(params[:categories]).compact_blank
+    brands = Array(params[:brands]).compact_blank
+
+    parts << categories.to_sentence if categories.any?
+    parts << brands.to_sentence if brands.any?
+
+    if ActiveModel::Type::Boolean.new.cast(params[:in_stock])
+      parts << 'En Stock'
+    end
+
+    if ActiveModel::Type::Boolean.new.cast(params[:preorder])
+      parts << 'Preventa'
+    end
+
+    parts.any? ? parts.join(' - ') : 'Catálogo'
+  end
+
+  # Subtítulo contextual
+  def catalog_subtitle
+    if params[:q].present?
+      'Búsqueda en el catálogo'
+    elsif active_filters_count > 0
+      "#{active_filters_count} filtro#{'s' if active_filters_count > 1} activo#{'s' if active_filters_count > 1}"
+    else
+      'Explora nuestra colección completa'
+    end
+  end
+
   # Genera breadcrumbs dinámicos para el catálogo
   def catalog_breadcrumbs
     breadcrumbs = [

@@ -112,7 +112,54 @@
         </div>
       </div>
     </div>
-    <div class="col-lg-4 d-none d-lg-block"><!-- espacio lateral futuro (relacionados, reviews) --></div>
+    <div class="col-lg-4">
+      <%# Productos relacionados %>
+      <% if @related_products.present? %>
+        <div class="card border-0 shadow-sm sticky-sidebar">
+          <div class="card-body">
+            <h3 class="h6 fw-semibold mb-3">
+              <i class="fas fa-th-large text-danger me-2"></i>También te puede interesar
+            </h3>
+            <div class="related-products">
+              <% @related_products.each do |related| %>
+                <div class="related-product-item d-flex align-items-center gap-3 mb-3 pb-3 border-bottom">
+                  <%= link_to product_path(related), class: "flex-shrink-0" do %>
+                    <% if related.product_images.attached? %>
+                      <%= responsive_attachment_image related.product_images.first,
+                          alt: related.product_name,
+                          widths: [60, 80],
+                          css_class: "related-product-image rounded",
+                          square: true %>
+                    <% else %>
+                      <%= image_tag "placeholder.png", class: "related-product-image rounded", width: 60, height: 60, alt: "Imagen no disponible" %>
+                    <% end %>
+                  <% end %>
+                  <div class="flex-grow-1 min-width-0">
+                    <%= link_to product_path(related), class: "text-decoration-none" do %>
+                      <h6 class="mb-1 text-dark small fw-semibold text-truncate" title="<%= related.product_name %>">
+                        <%= related.product_name %>
+                      </h6>
+                    <% end %>
+                    <div class="d-flex align-items-center gap-2">
+                      <span class="text-danger fw-bold small"><%= number_to_currency(related.selling_price) %></span>
+                      <% on_hand = @related_on_hand[related.id] || 0 %>
+                      <% if on_hand > 0 %>
+                        <span class="badge bg-success-subtle text-success extra-small">En stock</span>
+                      <% elsif related.backorder_allowed? %>
+                        <span class="badge bg-warning-subtle text-warning extra-small">Backorder</span>
+                      <% end %>
+                    </div>
+                  </div>
+                </div>
+              <% end %>
+            </div>
+            <%= link_to catalog_path(categories: [@product.category]), class: "btn btn-outline-danger btn-sm w-100 mt-2" do %>
+              <i class="fas fa-arrow-right me-1"></i>Ver más en <%= @product.category %>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    </div>
   </div>
 </div>
 
@@ -126,4 +173,13 @@
 .product-summary{position:sticky;top:calc(var(--banner-height,0px) + var(--nav-height,60px) + 1rem)}
 .product-summary .line-clamp{-webkit-line-clamp:3;-webkit-box-orient:vertical;display:-webkit-box;overflow:hidden}
 @media (max-width: 991px){.product-summary{position:static}}
+
+/* Related Products */
+.product-show .sticky-sidebar{position:sticky;top:calc(var(--banner-height,0px) + var(--nav-height,60px) + 1rem)}
+.product-show .related-product-image{width:60px;height:60px;object-fit:contain;background:#f8f9fa}
+.product-show .related-product-item:last-child{border-bottom:0!important;margin-bottom:0!important;padding-bottom:0!important}
+.product-show .related-product-item:hover .text-dark{color:#dc3545!important}
+.product-show .min-width-0{min-width:0}
+.product-show .extra-small{font-size:0.7rem;padding:0.2em 0.5em}
+@media (max-width: 991px){.product-show .sticky-sidebar{position:static;margin-top:1.5rem}}
 </style>

@@ -8,10 +8,10 @@ Rails.application.routes.draw do
   get "products/index"
   get "products/show"
   post "/accept_cookies", to: "users#accept_cookies", as: :accept_cookies
-  
+
   # Newsletter subscription
   resources :newsletter_subscribers, only: [:create]
-  
+
   # Devise authentication for all users
   devise_for :users
 

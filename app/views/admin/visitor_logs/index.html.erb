@@ -114,8 +114,8 @@
                   <% if log.country.present? %>
                     <% flag_code = country_flag_code(log.country) %>
                     <% if flag_code %>
-                      <img src="https://flagcdn.com/20x15/<%= flag_code %>.png" 
-                           alt="<%= log.country %>" 
+                      <img src="https://flagcdn.com/20x15/<%= flag_code %>.png"
+                           alt="<%= log.country %>"
                            class="me-1"
                            style="vertical-align: middle;">
                     <% end %>
@@ -173,8 +173,8 @@
                   <% if row.country.present? %>
                     <% flag_code = country_flag_code(row.country) %>
                     <% if flag_code %>
-                      <img src="https://flagcdn.com/20x15/<%= flag_code %>.png" 
-                           alt="<%= row.country %>" 
+                      <img src="https://flagcdn.com/20x15/<%= flag_code %>.png"
+                           alt="<%= row.country %>"
                            class="me-1">
                     <% end %>
                     <small><%= [row.city, row.country].compact.join(", ") %></small>
@@ -247,8 +247,8 @@
                 <td class="ps-3">
                   <% flag_code = country_flag_code(row.country) %>
                   <% if flag_code %>
-                    <img src="https://flagcdn.com/24x18/<%= flag_code %>.png" 
-                         alt="<%= row.country %>" 
+                    <img src="https://flagcdn.com/24x18/<%= flag_code %>.png"
+                         alt="<%= row.country %>"
                          class="me-2">
                   <% end %>
                   <strong><%= row.country %></strong>
