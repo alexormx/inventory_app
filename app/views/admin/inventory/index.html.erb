@@ -5,20 +5,20 @@
   in_transit_count = @inventory_counts_global[:in_transit] || 0
   sold_count = @inventory_counts_global[:sold] || 0
   total_count = @inventory_counts_global.values.sum
-  
+
   # Calcular valores estimados del inventario por estado
   available_value = Inventory.where(status: :available).sum(:purchase_cost) rescue 0
   reserved_value = Inventory.where(status: :reserved).sum(:purchase_cost) rescue 0
   in_transit_value = Inventory.where(status: :in_transit).sum(:purchase_cost) rescue 0
   total_value = Inventory.sum(:purchase_cost) rescue 0
-  
-  status_icons = { 
+
+  status_icons = {
     'available' => 'check-circle', 'reserved' => 'bookmark', 'in_transit' => 'truck',
     'sold' => 'shopping-cart', 'pre_reserved' => 'clock', 'pre_sold' => 'hourglass-half',
     'marketing' => 'bullhorn', 'returned' => 'undo', 'damaged' => 'exclamation-triangle',
     'lost' => 'question-circle', 'scrap' => 'trash'
   }
-  status_labels = { 
+  status_labels = {
     'available' => 'Disponible', 'reserved' => 'Apartado', 'in_transit' => 'En Tránsito',
     'sold' => 'Vendido', 'pre_reserved' => 'Pre-Apartado', 'pre_sold' => 'Pre-Vendido',
     'marketing' => 'Marketing', 'returned' => 'Devuelto', 'damaged' => 'Dañado',
@@ -120,11 +120,11 @@
           <button class="btn btn-primary" type="submit"><i class="fa fa-search"></i></button>
         </div>
       </div>
-      
+
       <div class="col-12 col-lg-8">
         <div class="d-flex flex-wrap gap-2 justify-content-lg-end align-items-center">
           <% current_status = @status_filter.presence || "all" %>
-          
+
           <%# Filter chips con scroll horizontal en móvil %>
           <div class="d-flex gap-1 flex-wrap" style="max-width: 100%;">
             <%
@@ -146,12 +146,12 @@
               # Estados secundarios (en dropdown)
               other_statuses = ['pre_reserved', 'pre_sold', 'marketing', 'damaged', 'lost', 'scrap']
             %>
-            
+
             <%# Chips principales %>
             <% main_statuses.each do |st| %>
               <% is_active = current_status == st %>
               <% count = st == 'all' ? total_count : (@inventory_counts_global[st.to_sym] || 0) %>
-              <%= button_tag name: :status, value: st, 
+              <%= button_tag name: :status, value: st,
                   class: "btn btn-sm btn-#{chip_styles[st]} #{'active' if is_active}",
                   title: st == 'all' ? 'Todos' : status_labels[st] do %>
                 <% if st != 'all' %><i class="fa fa-<%= status_icons[st] %> me-1"></i><% end %>
@@ -159,10 +159,10 @@
                 <span class="badge bg-light text-dark ms-1"><%= count %></span>
               <% end %>
             <% end %>
-            
+
             <%# Dropdown para otros estados %>
             <div class="dropdown d-inline-block" data-controller="dropdown">
-              <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" 
+              <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button"
                       data-dropdown-target="button"
                       data-action="click->dropdown#toggle"
                       aria-expanded="false">
@@ -172,7 +172,7 @@
                 <% other_statuses.each do |st| %>
                   <% count = @inventory_counts_global[st.to_sym] || 0 %>
                   <li>
-                    <%= button_tag name: :status, value: st, 
+                    <%= button_tag name: :status, value: st,
                         class: "dropdown-item d-flex justify-content-between align-items-center #{'active bg-primary text-white' if current_status == st}" do %>
                       <span><i class="fa fa-<%= status_icons[st] %> me-2"></i><%= status_labels[st] %></span>
                       <span class="badge bg-light text-dark"><%= count %></span>
@@ -182,9 +182,9 @@
               </ul>
             </div>
           </div>
-          
+
           <%= hidden_field_tag :current_status, current_status %>
-          
+
           <% if @q.present? || (current_status != 'all') %>
             <%= link_to admin_inventory_path, class: "btn btn-sm btn-outline-secondary" do %>
               <i class="fa fa-times"></i> Limpiar
@@ -203,7 +203,7 @@
     <% @inventory_counts.each do |status, count| %>
       <% next if count == 0 %>
       <span class="badge bg-<%= inventory_status_color(status.to_s) %>">
-        <%= status_labels[status.to_s] || status.to_s.humanize %> 
+        <%= status_labels[status.to_s] || status.to_s.humanize %>
         <span class="fw-bold"><%= count %></span>
       </span>
     <% end %>
@@ -220,12 +220,12 @@
         product.inventories.size
       end %>
     <% cache_buster = product.updated_at&.to_i || Time.now.to_i %>
-    
+
     <div class="card border-0 shadow-sm mb-3 inventory-card"
          data-controller="toggle-inventory"
          data-toggle-inventory-url-value="<%= items_admin_inventory_path(product, status: filtered_status, _ts: cache_buster) %>"
          data-toggle-inventory-count-value="<%= total_items %>">
-      
+
       <%# Header de la card %>
       <div class="card-header bg-transparent border-0 py-3">
         <div class="d-flex justify-content-between align-items-center">
@@ -252,7 +252,7 @@
               </div>
             </div>
           </div>
-          
+
           <%# Acciones y toggle %>
           <div class="d-flex align-items-center gap-2">
             <% if total_items > 0 %>
@@ -260,20 +260,20 @@
                       data-toggle-inventory-target="button"
                       data-action="click->toggle-inventory#toggle"
                       class="btn btn-sm btn-outline-primary inventory-toggle">
-                <i class="fa fa-eye me-1"></i> Ver piezas 
+                <i class="fa fa-eye me-1"></i> Ver piezas
                 <span class="badge bg-primary text-white ms-1"><%= total_items %></span>
               </button>
             <% else %>
               <span class="badge bg-light text-muted border">Sin piezas</span>
             <% end %>
-            
+
             <%= link_to admin_product_path(product), class: "btn btn-sm btn-outline-secondary", title: "Ver producto" do %>
               <i class="fa fa-external-link-alt"></i>
             <% end %>
           </div>
         </div>
       </div>
-      
+
       <%# Summary badges %>
       <div class="card-body py-2 border-top bg-light">
         <% counts = product.inventories.group_by(&:status).transform_values(&:size) %>
@@ -283,7 +283,7 @@
             <% next if count == 0 %>
             <span class="badge rounded-pill bg-<%= inventory_status_color(key) %>" title="<%= status_labels[key] %>">
               <i class="fa fa-<%= status_icons[key] %> me-1"></i>
-              <%= status_labels[key] %> 
+              <%= status_labels[key] %>
               <span class="fw-bold"><%= count %></span>
             </span>
           <% end %>

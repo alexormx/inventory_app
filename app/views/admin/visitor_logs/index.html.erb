@@ -1,39 +1,280 @@
-<h1 class="mb-3 fs-4">📊 Registro de Visitas</h1>
+<h2 class="mb-3 d-flex align-items-center gap-2">
+  <i class="fa fa-chart-line text-primary"></i> Registro de Visitas
+</h2>
 
-<div class="table-responsive">
-  <table class="table table-bordered table-hover table-sm align-middle text-center small">
-    <thead class="table-light">
-      <tr class="align-middle">
-        <th class="fw-semibold">Ruta</th>
-        <th>👁</th>
-        <th>🕒</th>
-        <th>🧭</th>
-        <th>👤</th>
-        <th class="d-none d-md-table-cell">📱</th>
-        <th>🌍</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @visitor_logs.each do |log| %>
-        <tr>
-          <td class="text-truncate" style="max-width: 180px;"><%= log.path %></td>
-          <td><%= log.visit_count %></td>
-          <td><%= log.last_visited_at&.strftime("%d-%m-%Y %H:%M") %></td>
-          <td><%= log.ip_address %></td>
-          <td><%= log.user&.email || "Visitante" %></td>
-          <td class="d-none d-md-table-cell text-truncate" style="max-width: 180px;">
-            <%= truncate(log.user_agent, length: 70) %>
-          </td>
-          <td class="text-truncate" style="max-width: 200px;">
-            <% if log.country.present? %>
-              <%= image_tag "https://flagcdn.com/24x18/#{log.country.downcase}.png",
-                            alt: log.country,
-                            class: "me-1" %>
+<%# Métricas cards %>
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-3">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body text-center py-3">
+        <div class="text-muted small mb-1"><i class="fa fa-eye me-1"></i> Total visitas</div>
+        <div class="fs-4 fw-bold text-primary"><%= number_with_delimiter(@metrics[:total_visits]) %></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body text-center py-3">
+        <div class="text-muted small mb-1"><i class="fa fa-calendar-day me-1"></i> Hoy</div>
+        <div class="fs-4 fw-bold text-success"><%= number_with_delimiter(@metrics[:today_visits]) %></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body text-center py-3">
+        <div class="text-muted small mb-1"><i class="fa fa-users me-1"></i> Visitantes únicos</div>
+        <div class="fs-4 fw-bold text-info"><%= number_with_delimiter(@metrics[:unique_visitors]) %></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body text-center py-3">
+        <div class="text-muted small mb-1"><i class="fa fa-globe me-1"></i> Países</div>
+        <div class="fs-4 fw-bold text-warning"><%= @metrics[:countries] %></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%# Tabs de navegación %>
+<ul class="nav nav-tabs mb-3">
+  <li class="nav-item">
+    <%= link_to admin_visitor_logs_path(tab: 'recent'), class: "nav-link #{'active' if @tab == 'recent'}" do %>
+      <i class="fa fa-clock me-1"></i> Reciente
+    <% end %>
+  </li>
+  <li class="nav-item">
+    <%= link_to admin_visitor_logs_path(tab: 'by_user'), class: "nav-link #{'active' if @tab == 'by_user'}" do %>
+      <i class="fa fa-user me-1"></i> Por Usuario
+    <% end %>
+  </li>
+  <li class="nav-item">
+    <%= link_to admin_visitor_logs_path(tab: 'by_page'), class: "nav-link #{'active' if @tab == 'by_page'}" do %>
+      <i class="fa fa-file me-1"></i> Por Página
+    <% end %>
+  </li>
+  <li class="nav-item">
+    <%= link_to admin_visitor_logs_path(tab: 'by_country'), class: "nav-link #{'active' if @tab == 'by_country'}" do %>
+      <i class="fa fa-globe me-1"></i> Por País
+    <% end %>
+  </li>
+</ul>
+
+<%# Contenido según tab %>
+<div class="card border-0 shadow-sm">
+  <div class="card-body p-0">
+    <% if @tab == 'recent' %>
+      <%# Tab: Reciente %>
+      <div class="table-responsive">
+        <table class="table table-hover table-sm align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th class="ps-3"><i class="fa fa-link text-muted me-1"></i> Ruta</th>
+              <th class="text-center"><i class="fa fa-eye text-muted me-1"></i> Visitas</th>
+              <th><i class="fa fa-clock text-muted me-1"></i> Última</th>
+              <th><i class="fa fa-user text-muted me-1"></i> Usuario</th>
+              <th class="d-none d-lg-table-cell"><i class="fa fa-desktop text-muted me-1"></i> Dispositivo</th>
+              <th><i class="fa fa-globe text-muted me-1"></i> Ubicación</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @visitor_logs.each do |log| %>
+              <tr>
+                <td class="ps-3">
+                  <span class="text-truncate d-inline-block" style="max-width: 200px;" title="<%= log.path %>">
+                    <%= log.path %>
+                  </span>
+                </td>
+                <td class="text-center">
+                  <span class="badge bg-secondary"><%= log.visit_count %></span>
+                </td>
+                <td>
+                  <small class="text-muted"><%= log.last_visited_at&.strftime("%d/%m %H:%M") %></small>
+                </td>
+                <td>
+                  <% if log.user %>
+                    <span class="badge bg-primary-subtle text-primary">
+                      <i class="fa fa-user-check me-1"></i><%= log.user.name || log.user.email.split('@').first %>
+                    </span>
+                  <% else %>
+                    <span class="text-muted small">
+                      <i class="fa fa-user-secret me-1"></i>Visitante
+                    </span>
+                  <% end %>
+                </td>
+                <td class="d-none d-lg-table-cell">
+                  <small>
+                    <i class="fa <%= device_icon(log.user_agent) %> text-muted me-1"></i>
+                    <%= parse_user_agent(log.user_agent) %>
+                  </small>
+                </td>
+                <td>
+                  <% if log.country.present? %>
+                    <% flag_code = country_flag_code(log.country) %>
+                    <% if flag_code %>
+                      <img src="https://flagcdn.com/20x15/<%= flag_code %>.png" 
+                           alt="<%= log.country %>" 
+                           class="me-1"
+                           style="vertical-align: middle;">
+                    <% end %>
+                    <small><%= [log.city, log.country].compact.join(", ") %></small>
+                  <% else %>
+                    <small class="text-muted">—</small>
+                  <% end %>
+                </td>
+              </tr>
             <% end %>
-            <%= [log.city, log.region, log.country].compact.join(", ") %>
-          </td>
-        </tr>
-      <% end %>
-    </tbody>
-  </table>
+          </tbody>
+        </table>
+      </div>
+      <div class="p-3 border-top">
+        <%= paginate @visitor_logs %>
+      </div>
+
+    <% elsif @tab == 'by_user' %>
+      <%# Tab: Por Usuario %>
+      <div class="table-responsive">
+        <table class="table table-hover table-sm align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th class="ps-3"><i class="fa fa-user text-muted me-1"></i> Usuario / IP</th>
+              <th class="text-center"><i class="fa fa-eye text-muted me-1"></i> Visitas</th>
+              <th class="text-center"><i class="fa fa-file text-muted me-1"></i> Páginas</th>
+              <th><i class="fa fa-clock text-muted me-1"></i> Última actividad</th>
+              <th><i class="fa fa-globe text-muted me-1"></i> Ubicación</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @by_user.each do |row| %>
+              <tr>
+                <td class="ps-3">
+                  <% if row.user_email.present? %>
+                    <span class="badge bg-primary-subtle text-primary">
+                      <i class="fa fa-user-check me-1"></i><%= row.user_name || row.user_email.split('@').first %>
+                    </span>
+                    <br><small class="text-muted"><%= row.ip_address %></small>
+                  <% else %>
+                    <i class="fa fa-user-secret text-muted me-1"></i>
+                    <code class="small"><%= row.ip_address %></code>
+                  <% end %>
+                </td>
+                <td class="text-center">
+                  <span class="badge bg-secondary fs-6"><%= number_with_delimiter(row.total_visits) %></span>
+                </td>
+                <td class="text-center">
+                  <span class="text-muted"><%= row.pages_visited %></span>
+                </td>
+                <td>
+                  <small><%= row.last_activity&.strftime("%d/%m/%Y %H:%M") %></small>
+                </td>
+                <td>
+                  <% if row.country.present? %>
+                    <% flag_code = country_flag_code(row.country) %>
+                    <% if flag_code %>
+                      <img src="https://flagcdn.com/20x15/<%= flag_code %>.png" 
+                           alt="<%= row.country %>" 
+                           class="me-1">
+                    <% end %>
+                    <small><%= [row.city, row.country].compact.join(", ") %></small>
+                  <% else %>
+                    <small class="text-muted">—</small>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+
+    <% elsif @tab == 'by_page' %>
+      <%# Tab: Por Página %>
+      <div class="table-responsive">
+        <table class="table table-hover table-sm align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th class="ps-3"><i class="fa fa-link text-muted me-1"></i> Ruta</th>
+              <th class="text-center"><i class="fa fa-eye text-muted me-1"></i> Visitas</th>
+              <th class="text-center"><i class="fa fa-users text-muted me-1"></i> Únicos</th>
+              <th><i class="fa fa-clock text-muted me-1"></i> Última visita</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @by_page.each_with_index do |row, idx| %>
+              <tr>
+                <td class="ps-3">
+                  <% if idx < 3 %>
+                    <span class="badge <%= idx == 0 ? 'bg-warning text-dark' : 'bg-secondary' %> me-1"><%= idx + 1 %></span>
+                  <% end %>
+                  <span class="text-truncate d-inline-block" style="max-width: 300px;" title="<%= row.path %>">
+                    <%= row.path %>
+                  </span>
+                </td>
+                <td class="text-center">
+                  <span class="badge bg-primary fs-6"><%= number_with_delimiter(row.total_visits) %></span>
+                </td>
+                <td class="text-center">
+                  <span class="text-muted"><%= number_with_delimiter(row.unique_visitors) %></span>
+                </td>
+                <td>
+                  <small><%= row.last_visit&.strftime("%d/%m/%Y %H:%M") %></small>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+
+    <% elsif @tab == 'by_country' %>
+      <%# Tab: Por País %>
+      <div class="table-responsive">
+        <table class="table table-hover table-sm align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th class="ps-3"><i class="fa fa-globe text-muted me-1"></i> País</th>
+              <th class="text-center"><i class="fa fa-eye text-muted me-1"></i> Visitas</th>
+              <th class="text-center"><i class="fa fa-users text-muted me-1"></i> Únicos</th>
+              <th class="text-center"><i class="fa fa-file text-muted me-1"></i> Páginas</th>
+              <th>% del total</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% total = @by_country.sum(&:total_visits) %>
+            <% @by_country.each do |row| %>
+              <% pct = total > 0 ? (row.total_visits.to_f / total * 100).round(1) : 0 %>
+              <tr>
+                <td class="ps-3">
+                  <% flag_code = country_flag_code(row.country) %>
+                  <% if flag_code %>
+                    <img src="https://flagcdn.com/24x18/<%= flag_code %>.png" 
+                         alt="<%= row.country %>" 
+                         class="me-2">
+                  <% end %>
+                  <strong><%= row.country %></strong>
+                </td>
+                <td class="text-center">
+                  <span class="badge bg-primary fs-6"><%= number_with_delimiter(row.total_visits) %></span>
+                </td>
+                <td class="text-center">
+                  <span class="text-muted"><%= number_with_delimiter(row.unique_visitors) %></span>
+                </td>
+                <td class="text-center">
+                  <span class="text-muted"><%= row.pages_viewed %></span>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="d-flex align-items-center gap-2">
+                    <div class="progress flex-grow-1" style="height: 8px;">
+                      <div class="progress-bar bg-success" style="width: <%= pct %>%"></div>
+                    </div>
+                    <small class="text-muted" style="min-width: 45px;"><%= pct %>%</small>
+                  </div>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% end %>
+  </div>
 </div>

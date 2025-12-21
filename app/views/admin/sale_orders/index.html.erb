@@ -5,7 +5,7 @@
   total_balance_due = @sale_orders.sum { |so| so.attributes["balance_due_value"].to_d }
   this_month_count = @sale_orders.count { |so| so.order_date >= Date.current.beginning_of_month }
   overdue_count = @sale_orders.count { |so| so.due_date.present? && so.due_date < Date.current && so.attributes["balance_due_value"].to_d > 0 }
-  
+
   status_icons = { 'Pending' => 'clock', 'Confirmed' => 'check', 'In Transit' => 'shipping-fast', 'Delivered' => 'check-circle', 'Canceled' => 'times-circle' }
   status_labels = { 'Pending' => 'Pendiente', 'Confirmed' => 'Confirmada', 'In Transit' => 'En Tránsito', 'Delivered' => 'Entregada', 'Canceled' => 'Cancelada' }
 %>
@@ -99,7 +99,7 @@
     <%= form_with url: admin_sale_orders_path, method: :get, local: true, class: "row g-2 align-items-center" do %>
       <%= hidden_field_tag :sort, params[:sort] %>
       <%= hidden_field_tag :dir, params[:dir] %>
-      
+
       <div class="col-12 col-lg-4">
         <div class="input-group input-group-sm">
           <span class="input-group-text bg-light border-end-0"><i class="fa fa-search text-muted"></i></span>
@@ -107,14 +107,14 @@
           <button class="btn btn-primary" type="submit"><i class="fa fa-search"></i></button>
         </div>
       </div>
-      
+
       <div class="col-12 col-lg-8">
         <div class="d-flex flex-wrap gap-2 justify-content-lg-end align-items-center">
           <% current_status = @status_filter.presence || "all" %>
-          
+
           <%# Filter chips style %>
           <div class="btn-group btn-group-sm" role="group">
-            <% 
+            <%
               chip_styles = {
                 'all' => 'outline-secondary',
                 'Pending' => 'outline-warning',
@@ -127,7 +127,7 @@
             <% ['all', 'Pending', 'Confirmed', 'In Transit', 'Delivered', 'Canceled'].each do |st| %>
               <% is_active = current_status == st %>
               <% count = st == 'all' ? @sale_orders.total_count : (@counts_global[st] || 0) %>
-              <%= button_tag name: :status, value: st, 
+              <%= button_tag name: :status, value: st,
                   class: "btn btn-#{chip_styles[st]} #{'active' if is_active}",
                   title: st == 'all' ? 'Todas' : status_labels[st] do %>
                 <% if st != 'all' %><i class="fa fa-<%= status_icons[st] %> me-1"></i><% end %>
@@ -136,14 +136,14 @@
               <% end %>
             <% end %>
           </div>
-          
+
           <div class="form-check form-check-inline mb-0">
             <%= check_box_tag :due, 1, @due_filter, class: "form-check-input", id: "dueFilter" %>
             <label class="form-check-label small" for="dueFilter">
               <i class="fa fa-exclamation-circle text-danger me-1"></i>Con adeudo
             </label>
           </div>
-          
+
           <% if @q.present? || (@status_filter.present? && @status_filter != 'all') || @due_filter %>
             <%= link_to admin_sale_orders_path, class: "btn btn-sm btn-outline-secondary" do %>
               <i class="fa fa-times"></i> Limpiar
@@ -192,7 +192,7 @@
                 <% end %>
               </div>
             </td>
-            
+
             <%# Cliente con avatar %>
             <td>
               <div class="d-flex align-items-center gap-2">
@@ -209,12 +209,12 @@
                 </div>
               </div>
             </td>
-            
+
             <%# Fecha %>
             <td>
               <div class="small"><%= l(so.order_date, format: :short) %></div>
             </td>
-            
+
             <%# Estado %>
             <td>
               <span class="badge <%= status_badge_class(so.status) %> d-inline-flex align-items-center gap-1">
@@ -222,22 +222,22 @@
                 <%= status_labels[so.status] %>
               </span>
             </td>
-            
+
             <%# Items %>
             <td class="text-center">
               <span class="badge bg-light text-dark border"><%= so.attributes["items_count"].to_i %></span>
             </td>
-            
+
             <%# Total %>
             <td class="text-end fw-medium">
               <%= number_to_currency(so.total_order_value, unit: "$", precision: 0) %>
             </td>
-            
+
             <%# Pagado %>
             <td class="text-end">
               <span class="text-success"><%= number_to_currency(so.attributes["total_paid_value"].to_d, unit: "$", precision: 0) %></span>
             </td>
-            
+
             <%# Adeudo %>
             <td class="text-end">
               <% if has_balance %>
@@ -250,7 +250,7 @@
                 </span>
               <% end %>
             </td>
-            
+
             <%# Acciones %>
             <td class="text-end">
               <div class="btn-group btn-group-sm" role="group">
@@ -310,7 +310,7 @@
       </tbody>
     </table>
   </div>
-  
+
   <%# Paginación %>
   <% if @sale_orders.total_pages > 1 %>
     <div class="card-footer bg-transparent border-0 d-flex justify-content-center py-3">

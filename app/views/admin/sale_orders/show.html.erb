@@ -4,21 +4,21 @@
   products_count = @sale_order.sale_order_items.count
   balance = @sale_order.total_order_value - @sale_order.total_paid
   is_fully_paid = balance <= 0
-  
+
   # Credit info
   credit_allowed = (@sale_order.user&.respond_to?(:credit_enabled) && @sale_order.user.credit_enabled) || @sale_order.credit_override
   credit_terms = (@sale_order.credit_terms || @sale_order.user&.default_credit_terms).to_s
   has_credit = credit_allowed && credit_terms != 'none'
   is_overdue = @sale_order.due_date.present? && balance > 0 && Date.today > @sale_order.due_date
   days_overdue = is_overdue ? (Date.today - @sale_order.due_date).to_i : 0
-  
+
   status_icons = { 'Pending' => 'clock', 'Confirmed' => 'check', 'In Transit' => 'shipping-fast', 'Delivered' => 'check-circle', 'Canceled' => 'times-circle' }
   status_labels = { 'Pending' => 'Pendiente', 'Confirmed' => 'Confirmada', 'In Transit' => 'En Tránsito', 'Delivered' => 'Entregada', 'Canceled' => 'Cancelada' }
 %>
 
 <div class="container-fluid px-0">
   <%= turbo_stream_from ["sale_order", @sale_order.id] %>
-  
+
   <%# Header con navegación %>
   <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
     <h2 class="mb-0 d-flex align-items-center gap-2 flex-wrap">

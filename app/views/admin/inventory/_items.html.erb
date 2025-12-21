@@ -1,7 +1,7 @@
 <turbo-frame id="<%= (local_assigns[:frame_id].presence || "inventory-items-frame-#{product.id}") %>">
   <div class="card-body border-top">
     <% selected_status = params[:status].presence || 'all' %>
-    
+
     <%# Header info %>
     <div class="d-flex justify-content-between align-items-center mb-3">
       <div class="small">
@@ -14,12 +14,12 @@
           Mostrando <strong><%= items.size %></strong> piezas
         </span>
       </div>
-      <button type="button" class="btn btn-sm btn-outline-secondary" 
+      <button type="button" class="btn btn-sm btn-outline-secondary"
               data-action="click->toggle-inventory#toggle">
         <i class="fa fa-times"></i> Cerrar
       </button>
     </div>
-    
+
     <%# Tabla de items %>
     <div class="table-responsive">
       <table class="table table-sm table-hover align-middle mb-0">
@@ -41,14 +41,14 @@
               <td>
                 <span class="badge bg-light text-dark border"><%= item.id %></span>
               </td>
-              
+
               <%# Estado con edición inline %>
               <td>
                 <turbo-frame id="inventory_status_<%= item.id %>">
                   <%= render partial: "admin/inventory/status_badge", locals: { item: item } %>
                 </turbo-frame>
               </td>
-              
+
               <%# Origen (PO) %>
               <td>
                 <% if item.purchase_order_id.present? %>
@@ -66,7 +66,7 @@
                   <span class="text-muted">—</span>
                 <% end %>
               </td>
-              
+
               <%# Destino (SO) %>
               <td>
                 <% if item.sale_order_id.present? %>
@@ -77,7 +77,7 @@
                   <span class="text-muted">—</span>
                 <% end %>
               </td>
-              
+
               <%# Costo %>
               <td class="text-end">
                 <% if item.purchase_cost.to_f > 0 %>
@@ -86,7 +86,7 @@
                   <span class="text-muted">—</span>
                 <% end %>
               </td>
-              
+
               <%# Precio venta %>
               <td class="text-end">
                 <% if item.sold_price.to_f > 0 %>
@@ -95,7 +95,7 @@
                   <span class="text-muted">—</span>
                 <% end %>
               </td>
-              
+
               <%# Fecha actualización %>
               <td class="small text-muted">
                 <%= item.status_changed_at&.strftime("%d/%m/%y") || item.updated_at&.strftime("%d/%m/%y") %>
@@ -105,7 +105,7 @@
         </tbody>
       </table>
     </div>
-    
+
     <% if items.empty? %>
       <div class="text-center py-4 text-muted">
         <i class="fa fa-inbox fa-2x mb-2"></i>

@@ -26,7 +26,7 @@ export default class extends Controller {
     // Load content via Turbo
     const frame = this.frameTarget
     frame.src = this.urlValue
-    
+
     // Show the frame (remove Bootstrap collapse class)
     frame.classList.remove("collapse")
     frame.classList.add("show")
@@ -41,7 +41,7 @@ export default class extends Controller {
     const frame = this.frameTarget
     frame.classList.add("collapse")
     frame.classList.remove("show")
-    
+
     // Clear the frame content
     frame.innerHTML = ""
     frame.removeAttribute("src")
