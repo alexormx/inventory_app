@@ -588,24 +588,6 @@ img.product-order-image {
   font-weight: 500;
 }
 
-/* Búsqueda en navbar */
-.navbar-search .input-group {
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 0.5rem;
-  overflow: hidden;
-}
-.navbar-search .input-group-text {
-  border: none;
-  padding-right: 0;
-}
-.navbar-search .form-control {
-  border: none;
-  box-shadow: none !important;
-}
-.navbar-search .form-control:focus {
-  background: #fff;
-}
-
 /* En móviles, evitar sticky para no consumir altura útil */
 @media (max-width: 767.98px) {
   .admin-navbar {

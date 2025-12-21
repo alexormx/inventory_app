@@ -65,21 +65,6 @@
       <span class="navbar-brand mb-0 h6 d-md-none"><%= controller_name_human %></span>
     </div>
 
-    <!-- Búsqueda global -->
-    <div class="navbar-search d-none d-lg-flex flex-grow-1 justify-content-center px-4">
-      <%= form_with url: admin_products_path, method: :get, local: true, class: "w-100", style: "max-width: 400px;" do %>
-        <div class="input-group input-group-sm">
-          <span class="input-group-text bg-transparent border-end-0">
-            <i class="fa-solid fa-magnifying-glass text-muted"></i>
-          </span>
-          <%= text_field_tag :q, params[:q], 
-              class: "form-control border-start-0 ps-0", 
-              placeholder: "Buscar productos...",
-              autocomplete: "off" %>
-        </div>
-      <% end %>
-    </div>
-
     <!-- Navbar toggler for actions menu (mobile) -->
     <button class="navbar-toggler ms-auto d-lg-none" id="admin-hamburger" type="button" aria-controls="admin-navbar" aria-expanded="false" aria-label="Toggle navigation">
       <i class="fa-solid fa-ellipsis-vertical"></i>
@@ -88,20 +73,6 @@
     <!-- Acciones -->
     <div class="collapse navbar-collapse justify-content-end" id="admin-navbar">
       <ul class="navbar-nav align-items-center gap-1">
-        <!-- Búsqueda mobile -->
-        <li class="nav-item d-lg-none w-100 px-2 py-2">
-          <%= form_with url: admin_products_path, method: :get, local: true do %>
-            <div class="input-group input-group-sm">
-              <span class="input-group-text bg-white border-end-0">
-                <i class="fa-solid fa-magnifying-glass text-muted"></i>
-              </span>
-              <%= text_field_tag :q, params[:q], 
-                  class: "form-control border-start-0 ps-0", 
-                  placeholder: "Buscar productos..." %>
-            </div>
-          <% end %>
-        </li>
-        
         <!-- Ver tienda -->
         <li class="nav-item">
           <%= link_to root_path, class: "nav-link", title: "Ver tienda", target: "_blank" do %>
