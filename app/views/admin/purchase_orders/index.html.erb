@@ -22,6 +22,14 @@
   </div>
 </div>
 
+<style>
+  /* CSS-only dropdown support for Bootstrap markup (no JS required) */
+  .dropdown-hover { position: relative; }
+  .dropdown-hover .dropdown-menu { display: none; right: 0; top: 100%; margin-top: 0.25rem; }
+  .dropdown-hover:hover .dropdown-menu,
+  .dropdown-hover:focus-within .dropdown-menu { display: block; }
+</style>
+
 <%# Stats cards %>
 <div class="row g-3 mb-3">
   <div class="col-md-3 col-sm-6">
@@ -180,7 +188,7 @@
         <th>Estado</th>
         <th class="text-end"><%= sort_link('Items', :items) %></th>
         <th class="text-end"><%= sort_link('Total MXN', :total_mxn) %></th>
-        <th class="text-center">Acciones</th>
+        <th class="text-end" style="width: 110px;">Acciones</th>
       </tr>
     </thead>
     <tbody>
@@ -262,50 +270,49 @@
           </td>
 
           <%# Acciones %>
-          <td class="text-center">
-            <div class="btn-group">
-              <%= link_to admin_purchase_order_path(po), class: "btn btn-outline-secondary btn-sm", title: "Ver detalle" do %>
+          <td class="text-end">
+            <div class="btn-group btn-group-sm dropdown-hover" role="group">
+              <%= link_to admin_purchase_order_path(po), class: "btn btn-outline-primary", title: "Ver detalle" do %>
                 <i class="fa fa-eye"></i>
               <% end %>
-              <button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
-                <span class="visually-hidden">Toggle Dropdown</span>
+              <button type="button" class="btn btn-outline-secondary dropdown-toggle" aria-expanded="false">
+                <i class="fa fa-ellipsis-v"></i>
               </button>
-              <ul class="dropdown-menu dropdown-menu-end">
+              <ul class="dropdown-menu dropdown-menu-end shadow-sm">
                 <li>
                   <%= link_to admin_purchase_order_path(po), class: "dropdown-item" do %>
-                    <i class="fa fa-eye text-muted"></i> Ver detalle
+                    <i class="fa fa-eye me-2 text-muted"></i>Ver detalle
                   <% end %>
                 </li>
                 <li>
                   <%= link_to edit_admin_purchase_order_path(po), class: "dropdown-item" do %>
-                    <i class="fa fa-edit text-primary"></i> Editar
+                    <i class="fa fa-edit me-2 text-muted"></i>Editar
                   <% end %>
                 </li>
                 <li>
                   <%= link_to summary_admin_purchase_order_path(po), class: "dropdown-item" do %>
-                    <i class="fa fa-file-alt text-info"></i> Vista compacta
+                    <i class="fa fa-file-alt me-2 text-muted"></i>Vista compacta
                   <% end %>
                 </li>
                 <% if po.status == 'In Transit' || po.status == 'Pending' %>
                   <li><hr class="dropdown-divider"></li>
                   <li>
                     <%= button_to confirm_receipt_admin_purchase_order_path(po), method: :patch, class: "dropdown-item text-success", form: { data: { controller: 'confirm', action: 'submit->confirm#ask', confirm_message: '¿Confirmas que recibiste todos los productos?' } } do %>
-                      <i class="fa fa-check-circle"></i> Confirmar recepción
+                      <i class="fa fa-check-circle me-2"></i>Confirmar recepción
                     <% end %>
                   </li>
                 <% end %>
                 <% if po.user&.email.present? %>
-                  <li><hr class="dropdown-divider"></li>
                   <li>
                     <a href="mailto:<%= po.user.email %>?subject=Orden de Compra %23<%= po.id %>" class="dropdown-item">
-                      <i class="fa fa-envelope text-muted"></i> Contactar proveedor
+                      <i class="fa fa-envelope me-2 text-muted"></i>Contactar proveedor
                     </a>
                   </li>
                 <% end %>
                 <li><hr class="dropdown-divider"></li>
                 <li>
                   <%= button_to admin_purchase_order_path(po), method: :delete, class: "dropdown-item text-danger", form: { data: { controller: 'confirm', action: 'submit->confirm#ask', confirm_message: '¿Estás seguro de eliminar esta orden?' } } do %>
-                    <i class="fa fa-trash"></i> Eliminar
+                    <i class="fa fa-trash me-2"></i>Eliminar
                   <% end %>
                 </li>
               </ul>

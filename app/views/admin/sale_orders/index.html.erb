@@ -11,6 +11,14 @@
 %>
 
 <%# Header con navegación %>
+<style>
+  /* CSS-only dropdown support for Bootstrap markup (no JS required) */
+  .dropdown-hover { position: relative; }
+  .dropdown-hover .dropdown-menu { display: none; right: 0; top: 100%; margin-top: 0.25rem; }
+  .dropdown-hover:hover .dropdown-menu,
+  .dropdown-hover:focus-within .dropdown-menu { display: block; }
+</style>
+
 <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
   <h2 class="mb-0 d-flex align-items-center gap-2">
     <i class="fa fa-shopping-cart text-primary"></i> Órdenes de Venta
@@ -253,15 +261,14 @@
 
             <%# Acciones %>
             <td class="text-end">
-              <div class="btn-group btn-group-sm" role="group">
+              <div class="btn-group btn-group-sm dropdown-hover" role="group">
                 <%= link_to admin_sale_order_path(so), class: "btn btn-outline-primary", title: "Ver detalle" do %>
                   <i class="fa fa-eye"></i>
                 <% end %>
-                <div class="dropdown">
-                  <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                    <i class="fa fa-ellipsis-v"></i>
-                  </button>
-                  <ul class="dropdown-menu dropdown-menu-end">
+                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" aria-expanded="false">
+                  <i class="fa fa-ellipsis-v"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow-sm">
                   <li>
                     <%= link_to admin_sale_order_path(so), class: "dropdown-item" do %>
                       <i class="fa fa-eye me-2 text-muted"></i>Ver detalle
