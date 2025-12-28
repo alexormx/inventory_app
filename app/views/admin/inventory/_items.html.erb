@@ -52,7 +52,7 @@
               <%# Origen (PO) %>
               <td>
                 <% if item.purchase_order_id.present? %>
-                  <%= link_to admin_purchase_order_path(item.purchase_order_id), class: "text-decoration-none" do %>
+                  <%= link_to admin_purchase_order_path(item.purchase_order_id), class: "text-decoration-none", data: { turbo_frame: "_top" } do %>
                     <i class="fa fa-truck text-muted me-1"></i>PO #<%= item.purchase_order_id %>
                   <% end %>
                   <% if item.purchase_order_item_id.present? %>
@@ -70,7 +70,7 @@
               <%# Destino (SO) %>
               <td>
                 <% if item.sale_order_id.present? %>
-                  <%= link_to admin_sale_order_path(item.sale_order_id), class: "text-decoration-none" do %>
+                  <%= link_to admin_sale_order_path(item.sale_order_id), class: "text-decoration-none", data: { turbo_frame: "_top" } do %>
                     <i class="fa fa-shopping-cart text-muted me-1"></i>SO #<%= item.sale_order_id %>
                   <% end %>
                 <% else %>
