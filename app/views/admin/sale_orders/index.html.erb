@@ -161,7 +161,7 @@
     <table class="table table-hover align-middle mb-0">
       <thead class="table-light">
         <tr>
-          <th style="width: 45px;">#</th>
+          <th class="text-nowrap" style="width: 150px;">#</th>
           <th><%= sort_link('Cliente', :customer) %></th>
           <th><%= sort_link('Fecha', :date) %></th>
           <th>Estado</th>
@@ -182,7 +182,7 @@
           %>
           <tr class="<%= 'table-danger bg-opacity-10' if is_overdue %>">
             <%# ID con indicador %>
-            <td>
+            <td class="text-nowrap" style="min-width: 150px;">
               <div class="d-flex align-items-center gap-1">
                 <span class="fw-medium">#<%= so.id %></span>
                 <% if is_overdue %>
