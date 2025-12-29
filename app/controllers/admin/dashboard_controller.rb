@@ -192,6 +192,11 @@ module Admin
       @purchases_ytd = @po_ytd.sum(:total_cost_mxn).to_d
       @purchases_ytd = @po_ytd.sum(:total_order_cost).to_d if @purchases_ytd.zero?
 
+      @cash_in_ytd = SaleOrderItem.joins(:sale_order).merge(@so_ytd_paid).sum(rev_sql_arel).to_d
+      @cash_out_ytd = @po_ytd.sum(:total_cost_mxn).to_d
+      @cash_out_ytd = @po_ytd.sum(:total_order_cost).to_d if @cash_out_ytd.zero?
+      @cashflow_ytd = @cash_in_ytd - @cash_out_ytd
+
       @cogs_ytd = SaleOrderItem.joins(:sale_order, :product).merge(@so_ytd).sum(cogs_sql_arel).to_d
       @profit_ytd = @sales_ytd - @cogs_ytd
       @margin_ytd = @sales_ytd.positive? ? (@profit_ytd / @sales_ytd) : 0.to_d
@@ -263,13 +268,19 @@ module Admin
       @po_count_prev = po_prev_range.count
       @active_customers_prev = so_prev_range.select(:user_id).distinct.count
 
+      @cash_in_prev = SaleOrderItem.joins(:sale_order).merge(so_prev_range.where(status: PAID_STATUSES)).sum(rev_sql_arel).to_d
+      @cash_out_prev = po_prev_range.sum(:total_cost_mxn).to_d
+      @cash_out_prev = po_prev_range.sum(:total_order_cost).to_d if @cash_out_prev.zero?
+      @cashflow_prev = @cash_in_prev - @cash_out_prev
+
       @kpi_deltas = {
         sales: pct_delta(@sales_ytd, @sales_prev),
         profit: pct_delta(@profit_ytd, @profit_prev),
         orders: pct_delta(@orders_count_ytd, @orders_prev),
         po_count: pct_delta(@po_count_ytd, @po_count_prev),
         customers: pct_delta(@active_customers_ytd, @active_customers_prev),
-        margin_pp: @margin_ytd - @margin_prev
+        margin_pp: @margin_ytd - @margin_prev,
+        cashflow: pct_delta(@cashflow_ytd, @cashflow_prev)
       }
     end
 
@@ -545,7 +556,36 @@ module Admin
         @chart_sales_trend[:revenue][i] - @chart_sales_trend[:cogs][i]
       end
 
+      load_cashflow_chart(trend_start, trend_range, months_keys, month_key_expr)
       load_category_charts
+    end
+
+    def load_cashflow_chart(trend_start, trend_range, months_keys, month_key_expr)
+      month_key_expr_po = month_group_expr('purchase_orders', 'order_date')
+      rev_sql_arel = Arel.sql(REV_SQL)
+
+      inflow_map = SaleOrderItem.joins(:sale_order)
+                                 .merge(@so_scope.where(order_date: trend_range, status: PAID_STATUSES))
+                                 .group(Arel.sql(month_key_expr))
+                                 .sum(rev_sql_arel)
+
+      outflow_po_costs = @po_scope.where(order_date: trend_range)
+      outflow_map = outflow_po_costs.group(Arel.sql(month_key_expr_po)).sum(:total_cost_mxn)
+      if outflow_map.values.all? { |v| v.to_d.zero? }
+        outflow_map = outflow_po_costs.group(Arel.sql(month_key_expr_po)).sum(:total_order_cost)
+      end
+
+      inflow_norm = inflow_map.transform_keys { |k| normalize_month_key(k) }
+      outflow_norm = outflow_map.transform_keys { |k| normalize_month_key(k) }
+
+      @chart_cashflow = {
+        months: months_keys,
+        inflow: months_keys.map { |k| (inflow_norm[k] || 0).to_d },
+        outflow: months_keys.map { |k| (outflow_norm[k] || 0).to_d }
+      }
+      @chart_cashflow[:net] = months_keys.each_index.map do |i|
+        @chart_cashflow[:inflow][i] - @chart_cashflow[:outflow][i]
+      end
     end
 
     def load_category_charts

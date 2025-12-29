@@ -139,6 +139,17 @@
         health: @inventory_turnover_ytd.to_f >= 2 ? 'good' : (@inventory_turnover_ytd.to_f >= 1 ? 'warning' : 'danger')
       %>
     </div>
+    <div class="col-md-4 col-lg-3">
+      <%= render "kpi_card",
+        title: "Flujo de Caja YTD",
+        value: fmt_currency(@cashflow_ytd),
+        ly: fmt_currency(@cashflow_prev),
+        delta: @kpi_deltas&.dig(:cashflow),
+        variant: "text-bg-secondary-subtle",
+        tooltip: "Ingresos cobrados menos salidas pagadas (SO pagadas vs PO).",
+        health: @cashflow_ytd.to_f >= 0 ? 'good' : 'danger'
+      %>
+    </div>
   </div>
 
   <div class="row g-3 mb-3">
@@ -1067,6 +1078,37 @@
               </div>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gráfico de flujo de caja -->
+  <div class="row mt-4 g-3">
+    <div class="col-lg-12">
+      <div class="card h-100">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span><i class="fa-solid fa-water"></i> Flujo de Caja (últimos 12 meses)</span>
+        </div>
+        <div class="card-body">
+          <% cf = @chart_cashflow || {} %>
+          <% cf_values = [cf[:inflow], cf[:outflow], cf[:net]].flatten.compact.map(&:to_f) %>
+          <% has_cf_data = cf_values.any? { |v| v != 0 } %>
+          <% if has_cf_data %>
+            <div
+              data-controller="chart"
+              data-chart-type="line"
+              data-chart-x="<%= raw((cf[:months] || []).to_json) %>"
+              data-chart-series="<%= raw([
+                { name: 'Inflow', data: (cf[:inflow] || []).map(&:to_f) },
+                { name: 'Outflow', data: (cf[:outflow] || []).map { |v| -v.to_f } },
+                { name: 'Neto', data: (cf[:net] || []).map(&:to_f) }
+              ].to_json) %>"
+              style="height:280px"
+            ></div>
+          <% else %>
+            <div class="text-muted text-center py-4">Sin datos de flujo de caja.</div>
+          <% end %>
         </div>
       </div>
     </div>
