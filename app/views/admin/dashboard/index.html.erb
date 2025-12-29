@@ -1080,17 +1080,24 @@
           <span><i class="fa-solid fa-chart-line"></i> Comparativa de Ventas (Últimos 12 meses)</span>
         </div>
         <div class="card-body">
-          <div
-            data-controller="chart"
-            data-chart-type="line"
-            data-chart-x="<%= raw(@chart_sales_trend[:months].to_json) %>"
-            data-chart-series="<%= raw([
-              { name: 'Revenue', data: @chart_sales_trend[:revenue].map(&:to_f) },
-              { name: 'COGS',    data: @chart_sales_trend[:cogs].map(&:to_f) },
-              { name: 'Profit',  data: @chart_sales_trend[:profit].map(&:to_f) }
-            ].to_json) %>"
-            style="height:280px"
-          ></div>
+          <% trend = @chart_sales_trend || {} %>
+          <% trend_values = [trend[:revenue], trend[:cogs], trend[:profit]].flatten.compact %>
+          <% has_trend_data = trend_values.any? { |v| v.to_d != 0 } %>
+          <% if has_trend_data %>
+            <div
+              data-controller="chart"
+              data-chart-type="line"
+              data-chart-x="<%= raw((trend[:months] || []).to_json) %>"
+              data-chart-series="<%= raw([
+                { name: 'Revenue', data: (trend[:revenue] || []).map(&:to_f) },
+                { name: 'COGS',    data: (trend[:cogs] || []).map(&:to_f) },
+                { name: 'Profit',  data: (trend[:profit] || []).map(&:to_f) }
+              ].to_json) %>"
+              style="height:280px"
+            ></div>
+          <% else %>
+            <div class="text-muted text-center py-4">Sin datos para el periodo seleccionado.</div>
+          <% end %>
         </div>
       </div>
     </div>
@@ -1102,13 +1109,20 @@
       <div class="card h-100">
         <div class="card-header"><i class="fa-solid fa-chart-column"></i> Ventas por Mes (apilado por categoría)</div>
         <div class="card-body">
-          <div
-            data-controller="chart"
-            data-chart-type="bar"
-            data-chart-x="<%= raw(@chart_monthly_by_category[:months].to_json) %>"
-            data-chart-series="<%= raw((@chart_monthly_by_category[:series] || []).map { |s| s.merge(type: 'bar') }.to_json) %>"
-            style="height:280px"
-          ></div>
+          <% cat = @chart_monthly_by_category || {} %>
+          <% cat_series = (cat[:series] || []) %>
+          <% has_cat_data = cat_series.any? { |s| (s[:data] || []).any? { |v| v.to_d != 0 } } %>
+          <% if has_cat_data %>
+            <div
+              data-controller="chart"
+              data-chart-type="bar"
+              data-chart-x="<%= raw((cat[:months] || []).to_json) %>"
+              data-chart-series="<%= raw(cat_series.map { |s| s.merge(type: 'bar') }.to_json) %>"
+              style="height:280px"
+            ></div>
+          <% else %>
+            <div class="text-muted text-center py-4">Sin datos de ventas por categoría.</div>
+          <% end %>
         </div>
       </div>
     </div>
@@ -1120,13 +1134,19 @@
       <div class="card h-100">
         <div class="card-header"><i class="fa-solid fa-city"></i> Rentabilidad por Marca</div>
         <div class="card-body">
-          <div
-            data-controller="chart"
-            data-chart-type="bar"
-            data-chart-x="<%= raw(@chart_brand_profit[:brands].to_json) %>"
-            data-chart-series='[{"name":"Utilidad","data":<%= raw(@chart_brand_profit[:profit].map(&:to_f).to_json) %>}]'
-            style="height:280px"
-          ></div>
+          <% brand = @chart_brand_profit || {} %>
+          <% brand_data = (brand[:profit] || []).map(&:to_f) %>
+          <% if brand_data.any? { |v| v != 0 } %>
+            <div
+              data-controller="chart"
+              data-chart-type="bar"
+              data-chart-x="<%= raw((brand[:brands] || []).to_json) %>"
+              data-chart-series='[{"name":"Utilidad","data":<%= raw(brand_data.to_json) %>}]'
+              style="height:280px"
+            ></div>
+          <% else %>
+            <div class="text-muted text-center py-4">Sin datos de rentabilidad por marca.</div>
+          <% end %>
         </div>
       </div>
     </div>
@@ -1134,13 +1154,19 @@
       <div class="card h-100">
         <div class="card-header"><i class="fa-solid fa-tags"></i> Rentabilidad por Categoría</div>
         <div class="card-body">
-          <div
-            data-controller="chart"
-            data-chart-type="bar"
-            data-chart-x="<%= raw((@chart_category_profit[:categories] || []).to_json) %>"
-            data-chart-series='[{"name":"Utilidad","data":<%= raw((@chart_category_profit[:profit] || []).map(&:to_f).to_json) %>}]'
-            style="height:280px"
-          ></div>
+          <% cat_profit = @chart_category_profit || {} %>
+          <% cat_profit_data = (cat_profit[:profit] || []).map(&:to_f) %>
+          <% if cat_profit_data.any? { |v| v != 0 } %>
+            <div
+              data-controller="chart"
+              data-chart-type="bar"
+              data-chart-x="<%= raw((cat_profit[:categories] || []).to_json) %>"
+              data-chart-series='[{"name":"Utilidad","data":<%= raw(cat_profit_data.to_json) %>}]'
+              style="height:280px"
+            ></div>
+          <% else %>
+            <div class="text-muted text-center py-4">Sin datos de rentabilidad por categoría.</div>
+          <% end %>
         </div>
       </div>
     </div>

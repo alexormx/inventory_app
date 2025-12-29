@@ -95,3 +95,14 @@ export function registerResizeObserver(el, chart) {
     observed.add(el)
   }
 }
+
+export function unregisterResizeObserver(el) {
+  if (!el || !_ro) return
+  if (observed.has(el)) {
+    _ro.unobserve(el)
+    observed.delete(el)
+  }
+  if (el.__echartsInstance) {
+    delete el.__echartsInstance
+  }
+}

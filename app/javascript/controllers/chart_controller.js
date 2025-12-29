@@ -1,5 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
-import { initLine, initBar, initPie, initSparkline, registerResizeObserver } from "../dashboard/charts"
+import { initLine, initBar, initPie, initSparkline, registerResizeObserver, unregisterResizeObserver } from "../dashboard/charts"
 
 // data-controller="chart"
 // data-chart-type="line|bar|pie|spark"
@@ -20,6 +20,7 @@ export default class extends Controller {
       echarts = (await import("echarts")).default
     } catch (e) {
       console.warn("[chart_controller] Error loading echarts", e)
+      this.showFallback("No se pudo cargar el gráfico")
       return
     }
 
@@ -73,9 +74,25 @@ export default class extends Controller {
         default:
           chart = initLine(echarts, this.element, { x, series })
       }
-      if (chart) registerResizeObserver(this.element, chart)
+      if (chart) {
+        this.chart = chart
+        registerResizeObserver(this.element, chart)
+      }
     } catch (_e) {
       // Silencioso: evitamos bloquear otros controllers; si se requiere, podríamos emitir un CustomEvent
+      this.showFallback("No se pudo renderizar el gráfico")
     }
+  }
+
+  disconnect() {
+    if (this.chart) {
+      try { this.chart.dispose() } catch (_e) {}
+    }
+    unregisterResizeObserver(this.element)
+  }
+
+  showFallback(message) {
+    if (!this.element) return
+    this.element.innerHTML = `<div class="text-muted small text-center w-100 h-100 d-flex align-items-center justify-content-center">${message}</div>`
   }
 }
