@@ -1,5 +1,6 @@
 import { Controller } from "@hotwired/stimulus"
 import { initLine, initBar, initPie, initSparkline, registerResizeObserver, unregisterResizeObserver } from "../dashboard/charts"
+import * as echarts from "echarts"
 
 // data-controller="chart"
 // data-chart-type="line|bar|pie|spark"
@@ -13,17 +14,12 @@ export default class extends Controller {
     data: String       // for sparkline
   }
 
-  async connect() {
-    // Lazy load ECharts only if the element exists
-    let echarts
-    try {
-      echarts = (await import("echarts")).default
-    } catch (e) {
-      console.warn("[chart_controller] Error loading echarts", e)
+  connect() {
+    // ECharts is bundled statically to avoid dynamic import failures in prod
+    if (!echarts) {
       this.showFallback("No se pudo cargar el gráfico")
       return
     }
-
     this.init(echarts)
   }
 

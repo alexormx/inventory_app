@@ -1082,7 +1082,7 @@
         <div class="card-body">
           <% trend = @chart_sales_trend || {} %>
           <% trend_values = [trend[:revenue], trend[:cogs], trend[:profit]].flatten.compact %>
-          <% has_trend_data = trend_values.any? { |v| v.to_d != 0 } %>
+          <% has_trend_data = trend_values.any? { |v| v.to_f != 0 } %>
           <% if has_trend_data %>
             <div
               data-controller="chart"
@@ -1111,7 +1111,7 @@
         <div class="card-body">
           <% cat = @chart_monthly_by_category || {} %>
           <% cat_series = (cat[:series] || []) %>
-          <% has_cat_data = cat_series.any? { |s| (s[:data] || []).any? { |v| v.to_d != 0 } } %>
+          <% has_cat_data = cat_series.any? { |s| (s[:data] || []).any? { |v| v.to_f != 0 } } %>
           <% if has_cat_data %>
             <div
               data-controller="chart"
