@@ -51,6 +51,18 @@ export default class extends Controller {
     // Si no hay datos relevantes y tampoco tipo, no hacer nada para evitar trabajo inútil
     if (!type && series.length === 0 && data.length === 0) return
 
+    // Validación rápida: si faltan ejes/series, mostrar mensaje en lugar de dejar el canvas vacío
+    const hasSeries = Array.isArray(series) && series.length > 0
+    const hasX = Array.isArray(x) && x.length > 0
+    if ((type === 'line' || type === 'bar') && (!hasSeries || !hasX)) {
+      this.showFallback('Sin datos para este gráfico')
+      return
+    }
+    if ((type === 'spark' || type === 'sparkline') && !Array.isArray(data)) {
+      this.showFallback('Sin datos para este gráfico')
+      return
+    }
+
     let chart
     try {
       switch (type) {
@@ -74,8 +86,8 @@ export default class extends Controller {
         this.chart = chart
         registerResizeObserver(this.element, chart)
       }
-    } catch (_e) {
-      // Silencioso: evitamos bloquear otros controllers; si se requiere, podríamos emitir un CustomEvent
+    } catch (e) {
+      console.error('[chart_controller] render error', e)
       this.showFallback("No se pudo renderizar el gráfico")
     }
   }
