@@ -86,11 +86,14 @@ module Admin
     end
 
     def inventory_adjustment_params
-      params.expect(
-        inventory_adjustment: [:status, :adjustment_type, :found_at, :reference, :note, :user_id,
-                               { inventory_adjustment_lines_attributes: %i[
-                                 id product_id quantity direction reason unit_cost note _destroy
-                               ] }]
+      params.require(:inventory_adjustment).permit(
+        :status,
+        :adjustment_type,
+        :found_at,
+        :reference,
+        :note,
+        :user_id,
+        inventory_adjustment_lines_attributes: %i[id product_id quantity direction reason unit_cost note _destroy]
       )
     end
   end
