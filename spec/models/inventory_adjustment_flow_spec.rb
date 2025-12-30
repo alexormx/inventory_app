@@ -54,12 +54,14 @@ RSpec.describe 'InventoryAdjustment flow', type: :model do
     it 'marks items on apply' do
       decrease_adjustment.apply!
       expect(Inventory.where(product: product, status: :scrap).count).to eq(3)
+      expect(Inventory.where(product: product, status: :scrap).pluck(:adjustment_reference).uniq).to eq([decrease_adjustment.reference])
     end
 
     it 'restores on reverse' do
       decrease_adjustment.apply!
       decrease_adjustment.reverse!
       expect(Inventory.where(product: product, status: :available).count).to eq(5)
+      expect(Inventory.where(product: product).pluck(:adjustment_reference).compact).to be_empty
     end
   end
 end

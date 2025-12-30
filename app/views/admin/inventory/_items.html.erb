@@ -73,6 +73,10 @@
                   <%= link_to admin_sale_order_path(item.sale_order_id), class: "text-decoration-none", data: { turbo_frame: "_top" } do %>
                     <i class="fa fa-shopping-cart text-muted me-1"></i>SO #<%= item.sale_order_id %>
                   <% end %>
+                <% elsif item.adjustment_reference.present? %>
+                  <span class="text-info">
+                    <i class="fa fa-sliders-h me-1"></i><%= item.adjustment_reference %>
+                  </span>
                 <% else %>
                   <span class="text-muted">—</span>
                 <% end %>

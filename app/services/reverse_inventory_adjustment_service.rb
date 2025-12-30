@@ -32,7 +32,9 @@ class ReverseInventoryAdjustmentService
           line.inventory_adjustment_entries.where(action: %w[status_changed marked_lost marked_damaged 
                                                              marked_scrap]).includes(:inventory).find_each do |entry|
             inv = entry.inventory
-            inv.update!(status: :available, status_changed_at: @now) if inv.status.in?(%w[damaged lost scrap marketing])
+            if inv.status.in?(%w[damaged lost scrap marketing])
+              inv.update!(status: :available, status_changed_at: @now, adjustment_reference: nil)
+            end
           end
         end
       end
