@@ -123,12 +123,7 @@ class Admin::SaleOrdersController < ApplicationController
   def show; end
 
   def destroy
-    if @sale_order.destroy
-      redirect_to admin_sale_orders_path, notice: "Sale order eliminada."
-    else
-      redirect_to admin_sale_order_path(@sale_order),
-        alert: @sale_order.errors.full_messages.to_sentence.presence || "No se pudo eliminar la orden."
-    end
+    redirect_to admin_sale_order_path(@sale_order), alert: "La eliminación está deshabilitada. Usa Cancelar para liberar inventario y dejarla sin efecto."
   end
 
   def cancel

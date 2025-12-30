@@ -68,6 +68,7 @@ module SaleOrders
         status: Inventory.statuses[:available],
         sale_order_id: nil,
         sale_order_item_id: nil,
+        sold_price: nil,
         status_changed_at: Time.current,
         updated_at: Time.current
       )

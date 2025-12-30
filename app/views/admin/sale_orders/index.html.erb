@@ -299,15 +299,6 @@
                       </a>
                     </li>
                   <% end %>
-                  <li><hr class="dropdown-divider"></li>
-                  <li>
-                    <%= button_to admin_sale_order_path(so),
-                                  method: :delete,
-                                  form: { data: { controller: 'confirm', action: 'submit->confirm#ask', confirm_message: '¿Estás seguro de eliminar esta orden de venta?' }, class: "d-inline w-100" },
-                                  class: "dropdown-item text-danger" do %>
-                      <i class="fa fa-trash me-2"></i>Eliminar
-                    <% end %>
-                  </li>
                 </ul>
                 </div>
               </div>

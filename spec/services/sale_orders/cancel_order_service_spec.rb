@@ -63,13 +63,14 @@ RSpec.describe SaleOrders::CancelOrderService, type: :service do
     end
 
     context 'when sale order has sold inventories' do
-      let!(:inventory) { create(:inventory, product: product, status: :sold, sale_order: sale_order) }
+      let!(:inventory) { create(:inventory, product: product, status: :sold, sale_order: sale_order, sold_price: 123.45) }
 
       it 'releases sold inventories to available' do
         service = described_class.new(sale_order)
         service.call
 
         expect(inventory.reload.status).to eq('available')
+        expect(inventory.sold_price).to be_nil
       end
     end
 
