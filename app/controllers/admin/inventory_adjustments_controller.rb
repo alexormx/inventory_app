@@ -33,6 +33,10 @@ module Admin
 
     # PATCH/PUT /admin/inventory_adjustments/:id
     def update
+      if @inventory_adjustment.status_applied?
+        return redirect_to [:admin, @inventory_adjustment], alert: 'El ajuste está aplicado. Usa Reverse para poder editar.'
+      end
+
       if @inventory_adjustment.update(inventory_adjustment_params)
         redirect_to [:admin, @inventory_adjustment], notice: 'Adjustment updated.'
       else

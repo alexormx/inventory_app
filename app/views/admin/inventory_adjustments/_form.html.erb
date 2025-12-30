@@ -1,4 +1,14 @@
 <%= form_with model: [:admin, @inventory_adjustment], local: true do |f| %>
+  <% if @inventory_adjustment.errors.any? %>
+    <div class="alert alert-danger">
+      <strong>No se pudo guardar:</strong>
+      <ul class="mb-0">
+        <% @inventory_adjustment.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
   <div class="row g-3">
     <div class="col-md-3">
       <%= f.label :adjustment_type %>
