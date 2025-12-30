@@ -5,7 +5,7 @@
 
   let currentLink=null;
   let hideTimer=null;
-  const AUTOHIDE_DELAY=3000; // 3s
+  const AUTOHIDE_DELAY=1500; // 1.5s para cerrar tras salir del link/panel
   let linkListenersInstalled=false;
 
   function currentPanel(){ return document.getElementById('cart-preview'); }
@@ -27,14 +27,7 @@
   function scheduleHide(){
     clearTimeout(hideTimer);
     const panel=currentPanel(); if(!panel) return;
-    hideTimer=setTimeout(()=>{
-      const idleFor = Date.now()-lastInteractionAt;
-      if(idleFor < 400){ // si hubo interacción muy reciente, reprogramar una vez
-        scheduleHide();
-      } else {
-        hideImmediate();
-      }
-    }, AUTOHIDE_DELAY);
+    hideTimer=setTimeout(()=>{ hideImmediate(); }, AUTOHIDE_DELAY);
   }
 
   function bindLink(){
@@ -49,8 +42,8 @@
     const handlers={};
   handlers['mouseenter']=()=>{ lastInteractionAt=Date.now(); show(); clearTimeout(hideTimer); };
   handlers['focus']=()=>{ lastInteractionAt=Date.now(); show(); clearTimeout(hideTimer); };
-  handlers['mouseleave']=scheduleHide; // autohide
-  handlers['blur']=scheduleHide;
+  handlers['mouseleave']=()=>{ lastInteractionAt=Date.now(); scheduleHide(); };
+  handlers['blur']=()=>{ lastInteractionAt=Date.now(); scheduleHide(); };
   ['mouseenter','focus','mouseleave','blur'].forEach(ev=> link.addEventListener(ev, handlers[ev]));
     link._cartPrevHandlers=handlers; // guardar en nodo para remover futuro
     currentLink=link;
@@ -64,7 +57,7 @@
       return;
     }
   panel.addEventListener('mouseenter', ()=>{ lastInteractionAt=Date.now(); show(); clearTimeout(hideTimer); });
-  panel.addEventListener('mouseleave', scheduleHide);
+  panel.addEventListener('mouseleave', ()=>{ lastInteractionAt=Date.now(); scheduleHide(); });
     panel.__hoverBound=true;
     // Evitar cierre al hacer click en botones internos
     panel.addEventListener('click', (e)=>{
@@ -126,6 +119,7 @@
     // Limpiar bandera para que al restaurar la página se re-bindee correctamente
     const panel=currentPanel(); if(panel) panel.__hoverBound=false;
     linkListenersInstalled=false; currentLink=null;
+    hideImmediate();
   });
   document.addEventListener('turbo:after-stream-render', (e)=>{
     const panel=currentPanel();
@@ -155,10 +149,6 @@
     }
   });
   // Fallback: si el usuario mueve rápido el mouse hacia el panel después de salir del link
-  document.addEventListener('mousemove', (e)=>{
-    const panel=currentPanel(); if(!panel) return;
-    if(panel.dataset.lockOpen==='true') return; // ya seguro
-    if(panel.matches(':hover')) show();
-  }, {passive:true});
+  // Sin auto-apertura en mousemove para evitar flashes inesperados
 })();
 
