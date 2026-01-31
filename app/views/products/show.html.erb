@@ -153,7 +153,9 @@
                       </h6>
                     <% end %>
                     <div class="d-flex align-items-center gap-2">
-                      <span class="text-danger fw-bold small"><%= number_to_currency(related.selling_price) %></span>
+                      <% if user_signed_in? %>
+                        <span class="text-danger fw-bold small"><%= number_to_currency(related.selling_price) %></span>
+                      <% end %>
                       <% on_hand = @related_on_hand[related.id] || 0 %>
                       <% if on_hand > 0 %>
                         <span class="badge bg-success-subtle text-success extra-small">En stock</span>

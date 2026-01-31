@@ -54,7 +54,7 @@ export default class extends Controller {
     event.preventDefault()
     const container = this.jsonEditorContainerTarget
     const isHidden = container.classList.contains('d-none')
-    
+
     if (isHidden) {
       container.classList.remove('d-none')
       this.toggleTextTarget.textContent = 'Ocultar JSON Editor'
@@ -78,18 +78,18 @@ export default class extends Controller {
       alert("El área de texto está vacía")
       return
     }
-    
+
     const obj = this._tryParseLooseObject(input)
     if (obj) {
       // limpiar filas actuales
       this.rowsTarget.innerHTML = ""
       Object.entries(obj).forEach(([k,v]) => this._appendRow(k, this._valueToString(v)))
       this.sync()
-      
+
       // Opcional: ocultar el editor después de importar
       this.jsonEditorContainerTarget.classList.add('d-none')
       this.toggleTextTarget.textContent = 'Mostrar JSON Editor'
-      
+
       // Feedback visual
       const btn = event.currentTarget
       const originalText = btn.innerHTML

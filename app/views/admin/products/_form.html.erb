@@ -397,16 +397,16 @@
                     <span data-kv-editor-target="toggleText">Mostrar JSON Editor</span>
                   </button>
                 </div>
-                
+
                 <!-- JSON Editor Area (oculta por defecto) -->
                 <div class="d-none" data-kv-editor-target="jsonEditorContainer">
                   <label class="form-label">
                     <i class="fa-solid fa-file-code me-1"></i>
                     Editor JSON
                   </label>
-                  <textarea 
-                    data-kv-editor-target="jsonInput" 
-                    class="form-control font-monospace" 
+                  <textarea
+                    data-kv-editor-target="jsonInput"
+                    class="form-control font-monospace"
                     rows="6"
                     placeholder='{"color": "rojo", "material": "plástico", "escala": "1:18"}'
                     style="font-size: 0.9rem;"></textarea>
@@ -425,7 +425,7 @@
                     Pega o escribe JSON directamente. Ejemplo: {"color": "azul", "marca": "Lamborghini"}
                   </small>
                 </div>
-                
+
                 <%= f.hidden_field :custom_attributes, value: (@product.parsed_custom_attributes || {}).to_json, data: { kv_editor_target: "hidden" } %>
               </div>
             </div>

@@ -128,10 +128,10 @@ class Admin::SaleOrdersController < ApplicationController
 
   def cancel
     SaleOrders::CancelOrderService.new(@sale_order).call
-    redirect_to admin_sale_order_path(@sale_order), 
+    redirect_to admin_sale_order_path(@sale_order),
                 notice: "Orden cancelada exitosamente. Inventarios liberados y disponibles."
   rescue ActiveRecord::RecordInvalid => e
-    redirect_to admin_sale_order_path(@sale_order), 
+    redirect_to admin_sale_order_path(@sale_order),
                 alert: "No se pudo cancelar la orden: #{e.message}"
   end
 

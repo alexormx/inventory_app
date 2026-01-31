@@ -123,7 +123,7 @@
   });
   document.addEventListener('turbo:after-stream-render', (e)=>{
     const panel=currentPanel();
-    if(!panel) return; 
+    if(!panel) return;
     // Si se reemplazó solo el body, mantener abierto si estaba visible
     if(e.target && e.target.querySelector && e.target.querySelector('#cart-preview-body')){
       if(panel.classList.contains('show')){
