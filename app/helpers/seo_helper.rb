@@ -104,7 +104,7 @@ module SeoHelper
   def organization_json_ld
     site_name = seo_site_name
     site_description = SiteSetting.get('seo_meta_description', 'Tienda especializada en modelos a escala, autos de colección y figuras. Productos originales de las mejores marcas.')
-    
+
     data = {
       '@context' => 'https://schema.org',
       '@type' => 'Organization',

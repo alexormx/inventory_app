@@ -1,0 +1,43 @@
+<%# Partial para barra de progreso del checkout %>
+<%# Uso: render 'checkouts/progress_bar', current_step: 1 %>
+<% current_step ||= 1 %>
+<% steps = [
+  { number: 1, name: 'Productos', icon: '🛒', path: checkout_step1_path },
+  { number: 2, name: 'Envío', icon: '🚚', path: checkout_step2_path },
+  { number: 3, name: 'Pago', icon: '💳', path: checkout_step3_path }
+] %>
+
+<div class="checkout-progress-wrapper mb-4">
+  <div class="d-flex justify-content-between align-items-center position-relative">
+    <!-- Línea de conexión de fondo -->
+    <div class="progress-line position-absolute" style="top: 20px; left: 10%; right: 10%; height: 4px; background: #e9ecef; z-index: 0;"></div>
+    <div class="progress-line-active position-absolute" style="top: 20px; left: 10%; height: 4px; background: #0d6efd; z-index: 1; width: <%= (current_step - 1) * 40 %>%;"></div>
+
+    <% steps.each do |step| %>
+      <% is_completed = step[:number] < current_step %>
+      <% is_current = step[:number] == current_step %>
+      <% is_future = step[:number] > current_step %>
+
+      <div class="text-center position-relative" style="z-index: 2; flex: 1;">
+        <% if is_completed %>
+          <%= link_to step[:path], class: 'text-decoration-none' do %>
+            <div class="rounded-circle d-inline-flex align-items-center justify-content-center bg-success text-white" style="width: 44px; height: 44px; font-size: 1.2rem;">
+              ✓
+            </div>
+            <div class="mt-2 small text-success fw-medium"><%= step[:name] %></div>
+          <% end %>
+        <% elsif is_current %>
+          <div class="rounded-circle d-inline-flex align-items-center justify-content-center bg-primary text-white shadow" style="width: 44px; height: 44px; font-size: 1.2rem;">
+            <%= step[:icon] %>
+          </div>
+          <div class="mt-2 small text-primary fw-bold"><%= step[:name] %></div>
+        <% else %>
+          <div class="rounded-circle d-inline-flex align-items-center justify-content-center bg-light text-muted border" style="width: 44px; height: 44px; font-size: 1.2rem;">
+            <%= step[:number] %>
+          </div>
+          <div class="mt-2 small text-muted"><%= step[:name] %></div>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+</div>

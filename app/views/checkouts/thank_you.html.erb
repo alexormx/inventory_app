@@ -1,6 +1,181 @@
-<div class="text-center mt-5">
-  <h1 class="display-4 text-success">🎉 ¡Gracias por tu compra!</h1>
-  <p class="lead mt-3">Hemos recibido tu pedido y lo procesaremos pronto.</p>
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <!-- Header de éxito -->
+      <div class="text-center mb-5">
+        <div class="mb-4">
+          <div class="d-inline-flex align-items-center justify-content-center bg-success text-white rounded-circle" style="width: 80px; height: 80px;">
+            <i class="fa fa-check fa-2x"></i>
+          </div>
+        </div>
+        <h1 class="display-5 text-success mb-3">¡Gracias por tu compra!</h1>
+        <p class="lead text-muted">
+          Hemos recibido tu pedido y lo estamos procesando.
+          <% if @order %>
+            <br>Te enviaremos actualizaciones por correo electrónico.
+          <% end %>
+        </p>
+      </div>
 
-  <%= link_to "Seguir comprando", products_path, class: "btn btn-outline-primary mt-4" %>
+      <% if @order %>
+        <!-- Número de pedido -->
+        <div class="alert alert-light border text-center mb-4">
+          <small class="text-muted">Número de pedido</small>
+          <h3 class="mb-0 text-primary"><%= @order.id %></h3>
+        </div>
+
+        <div class="row g-4">
+          <!-- Información de envío -->
+          <div class="col-md-6">
+            <div class="card h-100">
+              <div class="card-header bg-light">
+                <h6 class="mb-0"><i class="fa fa-truck me-2"></i>Envío</h6>
+              </div>
+              <div class="card-body">
+                <% if @order.shipping_address %>
+                  <strong><%= @order.shipping_address.full_name %></strong><br>
+                  <span class="text-muted">
+                    <%= @order.shipping_address.line1 %><br>
+                    <%= @order.shipping_address.city %>, <%= @order.shipping_address.state %> <%= @order.shipping_address.postal_code %>
+                  </span>
+                <% end %>
+                <hr class="my-2">
+                <small class="text-muted">Método:</small>
+                <strong>
+                  <% shipping_method = ShippingMethod.find_by(code: @order.shipping_method) %>
+                  <%= shipping_method&.name || @order.shipping_method&.titleize || 'Estándar' %>
+                </strong>
+              </div>
+            </div>
+          </div>
+
+          <!-- Información de pago -->
+          <div class="col-md-6">
+            <div class="card h-100">
+              <div class="card-header bg-light">
+                <h6 class="mb-0"><i class="fa fa-credit-card me-2"></i>Pago</h6>
+              </div>
+              <div class="card-body">
+                <% payment = @order.payments.last %>
+                <% if payment %>
+                  <strong><%= payment.payment_method.titleize.gsub('_', ' ') %></strong>
+                  <br>
+                  <span class="badge bg-<%= payment.status == 'completed' ? 'success' : 'warning' %>">
+                    <%= payment.status == 'completed' ? 'Pagado' : 'Pendiente' %>
+                  </span>
+                  
+                  <% if payment.status != 'completed' %>
+                    <% pm = PaymentMethod.find_by(code: payment.payment_method) %>
+                    <% if pm&.account_number.present? %>
+                      <hr class="my-2">
+                      <small class="text-muted d-block mb-1">Datos para pago:</small>
+                      <% if pm.bank_name.present? %>
+                        <small><strong><%= pm.bank_name %></strong></small><br>
+                      <% end %>
+                      <code class="user-select-all"><%= pm.account_number %></code>
+                      <% if pm.account_holder.present? %>
+                        <br><small class="text-muted"><%= pm.account_holder %></small>
+                      <% end %>
+                    <% end %>
+                  <% end %>
+                <% end %>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Resumen de productos -->
+        <div class="card mt-4">
+          <div class="card-header bg-light">
+            <h6 class="mb-0"><i class="fa fa-shopping-bag me-2"></i>Productos</h6>
+          </div>
+          <div class="card-body p-0">
+            <ul class="list-group list-group-flush">
+              <% @order.sale_order_items.includes(:product).each do |item| %>
+                <li class="list-group-item">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center gap-3">
+                      <% if item.product&.product_images&.attached? %>
+                        <%= image_tag item.product.product_images.first.variant(resize_to_limit: [50, 50]), class: "rounded", style: "width: 50px; height: 50px; object-fit: cover;" %>
+                      <% else %>
+                        <div class="bg-light rounded d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                          <i class="fa fa-image text-muted"></i>
+                        </div>
+                      <% end %>
+                      <div>
+                        <strong><%= item.product&.product_name || 'Producto' %></strong>
+                        <div class="text-muted small"><%= item.quantity %> × <%= number_to_currency(item.unit_final_price) %></div>
+                      </div>
+                    </div>
+                    <strong><%= number_to_currency(item.quantity * item.unit_final_price) %></strong>
+                  </div>
+                </li>
+              <% end %>
+            </ul>
+          </div>
+          <div class="card-footer bg-white">
+            <div class="d-flex justify-content-between mb-1">
+              <span>Subtotal</span>
+              <span><%= number_to_currency(@order.subtotal_products) %></span>
+            </div>
+            <% if @order.shipping_cost&.positive? %>
+              <div class="d-flex justify-content-between mb-1">
+                <span>Envío</span>
+                <span><%= number_to_currency(@order.shipping_cost) %></span>
+              </div>
+            <% end %>
+            <% if @order.total_tax&.positive? %>
+              <div class="d-flex justify-content-between mb-1">
+                <span>Impuestos</span>
+                <span><%= number_to_currency(@order.total_tax) %></span>
+              </div>
+            <% end %>
+            <hr class="my-2">
+            <div class="d-flex justify-content-between">
+              <strong class="fs-5">Total</strong>
+              <strong class="fs-5 text-primary"><%= number_to_currency(@order.total_order_value) %></strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- Próximos pasos -->
+        <div class="card mt-4 border-primary">
+          <div class="card-header bg-primary text-white">
+            <h6 class="mb-0"><i class="fa fa-list-check me-2"></i>Próximos pasos</h6>
+          </div>
+          <div class="card-body">
+            <ol class="mb-0">
+              <% payment = @order.payments.last %>
+              <% if payment&.status != 'completed' %>
+                <li class="mb-2">
+                  <strong>Realiza tu pago</strong> usando los datos proporcionados arriba.
+                </li>
+                <li class="mb-2">
+                  <strong>Envía tu comprobante</strong> por WhatsApp o correo para agilizar la confirmación.
+                </li>
+              <% end %>
+              <li class="mb-2">
+                <strong>Recibirás un correo</strong> cuando tu pedido sea confirmado y enviado.
+              </li>
+              <li>
+                <strong>Rastrea tu pedido</strong> desde tu perfil o con el número de guía que te enviaremos.
+              </li>
+            </ol>
+          </div>
+        </div>
+      <% end %>
+
+      <!-- Acciones -->
+      <div class="d-flex justify-content-center gap-3 mt-5">
+        <%= link_to products_path, class: "btn btn-primary btn-lg" do %>
+          <i class="fa fa-shopping-bag me-2"></i>Seguir comprando
+        <% end %>
+        <% if @order %>
+          <%= link_to profile_path, class: "btn btn-outline-secondary btn-lg" do %>
+            <i class="fa fa-user me-2"></i>Ver mis pedidos
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+  </div>
 </div>

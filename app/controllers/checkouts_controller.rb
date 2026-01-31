@@ -5,8 +5,8 @@ class CheckoutsController < ApplicationController
 
   layout 'customer'
   before_action :authenticate_user!
-  before_action :set_cart
-  before_action :ensure_cart_not_empty
+  before_action :set_cart, except: [:thank_you]
+  before_action :ensure_cart_not_empty, except: [:thank_you]
 
   def step1
     @cart_items = @cart.items
@@ -178,9 +178,12 @@ class CheckoutsController < ApplicationController
     end
   end
 
-  # Aquí podrías enviar un correo de confirmación o notificación
+  # Página de agradecimiento con resumen del pedido
   def thank_you
-    # puedes mostrar un resumen básico si lo deseas
+    @order = current_user.sale_orders.find_by(id: params[:order_id])
+    unless @order
+      redirect_to root_path, alert: 'Pedido no encontrado.' and return
+    end
   end
 
   private

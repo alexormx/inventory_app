@@ -1,0 +1,66 @@
+<%# Partial para resumen del carrito (sidebar sticky) %>
+<%# Uso: render 'checkouts/cart_summary', cart: @cart, shipping_cost: 0 %>
+<% cart ||= @cart %>
+<% shipping_cost ||= 0 %>
+<% show_shipping = local_assigns.fetch(:show_shipping, false) %>
+<% shipping_method_name = local_assigns.fetch(:shipping_method_name, nil) %>
+
+<div class="card shadow-sm sticky-top" style="top: 20px;">
+  <div class="card-header bg-light">
+    <h6 class="mb-0 d-flex align-items-center gap-2">
+      <i class="fa fa-shopping-bag"></i>
+      Resumen del pedido
+      <span class="badge bg-primary rounded-pill ms-auto"><%= cart.items.sum { |_, qty| qty } %></span>
+    </h6>
+  </div>
+  <div class="card-body p-0">
+    <ul class="list-group list-group-flush">
+      <% cart.items.each do |product, qty| %>
+        <li class="list-group-item py-2 px-3">
+          <div class="d-flex gap-2 align-items-start">
+            <% if product.product_images.attached? %>
+              <%= image_tag product.product_images.first.variant(resize_to_limit: [50, 50]), class: "rounded", style: "width: 40px; height: 40px; object-fit: cover;" %>
+            <% else %>
+              <div class="bg-light rounded d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                <i class="fa fa-image text-muted small"></i>
+              </div>
+            <% end %>
+            <div class="flex-grow-1 small">
+              <div class="fw-medium text-truncate" style="max-width: 150px;" title="<%= product.product_name %>">
+                <%= truncate(product.product_name, length: 30) %>
+              </div>
+              <div class="text-muted">
+                <%= qty %> × <%= number_to_currency(product.selling_price) %>
+              </div>
+            </div>
+            <div class="text-end small fw-medium">
+              <%= number_to_currency(product.selling_price * qty) %>
+            </div>
+          </div>
+        </li>
+      <% end %>
+    </ul>
+  </div>
+  <div class="card-footer bg-white p-3">
+    <div class="d-flex justify-content-between mb-2">
+      <span class="text-muted">Subtotal</span>
+      <span><%= number_to_currency(cart.total) %></span>
+    </div>
+    <% if show_shipping %>
+      <div class="d-flex justify-content-between mb-2">
+        <span class="text-muted">
+          Envío
+          <% if shipping_method_name %>
+            <small>(<%= shipping_method_name %>)</small>
+          <% end %>
+        </span>
+        <span><%= shipping_cost.zero? ? '<span class="text-success">Gratis</span>'.html_safe : number_to_currency(shipping_cost) %></span>
+      </div>
+    <% end %>
+    <hr class="my-2">
+    <div class="d-flex justify-content-between">
+      <strong>Total</strong>
+      <strong class="text-primary fs-5"><%= number_to_currency(cart.total + shipping_cost) %></strong>
+    </div>
+  </div>
+</div>
