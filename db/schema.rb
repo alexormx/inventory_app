@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_01_31_212018) do
+ActiveRecord::Schema[8.0].define(version: 2026_01_31_212923) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -201,6 +201,9 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_31_212018) do
     t.integer "position", default: 0
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "account_number"
+    t.string "account_holder"
+    t.string "bank_name"
     t.index ["active"], name: "index_payment_methods_on_active"
     t.index ["code"], name: "index_payment_methods_on_code", unique: true
     t.index ["position"], name: "index_payment_methods_on_position"

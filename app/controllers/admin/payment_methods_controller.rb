@@ -51,7 +51,8 @@ module Admin
     end
 
     def payment_method_params
-      params.require(:payment_method).permit(:name, :code, :description, :instructions, :active, :position)
+      params.require(:payment_method).permit(:name, :code, :description, :instructions, :active, :position,
+                                             :account_number, :account_holder, :bank_name)
     end
   end
 end

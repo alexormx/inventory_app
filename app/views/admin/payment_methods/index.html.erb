@@ -18,7 +18,7 @@
             <th style="width: 60px;">Orden</th>
             <th>Nombre</th>
             <th>Código</th>
-            <th>Descripción</th>
+            <th>Cuenta / CLABE</th>
             <th class="text-center">Estado</th>
             <th class="text-end">Acciones</th>
           </tr>
@@ -28,9 +28,23 @@
             <% @payment_methods.each do |method| %>
               <tr class="<%= 'table-secondary' unless method.active? %>">
                 <td class="text-center"><%= method.position %></td>
-                <td><strong><%= method.name %></strong></td>
+                <td>
+                  <strong><%= method.name %></strong>
+                  <% if method.description.present? %>
+                    <br><small class="text-muted"><%= truncate(method.description, length: 40) %></small>
+                  <% end %>
+                </td>
                 <td><code><%= method.code %></code></td>
-                <td class="text-muted small"><%= truncate(method.description, length: 50) %></td>
+                <td>
+                  <% if method.account_number.present? %>
+                    <code class="small"><%= method.account_number %></code>
+                    <% if method.bank_name.present? %>
+                      <br><small class="text-muted"><%= method.bank_name %></small>
+                    <% end %>
+                  <% else %>
+                    <span class="text-muted">-</span>
+                  <% end %>
+                </td>
                 <td class="text-center">
                   <% if method.active? %>
                     <span class="badge bg-success">Activo</span>
