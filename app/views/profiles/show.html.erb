@@ -126,7 +126,7 @@
                           <%= t("sale_order.status.#{order.status}", default: order.status.humanize) %>
                         </span>
                       </td>
-                      <td class="text-end"><%= number_to_currency(order.total) %></td>
+                      <td class="text-end"><%= number_to_currency(order.total_order_value) %></td>
                     </tr>
                   <% end %>
                 </tbody>
