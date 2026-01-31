@@ -28,8 +28,8 @@
       </span>
     <% end %>
 
-    <%# Chip de precio %>
-    <% if filter_state.price_min || filter_state.price_max %>
+    <%# Chip de precio (solo para usuarios autenticados) %>
+    <% if user_signed_in? && (filter_state.price_min || filter_state.price_max) %>
       <span class="filter-chip">
         <i class="fas fa-dollar-sign me-1"></i><%= price_filter_text %>
         <%= link_to clear_price_url,

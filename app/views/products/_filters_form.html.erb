@@ -55,6 +55,7 @@
     </div>
   </div>
 
+  <% if user_signed_in? %>
   <div class="filter-block mb-3">
     <h6 class="fw-semibold small text-uppercase text-muted mb-2">
       <a class="text-decoration-none text-muted d-flex align-items-center justify-content-between" data-bs-toggle="collapse" href="#filterPrice<%= suffix %>" role="button" aria-expanded="true" aria-controls="filterPrice<%= suffix %>">
@@ -103,6 +104,7 @@
       </div>
     </div>
   </div>
+  <% end %>
 
   <% if @all_categories.present? %>
   <div class="filter-block mb-3">
