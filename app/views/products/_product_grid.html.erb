@@ -76,6 +76,9 @@
                 <span class="text-muted" aria-disabled="true"><%= product.product_name %></span>
               <% end %>
             </h2>
+            <p class="text-muted extra-small mb-1">
+              <span class="fw-semibold"><%= product.brand %></span> · <%= product.product_sku %>
+            </p>
             <% if user_signed_in? %>
               <p class="card-text text-danger fw-bold small mb-2" role="text">
                 <span class="visually-hidden">Precio: </span><%= number_to_currency(product.selling_price) %>
