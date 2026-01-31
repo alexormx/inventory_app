@@ -1,0 +1,186 @@
+<% content_for :title do %>Mi Perfil - Pasatiempos a Escala<% end %>
+
+<div class="container py-4">
+  <div class="row">
+    <!-- Sidebar con información del usuario -->
+    <div class="col-lg-4 mb-4">
+      <div class="card shadow-sm">
+        <div class="card-body text-center">
+          <div class="user-avatar-large mx-auto mb-3">
+            <span class="avatar-initials"><%= user_initials(@user) %></span>
+          </div>
+          <h4 class="card-title mb-1"><%= @user.name.presence || 'Usuario' %></h4>
+          <p class="text-muted mb-3"><%= @user.email %></p>
+
+          <%= link_to edit_profile_path, class: "btn btn-outline-primary btn-sm" do %>
+            <i class="fas fa-edit me-1"></i> Editar Perfil
+          <% end %>
+        </div>
+      </div>
+
+      <!-- Información de cuenta -->
+      <div class="card shadow-sm mt-3">
+        <div class="card-header bg-light">
+          <h6 class="mb-0"><i class="fas fa-user-circle me-2"></i>Información de Cuenta</h6>
+        </div>
+        <div class="card-body">
+          <ul class="list-unstyled mb-0">
+            <li class="mb-2">
+              <small class="text-muted">Miembro desde</small><br>
+              <strong><%= l(@user.created_at.to_date, format: :long) %></strong>
+            </li>
+            <% if @user.phone.present? %>
+              <li class="mb-2">
+                <small class="text-muted">Teléfono</small><br>
+                <strong><%= @user.phone %></strong>
+              </li>
+            <% end %>
+            <% if @user.address.present? %>
+              <li class="mb-0">
+                <small class="text-muted">Dirección</small><br>
+                <strong><%= @user.address %></strong>
+              </li>
+            <% end %>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Contenido principal -->
+    <div class="col-lg-8">
+      <!-- Direcciones de envío -->
+      <div class="card shadow-sm mb-4">
+        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+          <h5 class="mb-0"><i class="fas fa-map-marker-alt me-2"></i>Direcciones de Envío</h5>
+        </div>
+        <div class="card-body">
+          <% if @shipping_addresses.any? %>
+            <div class="row">
+              <% @shipping_addresses.each do |address| %>
+                <div class="col-md-6 mb-3">
+                  <div class="card h-100 border">
+                    <div class="card-body">
+                      <h6 class="card-title">
+                        <%= address.recipient_name %>
+                        <% if address.is_default? %>
+                          <span class="badge bg-primary ms-2">Principal</span>
+                        <% end %>
+                      </h6>
+                      <p class="card-text small text-muted mb-1">
+                        <%= address.street_address %><br>
+                        <% if address.address_line_2.present? %>
+                          <%= address.address_line_2 %><br>
+                        <% end %>
+                        <%= address.city %>, <%= address.state %> <%= address.postal_code %><br>
+                        <%= address.country %>
+                      </p>
+                      <% if address.phone.present? %>
+                        <p class="card-text small mb-0">
+                          <i class="fas fa-phone me-1"></i><%= address.phone %>
+                        </p>
+                      <% end %>
+                    </div>
+                  </div>
+                </div>
+              <% end %>
+            </div>
+          <% else %>
+            <div class="text-center text-muted py-4">
+              <i class="fas fa-map-marker-alt fa-2x mb-2"></i>
+              <p class="mb-0">No tienes direcciones de envío guardadas.</p>
+              <small>Podrás agregar una cuando realices tu primer pedido.</small>
+            </div>
+          <% end %>
+        </div>
+      </div>
+
+      <!-- Pedidos recientes -->
+      <div class="card shadow-sm">
+        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+          <h5 class="mb-0"><i class="fas fa-box me-2"></i>Pedidos Recientes</h5>
+          <%= link_to orders_path, class: "btn btn-sm btn-outline-primary" do %>
+            Ver todos <i class="fas fa-arrow-right ms-1"></i>
+          <% end %>
+        </div>
+        <div class="card-body">
+          <% if @recent_orders.any? %>
+            <div class="table-responsive">
+              <table class="table table-hover mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th>Orden</th>
+                    <th>Fecha</th>
+                    <th>Estado</th>
+                    <th class="text-end">Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% @recent_orders.each do |order| %>
+                    <tr>
+                      <td>
+                        <%= link_to order.reference, order_path(order), class: "text-decoration-none fw-bold" %>
+                      </td>
+                      <td><%= l(order.created_at.to_date, format: :short) %></td>
+                      <td>
+                        <span class="badge <%= status_badge_class(order.status) %>">
+                          <%= t("sale_order.status.#{order.status}", default: order.status.humanize) %>
+                        </span>
+                      </td>
+                      <td class="text-end"><%= number_to_currency(order.total) %></td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          <% else %>
+            <div class="text-center text-muted py-4">
+              <i class="fas fa-box-open fa-2x mb-2"></i>
+              <p class="mb-0">Aún no tienes pedidos.</p>
+              <%= link_to "Explorar catálogo", catalog_path, class: "btn btn-primary mt-2" %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+
+      <!-- Acciones de cuenta -->
+      <div class="card shadow-sm mt-4">
+        <div class="card-header bg-light">
+          <h5 class="mb-0"><i class="fas fa-cog me-2"></i>Configuración de Cuenta</h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6 mb-3 mb-md-0">
+              <%= link_to edit_user_registration_path, class: "btn btn-outline-secondary w-100" do %>
+                <i class="fas fa-key me-2"></i>Cambiar Contraseña
+              <% end %>
+            </div>
+            <div class="col-md-6">
+              <%= link_to edit_profile_path, class: "btn btn-outline-primary w-100" do %>
+                <i class="fas fa-user-edit me-2"></i>Editar Información
+              <% end %>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .user-avatar-large {
+    width: 100px;
+    height: 100px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .user-avatar-large .avatar-initials {
+    color: white;
+    font-size: 2.5rem;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+</style>

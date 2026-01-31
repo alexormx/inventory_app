@@ -12,6 +12,9 @@ Rails.application.routes.draw do
   # Newsletter subscription
   resources :newsletter_subscribers, only: [:create]
 
+  # User profile
+  resource :profile, only: [:show, :edit, :update]
+
   # Devise authentication for all users
   devise_for :users
 

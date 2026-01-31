@@ -111,7 +111,7 @@
               <span class="user-avatar" aria-hidden="true"><%= user_initials(current_user) %></span> <span class="link-text">Mi cuenta</span>
             </button>
             <ul class="dropdown-menu dropdown-menu-end" id="account-menu" aria-labelledby="account" data-dropdown-target="menu">
-              <li><%= link_to "Mi Perfil", "#", class: "dropdown-item" %></li>
+              <li><%= link_to "Mi Perfil", profile_path, class: "dropdown-item" %></li>
               <li><%= link_to "Mis Pedidos", orders_path, class: "dropdown-item" %></li>
               <li><hr class="dropdown-divider"></li>
               <li>
