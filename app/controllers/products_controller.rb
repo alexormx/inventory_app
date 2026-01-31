@@ -2,8 +2,7 @@
 
 class ProductsController < ApplicationController
   layout 'customer'
-  # Catálogo público, pero detalle requiere autenticación
-  before_action :authenticate_user!, only: :show
+  # Catálogo y detalle públicos (precio y carrito solo para autenticados)
   before_action :set_product, only: :show
   before_action :ensure_public_product_active, only: :show
 
