@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_12_21_002443) do
+ActiveRecord::Schema[8.0].define(version: 2026_01_31_212018) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -190,6 +190,20 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_21_002443) do
     t.index ["sale_order_id"], name: "index_order_shipping_addresses_on_sale_order_id", unique: true
     t.index ["shipping_method"], name: "index_order_shipping_addresses_on_shipping_method"
     t.index ["source_shipping_address_id"], name: "index_order_shipping_addresses_on_source_shipping_address_id"
+  end
+
+  create_table "payment_methods", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "code", null: false
+    t.text "description"
+    t.text "instructions"
+    t.boolean "active", default: true, null: false
+    t.integer "position", default: 0
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["active"], name: "index_payment_methods_on_active"
+    t.index ["code"], name: "index_payment_methods_on_code", unique: true
+    t.index ["position"], name: "index_payment_methods_on_position"
   end
 
   create_table "payments", force: :cascade do |t|
@@ -407,6 +421,20 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_21_002443) do
     t.index ["postal_code"], name: "index_shipping_addresses_on_postal_code"
     t.index ["user_id", "default"], name: "index_shipping_addresses_on_user_id_and_default"
     t.index ["user_id"], name: "index_shipping_addresses_on_user_id"
+  end
+
+  create_table "shipping_methods", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "code", null: false
+    t.text "description"
+    t.decimal "base_cost", precision: 10, scale: 2, default: "0.0"
+    t.boolean "active", default: true, null: false
+    t.integer "position", default: 0
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["active"], name: "index_shipping_methods_on_active"
+    t.index ["code"], name: "index_shipping_methods_on_code", unique: true
+    t.index ["position"], name: "index_shipping_methods_on_position"
   end
 
   create_table "site_settings", force: :cascade do |t|

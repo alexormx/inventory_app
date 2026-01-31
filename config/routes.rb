@@ -107,6 +107,19 @@ Rails.application.routes.draw do
     end
     # Accounts Receivable simple report
     resources :receivables, only: [:index]
+
+    # Shipping & Payment Methods Management
+    resources :shipping_methods, except: [:show] do
+      member do
+        patch :toggle_active
+      end
+    end
+    resources :payment_methods, except: [:show] do
+      member do
+        patch :toggle_active
+      end
+    end
+
     resources :settings, only: [:index] do
       collection do
         post :index # para guardar configuraciones simples (tax)

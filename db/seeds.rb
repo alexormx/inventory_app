@@ -12,6 +12,36 @@ end
 # Site settings initial values (idempotent)
 SiteSetting.set('language_switcher_enabled', false) unless SiteSetting.get('language_switcher_enabled') == false
 SiteSetting.set('dark_mode_enabled', false) unless SiteSetting.get('dark_mode_enabled') == false
+
+# Shipping Methods (idempotent)
+if defined?(ShippingMethod) && ShippingMethod.count.zero?
+  [
+    { name: 'Envío Estándar', code: 'envio_estandar', description: 'Entrega en 5-7 días hábiles', base_cost: 99.00, position: 1 },
+    { name: 'Envío Express', code: 'envio_express', description: 'Entrega en 2-3 días hábiles', base_cost: 199.00, position: 2 },
+    { name: 'Recoger en Tienda', code: 'recoger_tienda', description: 'Recoge tu pedido en nuestra ubicación', base_cost: 0.00, position: 3 },
+    { name: 'Envío Local (CDMX/Área Metro)', code: 'envio_local', description: 'Entrega el mismo día o al día siguiente', base_cost: 149.00, position: 4 }
+  ].each do |attrs|
+    ShippingMethod.find_or_create_by!(code: attrs[:code]) do |sm|
+      sm.assign_attributes(attrs)
+    end
+  end
+  Rails.logger.debug { "[SEED] ShippingMethods created: #{ShippingMethod.count}" }
+end
+
+# Payment Methods (idempotent)
+if defined?(PaymentMethod) && PaymentMethod.count.zero?
+  [
+    { name: 'Transferencia Bancaria', code: 'transferencia_bancaria', description: 'Pago por SPEI o transferencia', instructions: "Realiza tu transferencia a la cuenta:\nBanco: BBVA\nCLABE: 012345678901234567\nBeneficiario: Pasatiempos a Escala", position: 1 },
+    { name: 'Depósito OXXO', code: 'efectivo', description: 'Pago en efectivo en OXXO', instructions: "Deposita en cualquier OXXO a la tarjeta:\nNúmero: 4152 3138 0000 0000\nBeneficiario: Pasatiempos a Escala", position: 2 },
+    { name: 'Tarjeta de Crédito/Débito', code: 'tarjeta_de_credito', description: 'Pago con tarjeta (próximamente)', instructions: 'Pago con tarjeta en línea - Próximamente disponible', active: false, position: 3 }
+  ].each do |attrs|
+    PaymentMethod.find_or_create_by!(code: attrs[:code]) do |pm|
+      pm.assign_attributes(attrs)
+    end
+  end
+  Rails.logger.debug { "[SEED] PaymentMethods created: #{PaymentMethod.count}" }
+end
+
 # This file should ensure the existence of records required to run the application in every environment (production,
 # development, test). The code here should be idempotent so that it can be executed at any point in every environment.
 # The data can then be loaded with the bin/rails db:seed command (or created alongside the database with db:setup).

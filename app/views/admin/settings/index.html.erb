@@ -1,6 +1,46 @@
 <h2 class="mb-3 d-flex align-items-center gap-2"><i class="fa fa-cog"></i> Admin - Settings</h2>
 <p class="text-muted">Modify application settings.</p>
 
+<!-- Acceso rápido a configuraciones principales -->
+<div class="row mb-4">
+	<div class="col-md-6 col-lg-3 mb-3">
+		<%= link_to admin_shipping_methods_path, class: "card text-decoration-none h-100 border-primary" do %>
+			<div class="card-body text-center">
+				<i class="fa fa-truck fa-2x text-primary mb-2"></i>
+				<h6 class="card-title mb-1">Métodos de Envío</h6>
+				<p class="card-text small text-muted mb-0"><%= ShippingMethod.active.count %> activos</p>
+			</div>
+		<% end %>
+	</div>
+	<div class="col-md-6 col-lg-3 mb-3">
+		<%= link_to admin_payment_methods_path, class: "card text-decoration-none h-100 border-success" do %>
+			<div class="card-body text-center">
+				<i class="fa fa-credit-card fa-2x text-success mb-2"></i>
+				<h6 class="card-title mb-1">Métodos de Pago</h6>
+				<p class="card-text small text-muted mb-0"><%= PaymentMethod.active.count %> activos</p>
+			</div>
+		<% end %>
+	</div>
+	<div class="col-md-6 col-lg-3 mb-3">
+		<%= link_to admin_system_variables_path, class: "card text-decoration-none h-100 border-info" do %>
+			<div class="card-body text-center">
+				<i class="fa fa-database fa-2x text-info mb-2"></i>
+				<h6 class="card-title mb-1">Variables del Sistema</h6>
+				<p class="card-text small text-muted mb-0">Configuración avanzada</p>
+			</div>
+		<% end %>
+	</div>
+	<div class="col-md-6 col-lg-3 mb-3">
+		<%= link_to admin_inventory_audit_path, class: "card text-decoration-none h-100 border-warning" do %>
+			<div class="card-body text-center">
+				<i class="fa fa-warehouse fa-2x text-warning mb-2"></i>
+				<h6 class="card-title mb-1">Auditoría Inventario</h6>
+				<p class="card-text small text-muted mb-0">Reconciliación PO ↔ Inv</p>
+			</div>
+		<% end %>
+	</div>
+</div>
+
 <div class="alert alert-info" role="alert">
 	<strong>Documentation</strong>
 	<ul class="mb-0">

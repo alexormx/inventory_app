@@ -1,0 +1,82 @@
+<h2 class="mb-3 d-flex align-items-center gap-2">
+  <i class="fa fa-truck"></i> Métodos de Envío
+</h2>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <p class="text-muted mb-0">Configura los métodos de envío disponibles para los clientes.</p>
+  <%= link_to new_admin_shipping_method_path, class: "btn btn-primary" do %>
+    <i class="fa fa-plus me-1"></i> Nuevo Método
+  <% end %>
+</div>
+
+<div class="card">
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0 align-middle">
+        <thead class="table-light">
+          <tr>
+            <th style="width: 60px;">Orden</th>
+            <th>Nombre</th>
+            <th>Código</th>
+            <th>Costo Base</th>
+            <th>Descripción</th>
+            <th class="text-center">Estado</th>
+            <th class="text-end">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if @shipping_methods.any? %>
+            <% @shipping_methods.each do |method| %>
+              <tr class="<%= 'table-secondary' unless method.active? %>">
+                <td class="text-center"><%= method.position %></td>
+                <td><strong><%= method.name %></strong></td>
+                <td><code><%= method.code %></code></td>
+                <td><%= number_to_currency(method.base_cost) %></td>
+                <td class="text-muted small"><%= truncate(method.description, length: 50) %></td>
+                <td class="text-center">
+                  <% if method.active? %>
+                    <span class="badge bg-success">Activo</span>
+                  <% else %>
+                    <span class="badge bg-secondary">Inactivo</span>
+                  <% end %>
+                </td>
+                <td class="text-end">
+                  <div class="btn-group btn-group-sm">
+                    <%= link_to edit_admin_shipping_method_path(method), class: "btn btn-outline-primary", title: "Editar" do %>
+                      <i class="fa fa-edit"></i>
+                    <% end %>
+                    <%= button_to toggle_active_admin_shipping_method_path(method), method: :patch, class: "btn btn-outline-#{method.active? ? 'warning' : 'success'}", title: method.active? ? 'Desactivar' : 'Activar', form: { data: { turbo_confirm: "¿#{method.active? ? 'Desactivar' : 'Activar'} '#{method.name}'?" } } do %>
+                      <i class="fa fa-<%= method.active? ? 'toggle-off' : 'toggle-on' %>"></i>
+                    <% end %>
+                    <%= button_to admin_shipping_method_path(method), method: :delete, class: "btn btn-outline-danger", title: "Eliminar", form: { data: { turbo_confirm: "¿Eliminar '#{method.name}'? Esta acción no se puede deshacer." } } do %>
+                      <i class="fa fa-trash"></i>
+                    <% end %>
+                  </div>
+                </td>
+              </tr>
+            <% end %>
+          <% else %>
+            <tr>
+              <td colspan="7" class="text-center text-muted py-4">
+                <i class="fa fa-inbox fa-2x mb-2 d-block"></i>
+                No hay métodos de envío configurados.
+                <%= link_to "Crear el primero", new_admin_shipping_method_path, class: "d-block mt-2" %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <% if @shipping_methods.respond_to?(:current_page) && @shipping_methods.total_pages > 1 %>
+    <div class="card-footer py-2">
+      <%= paginate @shipping_methods %>
+    </div>
+  <% end %>
+</div>
+
+<div class="mt-3">
+  <%= link_to admin_settings_path, class: "btn btn-outline-secondary" do %>
+    <i class="fa fa-arrow-left me-1"></i> Volver a Settings
+  <% end %>
+</div>
