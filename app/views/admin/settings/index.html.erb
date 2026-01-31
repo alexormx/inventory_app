@@ -189,31 +189,6 @@
 
 <div class="card mb-4">
 	<div class="card-header d-flex align-items-center gap-2">
-		<i class="fa fa-credit-card"></i>
-		<span>Datos de Pago (Transferencia / OXXO)</span>
-	</div>
-	<div class="card-body">
-		<% bank_account = SiteSetting.get('payment_bank_account', '') %>
-		<% oxxo_number = SiteSetting.get('payment_oxxo_number', '') %>
-		<p class="small text-muted">Estos datos se mostrarán al cliente en el paso de pago.</p>
-		<%= form_with url: admin_settings_path, method: :post, data: { turbo: false }, class: 'row gy-2 gx-3 align-items-end' do %>
-			<div class="col-md-5">
-				<label class="form-label">Cuenta bancaria / CLABE</label>
-				<input type="text" name="payment_bank_account" class="form-control form-control-sm" value="<%= bank_account %>" placeholder="Ej: 012345678901234567" />
-			</div>
-			<div class="col-md-5">
-				<label class="form-label">Número para depósito OXXO</label>
-				<input type="text" name="payment_oxxo_number" class="form-control form-control-sm" value="<%= oxxo_number %>" placeholder="XXXX XXXX XXXX XXXX" />
-			</div>
-			<div class="col-md-2">
-				<button class="btn btn-primary btn-sm w-100" name="save_payments" value="1">Guardar</button>
-			</div>
-		<% end %>
-	</div>
-</div>
-
-<div class="card mb-4">
-	<div class="card-header d-flex align-items-center gap-2">
 		<i class="fa fa-clock"></i>
 		<span>Tiempos estimados (Preorden / Sobre pedido)</span>
 	</div>

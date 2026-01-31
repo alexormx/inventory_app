@@ -39,30 +39,30 @@
   <% end %>
 
 <h5 class="mb-2">Método de envío</h5>
-<p class="small text-muted">El costo puede variar según la dirección seleccionada (placeholder).</p>
-  <div class="row g-3">
-    <div class="col-md-6">
-      <% selected_method = if params[:shipping_method].present?
-                             params[:shipping_method]
-                           elsif previous_info[:method].present?
-                             previous_info[:method]
-                           else
-                             'standard'
-                           end %>
-      <div class="form-check">
-        <input class="form-check-input" type="radio" name="shipping_method" id="ship_standard" value="standard" <%= 'checked' if selected_method == 'standard' %>>
-        <label class="form-check-label" for="ship_standard">Estándar (3-5 días) - Gratis</label>
-      </div>
-      <div class="form-check">
-        <input class="form-check-input" type="radio" name="shipping_method" id="ship_express" value="express" <%= 'checked' if selected_method == 'express' %>>
-        <label class="form-check-label" for="ship_express">Exprés (1-2 días) - $149.00</label>
-      </div>
-      <div class="form-check">
-        <input class="form-check-input" type="radio" name="shipping_method" id="ship_pickup" value="pickup" <%= 'checked' if selected_method == 'pickup' %>>
-        <label class="form-check-label" for="ship_pickup">Recoger en tienda</label>
-      </div>
-    </div>
+<p class="small text-muted">Selecciona el método de envío que prefieras.</p>
+  <% shipping_methods = ShippingMethod.active.ordered %>
+  <% selected_method = params[:shipping_method].presence || previous_info[:method].presence || shipping_methods.first&.code %>
+  <div class="list-group mb-3">
+    <% shipping_methods.each do |sm| %>
+      <label class="list-group-item d-flex gap-3 align-items-start">
+        <input type="radio" name="shipping_method" value="<%= sm.code %>" class="form-check-input mt-1" <%= 'checked' if selected_method == sm.code %>>
+        <div class="flex-grow-1">
+          <strong><%= sm.name %></strong>
+          <% if sm.base_cost&.positive? %>
+            <span class="badge bg-secondary ms-2"><%= number_to_currency(sm.base_cost) %></span>
+          <% else %>
+            <span class="badge bg-success ms-2">Gratis</span>
+          <% end %>
+          <% if sm.description.present? %>
+            <br><small class="text-muted"><%= sm.description %></small>
+          <% end %>
+        </div>
+      </label>
+    <% end %>
   </div>
+  <% if shipping_methods.empty? %>
+    <div class="alert alert-warning">No hay métodos de envío disponibles.</div>
+  <% end %>
   <div class="text-end mt-4">
     <button type="submit" class="btn btn-primary">Continuar con el pago ➡️</button>
   </div>

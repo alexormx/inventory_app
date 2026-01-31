@@ -11,12 +11,8 @@
   <div class="card-header d-flex justify-content-between align-items-center">
     <strong>Envío</strong>
     <% if address %>
-      <% method_label = case shipping_info[:method]
-                       when 'express' then 'Exprés (1-2 días)'
-                       when 'standard' then 'Estándar (3-5 días)'
-                       when 'pickup' then 'Recoger en tienda'
-                       else shipping_info[:method].to_s
-                       end %>
+      <% shipping_method_record = ShippingMethod.find_by(code: shipping_info[:method]) %>
+      <% method_label = shipping_method_record&.name || shipping_info[:method].to_s.titleize %>
       <small class="text-muted">Método: <%= method_label %></small>
     <% end %>
   </div>
@@ -33,26 +29,34 @@
 <% session[:checkout_token] ||= SecureRandom.urlsafe_base64(32) %>
 <%= form_with url: checkout_complete_path, method: :post, local: true, html: { id: 'checkout-complete-form' } do %>
   <%= hidden_field_tag :checkout_token, session[:checkout_token] %>
-  <% bank_account = SiteSetting.get('payment_bank_account', '0000000000') %>
-  <% oxxo_account = SiteSetting.get('payment_oxxo_number', '0000 0000 0000 0000') %>
+  <% payment_methods = PaymentMethod.active.ordered %>
   <div class="mb-3">
     <label class="form-label">Método de pago</label>
     <div class="list-group">
-      <label class="list-group-item d-flex gap-3 align-items-start">
-        <input type="radio" name="payment_method" value="transferencia_bancaria" class="form-check-input mt-1" required>
-        <div>
-          <strong>Transferencia / Depósito bancario</strong><br>
-          <small class="text-muted">Cuenta: <code><%= bank_account %></code></small>
-        </div>
-      </label>
-      <label class="list-group-item d-flex gap-3 align-items-start">
-        <input type="radio" name="payment_method" value="oxxo" class="form-check-input mt-1" required>
-        <div>
-          <strong>Depósito en OXXO</strong><br>
-          <small class="text-muted">Número: <code><%= oxxo_account %></code></small>
-        </div>
-      </label>
+      <% payment_methods.each do |pm| %>
+        <label class="list-group-item d-flex gap-3 align-items-start">
+          <input type="radio" name="payment_method" value="<%= pm.code %>" class="form-check-input mt-1" required>
+          <div>
+            <strong><%= pm.name %></strong>
+            <% if pm.account_number.present? || pm.instructions.present? %>
+              <br>
+              <% if pm.account_holder.present? && pm.bank_name.present? %>
+                <small class="text-muted"><%= pm.bank_name %> - <%= pm.account_holder %></small><br>
+              <% end %>
+              <% if pm.account_number.present? %>
+                <small class="text-muted"><%= pm.clabe_or_card_label %>: <code><%= pm.account_number %></code></small>
+              <% end %>
+              <% if pm.instructions.present? %>
+                <br><small class="text-muted"><%= pm.instructions %></small>
+              <% end %>
+            <% end %>
+          </div>
+        </label>
+      <% end %>
     </div>
+    <% if payment_methods.empty? %>
+      <div class="alert alert-warning mt-2">No hay métodos de pago disponibles.</div>
+    <% end %>
   </div>
 
   <h5 class="mt-4">🧾 Resumen del pedido:</h5>
@@ -80,13 +84,14 @@
         </div>
       </li>
     <% end %>
-  <% shipping_cost = (shipping_info[:method] == 'express') ? 149 : 0 %>
+  <% shipping_method_for_cost = ShippingMethod.find_by(code: shipping_info[:method]) %>
+  <% shipping_cost = shipping_method_for_cost&.base_cost || 0 %>
     <li class="list-group-item d-flex justify-content-between">
       <span>Subtotal</span>
       <span><%= number_to_currency(@cart.total) %></span>
     </li>
     <li class="list-group-item d-flex justify-content-between">
-      <span>Envío</span>
+      <span>Envío<% if shipping_method_for_cost %> (<%= shipping_method_for_cost.name %>)<% end %></span>
       <span><%= shipping_cost.zero? ? 'Gratis' : number_to_currency(shipping_cost) %></span>
     </li>
     <li class="list-group-item d-flex justify-content-between">

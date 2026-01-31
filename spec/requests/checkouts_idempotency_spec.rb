@@ -6,6 +6,8 @@ RSpec.describe 'Checkout Idempotency Protection', type: :request do
   let(:user) { create(:user) }
   let(:product) { create(:product, selling_price: 100.0) }
   let(:address) { create(:shipping_address, user: user, default: true) }
+  let!(:shipping_method_standard) { create(:shipping_method, :standard) }
+  let!(:payment_method_transfer) { create(:payment_method, :transferencia_bancaria) }
 
   before do
     sign_in user
@@ -169,7 +171,7 @@ RSpec.describe 'Checkout Idempotency Protection', type: :request do
       second_token = session[:checkout_token]
 
       post checkout_complete_path, params: {
-        payment_method: 'efectivo',  # Método de pago válido
+        payment_method: 'transferencia_bancaria',  # Usar mismo método de pago válido
         checkout_token: second_token,  # Usando el token generado para este usuario
         accept_pending: '1'
       }

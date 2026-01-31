@@ -43,7 +43,9 @@ class CheckoutsController < ApplicationController
       render :step2, status: :unprocessable_entity and return
     end
 
-    unless %w[standard express pickup].include?(method)
+    # Validar que el método de envío existe y está activo
+    shipping_method = ShippingMethod.active.find_by(code: method)
+    unless shipping_method
       flash.now[:alert] = 'Método de envío inválido.'
       @shipping_info = { address_id: addr.id }
       render :step2, status: :unprocessable_entity and return
@@ -113,10 +115,10 @@ class CheckoutsController < ApplicationController
       redirect_to(root_path) and return
     end
 
-    # Validar método de pago
+    # Validar método de pago usando PaymentMethod de la base de datos
     payment_method = params[:payment_method]
-    valid_payment_methods = Payment.payment_methods.keys.map(&:to_s)
-    unless valid_payment_methods.include?(payment_method)
+    payment_method_record = PaymentMethod.active.find_by(code: payment_method)
+    unless payment_method_record
       flash[:alert] = 'Método de pago inválido.'
       redirect_to(checkout_step3_path) and return
     end
@@ -170,9 +172,9 @@ class CheckoutsController < ApplicationController
       else
         redirect_to checkout_step1_path
       end
-      
-        
-      
+
+
+
     end
   end
 
