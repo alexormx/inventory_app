@@ -3,7 +3,7 @@ import { Controller } from "@hotwired/stimulus"
 
 // A simple key/value editor that syncs to a hidden JSON field
 export default class extends Controller {
-  static targets = ["rows", "hidden"]
+  static targets = ["rows", "hidden", "jsonEditorContainer", "jsonInput", "toggleText"]
   static values = {
     initialValue: { type: Object, default: {} }
   }
@@ -48,6 +48,60 @@ export default class extends Controller {
       data[key.toLowerCase()] = this._stringToTypedValue(valStr)
     })
     this.hiddenTarget.value = JSON.stringify(data)
+  }
+
+  toggleJsonEditor(event) {
+    event.preventDefault()
+    const container = this.jsonEditorContainerTarget
+    const isHidden = container.classList.contains('d-none')
+    
+    if (isHidden) {
+      container.classList.remove('d-none')
+      this.toggleTextTarget.textContent = 'Ocultar JSON Editor'
+      this.loadCurrentToTextarea()
+    } else {
+      container.classList.add('d-none')
+      this.toggleTextTarget.textContent = 'Mostrar JSON Editor'
+    }
+  }
+
+  loadCurrentToTextarea(event) {
+    if (event) event.preventDefault()
+    const currentData = JSON.parse(this.hiddenTarget.value || '{}')
+    this.jsonInputTarget.value = JSON.stringify(currentData, null, 2)
+  }
+
+  importFromTextarea(event) {
+    event.preventDefault()
+    const input = this.jsonInputTarget.value.trim()
+    if (!input) {
+      alert("El área de texto está vacía")
+      return
+    }
+    
+    const obj = this._tryParseLooseObject(input)
+    if (obj) {
+      // limpiar filas actuales
+      this.rowsTarget.innerHTML = ""
+      Object.entries(obj).forEach(([k,v]) => this._appendRow(k, this._valueToString(v)))
+      this.sync()
+      
+      // Opcional: ocultar el editor después de importar
+      this.jsonEditorContainerTarget.classList.add('d-none')
+      this.toggleTextTarget.textContent = 'Mostrar JSON Editor'
+      
+      // Feedback visual
+      const btn = event.currentTarget
+      const originalText = btn.innerHTML
+      btn.innerHTML = '<i class="fa-solid fa-check me-1"></i>¡Importado!'
+      btn.classList.add('btn-success')
+      btn.classList.remove('btn-success')
+      setTimeout(() => {
+        btn.innerHTML = originalText
+      }, 1500)
+    } else {
+      alert("El JSON no es válido. Se esperaba un objeto JSON (clave/valor)")
+    }
   }
 
   _appendRow(key, value) {

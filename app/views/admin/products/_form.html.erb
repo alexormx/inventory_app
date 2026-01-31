@@ -387,16 +387,45 @@
                     <tbody data-kv-editor-target="rows"></tbody>
                   </table>
                 </div>
-                <div class="d-flex gap-2">
+                <div class="d-flex gap-2 mb-2">
                   <button type="button" class="btn btn-outline-primary btn-sm" data-action="kv-editor#addRow">
                     <i class="fa-solid fa-plus me-1"></i>
                     Agregar Atributo
                   </button>
-                  <button type="button" class="btn btn-outline-secondary btn-sm" data-action="kv-editor#importJson">
-                    <i class="fa-solid fa-file-import me-1"></i>
-                    Importar JSON
+                  <button type="button" class="btn btn-outline-secondary btn-sm" data-action="kv-editor#toggleJsonEditor">
+                    <i class="fa-solid fa-code me-1"></i>
+                    <span data-kv-editor-target="toggleText">Mostrar JSON Editor</span>
                   </button>
                 </div>
+                
+                <!-- JSON Editor Area (oculta por defecto) -->
+                <div class="d-none" data-kv-editor-target="jsonEditorContainer">
+                  <label class="form-label">
+                    <i class="fa-solid fa-file-code me-1"></i>
+                    Editor JSON
+                  </label>
+                  <textarea 
+                    data-kv-editor-target="jsonInput" 
+                    class="form-control font-monospace" 
+                    rows="6"
+                    placeholder='{"color": "rojo", "material": "plástico", "escala": "1:18"}'
+                    style="font-size: 0.9rem;"></textarea>
+                  <div class="mt-2 d-flex gap-2">
+                    <button type="button" class="btn btn-success btn-sm" data-action="kv-editor#importFromTextarea">
+                      <i class="fa-solid fa-check me-1"></i>
+                      Aplicar JSON
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-action="kv-editor#loadCurrentToTextarea">
+                      <i class="fa-solid fa-sync me-1"></i>
+                      Cargar Actual
+                    </button>
+                  </div>
+                  <small class="text-muted d-block mt-1">
+                    <i class="fa-solid fa-info-circle me-1"></i>
+                    Pega o escribe JSON directamente. Ejemplo: {"color": "azul", "marca": "Lamborghini"}
+                  </small>
+                </div>
+                
                 <%= f.hidden_field :custom_attributes, value: (@product.parsed_custom_attributes || {}).to_json, data: { kv_editor_target: "hidden" } %>
               </div>
             </div>
