@@ -99,7 +99,7 @@
               <% @product.parsed_custom_attributes.each do |key, value| %>
                 <div class="col d-flex">
                   <div class="w-50 text-muted text-capitalize fw-semibold"><%= key.to_s.humanize %></div>
-                  <div class="flex-grow-1"><%= value %></div>
+                  <div class="flex-grow-1"><%= value == true ? "Sí" : (value == false ? "No" : value) %></div>
                 </div>
               <% end %>
             </div>
