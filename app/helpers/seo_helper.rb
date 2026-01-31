@@ -105,7 +105,8 @@ module SeoHelper
     site_name = seo_site_name
     site_description = SiteSetting.get('seo_meta_description', 'Tienda especializada en modelos a escala, autos de colección y figuras. Productos originales de las mejores marcas.')
 
-    data = {
+    # Organization schema
+    org_data = {
       '@context' => 'https://schema.org',
       '@type' => 'Organization',
       'name' => site_name,
@@ -123,7 +124,26 @@ module SeoHelper
       }
     }
 
-    tag.script(data.to_json.html_safe, type: 'application/ld+json')
+    # WebSite schema con SearchAction para Google Sitelinks Searchbox
+    website_data = {
+      '@context' => 'https://schema.org',
+      '@type' => 'WebSite',
+      'name' => site_name,
+      'url' => root_url,
+      'potentialAction' => {
+        '@type' => 'SearchAction',
+        'target' => {
+          '@type' => 'EntryPoint',
+          'urlTemplate' => "#{catalog_url}?q={search_term_string}"
+        },
+        'query-input' => 'required name=search_term_string'
+      }
+    }
+
+    safe_join([
+      tag.script(org_data.to_json.html_safe, type: 'application/ld+json'),
+      tag.script(website_data.to_json.html_safe, type: 'application/ld+json')
+    ])
   end
 
   # Genera JSON-LD ItemList para páginas de catálogo
