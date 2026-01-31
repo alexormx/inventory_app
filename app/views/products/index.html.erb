@@ -46,7 +46,7 @@
         <input type="hidden" name="q" value="<%= @q %>">
         <div class="search-chip d-inline-flex align-items-center">
           <span class="chip-text" title="Criterio de búsqueda"><%= @q %></span>
-          <%= link_to catalog_path(request.query_parameters.except(:q, :page)),
+          <%= link_to catalog_path(request.query_parameters.except('q', 'page')),
                       class: "chip-clear",
                       "aria-label": "Limpiar búsqueda",
                       data: { turbo_frame: "products_grid" } do %>&times;<% end %>

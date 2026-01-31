@@ -37,12 +37,12 @@ module FilterParamsHelper
 
   # URL para limpiar el filtro de precio
   def clear_price_url
-    catalog_path(request.query_parameters.except(:price_min, :price_max).merge(page: nil))
+    catalog_path(request.query_parameters.except('price_min', 'price_max').merge(page: nil))
   end
 
   # URL para limpiar un filtro de disponibilidad específico
   def clear_availability_url(filter_key)
-    catalog_path(request.query_parameters.except(filter_key).merge(page: nil))
+    catalog_path(request.query_parameters.except(filter_key.to_s).merge(page: nil))
   end
 
   # URL para limpiar todos los filtros (mantiene sort y q)
