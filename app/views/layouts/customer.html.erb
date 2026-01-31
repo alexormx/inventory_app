@@ -6,10 +6,15 @@
 
   <title><%= content_for?(:title) ? yield(:title) : "Pasatiempos a Escala" %></title>
 
-  <meta name="description" content="<%= content_for?(:meta_description) ? yield(:meta_description) : 'Pasatiempos a Escala. Muy pronto podrás ver productos disponibles para comprar en línea.' %>">
-  <meta name="author" content="Pasatiempos">
+  <meta name="description" content="<%= content_for?(:meta_description) ? yield(:meta_description) : 'Pasatiempos a Escala - Tienda especializada en modelos a escala, autos de colección y figuras. Productos 100% originales con envío seguro a todo México.' %>">
+  <meta name="author" content="Pasatiempos a Escala">
   <meta name="robots" content="index, follow">
   <meta name="language" content="es">
+  <meta name="geo.region" content="MX">
+  <meta name="geo.placename" content="México">
+
+  <!-- Canonical URL -->
+  <link rel="canonical" href="<%= content_for?(:canonical_url) ? yield(:canonical_url) : request.original_url.split('?').first %>">
 
   <!-- Favicon -->
   <%= favicon_link_tag 'favicon.ico' %>
@@ -17,18 +22,19 @@
   <link rel="apple-touch-icon" href="/favicon.ico">
 
   <!-- Open Graph / Facebook -->
-  <meta property="og:title" content="<%= content_for?(:title) ? yield(:title) : 'Pasatiempos' %>">
-  <meta property="og:description" content="<%= content_for?(:meta_description) ? yield(:meta_description) : 'Muy pronto podrás ver productos disponibles en Pasatiempos.' %>">
-  <meta property="og:image" content="https://pasatiempos.com.mx/logo.png">
-  <meta property="og:url" content="https://pasatiempos.com.mx">
-  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Pasatiempos a Escala">
+  <meta property="og:title" content="<%= content_for?(:title) ? yield(:title) : 'Pasatiempos a Escala' %>">
+  <meta property="og:description" content="<%= content_for?(:meta_description) ? yield(:meta_description) : 'Tienda especializada en modelos a escala, autos de colección y figuras. Productos 100% originales.' %>">
+  <meta property="og:image" content="<%= content_for?(:og_image) ? yield(:og_image) : 'https://pasatiempos.com.mx/logo.png' %>">
+  <meta property="og:url" content="<%= content_for?(:canonical_url) ? yield(:canonical_url) : request.original_url %>">
+  <meta property="og:type" content="<%= content_for?(:og_type) ? yield(:og_type) : 'website' %>">
+  <meta property="og:locale" content="es_MX">
 
   <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="<%= content_for?(:title) ? yield(:title) : 'Pasatiempos' %>">
-  <meta name="twitter:description" content="<%= content_for?(:meta_description) ? yield(:meta_description) : 'Muy pronto podrás ver productos disponibles en Pasatiempos.' %>">
-  <meta name="twitter:image" content="https://pasatiempos.com.mx/logo.png">
-
+  <meta name="twitter:title" content="<%= content_for?(:title) ? yield(:title) : 'Pasatiempos a Escala' %>">
+  <meta name="twitter:description" content="<%= content_for?(:meta_description) ? yield(:meta_description) : 'Tienda especializada en modelos a escala, autos de colección y figuras.' %>">
+  <meta name="twitter:image" content="<%= content_for?(:og_image) ? yield(:og_image) : 'https://pasatiempos.com.mx/logo.png' %>">
 
   <%= csrf_meta_tags %>
   <%= csp_meta_tag %>
@@ -42,6 +48,9 @@
 
   <%= stylesheet_link_tag "application", media: "all", "data-turbo-track": "reload" %>
   <%= javascript_include_tag "application", "data-turbo-track": "reload", defer: true %>
+
+  <%# JSON-LD Structured Data from views %>
+  <%= yield(:head) if content_for?(:head) %>
 </head>
 
 

@@ -1,3 +1,13 @@
+<% content_for :title, catalog_meta_title %>
+<% content_for :meta_description, catalog_meta_description %>
+<% content_for :canonical_url, canonical_url %>
+
+<%# JSON-LD Structured Data %>
+<% content_for :head do %>
+  <%= breadcrumb_json_ld(catalog_breadcrumbs) %>
+  <%= product_list_json_ld(@products.first(10)) if @products.present? %>
+<% end %>
+
 <%# La lógica de filtros ahora está centralizada en FilterParamsHelper#filter_state %>
 
 <div class="container mt-4" id="catalog" data-controller="catalog-view">

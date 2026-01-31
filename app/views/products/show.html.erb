@@ -1,3 +1,15 @@
+<% content_for :title, product_meta_title(@product) %>
+<% content_for :meta_description, product_meta_description(@product) %>
+<% content_for :og_image, @product.product_images.attached? ? url_for(@product.product_images.first) : asset_url('logo.png') %>
+<% content_for :og_type, 'product' %>
+<% content_for :canonical_url, product_url(@product) %>
+
+<%# JSON-LD Structured Data %>
+<% content_for :head do %>
+  <%= product_json_ld(@product) %>
+  <%= breadcrumb_json_ld(product_breadcrumbs(@product)) %>
+<% end %>
+
 <div class="container py-4 product-show" data-controller="productMeta">
   <!-- Breadcrumbs -->
   <nav aria-label="breadcrumb" class="mb-3">

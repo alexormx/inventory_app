@@ -1,5 +1,11 @@
 <% content_for :title, t('home.index.meta.title') %>
-<% content_for :description, t('home.index.meta.description') %>
+<% content_for :meta_description, t('home.index.meta.description') %>
+<% content_for :canonical_url, root_url %>
+
+<%# JSON-LD Structured Data %>
+<% content_for :head do %>
+  <%= organization_json_ld %>
+<% end %>
 
 <!-- ✨ HERO SECTION -->
 <section class="hero-section position-relative d-flex align-items-center text-white" style="min-height: 60vh; background: linear-gradient(135deg, rgba(220,53,69,0.5) 0%, rgba(185,28,28,0.5) 50%, rgba(127,29,29,0.55) 100%), url('<%= asset_path('collection_shelf.jpg') %>') center/cover no-repeat; overflow: hidden;">
