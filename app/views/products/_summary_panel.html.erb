@@ -10,27 +10,42 @@
       </div>
     </div>
 
-    <div class="price-zone d-flex align-items-end gap-3 flex-wrap">
-      <span class="display-price h3 text-danger fw-bold mb-0"><%= number_to_currency(product.selling_price) %></span>
-      <%= stock_badge(product) %>
-      <% if (eta = stock_eta(product)) %>
-        <span class="small text-muted"><i class="fa fa-clock me-1"></i><%= eta %></span>
+    <% if user_signed_in? %>
+      <div class="price-zone d-flex align-items-end gap-3 flex-wrap">
+        <span class="display-price h3 text-danger fw-bold mb-0"><%= number_to_currency(product.selling_price) %></span>
+        <%= stock_badge(product) %>
+        <% if (eta = stock_eta(product)) %>
+          <span class="small text-muted"><i class="fa fa-clock me-1"></i><%= eta %></span>
+        <% end %>
+      </div>
+
+      <% on_hand = product.current_on_hand %>
+      <% disabled = (on_hand <= 0 && !product.oversell_allowed?) %>
+      <%= button_to cart_items_path,
+            params: { product_id: product.id },
+            method: :post,
+            class: "btn btn-danger btn-lg w-100 #{'disabled' if disabled}",
+            disabled: disabled,
+            title: (disabled ? 'Sin stock disponible' : 'Agregar al carrito') do %>
+        <i class="fas fa-cart-plus"></i> <%= disabled ? 'Sin stock' : 'Agregar al carrito' %>
       <% end %>
-    </div>
 
-    <% on_hand = product.current_on_hand %>
-    <% disabled = (on_hand <= 0 && !product.oversell_allowed?) %>
-    <%= button_to cart_items_path,
-          params: { product_id: product.id },
-          method: :post,
-          class: "btn btn-danger btn-lg w-100 #{'disabled' if disabled}",
-          disabled: disabled,
-          title: (disabled ? 'Sin stock disponible' : 'Agregar al carrito') do %>
-      <i class="fas fa-cart-plus"></i> <%= disabled ? 'Sin stock' : 'Agregar al carrito' %>
+      <div class="small text-muted d-flex flex-column gap-1">
+        <span><i class="fa fa-shield-alt me-1"></i> Métodos de Pago Seguro</span>
+      </div>
+    <% else %>
+      <div class="alert alert-light border mb-0">
+        <div class="text-center">
+          <i class="fas fa-lock fa-2x text-muted mb-2"></i>
+          <p class="mb-2">Inicia sesión para ver el precio y comprar este producto</p>
+          <%= link_to new_user_session_path, class: "btn btn-danger w-100" do %>
+            <i class="fas fa-sign-in-alt me-1"></i>Iniciar Sesión
+          <% end %>
+          <p class="small text-muted mt-2 mb-0">
+            ¿No tienes cuenta? <%= link_to "Regístrate aquí", new_user_registration_path, class: "text-danger" %>
+          </p>
+        </div>
+      </div>
     <% end %>
-
-    <div class="small text-muted d-flex flex-column gap-1">
-      <span><i class="fa fa-shield-alt me-1"></i> Métodos de Pago Seguro</span>
-    </div>
   </div>
 </div>

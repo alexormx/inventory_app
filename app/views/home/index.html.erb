@@ -104,15 +104,14 @@
           <div class="card h-100 border-0 shadow-sm hover-lift">
             <%= link_to product_path(product), class: "text-decoration-none" do %>
               <% if product.product_images&.attached? %>
-                <%= image_tag product.product_images.first, class: "card-img-top", alt: product.product_name, style: "height: 200px; object-fit: cover;", loading: "lazy" %>
+                <%= image_tag product.product_images.first, class: "card-img-top p-3", alt: product.product_name, style: "height: 200px; object-fit: contain; background: #f8f9fa;", loading: "lazy" %>
               <% else %>
                 <div class="card-img-top bg-secondary d-flex align-items-center justify-content-center text-white" style="height: 200px;">
                   <i class="fas fa-image fa-3x opacity-50"></i>
                 </div>
               <% end %>
-              <div class="card-body">
-                <h6 class="card-title text-dark mb-2 fw-semibold" style="font-size: 0.9rem;"><%= product.product_name %></h6>
-                <p class="text-danger fw-bold mb-0"><%= number_to_currency(product.selling_price) %></p>
+              <div class="card-body text-center">
+                <h6 class="card-title text-dark mb-0 fw-semibold" style="font-size: 0.9rem;"><%= product.product_name %></h6>
               </div>
             <% end %>
           </div>

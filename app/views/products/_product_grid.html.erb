@@ -27,7 +27,7 @@
               <i class="fas fa-sparkles me-1" aria-hidden="true"></i>Nuevo
             </span>
           <% end %>
-          <% if product.active? %>
+          <% if product.active? && user_signed_in? %>
             <%= link_to product_path(product), class: "d-block p-2", aria: { label: "Ver detalles de #{product.product_name}" }, data: { turbo_frame: "_top" } do %>
               <% if product.product_images.attached? %>
                 <%= responsive_attachment_image product.product_images.first,
@@ -39,6 +39,18 @@
                 <%= image_tag "placeholder.png", class: "product-image mx-auto d-block", alt: "Imagen no disponible para #{product.product_name}" %>
               <% end %>
             <% end %>
+          <% elsif product.active? %>
+            <div class="d-block p-2">
+              <% if product.product_images.attached? %>
+                <%= responsive_attachment_image product.product_images.first,
+                  alt: product.product_name,
+                  widths: [60,96,150,200],
+                  css_class: "product-image mx-auto d-block",
+                  square: true %>
+              <% else %>
+                <%= image_tag "placeholder.png", class: "product-image mx-auto d-block", alt: "Imagen no disponible para #{product.product_name}" %>
+              <% end %>
+            </div>
           <% else %>
             <div class="d-block p-2 opacity-50" title="Producto inactivo">
               <% if product.product_images.attached? %>
@@ -55,34 +67,47 @@
           <div class="card-body text-center p-2 d-flex flex-column w-100">
             <h2 class="card-title h6 mb-1" title="<%= product.product_name %>">
               <% if product.active? %>
-                <%= link_to product.product_name, product_path(product), class: "text-decoration-none text-dark", data: { turbo_frame: "_top" } %>
+                <% if user_signed_in? %>
+                  <%= link_to product.product_name, product_path(product), class: "text-decoration-none text-dark", data: { turbo_frame: "_top" } %>
+                <% else %>
+                  <span class="text-dark"><%= product.product_name %></span>
+                <% end %>
               <% else %>
                 <span class="text-muted" aria-disabled="true"><%= product.product_name %></span>
               <% end %>
             </h2>
-            <p class="card-text text-danger fw-bold small mb-2" role="text">
-              <span class="visually-hidden">Precio: </span><%= number_to_currency(product.selling_price) %>
-            </p>
-            <% if (eta = stock_eta(product)) %>
-              <p class="text-muted extra-small mb-2"><i class="fa fa-clock me-1" aria-hidden="true"></i><span class="visually-hidden">Disponible: </span><%= eta %></p>
-            <% end %>
-            <% if product.active? %>
-              <% on_hand = @on_hand_counts[product.id] || 0 %>
-              <% disabled = (on_hand <= 0 && !product.oversell_allowed?) %>
-              <%= button_to cart_items_path,
-                            params: { product_id: product.id },
-                            method: :post,
-                            class: "btn btn-danger btn-sm mt-auto #{'disabled' if disabled}",
-                            disabled: disabled,
-                            title: (disabled ? 'Sin stock disponible' : 'Agregar al carrito'),
-                            aria: { label: (disabled ? 'Sin stock' : "Agregar #{product.product_name} al carrito") } do %>
-                <i class="fas fa-cart-plus" aria-hidden="true"></i>
-                <span class="visually-hidden"><%= disabled ? 'Sin stock' : 'Agregar al carrito' %></span>
+            <% if user_signed_in? %>
+              <p class="card-text text-danger fw-bold small mb-2" role="text">
+                <span class="visually-hidden">Precio: </span><%= number_to_currency(product.selling_price) %>
+              </p>
+              <% if (eta = stock_eta(product)) %>
+                <p class="text-muted extra-small mb-2"><i class="fa fa-clock me-1" aria-hidden="true"></i><span class="visually-hidden">Disponible: </span><%= eta %></p>
+              <% end %>
+              <% if product.active? %>
+                <% on_hand = @on_hand_counts[product.id] || 0 %>
+                <% disabled = (on_hand <= 0 && !product.oversell_allowed?) %>
+                <%= button_to cart_items_path,
+                              params: { product_id: product.id },
+                              method: :post,
+                              class: "btn btn-danger btn-sm mt-auto #{'disabled' if disabled}",
+                              disabled: disabled,
+                              title: (disabled ? 'Sin stock disponible' : 'Agregar al carrito'),
+                              aria: { label: (disabled ? 'Sin stock' : "Agregar #{product.product_name} al carrito") } do %>
+                  <i class="fas fa-cart-plus" aria-hidden="true"></i>
+                  <span class="visually-hidden"><%= disabled ? 'Sin stock' : 'Agregar al carrito' %></span>
+                <% end %>
+              <% else %>
+                <button class="btn btn-outline-secondary btn-sm mt-auto" disabled title="Producto no disponible" aria-label="Producto no disponible">
+                  <i class="fas fa-ban" aria-hidden="true"></i>
+                </button>
               <% end %>
             <% else %>
-              <button class="btn btn-outline-secondary btn-sm mt-auto" disabled title="Producto no disponible" aria-label="Producto no disponible">
-                <i class="fas fa-ban" aria-hidden="true"></i>
-              </button>
+              <p class="text-muted small mb-2">
+                <i class="fas fa-lock me-1"></i>Inicia sesión para ver precio
+              </p>
+              <%= link_to new_user_session_path, class: "btn btn-outline-danger btn-sm mt-auto" do %>
+                <i class="fas fa-sign-in-alt me-1"></i>Iniciar Sesión
+              <% end %>
             <% end %>
           </div>
         </article>
