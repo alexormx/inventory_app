@@ -41,6 +41,57 @@
 	</div>
 </div>
 
+<!-- SEO Configuration -->
+<div class="card mb-4">
+	<div class="card-header d-flex align-items-center gap-2">
+		<i class="fa fa-search"></i>
+		<span>Configuración SEO</span>
+	</div>
+	<div class="card-body">
+		<% seo_site_name = SiteSetting.get('seo_site_name', 'Pasatiempos a Escala') %>
+		<% seo_site_title = SiteSetting.get('seo_site_title', 'Tienda de Coleccionables y Autos a Escala') %>
+		<% seo_meta_description = SiteSetting.get('seo_meta_description', 'Tienda especializada en modelos a escala, autos de colección Hot Wheels, Greenlight, Majorette y más. Productos 100% originales con envío a todo México.') %>
+		<% seo_keywords = SiteSetting.get('seo_keywords', 'autos a escala, hot wheels, greenlight, coleccionables, tienda de coleccionables, autos de colección, diecast, modelos a escala, majorette, jada toys') %>
+		
+		<div class="alert alert-info small mb-3">
+			<i class="fa fa-info-circle me-1"></i>
+			<strong>SEO (Search Engine Optimization)</strong>: Esta información ayuda a que tu tienda aparezca en buscadores como Google cuando los usuarios busquen términos relacionados con tus productos.
+		</div>
+		
+		<%= form_with url: admin_settings_path, method: :post, data: { turbo: false } do %>
+			<div class="row">
+				<div class="col-md-6 mb-3">
+					<label class="form-label">Nombre del sitio</label>
+					<input type="text" name="seo_site_name" class="form-control" value="<%= seo_site_name %>" placeholder="Ej: Pasatiempos a Escala">
+					<small class="text-muted">Aparece en títulos y redes sociales</small>
+				</div>
+				<div class="col-md-6 mb-3">
+					<label class="form-label">Slogan / Título principal</label>
+					<input type="text" name="seo_site_title" class="form-control" value="<%= seo_site_title %>" placeholder="Ej: Tienda de Coleccionables y Autos a Escala">
+					<small class="text-muted">Complementa el nombre en el título de la página</small>
+				</div>
+			</div>
+			
+			<div class="mb-3">
+				<label class="form-label">Meta Descripción</label>
+				<textarea name="seo_meta_description" class="form-control" rows="3" maxlength="300" placeholder="Descripción que aparece en resultados de Google..."><%= seo_meta_description %></textarea>
+				<small class="text-muted">Recomendado: 150-160 caracteres. Actual: <span id="seo-desc-count"><%= seo_meta_description.length %></span> caracteres</small>
+			</div>
+			
+			<div class="mb-3">
+				<label class="form-label">Palabras clave (Keywords)</label>
+				<textarea name="seo_keywords" class="form-control" rows="2" placeholder="autos a escala, hot wheels, greenlight, coleccionables..."><%= seo_keywords %></textarea>
+				<small class="text-muted">Separadas por comas. Incluye marcas y términos que buscan tus clientes: Hot Wheels, Greenlight, Majorette, Jada Toys, etc.</small>
+			</div>
+			
+			<div class="d-flex justify-content-between align-items-center">
+				<button class="btn btn-primary" name="save_seo" value="1"><i class="fa fa-save me-1"></i> Guardar configuración SEO</button>
+				<small class="text-muted">Los cambios se reflejarán inmediatamente en el sitio</small>
+			</div>
+		<% end %>
+	</div>
+</div>
+
 <div class="alert alert-info" role="alert">
 	<strong>Documentation</strong>
 	<ul class="mb-0">

@@ -31,6 +31,14 @@ module Admin
         flash[:notice] = 'Configuración de interfaz guardada.'
         redirect_to admin_settings_path and return
       end
+      if request.post? && params[:save_seo]
+        SiteSetting.set('seo_site_name', params[:seo_site_name].to_s.strip, 'string')
+        SiteSetting.set('seo_site_title', params[:seo_site_title].to_s.strip, 'string')
+        SiteSetting.set('seo_meta_description', params[:seo_meta_description].to_s.strip, 'string')
+        SiteSetting.set('seo_keywords', params[:seo_keywords].to_s.strip, 'string')
+        flash[:notice] = 'Configuración SEO guardada exitosamente.'
+        redirect_to admin_settings_path and return
+      end
       return unless request.post? && params[:save_eta]
 
       preorder_days = params[:preorder_eta_days].to_i

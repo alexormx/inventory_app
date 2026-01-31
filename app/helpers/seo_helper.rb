@@ -1,6 +1,11 @@
 # frozen_string_literal: true
 
 module SeoHelper
+  # Obtiene el nombre del sitio desde settings
+  def seo_site_name
+    SiteSetting.get('seo_site_name', 'Pasatiempos a Escala')
+  end
+
   # Genera JSON-LD structured data para un producto (Schema.org Product)
   def product_json_ld(product)
     return unless product
@@ -42,7 +47,7 @@ module SeoHelper
         'availability' => availability,
         'seller' => {
           '@type' => 'Organization',
-          'name' => 'Pasatiempos a Escala'
+          'name' => seo_site_name
         }
       }
     }
@@ -97,13 +102,16 @@ module SeoHelper
 
   # Genera JSON-LD Organization para la página principal
   def organization_json_ld
+    site_name = seo_site_name
+    site_description = SiteSetting.get('seo_meta_description', 'Tienda especializada en modelos a escala, autos de colección y figuras. Productos originales de las mejores marcas.')
+    
     data = {
       '@context' => 'https://schema.org',
       '@type' => 'Organization',
-      'name' => 'Pasatiempos a Escala',
+      'name' => site_name,
       'url' => root_url,
       'logo' => asset_url('logo.png'),
-      'description' => 'Tienda especializada en modelos a escala, autos de colección y figuras. Productos originales de las mejores marcas.',
+      'description' => site_description,
       'address' => {
         '@type' => 'PostalAddress',
         'addressCountry' => 'MX'
@@ -156,14 +164,14 @@ module SeoHelper
 
   # Meta tags para producto
   def product_meta_title(product)
-    "#{product.product_name} | #{product.brand} | Pasatiempos a Escala"
+    "#{product.product_name} | #{product.brand} | #{seo_site_name}"
   end
 
   def product_meta_description(product)
     base = product.description.presence || "#{product.product_name} de #{product.brand}"
     # Limitar a ~155 caracteres para SEO
     truncated = base.truncate(155, separator: ' ')
-    "#{truncated} Compra en Pasatiempos a Escala. Envío seguro. Producto 100% original."
+    "#{truncated} Compra en #{seo_site_name}. Envío seguro. Producto 100% original."
   end
 
   # Meta tags para catálogo
@@ -171,7 +179,7 @@ module SeoHelper
     parts = ['Catálogo']
     parts << params[:categories].join(', ') if params[:categories].present?
     parts << params[:brands].join(', ') if params[:brands].present?
-    parts << '| Pasatiempos a Escala'
+    parts << "| #{seo_site_name}"
     parts.join(' ')
   end
 
@@ -183,7 +191,7 @@ module SeoHelper
     if params[:brands].present?
       desc += " Marcas: #{params[:brands].join(', ')}."
     end
-    desc + ' Productos originales con envío seguro a todo México.'
+    desc + " Productos originales con envío seguro a todo México. #{seo_site_name}."
   end
 
   # Canonical URL helper
