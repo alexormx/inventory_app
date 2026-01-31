@@ -118,7 +118,7 @@
                   <% @recent_orders.each do |order| %>
                     <tr>
                       <td>
-                        <%= link_to order.reference, order_path(order), class: "text-decoration-none fw-bold" %>
+                        <%= link_to order.id, order_path(order), class: "text-decoration-none fw-bold" %>
                       </td>
                       <td><%= l(order.created_at.to_date, format: :short) %></td>
                       <td>
