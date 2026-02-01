@@ -84,4 +84,6 @@
   <% if location.has_children? %>
     <div class="location-children">
       <%= render partial: 'location_node', collection: location.children.sort_by { |c| [c.position || 0, c.name] }, as: :location, locals: { depth: depth + 1 } %>
+    </div>
+  <% end %>
 </div>
