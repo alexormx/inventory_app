@@ -28,6 +28,8 @@ import UserSuggestController from "./user_suggest_controller"
 import CatalogFiltersController from "./catalog_filters_controller"
 import PriceRangeController from "./price_range_controller"
 import InventoryLocationsController from "./inventory_locations_controller"
+import LocationSuggestController from "./location_suggest_controller"
+import BulkLocationAssignController from "./bulk_location_assign_controller"
 
 application.register("audit-progress", AuditProgressController)
 application.register("cart-item", CartItemController)
@@ -55,6 +57,8 @@ application.register("user-suggest", UserSuggestController)
 application.register("catalog-filters", CatalogFiltersController)
 application.register("price-range", PriceRangeController)
 application.register("inventory-locations", InventoryLocationsController)
+application.register("location-suggest", LocationSuggestController)
+application.register("bulk-location-assign", BulkLocationAssignController)
 
 // Export opcional para debugging
 window.Stimulus = application

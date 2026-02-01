@@ -108,6 +108,32 @@ module Admin
       end
     end
 
+    # GET /admin/inventory_locations/search?q= - Search by code or name for autocomplete
+    def search
+      q = params[:q].to_s.strip.downcase
+      if q.length < 2
+        render json: []
+        return
+      end
+
+      locations = InventoryLocation.active
+                                   .where('LOWER(code) LIKE :q OR LOWER(name) LIKE :q', q: "%#{q}%")
+                                   .order(:depth, :name)
+                                   .limit(15)
+
+      render json: locations.map { |loc|
+        {
+          id: loc.id,
+          code: loc.code,
+          name: loc.name,
+          full_path: loc.full_path,
+          location_type: loc.location_type,
+          type_name: loc.type_name,
+          depth: loc.depth
+        }
+      }
+    end
+
     private
 
     def set_inventory_location

@@ -138,6 +138,81 @@ module Admin
       render partial: 'admin/inventory/status_badge', locals: { item: @item }
     end
 
+    # GET /admin/inventory/unlocated - Inventario sin ubicación asignada
+    def unlocated
+      # Solo items available y reserved sin ubicación
+      base_scope = Inventory.where(status: %i[available reserved], inventory_location_id: nil)
+                            .includes(:product, :purchase_order)
+
+      # Agrupar por producto con conteos
+      @products_data = base_scope.group(:product_id)
+                                 .select('product_id, COUNT(*) as unlocated_count')
+                                 .index_by(&:product_id)
+
+      product_ids = @products_data.keys
+      @products = Product.where(id: product_ids)
+                         .order(:product_name)
+                         .includes(:inventories)
+
+      @total_unlocated = base_scope.count
+      @location_options = InventoryLocation.active.nested_options
+    end
+
+    # POST /admin/inventory/bulk_assign_location - Asignar ubicación masivamente
+    def bulk_assign_location
+      location_id = params[:inventory_location_id].to_i
+      assignments = params[:assignments] || {}
+
+      @location = InventoryLocation.find_by(id: location_id)
+      unless @location
+        redirect_to admin_inventory_unlocated_path, alert: 'Ubicación no encontrada'
+        return
+      end
+
+      total_assigned = 0
+      errors = []
+
+      ActiveRecord::Base.transaction do
+        assignments.each do |product_id, quantity|
+          qty = quantity.to_i
+          next if qty <= 0
+
+          # FIFO: asignar los items más antiguos primero
+          items = Inventory.where(
+            product_id: product_id,
+            status: %i[available reserved],
+            inventory_location_id: nil
+          ).order(:created_at).limit(qty)
+
+          assigned = items.update_all(
+            inventory_location_id: @location.id,
+            updated_at: Time.current
+          )
+          total_assigned += assigned
+        end
+      end
+
+      if total_assigned > 0
+        respond_to do |format|
+          format.html { redirect_to admin_inventory_unlocated_path, notice: "#{total_assigned} piezas asignadas a #{@location.code}" }
+          format.turbo_stream {
+            flash.now[:notice] = "#{total_assigned} piezas asignadas a #{@location.code}"
+            # Re-cargar datos para actualizar la vista
+            base_scope = Inventory.where(status: %i[available reserved], inventory_location_id: nil)
+            @products_data = base_scope.group(:product_id)
+                                       .select('product_id, COUNT(*) as unlocated_count')
+                                       .index_by(&:product_id)
+            product_ids = @products_data.keys
+            @products = Product.where(id: product_ids).order(:product_name)
+            @total_unlocated = base_scope.count
+            @location_options = InventoryLocation.active.nested_options
+          }
+        end
+      else
+        redirect_to admin_inventory_unlocated_path, alert: 'No se asignó ninguna pieza'
+      end
+    end
+
     private
 
     def inventory_params
