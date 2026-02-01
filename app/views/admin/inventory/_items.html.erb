@@ -27,6 +27,7 @@
           <tr>
             <th style="width: 60px;">ID</th>
             <th>Estado</th>
+            <th>Ubicación</th>
             <th>Origen</th>
             <th>Destino</th>
             <th class="text-end">Costo</th>
@@ -47,6 +48,20 @@
                 <turbo-frame id="inventory_status_<%= item.id %>">
                   <%= render partial: "admin/inventory/status_badge", locals: { item: item } %>
                 </turbo-frame>
+              </td>
+
+              <%# Ubicación %>
+              <td>
+                <% if item.inventory_location.present? %>
+                  <%= link_to admin_inventory_location_path(item.inventory_location), class: "text-decoration-none" do %>
+                    <i class="fa fa-map-marker-alt text-primary me-1"></i>
+                    <span class="badge bg-light text-dark border"><%= item.inventory_location.full_path %></span>
+                  <% end %>
+                <% else %>
+                  <span class="text-muted small">
+                    <i class="fa fa-map-marker-alt text-warning me-1"></i>Sin ubicar
+                  </span>
+                <% end %>
               </td>
 
               <%# Origen (PO) %>

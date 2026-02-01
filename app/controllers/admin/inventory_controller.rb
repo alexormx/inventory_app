@@ -81,7 +81,7 @@ module Admin
       # Consulta directa (evita efectos colaterales del proxy de asociación) y quitar límites ocultos
       status_filter = params[:status].to_s
       valid_statuses = Inventory.statuses.keys
-      base_scope = Inventory.where(product_id: @product.id).unscope(:limit, :offset)
+      base_scope = Inventory.where(product_id: @product.id).includes(:inventory_location).unscope(:limit, :offset)
       if status_filter.present? && status_filter != 'all' && valid_statuses.include?(status_filter)
         base_scope = base_scope.where(status: Inventory.statuses[status_filter])
       end
