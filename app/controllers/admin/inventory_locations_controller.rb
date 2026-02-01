@@ -12,7 +12,7 @@ module Admin
       @location_types = LocationType.options_for_select
 
       # Pre-calculate inventory counts for ALL locations in a single query
-      @inventory_counts = Inventory.where(status: %i[available reserved])
+      @inventory_counts = Inventory.requiring_location
                                    .where.not(inventory_location_id: nil)
                                    .group(:inventory_location_id)
                                    .count
@@ -30,7 +30,7 @@ module Admin
       # Cargar inventario de esta ubicación (directo, sin sub-ubicaciones)
       @direct_inventories = Inventory.includes(:product, :purchase_order)
                                       .where(inventory_location_id: @inventory_location.id)
-                                      .where(status: %i[available reserved])
+                                      .requiring_location
                                       .order('products.product_name')
                                       .references(:product)
     end

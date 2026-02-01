@@ -172,8 +172,8 @@ module Admin
 
     # GET /admin/inventory/unlocated - Inventario sin ubicación asignada
     def unlocated
-      # Solo items available y reserved sin ubicación
-      base_scope = Inventory.where(status: %i[available reserved], inventory_location_id: nil)
+      # Solo items que requieren ubicación y no la tienen
+      base_scope = Inventory.requiring_location.where(inventory_location_id: nil)
 
       # Agrupar por producto con conteos
       @products_data = base_scope.group(:product_id).count
@@ -238,7 +238,8 @@ module Admin
     def unlocated_items
       @product = Product.find(params[:product_id])
       @items = Inventory.includes(:purchase_order)
-                        .where(product_id: @product.id, status: %i[available reserved], inventory_location_id: nil)
+                        .where(product_id: @product.id, inventory_location_id: nil)
+                        .requiring_location
                         .order(:created_at)
                         .limit(50)
 

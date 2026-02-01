@@ -15,6 +15,12 @@ class Inventory < ApplicationRecord
     'ledger_adjustment' # creado desde ledger de ajustes
   ].freeze
 
+  # Estatus que requieren ubicación física (están en bodega)
+  STATUSES_REQUIRING_LOCATION = %w[available reserved pre_reserved].freeze
+
+  # Estatus que NO requieren ubicación (ya no están físicamente en bodega)
+  STATUSES_WITHOUT_LOCATION = %w[in_transit sold pre_sold lost scrap damaged marketing returned].freeze
+
   # Nota: agregar nuevos estatus siempre al final para no cambiar los IDs existentes
   enum :status,
        { available: 0, reserved: 1, in_transit: 2, sold: 3, damaged: 4, lost: 5, returned: 6, scrap: 7, pre_reserved: 8, pre_sold: 9, marketing: 10 }, default: :available
@@ -27,6 +33,7 @@ class Inventory < ApplicationRecord
   before_validation :set_source_from_purchase_order, on: :create
 
   before_save :clear_sale_order_for_free_status, if: :will_change_status_to_free?
+  before_save :clear_location_if_status_not_requires_it
   before_update :track_status_change
   after_save :log_sale_order_cleared_event, if: :sale_order_cleared?
   after_commit :update_product_stock_quantities, if: -> { saved_change_to_status? }
@@ -37,6 +44,15 @@ class Inventory < ApplicationRecord
   scope :free,     -> { where(sale_order_id: nil, status: %w[available in_transit]) }
   scope :reserved, -> { where(status: :reserved) }
   scope :sold,     -> { where(status: :sold) }
+
+  # Scopes para ubicación
+  scope :requiring_location, -> { where(status: STATUSES_REQUIRING_LOCATION) }
+  scope :not_requiring_location, -> { where(status: STATUSES_WITHOUT_LOCATION) }
+
+  # Método de instancia para verificar si requiere ubicación
+  def requires_location?
+    STATUSES_REQUIRING_LOCATION.include?(status.to_s)
+  end
 
   private
 
@@ -51,7 +67,14 @@ class Inventory < ApplicationRecord
     return unless status_changed?
 
     self.status_changed_at = Time.current
+  end
 
+  # Limpia la ubicación cuando el estatus cambia a uno que no requiere ubicación
+  def clear_location_if_status_not_requires_it
+    return unless will_save_change_to_status?
+    return if requires_location?
+
+    self.inventory_location_id = nil
   end
 
   def update_product_stock_quantities
