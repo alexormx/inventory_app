@@ -103,6 +103,19 @@ bin/rails db:test:prepare
 - `SaleOrderItem` changes auto-reserve available inventory (newest first)
 - Sync scoped per line item to prevent cross-contamination
 
+### Inventory Locations (Warehouse Management)
+The system supports hierarchical warehouse organization:
+- `InventoryLocation` model with parent-child relationships (self-referential)
+- Types configurable via `LocationType` (e.g., Bodega → Sección → Estante → Nivel)
+- Each inventory piece can have an `inventory_location_id`
+- Key features:
+  - Tree view at `/admin/inventory_locations` with inventory counts per level
+  - Bulk assignment at `/admin/inventory/unlocated` for items without location
+  - Transfer between locations at `/admin/inventory/transfer`
+  - Inline location editing in inventory detail view
+- Location has `full_path` method returning "Parent > Child > Grandchild" format
+- `path_cache` column stores denormalized path for performance
+
 ### API Design
 RESTful APIs under `/api/v1/` with batch endpoints:
 - Single item: `POST /api/v1/purchase_order_items`
@@ -120,15 +133,27 @@ RESTful APIs under `/api/v1/` with batch endpoints:
 - Test environment needs `config.enable_reloading = true` to avoid FrozenError
 - System variables are stored in DB table, access via `SystemVariable.get(key, default)`
 - Product dimensions and costs auto-update based on most recent purchase order
+- Inventory location editing only available for `available` and `reserved` statuses
+
+## Stimulus Controllers (JavaScript)
+Key controllers in `app/javascript/controllers/`:
+- `bulk-location-assign` - Bulk assignment of locations to unlocated inventory
+- `inventory-transfer` - Transfer items between locations with dual panels
+- `location-suggest` - Autocomplete search for locations
+- `inventory-locations` - Tree expand/collapse in location management
+- `toggle-inventory` - Expand/collapse product inventory details
 
 ## Performance Considerations
 - Product stats are denormalized and updated via services after inventory changes
 - ECharts dashboard data is cached and served as JSON endpoints
 - Kaminari pagination on large tables (products, inventory, orders)
 - Redis caching for session data and background jobs
+- Inventory location queries use `includes(:inventory_location)` to prevent N+1
+- Location tree uses `path_cache` for fast full path display
 
 ## Debugging Tips
 - Use `bin/rails zeitwerk:check` for autoloading issues
 - Check `log/development.log` for service errors and SQL queries
 - Admin audit pages highlight data inconsistencies automatically
 - Inventory status changes are timestamped for troubleshooting workflows
+- Use `npm run build:prod` to compile JS before deploying
