@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_01_31_212923) do
+ActiveRecord::Schema[8.0].define(version: 2026_02_01_001045) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -77,7 +77,10 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_31_212923) do
     t.integer "sale_order_item_id"
     t.string "source"
     t.string "adjustment_reference"
+    t.bigint "inventory_location_id"
     t.index ["adjustment_reference"], name: "index_inventories_on_adjustment_reference"
+    t.index ["inventory_location_id", "status"], name: "index_inventories_on_inventory_location_id_and_status"
+    t.index ["inventory_location_id"], name: "index_inventories_on_inventory_location_id"
     t.index ["product_id", "status"], name: "index_inventories_on_product_id_and_status"
     t.index ["product_id"], name: "index_inventories_on_product_id"
     t.index ["purchase_order_id"], name: "index_inventories_on_purchase_order_id"
@@ -148,6 +151,25 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_31_212923) do
     t.index ["event_type"], name: "index_inventory_events_on_event_type"
     t.index ["inventory_id"], name: "index_inventory_events_on_inventory_id"
     t.index ["product_id"], name: "index_inventory_events_on_product_id"
+  end
+
+  create_table "inventory_locations", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "code", null: false
+    t.string "location_type", null: false
+    t.text "description"
+    t.bigint "parent_id"
+    t.integer "position", default: 0
+    t.boolean "active", default: true, null: false
+    t.integer "depth", default: 0, null: false
+    t.string "path_cache"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["active"], name: "index_inventory_locations_on_active"
+    t.index ["code"], name: "index_inventory_locations_on_code", unique: true
+    t.index ["location_type"], name: "index_inventory_locations_on_location_type"
+    t.index ["parent_id", "position"], name: "index_inventory_locations_on_parent_id_and_position"
+    t.index ["parent_id"], name: "index_inventory_locations_on_parent_id"
   end
 
   create_table "maintenance_runs", force: :cascade do |t|
@@ -515,11 +537,13 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_31_212923) do
   add_foreign_key "canceled_order_items", "products"
   add_foreign_key "canceled_order_items", "sale_orders"
   add_foreign_key "cart_items", "products"
+  add_foreign_key "inventories", "inventory_locations"
   add_foreign_key "inventories", "products"
   add_foreign_key "inventories", "purchase_orders"
   add_foreign_key "inventories", "sale_orders"
   add_foreign_key "inventory_events", "inventories"
   add_foreign_key "inventory_events", "products"
+  add_foreign_key "inventory_locations", "inventory_locations", column: "parent_id"
   add_foreign_key "order_shipping_addresses", "sale_orders"
   add_foreign_key "payments", "sale_orders"
   add_foreign_key "products", "users", column: "last_supplier_id"

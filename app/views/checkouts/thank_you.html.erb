@@ -63,7 +63,7 @@
                   <span class="badge bg-<%= payment.status == 'completed' ? 'success' : 'warning' %>">
                     <%= payment.status == 'completed' ? 'Pagado' : 'Pendiente' %>
                   </span>
-                  
+
                   <% if payment.status != 'completed' %>
                     <% pm = PaymentMethod.find_by(code: payment.payment_method) %>
                     <% if pm&.account_number.present? %>

@@ -1,0 +1,156 @@
+<div class="container-fluid mt-3">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <h3><i class="bi bi-geo-alt"></i> Ubicaciones de Inventario</h3>
+      <p class="text-muted mb-0">Gestiona la estructura jerárquica de tu almacén: bodegas, secciones, estantes, niveles, etc.</p>
+    </div>
+    <%= link_to new_admin_inventory_location_path, class: 'btn btn-primary' do %>
+      <i class="bi bi-plus-lg"></i> Nueva Ubicación Raíz
+    <% end %>
+  </div>
+
+  <div class="row">
+    <!-- Tree View Panel -->
+    <div class="col-lg-8">
+      <div class="card">
+        <div class="card-header bg-light">
+          <div class="d-flex justify-content-between align-items-center">
+            <span><i class="bi bi-diagram-3"></i> Estructura de Ubicaciones</span>
+            <div class="btn-group btn-group-sm">
+              <button type="button" class="btn btn-outline-secondary" data-action="click->inventory-locations#expandAll">
+                <i class="bi bi-arrows-expand"></i> Expandir Todo
+              </button>
+              <button type="button" class="btn btn-outline-secondary" data-action="click->inventory-locations#collapseAll">
+                <i class="bi bi-arrows-collapse"></i> Colapsar Todo
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="card-body p-0" data-controller="inventory-locations">
+          <% if @locations.any? %>
+            <div class="location-tree">
+              <%= render partial: 'location_node', collection: @locations, as: :location, locals: { depth: 0 } %>
+            </div>
+          <% else %>
+            <div class="p-4 text-center text-muted">
+              <i class="bi bi-inbox display-4"></i>
+              <p class="mt-2">No hay ubicaciones configuradas.</p>
+              <p>Comienza creando tu primera bodega o almacén.</p>
+              <%= link_to 'Crear Primera Ubicación', new_admin_inventory_location_path, class: 'btn btn-primary' %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Stats Panel -->
+    <div class="col-lg-4">
+      <div class="card mb-3">
+        <div class="card-header bg-light">
+          <i class="bi bi-info-circle"></i> Resumen
+        </div>
+        <div class="card-body">
+          <ul class="list-group list-group-flush">
+            <% InventoryLocation::LOCATION_TYPES.each do |type| %>
+              <% count = InventoryLocation.by_type(type).count %>
+              <% next if count.zero? %>
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                <%= InventoryLocation::LOCATION_TYPE_NAMES[type] %>
+                <span class="badge bg-secondary rounded-pill"><%= count %></span>
+              </li>
+            <% end %>
+          </ul>
+          <% if InventoryLocation.count.zero? %>
+            <p class="text-muted text-center mb-0">Sin ubicaciones aún</p>
+          <% end %>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header bg-light">
+          <i class="bi bi-lightbulb"></i> Tipos de Ubicación
+        </div>
+        <div class="card-body">
+          <small class="text-muted">Tipos disponibles para organizar tu almacén:</small>
+          <div class="mt-2">
+            <% InventoryLocation::LOCATION_TYPES.each_with_index do |type, index| %>
+              <span class="badge bg-<%= %w[primary info success warning danger secondary dark primary info][index % 9] %> me-1 mb-1">
+                <%= InventoryLocation::LOCATION_TYPE_NAMES[type] %>
+              </span>
+            <% end %>
+          </div>
+          <hr>
+          <small class="text-muted">
+            <strong>Ejemplo de jerarquía:</strong><br>
+            Bodega → Zona → Sección → Pasillo → Estante → Nivel → Posición
+          </small>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .location-tree {
+    font-size: 0.95rem;
+  }
+  .location-node {
+    border-bottom: 1px solid #eee;
+  }
+  .location-node:last-child {
+    border-bottom: none;
+  }
+  .location-row {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    transition: background-color 0.15s;
+  }
+  .location-row:hover {
+    background-color: #f8f9fa;
+  }
+  .location-toggle {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border-radius: 4px;
+  }
+  .location-toggle:hover {
+    background-color: #e9ecef;
+  }
+  .location-toggle.no-children {
+    visibility: hidden;
+  }
+  .location-info {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .location-children {
+    margin-left: 1.5rem;
+    border-left: 2px solid #dee2e6;
+  }
+  .location-children.collapsed {
+    display: none;
+  }
+  .location-type-badge {
+    font-size: 0.75rem;
+    padding: 0.2rem 0.5rem;
+  }
+  .location-code {
+    font-family: monospace;
+    font-size: 0.85rem;
+    color: #6c757d;
+  }
+  .location-actions {
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+  .location-row:hover .location-actions {
+    opacity: 1;
+  }
+</style>

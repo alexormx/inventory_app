@@ -1,0 +1,20 @@
+<div class="container mt-3">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><%= link_to 'Ubicaciones', admin_inventory_locations_path %></li>
+      <% @inventory_location.ancestors.each do |ancestor| %>
+        <li class="breadcrumb-item"><%= link_to ancestor.name, admin_inventory_location_path(ancestor) %></li>
+      <% end %>
+      <li class="breadcrumb-item active">Editar: <%= @inventory_location.name %></li>
+    </ol>
+  </nav>
+
+  <div class="card">
+    <div class="card-header">
+      <i class="bi bi-pencil"></i> Editar Ubicación: <%= @inventory_location.name %>
+    </div>
+    <div class="card-body">
+      <%= render 'form', inventory_location: @inventory_location %>
+    </div>
+  </div>
+</div>

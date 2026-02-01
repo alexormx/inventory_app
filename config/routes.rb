@@ -61,6 +61,17 @@ Rails.application.routes.draw do
     # Tablas/frames del dashboard (Turbo)
     get 'dashboard/sellers', to: 'dashboard#sellers', as: :dashboard_sellers
 
+    # Inventory Locations (Warehouse Management)
+    resources :inventory_locations do
+      member do
+        get :children
+      end
+      collection do
+        get :tree
+        get :options
+      end
+    end
+
     # Product Management
     get 'products/drafts', to: 'products#drafts', as: :products_drafts
     get 'products/active', to: 'products#active', as: :products_active

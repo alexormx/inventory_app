@@ -6,6 +6,7 @@ class Inventory < ApplicationRecord
   belongs_to :sale_order, optional: true
   belongs_to :sale_order_item, optional: true
   belongs_to :product
+  belongs_to :inventory_location, optional: true
 
   SOURCES = [
     'po_regular',      # creado desde PO regular

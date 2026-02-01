@@ -1,0 +1,85 @@
+<%= form_with(model: [:admin, inventory_location], local: true) do |form| %>
+  <% if inventory_location.errors.any? %>
+    <div class="alert alert-danger">
+      <h6><%= pluralize(inventory_location.errors.count, "error") %> impidieron guardar esta ubicación:</h6>
+      <ul class="mb-0">
+        <% inventory_location.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="row">
+    <div class="col-md-6">
+      <div class="mb-3">
+        <%= form.label :name, 'Nombre *', class: 'form-label' %>
+        <%= form.text_field :name, class: 'form-control', placeholder: 'Ej: Bodega Principal, Estante A1, Nivel 2', autofocus: true, required: true %>
+        <small class="text-muted">Nombre descriptivo para esta ubicación</small>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="mb-3">
+        <%= form.label :code, 'Código', class: 'form-label' %>
+        <%= form.text_field :code, class: 'form-control', placeholder: 'Se genera automáticamente si lo dejas vacío' %>
+        <small class="text-muted">Código único para identificar esta ubicación (ej: BOD-A, EST-A1-N2)</small>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-md-6">
+      <div class="mb-3">
+        <%= form.label :location_type, 'Tipo de Ubicación *', class: 'form-label' %>
+        <%= form.select :location_type, @location_types, {}, class: 'form-select', required: true %>
+        <small class="text-muted">
+          Tipos sugeridos (de mayor a menor): Bodega → Zona → Sección → Pasillo → Estante → Anaquel → Nivel → Contenedor → Posición
+        </small>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="mb-3">
+        <%= form.label :parent_id, 'Ubicación Padre', class: 'form-label' %>
+        <%= form.select :parent_id,
+                        @parent_options.reject { |opt| opt[1] == inventory_location.id },
+                        { include_blank: '— Sin padre (ubicación raíz) —' },
+                        class: 'form-select' %>
+        <small class="text-muted">Deja vacío para crear una ubicación raíz (ej: una bodega principal)</small>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-md-6">
+      <div class="mb-3">
+        <%= form.label :position, 'Posición/Orden', class: 'form-label' %>
+        <%= form.number_field :position, class: 'form-control', min: 0 %>
+        <small class="text-muted">Orden de visualización entre ubicaciones del mismo nivel (menor = primero)</small>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="mb-3 pt-4">
+        <div class="form-check form-switch">
+          <%= form.check_box :active, class: 'form-check-input', role: 'switch' %>
+          <%= form.label :active, 'Activo', class: 'form-check-label' %>
+        </div>
+        <small class="text-muted">Desactivar oculta esta ubicación de las opciones disponibles</small>
+      </div>
+    </div>
+  </div>
+
+  <div class="mb-3">
+    <%= form.label :description, 'Descripción', class: 'form-label' %>
+    <%= form.text_area :description, class: 'form-control', rows: 2, placeholder: 'Descripción opcional de esta ubicación...' %>
+  </div>
+
+  <hr>
+
+  <div class="d-flex justify-content-between">
+    <%= link_to 'Cancelar', admin_inventory_locations_path, class: 'btn btn-outline-secondary' %>
+    <%= form.submit inventory_location.persisted? ? 'Actualizar Ubicación' : 'Crear Ubicación', class: 'btn btn-primary' %>
+  </div>
+<% end %>

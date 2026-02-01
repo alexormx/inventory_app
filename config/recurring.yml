@@ -1,0 +1,25 @@
+# Solid Queue Recurring Tasks Configuration
+# These tasks run automatically on the specified schedule
+#
+# Cron syntax: "minute hour day month weekday"
+# Examples:
+#   "0 4 * * *"     = Every day at 4:00 AM
+#   "*/30 * * * *"  = Every 30 minutes
+#   "0 */6 * * *"   = Every 6 hours
+#   "0 4 * * 1"     = Every Monday at 4:00 AM
+
+production:
+  sitemap_refresh:
+    class: SitemapRefreshJob
+    schedule: "0 4 * * *"  # Every day at 4:00 AM (Mexico City time)
+    queue: default
+
+development:
+  # Disabled in development - run manually with: SitemapRefreshJob.perform_later
+  # sitemap_refresh:
+  #   class: SitemapRefreshJob
+  #   schedule: "0 * * * *"  # Every hour for testing
+  #   queue: default
+
+test:
+  # No recurring tasks in test environment

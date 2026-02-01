@@ -1,0 +1,22 @@
+<div class="container mt-3">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><%= link_to 'Ubicaciones', admin_inventory_locations_path %></li>
+      <li class="breadcrumb-item active">Nueva Ubicación</li>
+    </ol>
+  </nav>
+
+  <div class="card">
+    <div class="card-header">
+      <i class="bi bi-plus-lg"></i> Nueva Ubicación de Inventario
+      <% if @inventory_location.parent.present? %>
+        <small class="text-muted">
+          (dentro de: <%= @inventory_location.parent.full_path %>)
+        </small>
+      <% end %>
+    </div>
+    <div class="card-body">
+      <%= render 'form', inventory_location: @inventory_location %>
+    </div>
+  </div>
+</div>

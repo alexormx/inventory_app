@@ -1,0 +1,61 @@
+<%# Recursive partial for rendering a location node in the tree %>
+<% depth ||= 0 %>
+<div class="location-node" data-location-id="<%= location.id %>" data-depth="<%= depth %>">
+  <div class="location-row" style="padding-left: <%= 1 + (depth * 1.5) %>rem;">
+    <%# Toggle button for expand/collapse %>
+    <div class="location-toggle <%= 'no-children' unless location.has_children? %>"
+         data-action="click->inventory-locations#toggle"
+         data-expanded="true">
+      <% if location.has_children? %>
+        <i class="bi bi-chevron-down"></i>
+      <% end %>
+    </div>
+
+    <%# Location info %>
+    <div class="location-info">
+      <span class="badge location-type-badge bg-<%= location_type_color(location.location_type) %>">
+        <%= location.type_name %>
+      </span>
+      <strong><%= location.name %></strong>
+      <span class="location-code">(<%= location.code %>)</span>
+      <% unless location.active? %>
+        <span class="badge bg-danger">Inactivo</span>
+      <% end %>
+    </div>
+
+    <%# Actions %>
+    <div class="location-actions">
+      <%= link_to new_admin_inventory_location_path(parent_id: location.id),
+                  class: 'btn btn-sm btn-outline-success me-1',
+                  title: 'Agregar sub-ubicación' do %>
+        <i class="bi bi-plus-lg"></i>
+      <% end %>
+      <%= link_to admin_inventory_location_path(location),
+                  class: 'btn btn-sm btn-outline-info me-1',
+                  title: 'Ver detalles' do %>
+        <i class="bi bi-eye"></i>
+      <% end %>
+      <%= link_to edit_admin_inventory_location_path(location),
+                  class: 'btn btn-sm btn-outline-primary me-1',
+                  title: 'Editar' do %>
+        <i class="bi bi-pencil"></i>
+      <% end %>
+      <% if location.leaf? && !Inventory.where(inventory_location_id: location.id).exists? %>
+        <%= link_to admin_inventory_location_path(location),
+                    method: :delete,
+                    data: { confirm: "¿Eliminar '#{location.name}'?" },
+                    class: 'btn btn-sm btn-outline-danger',
+                    title: 'Eliminar' do %>
+          <i class="bi bi-trash"></i>
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+
+  <%# Children (recursive) %>
+  <% if location.children.any? %>
+    <div class="location-children">
+      <%= render partial: 'location_node', collection: location.children.ordered, as: :location, locals: { depth: depth + 1 } %>
+    </div>
+  <% end %>
+</div>
