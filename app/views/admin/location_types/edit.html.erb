@@ -1,7 +1,7 @@
 <div class="container mt-3">
   <div class="d-flex justify-content-between align-items-center mb-3">
     <div>
-      <h3><i class="bi bi-pencil"></i> Editar Tipo de Ubicación</h3>
+      <h3><i class="fas fa-pencil-alt"></i> Editar Tipo de Ubicación</h3>
       <p class="text-muted mb-0">Modifica la configuración del tipo "<%= @location_type.name %>".</p>
     </div>
   </div>
@@ -15,7 +15,7 @@
   <% location_count = InventoryLocation.where(location_type: @location_type.code).count %>
   <% if location_count > 0 %>
     <div class="alert alert-info mt-3">
-      <i class="bi bi-info-circle"></i>
+      <i class="fas fa-info-circle"></i>
       Este tipo tiene <strong><%= location_count %></strong> ubicación(es) asignada(s).
       <%= link_to 'Ver ubicaciones', admin_inventory_locations_path(type: @location_type.code) %>.
     </div>

@@ -11,22 +11,30 @@ export default class extends Controller {
 
   // Toggle a single node's children visibility
   toggle(event) {
+    event.stopPropagation()
     const toggleBtn = event.currentTarget
     const node = toggleBtn.closest('.location-node')
-    const children = node.querySelector('.location-children')
+    const children = node.querySelector(':scope > .location-children')
 
     if (!children) return
 
     const isExpanded = toggleBtn.dataset.expanded === 'true'
+    const icon = toggleBtn.querySelector('i')
 
     if (isExpanded) {
       children.classList.add('collapsed')
       toggleBtn.dataset.expanded = 'false'
-      toggleBtn.querySelector('i').classList.replace('bi-chevron-down', 'bi-chevron-right')
+      if (icon) {
+        icon.classList.remove('fa-chevron-down')
+        icon.classList.add('fa-chevron-right')
+      }
     } else {
       children.classList.remove('collapsed')
       toggleBtn.dataset.expanded = 'true'
-      toggleBtn.querySelector('i').classList.replace('bi-chevron-right', 'bi-chevron-down')
+      if (icon) {
+        icon.classList.remove('fa-chevron-right')
+        icon.classList.add('fa-chevron-down')
+      }
     }
   }
 
@@ -38,8 +46,9 @@ export default class extends Controller {
     this.element.querySelectorAll('.location-toggle').forEach(toggle => {
       toggle.dataset.expanded = 'true'
       const icon = toggle.querySelector('i')
-      if (icon && icon.classList.contains('bi-chevron-right')) {
-        icon.classList.replace('bi-chevron-right', 'bi-chevron-down')
+      if (icon) {
+        icon.classList.remove('fa-chevron-right')
+        icon.classList.add('fa-chevron-down')
       }
     })
   }
@@ -52,8 +61,9 @@ export default class extends Controller {
     this.element.querySelectorAll('.location-toggle').forEach(toggle => {
       toggle.dataset.expanded = 'false'
       const icon = toggle.querySelector('i')
-      if (icon && icon.classList.contains('bi-chevron-down')) {
-        icon.classList.replace('bi-chevron-down', 'bi-chevron-right')
+      if (icon) {
+        icon.classList.remove('fa-chevron-down')
+        icon.classList.add('fa-chevron-right')
       }
     })
   }

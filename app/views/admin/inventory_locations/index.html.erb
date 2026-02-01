@@ -1,15 +1,15 @@
 <div class="container-fluid mt-3">
   <div class="d-flex justify-content-between align-items-center mb-3">
     <div>
-      <h3><i class="bi bi-geo-alt"></i> Ubicaciones de Inventario</h3>
+      <h3><i class="fas fa-map-marker-alt"></i> Ubicaciones de Inventario</h3>
       <p class="text-muted mb-0">Gestiona la estructura jerárquica de tu almacén: bodegas, secciones, estantes, niveles, etc.</p>
     </div>
     <div class="btn-group">
       <%= link_to admin_location_types_path, class: 'btn btn-outline-secondary' do %>
-        <i class="bi bi-tags"></i> Configurar Tipos
+        <i class="fas fa-tags"></i> Configurar Tipos
       <% end %>
       <%= link_to new_admin_inventory_location_path, class: 'btn btn-primary' do %>
-        <i class="bi bi-plus-lg"></i> Nueva Ubicación Raíz
+        <i class="fas fa-plus"></i> Nueva Ubicación Raíz
       <% end %>
     </div>
   </div>
@@ -20,13 +20,13 @@
       <div class="card" data-controller="inventory-locations">
         <div class="card-header bg-light">
           <div class="d-flex justify-content-between align-items-center">
-            <span><i class="bi bi-diagram-3"></i> Estructura de Ubicaciones</span>
+            <span><i class="fas fa-sitemap"></i> Estructura de Ubicaciones</span>
             <div class="btn-group btn-group-sm">
               <button type="button" class="btn btn-outline-secondary" data-action="click->inventory-locations#expandAll">
-                <i class="bi bi-arrows-expand"></i> Expandir Todo
+                <i class="fas fa-expand-arrows-alt"></i> Expandir Todo
               </button>
               <button type="button" class="btn btn-outline-secondary" data-action="click->inventory-locations#collapseAll">
-                <i class="bi bi-arrows-collapse"></i> Colapsar Todo
+                <i class="fas fa-compress-arrows-alt"></i> Colapsar Todo
               </button>
             </div>
           </div>
@@ -38,7 +38,7 @@
             </div>
           <% else %>
             <div class="p-4 text-center text-muted">
-              <i class="bi bi-inbox display-4"></i>
+              <i class="fas fa-inbox fa-3x"></i>
               <p class="mt-2">No hay ubicaciones configuradas.</p>
               <p>Comienza creando tu primera bodega o almacén.</p>
               <%= link_to 'Crear Primera Ubicación', new_admin_inventory_location_path, class: 'btn btn-primary' %>
@@ -52,15 +52,15 @@
     <div class="col-lg-4">
       <div class="card mb-3">
         <div class="card-header bg-light">
-          <i class="bi bi-info-circle"></i> Resumen
+          <i class="fas fa-info-circle"></i> Resumen
         </div>
         <div class="card-body">
           <ul class="list-group list-group-flush">
-            <% InventoryLocation::LOCATION_TYPES.each do |type| %>
-              <% count = InventoryLocation.by_type(type).count %>
+            <% LocationType.active.ordered.each do |lt| %>
+              <% count = InventoryLocation.by_type(lt.code).count %>
               <% next if count.zero? %>
               <li class="list-group-item d-flex justify-content-between align-items-center">
-                <%= InventoryLocation::LOCATION_TYPE_NAMES[type] %>
+                <%= lt.name %>
                 <span class="badge bg-secondary rounded-pill"><%= count %></span>
               </li>
             <% end %>
@@ -73,9 +73,9 @@
 
       <div class="card">
         <div class="card-header bg-light d-flex justify-content-between align-items-center">
-          <span><i class="bi bi-lightbulb"></i> Tipos de Ubicación</span>
+          <span><i class="fas fa-lightbulb"></i> Tipos de Ubicación</span>
           <%= link_to admin_location_types_path, class: 'btn btn-sm btn-outline-secondary' do %>
-            <i class="bi bi-pencil"></i> Editar
+            <i class="fas fa-pencil-alt"></i> Editar
           <% end %>
         </div>
         <div class="card-body">

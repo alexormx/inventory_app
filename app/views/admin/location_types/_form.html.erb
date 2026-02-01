@@ -1,7 +1,7 @@
 <%= form_with(model: [:admin, @location_type], local: true, class: 'needs-validation') do |f| %>
   <% if @location_type.errors.any? %>
     <div class="alert alert-danger">
-      <h6 class="alert-heading"><i class="bi bi-exclamation-triangle"></i> Errores</h6>
+      <h6 class="alert-heading"><i class="fas fa-exclamation-triangle"></i> Errores</h6>
       <ul class="mb-0">
         <% @location_type.errors.full_messages.each do |message| %>
           <li><%= message %></li>
@@ -33,13 +33,13 @@
         <%= f.label :icon, 'Icono', class: 'form-label' %>
         <div class="input-group">
           <span class="input-group-text" id="icon-preview">
-            <i class="<%= @location_type.icon.presence || 'bi bi-box' %>"></i>
+            <i class="<%= @location_type.icon.presence || 'fas fa-cube' %>"></i>
           </span>
-          <%= f.text_field :icon, class: 'form-control', placeholder: 'bi bi-box', data: { action: 'input->location-type#updateIconPreview' } %>
+          <%= f.text_field :icon, class: 'form-control', placeholder: 'fas fa-cube', data: { action: 'input->location-type#updateIconPreview' } %>
         </div>
         <div class="form-text">
-          Clase de icono Bootstrap Icons. Ver
-          <a href="https://icons.getbootstrap.com/" target="_blank">catálogo completo</a>.
+          Clase de icono Font Awesome. Ver
+          <a href="https://fontawesome.com/v5/search?o=r&m=free" target="_blank">catálogo completo</a>.
         </div>
       </div>
     </div>

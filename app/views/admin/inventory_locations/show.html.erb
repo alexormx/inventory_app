@@ -20,10 +20,10 @@
       </div>
       <div class="btn-group">
         <%= link_to new_admin_inventory_location_path(parent_id: @inventory_location.id), class: 'btn btn-success' do %>
-          <i class="bi bi-plus-lg"></i> Agregar Sub-ubicación
+          <i class="fas fa-plus"></i> Agregar Sub-ubicación
         <% end %>
         <%= link_to edit_admin_inventory_location_path(@inventory_location), class: 'btn btn-primary' do %>
-          <i class="bi bi-pencil"></i> Editar
+          <i class="fas fa-pencil-alt"></i> Editar
         <% end %>
       </div>
     </div>
@@ -127,7 +127,7 @@
                 </td>
                 <td class="text-end">
                   <%= link_to edit_admin_inventory_location_path(child), class: 'btn btn-sm btn-outline-primary' do %>
-                    <i class="bi bi-pencil"></i>
+                    <i class="fas fa-pencil-alt"></i>
                   <% end %>
                 </td>
               </tr>
