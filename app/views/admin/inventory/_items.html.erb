@@ -57,7 +57,7 @@
                 </turbo-frame>
               </td>
 
-              <%# Origen (PO) %>
+              <%# Origen (PO o ADJ positivo) %>
               <td>
                 <% if item.purchase_order_id.present? %>
                   <%= link_to admin_purchase_order_path(item.purchase_order_id), class: "text-decoration-none", data: { turbo_frame: "_top" } do %>
@@ -66,7 +66,8 @@
                   <% if item.purchase_order_item_id.present? %>
                     <span class="text-muted small ms-1">(línea <%= item.purchase_order_item_id %>)</span>
                   <% end %>
-                <% elsif item.adjustment_reference.present? %>
+                <% elsif item.source == 'ledger_adjustment' && item.adjustment_reference.present? %>
+                  <%# Ajuste positivo: el inventario fue CREADO por el ajuste %>
                   <span class="text-info">
                     <i class="fa fa-sliders-h me-1"></i><%= item.adjustment_reference %>
                   </span>
@@ -75,13 +76,14 @@
                 <% end %>
               </td>
 
-              <%# Destino (SO) %>
+              <%# Destino (SO o ADJ negativo) %>
               <td>
                 <% if item.sale_order_id.present? %>
                   <%= link_to admin_sale_order_path(item.sale_order_id), class: "text-decoration-none", data: { turbo_frame: "_top" } do %>
                     <i class="fa fa-shopping-cart text-muted me-1"></i>SO #<%= item.sale_order_id %>
                   <% end %>
-                <% elsif item.adjustment_reference.present? %>
+                <% elsif item.source != 'ledger_adjustment' && item.adjustment_reference.present? %>
+                  <%# Ajuste negativo: el inventario fue MARCADO como pérdida/daño por el ajuste %>
                   <span class="text-info">
                     <i class="fa fa-sliders-h me-1"></i><%= item.adjustment_reference %>
                   </span>
