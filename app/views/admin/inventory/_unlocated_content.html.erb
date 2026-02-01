@@ -98,7 +98,7 @@
             </thead>
             <tbody>
               <% @products.each do |product| %>
-                <% unlocated_count = @products_data[product.id]&.unlocated_count || 0 %>
+                <% unlocated_count = @products_data[product.id] || 0 %>
                 <tr data-bulk-location-assign-target="productGroup" data-product-id="<%= product.id %>">
                   <td>
                     <input type="checkbox"

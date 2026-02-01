@@ -142,17 +142,13 @@ module Admin
     def unlocated
       # Solo items available y reserved sin ubicación
       base_scope = Inventory.where(status: %i[available reserved], inventory_location_id: nil)
-                            .includes(:product, :purchase_order)
 
-      # Agrupar por producto con conteos
-      @products_data = base_scope.group(:product_id)
-                                 .select('product_id, COUNT(*) as unlocated_count')
-                                 .index_by(&:product_id)
+      # Agrupar por producto con conteos - usar hash simple en lugar de objetos Inventory parciales
+      @products_data = base_scope.group(:product_id).count
 
       product_ids = @products_data.keys
       @products = Product.where(id: product_ids)
                          .order(:product_name)
-                         .includes(:inventories)
 
       @total_unlocated = base_scope.count
       @location_options = InventoryLocation.active.nested_options
