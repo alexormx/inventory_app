@@ -1,54 +1,86 @@
-<% if items.any? %>
+<% grouped_items = items.group_by(&:product) %>
+<% if grouped_items.any? %>
   <table class="table table-sm table-hover mb-0">
     <thead class="table-light sticky-top">
       <tr>
-        <th width="30">
-          <input type="checkbox" class="form-check-input select-all-checkbox">
-        </th>
         <th>Producto</th>
-        <th width="80">Status</th>
-        <th width="90">Costo</th>
+        <th width="100" class="text-center">Disponible</th>
+        <th width="140" class="text-center">A Transferir</th>
       </tr>
     </thead>
     <tbody>
-      <% items.group_by(&:product).each do |product, product_items| %>
-        <% product_items.each_with_index do |item, idx| %>
-          <tr class="item-row" data-item-id="<%= item.id %>">
-            <td>
-              <input type="checkbox"
-                     class="form-check-input item-checkbox"
-                     value="<%= item.id %>"
-                     data-action="change->inventory-transfer#updateSelection">
-            </td>
-            <td>
-              <% if idx == 0 %>
-                <div class="d-flex align-items-center">
-                  <% if product.product_images.attached? %>
-                    <%= image_tag product.product_images.first.variant(resize_to_limit: [30, 30]), class: 'me-2 rounded' %>
-                  <% end %>
-                  <div>
-                    <strong class="small"><%= product.product_name %></strong>
-                    <br><small class="text-muted"><%= product.product_sku %></small>
-                    <span class="badge bg-light text-dark ms-1">×<%= product_items.size %></span>
-                  </div>
-                </div>
+      <% grouped_items.each do |product, product_items| %>
+        <%
+          item_ids = product_items.map(&:id)
+          total_cost = product_items.sum(&:purchase_cost)
+          avg_cost = total_cost / product_items.size
+        %>
+        <tr class="product-row"
+            data-product-id="<%= product.id %>"
+            data-item-ids="<%= item_ids.join(',') %>"
+            data-max="<%= product_items.size %>">
+          <td>
+            <div class="d-flex align-items-center">
+              <% if product.product_images.attached? %>
+                <%= image_tag product.product_images.first.variant(resize_to_limit: [40, 40]), class: 'me-2 rounded' %>
               <% else %>
-                <small class="text-muted ms-4">└ Pieza #<%= item.id %></small>
+                <div class="me-2 bg-secondary rounded d-flex align-items-center justify-content-center" style="width:40px;height:40px;">
+                  <i class="fas fa-image text-white small"></i>
+                </div>
               <% end %>
-            </td>
-            <td>
-              <span class="badge bg-<%= item.status == 'available' ? 'success' : 'info' %> small">
-                <%= item.status %>
-              </span>
-            </td>
-            <td class="small">
-              <%= number_to_currency(item.purchase_cost, unit: '$', precision: 2) %>
-            </td>
-          </tr>
-        <% end %>
+              <div>
+                <strong class="small"><%= product.product_name %></strong>
+                <br><small class="text-muted"><%= product.product_sku %></small>
+                <br><small class="text-muted">Costo prom: <%= number_to_currency(avg_cost, unit: '$', precision: 2) %></small>
+              </div>
+            </div>
+          </td>
+          <td class="text-center align-middle">
+            <span class="badge bg-info fs-6"><%= product_items.size %></span>
+          </td>
+          <td class="text-center align-middle">
+            <div class="input-group input-group-sm" style="max-width: 130px; margin: 0 auto;">
+              <button type="button" class="btn btn-outline-secondary"
+                      data-action="click->inventory-transfer#decrementQty"
+                      title="Reducir">
+                <i class="fas fa-minus"></i>
+              </button>
+              <input type="number"
+                     class="form-control text-center qty-input"
+                     min="0"
+                     max="<%= product_items.size %>"
+                     value="0"
+                     data-product-id="<%= product.id %>"
+                     data-action="input->inventory-transfer#qtyChanged">
+              <button type="button" class="btn btn-outline-secondary"
+                      data-action="click->inventory-transfer#incrementQty"
+                      title="Aumentar">
+                <i class="fas fa-plus"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
       <% end %>
     </tbody>
   </table>
+
+  <div class="p-2 bg-light border-top">
+    <div class="d-flex justify-content-between align-items-center">
+      <small class="text-muted">
+        <i class="fas fa-info-circle"></i> Las piezas más antiguas (FIFO) serán transferidas primero
+      </small>
+      <div class="btn-group btn-group-sm">
+        <button type="button" class="btn btn-outline-primary btn-sm"
+                data-action="click->inventory-transfer#setAllMax">
+          <i class="fas fa-check-double"></i> Todo
+        </button>
+        <button type="button" class="btn btn-outline-secondary btn-sm"
+                data-action="click->inventory-transfer#clearAll">
+          <i class="fas fa-times"></i> Limpiar
+        </button>
+      </div>
+    </div>
+  </div>
 <% else %>
   <div class="p-4 text-center text-muted">
     <i class="fas fa-inbox fa-2x mb-2"></i>

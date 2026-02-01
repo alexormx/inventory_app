@@ -1,6 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 
 // Controlador para transferencia de inventario entre ubicaciones
+// Soporta transferencias parciales por cantidad (FIFO)
 export default class extends Controller {
   static targets = [
     "sourceSelect",
@@ -15,7 +16,6 @@ export default class extends Controller {
   ]
 
   connect() {
-    this.selectedItems = new Set()
     this.updateUI()
   }
 
@@ -33,7 +33,6 @@ export default class extends Controller {
         </div>
       `
       this.sourceCountTarget.textContent = '0'
-      this.selectedItems.clear()
       this.updateUI()
       return
     }
@@ -52,17 +51,11 @@ export default class extends Controller {
       const html = await response.text()
       this.sourceItemsTarget.innerHTML = html
 
-      // Contar items
-      const count = this.sourceItemsTarget.querySelectorAll('.item-checkbox').length
-      this.sourceCountTarget.textContent = count
-
-      // Limpiar selección
-      this.selectedItems.clear()
+      // Contar total de piezas disponibles
+      this.updateSourceCount()
       this.updateUI()
-
-      // Bind select all checkbox
-      this.bindSelectAll(this.sourceItemsTarget)
     } catch (error) {
+      console.error('Error loading source:', error)
       this.sourceItemsTarget.innerHTML = `
         <div class="p-3 text-center text-danger">
           <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
@@ -104,18 +97,19 @@ export default class extends Controller {
       const html = await response.text()
       this.destItemsTarget.innerHTML = html
 
-      // Contar items y deshabilitar checkboxes en destino
-      const checkboxes = this.destItemsTarget.querySelectorAll('.item-checkbox')
-      checkboxes.forEach(cb => {
-        cb.disabled = true
-        cb.closest('tr')?.classList.add('table-light')
+      // Deshabilitar inputs en destino (solo lectura)
+      const inputs = this.destItemsTarget.querySelectorAll('.qty-input')
+      inputs.forEach(input => {
+        input.disabled = true
+        input.closest('tr')?.classList.add('table-light')
       })
-      const selectAll = this.destItemsTarget.querySelector('.select-all-checkbox')
-      if (selectAll) selectAll.disabled = true
+      const buttons = this.destItemsTarget.querySelectorAll('button')
+      buttons.forEach(btn => btn.disabled = true)
 
-      this.destCountTarget.textContent = checkboxes.length
+      this.updateDestCount()
       this.updateUI()
     } catch (error) {
+      console.error('Error loading destination:', error)
       this.destItemsTarget.innerHTML = `
         <div class="p-3 text-center text-danger">
           <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
@@ -130,63 +124,120 @@ export default class extends Controller {
     this.loadDestination()
   }
 
-  // Bind evento a checkbox "seleccionar todo"
-  bindSelectAll(container) {
-    const selectAll = container.querySelector('.select-all-checkbox')
-    if (selectAll) {
-      selectAll.addEventListener('change', (e) => {
-        const checkboxes = container.querySelectorAll('.item-checkbox')
-        checkboxes.forEach(cb => {
-          cb.checked = e.target.checked
-          if (e.target.checked) {
-            this.selectedItems.add(cb.value)
-          } else {
-            this.selectedItems.delete(cb.value)
-          }
+  // Actualizar contador de origen
+  updateSourceCount() {
+    let total = 0
+    const rows = this.sourceItemsTarget.querySelectorAll('.product-row')
+    rows.forEach(row => {
+      total += parseInt(row.dataset.max, 10) || 0
+    })
+    this.sourceCountTarget.textContent = total
+  }
+
+  // Actualizar contador de destino
+  updateDestCount() {
+    let total = 0
+    const rows = this.destItemsTarget.querySelectorAll('.product-row')
+    rows.forEach(row => {
+      total += parseInt(row.dataset.max, 10) || 0
+    })
+    this.destCountTarget.textContent = total
+  }
+
+  // Incrementar cantidad
+  incrementQty(event) {
+    const row = event.target.closest('.product-row')
+    const input = row.querySelector('.qty-input')
+    const max = parseInt(input.max, 10) || 0
+    let value = parseInt(input.value, 10) || 0
+    if (value < max) {
+      input.value = value + 1
+      this.updateUI()
+    }
+  }
+
+  // Decrementar cantidad
+  decrementQty(event) {
+    const row = event.target.closest('.product-row')
+    const input = row.querySelector('.qty-input')
+    let value = parseInt(input.value, 10) || 0
+    if (value > 0) {
+      input.value = value - 1
+      this.updateUI()
+    }
+  }
+
+  // Cuando cambia el input de cantidad
+  qtyChanged(event) {
+    const input = event.target
+    const max = parseInt(input.max, 10) || 0
+    let value = parseInt(input.value, 10) || 0
+
+    // Validar rango
+    if (value < 0) value = 0
+    if (value > max) value = max
+    input.value = value
+
+    this.updateUI()
+  }
+
+  // Poner todas las cantidades al máximo
+  setAllMax(event) {
+    // Determinar si el click viene del panel origen
+    const container = event.target.closest('.card-body') || this.sourceItemsTarget
+    const inputs = container.querySelectorAll('.qty-input:not([disabled])')
+    inputs.forEach(input => {
+      input.value = input.max
+    })
+    this.updateUI()
+  }
+
+  // Limpiar todas las cantidades
+  clearAll(event) {
+    const container = event.target.closest('.card-body') || this.sourceItemsTarget
+    const inputs = container.querySelectorAll('.qty-input:not([disabled])')
+    inputs.forEach(input => {
+      input.value = 0
+    })
+    this.updateUI()
+  }
+
+  // Obtener total de piezas a transferir
+  getTotalToTransfer() {
+    let total = 0
+    const inputs = this.sourceItemsTarget.querySelectorAll('.qty-input')
+    inputs.forEach(input => {
+      total += parseInt(input.value, 10) || 0
+    })
+    return total
+  }
+
+  // Obtener datos de transferencia (producto -> cantidad -> item_ids)
+  getTransferData() {
+    const transfers = []
+    const rows = this.sourceItemsTarget.querySelectorAll('.product-row')
+
+    rows.forEach(row => {
+      const input = row.querySelector('.qty-input')
+      const qty = parseInt(input.value, 10) || 0
+      if (qty > 0) {
+        const productId = row.dataset.productId
+        const itemIds = row.dataset.itemIds.split(',').map(id => parseInt(id, 10))
+        // Tomar solo los primeros N item_ids (FIFO - los más antiguos están primero)
+        transfers.push({
+          product_id: productId,
+          quantity: qty,
+          item_ids: itemIds.slice(0, qty)
         })
-        this.updateUI()
-      })
-    }
-  }
-
-  // Seleccionar todos los items del origen
-  selectAllSource() {
-    const checkboxes = this.sourceItemsTarget.querySelectorAll('.item-checkbox')
-    checkboxes.forEach(cb => {
-      cb.checked = true
-      this.selectedItems.add(cb.value)
+      }
     })
-    const selectAll = this.sourceItemsTarget.querySelector('.select-all-checkbox')
-    if (selectAll) selectAll.checked = true
-    this.updateUI()
-  }
 
-  // Deseleccionar todos los items del origen
-  deselectAllSource() {
-    const checkboxes = this.sourceItemsTarget.querySelectorAll('.item-checkbox')
-    checkboxes.forEach(cb => {
-      cb.checked = false
-      this.selectedItems.delete(cb.value)
-    })
-    const selectAll = this.sourceItemsTarget.querySelector('.select-all-checkbox')
-    if (selectAll) selectAll.checked = false
-    this.updateUI()
-  }
-
-  // Actualizar selección cuando cambia un checkbox
-  updateSelection(event) {
-    const checkbox = event.target
-    if (checkbox.checked) {
-      this.selectedItems.add(checkbox.value)
-    } else {
-      this.selectedItems.delete(checkbox.value)
-    }
-    this.updateUI()
+    return transfers
   }
 
   // Actualizar UI (contador y estado del botón)
   updateUI() {
-    const count = this.selectedItems.size
+    const count = this.getTotalToTransfer()
     this.selectedCountTarget.textContent = count
 
     const hasSource = this.sourceSelectTarget.value !== ''
@@ -206,10 +257,13 @@ export default class extends Controller {
   async executeTransfer() {
     const sourceId = this.sourceSelectTarget.value
     const destId = this.destSelectTarget.value
-    const itemIds = Array.from(this.selectedItems)
+    const transfers = this.getTransferData()
     const url = this.transferBtnTarget.dataset.url
 
-    if (!sourceId || !destId || itemIds.length === 0) return
+    if (!sourceId || !destId || transfers.length === 0) return
+
+    // Extraer todos los item_ids de las transferencias
+    const allItemIds = transfers.flatMap(t => t.item_ids)
 
     this.transferBtnTarget.disabled = true
     this.transferBtnTarget.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Transfiriendo...'
@@ -225,7 +279,7 @@ export default class extends Controller {
         body: JSON.stringify({
           source_location_id: sourceId,
           destination_location_id: destId,
-          item_ids: itemIds
+          item_ids: allItemIds
         })
       })
 
@@ -234,27 +288,19 @@ export default class extends Controller {
       if (data.success) {
         this.showAlert('success', data.message)
         // Recargar ambas listas
-        this.selectedItems.clear()
         await this.loadSource()
         await this.loadDestination()
-        // Actualizar contadores en los selects
-        this.updateSelectCounts()
       } else {
         this.showAlert('danger', data.error || 'Error al transferir')
       }
     } catch (error) {
+      console.error('Transfer error:', error)
       this.showAlert('danger', 'Error de conexión')
     }
 
     this.transferBtnTarget.disabled = false
     this.transferBtnTarget.innerHTML = '<i class="fas fa-arrow-right me-2"></i> Transferir al Destino'
     this.updateUI()
-  }
-
-  // Actualizar contadores en los selects (después de transferencia)
-  updateSelectCounts() {
-    // Esto requeriría recargar la página o hacer otra petición
-    // Por simplicidad, sugerimos recargar
   }
 
   // Mostrar alerta
