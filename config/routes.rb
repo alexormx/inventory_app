@@ -50,6 +50,9 @@ Rails.application.routes.draw do
         get :edit_status
         patch :update_status
         get :cancel_edit_status
+        get :edit_location
+        patch :update_location
+        get :cancel_edit_location
       end
     end
 

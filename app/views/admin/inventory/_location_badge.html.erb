@@ -1,0 +1,21 @@
+<turbo-frame id="inventory_location_<%= item.id %>">
+  <% if item.inventory_location.present? %>
+    <%= link_to admin_inventory_location_path(item.inventory_location), class: "text-decoration-none" do %>
+      <i class="fa fa-map-marker-alt text-primary me-1"></i>
+      <span class="badge bg-light text-dark border"><%= item.inventory_location.full_path %></span>
+    <% end %>
+  <% else %>
+    <span class="text-muted small">
+      <i class="fa fa-map-marker-alt text-warning me-1"></i>Sin ubicar
+    </span>
+  <% end %>
+
+  <% if %w[available reserved].include?(item.status) %>
+    <%= link_to edit_location_admin_inventory_path(item),
+                data: { turbo_frame: "inventory_location_#{item.id}" },
+                class: "btn btn-sm btn-light ms-1",
+                title: "Cambiar ubicación" do %>
+      <i class="fas fa-pen"></i>
+    <% end %>
+  <% end %>
+</turbo-frame>

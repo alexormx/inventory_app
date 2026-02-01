@@ -1,0 +1,43 @@
+<turbo-frame id="inventory_location_<%= item.id %>">
+  <%= form_with url: update_location_admin_inventory_path(item), method: :patch, local: false do |f| %>
+    <div class="d-flex gap-2 align-items-center">
+      <div class="position-relative flex-grow-1"
+           data-controller="location-suggest"
+           data-location-suggest-url-value="<%= search_admin_inventory_locations_path %>"
+           style="min-width: 200px;">
+        <input type="text"
+               class="form-control form-control-sm"
+               placeholder="Buscar ubicación..."
+               value="<%= item.inventory_location&.full_path %>"
+               data-location-suggest-target="input"
+               data-action="input->location-suggest#input keydown->location-suggest#keydown"
+               autocomplete="off">
+        <input type="hidden"
+               name="inventory_location_id"
+               value="<%= item.inventory_location_id %>"
+               data-location-suggest-target="hidden">
+        <div data-location-suggest-target="results" class="position-relative"></div>
+      </div>
+
+      <%= f.submit class: "btn btn-sm btn-success", title: "Guardar" do %>
+        <i class="fas fa-check"></i>
+      <% end %>
+
+      <%= link_to cancel_edit_location_admin_inventory_path(item), 
+                  data: { turbo_frame: "inventory_location_#{item.id}" },
+                  class: "btn btn-sm btn-secondary", 
+                  title: "Cancelar" do %>
+        <i class="fas fa-times"></i>
+      <% end %>
+
+      <% if item.inventory_location_id.present? %>
+        <button type="button" 
+                class="btn btn-sm btn-outline-danger"
+                title="Quitar ubicación"
+                onclick="this.closest('form').querySelector('input[name=inventory_location_id]').value=''; this.closest('form').submit();">
+          <i class="fas fa-unlink"></i>
+        </button>
+      <% end %>
+    </div>
+  <% end %>
+</turbo-frame>

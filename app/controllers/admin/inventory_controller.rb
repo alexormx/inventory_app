@@ -138,6 +138,38 @@ module Admin
       render partial: 'admin/inventory/status_badge', locals: { item: @item }
     end
 
+    # GET /admin/inventory/:id/edit_location - Formulario inline para cambiar ubicación
+    def edit_location
+      @item = Inventory.find(params[:id])
+      render partial: 'admin/inventory/edit_location_form', locals: { item: @item }
+    end
+
+    # PATCH /admin/inventory/:id/update_location - Actualizar ubicación
+    def update_location
+      @item = Inventory.includes(:inventory_location).find(params[:id])
+      location_id = params[:inventory_location_id].presence
+
+      @item.update(inventory_location_id: location_id)
+      @product = @item.product
+
+      respond_to do |format|
+        format.turbo_stream do
+          render turbo_stream: [
+            turbo_stream.replace("inventory_location_#{@item.id}", partial: 'admin/inventory/location_badge', locals: { item: @item.reload })
+          ]
+        end
+        format.html do
+          redirect_to admin_inventory_index_path, notice: 'Ubicación actualizada'
+        end
+      end
+    end
+
+    # GET /admin/inventory/:id/cancel_edit_location - Cancelar edición de ubicación
+    def cancel_edit_location
+      @item = Inventory.includes(:inventory_location).find(params[:id])
+      render partial: 'admin/inventory/location_badge', locals: { item: @item }
+    end
+
     # GET /admin/inventory/unlocated - Inventario sin ubicación asignada
     def unlocated
       # Solo items available y reserved sin ubicación
