@@ -7,6 +7,9 @@
         <span class="badge bg-warning text-dark ms-2">
           <i class="fas fa-box"></i> <%= @total_unlocated %> piezas sin ubicar
         </span>
+        <span class="badge bg-secondary ms-1">
+          <%= @total_products %> productos
+        </span>
       </p>
     </div>
     <div>
@@ -16,22 +19,56 @@
     </div>
   </div>
 
+  <!-- Filtros y ordenación -->
+  <div class="card mb-3">
+    <div class="card-body py-2">
+      <%= form_with url: admin_inventory_unlocated_path, method: :get, local: true, class: "row g-2 align-items-center" do %>
+        <div class="col-md-5">
+          <div class="input-group input-group-sm">
+            <span class="input-group-text"><i class="fas fa-search"></i></span>
+            <%= text_field_tag :q, @q, class: 'form-control', placeholder: 'Buscar por nombre o SKU...' %>
+            <% if @q.present? %>
+              <%= link_to admin_inventory_unlocated_path(sort: @sort), class: 'btn btn-outline-secondary' do %>
+                <i class="fas fa-times"></i>
+              <% end %>
+            <% end %>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="input-group input-group-sm">
+            <span class="input-group-text"><i class="fas fa-sort"></i> Ordenar</span>
+            <%= select_tag :sort, options_for_select([
+              ['Por nombre A-Z', 'name'],
+              ['Más piezas primero', 'count_desc'],
+              ['Menos piezas primero', 'count_asc']
+            ], @sort), class: 'form-select', onchange: 'this.form.submit()' %>
+          </div>
+        </div>
+        <div class="col-md-3 text-end">
+          <button type="submit" class="btn btn-sm btn-primary">
+            <i class="fas fa-filter"></i> Filtrar
+          </button>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
   <% if @products.any? %>
     <%= form_with url: admin_inventory_bulk_assign_location_path, method: :post, data: { action: "submit->bulk-location-assign#prepareSubmit" } do |f| %>
       <!-- Panel de ubicación destino -->
       <div class="card mb-3">
-        <div class="card-header bg-primary text-white">
+        <div class="card-header bg-primary text-white py-2">
           <i class="fas fa-crosshairs"></i> Ubicación Destino
         </div>
-        <div class="card-body">
+        <div class="card-body py-3">
           <div class="row align-items-end">
             <div class="col-md-8">
-              <label class="form-label fw-bold">Buscar ubicación por código o nombre:</label>
+              <label class="form-label fw-bold small">Buscar ubicación por código o nombre:</label>
               <div class="position-relative"
                    data-controller="location-suggest"
                    data-location-suggest-url-value="<%= search_admin_inventory_locations_path %>">
                 <input type="text"
-                       class="form-control form-control-lg"
+                       class="form-control"
                        placeholder="Ej: PRINCIPAL, ESTANTE-A, BOD..."
                        data-location-suggest-target="input"
                        data-action="input->location-suggest#input keydown->location-suggest#keydown"
@@ -42,17 +79,17 @@
                        data-bulk-location-assign-target="locationInput"
                        data-action="change->bulk-location-assign#locationSelected">
                 <div data-location-suggest-target="results" class="position-relative"></div>
-                <div data-location-suggest-target="hint" class="form-text mt-2"></div>
+                <div data-location-suggest-target="hint" class="form-text mt-1"></div>
               </div>
             </div>
             <div class="col-md-4">
-              <div class="d-flex align-items-center justify-content-between bg-light p-3 rounded">
+              <div class="d-flex align-items-center justify-content-between bg-light p-2 rounded">
                 <div>
                   <small class="text-muted d-block">Piezas a asignar:</small>
-                  <span class="fs-3 fw-bold" data-bulk-location-assign-target="counter">0</span>
+                  <span class="fs-4 fw-bold" data-bulk-location-assign-target="counter">0</span>
                 </div>
                 <button type="submit"
-                        class="btn btn-success btn-lg"
+                        class="btn btn-success"
                         data-bulk-location-assign-target="submitBtn"
                         disabled>
                   <i class="fas fa-check"></i> Asignar
@@ -65,10 +102,13 @@
 
       <!-- Lista de productos -->
       <div class="card">
-        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+        <div class="card-header bg-light d-flex justify-content-between align-items-center py-2">
           <div>
             <i class="fas fa-cubes"></i>
-            <strong><%= @products.count %></strong> productos con inventario sin ubicar
+            <strong><%= @products.respond_to?(:total_count) ? @products.total_count : @products.size %></strong> productos
+            <% if @q.present? %>
+              <small class="text-muted">(filtrado)</small>
+            <% end %>
           </div>
           <div class="btn-group btn-group-sm">
             <button type="button" class="btn btn-outline-secondary" data-action="click->bulk-location-assign#expandAll">
@@ -108,8 +148,9 @@
                   </td>
                   <td>
                     <button type="button"
-                            class="btn btn-sm btn-link p-0"
-                            data-action="click->bulk-location-assign#toggleGroup">
+                            class="btn btn-sm btn-link p-0 toggle-btn"
+                            data-action="click->bulk-location-assign#toggleGroup"
+                            data-url="<%= admin_inventory_unlocated_items_path(product_id: product.id) %>">
                       <i class="fas fa-chevron-right toggle-icon"></i>
                     </button>
                   </td>
@@ -156,54 +197,12 @@
                     </div>
                   </td>
                 </tr>
-                <!-- Fila colapsable con detalles del inventario -->
-                <tr>
+                <!-- Fila colapsable con detalles del inventario (carga diferida) -->
+                <tr class="detail-row" style="display: none;">
                   <td colspan="5" class="p-0 border-0">
-                    <div class="product-group-content collapsed" style="display: none;">
-                      <div class="bg-light p-3 ms-5">
-                        <h6 class="text-muted mb-2">
-                          <i class="fas fa-list"></i> Detalle de piezas sin ubicar
-                        </h6>
-                        <% items = product.inventories.includes(:purchase_order).where(status: %i[available reserved], inventory_location_id: nil).order(:created_at).limit(20) %>
-                        <div class="table-responsive">
-                          <table class="table table-sm table-bordered mb-0">
-                            <thead>
-                              <tr>
-                                <th>ID</th>
-                                <th>Status</th>
-                                <th>Costo</th>
-                                <th>Orden de Compra</th>
-                                <th>Fecha Creación</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              <% items.each do |inv| %>
-                                <tr>
-                                  <td><code>#<%= inv.id %></code></td>
-                                  <td>
-                                    <span class="badge bg-<%= inv.status == 'available' ? 'success' : 'info' %>">
-                                      <%= inv.status %>
-                                    </span>
-                                  </td>
-                                  <td><%= number_to_currency(inv.purchase_cost, unit: '$') %></td>
-                                  <td>
-                                    <% if inv.purchase_order %>
-                                      <%= link_to inv.purchase_order.id, admin_purchase_order_path(inv.purchase_order), target: '_blank' %>
-                                    <% else %>
-                                      <span class="text-muted">-</span>
-                                    <% end %>
-                                  </td>
-                                  <td><%= inv.created_at.strftime('%d/%m/%Y %H:%M') %></td>
-                                </tr>
-                              <% end %>
-                            </tbody>
-                          </table>
-                        </div>
-                        <% if unlocated_count > 20 %>
-                          <small class="text-muted mt-2 d-block">
-                            Mostrando 20 de <%= unlocated_count %> piezas
-                          </small>
-                        <% end %>
+                    <div class="product-group-content ms-4">
+                      <div class="detail-content p-2 text-center text-muted">
+                        <i class="fas fa-spinner fa-spin"></i> Cargando...
                       </div>
                     </div>
                   </td>
@@ -212,16 +211,75 @@
             </tbody>
           </table>
         </div>
+
+        <!-- Paginación -->
+        <% if @total_pages && @total_pages > 1 %>
+          <div class="card-footer bg-light">
+            <nav aria-label="Paginación">
+              <ul class="pagination pagination-sm justify-content-center mb-0">
+                <% if @current_page > 1 %>
+                  <li class="page-item">
+                    <%= link_to admin_inventory_unlocated_path(page: @current_page - 1, q: @q, sort: @sort), class: 'page-link' do %>
+                      <i class="fas fa-chevron-left"></i>
+                    <% end %>
+                  </li>
+                <% end %>
+
+                <% start_page = [1, @current_page - 2].max %>
+                <% end_page = [@total_pages, @current_page + 2].min %>
+
+                <% if start_page > 1 %>
+                  <li class="page-item">
+                    <%= link_to '1', admin_inventory_unlocated_path(page: 1, q: @q, sort: @sort), class: 'page-link' %>
+                  </li>
+                  <% if start_page > 2 %>
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                  <% end %>
+                <% end %>
+
+                <% (start_page..end_page).each do |page| %>
+                  <li class="page-item <%= 'active' if page == @current_page %>">
+                    <%= link_to page, admin_inventory_unlocated_path(page: page, q: @q, sort: @sort), class: 'page-link' %>
+                  </li>
+                <% end %>
+
+                <% if end_page < @total_pages %>
+                  <% if end_page < @total_pages - 1 %>
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                  <% end %>
+                  <li class="page-item">
+                    <%= link_to @total_pages, admin_inventory_unlocated_path(page: @total_pages, q: @q, sort: @sort), class: 'page-link' %>
+                  </li>
+                <% end %>
+
+                <% if @current_page < @total_pages %>
+                  <li class="page-item">
+                    <%= link_to admin_inventory_unlocated_path(page: @current_page + 1, q: @q, sort: @sort), class: 'page-link' do %>
+                      <i class="fas fa-chevron-right"></i>
+                    <% end %>
+                  </li>
+                <% end %>
+              </ul>
+            </nav>
+          </div>
+        <% end %>
       </div>
     <% end %>
   <% else %>
     <div class="card">
       <div class="card-body text-center py-5">
-        <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
-        <h4>¡Todo el inventario tiene ubicación!</h4>
-        <p class="text-muted">No hay piezas de inventario pendientes de asignar ubicación.</p>
-        <%= link_to 'Ver Inventario', admin_inventory_path, class: 'btn btn-primary' %>
-        <%= link_to 'Ver Ubicaciones', admin_inventory_locations_path, class: 'btn btn-outline-secondary' %>
+        <% if @q.present? %>
+          <i class="fas fa-search fa-4x text-muted mb-3"></i>
+          <h4>No se encontraron productos</h4>
+          <p class="text-muted">No hay productos que coincidan con "<%= @q %>"</p>
+          <%= link_to 'Limpiar búsqueda', admin_inventory_unlocated_path, class: 'btn btn-outline-primary' %>
+        <% else %>
+          <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
+          <h4>¡Todo el inventario tiene ubicación!</h4>
+          <p class="text-muted">No hay piezas de inventario pendientes de asignar ubicación.</p>
+          <%= link_to 'Ver Inventario', admin_inventory_path, class: 'btn btn-primary' %>
+          <%= link_to 'Ver Ubicaciones', admin_inventory_locations_path, class: 'btn btn-outline-secondary' %>
+        <% end %>
       </div>
     </div>
   <% end %>

@@ -143,15 +143,74 @@ module Admin
       # Solo items available y reserved sin ubicación
       base_scope = Inventory.where(status: %i[available reserved], inventory_location_id: nil)
 
-      # Agrupar por producto con conteos - usar hash simple en lugar de objetos Inventory parciales
+      # Agrupar por producto con conteos
       @products_data = base_scope.group(:product_id).count
 
       product_ids = @products_data.keys
-      @products = Product.where(id: product_ids)
-                         .order(:product_name)
+
+      # Base de productos
+      products_scope = Product.where(id: product_ids)
+
+      # Filtro de búsqueda
+      @q = params[:q].to_s.strip
+      if @q.present?
+        term = "%#{@q.downcase}%"
+        products_scope = products_scope.where('LOWER(product_name) LIKE ? OR LOWER(product_sku) LIKE ?', term, term)
+      end
+
+      # Ordenación
+      @sort = params[:sort].presence || 'name'
+      case @sort
+      when 'count_desc'
+        # Ordenar por cantidad sin ubicar (descendente)
+        sorted_ids = @products_data.sort_by { |_id, count| -count }.map(&:first)
+        # Filtrar por IDs de productos que coincidan con la búsqueda
+        filtered_ids = products_scope.pluck(:id)
+        sorted_ids = sorted_ids & filtered_ids
+        # Paginar manualmente
+        page_num = (params[:page] || 1).to_i
+        per_page = 20
+        offset = (page_num - 1) * per_page
+        paged_ids = sorted_ids[offset, per_page] || []
+        @products = Product.where(id: paged_ids).index_by(&:id)
+        @products = paged_ids.map { |id| @products[id] }.compact
+        @total_products = sorted_ids.size
+        @current_page = page_num
+        @total_pages = (sorted_ids.size.to_f / per_page).ceil
+      when 'count_asc'
+        sorted_ids = @products_data.sort_by { |_id, count| count }.map(&:first)
+        filtered_ids = products_scope.pluck(:id)
+        sorted_ids = sorted_ids & filtered_ids
+        page_num = (params[:page] || 1).to_i
+        per_page = 20
+        offset = (page_num - 1) * per_page
+        paged_ids = sorted_ids[offset, per_page] || []
+        @products = Product.where(id: paged_ids).index_by(&:id)
+        @products = paged_ids.map { |id| @products[id] }.compact
+        @total_products = sorted_ids.size
+        @current_page = page_num
+        @total_pages = (sorted_ids.size.to_f / per_page).ceil
+      else
+        # Por nombre (default)
+        @products = products_scope.order(:product_name).page(params[:page]).per(20)
+        @total_products = products_scope.count
+        @current_page = @products.current_page
+        @total_pages = @products.total_pages
+      end
 
       @total_unlocated = base_scope.count
       @location_options = InventoryLocation.active.nested_options
+    end
+
+    # GET /admin/inventory/unlocated_items/:product_id - Detalle de piezas sin ubicar (AJAX)
+    def unlocated_items
+      @product = Product.find(params[:product_id])
+      @items = Inventory.includes(:purchase_order)
+                        .where(product_id: @product.id, status: %i[available reserved], inventory_location_id: nil)
+                        .order(:created_at)
+                        .limit(50)
+
+      render partial: 'admin/inventory/unlocated_items_detail', locals: { items: @items, product: @product }
     end
 
     # POST /admin/inventory/bulk_assign_location - Asignar ubicación masivamente

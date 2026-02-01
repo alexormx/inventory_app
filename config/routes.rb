@@ -42,6 +42,7 @@ Rails.application.routes.draw do
     #Inventory Management views
     get "inventory", to: "inventory#index", as: :inventory
     get "inventory/unlocated", to: "inventory#unlocated", as: :inventory_unlocated
+    get "inventory/unlocated_items/:product_id", to: "inventory#unlocated_items", as: :inventory_unlocated_items
     post "inventory/bulk_assign_location", to: "inventory#bulk_assign_location", as: :inventory_bulk_assign_location
     resources :inventory do
       member do

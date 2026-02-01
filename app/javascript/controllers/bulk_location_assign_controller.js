@@ -20,45 +20,96 @@ export default class extends Controller {
 
   // Toggle colapsar/expandir un grupo de producto
   toggleGroup(event) {
-    const header = event.currentTarget
-    const group = header.closest('[data-bulk-location-assign-target="productGroup"]')
-    const content = group.querySelector('.product-group-content')
-    const icon = header.querySelector('.toggle-icon')
+    event.preventDefault()
+    const button = event.currentTarget
+    const group = button.closest('[data-bulk-location-assign-target="productGroup"]')
+    const detailRow = group.nextElementSibling
+    const icon = button.querySelector('.toggle-icon')
 
-    if (content.classList.contains('collapsed')) {
-      content.classList.remove('collapsed')
-      content.style.display = 'block'
+    if (!detailRow || !detailRow.classList.contains('detail-row')) return
+
+    const isHidden = detailRow.style.display === 'none'
+
+    if (isHidden) {
+      // Expandir - cargar contenido si es necesario
+      detailRow.style.display = ''
       if (icon) icon.classList.replace('fa-chevron-right', 'fa-chevron-down')
+
+      // Cargar contenido via AJAX si aún no se ha cargado
+      const detailContent = detailRow.querySelector('.detail-content')
+      const url = button.dataset.url
+
+      if (url && detailContent && !detailContent.dataset.loaded) {
+        fetch(url, {
+          headers: {
+            'Accept': 'text/html',
+            'X-Requested-With': 'XMLHttpRequest'
+          }
+        })
+          .then(response => response.text())
+          .then(html => {
+            detailContent.innerHTML = html
+            detailContent.dataset.loaded = 'true'
+          })
+          .catch(error => {
+            detailContent.innerHTML = '<p class="text-danger p-3"><i class="fas fa-exclamation-triangle"></i> Error al cargar</p>'
+            console.error('Error loading inventory items:', error)
+          })
+      }
     } else {
-      content.classList.add('collapsed')
-      content.style.display = 'none'
+      // Colapsar
+      detailRow.style.display = 'none'
       if (icon) icon.classList.replace('fa-chevron-down', 'fa-chevron-right')
     }
   }
 
   // Expandir todos los grupos
-  expandAll() {
+  expandAll(event) {
+    event.preventDefault()
     this.productGroupTargets.forEach(group => {
-      const content = group.querySelector('.product-group-content')
+      const button = group.querySelector('.toggle-btn')
+      const detailRow = group.nextElementSibling
       const icon = group.querySelector('.toggle-icon')
-      if (content) {
-        content.classList.remove('collapsed')
-        content.style.display = 'block'
+
+      if (detailRow && detailRow.classList.contains('detail-row')) {
+        detailRow.style.display = ''
+        if (icon) icon.classList.replace('fa-chevron-right', 'fa-chevron-down')
+
+        // Cargar contenido si es necesario
+        const detailContent = detailRow.querySelector('.detail-content')
+        const url = button?.dataset.url
+
+        if (url && detailContent && !detailContent.dataset.loaded) {
+          fetch(url, {
+            headers: {
+              'Accept': 'text/html',
+              'X-Requested-With': 'XMLHttpRequest'
+            }
+          })
+            .then(response => response.text())
+            .then(html => {
+              detailContent.innerHTML = html
+              detailContent.dataset.loaded = 'true'
+            })
+            .catch(error => {
+              detailContent.innerHTML = '<p class="text-danger p-3"><i class="fas fa-exclamation-triangle"></i> Error al cargar</p>'
+            })
+        }
       }
-      if (icon) icon.classList.replace('fa-chevron-right', 'fa-chevron-down')
     })
   }
 
   // Colapsar todos los grupos
-  collapseAll() {
+  collapseAll(event) {
+    event.preventDefault()
     this.productGroupTargets.forEach(group => {
-      const content = group.querySelector('.product-group-content')
+      const detailRow = group.nextElementSibling
       const icon = group.querySelector('.toggle-icon')
-      if (content) {
-        content.classList.add('collapsed')
-        content.style.display = 'none'
+
+      if (detailRow && detailRow.classList.contains('detail-row')) {
+        detailRow.style.display = 'none'
+        if (icon) icon.classList.replace('fa-chevron-down', 'fa-chevron-right')
       }
-      if (icon) icon.classList.replace('fa-chevron-down', 'fa-chevron-right')
     })
   }
 
