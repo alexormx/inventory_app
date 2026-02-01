@@ -1,11 +1,10 @@
 <%# Recursive partial for rendering a location node in the tree %>
 <% depth ||= 0 %>
 <%
-  # Contar inventario directo en esta ubicación
-  direct_count = Inventory.where(inventory_location_id: location.id, status: %i[available reserved]).count
-  # Contar inventario total incluyendo sub-ubicaciones
-  all_ids = [location.id] + location.descendants.pluck(:id)
-  total_count = Inventory.where(inventory_location_id: all_ids, status: %i[available reserved]).count
+  # Use pre-calculated counts from controller (avoids N+1 queries)
+  inventory_counts = @inventory_counts || {}
+  direct_count = inventory_counts[location.id] || 0
+  total_count = location.total_inventory_count(inventory_counts)
 %>
 <div class="location-node" data-location-id="<%= location.id %>" data-depth="<%= depth %>">
   <div class="location-row" style="padding-left: <%= 1 + (depth * 1.5) %>rem;">
@@ -70,7 +69,7 @@
                   title: 'Editar' do %>
         <i class="fas fa-pencil-alt"></i>
       <% end %>
-      <% if location.leaf? && !Inventory.where(inventory_location_id: location.id).exists? %>
+      <% if location.leaf? && direct_count == 0 %>
         <%= link_to admin_inventory_location_path(location),
                     data: { turbo_method: :delete, turbo_confirm: "¿Eliminar '#{location.name}'?" },
                     class: 'btn btn-sm btn-outline-danger',
@@ -81,10 +80,8 @@
     </div>
   </div>
 
-  <%# Children (recursive) %>
-  <% if location.children.any? %>
+  <%# Children (recursive) - use already loaded children %>
+  <% if location.has_children? %>
     <div class="location-children">
-      <%= render partial: 'location_node', collection: location.children.ordered, as: :location, locals: { depth: depth + 1 } %>
-    </div>
-  <% end %>
+      <%= render partial: 'location_node', collection: location.children.sort_by { |c| [c.position || 0, c.name] }, as: :location, locals: { depth: depth + 1 } %>
 </div>

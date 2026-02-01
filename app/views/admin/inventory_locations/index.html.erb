@@ -57,7 +57,7 @@
         <div class="card-body">
           <ul class="list-group list-group-flush">
             <% LocationType.active.ordered.each do |lt| %>
-              <% count = InventoryLocation.by_type(lt.code).count %>
+              <% count = @location_type_counts[lt.code] || 0 %>
               <% next if count.zero? %>
               <li class="list-group-item d-flex justify-content-between align-items-center">
                 <%= lt.name %>
@@ -65,7 +65,7 @@
               </li>
             <% end %>
           </ul>
-          <% if InventoryLocation.count.zero? %>
+          <% if @total_locations_count.zero? %>
             <p class="text-muted text-center mb-0">Sin ubicaciones aún</p>
           <% end %>
         </div>

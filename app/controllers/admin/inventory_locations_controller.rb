@@ -7,9 +7,19 @@ module Admin
     before_action :set_inventory_location, only: %i[show edit update destroy children]
 
     def index
-      @locations = InventoryLocation.roots.ordered.includes(:children)
-      @tree = InventoryLocation.tree
+      # Eager load entire tree structure
+      @locations = InventoryLocation.roots.ordered.includes(children: { children: { children: :children } })
       @location_types = LocationType.options_for_select
+
+      # Pre-calculate inventory counts for ALL locations in a single query
+      @inventory_counts = Inventory.where(status: %i[available reserved])
+                                   .where.not(inventory_location_id: nil)
+                                   .group(:inventory_location_id)
+                                   .count
+
+      # Pre-calculate location type counts for summary panel
+      @location_type_counts = InventoryLocation.group(:location_type).count
+      @total_locations_count = InventoryLocation.count
     end
 
     def show

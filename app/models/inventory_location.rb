@@ -129,12 +129,20 @@ class InventoryLocation < ApplicationRecord
 
   # Check if this location has children
   def has_children?
-    children.exists?
+    children.any? # Uses loaded association if eager loaded
   end
 
   # Check if this location is a leaf (no children)
   def leaf?
     !has_children?
+  end
+
+  # Calculate total inventory count including all descendants
+  # Uses pre-loaded counts hash to avoid N+1 queries
+  def total_inventory_count(counts_hash)
+    count = counts_hash[id] || 0
+    children.each { |child| count += child.total_inventory_count(counts_hash) }
+    count
   end
 
   # Get siblings (other children of same parent)
