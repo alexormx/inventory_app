@@ -147,10 +147,15 @@
     color: #6c757d;
   }
   .location-actions {
-    opacity: 0;
-    transition: opacity 0.15s;
-  }
-  .location-row:hover .location-actions {
     opacity: 1;
+  }
+  @media (min-width: 992px) {
+    .location-actions {
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+    .location-row:hover .location-actions {
+      opacity: 1;
+    }
   }
 </style>

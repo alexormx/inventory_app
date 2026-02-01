@@ -42,8 +42,7 @@
       <% end %>
       <% if location.leaf? && !Inventory.where(inventory_location_id: location.id).exists? %>
         <%= link_to admin_inventory_location_path(location),
-                    method: :delete,
-                    data: { confirm: "¿Eliminar '#{location.name}'?" },
+                    data: { turbo_method: :delete, turbo_confirm: "¿Eliminar '#{location.name}'?" },
                     class: 'btn btn-sm btn-outline-danger',
                     title: 'Eliminar' do %>
           <i class="bi bi-trash"></i>
