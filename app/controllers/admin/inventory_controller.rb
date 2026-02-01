@@ -300,6 +300,65 @@ module Admin
       end
     end
 
+    # GET /admin/inventory/transfer - Vista para transferir entre ubicaciones
+    def transfer
+      @locations = InventoryLocation.active.order(:path_cache)
+    end
+
+    # GET /admin/inventory/location_items/:location_id - Items de una ubicación (AJAX)
+    def location_items
+      @location = InventoryLocation.find(params[:location_id])
+      @items = Inventory.includes(:product, :purchase_order)
+                        .where(inventory_location_id: @location.id, status: %i[available reserved])
+                        .order('products.product_name')
+                        .references(:product)
+
+      render partial: 'admin/inventory/transfer_location_items', locals: { items: @items, location: @location }
+    end
+
+    # POST /admin/inventory/execute_transfer - Ejecutar transferencia
+    def execute_transfer
+      source_id = params[:source_location_id]
+      destination_id = params[:destination_location_id]
+      item_ids = params[:item_ids] || []
+
+      if source_id.blank? || destination_id.blank?
+        render json: { error: 'Debe seleccionar ubicación origen y destino' }, status: :unprocessable_entity
+        return
+      end
+
+      if source_id == destination_id
+        render json: { error: 'La ubicación origen y destino deben ser diferentes' }, status: :unprocessable_entity
+        return
+      end
+
+      if item_ids.empty?
+        render json: { error: 'Debe seleccionar al menos un item para transferir' }, status: :unprocessable_entity
+        return
+      end
+
+      @source = InventoryLocation.find_by(id: source_id)
+      @destination = InventoryLocation.find_by(id: destination_id)
+
+      unless @source && @destination
+        render json: { error: 'Ubicación no encontrada' }, status: :unprocessable_entity
+        return
+      end
+
+      transferred = 0
+      ActiveRecord::Base.transaction do
+        # Solo transferir items que pertenezcan a la ubicación origen
+        items = Inventory.where(id: item_ids, inventory_location_id: @source.id, status: %i[available reserved])
+        transferred = items.update_all(inventory_location_id: @destination.id, updated_at: Time.current)
+      end
+
+      render json: {
+        success: true,
+        message: "#{transferred} pieza(s) transferida(s) de #{@source.code} a #{@destination.code}",
+        transferred: transferred
+      }
+    end
+
     private
 
     def inventory_params

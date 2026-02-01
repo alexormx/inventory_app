@@ -41,6 +41,9 @@
         <span class="badge bg-warning text-dark ms-1"><%= unlocated_count %></span>
       <% end %>
     <% end %>
+    <%= link_to admin_inventory_transfer_path, class: "btn btn-outline-primary btn-sm" do %>
+      <i class="fa fa-exchange-alt"></i> Transferir
+    <% end %>
     <%= link_to admin_inventory_path(request.query_parameters.merge(format: :csv)), class: "btn btn-outline-secondary btn-sm" do %>
       <i class="fa fa-download"></i> Exportar CSV
     <% end %>
