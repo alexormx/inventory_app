@@ -112,6 +112,9 @@ RSpec.describe Admin::LocationTypesController, type: :request do
   end
 
   describe 'PATCH /admin/location_types/:id/move' do
+    # Clean up any existing location types to ensure isolated test
+    before { LocationType.delete_all }
+
     let!(:type1) { create(:location_type, position: 0) }
     let!(:type2) { create(:location_type, position: 1) }
     let!(:type3) { create(:location_type, position: 2) }
