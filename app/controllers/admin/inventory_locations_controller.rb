@@ -14,7 +14,15 @@ module Admin
 
     def show
       @children = @inventory_location.children.ordered
-      @inventories_count = Inventory.where(inventory_location_id: [@inventory_location.id] + @inventory_location.descendants.map(&:id)).count
+      all_location_ids = [@inventory_location.id] + @inventory_location.descendants.map(&:id)
+      @inventories_count = Inventory.where(inventory_location_id: all_location_ids).count
+      
+      # Cargar inventario de esta ubicación (directo, sin sub-ubicaciones)
+      @direct_inventories = Inventory.includes(:product, :purchase_order)
+                                      .where(inventory_location_id: @inventory_location.id)
+                                      .where(status: %i[available reserved])
+                                      .order('products.product_name')
+                                      .references(:product)
     end
 
     def new
