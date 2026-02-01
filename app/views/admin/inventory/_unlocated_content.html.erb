@@ -4,11 +4,13 @@
       <h3><i class="fas fa-map-marker-alt"></i> Inventario Sin Ubicación</h3>
       <p class="text-muted mb-0">
         Asigna ubicación a piezas de inventario que aún no tienen ubicación asignada.
-        <span class="badge bg-warning text-dark ms-2">
-          <i class="fas fa-box"></i> <%= @total_unlocated %> piezas sin ubicar
-        </span>
-        <span class="badge bg-secondary ms-1">
-          <%= @total_products %> productos
+        <span id="unlocated-header-badges">
+          <span class="badge bg-warning text-dark ms-2">
+            <i class="fas fa-box"></i> <%= @total_unlocated %> piezas sin ubicar
+          </span>
+          <span class="badge bg-secondary ms-1">
+            <%= @total_products %> productos
+          </span>
         </span>
       </p>
     </div>
@@ -86,7 +88,7 @@
               <div class="d-flex align-items-center justify-content-between bg-light p-2 rounded">
                 <div>
                   <small class="text-muted d-block">Piezas a asignar:</small>
-                  <span class="fs-4 fw-bold" data-bulk-location-assign-target="counter">0</span>
+                  <span id="bulk-assign-counter" class="fs-4 fw-bold" data-bulk-location-assign-target="counter">0</span>
                 </div>
                 <button type="submit"
                         class="btn btn-success"
@@ -101,7 +103,7 @@
       </div>
 
       <!-- Lista de productos -->
-      <div class="card">
+      <div id="unlocated-products-table" class="card">
         <div class="card-header bg-light d-flex justify-content-between align-items-center py-2">
           <div>
             <i class="fas fa-cubes"></i>
@@ -139,7 +141,7 @@
             <tbody>
               <% @products.each do |product| %>
                 <% unlocated_count = @products_data[product.id] || 0 %>
-                <tr data-bulk-location-assign-target="productGroup" data-product-id="<%= product.id %>">
+                <tr id="product-row-<%= product.id %>" data-bulk-location-assign-target="productGroup" data-product-id="<%= product.id %>">
                   <td>
                     <input type="checkbox"
                            class="form-check-input"
@@ -170,10 +172,10 @@
                     </div>
                   </td>
                   <td class="text-center">
-                    <span class="badge bg-warning text-dark fs-6"><%= unlocated_count %></span>
+                    <span id="product-unlocated-count-<%= product.id %>" class="badge bg-warning text-dark fs-6"><%= unlocated_count %></span>
                   </td>
                   <td class="text-center">
-                    <div class="input-group input-group-sm" style="max-width: 180px; margin: 0 auto;">
+                    <div id="product-quantity-input-<%= product.id %>" class="input-group input-group-sm" style="max-width: 180px; margin: 0 auto;">
                       <button type="button"
                               class="btn btn-outline-secondary"
                               title="Limpiar"
@@ -198,7 +200,7 @@
                   </td>
                 </tr>
                 <!-- Fila colapsable con detalles del inventario (carga diferida) -->
-                <tr class="detail-row" style="display: none;">
+                <tr id="product-detail-row-<%= product.id %>" class="detail-row" style="display: none;">
                   <td colspan="5" class="p-0 border-0">
                     <div class="product-group-content ms-4">
                       <div class="detail-content p-2 text-center text-muted">

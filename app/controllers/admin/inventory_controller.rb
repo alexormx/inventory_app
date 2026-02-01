@@ -258,16 +258,18 @@ module Admin
       end
 
       total_assigned = 0
-      errors = []
+      @affected_products = {} # Track: product_id => { assigned: N, remaining: M }
 
       ActiveRecord::Base.transaction do
         assignments.each do |product_id, quantity|
           qty = quantity.to_i
           next if qty <= 0
 
+          pid = product_id.to_i
+
           # FIFO: asignar los items más antiguos primero
           items = Inventory.where(
-            product_id: product_id,
+            product_id: pid,
             status: %i[available reserved],
             inventory_location_id: nil
           ).order(:created_at).limit(qty)
@@ -276,7 +278,17 @@ module Admin
             inventory_location_id: @location.id,
             updated_at: Time.current
           )
-          total_assigned += assigned
+
+          if assigned > 0
+            total_assigned += assigned
+            # Calcular cuántos quedan sin ubicar para este producto
+            remaining = Inventory.where(
+              product_id: pid,
+              status: %i[available reserved],
+              inventory_location_id: nil
+            ).count
+            @affected_products[pid] = { assigned: assigned, remaining: remaining }
+          end
         end
       end
 
@@ -285,15 +297,10 @@ module Admin
           format.html { redirect_to admin_inventory_unlocated_path, notice: "#{total_assigned} piezas asignadas a #{@location.code}" }
           format.turbo_stream {
             flash.now[:notice] = "#{total_assigned} piezas asignadas a #{@location.code}"
-            # Re-cargar datos para actualizar la vista
-            base_scope = Inventory.where(status: %i[available reserved], inventory_location_id: nil)
-            @products_data = base_scope.group(:product_id)
-                                       .select('product_id, COUNT(*) as unlocated_count')
-                                       .index_by(&:product_id)
-            product_ids = @products_data.keys
-            @products = Product.where(id: product_ids).order(:product_name)
-            @total_unlocated = base_scope.count
-            @location_options = InventoryLocation.active.nested_options
+            # Solo calcular el total global para el badge del header
+            @total_unlocated = Inventory.where(status: %i[available reserved], inventory_location_id: nil).count
+            @total_products = Inventory.where(status: %i[available reserved], inventory_location_id: nil)
+                                       .distinct.count(:product_id)
           }
         end
       else
