@@ -97,9 +97,9 @@ class InventoryLocation < ApplicationRecord
     ancestors + [self]
   end
 
-  # Full path as string
+  # Full path as string (uses cached value for performance)
   def full_path
-    path.map(&:name).join(' > ')
+    path_cache.presence || path.map(&:name).join(' > ')
   end
 
   # Human-readable type name

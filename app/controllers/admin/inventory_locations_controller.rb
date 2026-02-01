@@ -135,7 +135,7 @@ module Admin
       end
 
       locations = InventoryLocation.active
-                                   .where('LOWER(code) LIKE :q OR LOWER(name) LIKE :q', q: "%#{q}%")
+                                   .where('LOWER(code) LIKE :q OR LOWER(name) LIKE :q OR LOWER(path_cache) LIKE :q', q: "%#{q}%")
                                    .order(:depth, :name)
                                    .limit(15)
 

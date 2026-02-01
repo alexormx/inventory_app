@@ -1114,6 +1114,83 @@
     </div>
   </div>
 
+  <!-- Gráfico de comparativo de flujo de caja año vs año anterior -->
+  <div class="row mt-4 g-3">
+    <div class="col-lg-12">
+      <div class="card h-100">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span><i class="fa-solid fa-scale-balanced"></i> Comparativo Flujo de Caja: <%= @chart_cashflow_comparison&.dig(:current_year) || Time.zone.now.year %> vs <%= @chart_cashflow_comparison&.dig(:prev_year) || Time.zone.now.year - 1 %></span>
+          <span class="badge bg-secondary small">Ingresos (Ventas) - Egresos (Compras)</span>
+        </div>
+        <div class="card-body">
+          <% cfc = @chart_cashflow_comparison || {} %>
+          <% cfc_values = [cfc[:net_current], cfc[:net_prev]].flatten.compact.map(&:to_f) %>
+          <% has_cfc_data = cfc_values.any? { |v| v != 0 } %>
+          <% if has_cfc_data %>
+            <div
+              data-controller="chart"
+              data-chart-type="bar"
+              data-chart-x="<%= raw((cfc[:months] || []).to_json) %>"
+              data-chart-series="<%= raw([
+                { name: "#{cfc[:current_year]} Flujo Neto", data: (cfc[:net_current] || []).map(&:to_f), type: 'bar' },
+                { name: "#{cfc[:prev_year]} Flujo Neto", data: (cfc[:net_prev] || []).map(&:to_f), type: 'bar' }
+              ].to_json) %>"
+              style="height:300px"
+            ></div>
+            <div class="row mt-3 small text-muted">
+              <div class="col-md-6">
+                <table class="table table-sm table-borderless mb-0">
+                  <thead>
+                    <tr>
+                      <th><%= cfc[:current_year] %></th>
+                      <th class="text-end">Ingresos</th>
+                      <th class="text-end">Egresos</th>
+                      <th class="text-end">Neto</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>Total</td>
+                      <td class="text-end text-success"><%= number_to_currency((cfc[:inflow_current] || []).sum, unit: '$', precision: 0, delimiter: ',') %></td>
+                      <td class="text-end text-danger"><%= number_to_currency((cfc[:outflow_current] || []).sum, unit: '$', precision: 0, delimiter: ',') %></td>
+                      <td class="text-end fw-bold <%= (cfc[:net_current] || []).sum >= 0 ? 'text-success' : 'text-danger' %>">
+                        <%= number_to_currency((cfc[:net_current] || []).sum, unit: '$', precision: 0, delimiter: ',') %>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="col-md-6">
+                <table class="table table-sm table-borderless mb-0">
+                  <thead>
+                    <tr>
+                      <th><%= cfc[:prev_year] %></th>
+                      <th class="text-end">Ingresos</th>
+                      <th class="text-end">Egresos</th>
+                      <th class="text-end">Neto</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>Total</td>
+                      <td class="text-end text-success"><%= number_to_currency((cfc[:inflow_prev] || []).sum, unit: '$', precision: 0, delimiter: ',') %></td>
+                      <td class="text-end text-danger"><%= number_to_currency((cfc[:outflow_prev] || []).sum, unit: '$', precision: 0, delimiter: ',') %></td>
+                      <td class="text-end fw-bold <%= (cfc[:net_prev] || []).sum >= 0 ? 'text-success' : 'text-danger' %>">
+                        <%= number_to_currency((cfc[:net_prev] || []).sum, unit: '$', precision: 0, delimiter: ',') %>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          <% else %>
+            <div class="text-muted text-center py-4">Sin datos de comparativo de flujo de caja.</div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Gráficos de tendencias -->
   <div class="row mt-4 g-3">
     <div class="col-lg-12">

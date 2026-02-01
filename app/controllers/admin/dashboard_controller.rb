@@ -557,6 +557,7 @@ module Admin
       end
 
       load_cashflow_chart(trend_start, trend_range, months_keys, month_key_expr)
+      load_cashflow_comparison_chart
       load_category_charts
     end
 
@@ -586,6 +587,71 @@ module Admin
       @chart_cashflow[:net] = months_keys.each_index.map do |i|
         @chart_cashflow[:inflow][i] - @chart_cashflow[:outflow][i]
       end
+    end
+
+    # Comparativo de flujo de caja: año actual vs año anterior (mes a mes)
+    def load_cashflow_comparison_chart
+      current_year = @now.year
+      prev_year = current_year - 1
+      month_labels = %w[Ene Feb Mar Abr May Jun Jul Ago Sep Oct Nov Dic]
+
+      month_key_expr_so = month_group_expr('sale_orders', 'order_date')
+      month_key_expr_po = month_group_expr('purchase_orders', 'order_date')
+      rev_sql_arel = Arel.sql(REV_SQL)
+
+      # Ingresos (ventas pagadas) por mes - año actual
+      current_year_start = Date.new(current_year, 1, 1)
+      current_year_end = Date.new(current_year, 12, 31).end_of_day
+      inflow_current = SaleOrderItem.joins(:sale_order)
+                                     .merge(@so_scope.where(order_date: current_year_start..current_year_end, status: PAID_STATUSES))
+                                     .group(Arel.sql(month_key_expr_so))
+                                     .sum(rev_sql_arel)
+                                     .transform_keys { |k| normalize_month_key(k) }
+
+      # Egresos (compras) por mes - año actual
+      outflow_current_scope = @po_scope.where(order_date: current_year_start..current_year_end)
+      outflow_current = outflow_current_scope.group(Arel.sql(month_key_expr_po)).sum(:total_cost_mxn)
+      if outflow_current.values.all? { |v| v.to_d.zero? }
+        outflow_current = outflow_current_scope.group(Arel.sql(month_key_expr_po)).sum(:total_order_cost)
+      end
+      outflow_current = outflow_current.transform_keys { |k| normalize_month_key(k) }
+
+      # Ingresos (ventas pagadas) por mes - año anterior
+      prev_year_start = Date.new(prev_year, 1, 1)
+      prev_year_end = Date.new(prev_year, 12, 31).end_of_day
+      inflow_prev = SaleOrderItem.joins(:sale_order)
+                                  .merge(@so_scope.where(order_date: prev_year_start..prev_year_end, status: PAID_STATUSES))
+                                  .group(Arel.sql(month_key_expr_so))
+                                  .sum(rev_sql_arel)
+                                  .transform_keys { |k| normalize_month_key(k) }
+
+      # Egresos (compras) por mes - año anterior
+      outflow_prev_scope = @po_scope.where(order_date: prev_year_start..prev_year_end)
+      outflow_prev = outflow_prev_scope.group(Arel.sql(month_key_expr_po)).sum(:total_cost_mxn)
+      if outflow_prev.values.all? { |v| v.to_d.zero? }
+        outflow_prev = outflow_prev_scope.group(Arel.sql(month_key_expr_po)).sum(:total_order_cost)
+      end
+      outflow_prev = outflow_prev.transform_keys { |k| normalize_month_key(k) }
+
+      # Generar keys por mes para cada año
+      current_months = (1..12).map { |m| format('%04d-%02d', current_year, m) }
+      prev_months = (1..12).map { |m| format('%04d-%02d', prev_year, m) }
+
+      # Calcular flujo neto (ingresos - egresos) por mes
+      net_current = current_months.map { |k| (inflow_current[k] || 0).to_d - (outflow_current[k] || 0).to_d }
+      net_prev = prev_months.map { |k| (inflow_prev[k] || 0).to_d - (outflow_prev[k] || 0).to_d }
+
+      @chart_cashflow_comparison = {
+        months: month_labels,
+        current_year: current_year,
+        prev_year: prev_year,
+        net_current: net_current,
+        net_prev: net_prev,
+        inflow_current: current_months.map { |k| (inflow_current[k] || 0).to_d },
+        outflow_current: current_months.map { |k| (outflow_current[k] || 0).to_d },
+        inflow_prev: prev_months.map { |k| (inflow_prev[k] || 0).to_d },
+        outflow_prev: prev_months.map { |k| (outflow_prev[k] || 0).to_d }
+      }
     end
 
     def load_category_charts
