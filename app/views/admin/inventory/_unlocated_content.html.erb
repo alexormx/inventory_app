@@ -188,7 +188,7 @@
                                   <td><%= number_to_currency(inv.purchase_cost, unit: '$') %></td>
                                   <td>
                                     <% if inv.purchase_order %>
-                                      <%= link_to inv.purchase_order.order_number, admin_purchase_order_path(inv.purchase_order), target: '_blank' %>
+                                      <%= link_to inv.purchase_order.id, admin_purchase_order_path(inv.purchase_order), target: '_blank' %>
                                     <% else %>
                                       <span class="text-muted">-</span>
                                     <% end %>
