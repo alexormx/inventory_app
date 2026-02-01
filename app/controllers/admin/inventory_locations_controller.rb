@@ -9,9 +9,7 @@ module Admin
     def index
       @locations = InventoryLocation.roots.ordered.includes(:children)
       @tree = InventoryLocation.tree
-      @location_types = InventoryLocation::LOCATION_TYPES.map do |type|
-        [InventoryLocation::LOCATION_TYPE_NAMES[type], type]
-      end
+      @location_types = LocationType.options_for_select
     end
 
     def show
@@ -122,9 +120,7 @@ module Admin
 
     def set_form_data
       @parent_options = InventoryLocation.nested_options
-      @location_types = InventoryLocation::LOCATION_TYPES.map do |type|
-        [InventoryLocation::LOCATION_TYPE_NAMES[type], type]
-      end
+      @location_types = LocationType.options_for_select
     end
 
     def suggested_type_for_parent

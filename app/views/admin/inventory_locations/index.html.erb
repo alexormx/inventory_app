@@ -4,9 +4,14 @@
       <h3><i class="bi bi-geo-alt"></i> Ubicaciones de Inventario</h3>
       <p class="text-muted mb-0">Gestiona la estructura jerárquica de tu almacén: bodegas, secciones, estantes, niveles, etc.</p>
     </div>
-    <%= link_to new_admin_inventory_location_path, class: 'btn btn-primary' do %>
-      <i class="bi bi-plus-lg"></i> Nueva Ubicación Raíz
-    <% end %>
+    <div class="btn-group">
+      <%= link_to admin_location_types_path, class: 'btn btn-outline-secondary' do %>
+        <i class="bi bi-tags"></i> Configurar Tipos
+      <% end %>
+      <%= link_to new_admin_inventory_location_path, class: 'btn btn-primary' do %>
+        <i class="bi bi-plus-lg"></i> Nueva Ubicación Raíz
+      <% end %>
+    </div>
   </div>
 
   <div class="row">

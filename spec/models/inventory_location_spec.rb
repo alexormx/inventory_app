@@ -3,6 +3,11 @@
 require 'rails_helper'
 
 RSpec.describe InventoryLocation, type: :model do
+  # Ensure LocationTypes exist before running specs
+  before(:all) do
+    LocationType.seed_defaults! unless LocationType.exists?
+  end
+
   describe 'validations' do
     subject { build(:inventory_location) }
 
@@ -10,7 +15,12 @@ RSpec.describe InventoryLocation, type: :model do
     # Note: code is auto-generated, so presence validation passes due to before_validation callback
     it { is_expected.to validate_presence_of(:location_type) }
     it { is_expected.to validate_uniqueness_of(:code).case_insensitive }
-    it { is_expected.to validate_inclusion_of(:location_type).in_array(InventoryLocation::LOCATION_TYPES) }
+
+    it 'validates location_type against LocationType records' do
+      location = build(:inventory_location, location_type: 'invalid_type')
+      expect(location).not_to be_valid
+      expect(location.errors[:location_type]).to be_present
+    end
 
     it 'is valid with valid attributes' do
       location = build(:inventory_location, :warehouse)

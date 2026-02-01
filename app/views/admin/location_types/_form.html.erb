@@ -1,0 +1,91 @@
+<%= form_with(model: [:admin, @location_type], local: true, class: 'needs-validation') do |f| %>
+  <% if @location_type.errors.any? %>
+    <div class="alert alert-danger">
+      <h6 class="alert-heading"><i class="bi bi-exclamation-triangle"></i> Errores</h6>
+      <ul class="mb-0">
+        <% @location_type.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="row">
+    <div class="col-md-6">
+      <div class="mb-3">
+        <%= f.label :name, 'Nombre', class: 'form-label' %>
+        <%= f.text_field :name, class: 'form-control', placeholder: 'Ej: Almacén, Zona, Estante...' %>
+        <div class="form-text">Nombre descriptivo que se mostrará en la interfaz.</div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="mb-3">
+        <%= f.label :code, 'Código', class: 'form-label' %>
+        <%= f.text_field :code, class: 'form-control', placeholder: 'Ej: warehouse, zone, shelf...' %>
+        <div class="form-text">Identificador único en minúsculas, sin espacios ni acentos.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-md-6">
+      <div class="mb-3">
+        <%= f.label :icon, 'Icono', class: 'form-label' %>
+        <div class="input-group">
+          <span class="input-group-text" id="icon-preview">
+            <i class="<%= @location_type.icon.presence || 'bi bi-box' %>"></i>
+          </span>
+          <%= f.text_field :icon, class: 'form-control', placeholder: 'bi bi-box', data: { action: 'input->location-type#updateIconPreview' } %>
+        </div>
+        <div class="form-text">
+          Clase de icono Bootstrap Icons. Ver
+          <a href="https://icons.getbootstrap.com/" target="_blank">catálogo completo</a>.
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="mb-3">
+        <%= f.label :color, 'Color', class: 'form-label' %>
+        <%= f.select :color,
+            [
+              ['Primary (Azul)', 'primary'],
+              ['Secondary (Gris)', 'secondary'],
+              ['Success (Verde)', 'success'],
+              ['Danger (Rojo)', 'danger'],
+              ['Warning (Amarillo)', 'warning'],
+              ['Info (Celeste)', 'info'],
+              ['Dark (Oscuro)', 'dark']
+            ],
+            { include_blank: 'Seleccionar color...' },
+            { class: 'form-select' } %>
+        <div class="form-text">Color del badge que identifica este tipo.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-md-6">
+      <div class="mb-3">
+        <%= f.label :position, 'Posición', class: 'form-label' %>
+        <%= f.number_field :position, class: 'form-control', min: 0, placeholder: 'Automático si se deja vacío' %>
+        <div class="form-text">Orden en la jerarquía (menor = más general).</div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="mb-3 pt-4">
+        <div class="form-check form-switch">
+          <%= f.check_box :active, class: 'form-check-input', role: 'switch', id: 'active_switch' %>
+          <%= f.label :active, 'Tipo activo', class: 'form-check-label', for: 'active_switch' %>
+        </div>
+        <div class="form-text">Los tipos inactivos no aparecen como opciones al crear ubicaciones.</div>
+      </div>
+    </div>
+  </div>
+
+  <hr>
+
+  <div class="d-flex justify-content-between">
+    <%= link_to 'Cancelar', admin_location_types_path, class: 'btn btn-outline-secondary' %>
+    <%= f.submit @location_type.new_record? ? 'Crear Tipo' : 'Guardar Cambios', class: 'btn btn-primary' %>
+  </div>
+<% end %>

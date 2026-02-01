@@ -6,13 +6,12 @@ class InventoryLocation < ApplicationRecord
   # ============================================
   belongs_to :parent, class_name: 'InventoryLocation', optional: true
   has_many :children, class_name: 'InventoryLocation', foreign_key: :parent_id, dependent: :destroy
-
-  # Future: relate inventories to locations
-  # has_many :inventories
+  has_many :inventories
 
   # ============================================
-  # LOCATION TYPES (configurable hierarchy)
+  # LOCATION TYPES (now configurable via LocationType model)
   # ============================================
+  # Legacy constants kept for backward compatibility during migration
   LOCATION_TYPES = %w[
     warehouse
     zone
@@ -25,7 +24,6 @@ class InventoryLocation < ApplicationRecord
     position
   ].freeze
 
-  # Human-readable names in Spanish
   LOCATION_TYPE_NAMES = {
     'warehouse' => 'Bodega',
     'zone' => 'Zona',
@@ -43,7 +41,8 @@ class InventoryLocation < ApplicationRecord
   # ============================================
   validates :name, presence: true, length: { maximum: 100 }
   validates :code, presence: true, uniqueness: { case_sensitive: false }, length: { maximum: 50 }
-  validates :location_type, presence: true, inclusion: { in: LOCATION_TYPES }
+  validates :location_type, presence: true
+  validate :location_type_must_be_valid
   validates :position, numericality: { only_integer: true, greater_than_or_equal_to: 0 }, allow_nil: true
 
   # Prevent circular references
@@ -105,7 +104,17 @@ class InventoryLocation < ApplicationRecord
 
   # Human-readable type name
   def type_name
-    LOCATION_TYPE_NAMES[location_type] || location_type.humanize
+    LocationType.name_for(location_type)
+  end
+
+  # Type color for badges
+  def type_color
+    LocationType.color_for(location_type)
+  end
+
+  # Type icon
+  def type_icon
+    LocationType.icon_for(location_type)
   end
 
   # Display name with type
@@ -144,13 +153,24 @@ class InventoryLocation < ApplicationRecord
 
   # Suggested child types based on current type
   def suggested_child_types
-    current_index = LOCATION_TYPES.index(location_type) || -1
-    LOCATION_TYPES[(current_index + 1)..]
+    all_types = LocationType.active.ordered.pluck(:code)
+    current_index = all_types.index(location_type) || -1
+    all_types[(current_index + 1)..]
   end
 
   # ============================================
   # CLASS METHODS
   # ============================================
+
+  # Get all valid type codes (dynamic)
+  def self.valid_type_codes
+    LocationType.valid_codes
+  end
+
+  # Get type options for forms
+  def self.type_options_for_select
+    LocationType.options_for_select
+  end
 
   # Build a nested tree structure for UI
   def self.tree(scope = active.ordered)
@@ -232,6 +252,21 @@ class InventoryLocation < ApplicationRecord
 
     if descendants.map(&:id).include?(parent_id)
       errors.add(:parent_id, 'no puede ser un descendiente de esta ubicación')
+    end
+  end
+
+  def location_type_must_be_valid
+    return if location_type.blank?
+
+    # Check against dynamic LocationType if table exists, otherwise use legacy constants
+    valid_types = if LocationType.table_exists?
+                    LocationType.pluck(:code)
+                  else
+                    LOCATION_TYPES
+                  end
+
+    unless valid_types.include?(location_type)
+      errors.add(:location_type, "no es un tipo válido. Tipos válidos: #{valid_types.join(', ')}")
     end
   end
 end

@@ -72,6 +72,13 @@ Rails.application.routes.draw do
       end
     end
 
+    # Location Types (configurable types for inventory locations)
+    resources :location_types, except: [:show] do
+      member do
+        patch :move
+      end
+    end
+
     # Product Management
     get 'products/drafts', to: 'products#drafts', as: :products_drafts
     get 'products/active', to: 'products#active', as: :products_active

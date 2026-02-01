@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_02_01_001045) do
+ActiveRecord::Schema[8.0].define(version: 2026_02_01_013342) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -170,6 +170,20 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_01_001045) do
     t.index ["location_type"], name: "index_inventory_locations_on_location_type"
     t.index ["parent_id", "position"], name: "index_inventory_locations_on_parent_id_and_position"
     t.index ["parent_id"], name: "index_inventory_locations_on_parent_id"
+  end
+
+  create_table "location_types", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "code", null: false
+    t.string "icon", default: "bi-geo-alt"
+    t.string "color", default: "secondary"
+    t.integer "position", default: 0
+    t.boolean "active", default: true, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["active"], name: "index_location_types_on_active"
+    t.index ["code"], name: "index_location_types_on_code", unique: true
+    t.index ["position"], name: "index_location_types_on_position"
   end
 
   create_table "maintenance_runs", force: :cascade do |t|

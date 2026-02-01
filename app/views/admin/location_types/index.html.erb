@@ -1,0 +1,121 @@
+<div class="container mt-3">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <h3><i class="bi bi-tags"></i> Tipos de Ubicación</h3>
+      <p class="text-muted mb-0">Configura los tipos de ubicación disponibles para organizar tu almacén.</p>
+    </div>
+    <%= link_to new_admin_location_type_path, class: 'btn btn-primary' do %>
+      <i class="bi bi-plus-lg"></i> Nuevo Tipo
+    <% end %>
+  </div>
+
+  <div class="card">
+    <div class="card-header bg-light">
+      <i class="bi bi-list-ol"></i> Tipos Configurados
+      <small class="text-muted ms-2">(El orden define la jerarquía sugerida)</small>
+    </div>
+    <div class="card-body p-0">
+      <% if @location_types.any? %>
+        <table class="table table-hover mb-0">
+          <thead>
+            <tr>
+              <th width="60">Orden</th>
+              <th width="60">Icono</th>
+              <th>Nombre</th>
+              <th>Código</th>
+              <th>Color</th>
+              <th>Ubicaciones</th>
+              <th>Estado</th>
+              <th width="200" class="text-end">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @location_types.each_with_index do |lt, index| %>
+              <tr>
+                <td>
+                  <div class="btn-group btn-group-sm">
+                    <% if index > 0 %>
+                      <%= link_to move_admin_location_type_path(lt, direction: 'up'), data: { turbo_method: :patch }, class: 'btn btn-outline-secondary', title: 'Subir' do %>
+                        <i class="bi bi-chevron-up"></i>
+                      <% end %>
+                    <% else %>
+                      <button class="btn btn-outline-secondary" disabled><i class="bi bi-chevron-up"></i></button>
+                    <% end %>
+                    <% if index < @location_types.size - 1 %>
+                      <%= link_to move_admin_location_type_path(lt, direction: 'down'), data: { turbo_method: :patch }, class: 'btn btn-outline-secondary', title: 'Bajar' do %>
+                        <i class="bi bi-chevron-down"></i>
+                      <% end %>
+                    <% else %>
+                      <button class="btn btn-outline-secondary" disabled><i class="bi bi-chevron-down"></i></button>
+                    <% end %>
+                  </div>
+                </td>
+                <td>
+                  <i class="<%= lt.icon %> fs-5"></i>
+                </td>
+                <td><strong><%= lt.name %></strong></td>
+                <td><code><%= lt.code %></code></td>
+                <td>
+                  <span class="badge bg-<%= lt.color %>"><%= lt.color %></span>
+                </td>
+                <td>
+                  <% count = InventoryLocation.where(location_type: lt.code).count %>
+                  <% if count > 0 %>
+                    <%= link_to count, admin_inventory_locations_path(type: lt.code), class: 'text-decoration-none' %>
+                  <% else %>
+                    <span class="text-muted">0</span>
+                  <% end %>
+                </td>
+                <td>
+                  <% if lt.active? %>
+                    <span class="badge bg-success">Activo</span>
+                  <% else %>
+                    <span class="badge bg-secondary">Inactivo</span>
+                  <% end %>
+                </td>
+                <td class="text-end">
+                  <%= link_to edit_admin_location_type_path(lt), class: 'btn btn-sm btn-outline-primary me-1' do %>
+                    <i class="bi bi-pencil"></i> Editar
+                  <% end %>
+                  <% if InventoryLocation.where(location_type: lt.code).count == 0 %>
+                    <%= link_to admin_location_type_path(lt),
+                                data: { turbo_method: :delete, turbo_confirm: "¿Eliminar tipo '#{lt.name}'?" },
+                                class: 'btn btn-sm btn-outline-danger' do %>
+                      <i class="bi bi-trash"></i>
+                    <% end %>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% else %>
+        <div class="p-4 text-center text-muted">
+          <i class="bi bi-inbox display-4"></i>
+          <p class="mt-2">No hay tipos de ubicación configurados.</p>
+          <%= link_to 'Crear Primer Tipo', new_admin_location_type_path, class: 'btn btn-primary' %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="card mt-3">
+    <div class="card-header bg-light">
+      <i class="bi bi-lightbulb"></i> Ayuda
+    </div>
+    <div class="card-body">
+      <p class="mb-2"><strong>¿Cómo funcionan los tipos?</strong></p>
+      <ul class="mb-0">
+        <li>El <strong>orden</strong> define la jerarquía sugerida al crear ubicaciones (de más general a más específico).</li>
+        <li>El <strong>código</strong> es único y se usa internamente para identificar el tipo.</li>
+        <li>El <strong>color</strong> se muestra en los badges de las ubicaciones.</li>
+        <li>Los tipos <strong>inactivos</strong> no aparecen como opciones al crear nuevas ubicaciones.</li>
+        <li>No puedes eliminar un tipo que tenga ubicaciones asignadas.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="mt-3">
+    <%= link_to '← Volver a Ubicaciones', admin_inventory_locations_path, class: 'btn btn-outline-secondary' %>
+  </div>
+</div>

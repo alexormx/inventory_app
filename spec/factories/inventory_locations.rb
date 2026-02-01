@@ -8,6 +8,13 @@ FactoryBot.define do
     active { true }
     position { 0 }
 
+    # Ensure LocationType exists for validation to pass
+    after(:build) do |location, _evaluator|
+      if LocationType.table_exists? && !LocationType.exists?(code: location.location_type)
+        LocationType.seed_defaults!
+      end
+    end
+
     trait :warehouse do
       location_type { 'warehouse' }
       sequence(:name) { |n| "Bodega #{('A'.ord + n - 1).chr}" }
