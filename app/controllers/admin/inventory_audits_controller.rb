@@ -43,28 +43,40 @@ module Admin
     private
 
     def pending_assignments_summary
-      # SOIs que necesitan más inventario del que tienen asignado
-      SaleOrderItem
+      # SOIs de SOs activas (Pending/Confirmed) que podrían necesitar inventario
+      active_sois = SaleOrderItem
         .joins(:sale_order)
         .where(sale_orders: { status: ['Pending', 'Confirmed'] })
-        .where('sale_order_items.assigned_quantity < sale_order_items.quantity')
-        .includes(:product, :sale_order)
-        .map do |soi|
-          assigned = soi.assigned_quantity || 0
-          needed = soi.quantity
+        .includes(:product)
 
-          {
-            sale_order_id: soi.sale_order_id,
-            sale_order_reference: soi.sale_order_id,
-            sale_order_item_id: soi.id,
-            product_id: soi.product_id,
-            product_sku: soi.product&.product_sku,
-            product_name: soi.product&.product_name,
-            quantity_needed: needed,
-            quantity_assigned: assigned,
-            quantity_pending: needed - assigned
-          }
-        end
+      # Calcular cantidad asignada real contando inventarios vinculados
+      # (reserved o sold con sale_order_item_id apuntando a este SOI)
+      assigned_counts = Inventory
+        .where(sale_order_item_id: active_sois.select(:id))
+        .where(status: [:reserved, :sold])
+        .group(:sale_order_item_id)
+        .count
+
+      active_sois.filter_map do |soi|
+        actual_assigned = assigned_counts[soi.id] || 0
+        needed = soi.quantity
+        pending = needed - actual_assigned
+
+        # Solo incluir si hay piezas pendientes
+        next if pending <= 0
+
+        {
+          sale_order_id: soi.sale_order_id,
+          sale_order_reference: soi.sale_order_id,
+          sale_order_item_id: soi.id,
+          product_id: soi.product_id,
+          product_sku: soi.product&.product_sku,
+          product_name: soi.product&.product_name,
+          quantity_needed: needed,
+          quantity_assigned: actual_assigned,
+          quantity_pending: pending
+        }
+      end
     end
   end
 end
