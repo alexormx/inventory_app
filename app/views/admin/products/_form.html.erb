@@ -214,6 +214,38 @@
           </div>
         </div>
 
+        <div class="col-12 col-md-6">
+          <div class="card <%= @product.discontinued? ? 'border-danger bg-danger bg-opacity-10' : 'border-warning' %>">
+            <div class="card-body">
+              <div class="form-check form-switch">
+                <input type="checkbox"
+                       class="form-check-input"
+                       role="switch"
+                       id="discontinuedSwitch"
+                       <%= @product.discontinued? ? 'checked' : '' %>
+                       data-controller="discontinued-toggle"
+                       data-action="change->discontinued-toggle#toggle"
+                       data-discontinued-toggle-product-id-value="<%= @product.id %>"
+                       data-discontinued-toggle-current-state-value="<%= @product.discontinued? %>">
+                <label class="form-check-label fw-bold" for="discontinuedSwitch">
+                  <i class="fa-solid fa-ban text-danger me-1"></i>
+                  Producto Descontinuado
+                </label>
+              </div>
+              <small class="text-muted d-block mt-2">
+                <i class="fa-solid fa-info-circle me-1"></i>
+                Al marcar, las piezas nuevas se convierten a MISB (coleccionable)
+              </small>
+              <% if @product.discontinued? %>
+                <div class="alert alert-danger mt-2 mb-0 py-1 px-2 small">
+                  <i class="fa-solid fa-exclamation-triangle me-1"></i>
+                  Este producto está descontinuado por el proveedor
+                </div>
+              <% end %>
+            </div>
+          </div>
+        </div>
+
         <div class="col-12">
           <label class="form-label fw-bold">
             <i class="fa-solid fa-box text-secondary me-2"></i>

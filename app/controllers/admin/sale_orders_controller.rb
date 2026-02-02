@@ -118,6 +118,15 @@ class Admin::SaleOrdersController < ApplicationController
       flash.now[:alert] = "There were errors saving the sale order"
       render :edit, status: :unprocessable_entity
     end
+  rescue ActiveRecord::RecordNotDestroyed => e
+    # This happens when trying to delete a line item that has sold inventory
+    # Extract the error message from the failed record
+    failed_item = e.record
+    error_msg = failed_item&.errors&.full_messages&.join(', ') ||
+                "No se puede eliminar una línea con inventario vendido"
+    flash.now[:alert] = error_msg
+    @sale_order.reload # Reset changes
+    render :edit, status: :unprocessable_entity
   end
 
   def show; end

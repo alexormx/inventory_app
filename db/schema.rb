@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_02_01_030014) do
+ActiveRecord::Schema[8.0].define(version: 2026_02_02_164915) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -78,9 +78,12 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_01_030014) do
     t.string "source"
     t.string "adjustment_reference"
     t.bigint "inventory_location_id"
+    t.integer "item_condition", default: 0, null: false
+    t.decimal "selling_price", precision: 10, scale: 2
     t.index ["adjustment_reference"], name: "index_inventories_on_adjustment_reference"
     t.index ["inventory_location_id", "status"], name: "index_inventories_on_inventory_location_id_and_status"
     t.index ["inventory_location_id"], name: "index_inventories_on_inventory_location_id"
+    t.index ["item_condition"], name: "index_inventories_on_item_condition"
     t.index ["product_id", "status"], name: "index_inventories_on_product_id_and_status"
     t.index ["product_id"], name: "index_inventories_on_product_id"
     t.index ["purchase_order_id"], name: "index_inventories_on_purchase_order_id"
@@ -332,9 +335,11 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_01_030014) do
     t.text "description"
     t.string "supplier_product_code"
     t.date "launch_date"
+    t.boolean "discontinued", default: false, null: false
     t.index "lower((product_name)::text)", name: "index_products_on_lower_product_name"
     t.index ["brand"], name: "index_products_on_brand"
     t.index ["category"], name: "index_products_on_category"
+    t.index ["discontinued"], name: "index_products_on_discontinued"
     t.index ["last_supplier_id"], name: "index_products_on_last_supplier_id"
     t.index ["launch_date"], name: "index_products_on_launch_date"
     t.index ["preferred_supplier_id"], name: "index_products_on_preferred_supplier_id"

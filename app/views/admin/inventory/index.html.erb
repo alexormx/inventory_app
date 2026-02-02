@@ -14,7 +14,7 @@
 
   # Inventario sin ubicación
   unlocated_count = Inventory.where(status: %i[available reserved], inventory_location_id: nil).count
-  
+
   # Inventario con ubicación (ya inventariado)
   located_count = Inventory.where(status: %i[available reserved]).where.not(inventory_location_id: nil).count
 

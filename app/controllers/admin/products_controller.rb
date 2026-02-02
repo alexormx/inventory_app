@@ -5,7 +5,8 @@ module Admin
     include CustomAttributesParam
     before_action :authenticate_user!
     before_action :authorize_admin!
-    before_action :set_product, only: %i[show edit update destroy purge_image activate deactivate assign_preorders]
+    before_action :set_product, only: %i[show edit update destroy purge_image activate deactivate assign_preorders
+                                       discontinue reverse_discontinue]
     before_action :fix_custom_attributes_param, only: %i[create update]
     before_action :load_counts, only: %i[index drafts active inactive]
 
@@ -178,6 +179,41 @@ module Admin
         format.turbo_stream
         format.html { redirect_to admin_products_path(status: params[:source_tab]), notice: 'Product deactivated' }
       end
+    end
+
+    # Mark product as discontinued and convert all "new" inventory to "misb" with new price
+    def discontinue
+      price = params[:price].to_d
+      if price <= 0
+        return render json: { error: 'El precio debe ser mayor a 0' }, status: :unprocessable_entity
+      end
+
+      service = Products::DiscontinueService.new(@product)
+      result = service.discontinue!(misb_price: price)
+
+      render json: {
+        status: 'ok',
+        message: "Producto descontinuado. #{result[:converted_count]} piezas convertidas a MISB.",
+        converted_count: result[:converted_count]
+      }
+    rescue StandardError => e
+      render json: { error: e.message }, status: :unprocessable_entity
+    end
+
+    # Reverse discontinuation: convert all "misb" inventory back to "new"
+    def reverse_discontinue
+      new_price = params[:price].present? ? params[:price].to_d : nil
+
+      service = Products::DiscontinueService.new(@product)
+      result = service.reverse!(new_price: new_price)
+
+      render json: {
+        status: 'ok',
+        message: "Producto restaurado a producción. #{result[:converted_count]} piezas convertidas a Nuevo.",
+        converted_count: result[:converted_count]
+      }
+    rescue StandardError => e
+      render json: { error: e.message }, status: :unprocessable_entity
     end
 
     # --- Vistas por estado ---

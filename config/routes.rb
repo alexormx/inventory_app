@@ -100,6 +100,8 @@ Rails.application.routes.draw do
         patch :activate
         patch :deactivate
         post  :assign_preorders
+        post  :discontinue
+        post  :reverse_discontinue
       end
       # Image removal for ActiveStorage
       delete "images/:image_id", to: "products#purge_image", as: :purge_image

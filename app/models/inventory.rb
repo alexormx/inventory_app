@@ -8,6 +8,9 @@ class Inventory < ApplicationRecord
   belongs_to :product
   belongs_to :inventory_location, optional: true
 
+  # Fotos específicas para piezas no nuevas (coleccionables)
+  has_many_attached :piece_images
+
   SOURCES = [
     'po_regular',      # creado desde PO regular
     'po_adjustment',   # creado desde PO de ajuste
@@ -21,9 +24,34 @@ class Inventory < ApplicationRecord
   # Estatus que NO requieren ubicación (ya no están físicamente en bodega)
   STATUSES_WITHOUT_LOCATION = %w[in_transit sold pre_sold lost scrap damaged marketing returned].freeze
 
+  # Condiciones de coleccionables
+  ITEM_CONDITIONS = {
+    brand_new: 0,     # Nuevo de línea (stock renovable)
+    misb: 1,          # Mint In Sealed Box - Descontinuado, sellado
+    moc: 2,           # Mint On Card - Sellado en blister
+    mib: 3,           # Mint In Box - Caja original, pudo abrirse
+    mint: 4,          # Perfecto estado, abierto
+    loose: 5,         # Sin empaque, suelto
+    good: 6,          # Buen estado, desgaste menor
+    fair: 7           # Aceptable, desgaste visible
+  }.freeze
+
+  CONDITION_LABELS = {
+    'brand_new' => 'Nuevo (Sellado)',
+    'misb' => 'MISB - Mint In Sealed Box',
+    'moc' => 'MOC - Mint On Card',
+    'mib' => 'MIB - Mint In Box',
+    'mint' => 'Mint',
+    'loose' => 'Loose (Suelto)',
+    'good' => 'Good (Buen estado)',
+    'fair' => 'Fair (Aceptable)'
+  }.freeze
+
   # Nota: agregar nuevos estatus siempre al final para no cambiar los IDs existentes
   enum :status,
        { available: 0, reserved: 1, in_transit: 2, sold: 3, damaged: 4, lost: 5, returned: 6, scrap: 7, pre_reserved: 8, pre_sold: 9, marketing: 10 }, default: :available
+
+  enum :item_condition, ITEM_CONDITIONS, default: :brand_new
 
   validates :purchase_cost, presence: true, numericality: { greater_than_or_equal_to: 0 }
   validates :sold_price, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true
@@ -52,6 +80,28 @@ class Inventory < ApplicationRecord
   # Método de instancia para verificar si requiere ubicación
   def requires_location?
     STATUSES_REQUIRING_LOCATION.include?(status.to_s)
+  end
+
+  # Precio a mostrar: nuevo usa precio de producto, otras condiciones usan precio individual
+  def display_price
+    brand_new? ? product.selling_price : (selling_price || product.selling_price)
+  end
+
+  # Imágenes a mostrar: piezas no nuevas usan sus fotos, fallback a producto
+  def display_images
+    return piece_images if piece_images.attached? && piece_images.any?
+
+    product.product_images
+  end
+
+  # Etiqueta de condición para mostrar
+  def condition_label
+    CONDITION_LABELS[item_condition.to_s] || item_condition.to_s.titleize
+  end
+
+  # ¿Es pieza de coleccionista (no nueva)?
+  def collectible?
+    !brand_new?
   end
 
   private

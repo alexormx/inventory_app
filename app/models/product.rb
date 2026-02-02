@@ -46,6 +46,8 @@ class Product < ApplicationRecord
 
   # --- Scopes ---
   scope :publicly_visible, -> { active }
+  scope :discontinued, -> { where(discontinued: true) }
+  scope :in_production, -> { where(discontinued: false) }
 
   # --- Public helper for your current view (optional, can be removed later) ---
   def parsed_custom_attributes
@@ -80,7 +82,7 @@ class Product < ApplicationRecord
     return unless minimum_price.present? && selling_price.present? && minimum_price > selling_price
 
     errors.add(:minimum_price, 'cannot be higher than the selling price')
-    
+
   end
 
   def recalculate_stats_if_needed
@@ -230,6 +232,6 @@ class Product < ApplicationRecord
       PurchaseOrders::RecalculateCostsForProductService.new(self).call
       PurchaseOrders::RecalculateDistributedCostsForProductService.new(self).call
     end
-    
+
   end
 end

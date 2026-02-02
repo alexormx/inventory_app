@@ -27,6 +27,7 @@
           <tr>
             <th style="width: 60px;">ID</th>
             <th>Estado</th>
+            <th>Condición</th>
             <th>Ubicación</th>
             <th>Origen</th>
             <th>Destino</th>
@@ -48,6 +49,20 @@
                 <turbo-frame id="inventory_status_<%= item.id %>">
                   <%= render partial: "admin/inventory/status_badge", locals: { item: item } %>
                 </turbo-frame>
+              </td>
+
+              <%# Condición del item %>
+              <td>
+                <% condition_colors = { 'brand_new' => 'primary', 'misb' => 'success', 'moc' => 'success',
+                                        'mib' => 'info', 'mint' => 'info', 'loose' => 'warning',
+                                        'good' => 'secondary', 'fair' => 'secondary' } %>
+                <span class="badge bg-<%= condition_colors[item.item_condition] || 'secondary' %>"
+                      title="<%= item.condition_label %>">
+                  <%= item.item_condition == 'brand_new' ? 'NUEVO' : item.item_condition.upcase %>
+                </span>
+                <% if item.collectible? && item.selling_price.to_f > 0 %>
+                  <br><small class="text-muted"><%= number_to_currency(item.selling_price, unit: '$', precision: 0) %></small>
+                <% end %>
               </td>
 
               <%# Ubicación con edición inline %>
