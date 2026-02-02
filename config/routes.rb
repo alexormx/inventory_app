@@ -285,6 +285,9 @@ Rails.application.routes.draw do
   # Health check (lightweight; avoids hitting DB on boot)
   get "up" => "health#show", as: :rails_health_check
 
+  # Sitemap for search engines (dynamically generated)
+  get "sitemap.xml", to: "sitemaps#show", as: :sitemap, defaults: { format: :xml }
+
   # Public-facing root (if any)
   root "home#index"
 end

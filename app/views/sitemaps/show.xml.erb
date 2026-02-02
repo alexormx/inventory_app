@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+  <%# Página principal %>
+  <url>
+    <loc><%= @host %></loc>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+
+  <%# Catálogo %>
+  <url>
+    <loc><%= @host %>/catalog</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <%# Aviso de privacidad %>
+  <url>
+    <loc><%= @host %>/aviso-de-privacidad</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.3</priority>
+  </url>
+
+  <%# Términos y condiciones %>
+  <url>
+    <loc><%= @host %>/terminos-y-condiciones</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.3</priority>
+  </url>
+
+  <%# Productos activos %>
+  <% Product.where(status: 'active').find_each do |product| %>
+  <url>
+    <loc><%= @host %>/products/<%= product.slug %></loc>
+    <lastmod><%= product.updated_at.strftime('%Y-%m-%d') %></lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <% if product.product_images.attached? %>
+    <image:image>
+      <image:loc><%= rails_blob_url(product.product_images.first, host: @host) %></image:loc>
+      <image:title><%= product.product_name %></image:title>
+      <image:caption><%= "#{product.product_name} - #{product.brand}" %></image:caption>
+    </image:image>
+    <% end %>
+  </url>
+  <% end %>
+
+  <%# Categorías únicas %>
+  <% Product.where(status: 'active').distinct.pluck(:category).compact.each do |category| %>
+  <url>
+    <loc><%= @host %>/catalog?categories[]=<%= CGI.escape(category) %></loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <% end %>
+
+  <%# Marcas únicas %>
+  <% Product.where(status: 'active').distinct.pluck(:brand).compact.each do |brand| %>
+  <url>
+    <loc><%= @host %>/catalog?brands[]=<%= CGI.escape(brand) %></loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <% end %>
+</urlset>
