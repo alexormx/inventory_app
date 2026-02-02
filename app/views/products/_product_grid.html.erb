@@ -115,7 +115,7 @@
       <% end %>
 
       <div class="empty-state-actions d-flex flex-wrap justify-content-center gap-2 mb-4">
-        <%= link_to catalog_path, class: "btn btn-danger", data: { turbo_frame: "products_grid" } do %>
+        <%= link_to catalog_path, class: "btn btn-danger", data: { turbo_frame: "products_grid", turbo_action: "advance" } do %>
           <i class="fas fa-redo me-1"></i>Ver todos los productos
         <% end %>
       </div>
@@ -125,7 +125,7 @@
         <p class="text-muted small mb-3">¿Buscas algo específico? Explora nuestras categorías:</p>
         <div class="d-flex flex-wrap justify-content-center gap-2">
           <% ['Diecast', 'Figuras', 'Coleccionables', 'Juguetes'].each do |cat| %>
-            <%= link_to catalog_path(categories: [cat]), class: "btn btn-outline-secondary btn-sm", data: { turbo_frame: "products_grid" } do %>
+            <%= link_to catalog_path(categories: [cat]), class: "btn btn-outline-secondary btn-sm", data: { turbo_frame: "products_grid", turbo_action: "advance" } do %>
               <i class="fas fa-tag me-1"></i><%= cat %>
             <% end %>
           <% end %>
@@ -145,7 +145,7 @@
           <span class="text-muted small">Página <%= @products.current_page %> de <%= @products.total_pages %></span>
         </div>
       </div>
-      <div class="d-flex justify-content-center">
+      <div class="d-flex justify-content-center" data-turbo-action="advance">
         <%= paginate @products %>
       </div>
     </div>

@@ -2,6 +2,7 @@
 
 <%= form_with url: catalog_path, method: :get, data: {
   turbo_frame: "products_grid",
+  turbo_action: "advance",
   controller: "catalog-filters",
   action: "change->catalog-filters#submit input->catalog-filters#debouncedSubmit"
 }, class: "catalog-sidebar-filters", id: form_id do %>
@@ -173,6 +174,6 @@
     <% if suffix.to_s == 'Mobile' %>
       <button type="button" class="btn btn-danger btn-sm" data-bs-dismiss="offcanvas">Cerrar</button>
     <% end %>
-    <a href="<%= catalog_path %>" class="btn btn-outline-secondary btn-sm" data-turbo-frame="products_grid">Limpiar todo</a>
+    <a href="<%= catalog_path %>" class="btn btn-outline-secondary btn-sm" data-turbo-frame="products_grid" data-turbo-action="advance">Limpiar todo</a>
   </div>
 <% end %>

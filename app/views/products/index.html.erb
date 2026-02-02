@@ -49,6 +49,7 @@
     </div>
     <%= form_with url: catalog_path, method: :get, data: {
       turbo_frame: "products_grid",
+      turbo_action: "advance",
       controller: "catalog-filters",
       action: "change->catalog-filters#submit"
     }, class: "catalog-filters d-flex flex-column flex-sm-row flex-wrap gap-2 align-items-stretch w-100 w-lg-auto mb-0", id: "header-sort-form" do %>
@@ -59,7 +60,7 @@
           <%= link_to catalog_path(request.query_parameters.except('q', 'page')),
                       class: "chip-clear",
                       "aria-label": "Limpiar búsqueda",
-                      data: { turbo_frame: "products_grid" } do %>&times;<% end %>
+                      data: { turbo_frame: "products_grid", turbo_action: "advance" } do %>&times;<% end %>
         </div>
       <% end %>
       <select name="sort" class="form-select form-select-sm sort-select" aria-label="Ordenar productos">
@@ -72,7 +73,7 @@
         <%= link_to catalog_path,
                     class: "btn btn-outline-secondary btn-icon",
                     title: "Limpiar filtros",
-                    data: { turbo_frame: "products_grid" } do %>
+                    data: { turbo_frame: "products_grid", turbo_action: "advance" } do %>
           <i class="fas fa-times"></i>
         <% end %>
       <% end %>
