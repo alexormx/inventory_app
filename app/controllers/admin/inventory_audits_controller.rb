@@ -47,23 +47,24 @@ module Admin
       SaleOrderItem
         .joins(:sale_order)
         .where(sale_orders: { status: ['Pending', 'Confirmed'] })
-        .select('sale_order_items.*, sale_orders.status as so_status')
+        .where('sale_order_items.assigned_quantity < sale_order_items.quantity')
+        .includes(:product, :sale_order)
         .map do |soi|
-          assigned = soi.inventories.count
+          assigned = soi.assigned_quantity || 0
           needed = soi.quantity
-          next if assigned >= needed
 
           {
             sale_order_id: soi.sale_order_id,
+            sale_order_reference: soi.sale_order&.reference,
             sale_order_item_id: soi.id,
             product_id: soi.product_id,
             product_sku: soi.product&.sku,
-            product_name: soi.product&.name,
+            product_name: soi.product&.product_name,
             quantity_needed: needed,
             quantity_assigned: assigned,
             quantity_pending: needed - assigned
           }
-        end.compact
+        end
     end
   end
 end
