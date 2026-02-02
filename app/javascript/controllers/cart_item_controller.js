@@ -91,10 +91,15 @@ export default class extends Controller {
           if (data.tax_enabled) summaryTaxRow.classList.remove('d-none')
           else summaryTaxRow.classList.add('d-none')
         }
-        const summaryShipping = document.getElementById('summary-shipping')
-        if (summaryShipping && data.shipping_cost) summaryShipping.textContent = data.shipping_cost
+        // El envío se calcula en checkout, no actualizamos aquí
         const summaryGrand = document.getElementById('summary-grand-total')
-        if (summaryGrand && data.grand_total) summaryGrand.textContent = data.grand_total
+        // Usamos subtotal_with_tax que viene del API (o subtotal + tax_amount si no viene)
+        if (summaryGrand && data.subtotal_with_tax) {
+          summaryGrand.textContent = data.subtotal_with_tax
+        } else if (summaryGrand && data.subtotal) {
+          // Fallback: usar subtotal como gran total (sin envío)
+          summaryGrand.textContent = data.subtotal
+        }
         const badge = document.getElementById('cart-count')
         if (badge) badge.textContent = data.total_items
         const itemCount = document.getElementById('cart-item-count')
@@ -121,8 +126,11 @@ export default class extends Controller {
           const summaryTax = document.getElementById('summary-tax'); if (summaryTax) summaryTax.textContent = data.tax_amount
           const summaryTaxRow = document.getElementById('summary-tax-row'); if (summaryTaxRow && typeof data.tax_enabled !== 'undefined') { data.tax_enabled ? summaryTaxRow.classList.remove('d-none') : summaryTaxRow.classList.add('d-none') }
         }
-        if (data.shipping_cost) { const summaryShipping = document.getElementById('summary-shipping'); if (summaryShipping) summaryShipping.textContent = data.shipping_cost }
-        if (data.grand_total) { const summaryGrand = document.getElementById('summary-grand-total'); if (summaryGrand) summaryGrand.textContent = data.grand_total }
+        // Envío: no actualizamos, se calcula en checkout
+        // Grand total: mostramos subtotal + tax (sin envío)
+        if (data.subtotal_with_tax) {
+          const summaryGrand = document.getElementById('summary-grand-total'); if (summaryGrand) summaryGrand.textContent = data.subtotal_with_tax
+        }
       })
       .finally(()=>{
         this.element.querySelector('.cart-qty-group')?.classList.remove('loading')

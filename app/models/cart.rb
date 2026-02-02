@@ -22,6 +22,7 @@ class Cart
     @session[:cart][pid] ||= {}
     @session[:cart][pid][condition] ||= 0
     @session[:cart][pid][condition] += quantity.to_i
+    invalidate_cache!
   end
 
   # Actualiza cantidad para producto + condición
@@ -34,6 +35,7 @@ class Cart
       @session[:cart][pid] ||= {}
       @session[:cart][pid][condition] = quantity.to_i
     end
+    invalidate_cache!
   end
 
   # Elimina una condición específica de un producto
@@ -47,6 +49,12 @@ class Cart
       # Eliminar todas las condiciones del producto
       @session[:cart].delete(pid)
     end
+    invalidate_cache!
+  end
+
+  # Invalida el cache de items para forzar recarga
+  def invalidate_cache!
+    @items = nil
   end
 
   # Obtener cantidad para producto + condición
@@ -61,38 +69,27 @@ class Cart
 
   # Items del carrito: [{ product:, condition:, quantity:, price: }, ...]
   def items
-    @items ||= begin
-      result = []
-      @session[:cart].each do |product_id, conditions|
-        product = Product.find_by(id: product_id)
-        next unless product
-
-        conditions.each do |condition, quantity|
-          next if quantity.to_i <= 0
-
-          price = price_for_condition(product, condition)
-          result << {
-            product: product,
-            condition: condition,
-            quantity: quantity.to_i,
-            price: price,
-            collectible: condition != 'brand_new',
-            label: condition_label(condition),
-            line_total: price * quantity.to_i
-          }
-        end
-      end
-      result
-    end
+    load_items
   end
 
-  # Total del carrito
+  # Carga los items - se puede llamar múltiples veces sin problema de cache stale
+  def load_items
+    @items ||= build_items
+  end
+
+  # Fuerza recarga de items (útil después de modificaciones)
+  def reload_items!
+    @items = nil
+    load_items
+  end
+
+  # Total del carrito (suma de line_total de cada item)
   def total
-    items.sum { |item| item[:line_total] }
+    load_items.sum { |item| item[:line_total] }
   end
 
   def item_count
-    items.sum { |item| item[:quantity] }
+    load_items.sum { |item| item[:quantity] }
   end
 
   # Subtotal alias for clarity in views
@@ -107,8 +104,11 @@ class Cart
     (subtotal * tax_rate).round(2)
   end
 
+  # Shipping cost - solo se calcula si hay items en el carrito
+  # En el carrito mostramos el estimado; el costo real depende del método de envío en checkout
   def shipping_cost
-    return 0 if subtotal.zero? || subtotal >= FREE_SHIPPING_THRESHOLD
+    return 0 if empty?
+    return 0 if total >= FREE_SHIPPING_THRESHOLD
 
     SHIPPING_FLAT
   end
@@ -169,6 +169,30 @@ class Cart
       end
     end
     @session[:cart] = migrated
+  end
+
+  def build_items
+    result = []
+    @session[:cart].each do |product_id, conditions|
+      product = Product.find_by(id: product_id)
+      next unless product
+
+      conditions.each do |condition, quantity|
+        next if quantity.to_i <= 0
+
+        price = price_for_condition(product, condition)
+        result << {
+          product: product,
+          condition: condition,
+          quantity: quantity.to_i,
+          price: price,
+          collectible: condition != 'brand_new',
+          label: condition_label(condition),
+          line_total: price * quantity.to_i
+        }
+      end
+    end
+    result
   end
 
   def price_for_condition(product, condition)

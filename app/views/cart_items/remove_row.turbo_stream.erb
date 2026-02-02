@@ -1,5 +1,12 @@
 <%# Elimina fila individual y actualiza totales y badge %>
-<%= turbo_stream.remove "cart_item_#{@product.id}" %>
+<% if @condition.present? %>
+  <%= turbo_stream.remove "cart_item_#{@product.id}_#{@condition}" %>
+<% else %>
+  <%# Cuando no se especifica condición, se eliminan todas las filas del producto %>
+  <% ['brand_new', 'misb', 'moc', 'mib', 'mint', 'loose', 'good', 'fair'].each do |cond| %>
+    <%= turbo_stream.remove "cart_item_#{@product.id}_#{cond}" %>
+  <% end %>
+<% end %>
 
 <%= turbo_stream.replace 'cart-total' do %>
   <%= number_to_currency(@cart.total) %>
@@ -23,10 +30,10 @@
   <%= turbo_stream.remove 'summary-tax-row' %>
 <% end %>
 <%= turbo_stream.replace 'summary-shipping' do %>
-  <%= number_to_currency(@cart.shipping_cost) %>
+  <span id="summary-shipping" class="small">A calcular</span>
 <% end %>
 <%= turbo_stream.replace 'summary-grand-total' do %>
-  <strong id="summary-grand-total"><%= number_to_currency(@cart.grand_total) %></strong>
+  <strong id="summary-grand-total"><%= number_to_currency(@cart.subtotal + @cart.tax_amount) %></strong>
 <% end %>
 
 <% if @cart.empty? %>

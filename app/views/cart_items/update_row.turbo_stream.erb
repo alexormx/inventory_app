@@ -1,6 +1,9 @@
 <%# Reemplaza fila individual y totales tras update via Turbo %>
-<%= turbo_stream.replace "cart_item_#{@product.id}" do %>
-  <%= render 'carts/cart_item', product: @product, quantity: session[:cart][@product.id.to_s], cart: @cart %>
+<% item = @cart.items.find { |i| i[:product].id == @product.id && i[:condition] == @condition } %>
+<% if item %>
+  <%= turbo_stream.replace "cart_item_#{@product.id}_#{@condition}" do %>
+    <%= render 'carts/cart_item', item: item, cart: @cart %>
+  <% end %>
 <% end %>
 
 <%= turbo_stream.replace 'cart-total' do %>
@@ -25,8 +28,8 @@
   <%= turbo_stream.remove 'summary-tax-row' %>
 <% end %>
 <%= turbo_stream.replace 'summary-shipping' do %>
-  <%= number_to_currency(@cart.shipping_cost) %>
+  <span id="summary-shipping" class="small">A calcular</span>
 <% end %>
 <%= turbo_stream.replace 'summary-grand-total' do %>
-  <strong id="summary-grand-total"><%= number_to_currency(@cart.grand_total) %></strong>
+  <strong id="summary-grand-total"><%= number_to_currency(@cart.subtotal + @cart.tax_amount) %></strong>
 <% end %>

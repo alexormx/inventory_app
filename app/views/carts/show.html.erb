@@ -47,8 +47,13 @@
             <% if @cart.tax_enabled? %>
               <li class="d-flex justify-content-between" id="summary-tax-row"><span>Impuestos (<%= @cart.tax_rate_percent %>%)</span><span id="summary-tax"><%= number_to_currency(@cart.tax_amount) %></span></li>
             <% end %>
-            <li class="d-flex justify-content-between"><span>Envío <%= @cart.shipping_cost.zero? ? '(Gratis)' : '' %></span><span id="summary-shipping"><%= number_to_currency(@cart.shipping_cost) %></span></li>
-            <li class="d-flex justify-content-between border-top pt-2 fw-semibold"><span>Total a pagar</span><strong id="summary-grand-total" aria-live="polite"><%= number_to_currency(@cart.grand_total) %></strong></li>
+            <li class="d-flex justify-content-between text-muted"><span>Envío</span><span id="summary-shipping" class="small">A calcular</span></li>
+            <% if @cart.subtotal < Cart::FREE_SHIPPING_THRESHOLD %>
+              <li class="small text-info"><i class="fa fa-info-circle me-1"></i>Envío gratis a partir de <%= number_to_currency(Cart::FREE_SHIPPING_THRESHOLD) %></li>
+            <% else %>
+              <li class="small text-success"><i class="fa fa-check-circle me-1"></i>¡Envío gratis!</li>
+            <% end %>
+            <li class="d-flex justify-content-between border-top pt-2 fw-semibold"><span>Subtotal</span><strong id="summary-grand-total" aria-live="polite"><%= number_to_currency(@cart.subtotal + @cart.tax_amount) %></strong></li>
           </ul>
           <div class="d-grid gap-2">
             <%= link_to 'Finalizar compra', checkout_step1_path, class: 'btn btn-primary btn-lg' %>
