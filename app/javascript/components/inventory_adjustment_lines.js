@@ -1,6 +1,5 @@
 function initInventoryAdjustmentLines(){
   const DEBUG = window?.APP_DEBUG === true; // activar poniendo window.APP_DEBUG = true en consola si se necesita
-  if(window.__IA_LINES_LOADED){ if(DEBUG) console.log("[IA Lines] already initialized"); return; }
   if(DEBUG) console.log("[IA Lines] init invoked");
   const searchInput = document.querySelector("#inventory-adjustment-product-search");
   const resultsContainer = document.querySelector("#inventory-adjustment-product-results");
@@ -9,9 +8,10 @@ function initInventoryAdjustmentLines(){
   if (!searchInput) { if(DEBUG) console.log("[IA Lines] search input not found"); return; }
   if (!resultsContainer) { if(DEBUG) console.log("[IA Lines] results container not found"); return; }
   if (!linesTableBody) { if(DEBUG) console.log("[IA Lines] lines body not found"); return; }
+  // Evitar inicialización doble en el mismo input
+  if (searchInput.dataset.iaInitialized === 'true') { if(DEBUG) console.log("[IA Lines] already initialized on this input"); return; }
+  searchInput.dataset.iaInitialized = 'true';
   if(DEBUG) console.log("[IA Lines] initialization OK");
-  // Marcar como inicializado solo cuando los elementos requeridos existen
-  window.__IA_LINES_LOADED = true;
 
   let debounceTimer = null;
   let lineIndex = linesTableBody.querySelectorAll("tr.line-row").length;
@@ -148,8 +148,6 @@ function initInventoryAdjustmentLines(){
         placeholder.className = "text-muted";
         placeholder.innerHTML = `<td colspan='9'><em>No lines yet. Use the search box above to add products.</em></td>`;
         linesTableBody.appendChild(placeholder);
-        // allow re-init if user added/removed all
-        window.__IA_LINES_LOADED = true; // keep flag
       }
     }
   });
@@ -157,7 +155,7 @@ function initInventoryAdjustmentLines(){
 
 document.addEventListener("turbo:load", initInventoryAdjustmentLines);
 document.addEventListener("DOMContentLoaded", () => {
-  setTimeout(() => { if(!window.__IA_LINES_LOADED) initInventoryAdjustmentLines(); }, 50);
+  setTimeout(initInventoryAdjustmentLines, 50);
 });
 
 window.forceInitInventoryAdjustmentLines = initInventoryAdjustmentLines;
