@@ -58,7 +58,7 @@ module Admin
             sale_order_reference: soi.sale_order_id,
             sale_order_item_id: soi.id,
             product_id: soi.product_id,
-            product_sku: soi.product&.sku,
+            product_sku: soi.product&.product_sku,
             product_name: soi.product&.product_name,
             quantity_needed: needed,
             quantity_assigned: assigned,
