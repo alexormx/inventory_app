@@ -30,7 +30,7 @@ Rails.application.routes.draw do
     post 'inventory_audit/fix', to: 'inventory_audits#fix_inconsistencies', as: :inventory_audit_fix
     post 'inventory_audit/fix_missing_so_lines', to: 'inventory_audits#fix_missing_so_lines',
                                                  as: :inventory_audit_fix_missing_so_lines
-    post 'inventory_audit/auto_assign', to: 'inventory_audits#auto_assign', as: :auto_assign_admin_inventory_audit
+    post 'inventory_audit/auto_assign', to: 'inventory_audits#auto_assign', as: :inventory_audit_auto_assign
     # Inventory Events (audit trail de cambios de costo / desvinculaciones)
     resources :inventory_events, only: [:index]
     # Inventory reconciliation trigger

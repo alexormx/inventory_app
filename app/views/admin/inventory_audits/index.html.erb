@@ -52,9 +52,9 @@
     <% end %>
 
     <div class="d-flex flex-wrap gap-2">
-      <%= button_to 'Dry Run', auto_assign_admin_inventory_audit_path(dry_run: '1'),
+      <%= button_to 'Dry Run', admin_inventory_audit_auto_assign_path(dry_run: '1'),
                     method: :post, class: 'btn btn-outline-success btn-sm' %>
-      <%= button_to 'Ejecutar Auto-Asignación', auto_assign_admin_inventory_audit_path,
+      <%= button_to 'Ejecutar Auto-Asignación', admin_inventory_audit_auto_assign_path,
                     method: :post, class: 'btn btn-success btn-sm',
                     data: { controller: 'confirm', action: 'click->confirm#ask',
                             confirm_message: '¿Ejecutar auto-asignación? Esto asignará inventario disponible a Sale Orders pendientes.' } %>
