@@ -54,4 +54,98 @@ RSpec.describe Product, type: :model do
     end
   end
 
+  describe '#available_by_condition' do
+    let(:product) { create(:product, skip_seed_inventory: true, selling_price: 100) }
+
+    context 'when product has no inventory' do
+      it 'returns an empty array' do
+        expect(product.available_by_condition).to eq([])
+      end
+    end
+
+    context 'when product has only brand_new inventory' do
+      before do
+        create_list(:inventory, 3, product: product, status: :available, item_condition: :brand_new)
+      end
+
+      it 'returns array with one entry for brand_new' do
+        result = product.available_by_condition
+        expect(result.size).to eq(1)
+        expect(result.first[:condition]).to eq('brand_new')
+        expect(result.first[:count]).to eq(3)
+        expect(result.first[:price]).to eq(100)
+        expect(result.first[:collectible]).to be false
+      end
+    end
+
+    context 'when product has mixed conditions' do
+      before do
+        create_list(:inventory, 2, product: product, status: :available, item_condition: :brand_new)
+        create_list(:inventory, 1, product: product, status: :available, item_condition: :misb, selling_price: 150)
+        create(:inventory, product: product, status: :available, item_condition: :loose, selling_price: 75)
+      end
+
+      it 'returns array sorted by condition' do
+        result = product.available_by_condition
+        expect(result.size).to eq(3)
+        expect(result.map { |c| c[:condition] }).to eq(%w[brand_new misb loose])
+      end
+
+      it 'marks collectibles correctly' do
+        result = product.available_by_condition
+        brand_new_entry = result.find { |c| c[:condition] == 'brand_new' }
+        misb_entry = result.find { |c| c[:condition] == 'misb' }
+        expect(brand_new_entry[:collectible]).to be false
+        expect(misb_entry[:collectible]).to be true
+      end
+    end
+
+    context 'when product has only sold inventory' do
+      before do
+        create(:inventory, product: product, status: :sold, item_condition: :brand_new)
+      end
+
+      it 'returns empty array' do
+        expect(product.available_by_condition).to eq([])
+      end
+    end
+  end
+
+  describe '#has_collectibles?' do
+    let(:product) { create(:product, skip_seed_inventory: true, selling_price: 100) }
+
+    it 'returns false when no inventory' do
+      expect(product.has_collectibles?).to be false
+    end
+
+    it 'returns false when only brand_new inventory' do
+      create(:inventory, product: product, status: :available, item_condition: :brand_new)
+      expect(product.has_collectibles?).to be false
+    end
+
+    it 'returns true when has misb inventory' do
+      create(:inventory, product: product, status: :available, item_condition: :misb, selling_price: 150)
+      expect(product.has_collectibles?).to be true
+    end
+
+    it 'returns true when has loose inventory' do
+      create(:inventory, product: product, status: :available, item_condition: :loose, selling_price: 80)
+      expect(product.has_collectibles?).to be true
+    end
+  end
+
+  describe '#total_available' do
+    let(:product) { create(:product, skip_seed_inventory: true, selling_price: 100) }
+
+    it 'returns 0 when no inventory' do
+      expect(product.total_available).to eq(0)
+    end
+
+    it 'sums all available conditions' do
+      create_list(:inventory, 2, product: product, status: :available, item_condition: :brand_new)
+      create(:inventory, product: product, status: :available, item_condition: :misb, selling_price: 150)
+      create(:inventory, product: product, status: :sold, item_condition: :brand_new)
+      expect(product.total_available).to eq(3)
+    end
+  end
 end

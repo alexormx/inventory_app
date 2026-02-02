@@ -1,0 +1,107 @@
+<%# Modal con glosario de condiciones de coleccionables %>
+<div class="modal fade" id="conditionGlossaryModal" tabindex="-1" aria-labelledby="conditionGlossaryLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-semibold" id="conditionGlossaryLabel">
+          <i class="fas fa-info-circle text-primary me-2"></i>Guía de Condiciones
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body pt-2">
+        <p class="text-muted small mb-3">
+          Los coleccionables se clasifican según su estado de conservación.
+          Cada pieza es única y puede tener variaciones menores.
+        </p>
+
+        <div class="condition-list">
+          <div class="condition-item d-flex gap-3 py-3 border-bottom">
+            <span class="badge bg-primary condition-badge">NUEVO</span>
+            <div>
+              <strong>Nuevo (Sellado)</strong>
+              <p class="text-muted small mb-0">Producto nuevo de línea, sellado de fábrica. Stock renovable del fabricante.</p>
+            </div>
+          </div>
+
+          <div class="condition-item d-flex gap-3 py-3 border-bottom">
+            <span class="badge bg-success condition-badge">MISB</span>
+            <div>
+              <strong>Mint In Sealed Box</strong>
+              <p class="text-muted small mb-0">Caja sellada de fábrica, nunca abierta. Producto descontinuado, pieza única.</p>
+            </div>
+          </div>
+
+          <div class="condition-item d-flex gap-3 py-3 border-bottom">
+            <span class="badge bg-success condition-badge">MOC</span>
+            <div>
+              <strong>Mint On Card</strong>
+              <p class="text-muted small mb-0">Sellado en blister/cartón original. Perfecto para coleccionistas de figuras.</p>
+            </div>
+          </div>
+
+          <div class="condition-item d-flex gap-3 py-3 border-bottom">
+            <span class="badge bg-info condition-badge">MIB</span>
+            <div>
+              <strong>Mint In Box</strong>
+              <p class="text-muted small mb-0">Con caja original, pudo haber sido abierta pero el contenido está perfecto.</p>
+            </div>
+          </div>
+
+          <div class="condition-item d-flex gap-3 py-3 border-bottom">
+            <span class="badge bg-info condition-badge">MINT</span>
+            <div>
+              <strong>Mint (Perfecto)</strong>
+              <p class="text-muted small mb-0">Pieza en perfecto estado, fue abierta pero sin marcas ni desgaste.</p>
+            </div>
+          </div>
+
+          <div class="condition-item d-flex gap-3 py-3 border-bottom">
+            <span class="badge bg-warning text-dark condition-badge">LOOSE</span>
+            <div>
+              <strong>Loose (Suelto)</strong>
+              <p class="text-muted small mb-0">Sin empaque original. La pieza está completa y en buen estado.</p>
+            </div>
+          </div>
+
+          <div class="condition-item d-flex gap-3 py-3 border-bottom">
+            <span class="badge bg-secondary condition-badge">GOOD</span>
+            <div>
+              <strong>Good (Buen estado)</strong>
+              <p class="text-muted small mb-0">Desgaste menor visible, pequeños raspones o marcas de uso normal.</p>
+            </div>
+          </div>
+
+          <div class="condition-item d-flex gap-3 py-3">
+            <span class="badge bg-secondary condition-badge">FAIR</span>
+            <div>
+              <strong>Fair (Aceptable)</strong>
+              <p class="text-muted small mb-0">Desgaste visible, puede tener piezas faltantes menores o daños cosméticos.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="alert alert-light border mt-3 mb-0">
+          <div class="d-flex align-items-start gap-2">
+            <i class="fas fa-camera text-muted mt-1"></i>
+            <small class="text-muted">
+              Las piezas coleccionables pueden incluir fotos específicas del artículo que recibirás.
+              Si tienes dudas sobre alguna pieza, <a href="https://wa.me/523310000000" target="_blank" class="text-danger">contáctanos por WhatsApp</a>.
+            </small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.condition-badge {
+  min-width: 60px;
+  font-size: 0.7rem;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 24px;
+}
+</style>

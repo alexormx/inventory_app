@@ -181,6 +181,63 @@ class Product < ApplicationRecord
     @current_on_hand ||= Inventory.where(product_id: id, status: [:available]).count
   end
 
+  # Inventario disponible agrupado por condición con precio
+  # Retorna: [{ condition: 'brand_new', label: 'Nuevo', count: 5, price: 150.0 }, ...]
+  def available_by_condition
+    @available_by_condition ||= begin
+      # Agrupar inventario disponible por condición
+      counts = inventories.where(status: :available)
+                          .group(:item_condition)
+                          .count
+
+      # Obtener precio representativo por condición (promedio de selling_price o product price)
+      prices = inventories.where(status: :available)
+                          .where.not(item_condition: :brand_new)
+                          .group(:item_condition)
+                          .average(:selling_price)
+
+      counts.map do |condition, count|
+        condition_str = condition.to_s
+        {
+          condition: condition_str,
+          label: Inventory::CONDITION_LABELS[condition_str] || condition_str.titleize,
+          short_label: condition_short_label(condition_str),
+          count: count,
+          price: condition_str == 'brand_new' ? selling_price : (prices[condition]&.to_f || selling_price),
+          collectible: condition_str != 'brand_new'
+        }
+      end.sort_by { |c| Inventory::ITEM_CONDITIONS[c[:condition].to_sym] || 99 }
+    end
+  end
+
+  # ¿Tiene piezas coleccionables (no nuevas)?
+  def has_collectibles?
+    available_by_condition.any? { |c| c[:collectible] && c[:count] > 0 }
+  end
+
+  # Total disponible (todas las condiciones)
+  def total_available
+    available_by_condition.sum { |c| c[:count] }
+  end
+
+  private
+
+  def condition_short_label(condition)
+    case condition
+    when 'brand_new' then 'Nuevo'
+    when 'misb' then 'MISB'
+    when 'moc' then 'MOC'
+    when 'mib' then 'MIB'
+    when 'mint' then 'Mint'
+    when 'loose' then 'Loose'
+    when 'good' then 'Good'
+    when 'fair' then 'Fair'
+    else condition.titleize
+    end
+  end
+
+  public
+
   def oversell_allowed?
     backorder_allowed || preorder_available
   end

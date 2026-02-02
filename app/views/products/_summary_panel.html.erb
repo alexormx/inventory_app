@@ -1,5 +1,5 @@
 <%# Panel de resumen y compra sticky %>
-<div class="product-summary card shadow-sm border-0" data-product-summary>
+<div class="product-summary card shadow-sm border-0" data-product-summary data-controller="product-conditions">
   <div class="card-body d-flex flex-column gap-3">
     <div>
       <h1 class="h3 fw-bold mb-1"><%= product.product_name %></h1>
@@ -11,23 +11,84 @@
     </div>
 
     <% if user_signed_in? %>
-      <div class="price-zone d-flex align-items-end gap-3 flex-wrap">
-        <span class="display-price h3 text-danger fw-bold mb-0"><%= number_to_currency(product.selling_price) %></span>
-        <%= stock_badge(product) %>
-        <% if (eta = stock_eta(product)) %>
-          <span class="small text-muted"><i class="fa fa-clock me-1"></i><%= eta %></span>
+      <% conditions = product.available_by_condition %>
+      <% has_collectibles = product.has_collectibles? %>
+      <% total_available = product.total_available %>
+      
+      <% if conditions.empty? %>
+        <%# Sin stock disponible %>
+        <div class="price-zone d-flex align-items-end gap-3 flex-wrap">
+          <span class="display-price h3 text-danger fw-bold mb-0"><%= number_to_currency(product.selling_price) %></span>
+          <%= stock_badge(product) %>
+          <% if (eta = stock_eta(product)) %>
+            <span class="small text-muted"><i class="fa fa-clock me-1"></i><%= eta %></span>
+          <% end %>
+        </div>
+        
+        <button class="btn btn-secondary btn-lg w-100 disabled" disabled title="Sin stock disponible">
+          <i class="fas fa-times-circle"></i> Sin stock
+        </button>
+      <% elsif !has_collectibles && conditions.size == 1 %>
+        <%# Solo productos nuevos - vista simple %>
+        <% cond = conditions.first %>
+        <div class="price-zone d-flex align-items-end gap-3 flex-wrap">
+          <span class="display-price h3 text-danger fw-bold mb-0"><%= number_to_currency(cond[:price]) %></span>
+          <span class="badge bg-success-subtle text-success"><%= cond[:count] %> disponible<%= 's' if cond[:count] > 1 %></span>
+        </div>
+        
+        <%= button_to cart_items_path,
+              params: { product_id: product.id, condition: cond[:condition] },
+              method: :post,
+              class: "btn btn-danger btn-lg w-100",
+              title: 'Agregar al carrito' do %>
+          <i class="fas fa-cart-plus"></i> Agregar al carrito
         <% end %>
-      </div>
-
-      <% on_hand = product.current_on_hand %>
-      <% disabled = (on_hand <= 0 && !product.oversell_allowed?) %>
-      <%= button_to cart_items_path,
-            params: { product_id: product.id },
-            method: :post,
-            class: "btn btn-danger btn-lg w-100 #{'disabled' if disabled}",
-            disabled: disabled,
-            title: (disabled ? 'Sin stock disponible' : 'Agregar al carrito') do %>
-        <i class="fas fa-cart-plus"></i> <%= disabled ? 'Sin stock' : 'Agregar al carrito' %>
+      <% else %>
+        <%# Múltiples condiciones o coleccionables %>
+        <div class="conditions-section">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="fw-semibold text-muted small">
+              <%= total_available %> pieza<%= 's' if total_available > 1 %> disponible<%= 's' if total_available > 1 %>
+            </span>
+            <% if has_collectibles %>
+              <a href="#" class="small text-danger text-decoration-none" data-bs-toggle="modal" data-bs-target="#conditionGlossaryModal">
+                <i class="fas fa-info-circle me-1"></i>¿Qué significan las condiciones?
+              </a>
+            <% end %>
+          </div>
+          
+          <div class="condition-options d-flex flex-column gap-2">
+            <% conditions.each do |cond| %>
+              <div class="condition-option card border <%= cond[:collectible] ? 'border-warning' : '' %>">
+                <div class="card-body p-2 d-flex align-items-center gap-2">
+                  <div class="flex-grow-1">
+                    <div class="d-flex align-items-center gap-2">
+                      <span class="badge <%= condition_badge_class(cond[:condition]) %>">
+                        <%= cond[:short_label] %>
+                      </span>
+                      <span class="small text-muted">
+                        (<%= cond[:count] %> disponible<%= 's' if cond[:count] > 1 %>)
+                      </span>
+                      <% if cond[:collectible] %>
+                        <span class="badge bg-warning-subtle text-warning small" title="Pieza única descontinuada">
+                          <i class="fas fa-gem"></i>
+                        </span>
+                      <% end %>
+                    </div>
+                    <div class="fw-bold text-danger"><%= number_to_currency(cond[:price]) %></div>
+                  </div>
+                  <%= button_to cart_items_path,
+                        params: { product_id: product.id, condition: cond[:condition] },
+                        method: :post,
+                        class: "btn btn-sm btn-outline-danger",
+                        title: "Agregar #{cond[:short_label]} al carrito" do %>
+                    <i class="fas fa-cart-plus"></i>
+                  <% end %>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        </div>
       <% end %>
 
       <div class="small text-muted d-flex flex-column gap-1">
@@ -49,3 +110,8 @@
     <% end %>
   </div>
 </div>
+
+<%# Incluir modal de glosario si hay coleccionables %>
+<% if user_signed_in? && product.has_collectibles? %>
+  <%= render 'products/condition_glossary' %>
+<% end %>

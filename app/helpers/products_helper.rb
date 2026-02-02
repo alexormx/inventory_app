@@ -218,4 +218,22 @@ module ProductsHelper
                 end
     (pending_units * unit_cost.to_d).round(2)
   end
+
+  # Devuelve la clase CSS para el badge de condición de inventario
+  def condition_badge_class(condition)
+    case condition.to_s
+    when 'brand_new'
+      'bg-primary'
+    when 'misb', 'moc'
+      'bg-success'
+    when 'mib', 'mint'
+      'bg-info'
+    when 'loose'
+      'bg-warning text-dark'
+    when 'good', 'fair'
+      'bg-secondary'
+    else
+      'bg-secondary'
+    end
+  end
 end
