@@ -55,7 +55,7 @@ module Admin
 
           {
             sale_order_id: soi.sale_order_id,
-            sale_order_reference: soi.sale_order&.reference,
+            sale_order_reference: soi.sale_order_id,
             sale_order_item_id: soi.id,
             product_id: soi.product_id,
             product_sku: soi.product&.sku,
