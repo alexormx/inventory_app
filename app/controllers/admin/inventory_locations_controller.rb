@@ -17,9 +17,19 @@ module Admin
                                    .group(:inventory_location_id)
                                    .count
 
+      # Pre-calculate inventory costs for ALL locations in a single query
+      @inventory_costs = Inventory.requiring_location
+                                  .where.not(inventory_location_id: nil)
+                                  .group(:inventory_location_id)
+                                  .sum(:purchase_cost)
+
       # Pre-calculate location type counts for summary panel
       @location_type_counts = InventoryLocation.group(:location_type).count
       @total_locations_count = InventoryLocation.count
+
+      # Calculate totals for the summary panel
+      @total_inventory_pieces = @inventory_counts.values.sum
+      @total_inventory_cost = @inventory_costs.values.sum
     end
 
     def show

@@ -1,10 +1,13 @@
 <%# Recursive partial for rendering a location node in the tree %>
 <% depth ||= 0 %>
 <%
-  # Use pre-calculated counts from controller (avoids N+1 queries)
+  # Use pre-calculated counts and costs from controller (avoids N+1 queries)
   inventory_counts = @inventory_counts || {}
+  inventory_costs = @inventory_costs || {}
   direct_count = inventory_counts[location.id] || 0
+  direct_cost = inventory_costs[location.id] || 0
   total_count = location.total_inventory_count(inventory_counts)
+  total_cost = location.total_inventory_cost(inventory_costs)
 %>
 <div class="location-node" data-location-id="<%= location.id %>" data-depth="<%= depth %>">
   <div class="location-row" style="padding-left: <%= 1 + (depth * 1.5) %>rem;">
@@ -29,19 +32,27 @@
         <span class="badge bg-danger">Inactivo</span>
       <% end %>
 
-      <%# Mostrar contadores de inventario %>
+      <%# Mostrar contadores de inventario y costos %>
       <% if total_count > 0 %>
         <span class="ms-2">
           <% if location.has_children? && total_count != direct_count %>
+            <%# Location with children: show direct and total %>
             <span class="badge bg-info" title="Piezas en esta ubicación">
               <i class="fas fa-box"></i> <%= direct_count %>
             </span>
-            <span class="badge bg-secondary" title="Total incluyendo sub-ubicaciones">
+            <span class="badge bg-secondary" title="Total piezas incluyendo sub-ubicaciones">
               <i class="fas fa-boxes"></i> <%= total_count %>
             </span>
+            <span class="badge bg-success" title="Costo total incluyendo sub-ubicaciones">
+              <i class="fas fa-dollar-sign"></i> <%= number_to_currency(total_cost, unit: '$', precision: 0) %>
+            </span>
           <% else %>
+            <%# Leaf location or all inventory is direct %>
             <span class="badge bg-info" title="Piezas en esta ubicación">
               <i class="fas fa-box"></i> <%= direct_count %>
+            </span>
+            <span class="badge bg-success" title="Costo de inventario">
+              <i class="fas fa-dollar-sign"></i> <%= number_to_currency(direct_cost, unit: '$', precision: 0) %>
             </span>
           <% end %>
         </span>

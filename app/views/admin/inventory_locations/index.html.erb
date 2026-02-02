@@ -50,9 +50,30 @@
 
     <!-- Quick Stats Panel -->
     <div class="col-lg-4">
+      <!-- Resumen de Inventario -->
+      <div class="card mb-3">
+        <div class="card-header bg-success text-white">
+          <i class="fas fa-chart-pie"></i> Resumen de Inventario
+        </div>
+        <div class="card-body">
+          <div class="row text-center">
+            <div class="col-6">
+              <div class="border-end">
+                <h4 class="mb-0 text-info"><%= number_with_delimiter(@total_inventory_pieces) %></h4>
+                <small class="text-muted">Piezas con ubicación</small>
+              </div>
+            </div>
+            <div class="col-6">
+              <h4 class="mb-0 text-success"><%= number_to_currency(@total_inventory_cost, unit: '$', precision: 0) %></h4>
+              <small class="text-muted">Valor total</small>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="card mb-3">
         <div class="card-header bg-light">
-          <i class="fas fa-info-circle"></i> Resumen
+          <i class="fas fa-info-circle"></i> Resumen por Tipo
         </div>
         <div class="card-body">
           <ul class="list-group list-group-flush">

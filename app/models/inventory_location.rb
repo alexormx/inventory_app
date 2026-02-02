@@ -145,6 +145,14 @@ class InventoryLocation < ApplicationRecord
     count
   end
 
+  # Calculate total inventory cost including all descendants
+  # Uses pre-loaded costs hash to avoid N+1 queries
+  def total_inventory_cost(costs_hash)
+    cost = costs_hash[id] || 0
+    children.each { |child| cost += child.total_inventory_cost(costs_hash) }
+    cost
+  end
+
   # Get siblings (other children of same parent)
   def siblings
     if parent_id
