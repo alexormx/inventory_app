@@ -1,11 +1,13 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  static values = { productId: Number }
+  static values = { productId: Number, condition: String }
   static targets = ["quantity", "lineTotal"]
 
   connect() {
     this.csrfToken = document.querySelector('meta[name="csrf-token"]').content
+    // Default condition to brand_new if not set
+    if (!this.conditionValue) this.conditionValue = 'brand_new'
   }
 
   increase() {
@@ -34,12 +36,18 @@ export default class extends Controller {
         'X-CSRF-Token': this.csrfToken,
         'Accept': 'application/json'
       },
-      body: JSON.stringify({ product_id: this.productIdValue, quantity: qty })
+      body: JSON.stringify({
+        product_id: this.productIdValue,
+        quantity: qty,
+        condition: this.conditionValue
+      })
     })
       .then(res => res.json())
       .then(data => {
-        this.quantityTarget.value = data.quantity
-        if (this.lineTotalTarget) {
+        if (this.hasQuantityTarget) {
+          this.quantityTarget.value = data.quantity
+        }
+        if (this.hasLineTotalTarget) {
           let html = `<span class=\"line-total-amount\">${data.line_total}</span>`
           if (data.item_pending > 0) {
             const pendingLabel = data.item_pending_type === 'preorder' ? 'preventa' : 'sobre pedido'

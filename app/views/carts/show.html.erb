@@ -22,8 +22,8 @@
             </tr>
           </thead>
           <tbody id="cart-items">
-            <% items.each do |product, quantity| %>
-              <%= render 'carts/cart_item', product: product, quantity: quantity, cart: @cart %>
+            <% items.each do |item| %>
+              <%= render 'carts/cart_item', item: item, cart: @cart %>
             <% end %>
           </tbody>
           <tfoot>

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_02_02_164915) do
+ActiveRecord::Schema[8.0].define(version: 2026_02_02_181235) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -406,7 +406,10 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_02_164915) do
     t.datetime "updated_at", null: false
     t.integer "preorder_quantity", default: 0, null: false
     t.integer "backordered_quantity", default: 0, null: false
+    t.integer "item_condition", default: 0, null: false
+    t.decimal "unit_selling_price", precision: 10, scale: 2
     t.index ["backordered_quantity"], name: "index_sale_order_items_on_backordered_quantity"
+    t.index ["item_condition"], name: "index_sale_order_items_on_item_condition"
     t.index ["preorder_quantity"], name: "index_sale_order_items_on_preorder_quantity"
     t.index ["product_id"], name: "index_sale_order_items_on_product_id"
   end

@@ -2,8 +2,8 @@
 <div class="cart-preview-header d-flex justify-content-between align-items-center mb-2 flex-shrink-0">
   <div class="d-flex align-items-center">
     <strong>Carrito</strong>
-    <%# cart_obj.items devuelve un array de [product, qty]; sumamos las cantidades %>
-    <% items_count = cart_obj.items.sum { |(_, qty)| qty.to_i } %>
+    <%# cart_obj.items devuelve un array de hashes; sumamos las cantidades %>
+    <% items_count = cart_obj.items.sum { |item| item[:quantity].to_i } %>
     <span class="cart-preview-count" aria-label="Total de unidades en el carrito"><%= items_count %></span>
   </div>
   <button type="button" class="btn-close btn-sm" data-cart-preview-close aria-label="Cerrar carrito"></button>
@@ -11,8 +11,13 @@
 <% if cart_obj.items.any? %>
   <div class="cart-preview-scroll">
   <ul class="list-unstyled mb-2">
-    <% cart_obj.items.each do |product, qty| %>
-      <li class="d-flex align-items-center mb-2 cart-preview-item" id="cart_item_<%= product.id %>">
+    <% cart_obj.items.each do |item| %>
+      <% product = item[:product] %>
+      <% qty = item[:quantity] %>
+      <% item_price = item[:price] %>
+      <% condition = item[:condition] %>
+      <% collectible = item[:collectible] %>
+      <li class="d-flex align-items-center mb-2 cart-preview-item" id="cart_item_<%= product.id %>_<%= condition %>">
         <div class="me-2 flex-shrink-0">
           <% if product.product_images.attached? %>
             <%= image_tag product.product_images.first.variant(resize_to_fill: [40,40]), alt: product.product_name, class: 'rounded border cart-preview-thumb' %>
@@ -21,29 +26,43 @@
           <% end %>
         </div>
         <div class="flex-grow-1 me-2">
-          <div class="fw-medium small line-clamp-1"><%= product.product_name %></div>
-          <% on_hand = product.current_on_hand %>
-          <% split = product.split_immediate_and_pending(qty) %>
-          <div class="d-flex flex-wrap align-items-center gap-1 mb-1">
-            <%= stock_badge(product, quantity: qty, suppress_pending_note: false) %>
+          <div class="fw-medium small line-clamp-1">
+            <%= product.product_name %>
+            <% if collectible %>
+              <i class="fas fa-gem text-warning" title="<%= item[:label] %>"></i>
+            <% end %>
           </div>
-          <% if (eta = stock_eta(product)) %>
-            <div class="small text-muted mb-1"><i class="fa fa-clock me-1"></i><%= eta %></div>
+          <% on_hand = product.current_on_hand %>
+          <% unless collectible %>
+            <% split = product.split_immediate_and_pending(qty) %>
+            <div class="d-flex flex-wrap align-items-center gap-1 mb-1">
+              <%= stock_badge(product, quantity: qty, suppress_pending_note: false) %>
+            </div>
+            <% if (eta = stock_eta(product)) %>
+              <div class="small text-muted mb-1"><i class="fa fa-clock me-1"></i><%= eta %></div>
+            <% end %>
+          <% else %>
+            <div class="small text-muted mb-1"><span class="badge bg-warning-subtle text-warning"><%= item[:label] %></span></div>
           <% end %>
           <div class="text-muted small d-flex align-items-center gap-2">
-            <%= form_with url: cart_item_path(product), method: :patch, data: { turbo_frame: "_top" }, class: 'd-inline-flex align-items-center cart-mini-qty-form' do %>
-              <input type="hidden" name="product_id" value="<%= product.id %>">
-              <button class="btn btn-sm btn-outline-secondary px-1 py-0 cart-mini-decrease" name="quantity" value="<%= qty - 1 %>" <%= 'disabled' if qty <= 1 %> aria-label="Disminuir cantidad">−</button>
-              <span class="mx-1 small" aria-live="polite"><%= qty %></span>
-              <% disabled_inc = (on_hand <= qty.to_i && !product.oversell_allowed?) %>
-              <button class="btn btn-sm btn-outline-secondary px-1 py-0 cart-mini-increase <%= 'disabled' if disabled_inc %>" name="quantity" value="<%= qty + 1 %>" aria-label="Aumentar cantidad" <%= 'disabled' if disabled_inc %>>+</button>
+            <% if collectible %>
+              <span class="small">1 pieza única</span>
+            <% else %>
+              <%= form_with url: cart_item_path(product), method: :patch, data: { turbo_frame: "_top" }, class: 'd-inline-flex align-items-center cart-mini-qty-form' do %>
+                <input type="hidden" name="product_id" value="<%= product.id %>">
+                <input type="hidden" name="condition" value="<%= condition %>">
+                <button class="btn btn-sm btn-outline-secondary px-1 py-0 cart-mini-decrease" name="quantity" value="<%= qty - 1 %>" <%= 'disabled' if qty <= 1 %> aria-label="Disminuir cantidad">−</button>
+                <span class="mx-1 small" aria-live="polite"><%= qty %></span>
+                <% disabled_inc = (on_hand <= qty.to_i && !product.oversell_allowed?) %>
+                <button class="btn btn-sm btn-outline-secondary px-1 py-0 cart-mini-increase <%= 'disabled' if disabled_inc %>" name="quantity" value="<%= qty + 1 %>" aria-label="Aumentar cantidad" <%= 'disabled' if disabled_inc %>>+</button>
+              <% end %>
             <% end %>
-            <span>· <%= number_to_currency(product.selling_price * qty) %></span>
+            <span>· <%= number_to_currency(item_price * qty) %></span>
           </div>
         </div>
         <div class="d-flex flex-column align-items-end gap-1">
-          <div class="small fw-semibold text-nowrap"><%= number_to_currency(product.selling_price) %></div>
-          <%= button_to cart_item_path(product), method: :delete, params: { product_id: product.id }, form: { class: 'm-0 p-0' }, class: 'btn btn-sm btn-link text-danger p-0 small', title: 'Eliminar', aria: { label: 'Eliminar producto del carrito' } do %>
+          <div class="small fw-semibold text-nowrap"><%= number_to_currency(item_price) %></div>
+          <%= button_to cart_item_path(product), method: :delete, params: { product_id: product.id, condition: condition }, form: { class: 'm-0 p-0' }, class: 'btn btn-sm btn-link text-danger p-0 small', title: 'Eliminar', aria: { label: 'Eliminar producto del carrito' } do %>
             <i class="fas fa-times"></i>
           <% end %>
         </div>

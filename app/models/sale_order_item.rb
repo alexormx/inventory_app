@@ -6,6 +6,10 @@ class SaleOrderItem < ApplicationRecord
   belongs_to :sale_order
   belongs_to :product
 
+  # Usar el mismo enum que Inventory para consistencia
+  ITEM_CONDITIONS = Inventory::ITEM_CONDITIONS
+  enum :item_condition, ITEM_CONDITIONS, default: :brand_new
+
   validates :quantity, presence: true, numericality: { greater_than: 0 }
   validates :unit_cost, presence: true, numericality: { greater_than_or_equal_to: 0 }
   validates :total_line_cost, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true

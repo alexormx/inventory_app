@@ -28,17 +28,8 @@ RSpec.describe Checkout::CreateOrder, 'inventory revalidation' do
       # Simular dos carritos que quieren comprar 2 unidades cada uno
       # Solo hay 2 unidades disponibles, así que uno debe fallar
 
-      cart1 = instance_double('Cart',
-        empty?: false,
-        items: { product => 2 },
-        total: 200.0
-      )
-
-      cart2 = instance_double('Cart',
-        empty?: false,
-        items: { product => 2 },
-        total: 200.0
-      )
+      cart1 = mock_simple_cart(product, 2)
+      cart2 = mock_simple_cart(product, 2)
 
       results = []
       threads = []
@@ -102,11 +93,7 @@ RSpec.describe Checkout::CreateOrder, 'inventory revalidation' do
   describe 'revalidation catches inventory changes between step3 and complete' do
     it 'fails if inventory becomes unavailable after user saw step3' do
       # Usuario ve step3 con 2 unidades disponibles
-      cart = instance_double('Cart',
-        empty?: false,
-        items: { product => 2 },
-        total: 200.0
-      )
+      cart = mock_simple_cart(product, 2)
 
       # Entre step3 y complete, alguien más compra las unidades
       # (simulamos marcando inventarios como sold)
@@ -131,11 +118,7 @@ RSpec.describe Checkout::CreateOrder, 'inventory revalidation' do
     end
 
     it 'succeeds if inventory is still available after revalidation' do
-      cart = instance_double('Cart',
-        empty?: false,
-        items: { product => 1 },
-        total: 100.0
-      )
+      cart = mock_simple_cart(product, 1)
 
       service = Checkout::CreateOrder.new(
         user: user1,
@@ -160,11 +143,7 @@ RSpec.describe Checkout::CreateOrder, 'inventory revalidation' do
 
     it 'allows creating order with preorder items even if immediate stock is 0' do
       # No hay inventario inmediato, pero permite preorder
-      cart = instance_double('Cart',
-        empty?: false,
-        items: { preorder_product => 3 },
-        total: 150.0
-      )
+      cart = mock_simple_cart(preorder_product, 3)
 
       service = Checkout::CreateOrder.new(
         user: user1,

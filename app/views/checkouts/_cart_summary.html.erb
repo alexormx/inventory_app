@@ -10,12 +10,16 @@
     <h6 class="mb-0 d-flex align-items-center gap-2">
       <i class="fa fa-shopping-bag"></i>
       Resumen del pedido
-      <span class="badge bg-primary rounded-pill ms-auto"><%= cart.items.sum { |_, qty| qty } %></span>
+      <span class="badge bg-primary rounded-pill ms-auto"><%= cart.items.sum { |item| item[:quantity] } %></span>
     </h6>
   </div>
   <div class="card-body p-0">
     <ul class="list-group list-group-flush">
-      <% cart.items.each do |product, qty| %>
+      <% cart.items.each do |item| %>
+        <% product = item[:product] %>
+        <% qty = item[:quantity] %>
+        <% item_price = item[:price] %>
+        <% collectible = item[:collectible] %>
         <li class="list-group-item py-2 px-3">
           <div class="d-flex gap-2 align-items-start">
             <% if product.product_images.attached? %>
@@ -28,13 +32,16 @@
             <div class="flex-grow-1 small">
               <div class="fw-medium text-truncate" style="max-width: 150px;" title="<%= product.product_name %>">
                 <%= truncate(product.product_name, length: 30) %>
+                <% if collectible %>
+                  <i class="fas fa-gem text-warning" title="<%= item[:label] %>"></i>
+                <% end %>
               </div>
               <div class="text-muted">
-                <%= qty %> × <%= number_to_currency(product.selling_price) %>
+                <%= qty %> × <%= number_to_currency(item_price) %>
               </div>
             </div>
             <div class="text-end small fw-medium">
-              <%= number_to_currency(product.selling_price * qty) %>
+              <%= number_to_currency(item_price * qty) %>
             </div>
           </div>
         </li>

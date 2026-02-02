@@ -1,7 +1,7 @@
 <!-- Actualización de cantidad en carrito -->
 <%= turbo_stream.replace "cart-count" do %>
   <span id="cart-count" class="badge bg-danger rounded-pill position-absolute top-0 start-100 translate-middle">
-    <%= session[:cart]&.values&.sum || 0 %>
+    <%= cart_item_count %>
   </span>
 <% end %>
 

@@ -126,7 +126,7 @@
 
           <!-- Cart Button -->
           <li class="nav-item">
-      <% cart_count = session[:cart]&.values&.sum || 0 %>
+      <% cart_count = cart_item_count %>
           <%= link_to cart_path,
         class: "nav-item-link position-relative d-flex align-items-center #{'active' if ['cart_items','carts'].include?(controller_path)}",
                 'data-nav-link': 'cart',

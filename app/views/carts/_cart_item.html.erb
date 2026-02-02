@@ -1,48 +1,70 @@
-<%# Partial de fila de item en carrito - locals: product, quantity, cart %>
-<tr id="cart_item_<%= product.id %>" data-controller="cart-item" data-cart-item-product-id-value="<%= product.id %>">
+<%# Partial de fila de item en carrito - locals: item (hash con :product, :condition, :quantity, :price, :collectible, :label, :line_total), cart %>
+<% product = item[:product] %>
+<% quantity = item[:quantity] %>
+<% condition = item[:condition] %>
+<% collectible = item[:collectible] %>
+<% item_price = item[:price] %>
+<% line_total = item[:line_total] %>
+<% label = item[:label] %>
+<% row_id = "cart_item_#{product.id}_#{condition}" %>
+
+<tr id="<%= row_id %>" data-controller="cart-item" data-cart-item-product-id-value="<%= product.id %>" data-cart-item-condition-value="<%= condition %>">
   <th scope="row">
     <div class="d-flex align-items-center gap-2">
-  <% if product.product_images.attached? %>
-    <%= responsive_attachment_image product.product_images.first,
-      alt: product.product_name,
-      widths: [40,50,64],
-      css_class: 'img-thumbnail',
-      square: true %>
-  <% else %>
+      <% if product.product_images.attached? %>
+        <%= responsive_attachment_image product.product_images.first,
+          alt: product.product_name,
+          widths: [40,50,64],
+          css_class: 'img-thumbnail',
+          square: true %>
+      <% else %>
         <div class="rounded bg-light border d-flex align-items-center justify-content-center" style="width:50px;height:50px;font-size:.8rem;">📦</div>
       <% end %>
       <div class="d-flex flex-column">
         <strong class="small mb-0"><%= product.product_name %></strong>
-  <% on_hand = product.current_on_hand %>
-  <div class="small mt-1"><%= stock_badge(product, quantity: quantity, suppress_pending_note: true) %></div>
-        <% if (eta = stock_eta(product)) %>
+        <% if collectible %>
+          <span class="badge bg-warning-subtle text-warning small mt-1" title="Pieza coleccionable única">
+            <i class="fas fa-gem me-1"></i><%= label %>
+          </span>
+        <% else %>
+          <span class="badge bg-primary-subtle text-primary small mt-1"><%= label %></span>
+        <% end %>
+        <% on_hand = product.inventories.where(status: :available, item_condition: condition).count %>
+        <div class="small mt-1"><%= stock_badge(product, quantity: quantity, suppress_pending_note: true, on_hand_override: on_hand) %></div>
+        <% if !collectible && (eta = stock_eta(product)) %>
           <div class="small text-muted"><i class="fa fa-clock me-1"></i><%= eta %></div>
         <% end %>
-        <% split = product.split_immediate_and_pending(quantity) %>
-  <%# Se omite badge adicional de preventa para evitar duplicación; posición podría mostrarse en tooltip futuro %>
       </div>
     </div>
   </th>
   <td class="text-center">
-    <div class="input-group input-group-sm justify-content-center cart-qty-group" style="max-width: 140px;">
-      <button class="btn btn-outline-secondary px-2" type="button" aria-label="Disminuir" data-action="click->cart-item#decrease">−</button>
-  <input type="number" min="1" class="form-control text-center px-1" value="<%= quantity %>" data-cart-item-target="quantity" data-action="change->cart-item#quantityChanged" style="width: 50px;" aria-label="Cantidad" id="cart_item_quantity_<%= product.id %>" name="cart[items][<%= product.id %>][quantity]">
-  <% disabled_increase = (on_hand <= quantity.to_i && !product.oversell_allowed?) %>
-  <button class="btn btn-outline-secondary px-2 <%= 'disabled' if disabled_increase %>" type="button" aria-label="Aumentar" data-action="click->cart-item#increase" <%= 'disabled' if disabled_increase %>>+</button>
-    </div>
-  </td>
-  <td class="text-end"><%= number_to_currency(product.selling_price) %></td>
-  <td class="text-end" data-cart-item-target="lineTotal" aria-live="polite">
-    <% split ||= product.split_immediate_and_pending(quantity) %>
-    <%= number_to_currency(product.selling_price * quantity) %>
-    <% if split[:pending].positive? %>
-      <div class="small text-muted mt-1">
-        <%= split[:immediate] %> inmediata(s) · <%= split[:pending] %> <%= split[:pending_type] == :preorder ? 'preventa' : 'sobre pedido' %>
+    <% if collectible %>
+      <%# Coleccionables: cantidad fija en 1, solo botón eliminar %>
+      <span class="badge bg-secondary">1</span>
+    <% else %>
+      <% max_qty = cart.max_allowed(condition) %>
+      <div class="input-group input-group-sm justify-content-center cart-qty-group" style="max-width: 140px;">
+        <button class="btn btn-outline-secondary px-2" type="button" aria-label="Disminuir" data-action="click->cart-item#decrease">−</button>
+        <input type="number" min="1" max="<%= max_qty %>" class="form-control text-center px-1" value="<%= quantity %>" data-cart-item-target="quantity" data-action="change->cart-item#quantityChanged" style="width: 50px;" aria-label="Cantidad" id="<%= row_id %>_quantity" name="cart[items][<%= product.id %>][<%= condition %>][quantity]">
+        <% disabled_increase = (on_hand <= quantity.to_i && !product.oversell_allowed?) || quantity >= max_qty %>
+        <button class="btn btn-outline-secondary px-2 <%= 'disabled' if disabled_increase %>" type="button" aria-label="Aumentar" data-action="click->cart-item#increase" <%= 'disabled' if disabled_increase %>>+</button>
       </div>
     <% end %>
   </td>
+  <td class="text-end"><%= number_to_currency(item_price) %></td>
+  <td class="text-end" data-cart-item-target="lineTotal" aria-live="polite">
+    <%= number_to_currency(line_total) %>
+    <% unless collectible %>
+      <% split = product.split_immediate_and_pending(quantity) %>
+      <% if split[:pending].positive? %>
+        <div class="small text-muted mt-1">
+          <%= split[:immediate] %> inmediata(s) · <%= split[:pending] %> <%= split[:pending_type] == :preorder ? 'preventa' : 'sobre pedido' %>
+        </div>
+      <% end %>
+    <% end %>
+  </td>
   <td class="text-end">
-  <%= button_to cart_item_path(product), method: :delete, params: { product_id: product.id }, class: 'btn btn-sm btn-link text-danger p-0', title: 'Eliminar', aria: { label: 'Eliminar producto' }, form: { data: { controller: 'confirm', action: 'submit->confirm#ask', confirm_message_value: '¿Eliminar este producto?' }, class: 'd-inline' } do %>
+    <%= button_to cart_item_path(product), method: :delete, params: { product_id: product.id, condition: condition }, class: 'btn btn-sm btn-link text-danger p-0', title: 'Eliminar', aria: { label: 'Eliminar producto' }, form: { data: { controller: 'confirm', action: 'submit->confirm#ask', confirm_message_value: '¿Eliminar este producto?' }, class: 'd-inline' } do %>
       <i class="fas fa-trash"></i><span class="visually-hidden">Eliminar</span>
     <% end %>
   </td>

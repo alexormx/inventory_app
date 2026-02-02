@@ -30,13 +30,24 @@ module Checkout
       calc_cls = Shipping::Calculator.resolve(@shipping_method)
       shipping_cost = calc_cls.new.calculate(user: @user, address: source_address, cart: @cart)
 
-      # Recalcular disponibilidad actual
-      @cart.items.each do |product, qty|
-        split = InventoryServices::AvailabilitySplitter.new(product, qty).call
-        availability_map[product.id] = split
-        # Caso: faltante sin permiso de preorder/backorder
-        if split.pending.positive? && split.pending_type.nil?
-          errors << "Producto #{product.product_name} no tiene suficiente stock y no permite preventa/backorder"
+      # Recalcular disponibilidad actual (nuevo formato: items es array de hashes)
+      @cart.items.each do |item|
+        product = item[:product]
+        qty = item[:quantity]
+        condition = item[:condition]
+
+        # Para coleccionables, validar disponibilidad específica por condición
+        if condition != 'brand_new'
+          available = product.inventories.where(status: :available, item_condition: condition).count
+          if qty > available
+            errors << "#{product.product_name} (#{item[:label]}) no tiene suficiente stock (disponible: #{available})"
+          end
+        else
+          split = InventoryServices::AvailabilitySplitter.new(product, qty).call
+          availability_map["#{product.id}_#{condition}"] = split
+          if split.pending.positive? && split.pending_type.nil?
+            errors << "Producto #{product.product_name} no tiene suficiente stock y no permite preventa/backorder"
+          end
         end
       end
       return fail_with(errors) if errors.any?
@@ -54,15 +65,20 @@ module Checkout
         Bullet.enable = false
       end
       ActiveRecord::Base.transaction do
-        # @cart.items devuelve [[product, qty], ...] no un hash
-        product_ids = @cart.items.map { |product, _qty| product.id }
+        # @cart.items ahora es array de hashes con :product, :condition, :quantity, :price, etc.
+        product_ids = @cart.items.map { |item| item[:product].id }.uniq
         # Cargamos y bloqueamos filas de producto (SELECT ... FOR UPDATE)
         locked_products = Product.where(id: product_ids).lock.order(:id).to_a
         locked_products_map = locked_products.index_by(&:id)
 
         # Recalcular disponibilidad sobre los productos bloqueados
         revalidated = {}
-        @cart.items.each do |product, qty|
+        @cart.items.each do |item|
+          product = item[:product]
+          qty = item[:quantity]
+          condition = item[:condition]
+          key = "#{product.id}_#{condition}"
+
           # Usar el producto bloqueado
           locked_product = locked_products_map[product.id]
           unless locked_product
@@ -70,12 +86,20 @@ module Checkout
             next
           end
 
-          split = InventoryServices::AvailabilitySplitter.new(locked_product, qty).call
-          revalidated[product.id] = split
+          if condition != 'brand_new'
+            # Para coleccionables, validar disponibilidad específica
+            available = locked_product.inventories.where(status: :available, item_condition: condition).count
+            if qty > available
+              revalidation_errors << "#{locked_product.product_name} (#{item[:label]}) ya no está disponible"
+            end
+            revalidated[key] = { collectible: true, available: available }
+          else
+            split = InventoryServices::AvailabilitySplitter.new(locked_product, qty).call
+            revalidated[key] = split
 
-          if split.pending.positive? && split.pending_type.nil?
-            # Ya no hay disponibilidad suficiente y no permite preorder/backorder
-            revalidation_errors << "Producto #{locked_product.product_name} quedó sin stock suficiente durante el checkout (disponible: #{split.immediate}, solicitado: #{qty})"
+            if split.pending.positive? && split.pending_type.nil?
+              revalidation_errors << "Producto #{locked_product.product_name} quedó sin stock suficiente durante el checkout (disponible: #{split.immediate}, solicitado: #{qty})"
+            end
           end
         end
 
@@ -94,22 +118,41 @@ module Checkout
           idempotency_key: @idempotency_key
         )
 
-        @cart.items.each do |product, qty|
-          split = revalidated[product.id] || availability_map[product.id]
+        @cart.items.each do |item|
+          product = item[:product]
+          qty = item[:quantity]
+          condition = item[:condition]
+          item_price = item[:price]
+          key = "#{product.id}_#{condition}"
+
+          revalidation_data = revalidated[key] || availability_map[key]
+
+          # Determinar preorder/backorder (solo para brand_new)
+          preorder_qty = 0
+          backorder_qty = 0
+          if condition == 'brand_new' && revalidation_data.respond_to?(:pending_type)
+            preorder_qty = revalidation_data.pending_type == :preorder ? revalidation_data.pending : 0
+            backorder_qty = revalidation_data.pending_type == :backorder ? revalidation_data.pending : 0
+          end
+
           soi = sale_order.sale_order_items.create!(
             product: product,
             quantity: qty,
-            unit_cost: product.selling_price,
-            total_line_cost: product.selling_price * qty,
-            preorder_quantity: (split.pending_type == :preorder ? split.pending : 0),
-            backordered_quantity: (split.pending_type == :backorder ? split.pending : 0)
+            unit_cost: item_price,
+            unit_selling_price: item_price,
+            total_line_cost: item_price * qty,
+            item_condition: condition,
+            preorder_quantity: preorder_qty,
+            backordered_quantity: backorder_qty
           )
-          next unless split.pending_type == :preorder && split.pending.positive?
+
+          # Crear reservación de preorder si aplica
+          next unless preorder_qty.positive?
 
           PreorderReservation.create!(
             product: product,
             user: @user,
-            quantity: split.pending,
+            quantity: preorder_qty,
             status: :pending,
             reserved_at: Time.current,
             sale_order: nil,

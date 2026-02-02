@@ -9,6 +9,19 @@ RSpec.describe Checkout::CreateOrder, type: :service do
   let(:address1) { create(:shipping_address, user: user1, default: true) }
   let(:address2) { create(:shipping_address, user: user2, default: true) }
 
+  # Helper to build cart items in new format
+  def build_cart_items(product, qty, condition: 'brand_new')
+    [{
+      product: product,
+      condition: condition,
+      quantity: qty,
+      price: product.selling_price,
+      collectible: condition != 'brand_new',
+      label: condition == 'brand_new' ? 'Nuevo' : condition.upcase,
+      line_total: product.selling_price * qty
+    }]
+  end
+
   before do
     # Crear exactamente 1 unidad de inventario disponible
     Inventory.create!(
@@ -25,13 +38,13 @@ RSpec.describe Checkout::CreateOrder, type: :service do
 
     cart1 = instance_double('Cart',
       empty?: false,
-      items: [[product, 1]],
+      items: build_cart_items(product, 1),
       total: 50.0
     )
 
     cart2 = instance_double('Cart',
       empty?: false,
-      items: [[product, 1]],
+      items: build_cart_items(product, 1),
       total: 50.0
     )
 

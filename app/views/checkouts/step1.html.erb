@@ -29,7 +29,11 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <% @cart.items.each do |product, quantity| %>
+                  <% @cart.items.each do |item| %>
+                    <% product = item[:product] %>
+                    <% quantity = item[:quantity] %>
+                    <% item_price = item[:price] %>
+                    <% collectible = item[:collectible] %>
                     <tr>
                       <td class="ps-3">
                         <div class="d-flex align-items-center gap-3">
@@ -41,7 +45,14 @@
                             </div>
                           <% end %>
                           <div>
-                            <div class="fw-medium"><%= product.product_name %></div>
+                            <div class="fw-medium">
+                              <%= product.product_name %>
+                              <% if collectible %>
+                                <span class="badge bg-warning-subtle text-warning" title="Pieza coleccionable única">
+                                  <i class="fas fa-gem me-1"></i><%= item[:label] %>
+                                </span>
+                              <% end %>
+                            </div>
                             <small class="text-muted">SKU: <%= product.product_sku %></small>
                             <% if product.brand.present? %>
                               <br><small class="text-muted"><%= product.brand %></small>
@@ -52,8 +63,8 @@
                       <td class="text-center">
                         <span class="badge bg-secondary fs-6"><%= quantity %></span>
                       </td>
-                      <td class="text-end"><%= number_to_currency(product.selling_price) %></td>
-                      <td class="text-end pe-3 fw-medium"><%= number_to_currency(product.selling_price * quantity) %></td>
+                      <td class="text-end"><%= number_to_currency(item_price) %></td>
+                      <td class="text-end pe-3 fw-medium"><%= number_to_currency(item_price * quantity) %></td>
                     </tr>
                   <% end %>
                 </tbody>

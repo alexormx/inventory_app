@@ -11,16 +11,30 @@ RSpec.describe CartItemsController, type: :controller do
   end
 
   describe "POST #create" do
-    it "adds a product to the cart" do
+    it "adds a product to the cart with default brand_new condition" do
       post :create, params: { product_id: product.id }
       expect(session[:cart]).to be_present
-      expect(session[:cart][product.id.to_s]).to eq(1)
+      expect(session[:cart][product.id.to_s]).to be_a(Hash)
+      expect(session[:cart][product.id.to_s]['brand_new']).to eq(1)
+    end
+
+    it "adds a product with specific condition" do
+      # Crear inventario disponible con condición misb
+      create(:inventory, product: product, status: :available, item_condition: :misb)
+      post :create, params: { product_id: product.id, condition: 'misb' }
+      expect(session[:cart][product.id.to_s]['misb']).to eq(1)
     end
   end
 
   describe "DELETE #destroy" do
-    it "removes a product from the cart" do
-      session[:cart] = { product.id.to_s => 1 }
+    it "removes a product condition from the cart" do
+      session[:cart] = { product.id.to_s => { 'brand_new' => 1 } }
+      delete :destroy, params: { id: product.id, product_id: product.id, condition: 'brand_new' }
+      expect(session[:cart][product.id.to_s]).to be_nil
+    end
+
+    it "removes all conditions when no condition specified" do
+      session[:cart] = { product.id.to_s => { 'brand_new' => 2, 'misb' => 1 } }
       delete :destroy, params: { id: product.id, product_id: product.id }
       expect(session[:cart][product.id.to_s]).to be_nil
     end
