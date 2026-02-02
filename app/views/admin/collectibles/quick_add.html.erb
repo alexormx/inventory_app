@@ -78,8 +78,8 @@
             </datalist>
           </div>
           <div class="col-md-4">
-            <label class="form-label">Precio Base (referencia)</label>
-            <%= number_field_tag 'product[base_price]', @product&.base_price, class: 'form-control', step: '0.01', min: '0' %>
+            <label class="form-label">Precio de Venta (referencia)</label>
+            <%= number_field_tag 'product[selling_price]', @product&.selling_price, class: 'form-control', step: '0.01', min: '0' %>
           </div>
           <div class="col-12">
             <label class="form-label">Descripción</label>
