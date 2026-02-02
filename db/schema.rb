@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_02_02_181235) do
+ActiveRecord::Schema[8.0].define(version: 2026_02_02_184708) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -136,6 +136,28 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_02_181235) do
     t.index ["code"], name: "index_inventory_adjustments_on_code", unique: true
     t.index ["found_at"], name: "index_inventory_adjustments_on_found_at"
     t.index ["reversed_at"], name: "index_inventory_adjustments_on_reversed_at"
+  end
+
+  create_table "inventory_assignment_logs", force: :cascade do |t|
+    t.string "sale_order_id"
+    t.bigint "sale_order_item_id"
+    t.bigint "product_id"
+    t.bigint "inventory_id"
+    t.datetime "assigned_at", default: -> { "CURRENT_TIMESTAMP" }, null: false
+    t.integer "assignment_type", default: 0, null: false
+    t.string "triggered_by", default: "system", null: false
+    t.text "notes"
+    t.integer "quantity_assigned", default: 1
+    t.integer "quantity_pending", default: 0
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["assigned_at"], name: "index_inventory_assignment_logs_on_assigned_at"
+    t.index ["assignment_type"], name: "index_inventory_assignment_logs_on_assignment_type"
+    t.index ["inventory_id"], name: "index_inventory_assignment_logs_on_inventory_id"
+    t.index ["product_id"], name: "index_inventory_assignment_logs_on_product_id"
+    t.index ["sale_order_id"], name: "index_inventory_assignment_logs_on_sale_order_id"
+    t.index ["sale_order_item_id"], name: "index_inventory_assignment_logs_on_sale_order_item_id"
+    t.index ["triggered_by"], name: "index_inventory_assignment_logs_on_triggered_by"
   end
 
   create_table "inventory_events", force: :cascade do |t|
@@ -563,6 +585,10 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_02_181235) do
   add_foreign_key "inventories", "products"
   add_foreign_key "inventories", "purchase_orders"
   add_foreign_key "inventories", "sale_orders"
+  add_foreign_key "inventory_assignment_logs", "inventories"
+  add_foreign_key "inventory_assignment_logs", "products"
+  add_foreign_key "inventory_assignment_logs", "sale_order_items"
+  add_foreign_key "inventory_assignment_logs", "sale_orders"
   add_foreign_key "inventory_events", "inventories"
   add_foreign_key "inventory_events", "products"
   add_foreign_key "inventory_locations", "inventory_locations", column: "parent_id"

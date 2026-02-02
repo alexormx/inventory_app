@@ -1,8 +1,121 @@
 <h1>Auditoría de Inventario</h1>
-<p>Herramientas para reconciliar piezas con líneas de Purchase Orders.</p>
+<p>Herramientas para reconciliar inventario y asignar piezas a órdenes.</p>
 
+<%# Auto-asignación de inventario a Sale Orders %>
 <div class="card mb-3">
-  <div class="card-header">Reconciliación</div>
+  <div class="card-header bg-success text-white">
+    <i class="bi bi-arrow-repeat"></i> Auto-Asignación de Inventario a Sale Orders
+  </div>
+  <div class="card-body">
+    <p class="text-muted small">
+      Asigna automáticamente inventario disponible a líneas de Sale Orders pendientes.
+      El sistema usa FIFO (primero en entrar, primero en salir) y respeta condiciones del inventario.
+    </p>
+
+    <% if @pending_assignments.present? %>
+      <div class="alert alert-warning mb-3">
+        <strong><%= @pending_assignments.size %> líneas</strong> necesitan inventario
+        (total: <%= @pending_assignments.sum { |p| p[:quantity_pending] } %> piezas pendientes)
+      </div>
+
+      <details class="mb-3">
+        <summary class="btn btn-outline-secondary btn-sm">Ver líneas pendientes</summary>
+        <table class="table table-sm table-striped mt-2">
+          <thead>
+            <tr>
+              <th>SO #</th>
+              <th>SKU</th>
+              <th>Producto</th>
+              <th>Necesarias</th>
+              <th>Asignadas</th>
+              <th>Pendientes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @pending_assignments.each do |pa| %>
+              <tr>
+                <td><%= link_to "SO-#{pa[:sale_order_id]}", admin_sale_order_path(pa[:sale_order_id]) %></td>
+                <td><code><%= pa[:product_sku] %></code></td>
+                <td><%= truncate(pa[:product_name], length: 30) %></td>
+                <td><%= pa[:quantity_needed] %></td>
+                <td><%= pa[:quantity_assigned] %></td>
+                <td class="text-danger fw-bold"><%= pa[:quantity_pending] %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </details>
+    <% else %>
+      <div class="alert alert-success mb-3">
+        <i class="bi bi-check-circle"></i> Todas las líneas de Sale Orders activas tienen inventario asignado.
+      </div>
+    <% end %>
+
+    <div class="d-flex flex-wrap gap-2">
+      <%= button_to 'Dry Run', auto_assign_admin_inventory_audit_path(dry_run: '1'),
+                    method: :post, class: 'btn btn-outline-success btn-sm' %>
+      <%= button_to 'Ejecutar Auto-Asignación', auto_assign_admin_inventory_audit_path,
+                    method: :post, class: 'btn btn-success btn-sm',
+                    data: { controller: 'confirm', action: 'click->confirm#ask',
+                            confirm_message: '¿Ejecutar auto-asignación? Esto asignará inventario disponible a Sale Orders pendientes.' } %>
+    </div>
+  </div>
+</div>
+
+<%# Log de asignaciones %>
+<% if @assignment_logs.present? %>
+  <div class="card mb-3">
+    <div class="card-header">
+      <i class="bi bi-journal-text"></i> Log de Asignaciones Recientes
+    </div>
+    <div class="card-body p-0">
+      <table class="table table-sm table-striped mb-0">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Tipo</th>
+            <th>Disparador</th>
+            <th>SO</th>
+            <th>Producto</th>
+            <th>Asignadas</th>
+            <th>Pendientes</th>
+            <th>Notas</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @assignment_logs.each do |log| %>
+            <tr>
+              <td><%= log.assigned_at.strftime('%Y-%m-%d %H:%M') %></td>
+              <td><span class="badge bg-secondary"><%= log.assignment_type %></span></td>
+              <td><code><%= log.triggered_by %></code></td>
+              <td>
+                <% if log.sale_order_id %>
+                  <%= link_to "SO-#{log.sale_order_id}", admin_sale_order_path(log.sale_order_id) %>
+                <% else %>
+                  <span class="text-muted">—</span>
+                <% end %>
+              </td>
+              <td>
+                <% if log.product %>
+                  <%= link_to log.product.sku, admin_product_path(log.product) %>
+                <% else %>
+                  <span class="text-muted">—</span>
+                <% end %>
+              </td>
+              <td><%= log.quantity_assigned || 0 %></td>
+              <td><%= log.quantity_pending || 0 %></td>
+              <td class="small"><%= truncate(log.notes, length: 50) %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+<% end %>
+
+<%# Reconciliación de PO %>
+<div class="card mb-3">
+  <div class="card-header">Reconciliación de Purchase Orders</div>
   <div class="card-body">
     <p class="text-muted small">Ejecuta en modo <strong>dry-run</strong> primero para revisar impacto. Usa los modos para limitar la acción.</p>
     <div class="d-flex flex-wrap gap-2">

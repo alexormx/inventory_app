@@ -66,6 +66,7 @@ class Inventory < ApplicationRecord
   after_save :log_sale_order_cleared_event, if: :sale_order_cleared?
   after_commit :update_product_stock_quantities, if: -> { saved_change_to_status? }
   after_commit :allocate_preorders_if_now_available, if: -> { saved_change_to_status? || saved_change_to_sale_order_id? }
+  after_commit :trigger_auto_assignment_if_available, if: -> { saved_change_to_status? && status == 'available' }
 
   # inventory.rb
   scope :assignable, -> { where(status: %i[available in_transit], sale_order_id: nil) }
@@ -143,6 +144,19 @@ class Inventory < ApplicationRecord
     rescue StandardError => e
       Rails.logger.error "[Preorders] Allocation error for product=#{product_id} inv=#{id}: #{e.class} #{e.message}"
     end
+  end
+
+  # Dispara auto-asignación de inventario a Sale Orders cuando una pieza se vuelve available
+  def trigger_auto_assignment_if_available
+    return if sale_order_id.present? # ya está asignada
+
+    # Ejecutar en background para no bloquear
+    InventoryAutoAssignmentJob.perform_later(
+      triggered_by: 'inventory_status_changed',
+      sale_order_ids: nil # asignar a cualquier SO pendiente
+    )
+  rescue StandardError => e
+    Rails.logger.error "[Inventory#trigger_auto_assignment] #{e.class}: #{e.message}"
   end
 
   def will_change_status_to_free?
