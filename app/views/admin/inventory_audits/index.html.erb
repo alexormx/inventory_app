@@ -97,7 +97,7 @@
               </td>
               <td>
                 <% if log.product %>
-                  <%= link_to log.product.sku, admin_product_path(log.product) %>
+                  <%= link_to log.product.product_sku, admin_product_path(log.product) %>
                 <% else %>
                   <span class="text-muted">—</span>
                 <% end %>
