@@ -9,11 +9,15 @@ This is a comprehensive Rails 8.0.1 inventory management system for a hobby stor
 Business logic lives in services under `app/services/`, not controllers or models:
 - `ApplyInventoryAdjustmentService` - Handles inventory adjustments with atomicity and FIFO
 - `Products::UpdateStatsService` - Recalculates product metrics after inventory changes
+- `Collectibles::QuickAddService` - Creates product + inventory for collectibles in one step
 - Services follow the pattern: `initialize(params)` → `call` method → return value or raise exception
 
 ### Individual Inventory Tracking
 Unlike simple stock counts, each physical item is tracked individually in the `inventories` table:
 - Each inventory record represents one physical piece with status: `available`, `reserved`, `sold`, `in_transit`, `damaged`, `lost`, `scrap`, `marketing`
+- **Item condition**: `brand_new`, `misb`, `moc`, `mib`, `mint`, `loose`, `good`, `fair`
+- **Individual pricing**: `selling_price` field for collectibles with special value
+- **Piece images**: `piece_images` attachment for condition-specific photos
 - FIFO logic for decreases: oldest available items are consumed first
 - Inventory sync rules automatically create/destroy records when PO/SO items change quantities
 
@@ -95,8 +99,19 @@ bin/rails db:test:prepare
 - Only two states: `draft` (editable) and `applied` (immutable)
 - Reference format: `ADJ-YYYYMM-NN` (e.g., `ADJ-202509-01`)
 - Increases create new inventory; decreases mark existing as damaged/lost/scrap via FIFO
+- **Supports item_condition**: Specify condition (brand_new, misb, moc, etc.) for increases
+- **Supports selling_price**: Set individual price for collectible pieces
 - Idempotent: `adjustment.apply!` is safe to call multiple times
 - Reversible: `adjustment.reverse!` undoes changes and returns to draft state
+
+### Collectibles / Used Products
+Two ways to add used or collectible products:
+1. **Inventory Adjustments**: Add `increase` lines with `item_condition` and optional `selling_price`
+2. **Quick Add Collectible** (`/admin/collectibles/quick_add`): Create product + inventory in one step
+   - Search existing product or create new
+   - Set condition, purchase cost, selling price
+   - Attach piece-specific photos
+   - Uses `Collectibles::QuickAddService`
 
 ### Order-Inventory Sync
 - `PurchaseOrderItem` changes auto-sync to create/destroy inventory records
@@ -142,6 +157,10 @@ Key controllers in `app/javascript/controllers/`:
 - `location-suggest` - Autocomplete search for locations
 - `inventory-locations` - Tree expand/collapse in location management
 - `toggle-inventory` - Expand/collapse product inventory details
+- `collectible-quick-add` - Product search and selection for quick add form
+
+Key components in `app/javascript/components/`:
+- `inventory_adjustment_lines.js` - Dynamic line management in adjustment form
 
 ## Performance Considerations
 - Product stats are denormalized and updated via services after inventory changes

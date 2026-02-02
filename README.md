@@ -148,6 +148,22 @@ Formato: `ADJ-YYYYMM-NN` (ej: `ADJ-202509-01`)
 | `increase` | Crea nuevas piezas de inventario |
 | `decrease` | Marca piezas existentes según razón |
 
+#### Condición de Piezas (Para Coleccionables)
+Al crear líneas de tipo `increase`, puedes especificar la condición:
+
+| Condición | Descripción |
+|-----------|-------------|
+| `brand_new` | Nuevo sellado (default) |
+| `misb` | Mint In Sealed Box |
+| `moc` | Mint On Card |
+| `mib` | Mint In Box |
+| `mint` | Mint (sin empaque) |
+| `loose` | Suelto |
+| `good` | Buen estado |
+| `fair` | Aceptable |
+
+También puedes asignar un **precio de venta individual** para piezas con valor especial.
+
 #### Razones de Decrease
 | Reason | Estado destino |
 |--------|----------------|
@@ -162,6 +178,45 @@ Formato: `ADJ-YYYYMM-NN` (ej: `ADJ-202509-01`)
 - FIFO para selección de piezas a decrementar
 - Reversible (`reverse!`)
 - Trazabilidad vía `adjustment_reference`
+
+---
+
+## 💎 Agregar Coleccionables (Productos Usados)
+
+### Quick Add Collectible (`/admin/collectibles/quick_add`)
+Interfaz rápida para agregar productos coleccionables o usados en un solo paso.
+
+#### Flujo de Trabajo
+1. **Seleccionar Producto**: Buscar producto existente o crear uno nuevo
+2. **Configurar Inventario**: Condición, costo de compra, precio de venta
+3. **Agregar Fotos** (opcional): Imágenes específicas de la pieza
+4. **Guardar**: Crea el producto (si es nuevo) y la pieza de inventario
+
+#### Campos del Formulario
+
+**Producto (nuevo):**
+- SKU (auto-generado si se deja vacío)
+- Nombre del producto
+- Categoría y Marca
+- Precio de venta (referencia)
+- Descripción
+
+**Inventario:**
+- Condición (brand_new, misb, moc, mib, mint, loose, good, fair)
+- Costo de compra
+- Precio de venta individual (opcional)
+- Ubicación (opcional)
+- Notas
+
+**Fotos:**
+- Imágenes específicas de la pieza (se adjuntan a `piece_images`)
+
+#### Servicio
+`Collectibles::QuickAddService` maneja la lógica:
+- Busca o crea el producto según parámetros
+- Crea la pieza de inventario con condición y precios
+- Adjunta imágenes específicas
+- Actualiza estadísticas del producto
 
 ---
 
@@ -378,6 +433,15 @@ app/
 ---
 
 ## 📝 Changelog Reciente
+
+### v475 (Feb 2026)
+- **Condición de pieza en Ajustes de Inventario**: Soporte para agregar productos usados/coleccionables con condiciones específicas (brand_new, misb, moc, mib, mint, loose, good, fair)
+- **Precio de venta individual**: Campo `selling_price` en líneas de ajuste para piezas con precio especial
+- **Quick Add Collectible** (`/admin/collectibles/quick_add`): Nueva funcionalidad para agregar coleccionables rápidamente
+- **Límite de stock en frontend**: Muestra ">10" cuando hay más de 10 unidades disponibles
+
+### v474 (Feb 2026)
+- Fix: Buscador de productos en Inventory Adjustments con navegación Turbo
 
 ### v447 (Feb 2026)
 - Mostrar contadores de inventario en árbol de ubicaciones
