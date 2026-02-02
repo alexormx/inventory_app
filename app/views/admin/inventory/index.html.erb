@@ -14,6 +14,9 @@
 
   # Inventario sin ubicación
   unlocated_count = Inventory.where(status: %i[available reserved], inventory_location_id: nil).count
+  
+  # Inventario con ubicación (ya inventariado)
+  located_count = Inventory.where(status: %i[available reserved]).where.not(inventory_location_id: nil).count
 
   status_icons = {
     'available' => 'check-circle', 'reserved' => 'bookmark', 'in_transit' => 'truck',
@@ -35,10 +38,16 @@
     <i class="fa fa-archive text-primary"></i> Inventario
   </h2>
   <div class="d-flex gap-2 flex-wrap">
+    <%= link_to admin_inventory_locations_path, class: "btn btn-outline-success btn-sm" do %>
+      <i class="fa fa-map-marker-alt"></i> Con Ubicación
+      <% if located_count > 0 %>
+        <span class="badge bg-success ms-1"><%= number_with_delimiter(located_count) %></span>
+      <% end %>
+    <% end %>
     <%= link_to admin_inventory_unlocated_path, class: "btn btn-outline-warning btn-sm" do %>
       <i class="fa fa-map-marker-alt"></i> Sin Ubicación
       <% if unlocated_count > 0 %>
-        <span class="badge bg-warning text-dark ms-1"><%= unlocated_count %></span>
+        <span class="badge bg-warning text-dark ms-1"><%= number_with_delimiter(unlocated_count) %></span>
       <% end %>
     <% end %>
     <%= link_to admin_inventory_transfer_path, class: "btn btn-outline-primary btn-sm" do %>
