@@ -54,20 +54,22 @@
       <span><%= number_to_currency(cart.total) %></span>
     </div>
     <% if show_shipping %>
-      <div class="d-flex justify-content-between mb-2">
+      <div class="d-flex justify-content-between mb-2" id="checkout-shipping-row">
         <span class="text-muted">
           Envío
-          <% if shipping_method_name %>
-            <small>(<%= shipping_method_name %>)</small>
-          <% end %>
+          <span id="checkout-shipping-method-name">
+            <% if shipping_method_name %>
+              <small>(<%= shipping_method_name %>)</small>
+            <% end %>
+          </span>
         </span>
-        <span><%= shipping_cost.zero? ? '<span class="text-success">Gratis</span>'.html_safe : number_to_currency(shipping_cost) %></span>
+        <span id="checkout-shipping-cost"><%= shipping_cost.zero? ? '<span class="text-success">Gratis</span>'.html_safe : number_to_currency(shipping_cost) %></span>
       </div>
     <% end %>
     <hr class="my-2">
     <div class="d-flex justify-content-between">
       <strong>Total</strong>
-      <strong class="text-primary fs-5"><%= number_to_currency(cart.total + shipping_cost) %></strong>
+      <strong class="text-primary fs-5" id="checkout-grand-total"><%= number_to_currency(cart.total + shipping_cost) %></strong>
     </div>
   </div>
 </div>

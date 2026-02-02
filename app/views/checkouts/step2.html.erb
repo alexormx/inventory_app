@@ -132,6 +132,43 @@
     });
   });
 
+  // Datos de métodos de envío para actualizar el resumen
+  const shippingMethods = {
+    <% ShippingMethod.active.ordered.each do |sm| %>
+    '<%= sm.code %>': { name: '<%= sm.name %>', cost: <%= sm.base_cost || 0 %> },
+    <% end %>
+  };
+  const cartSubtotal = <%= @cart.total %>;
+
+  function formatCurrency(amount) {
+    return '$' + amount.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function updateOrderSummary(methodCode) {
+    const method = shippingMethods[methodCode];
+    if (!method) return;
+
+    const shippingCostEl = document.getElementById('checkout-shipping-cost');
+    const shippingNameEl = document.getElementById('checkout-shipping-method-name');
+    const grandTotalEl = document.getElementById('checkout-grand-total');
+
+    if (shippingCostEl) {
+      if (method.cost === 0) {
+        shippingCostEl.innerHTML = '<span class="text-success">Gratis</span>';
+      } else {
+        shippingCostEl.textContent = formatCurrency(method.cost);
+      }
+    }
+
+    if (shippingNameEl) {
+      shippingNameEl.innerHTML = `<small>(${method.name})</small>`;
+    }
+
+    if (grandTotalEl) {
+      grandTotalEl.textContent = formatCurrency(cartSubtotal + method.cost);
+    }
+  }
+
   // Actualizar visual cuando se selecciona método de envío
   document.querySelectorAll('input[name="shipping_method"]').forEach(radio => {
     radio.addEventListener('change', function() {
@@ -139,6 +176,9 @@
         r.closest('label').classList.remove('border-primary', 'border-2', 'bg-primary', 'bg-opacity-10');
       });
       this.closest('label').classList.add('border-primary', 'border-2', 'bg-primary', 'bg-opacity-10');
+      
+      // Actualizar resumen del pedido
+      updateOrderSummary(this.value);
     });
   });
 </script>
