@@ -6,10 +6,14 @@ class InventoryAdjustmentLine < ApplicationRecord
   belongs_to :product
   has_many :inventory_adjustment_entries, dependent: :destroy
 
+  # Usar el mismo enum que Inventory para consistencia
+  enum :item_condition, Inventory::ITEM_CONDITIONS, default: :brand_new
+
   # Validations
   validates :quantity, :direction, presence: true
   validates :quantity, numericality: { only_integer: true, greater_than: 0 }
   validates :direction, inclusion: { in: %w[increase decrease] }
+  validates :selling_price, numericality: { greater_than: 0 }, allow_nil: true
   # Razones permitidas cuando es decrease (mapean a estados de inventario destino)
   ALLOWED_DECREASE_REASONS = %w[scrap marketing lost damaged].freeze
 
@@ -40,6 +44,6 @@ class InventoryAdjustmentLine < ApplicationRecord
     return unless reason.blank? || ALLOWED_DECREASE_REASONS.exclude?(reason)
 
     errors.add(:reason, "must be one of: #{ALLOWED_DECREASE_REASONS.join(', ')}")
-    
+
   end
 end

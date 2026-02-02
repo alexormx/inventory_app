@@ -1,0 +1,155 @@
+<% content_for :title, "Agregar Coleccionable" %>
+
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><%= link_to "Dashboard", admin_dashboard_path %></li>
+    <li class="breadcrumb-item"><%= link_to "Productos", admin_products_path %></li>
+    <li class="breadcrumb-item active">Agregar Coleccionable</li>
+  </ol>
+</nav>
+
+<h1 class="mb-4">
+  <i class="bi bi-gem text-warning"></i> Agregar Coleccionable / Usado
+</h1>
+
+<p class="text-muted mb-4">
+  Agrega un producto usado o coleccionable al inventario. Puedes usar un producto existente o crear uno nuevo.
+</p>
+
+<%= form_with url: admin_collectibles_quick_add_path, method: :post, local: true, html: { class: 'needs-validation' }, data: { controller: 'collectible-quick-add' } do |f| %>
+
+  <%# Sección 1: Selección de producto %>
+  <div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+      <i class="bi bi-box-seam"></i> 1. Producto
+    </div>
+    <div class="card-body">
+      <div class="mb-3">
+        <div class="form-check form-check-inline">
+          <%= radio_button_tag :use_existing_product, '1', false, class: 'form-check-input', id: 'use_existing', data: { action: 'change->collectible-quick-add#toggleProductMode' } %>
+          <label class="form-check-label" for="use_existing">Usar producto existente</label>
+        </div>
+        <div class="form-check form-check-inline">
+          <%= radio_button_tag :use_existing_product, '0', true, class: 'form-check-input', id: 'create_new', data: { action: 'change->collectible-quick-add#toggleProductMode' } %>
+          <label class="form-check-label" for="create_new">Crear nuevo producto</label>
+        </div>
+      </div>
+
+      <%# Buscar producto existente %>
+      <div id="existing-product-section" class="d-none" data-collectible-quick-add-target="existingSection">
+        <div class="mb-3">
+          <label class="form-label">Buscar producto</label>
+          <input type="text" id="product-search" class="form-control" placeholder="Escribe nombre o SKU..." autocomplete="off" data-collectible-quick-add-target="searchInput" data-action="input->collectible-quick-add#searchProducts">
+          <div id="product-search-results" class="list-group mt-1" data-collectible-quick-add-target="searchResults"></div>
+          <input type="hidden" name="existing_product_id" id="existing_product_id" data-collectible-quick-add-target="existingProductId">
+        </div>
+        <div id="selected-product-preview" class="alert alert-info d-none" data-collectible-quick-add-target="productPreview">
+          <strong>Producto seleccionado:</strong> <span id="selected-product-name" data-collectible-quick-add-target="productName"></span>
+        </div>
+      </div>
+
+      <%# Crear nuevo producto %>
+      <div id="new-product-section" data-collectible-quick-add-target="newSection">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Nombre del producto *</label>
+            <%= text_field_tag 'product[product_name]', @product&.product_name, class: 'form-control', required: true %>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">SKU <small class="text-muted">(se genera automáticamente si se deja vacío)</small></label>
+            <%= text_field_tag 'product[product_sku]', @product&.product_sku, class: 'form-control' %>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Categoría</label>
+            <%= text_field_tag 'product[category]', @product&.category, class: 'form-control', list: 'category-list' %>
+            <datalist id="category-list">
+              <% @categories.each do |cat| %>
+                <option value="<%= cat %>">
+              <% end %>
+            </datalist>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Marca</label>
+            <%= text_field_tag 'product[brand]', @product&.brand, class: 'form-control', list: 'brand-list' %>
+            <datalist id="brand-list">
+              <% @brands.each do |brand| %>
+                <option value="<%= brand %>">
+              <% end %>
+            </datalist>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Precio Base (referencia)</label>
+            <%= number_field_tag 'product[base_price]', @product&.base_price, class: 'form-control', step: '0.01', min: '0' %>
+          </div>
+          <div class="col-12">
+            <label class="form-label">Descripción</label>
+            <%= text_area_tag 'product[description]', @product&.description, class: 'form-control', rows: 2 %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%# Sección 2: Datos del inventario %>
+  <div class="card mb-4">
+    <div class="card-header bg-success text-white">
+      <i class="bi bi-tag"></i> 2. Condición y Precio
+    </div>
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label">Condición *</label>
+          <%= select_tag 'inventory[item_condition]',
+              options_for_select(
+                Inventory::CONDITION_LABELS.reject { |k, _| k == 'brand_new' }.map { |k, v| [v, k] },
+                @inventory&.item_condition || 'loose'
+              ),
+              class: 'form-select', required: true %>
+          <small class="text-muted">Las condiciones de coleccionables (no nuevos)</small>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Costo de compra</label>
+          <%= number_field_tag 'inventory[purchase_cost]', @inventory&.purchase_cost, class: 'form-control', step: '0.01', min: '0', placeholder: '0.00' %>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Precio de venta</label>
+          <%= number_field_tag 'inventory[selling_price]', @inventory&.selling_price, class: 'form-control', step: '0.01', min: '0', placeholder: 'Opcional' %>
+          <small class="text-muted">Precio específico para esta pieza</small>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Ubicación</label>
+          <%= select_tag 'inventory[inventory_location_id]',
+              options_for_select(
+                InventoryLocation.order(:path_cache).map { |loc| [loc.full_path, loc.id] },
+                @inventory&.inventory_location_id
+              ),
+              include_blank: '-- Sin ubicación --',
+              class: 'form-select' %>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Notas</label>
+          <%= text_field_tag 'inventory[notes]', @inventory&.notes, class: 'form-control', placeholder: 'Observaciones sobre la pieza...' %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%# Sección 3: Fotos de la pieza %>
+  <div class="card mb-4">
+    <div class="card-header bg-warning">
+      <i class="bi bi-camera"></i> 3. Fotos de la pieza (opcional)
+    </div>
+    <div class="card-body">
+      <div class="mb-3">
+        <label class="form-label">Subir fotos</label>
+        <%= file_field_tag 'inventory[piece_images][]', multiple: true, accept: 'image/*', class: 'form-control' %>
+        <small class="text-muted">Puedes seleccionar múltiples fotos. Estas son específicas de esta pieza, no del producto.</small>
+      </div>
+    </div>
+  </div>
+
+  <div class="d-flex gap-2">
+    <%= submit_tag 'Agregar Coleccionable', class: 'btn btn-primary btn-lg' %>
+    <%= link_to 'Cancelar', admin_products_path, class: 'btn btn-outline-secondary' %>
+  </div>
+<% end %>

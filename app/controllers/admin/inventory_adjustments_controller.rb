@@ -93,7 +93,7 @@ module Admin
         :reference,
         :note,
         :user_id,
-        inventory_adjustment_lines_attributes: %i[id product_id quantity direction reason unit_cost note _destroy]
+        inventory_adjustment_lines_attributes: %i[id product_id quantity direction reason unit_cost note item_condition selling_price _destroy]
       )
     end
   end

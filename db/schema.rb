@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_02_02_200607) do
+ActiveRecord::Schema[8.0].define(version: 2026_02_02_210000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -112,8 +112,11 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_02_200607) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "direction", default: "increase", null: false
+    t.integer "item_condition", default: 0, null: false
+    t.decimal "selling_price", precision: 10, scale: 2
     t.index ["direction"], name: "index_inventory_adjustment_lines_on_direction"
     t.index ["inventory_adjustment_id"], name: "index_inventory_adjustment_lines_on_inventory_adjustment_id"
+    t.index ["item_condition"], name: "index_inventory_adjustment_lines_on_item_condition"
     t.index ["product_id"], name: "index_inventory_adjustment_lines_on_product_id"
   end
 

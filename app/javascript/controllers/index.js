@@ -31,6 +31,7 @@ import InventoryLocationsController from "./inventory_locations_controller"
 import LocationSuggestController from "./location_suggest_controller"
 import BulkLocationAssignController from "./bulk_location_assign_controller"
 import InventoryTransferController from "./inventory_transfer_controller"
+import CollectibleQuickAddController from "./collectible_quick_add_controller"
 
 application.register("audit-progress", AuditProgressController)
 application.register("cart-item", CartItemController)
@@ -61,6 +62,7 @@ application.register("inventory-locations", InventoryLocationsController)
 application.register("location-suggest", LocationSuggestController)
 application.register("bulk-location-assign", BulkLocationAssignController)
 application.register("inventory-transfer", InventoryTransferController)
+application.register("collectible-quick-add", CollectibleQuickAddController)
 
 // Export opcional para debugging
 window.Stimulus = application

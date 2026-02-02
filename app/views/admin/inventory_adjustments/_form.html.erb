@@ -40,8 +40,10 @@
           <th>Product</th>
           <th>Direction</th>
           <th>Qty</th>
+          <th>Condition</th>
           <th>Reason</th>
           <th>Unit cost</th>
+          <th>Sell price</th>
           <th>Note</th>
           <th></th>
         </tr>
@@ -49,7 +51,7 @@
       <tbody id="inventory-adjustment-lines-body">
         <% if @inventory_adjustment.inventory_adjustment_lines.empty? %>
           <tr class="text-muted" id="no-lines-placeholder">
-            <td colspan="7"><em>No lines yet. Use the search box above to add products.</em></td>
+            <td colspan="9"><em>No lines yet. Use the search box above to add products.</em></td>
           </tr>
         <% end %>
         <%= f.fields_for :inventory_adjustment_lines do |lf| %>
@@ -64,12 +66,19 @@
               <% end %>
             </td>
             <td><%= lf.select :direction, [['Increase','increase'],['Decrease','decrease']], {}, class: 'form-select direction-select' %></td>
-            <td style="width:120px"><%= lf.number_field :quantity, min: 1, class: 'form-control quantity-input' %></td>
+            <td style="width:80px"><%= lf.number_field :quantity, min: 1, class: 'form-control quantity-input' %></td>
+            <td style="width:150px">
+              <%= lf.select :item_condition,
+                  Inventory::CONDITION_LABELS.map { |k, v| [v, k] },
+                  {},
+                  class: "form-select condition-select #{'d-none' if lf.object.direction == 'decrease'}" %>
+            </td>
             <td>
               <%= lf.select :reason, options_for_select(InventoryAdjustmentLine::ALLOWED_DECREASE_REASONS.map { |r| [r.titleize, r] }, lf.object.reason), { include_blank: 'Select' }, class: "form-select reason-select #{'d-none' unless lf.object.direction == 'decrease'}" %>
             </td>
-            <td style="width:140px"><%= lf.number_field :unit_cost, step: '0.01', class: 'form-control unit-cost-input' %></td>
-            <td><%= lf.text_field :note, class: 'form-control note-input' %></td>
+            <td style="width:100px"><%= lf.number_field :unit_cost, step: '0.01', class: "form-control unit-cost-input #{'d-none' if lf.object.direction == 'decrease'}" %></td>
+            <td style="width:100px"><%= lf.number_field :selling_price, step: '0.01', class: "form-control selling-price-input #{'d-none' if lf.object.direction == 'decrease'}", placeholder: 'Optional' %></td>
+            <td><%= lf.text_field :note, class: 'form-control note-input', style: 'min-width:100px' %></td>
             <td>
               <% if lf.object&.persisted? %>
                 <label class="small">Remove <%= lf.check_box :_destroy, class: 'form-check-input ms-1 item-destroy-flag' %></label>

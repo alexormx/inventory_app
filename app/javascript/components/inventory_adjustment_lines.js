@@ -68,8 +68,20 @@ function initInventoryAdjustmentLines(){
           <option value='decrease'>Decrease</option>
         </select>
       </td>
-      <td style='width:110px'>
+      <td style='width:80px'>
         <input type='number' min='1' value='1' class='form-control quantity-input' name='inventory_adjustment[inventory_adjustment_lines_attributes][${lineIndex}][quantity]' />
+      </td>
+      <td style='width:150px'>
+        <select name='inventory_adjustment[inventory_adjustment_lines_attributes][${lineIndex}][item_condition]' class='form-select condition-select'>
+          <option value='brand_new'>Nuevo (Sellado)</option>
+          <option value='misb'>MISB - Mint In Sealed Box</option>
+          <option value='moc'>MOC - Mint On Card</option>
+          <option value='mib'>MIB - Mint In Box</option>
+          <option value='mint'>Mint</option>
+          <option value='loose'>Loose (Suelto)</option>
+          <option value='good'>Good (Buen estado)</option>
+          <option value='fair'>Fair (Aceptable)</option>
+        </select>
       </td>
       <td>
         <select name='inventory_adjustment[inventory_adjustment_lines_attributes][${lineIndex}][reason]' class='form-select reason-select d-none'>
@@ -80,11 +92,14 @@ function initInventoryAdjustmentLines(){
           <option value='damaged'>Damaged</option>
         </select>
       </td>
-      <td style='width:140px'>
+      <td style='width:100px'>
         <input type='number' step='0.01' class='form-control unit-cost-input' name='inventory_adjustment[inventory_adjustment_lines_attributes][${lineIndex}][unit_cost]' />
       </td>
+      <td style='width:100px'>
+        <input type='number' step='0.01' class='form-control selling-price-input' placeholder='Optional' name='inventory_adjustment[inventory_adjustment_lines_attributes][${lineIndex}][selling_price]' />
+      </td>
       <td>
-        <input type='text' class='form-control note-input' name='inventory_adjustment[inventory_adjustment_lines_attributes][${lineIndex}][note]' />
+        <input type='text' class='form-control note-input' style='min-width:100px' name='inventory_adjustment[inventory_adjustment_lines_attributes][${lineIndex}][note]' />
       </td>
       <td>
         <button type='button' class='btn btn-sm btn-outline-danger remove-line' title='Remove line'>&times;</button>
@@ -103,11 +118,21 @@ function initInventoryAdjustmentLines(){
     if (e.target.classList.contains("direction-select")) {
       const row = e.target.closest("tr");
       const reasonSelect = row.querySelector(".reason-select");
+      const conditionSelect = row.querySelector(".condition-select");
+      const unitCostInput = row.querySelector(".unit-cost-input");
+      const sellingPriceInput = row.querySelector(".selling-price-input");
+
       if (e.target.value === "decrease") {
         reasonSelect.classList.remove("d-none");
+        conditionSelect.classList.add("d-none");
+        if (unitCostInput) unitCostInput.classList.add("d-none");
+        if (sellingPriceInput) sellingPriceInput.classList.add("d-none");
       } else {
         reasonSelect.classList.add("d-none");
         reasonSelect.value = "";
+        conditionSelect.classList.remove("d-none");
+        if (unitCostInput) unitCostInput.classList.remove("d-none");
+        if (sellingPriceInput) sellingPriceInput.classList.remove("d-none");
       }
     }
   });
@@ -121,7 +146,7 @@ function initInventoryAdjustmentLines(){
         const placeholder = document.createElement("tr");
         placeholder.id = "no-lines-placeholder";
         placeholder.className = "text-muted";
-        placeholder.innerHTML = `<td colspan='7'><em>No lines yet. Use the search box above to add products.</em></td>`;
+        placeholder.innerHTML = `<td colspan='9'><em>No lines yet. Use the search box above to add products.</em></td>`;
         linesTableBody.appendChild(placeholder);
         // allow re-init if user added/removed all
         window.__IA_LINES_LOADED = true; // keep flag

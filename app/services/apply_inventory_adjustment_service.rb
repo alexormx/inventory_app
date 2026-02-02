@@ -39,6 +39,8 @@ class ApplyInventoryAdjustmentService
             inv = Inventory.create!(
               product_id: line.product_id,
               purchase_cost: line.unit_cost || 0,
+              item_condition: line.item_condition || :brand_new,
+              selling_price: line.selling_price,
               status: :available,
               status_changed_at: @now,
               source: 'ledger_adjustment',
@@ -49,9 +51,10 @@ class ApplyInventoryAdjustmentService
             movements += 1
           end
         else
-          # FIFO: más antiguos primero
-          to_mark = Inventory.where(product_id: line.product_id, status: :available)
-                             .order(:created_at).limit(line.quantity).lock
+          # FIFO: más antiguos primero, respetando la condición si se especifica
+          scope = Inventory.where(product_id: line.product_id, status: :available)
+          scope = scope.where(item_condition: line.item_condition) if line.item_condition.present? && line.item_condition != 'brand_new'
+          to_mark = scope.order(:created_at).limit(line.quantity).lock
           raise InsufficientStock, "Concurrent modification reduced stock for product #{line.product_id}" if to_mark.size < line.quantity
 
           target_status = case line.reason
@@ -80,11 +83,11 @@ class ApplyInventoryAdjustmentService
       # Recalcular métricas de productos afectados
       product_ids = lines.map(&:product_id).uniq
       product_ids.each do |pid|
-         
+
         Products::UpdateStatsService.new(Product.find(pid)).call
       rescue StandardError
         nil
-     
+
       end
 
       movements

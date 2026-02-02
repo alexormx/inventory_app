@@ -20,6 +20,11 @@ Rails.application.routes.draw do
 
   # Admin namespace
   namespace :admin do
+    # Quick Add Collectible (producto usado + inventario en un paso)
+    get 'collectibles/quick_add', to: 'collectibles#quick_add', as: :collectibles_quick_add
+    post 'collectibles/quick_add', to: 'collectibles#create_quick_add'
+    get 'collectibles/search_products', to: 'collectibles#search_products', as: :collectibles_search_products
+
     # Sales Orders Audit
     get 'sale_orders_audit', to: 'sale_orders_audits#index', as: :sale_orders_audit
     post 'sale_orders_audit/fix', to: 'sale_orders_audits#fix_gaps', as: :sale_orders_audit_fix
