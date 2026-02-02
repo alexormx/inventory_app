@@ -33,7 +33,7 @@
         <% cond = conditions.first %>
         <div class="price-zone d-flex align-items-end gap-3 flex-wrap">
           <span class="display-price h3 text-danger fw-bold mb-0"><%= number_to_currency(cond[:price]) %></span>
-          <span class="badge bg-success-subtle text-success"><%= cond[:count] %> disponible<%= 's' if cond[:count] > 1 %></span>
+          <span class="badge bg-success-subtle text-success"><%= display_stock_count(cond[:count]) %> disponibles</span>
         </div>
 
         <%= button_to cart_items_path,
@@ -48,7 +48,7 @@
         <div class="conditions-section">
           <div class="d-flex justify-content-between align-items-center mb-2">
             <span class="fw-semibold text-muted small">
-              <%= total_available %> pieza<%= 's' if total_available > 1 %> disponible<%= 's' if total_available > 1 %>
+              <%= display_stock_count(total_available) %> piezas disponibles
             </span>
             <% if has_collectibles %>
               <a href="#" class="small text-danger text-decoration-none" data-bs-toggle="modal" data-bs-target="#conditionGlossaryModal">
@@ -67,7 +67,7 @@
                         <%= cond[:short_label] %>
                       </span>
                       <span class="small text-muted">
-                        (<%= cond[:count] %> disponible<%= 's' if cond[:count] > 1 %>)
+                        (<%= display_stock_count(cond[:count]) %> disponibles)
                       </span>
                       <% if cond[:collectible] %>
                         <span class="badge bg-warning-subtle text-warning small" title="Pieza única descontinuada">

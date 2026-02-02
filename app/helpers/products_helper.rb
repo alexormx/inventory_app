@@ -1,6 +1,15 @@
 # frozen_string_literal: true
 
 module ProductsHelper
+  # Muestra la cantidad de stock limitada para el frontend público
+  # Si hay más de 10 unidades, muestra ">10" para no revelar stock real
+  MAX_DISPLAY_STOCK = 10
+
+  def display_stock_count(count)
+    return '0' if count.nil? || count <= 0
+    count > MAX_DISPLAY_STOCK ? '>10' : count.to_s
+  end
+
   # Genera un badge unificado de disponibilidad (En stock / Preorden / Sobre pedido / Fuera de stock)
   def stock_badge(product, quantity: nil, suppress_pending_note: false, on_hand_override: nil)
     on_hand = on_hand_override.nil? ? product.current_on_hand : on_hand_override
