@@ -21,28 +21,35 @@ module FilterParamsHelper
 
   # URL para limpiar un filtro específico de categoría
   def clear_category_url(category)
-    catalog_path(request.query_parameters.merge(
-      categories: filter_state.selected_categories - [category],
-      page: nil
-    ))
+    qp = normalized_catalog_query_parameters
+    cats = qp.delete('categories')
+    new_cats = Array(cats).compact_blank - [category]
+    qp['categories'] = new_cats if new_cats.present?
+    catalog_path(qp)
   end
 
   # URL para limpiar un filtro específico de marca
   def clear_brand_url(brand)
-    catalog_path(request.query_parameters.merge(
-      brands: filter_state.selected_brands - [brand],
-      page: nil
-    ))
+    qp = normalized_catalog_query_parameters
+    brands = qp.delete('brands')
+    new_brands = Array(brands).compact_blank - [brand]
+    qp['brands'] = new_brands if new_brands.present?
+    catalog_path(qp)
   end
 
   # URL para limpiar el filtro de precio
   def clear_price_url
-    catalog_path(request.query_parameters.except('price_min', 'price_max').merge(page: nil))
+    qp = normalized_catalog_query_parameters
+    qp.delete('price_min')
+    qp.delete('price_max')
+    catalog_path(qp)
   end
 
   # URL para limpiar un filtro de disponibilidad específico
   def clear_availability_url(filter_key)
-    catalog_path(request.query_parameters.except(filter_key.to_s).merge(page: nil))
+    qp = normalized_catalog_query_parameters
+    qp.delete(filter_key.to_s)
+    catalog_path(qp)
   end
 
   # URL para limpiar todos los filtros (mantiene sort y q)
@@ -66,10 +73,28 @@ module FilterParamsHelper
 
   private
 
+  # Normaliza request.query_parameters para evitar llaves duplicadas del tipo
+  # categories vs categories[] y brands vs brands[].
+  # También quita paginación para que al limpiar filtros se regrese a la primera página.
+  def normalized_catalog_query_parameters
+    qp = request.query_parameters.deep_dup
+    qp.delete('page')
+
+    cats = Array(qp.delete('categories')) + Array(qp.delete('categories[]'))
+    cats = cats.compact_blank.uniq
+    qp['categories'] = cats if cats.present?
+
+    brands = Array(qp.delete('brands')) + Array(qp.delete('brands[]'))
+    brands = brands.compact_blank.uniq
+    qp['brands'] = brands if brands.present?
+
+    qp
+  end
+
   def build_filter_state
     OpenStruct.new(
-      selected_categories: Array(params[:categories]).compact_blank,
-      selected_brands: Array(params[:brands]).compact_blank,
+      selected_categories: (Array(params[:categories]) + Array(params['categories[]'])).compact_blank.uniq,
+      selected_brands: (Array(params[:brands]) + Array(params['brands[]'])).compact_blank.uniq,
       price_min: params[:price_min].presence,
       price_max: params[:price_max].presence,
       in_stock_only: boolean_param(:in_stock),

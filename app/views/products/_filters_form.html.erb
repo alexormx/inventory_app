@@ -9,9 +9,6 @@
   <input type="hidden" name="sort" value="<%= @sort %>">
   <% if @q.present? %><input type="hidden" name="q" value="<%= @q %>"><% end %>
 
-  <%# Chips inline dentro del formulario usando partial reutilizable %>
-  <%= render 'filter_chips', label: 'Seleccionado:', hide_clear_all: false %>
-
   <div class="filter-block mb-3">
     <h6 class="fw-semibold small text-uppercase text-muted mb-2">
       <a class="text-decoration-none text-muted d-flex align-items-center justify-content-between" data-bs-toggle="collapse" href="#filterAvailability<%= suffix %>" role="button" aria-expanded="true" aria-controls="filterAvailability<%= suffix %>">
