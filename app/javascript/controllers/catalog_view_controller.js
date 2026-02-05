@@ -10,6 +10,21 @@ export default class extends Controller {
     const savedView = localStorage.getItem("catalogView") || "grid"
     this.viewValue = savedView
     this.applyView()
+
+    // Cuando Turbo reemplaza el contenido del frame, el DOM del grid cambia.
+    // Reaplicamos la vista guardada para que el usuario no "pierda" el modo lista.
+    this._onTurboFrameRender = (event) => {
+      if (event?.target?.id !== "products_grid") return
+      this.applyView()
+    }
+
+    document.addEventListener("turbo:frame-render", this._onTurboFrameRender)
+  }
+
+  disconnect() {
+    if (this._onTurboFrameRender) {
+      document.removeEventListener("turbo:frame-render", this._onTurboFrameRender)
+    }
   }
 
   setGrid() {
