@@ -33,11 +33,6 @@
     </div>
     <%# Contador prominente y toggle de vista %>
     <div class="d-flex align-items-center gap-3">
-      <div class="results-count d-none d-md-flex align-items-center bg-light rounded-pill px-3 py-2">
-        <i class="fas fa-box text-danger me-2"></i>
-        <span class="fw-semibold text-dark"><%= number_with_delimiter(@products.total_count) %></span>
-        <span class="text-muted ms-1">productos</span>
-      </div>
       <div class="btn-group view-toggle" role="group" aria-label="Cambiar vista">
         <button type="button" class="btn btn-outline-secondary btn-sm active" data-action="click->catalog-view#setGrid" data-catalog-view-target="gridBtn" title="Vista cuadrícula">
           <i class="fas fa-th"></i>

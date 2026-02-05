@@ -1,11 +1,21 @@
 <%= turbo_frame_tag "products_grid" do %>
   <%# Chips de filtros activos dentro del frame para actualizar en cada request %>
 
-  <% if @q.present? %>
-    <p class="text-muted small mb-2">Resultados para "<strong><%= @q %></strong>": <%= @products.total_count %></p>
-  <% else %>
-    <p class="text-muted small mb-2">Productos encontrados: <%= @products.total_count %></p>
-  <% end %>
+  <% total_products = @products.total_count %>
+
+  <div class="d-flex align-items-start align-items-sm-center justify-content-between flex-wrap gap-2 mb-2">
+    <div class="text-muted small">
+      <% if @q.present? %>
+        Resultados para "<strong><%= @q %></strong>"
+      <% end %>
+    </div>
+
+    <div class="results-count d-inline-flex align-items-center bg-light rounded-pill px-3 py-2">
+      <i class="fas fa-box text-danger me-2" aria-hidden="true"></i>
+      <span class="fw-semibold text-dark"><%= number_with_delimiter(total_products) %></span>
+      <span class="text-muted ms-1"><%= total_products == 1 ? 'producto' : 'productos' %></span>
+    </div>
+  </div>
 
   <%# Chips de filtros usando partial reutilizable %>
   <%= render 'filter_chips' %>
