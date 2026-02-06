@@ -6,9 +6,7 @@ export default class extends Controller {
   static values = { view: { type: String, default: "grid" } }
 
   connect() {
-    // Restaurar vista desde localStorage
-    const savedView = localStorage.getItem("catalogView") || "grid"
-    this.viewValue = savedView
+    this.viewValue = this.safeGetPreference() || "grid"
     this.applyView()
 
     // Cuando Turbo reemplaza el contenido del frame, el DOM del grid cambia.
@@ -30,13 +28,13 @@ export default class extends Controller {
   setGrid() {
     this.viewValue = "grid"
     this.applyView()
-    this.savePreference()
+    this.safeSetPreference(this.viewValue)
   }
 
   setList() {
     this.viewValue = "list"
     this.applyView()
-    this.savePreference()
+    this.safeSetPreference(this.viewValue)
   }
 
   applyView() {
@@ -48,18 +46,30 @@ export default class extends Controller {
       grid.classList.add("list-view")
       grid.classList.remove("row-cols-2", "row-cols-sm-2", "row-cols-md-3", "row-cols-lg-4", "row-cols-xl-5")
       grid.classList.add("row-cols-1")
-      this.listBtnTarget?.classList.add("active")
-      this.gridBtnTarget?.classList.remove("active")
+      if (this.hasListBtnTarget) this.listBtnTarget.classList.add("active")
+      if (this.hasGridBtnTarget) this.gridBtnTarget.classList.remove("active")
     } else {
       grid.classList.remove("list-view", "row-cols-1")
       grid.classList.add("row-cols-2", "row-cols-sm-2", "row-cols-md-3", "row-cols-lg-4", "row-cols-xl-5")
-      this.gridBtnTarget?.classList.add("active")
-      this.listBtnTarget?.classList.remove("active")
+      if (this.hasGridBtnTarget) this.gridBtnTarget.classList.add("active")
+      if (this.hasListBtnTarget) this.listBtnTarget.classList.remove("active")
     }
   }
 
-  savePreference() {
-    localStorage.setItem("catalogView", this.viewValue)
+  safeGetPreference() {
+    try {
+      return localStorage.getItem("catalogView")
+    } catch (_) {
+      return null
+    }
+  }
+
+  safeSetPreference(value) {
+    try {
+      localStorage.setItem("catalogView", value)
+    } catch (_) {
+      // Sin persistencia si el storage está bloqueado.
+    }
   }
 
   // Re-aplicar vista cuando Turbo actualiza el frame
