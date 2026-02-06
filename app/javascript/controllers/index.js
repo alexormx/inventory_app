@@ -26,6 +26,7 @@ import ToggleInventoryController from "./toggle_inventory_controller"
 import ProductSearchController from "./product_search_controller"
 import UserSuggestController from "./user_suggest_controller"
 import CatalogFiltersController from "./catalog_filters_controller"
+import CatalogViewController from "./catalog_view_controller"
 import PriceRangeController from "./price_range_controller"
 import InventoryLocationsController from "./inventory_locations_controller"
 import LocationSuggestController from "./location_suggest_controller"
@@ -57,6 +58,7 @@ application.register("toggle-inventory", ToggleInventoryController)
 application.register("product-search", ProductSearchController)
 application.register("user-suggest", UserSuggestController)
 application.register("catalog-filters", CatalogFiltersController)
+application.register("catalog-view", CatalogViewController)
 application.register("price-range", PriceRangeController)
 application.register("inventory-locations", InventoryLocationsController)
 application.register("location-suggest", LocationSuggestController)
