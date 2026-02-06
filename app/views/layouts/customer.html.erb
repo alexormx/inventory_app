@@ -4,23 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <% seo_site_name = SiteSetting.get('seo_site_name', 'Pasatiempos a Escala') %>
-  <% seo_site_title = SiteSetting.get('seo_site_title', 'Tienda de Coleccionables y Autos a Escala') %>
-  <% seo_meta_description = SiteSetting.get('seo_meta_description', 'Tienda especializada en modelos a escala, autos de colección Hot Wheels, Greenlight, Majorette y más. Productos 100% originales con envío a todo México.') %>
-  <% seo_keywords = SiteSetting.get('seo_keywords', 'autos a escala, hot wheels, greenlight, coleccionables, tienda de coleccionables, autos de colección, diecast, modelos a escala') %>
-
-  <title><%= content_for?(:title) ? "#{yield(:title)} | #{seo_site_name}" : "#{seo_site_name} - #{seo_site_title}" %></title>
-
-  <meta name="description" content="<%= content_for?(:meta_description) ? yield(:meta_description) : seo_meta_description %>">
-  <meta name="keywords" content="<%= seo_keywords %>">
-  <meta name="author" content="<%= seo_site_name %>">
-  <meta name="robots" content="index, follow">
-  <meta name="language" content="es">
-  <meta name="geo.region" content="MX">
-  <meta name="geo.placename" content="México">
-
-  <!-- Canonical URL -->
-  <link rel="canonical" href="<%= content_for?(:canonical_url) ? yield(:canonical_url) : request.original_url.split('?').first %>">
+  <%= render 'shared/meta' %>
 
   <!-- Favicon -->
   <%= favicon_link_tag 'favicon.ico' %>
@@ -30,21 +14,6 @@
   <!-- Preconnect para recursos externos (mejora Core Web Vitals) -->
   <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
   <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
-
-  <!-- Open Graph / Facebook -->
-  <meta property="og:site_name" content="<%= seo_site_name %>">
-  <meta property="og:title" content="<%= content_for?(:title) ? yield(:title) : "#{seo_site_name} - #{seo_site_title}" %>">
-  <meta property="og:description" content="<%= content_for?(:meta_description) ? yield(:meta_description) : seo_meta_description %>">
-  <meta property="og:image" content="<%= content_for?(:og_image) ? yield(:og_image) : 'https://pasatiempos.com.mx/logo.png' %>">
-  <meta property="og:url" content="<%= content_for?(:canonical_url) ? yield(:canonical_url) : request.original_url %>">
-  <meta property="og:type" content="<%= content_for?(:og_type) ? yield(:og_type) : 'website' %>">
-  <meta property="og:locale" content="es_MX">
-
-  <!-- Twitter -->
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="<%= content_for?(:title) ? yield(:title) : "#{seo_site_name} - #{seo_site_title}" %>">
-  <meta name="twitter:description" content="<%= content_for?(:meta_description) ? yield(:meta_description) : seo_meta_description %>">
-  <meta name="twitter:image" content="<%= content_for?(:og_image) ? yield(:og_image) : 'https://pasatiempos.com.mx/logo.png' %>">
 
   <%= csrf_meta_tags %>
   <%= csp_meta_tag %>

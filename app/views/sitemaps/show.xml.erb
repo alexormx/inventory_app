@@ -38,29 +38,12 @@
     <priority>0.8</priority>
     <% if product.product_images.attached? %>
     <image:image>
-      <image:loc><%= rails_blob_url(product.product_images.first, host: @host) %></image:loc>
+      <% blob = product.product_images.first.blob %>
+      <image:loc><%= rails_service_blob_proxy_url(blob.signed_id, blob.filename, host: @host) %></image:loc>
       <image:title><%= product.product_name %></image:title>
       <image:caption><%= "#{product.product_name} - #{product.brand}" %></image:caption>
     </image:image>
     <% end %>
-  </url>
-  <% end %>
-
-  <%# Categorías únicas %>
-  <% Product.where(status: 'active').distinct.pluck(:category).compact.each do |category| %>
-  <url>
-    <loc><%= @host %>/catalog?categories[]=<%= CGI.escape(category) %></loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <% end %>
-
-  <%# Marcas únicas %>
-  <% Product.where(status: 'active').distinct.pluck(:brand).compact.each do |brand| %>
-  <url>
-    <loc><%= @host %>/catalog?brands[]=<%= CGI.escape(brand) %></loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
   </url>
   <% end %>
 </urlset>

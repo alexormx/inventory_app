@@ -19,28 +19,24 @@ SitemapGenerator::Sitemap.create do
 
   # Todos los productos activos (status = 'active')
   Product.where(status: 'active').find_each do |product|
+    first_image = product.product_images.first
+    image_loc = if first_image.present?
+                  blob = first_image.blob
+                  Rails.application.routes.url_helpers.rails_service_blob_proxy_url(
+                    blob.signed_id,
+                    blob.filename,
+                    host: SitemapGenerator::Sitemap.default_host
+                  )
+                end
+
     add product_path(product),
         lastmod: product.updated_at,
         changefreq: 'weekly',
         priority: 0.8,
-        images: product.product_images.attached? ? [{
-          loc: Rails.application.routes.url_helpers.rails_blob_url(product.product_images.first, host: SitemapGenerator::Sitemap.default_host),
+        images: image_loc.present? ? [{
+          loc: image_loc,
           title: product.product_name,
           caption: "#{product.product_name} - #{product.brand}"
         }] : []
-  end
-
-  # Categorías únicas como páginas de filtro
-  Product.where(status: 'active').distinct.pluck(:category).compact.each do |category|
-    add catalog_path(categories: [category]),
-        changefreq: 'weekly',
-        priority: 0.7
-  end
-
-  # Marcas únicas como páginas de filtro
-  Product.where(status: 'active').distinct.pluck(:brand).compact.each do |brand|
-    add catalog_path(brands: [brand]),
-        changefreq: 'weekly',
-        priority: 0.7
   end
 end
