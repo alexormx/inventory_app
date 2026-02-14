@@ -54,11 +54,11 @@ class Product < ApplicationRecord
     custom_attributes.is_a?(Hash) ? custom_attributes : {}
   end
 
-  # NEW: Normalize at assignment time (runs earlier than validations)
+  # Normalize at assignment time: strip/downcase, default blank to 'draft'.
+  # Invalid values pass through to be caught by enum validation (raises ArgumentError).
   def status=(value)
     normalized = value.to_s.strip.downcase
     normalized = 'draft' if normalized.blank?
-    normalized = 'inactive' unless self.class.statuses.key?(normalized)
     super(normalized)
   end
 

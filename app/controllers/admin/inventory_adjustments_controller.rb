@@ -2,6 +2,8 @@
 
 module Admin
   class InventoryAdjustmentsController < ApplicationController
+    before_action :authenticate_user!
+    before_action :authorize_admin!
     before_action :set_inventory_adjustment, only: %i[show edit update destroy apply reverse]
 
     # GET /admin/inventory_adjustments
@@ -82,7 +84,13 @@ module Admin
     private
 
     def set_inventory_adjustment
-      @inventory_adjustment = InventoryAdjustment.find(params[:id])
+      @inventory_adjustment = InventoryAdjustment
+        .includes(
+          :user, :applied_by, :reversed_by,
+          inventory_adjustment_lines: :product,
+          inventory_adjustment_entries: [:inventory, { inventory_adjustment_line: :product }]
+        )
+        .find(params[:id])
     end
 
     def inventory_adjustment_params

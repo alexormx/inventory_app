@@ -1,51 +1,208 @@
 <div class="container mt-3">
   <div class="d-flex justify-content-between align-items-center mb-3">
-    <h3>Adjustment #<%= @inventory_adjustment.id %></h3>
+    <h3>
+      <i class="fa fa-clipboard-list text-primary"></i>
+      Ajuste #<%= @inventory_adjustment.id %>
+      <% if @inventory_adjustment.reference.present? %>
+        <small class="text-muted">(<%= @inventory_adjustment.reference %>)</small>
+      <% end %>
+    </h3>
     <div class="d-flex gap-2">
       <% if @inventory_adjustment.status_draft? %>
-        <%= button_to 'Apply', apply_admin_inventory_adjustment_path(@inventory_adjustment), method: :post, class: 'btn btn-success' %>
-        <%= link_to 'Edit', edit_admin_inventory_adjustment_path(@inventory_adjustment), class: 'btn btn-outline-secondary' %>
+        <%= button_to 'Aplicar', apply_admin_inventory_adjustment_path(@inventory_adjustment), method: :post, class: 'btn btn-success' %>
+        <%= link_to 'Editar', edit_admin_inventory_adjustment_path(@inventory_adjustment), class: 'btn btn-outline-secondary' %>
       <% else %>
-        <%= button_to 'Reverse', reverse_admin_inventory_adjustment_path(@inventory_adjustment), method: :post, class: 'btn btn-warning' %>
+        <%= button_to 'Revertir', reverse_admin_inventory_adjustment_path(@inventory_adjustment), method: :post, class: 'btn btn-warning', data: { turbo_confirm: '¿Estás seguro de revertir este ajuste? Se deshará el efecto en inventario.' } %>
       <% end %>
-      <%= link_to 'Back', admin_inventory_adjustments_path, class: 'btn btn-outline-dark' %>
+      <%= link_to 'Volver', admin_inventory_adjustments_path, class: 'btn btn-outline-dark' %>
     </div>
   </div>
 
-  <div class="row g-3">
-    <div class="col-md-3"><strong>Status:</strong> <%= @inventory_adjustment.status %></div>
-    <div class="col-md-3"><strong>Type:</strong> <%= @inventory_adjustment.adjustment_type %></div>
-    <div class="col-md-3"><strong>Reference:</strong> <%= @inventory_adjustment.reference %></div>
+  <%# Info card %>
+  <div class="card mb-4">
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-3">
+          <strong>Status:</strong>
+          <% if @inventory_adjustment.status_applied? %>
+            <span class="badge bg-success"><i class="fa fa-check-circle"></i> Aplicado</span>
+          <% else %>
+            <span class="badge bg-secondary"><i class="fa fa-pencil-alt"></i> Borrador</span>
+          <% end %>
+        </div>
+        <div class="col-md-3">
+          <strong>Tipo:</strong>
+          <span class="badge bg-info"><%= @inventory_adjustment.adjustment_type&.humanize %></span>
+        </div>
+        <div class="col-md-3">
+          <strong>Referencia:</strong> <%= @inventory_adjustment.reference || '—' %>
+        </div>
+        <div class="col-md-3">
+          <strong>Creado por:</strong> <%= @inventory_adjustment.user&.email || '—' %>
+        </div>
+      </div>
+
+      <% if @inventory_adjustment.note.present? %>
+        <div class="row mt-3">
+          <div class="col-12">
+            <strong>Nota:</strong>
+            <p class="mb-0 text-muted"><%= @inventory_adjustment.note %></p>
+          </div>
+        </div>
+      <% end %>
+
+      <% if @inventory_adjustment.found_at.present? %>
+        <div class="row mt-2">
+          <div class="col-md-4">
+            <strong>Fecha hallazgo:</strong> <%= @inventory_adjustment.found_at.strftime('%d/%m/%Y %H:%M') %>
+          </div>
+        </div>
+      <% end %>
+
+      <%# Audit timestamps %>
+      <div class="row mt-3">
+        <% if @inventory_adjustment.applied_at.present? %>
+          <div class="col-md-4">
+            <small class="text-muted">
+              <i class="fa fa-check text-success"></i>
+              Aplicado el <%= @inventory_adjustment.applied_at.strftime('%d/%m/%Y %H:%M') %>
+              <% if @inventory_adjustment.applied_by.present? %>
+                por <strong><%= @inventory_adjustment.applied_by.email %></strong>
+              <% end %>
+            </small>
+          </div>
+        <% end %>
+        <% if @inventory_adjustment.reversed_at.present? %>
+          <div class="col-md-4">
+            <small class="text-muted">
+              <i class="fa fa-undo text-warning"></i>
+              Revertido el <%= @inventory_adjustment.reversed_at.strftime('%d/%m/%Y %H:%M') %>
+              <% if @inventory_adjustment.reversed_by.present? %>
+                por <strong><%= @inventory_adjustment.reversed_by.email %></strong>
+              <% end %>
+            </small>
+          </div>
+        <% end %>
+        <div class="col-md-4">
+          <small class="text-muted">
+            <i class="fa fa-calendar"></i>
+            Creado el <%= @inventory_adjustment.created_at.strftime('%d/%m/%Y %H:%M') %>
+          </small>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <hr>
-  <h5>Lines</h5>
-  <table class="table table-striped">
-    <thead>
+  <%# Lines table %>
+  <h5><i class="fa fa-list"></i> Líneas del Ajuste</h5>
+  <table class="table table-striped table-hover">
+    <thead class="table-light">
       <tr>
-        <th>Product</th>
-        <th>Direction</th>
-        <th>Qty</th>
-  <th>Reason / Target</th>
-        <th>Unit cost</th>
+        <th>Producto</th>
+        <th>Dirección</th>
+        <th class="text-center">Cantidad</th>
+        <th>Condición</th>
+        <th>Razón / Destino</th>
+        <th class="text-end">Costo unit.</th>
+        <th class="text-end">Precio venta</th>
+        <th class="text-end">Total línea</th>
       </tr>
     </thead>
     <tbody>
       <% @inventory_adjustment.inventory_adjustment_lines.includes(:product).each do |l| %>
         <tr>
-          <td><%= l.product&.product_name %></td>
-          <td><%= l.direction %></td>
-          <td><%= l.quantity %></td>
           <td>
-            <% if l.decrease? %>
-              <span class="badge bg-danger"><%= l.reason %></span>
+            <% if l.product %>
+              <%= link_to l.product.product_name, admin_product_path(l.product) %>
+              <br><small class="text-muted"><%= l.product.product_sku %></small>
             <% else %>
-              <span class="badge bg-success">increase</span>
+              <span class="text-danger">Producto eliminado</span>
             <% end %>
           </td>
-          <td><%= number_to_currency(l.unit_cost || 0) %></td>
+          <td>
+            <% if l.decrease? %>
+              <span class="badge bg-danger"><i class="fa fa-arrow-down"></i> Disminución</span>
+            <% else %>
+              <span class="badge bg-success"><i class="fa fa-arrow-up"></i> Aumento</span>
+            <% end %>
+          </td>
+          <td class="text-center"><%= l.quantity %></td>
+          <td>
+            <% if l.item_condition.present? && l.item_condition != 'brand_new' %>
+              <span class="badge bg-warning text-dark"><%= l.item_condition.humanize %></span>
+            <% else %>
+              <span class="text-muted">Nuevo</span>
+            <% end %>
+          </td>
+          <td>
+            <% if l.decrease? && l.reason.present? %>
+              <span class="badge bg-danger"><%= l.reason %></span>
+            <% elsif l.respond_to?(:increase?) && l.increase? %>
+              <span class="text-muted">—</span>
+            <% end %>
+          </td>
+          <td class="text-end"><%= number_to_currency(l.unit_cost || 0) %></td>
+          <td class="text-end">
+            <% if l.selling_price.present? %>
+              <%= number_to_currency(l.selling_price) %>
+            <% else %>
+              <span class="text-muted">—</span>
+            <% end %>
+          </td>
+          <td class="text-end"><%= number_to_currency((l.unit_cost || 0) * l.quantity) %></td>
         </tr>
       <% end %>
     </tbody>
+    <tfoot class="table-light">
+      <tr>
+        <td colspan="2"><strong>Total</strong></td>
+        <td class="text-center"><strong><%= @inventory_adjustment.inventory_adjustment_lines.sum(:quantity) %></strong></td>
+        <td colspan="4"></td>
+        <td class="text-end">
+          <strong><%= number_to_currency(@inventory_adjustment.inventory_adjustment_lines.sum { |l| (l.unit_cost || 0) * l.quantity }) %></strong>
+        </td>
+      </tr>
+    </tfoot>
   </table>
+
+  <%# Audit entries (only shown when applied) %>
+  <% entries = @inventory_adjustment.inventory_adjustment_entries.includes(inventory_adjustment_line: :product, inventory: :product) %>
+  <% if entries.any? %>
+    <h5 class="mt-4"><i class="fa fa-history"></i> Registro de Movimientos</h5>
+    <table class="table table-sm table-bordered">
+      <thead class="table-light">
+        <tr>
+          <th>Producto</th>
+          <th>Pieza ID</th>
+          <th>Acción</th>
+          <th>Fecha</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% entries.each do |entry| %>
+          <tr>
+            <td><%= entry.inventory&.product&.product_name || entry.inventory_adjustment_line&.product&.product_name %></td>
+            <td>
+              <% if entry.inventory %>
+                #<%= entry.inventory.id %>
+              <% else %>
+                <span class="text-muted">—</span>
+              <% end %>
+            </td>
+            <td>
+              <% case entry.action %>
+              <% when 'created' %>
+                <span class="badge bg-success">Creada</span>
+              <% when 'status_changed' %>
+                <span class="badge bg-warning text-dark">Status cambiado</span>
+              <% else %>
+                <span class="badge bg-secondary"><%= entry.action %></span>
+              <% end %>
+            </td>
+            <td><%= entry.created_at.strftime('%d/%m/%Y %H:%M') %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
 </div>

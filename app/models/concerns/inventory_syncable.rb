@@ -19,9 +19,10 @@ module InventorySyncable
       sync_inventory_for_sale(desired_quantity)
     end
   rescue StandardError => e
-    Rails.logger.error "[❌ InventorySync Error] #{e.class}: #{e.message}"
-    # En entorno de test y durante checkout, no abortar la transacción completa por errores de sync
-    # La lógica de inventario será verificada por servicios dedicados; aquí degradamos a log.
+    Rails.logger.error "[❌ InventorySync Error] #{e.class}: #{e.message}\n#{e.backtrace&.first(5)&.join("\n")}"
+    # En producción degradar a log para no romper el checkout del cliente;
+    # en desarrollo y test, propagar para detectar bugs tempranamente.
+    raise unless Rails.env.production?
   end
 
   private
@@ -151,6 +152,8 @@ module InventorySyncable
       item.update!(
         status: :available,
         sale_order_id: nil,
+        sale_order_item_id: nil,
+        sold_price: nil,
         status_changed_at: Time.current
       )
     end

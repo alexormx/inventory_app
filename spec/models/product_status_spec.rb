@@ -13,9 +13,9 @@ RSpec.describe Product, type: :model do
     expect(p.status).to eq("active")
   end
 
-  it "coerces unknown to inactive" do
-    p = Product.new(product_sku: "X3", product_name: "Test", selling_price: 10, maximum_discount: 0, minimum_price: 0, whatsapp_code: "W3", status: "weird")
-    p.validate
-    expect(p.status).to eq("inactive")
+  it "rejects unknown status values" do
+    expect {
+      Product.new(product_sku: "X3", product_name: "Test", selling_price: 10, maximum_discount: 0, minimum_price: 0, whatsapp_code: "W3", status: "weird")
+    }.to raise_error(ArgumentError, /'weird' is not a valid status/)
   end
 end

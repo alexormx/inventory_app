@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_02_02_210000) do
+ActiveRecord::Schema[8.0].define(version: 2026_02_14_230000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -87,6 +87,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_02_210000) do
     t.index ["product_id", "status"], name: "index_inventories_on_product_id_and_status"
     t.index ["product_id"], name: "index_inventories_on_product_id"
     t.index ["purchase_order_id"], name: "index_inventories_on_purchase_order_id"
+    t.index ["purchase_order_item_id"], name: "index_inventories_on_purchase_order_item_id"
     t.index ["sale_order_id"], name: "index_inventories_on_sale_order_id"
     t.index ["sale_order_item_id"], name: "index_inventories_on_sale_order_item_id"
     t.index ["source"], name: "index_inventories_on_source"
@@ -121,7 +122,6 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_02_210000) do
   end
 
   create_table "inventory_adjustments", force: :cascade do |t|
-    t.string "code"
     t.string "status", default: "draft", null: false
     t.string "adjustment_type", default: "audit", null: false
     t.datetime "found_at"
@@ -136,7 +136,6 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_02_210000) do
     t.integer "reversed_by_id"
     t.index ["adjustment_type"], name: "index_inventory_adjustments_on_adjustment_type"
     t.index ["applied_at"], name: "index_inventory_adjustments_on_applied_at"
-    t.index ["code"], name: "index_inventory_adjustments_on_code", unique: true
     t.index ["found_at"], name: "index_inventory_adjustments_on_found_at"
     t.index ["reversed_at"], name: "index_inventory_adjustments_on_reversed_at"
   end
@@ -281,6 +280,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_02_210000) do
     t.datetime "updated_at", null: false
     t.string "sale_order_id", null: false
     t.integer "payment_method"
+    t.index ["sale_order_id"], name: "index_payments_on_sale_order_id"
   end
 
   create_table "postal_codes", force: :cascade do |t|
@@ -388,6 +388,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_02_210000) do
     t.decimal "total_line_cost", precision: 10, scale: 2
     t.decimal "total_line_cost_in_mxn", precision: 10, scale: 2
     t.index ["product_id"], name: "index_purchase_order_items_on_product_id"
+    t.index ["purchase_order_id"], name: "index_purchase_order_items_on_purchase_order_id"
   end
 
   create_table "purchase_orders", id: :string, force: :cascade do |t|
@@ -439,6 +440,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_02_210000) do
     t.index ["item_condition"], name: "index_sale_order_items_on_item_condition"
     t.index ["preorder_quantity"], name: "index_sale_order_items_on_preorder_quantity"
     t.index ["product_id"], name: "index_sale_order_items_on_product_id"
+    t.index ["sale_order_id"], name: "index_sale_order_items_on_sale_order_id"
   end
 
   create_table "sale_orders", id: :string, force: :cascade do |t|
@@ -475,6 +477,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_02_210000) do
     t.string "sale_order_id", null: false
     t.integer "status"
     t.decimal "shipping_cost", precision: 10, scale: 2, default: "0.0", null: false
+    t.index ["sale_order_id"], name: "index_shipments_on_sale_order_id"
   end
 
   create_table "shipping_addresses", force: :cascade do |t|

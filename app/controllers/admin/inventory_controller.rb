@@ -51,16 +51,28 @@ module Admin
       end
 
       status_keys = %w[available reserved in_transit sold returned damaged lost scrap pre_reserved pre_sold marketing]
-      # Superiores (globales, no cambian con filtros): conteo global por status
+
+      # Superiores (globales): una sola query agrupada en lugar de 11 individuales
+      global_grouped = Inventory.group(:status).count
       @inventory_counts_global = {}
       status_keys.each do |key|
-        @inventory_counts_global[key.to_sym] = Inventory.where(status: status_ids[key]).count
+        @inventory_counts_global[key.to_sym] = global_grouped[status_ids[key]] || 0
       end
-      # Inferiores (filtrados por q + status)
+
+      # Inferiores (filtrados por q + status): una sola query agrupada
+      filtered_grouped = inventories_scope.group(:status).count
       @inventory_counts = {}
       status_keys.each do |key|
-        @inventory_counts[key.to_sym] = inventories_scope.where(status: status_ids[key]).count
+        @inventory_counts[key.to_sym] = filtered_grouped[status_ids[key]] || 0
       end
+
+      # Pre-calculate cost aggregations for the view (avoid N+1 queries in ERB)
+      @available_value = Inventory.where(status: :available).sum(:purchase_cost)
+      @reserved_value = Inventory.where(status: :reserved).sum(:purchase_cost)
+      @in_transit_value = Inventory.where(status: :in_transit).sum(:purchase_cost)
+      @total_value = Inventory.sum(:purchase_cost)
+      @unlocated_count = Inventory.where(status: %i[available reserved], inventory_location_id: nil).count
+      @located_count = Inventory.where(status: %i[available reserved]).where.not(inventory_location_id: nil).count
 
       # Ordenar por prioridad: disponible desc, reservado desc, en tránsito desc, vendido desc, total desc
       @export_products = products
@@ -109,11 +121,29 @@ module Admin
       render partial: 'admin/inventory/edit_status_form', locals: { item: @item }
     end
 
+    # Transiciones de status permitidas desde la UI admin.
+    # Los cambios gestionados por servicios (sync, adjustments, cancel) no pasan por aquí.
+    VALID_STATUS_TRANSITIONS = {
+      'available'    => %w[reserved damaged lost scrap marketing],
+      'reserved'     => %w[available sold damaged lost],
+      'in_transit'   => %w[available damaged lost],
+      'returned'     => %w[available damaged scrap],
+      'damaged'      => %w[scrap available],
+      'lost'         => %w[available scrap],
+      'scrap'        => %w[],
+      'sold'         => %w[],
+      'pre_reserved' => %w[reserved available],
+      'pre_sold'     => %w[sold available],
+      'marketing'    => %w[available damaged scrap]
+    }.freeze
+
     def update_status
       @item = Inventory.find(params[:id])
+      new_status = params[:status].to_s
+      allowed = VALID_STATUS_TRANSITIONS[@item.status] || []
 
-      if @item.status != 'sold' && Inventory.statuses.keys.include?(params[:status])
-        @item.update(status: params[:status], status_changed_at: Time.current)
+      if allowed.include?(new_status)
+        @item.update(status: new_status, status_changed_at: Time.current)
         @product = @item.product
 
         respond_to do |format|
@@ -128,7 +158,7 @@ module Admin
           end
         end
       else
-        redirect_to admin_inventory_index_path, alert: 'Status could not be updated'
+        redirect_to admin_inventory_index_path, alert: "Transición de '#{@item.status}' a '#{params[:status]}' no permitida."
       end
     end
 

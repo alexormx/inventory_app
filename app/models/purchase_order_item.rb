@@ -11,7 +11,7 @@ class PurchaseOrderItem < ApplicationRecord
   before_validation :compute_line_volume_and_weight, if: :should_compute_volume_weight?
   before_update :ensure_free_units_for_quantity_reduction, if: :will_reduce_quantity?
   before_destroy :ensure_enough_free_inventory_to_remove
-  after_save :sync_inventory_records
+  after_save :sync_inventory_records, if: :saved_change_to_quantity?
   after_commit :update_product_stats
   after_commit :recalculate_parent_order_totals
 

@@ -98,9 +98,9 @@ module Admin
           format.html { redirect_to admin_inventory_locations_path, alert: 'No se puede eliminar una ubicación con sub-ubicaciones. Elimina primero los hijos.' }
           format.json { render json: { status: 'error', message: 'Cannot delete location with children' }, status: :unprocessable_entity }
         end
-      elsif Inventory.where(inventory_location_id: @inventory_location.id).exists?
+      elsif Inventory.where(inventory_location_id: [@inventory_location.id] + @inventory_location.descendants.pluck(:id)).exists?
         respond_to do |format|
-          format.html { redirect_to admin_inventory_locations_path, alert: 'No se puede eliminar una ubicación con inventario asignado.' }
+          format.html { redirect_to admin_inventory_locations_path, alert: 'No se puede eliminar una ubicación con inventario asignado (incluyendo sub-ubicaciones).' }
           format.json { render json: { status: 'error', message: 'Cannot delete location with assigned inventory' }, status: :unprocessable_entity }
         end
       else

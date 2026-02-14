@@ -6,17 +6,15 @@
   sold_count = @inventory_counts_global[:sold] || 0
   total_count = @inventory_counts_global.values.sum
 
-  # Calcular valores estimados del inventario por estado
-  available_value = Inventory.where(status: :available).sum(:purchase_cost) rescue 0
-  reserved_value = Inventory.where(status: :reserved).sum(:purchase_cost) rescue 0
-  in_transit_value = Inventory.where(status: :in_transit).sum(:purchase_cost) rescue 0
-  total_value = Inventory.sum(:purchase_cost) rescue 0
+  # Usar valores pre-calculados en el controller
+  available_value = @available_value || 0
+  reserved_value = @reserved_value || 0
+  in_transit_value = @in_transit_value || 0
+  total_value = @total_value || 0
 
-  # Inventario sin ubicación
-  unlocated_count = Inventory.where(status: %i[available reserved], inventory_location_id: nil).count
-
-  # Inventario con ubicación (ya inventariado)
-  located_count = Inventory.where(status: %i[available reserved]).where.not(inventory_location_id: nil).count
+  # Inventario sin/con ubicación (pre-calculados en controller)
+  unlocated_count = @unlocated_count || 0
+  located_count = @located_count || 0
 
   status_icons = {
     'available' => 'check-circle', 'reserved' => 'bookmark', 'in_transit' => 'truck',

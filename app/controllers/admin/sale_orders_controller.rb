@@ -1,5 +1,4 @@
 # frozen_string_literal: true
-# rubocop:disable all
 
 # app/controllers/admin/sale_orders_controller.rb
 class Admin::SaleOrdersController < ApplicationController
@@ -11,84 +10,24 @@ class Admin::SaleOrdersController < ApplicationController
   PER_PAGE = 20
 
   def index
-    # Filtros y búsqueda similares a inventario
     params[:status] ||= params[:current_status]
     @status_filter = params[:status].presence
-  @q = params[:q].to_s.strip
-  # Filtro: con adeudo (balance > 0)
-  @due_filter = %w[1 true yes on].include?(params[:due].to_s)
+    @q = params[:q].to_s.strip
+    @due_filter = %w[1 true yes on].include?(params[:due].to_s)
 
-  scope = SaleOrder.joins(:user).includes(:user)
-  # Subqueries: items_count, total_paid (pagos Completed), balance_due
-  items_count_sql = "(SELECT COALESCE(SUM(quantity),0) FROM sale_order_items soi WHERE soi.sale_order_id = sale_orders.id) AS items_count"
-  total_paid_sql  = "(SELECT COALESCE(SUM(amount),0) FROM payments p WHERE p.sale_order_id = sale_orders.id AND p.status = 'Completed') AS total_paid_value"
-  balance_due_sql = "(sale_orders.total_order_value - (SELECT COALESCE(SUM(amount),0) FROM payments p2 WHERE p2.sale_order_id = sale_orders.id AND p2.status = 'Completed')) AS balance_due_value"
-  scope = scope.select("sale_orders.*", items_count_sql, total_paid_sql, balance_due_sql)
-    # Sorting
-    sort = params[:sort].presence
-    dir  = params[:dir].to_s.downcase == 'asc' ? 'asc' : 'desc'
-    sort_map = {
-      'date'      => 'sale_orders.order_date',
-      'created'   => 'sale_orders.created_at',
-      'customer'  => 'users.name',
-  'total_mxn' => 'sale_orders.total_order_value',
-  'items'     => 'items_count',
-      'paid'      => 'total_paid_value',
-      'balance'   => 'balance_due_value'
-    }
-    if sort_map.key?(sort)
-      scope = scope.order(Arel.sql("#{sort_map[sort]} #{dir.upcase}"))
-    else
-      scope = scope.order(created_at: :desc)
-    end
-    if @status_filter.present? && @status_filter != "all"
-      scope = scope.where(status: @status_filter)
-    end
-    if @due_filter
-      balance_expr = "sale_orders.total_order_value - (SELECT COALESCE(SUM(amount),0) FROM payments p2 WHERE p2.sale_order_id = sale_orders.id AND p2.status = 'Completed')"
-      scope = scope.where(Arel.sql("#{balance_expr} > 0"))
-    end
-    if @q.present?
-      adapter = ActiveRecord::Base.connection.adapter_name.downcase
-      id_cast = adapter.include?("postgres") ? "sale_orders.id::text" : "CAST(sale_orders.id AS TEXT)"
-      name_cond = adapter.include?("postgres") ? "users.name ILIKE ?" : "LOWER(users.name) LIKE ?"
-      term = adapter.include?("postgres") ? "%#{@q}%" : "%#{@q.downcase}%"
-      if (m = @q.match(/\A#?(\d+)\z/))
-        exact_id = m[1].to_i
-        scope = scope.where(["sale_orders.id = ? OR #{name_cond}", exact_id, term])
-      else
-        scope = scope.where(["#{id_cast} LIKE ? OR #{name_cond}", term, term])
-      end
-    end
-  # Dataset para exportación (sin paginar)
-  @export_sale_orders = scope
-  @sale_orders = scope.page(params[:page]).per(PER_PAGE)
+    scope = build_base_scope
+    scope = apply_sorting(scope)
+    scope = apply_filters(scope)
 
-    # Contadores superiores (globales) e inferiores (filtrados)
-    statuses = ["Pending", "Confirmed", "Shipped", "Delivered", "Canceled"]
-    @counts_global = statuses.each_with_object({}) { |s, h| h[s] = SaleOrder.where(status: s).count }
-  counts_scope = SaleOrder.joins(:user)
-    if @q.present?
-      adapter = ActiveRecord::Base.connection.adapter_name.downcase
-      id_cast = adapter.include?("postgres") ? "sale_orders.id::text" : "CAST(sale_orders.id AS TEXT)"
-      name_cond = adapter.include?("postgres") ? "users.name ILIKE ?" : "LOWER(users.name) LIKE ?"
-      term = adapter.include?("postgres") ? "%#{@q}%" : "%#{@q.downcase}%"
-      if (m = @q.match(/\A#?(\d+)\z/))
-        exact_id = m[1].to_i
-        counts_scope = counts_scope.where(["sale_orders.id = ? OR #{name_cond}", exact_id, term])
-      else
-        counts_scope = counts_scope.where(["#{id_cast} LIKE ? OR #{name_cond}", term, term])
-      end
-    end
-  if @status_filter.present? && @status_filter != "all"
-      counts_scope = counts_scope.where(status: @status_filter)
-    end
-  # Nota: los contadores por status no aplican 'due', se mantienen globales al filtro de status/búsqueda.
-    @counts = statuses.each_with_object({}) { |s, h| h[s] = counts_scope.where(status: s).count }
+    @export_sale_orders = scope
+    @sale_orders = scope.page(params[:page]).per(PER_PAGE)
+
+    build_status_counts(scope)
+
     respond_to do |format|
       format.html
       format.csv { send_data csv_for_sale_orders(@export_sale_orders), filename: "sale_orders-#{Time.current.strftime('%Y%m%d-%H%M')}.csv" }
-      format.any  { head :not_acceptable }
+      format.any { head :not_acceptable }
     end
   end
 
@@ -99,8 +38,8 @@ class Admin::SaleOrdersController < ApplicationController
   def create
     @sale_order = SaleOrder.new(sale_order_params)
     if @sale_order.save
-      @sale_order.update_status_if_fully_paid! # If you want to trigger status logic
-      redirect_to admin_sale_order_path(@sale_order), notice: "Sale order created"
+      @sale_order.update_status_if_fully_paid!
+      redirect_to admin_sale_order_path(@sale_order), notice: 'Orden de venta creada.'
     else
       Rails.logger.error(@sale_order.errors.full_messages)
       render :new, status: :unprocessable_entity
@@ -113,41 +52,38 @@ class Admin::SaleOrdersController < ApplicationController
     @sale_order = SaleOrder.find(params[:id])
     if @sale_order.update(sale_order_params)
       @sale_order.update_status_if_fully_paid!
-      redirect_to admin_sale_order_path(@sale_order), notice: "Sale order updated successfully"
+      redirect_to admin_sale_order_path(@sale_order), notice: 'Orden de venta actualizada.'
     else
-      flash.now[:alert] = "There were errors saving the sale order"
+      flash.now[:alert] = 'Hubo errores al guardar la orden de venta.'
       render :edit, status: :unprocessable_entity
     end
   rescue ActiveRecord::RecordNotDestroyed => e
-    # This happens when trying to delete a line item that has sold inventory
-    # Extract the error message from the failed record
     failed_item = e.record
     error_msg = failed_item&.errors&.full_messages&.join(', ') ||
-                "No se puede eliminar una línea con inventario vendido"
+                'No se puede eliminar una línea con inventario vendido'
     flash.now[:alert] = error_msg
-    @sale_order.reload # Reset changes
+    @sale_order.reload
     render :edit, status: :unprocessable_entity
   end
 
   def show; end
 
   def destroy
-    redirect_to admin_sale_order_path(@sale_order), alert: "La eliminación está deshabilitada. Usa Cancelar para liberar inventario y dejarla sin efecto."
+    redirect_to admin_sale_order_path(@sale_order),
+                alert: 'La eliminación está deshabilitada. Usa Cancelar para liberar inventario.'
   end
 
   def cancel
     SaleOrders::CancelOrderService.new(@sale_order).call
     redirect_to admin_sale_order_path(@sale_order),
-                notice: "Orden cancelada exitosamente. Inventarios liberados y disponibles."
+                notice: 'Orden cancelada exitosamente. Inventarios liberados y disponibles.'
   rescue ActiveRecord::RecordInvalid => e
     redirect_to admin_sale_order_path(@sale_order),
                 alert: "No se pudo cancelar la orden: #{e.message}"
   end
 
-  # Admin compact summary view: reuse customer summary template but under admin layout
-  # This avoids duplication while preserving styling/structure improvements already applied there.
   def summary
-    @order = @sale_order # variable name expected by shared summary template
+    @order = @sale_order
     render 'orders/summary'
   end
 
@@ -162,7 +98,6 @@ class Admin::SaleOrdersController < ApplicationController
       :user_id, :order_date, :subtotal, :tax_rate,
       :total_tax, :total_order_value, :discount,
       :status, :notes,
-      # Credit fields
       :credit_override, :credit_terms,
       sale_order_items_attributes: [
         :id, :product_id, :quantity, :unit_cost, :unit_discount,
@@ -173,34 +108,94 @@ class Admin::SaleOrdersController < ApplicationController
   end
 
   def load_counts
-    # Mantener método para compatibilidad; @counts se recalcula en index
     @counts ||= SaleOrder.group(:status).count
+  end
+
+  # --- Index helpers (extracted for readability) ---
+
+  def build_base_scope
+    items_sql   = '(SELECT COALESCE(SUM(quantity),0) FROM sale_order_items soi WHERE soi.sale_order_id = sale_orders.id) AS items_count'
+    paid_sql    = "(SELECT COALESCE(SUM(amount),0) FROM payments p WHERE p.sale_order_id = sale_orders.id AND p.status = 'Completed') AS total_paid_value"
+    balance_sql = "(sale_orders.total_order_value - (SELECT COALESCE(SUM(amount),0) FROM payments p2 WHERE p2.sale_order_id = sale_orders.id AND p2.status = 'Completed')) AS balance_due_value"
+
+    SaleOrder.joins(:user).includes(:user)
+             .select('sale_orders.*', items_sql, paid_sql, balance_sql)
+  end
+
+  def apply_sorting(scope)
+    sort = params[:sort].presence
+    dir  = params[:dir].to_s.downcase == 'asc' ? 'ASC' : 'DESC'
+    sort_map = {
+      'date'      => 'sale_orders.order_date',
+      'created'   => 'sale_orders.created_at',
+      'customer'  => 'users.name',
+      'total_mxn' => 'sale_orders.total_order_value',
+      'items'     => 'items_count',
+      'paid'      => 'total_paid_value',
+      'balance'   => 'balance_due_value'
+    }
+
+    if sort_map.key?(sort)
+      scope.order(Arel.sql("#{sort_map[sort]} #{dir}"))
+    else
+      scope.order(created_at: :desc)
+    end
+  end
+
+  def apply_filters(scope)
+    scope = scope.where(status: @status_filter) if @status_filter.present? && @status_filter != 'all'
+
+    if @due_filter
+      balance_expr = "sale_orders.total_order_value - (SELECT COALESCE(SUM(amount),0) FROM payments p2 WHERE p2.sale_order_id = sale_orders.id AND p2.status = 'Completed')"
+      scope = scope.where(Arel.sql("#{balance_expr} > 0"))
+    end
+
+    scope = apply_search(scope) if @q.present?
+    scope
+  end
+
+  def apply_search(scope)
+    adapter  = ActiveRecord::Base.connection.adapter_name.downcase
+    postgres = adapter.include?('postgres')
+    id_cast  = postgres ? 'sale_orders.id::text' : 'CAST(sale_orders.id AS TEXT)'
+    name_cond = postgres ? 'users.name ILIKE ?' : 'LOWER(users.name) LIKE ?'
+    term = postgres ? "%#{@q}%" : "%#{@q.downcase}%"
+
+    if (m = @q.match(/\A#?(\d+)\z/))
+      scope.where(["sale_orders.id = ? OR #{name_cond}", m[1].to_i, term])
+    else
+      scope.where(["#{id_cast} LIKE ? OR #{name_cond}", term, term])
+    end
+  end
+
+  def build_status_counts(filtered_scope) # rubocop:disable Metrics/AbcSize
+    statuses = %w[Pending Confirmed Shipped Delivered Canceled]
+
+    # Global counts (unaffected by filters)
+    global_grouped = SaleOrder.group(:status).count
+    @counts_global = statuses.each_with_object({}) { |s, h| h[s] = global_grouped[s] || 0 }
+
+    # Filtered counts (respecting search + status + due filters)
+    counts_scope = SaleOrder.joins(:user)
+    counts_scope = apply_search(counts_scope) if @q.present?
+    counts_scope = counts_scope.where(status: @status_filter) if @status_filter.present? && @status_filter != 'all'
+    filtered_grouped = counts_scope.group(:status).count
+    @counts = statuses.each_with_object({}) { |s, h| h[s] = filtered_grouped[s] || 0 }
   end
 
   def csv_for_sale_orders(relation)
     require 'csv'
     CSV.generate(headers: true) do |csv|
-      csv << [
-        "ID", "Customer", "Order Date", "Status", "Items", "Total", "Pagado", "Adeudo", "Discount"
-      ]
+      csv << %w[ID Customer Order\ Date Status Items Total Pagado Adeudo Discount]
       relation.each do |so|
         csv << [
-          so.id,
-          so.user&.name,
-          so.order_date,
-          so.status,
-          so.attributes["items_count"].to_i,
-          so.total_order_value,
-          so.attributes["total_paid_value"].to_d,
-          so.attributes["balance_due_value"].to_d,
-          so.discount
+          so.id, so.user&.name, so.order_date, so.status,
+          so.attributes['items_count'].to_i, so.total_order_value,
+          so.attributes['total_paid_value'].to_d,
+          so.attributes['balance_due_value'].to_d, so.discount
         ]
       end
     end
   end
-
-  # XLSX export removed
 end
-
-# rubocop:enable all
 

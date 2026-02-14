@@ -42,7 +42,8 @@ class InventoryAdjustment < ApplicationRecord
     resolved_prefix = pattern.gsub('YYYYMM', now.strftime('%Y%m'))
     prefix = resolved_prefix
     # Buscar el último consecutivo existente para el mes (formato ADJ-YYYYMM-NN)
-    last = self.class.where('reference LIKE ?', "#{prefix}-%").where.not(reference: nil)
+    # Lock rows to prevent concurrent duplicate references
+    last = self.class.lock('FOR UPDATE').where('reference LIKE ?', "#{prefix}-%").where.not(reference: nil)
                .order(Arel.sql('reference DESC')).limit(1).pick(:reference)
     seq = if last
             last.split('-').last.to_i + 1
@@ -75,7 +76,7 @@ class InventoryAdjustment < ApplicationRecord
 
   def reference_format_on_apply
     return unless status == 'applied'
-    return if reference.blank? || reference =~ /\AADJ-\d{6}-\d{2}\z/
+    return if reference.blank? || reference =~ /\AADJ-\d{6}-\d{2,}\z/
 
     errors.add(:reference, 'must follow ADJ-YYYYMM-NN (e.g. ADJ-202509-01) or be blank before apply')
   end
