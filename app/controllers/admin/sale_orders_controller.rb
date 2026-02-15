@@ -101,7 +101,7 @@ module Admin
       if @sale_order.shipment.blank?
         order_base = @sale_order.order_date || Time.zone.today
         @sale_order.create_shipment!(
-          carrier: '',
+          carrier: 'Por asignar',
           estimated_delivery: order_base + 7,
           status: :pending
         )
