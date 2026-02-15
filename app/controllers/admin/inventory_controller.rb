@@ -89,7 +89,7 @@ module Admin
 
     def items
       # Buscar producto por slug/SKU antes que ID para evitar colisiones cuando el slug inicia con números
-      @product = Product.find_by_identifier!(params[:id])
+      @product = Product.find_by!(identifier: params[:id])
       # Consulta directa (evita efectos colaterales del proxy de asociación) y quitar límites ocultos
       status_filter = params[:status].to_s
       valid_statuses = Inventory.statuses.keys
@@ -124,17 +124,17 @@ module Admin
     # Transiciones de status permitidas desde la UI admin.
     # Los cambios gestionados por servicios (sync, adjustments, cancel) no pasan por aquí.
     VALID_STATUS_TRANSITIONS = {
-      'available'    => %w[reserved damaged lost scrap marketing],
-      'reserved'     => %w[available sold damaged lost],
-      'in_transit'   => %w[available damaged lost],
-      'returned'     => %w[available damaged scrap],
-      'damaged'      => %w[scrap available],
-      'lost'         => %w[available scrap],
-      'scrap'        => %w[],
-      'sold'         => %w[],
+      'available' => %w[reserved damaged lost scrap marketing],
+      'reserved' => %w[available sold damaged lost],
+      'in_transit' => %w[available damaged lost],
+      'returned' => %w[available damaged scrap],
+      'damaged' => %w[scrap available],
+      'lost' => %w[available scrap],
+      'scrap' => %w[],
+      'sold' => %w[],
       'pre_reserved' => %w[reserved available],
-      'pre_sold'     => %w[sold available],
-      'marketing'    => %w[available damaged scrap]
+      'pre_sold' => %w[sold available],
+      'marketing' => %w[available damaged scrap]
     }.freeze
 
     def update_status
@@ -228,7 +228,7 @@ module Admin
         sorted_ids = @products_data.sort_by { |_id, count| -count }.map(&:first)
         # Filtrar por IDs de productos que coincidan con la búsqueda
         filtered_ids = products_scope.pluck(:id)
-        sorted_ids = sorted_ids & filtered_ids
+        sorted_ids &= filtered_ids
         # Paginar manualmente
         page_num = (params[:page] || 1).to_i
         per_page = 20
@@ -242,7 +242,7 @@ module Admin
       when 'count_asc'
         sorted_ids = @products_data.sort_by { |_id, count| count }.map(&:first)
         filtered_ids = products_scope.pluck(:id)
-        sorted_ids = sorted_ids & filtered_ids
+        sorted_ids &= filtered_ids
         page_num = (params[:page] || 1).to_i
         per_page = 20
         offset = (page_num - 1) * per_page
@@ -309,29 +309,29 @@ module Admin
             updated_at: Time.current
           )
 
-          if assigned > 0
-            total_assigned += assigned
-            # Calcular cuántos quedan sin ubicar para este producto
-            remaining = Inventory.where(
-              product_id: pid,
-              status: %i[available reserved],
-              inventory_location_id: nil
-            ).count
-            @affected_products[pid] = { assigned: assigned, remaining: remaining }
-          end
+          next unless assigned.positive?
+
+          total_assigned += assigned
+          # Calcular cuántos quedan sin ubicar para este producto
+          remaining = Inventory.where(
+            product_id: pid,
+            status: %i[available reserved],
+            inventory_location_id: nil
+          ).count
+          @affected_products[pid] = { assigned: assigned, remaining: remaining }
         end
       end
 
-      if total_assigned > 0
+      if total_assigned.positive?
         respond_to do |format|
           format.html { redirect_to admin_inventory_unlocated_path, notice: "#{total_assigned} piezas asignadas a #{@location.code}" }
-          format.turbo_stream {
+          format.turbo_stream do
             flash.now[:notice] = "#{total_assigned} piezas asignadas a #{@location.code}"
             # Solo calcular el total global para el badge del header
             @total_unlocated = Inventory.where(status: %i[available reserved], inventory_location_id: nil).count
             @total_products = Inventory.where(status: %i[available reserved], inventory_location_id: nil)
                                        .distinct.count(:product_id)
-          }
+          end
         end
       else
         redirect_to admin_inventory_unlocated_path, alert: 'No se asignó ninguna pieza'

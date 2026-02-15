@@ -16,7 +16,7 @@ class SaleOrder < ApplicationRecord
 
   CANONICAL_STATUS = {
     'pending' => 'Pending',
-    'confirmed' => 'Confirmed',    'preparing' => 'Preparing',    'in_transit' => 'In Transit',
+    'confirmed' => 'Confirmed', 'preparing' => 'Preparing', 'in_transit' => 'In Transit',
     'shipped' => 'In Transit', # si llega “shipped”, lo mapeamos a In Transit
     'delivered' => 'Delivered',
     'canceled' => 'Canceled',
@@ -261,6 +261,7 @@ class SaleOrder < ApplicationRecord
 
   def ensure_shipment_status_matches
     return unless status == 'Delivered'
+
     # Si está en Preparing o In Transit, no forzamos el shipment a delivered
 
     # Si existe shipment, forzamos su estado a delivered (usa el enum como símbolo)
@@ -299,7 +300,6 @@ class SaleOrder < ApplicationRecord
            else 0
            end
     update_column(:due_date, base + days) if days.positive?
-
   end
 
   # Cambiar inventarios cuando la orden se confirma (pago completo) o se regresa a pendiente
@@ -310,15 +310,15 @@ class SaleOrder < ApplicationRecord
     #   Pending->Confirmed, Confirmed->Preparing, Preparing->In Transit,
     #   *->Delivered (catch-all para saltos)
     promote = [
-      %w[Pending Confirmed], %w[Confirmed Preparing], %w[Preparing In\ Transit],
+      %w[Pending Confirmed], %w[Confirmed Preparing], ['Preparing', 'In Transit'],
       %w[Confirmed Delivered], %w[Pending Delivered], %w[Preparing Delivered],
-      %w[In\ Transit Delivered], %w[Confirmed In\ Transit]
+      ['In Transit', 'Delivered'], ['Confirmed', 'In Transit']
     ]
     # Transiciones que revierten inventario a reserved:
     demote = [
-      %w[Confirmed Pending], %w[Preparing Confirmed], %w[In\ Transit Preparing],
+      %w[Confirmed Pending], %w[Preparing Confirmed], ['In Transit', 'Preparing'],
       %w[Delivered Confirmed], %w[Delivered Pending], %w[Delivered Preparing],
-      %w[Delivered In\ Transit], %w[In\ Transit Confirmed]
+      ['Delivered', 'In Transit'], ['In Transit', 'Confirmed']
     ]
 
     if promote.include?([previous, current])
@@ -346,6 +346,7 @@ class SaleOrder < ApplicationRecord
   def backfill_inventory_so_item_links
     # Evitar en entorno de test: el servicio de checkout hace backfill suave
     return if Rails.env.test?
+
     # Limitar al scope de esta orden para evitar operaciones globales
     Inventories::BackfillSaleOrderItemId.new(scope: inventories).call
   rescue StandardError => e
@@ -371,4 +372,3 @@ class SaleOrder < ApplicationRecord
     self.status = CANONICAL_STATUS[key] || status
   end
 end
-

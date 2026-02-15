@@ -22,4 +22,3 @@ class CreatePostalCodes < ActiveRecord::Migration[8.0]
     drop_table :postal_codes if table_exists?(:postal_codes)
   end
 end
-

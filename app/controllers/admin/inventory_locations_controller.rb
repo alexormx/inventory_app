@@ -39,10 +39,10 @@ module Admin
 
       # Cargar inventario de esta ubicación (directo, sin sub-ubicaciones)
       @direct_inventories = Inventory.includes(:product, :purchase_order)
-                                      .where(inventory_location_id: @inventory_location.id)
-                                      .requiring_location
-                                      .order('products.product_name')
-                                      .references(:product)
+                                     .where(inventory_location_id: @inventory_location.id)
+                                     .requiring_location
+                                     .order('products.product_name')
+                                     .references(:product)
     end
 
     def new
@@ -95,12 +95,16 @@ module Admin
     def destroy
       if @inventory_location.has_children?
         respond_to do |format|
-          format.html { redirect_to admin_inventory_locations_path, alert: 'No se puede eliminar una ubicación con sub-ubicaciones. Elimina primero los hijos.' }
+          format.html do
+            redirect_to admin_inventory_locations_path, alert: 'No se puede eliminar una ubicación con sub-ubicaciones. Elimina primero los hijos.'
+          end
           format.json { render json: { status: 'error', message: 'Cannot delete location with children' }, status: :unprocessable_entity }
         end
-      elsif Inventory.where(inventory_location_id: [@inventory_location.id] + @inventory_location.descendants.pluck(:id)).exists?
+      elsif Inventory.exists?(inventory_location_id: [@inventory_location.id] + @inventory_location.descendants.pluck(:id))
         respond_to do |format|
-          format.html { redirect_to admin_inventory_locations_path, alert: 'No se puede eliminar una ubicación con inventario asignado (incluyendo sub-ubicaciones).' }
+          format.html do
+            redirect_to admin_inventory_locations_path, alert: 'No se puede eliminar una ubicación con inventario asignado (incluyendo sub-ubicaciones).'
+          end
           format.json { render json: { status: 'error', message: 'Cannot delete location with assigned inventory' }, status: :unprocessable_entity }
         end
       else
@@ -169,7 +173,7 @@ module Admin
     end
 
     def inventory_location_params
-      params.require(:inventory_location).permit(:name, :code, :location_type, :description, :parent_id, :position, :active)
+      params.expect(inventory_location: %i[name code location_type description parent_id position active])
     end
 
     def set_form_data
@@ -178,7 +182,7 @@ module Admin
     end
 
     def suggested_type_for_parent
-      return 'warehouse' unless params[:parent_id].present?
+      return 'warehouse' if params[:parent_id].blank?
 
       parent = InventoryLocation.find_by(id: params[:parent_id])
       return 'warehouse' unless parent

@@ -50,4 +50,3 @@ module Inventories
     end
   end
 end
-

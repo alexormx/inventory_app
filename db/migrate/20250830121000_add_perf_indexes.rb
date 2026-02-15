@@ -9,22 +9,22 @@ class AddPerfIndexes < ActiveRecord::Migration[8.0]
     # Functional index para búsquedas case-insensitive (PostgreSQL). Ignorado en SQLite.
     reversible do |dir|
       dir.up do
-        
+
         execute <<~SQL.squish
           CREATE INDEX index_products_on_lower_product_name ON products (lower(product_name));
         SQL
       rescue StandardError
         nil
-        
+
       end
       dir.down do
-        
+
         execute <<~SQL.squish
           DROP INDEX index_products_on_lower_product_name;
         SQL
       rescue StandardError
         nil
-        
+
       end
     end
   end

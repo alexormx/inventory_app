@@ -33,10 +33,14 @@ SitemapGenerator::Sitemap.create do
         lastmod: product.updated_at,
         changefreq: 'weekly',
         priority: 0.8,
-        images: image_loc.present? ? [{
-          loc: image_loc,
-          title: product.product_name,
-          caption: "#{product.product_name} - #{product.brand}"
-        }] : []
+        images: if image_loc.present?
+                  [{
+                    loc: image_loc,
+                    title: product.product_name,
+                    caption: "#{product.product_name} - #{product.brand}"
+                  }]
+                else
+                  []
+                end
   end
 end

@@ -41,10 +41,10 @@ module Admin
       end
 
       products = Product
-        .where('product_name ILIKE ? OR product_sku ILIKE ?', "%#{query}%", "%#{query}%")
-        .order(:product_name)
-        .limit(10)
-        .select(:id, :product_name, :product_sku, :category, :brand, :base_price)
+                 .where('product_name ILIKE ? OR product_sku ILIKE ?', "%#{query}%", "%#{query}%")
+                 .order(:product_name)
+                 .limit(10)
+                 .select(:id, :product_name, :product_sku, :category, :brand, :base_price)
 
       render json: products.map { |p|
         {
@@ -64,8 +64,8 @@ module Admin
       params.permit(
         :use_existing_product,
         :existing_product_id,
-        product: [:product_name, :product_sku, :category, :brand, :base_price, :description, :weight, :width, :height, :depth],
-        inventory: [:item_condition, :purchase_cost, :selling_price, :notes, :inventory_location_id, piece_images: []]
+        product: %i[product_name product_sku category brand base_price description weight width height depth],
+        inventory: [:item_condition, :purchase_cost, :selling_price, :notes, :inventory_location_id, { piece_images: [] }]
       )
     end
   end

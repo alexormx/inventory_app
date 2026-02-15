@@ -94,16 +94,18 @@ module Dashboard
 
     def delta_value(current, previous)
       return nil if previous.nil? || previous.zero?
+
       ((current - previous) / previous.to_d * 100).round(1)
     end
 
     def delta_points(current, previous)
       return nil if previous.nil?
+
       (current - previous).round(2)
     end
 
     def base_scope
-      SaleOrder.where(status: %w[Confirmed In\ Transit Delivered])
+      SaleOrder.where(status: ['Confirmed', 'In Transit', 'Delivered'])
     end
   end
 end

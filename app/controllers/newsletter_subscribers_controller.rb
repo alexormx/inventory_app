@@ -34,6 +34,6 @@ class NewsletterSubscribersController < ApplicationController
   private
 
   def subscriber_params
-    params.require(:newsletter_subscriber).permit(:email)
+    params.expect(newsletter_subscriber: [:email])
   end
 end

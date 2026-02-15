@@ -14,4 +14,3 @@ class AddLocationFieldsToShippingAddresses < ActiveRecord::Migration[8.0]
     remove_column :shipping_addresses, :municipality if column_exists?(:shipping_addresses, :municipality)
   end
 end
-

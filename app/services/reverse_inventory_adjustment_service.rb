@@ -32,9 +32,7 @@ class ReverseInventoryAdjustmentService
           line.inventory_adjustment_entries.where(action: %w[status_changed marked_lost marked_damaged
                                                              marked_scrap]).includes(:inventory).find_each do |entry|
             inv = entry.inventory
-            if inv.status.in?(%w[damaged lost scrap marketing])
-              inv.update!(status: :available, status_changed_at: @now, adjustment_reference: nil)
-            end
+            inv.update!(status: :available, status_changed_at: @now, adjustment_reference: nil) if inv.status.in?(%w[damaged lost scrap marketing])
           end
         end
       end
@@ -43,13 +41,10 @@ class ReverseInventoryAdjustmentService
 
       product_ids = @adjustment.inventory_adjustment_lines.pluck(:product_id).uniq
       product_ids.each do |pid|
-
         Products::UpdateStatsService.new(Product.find(pid)).call
       rescue StandardError
         nil
-
       end
     end
   end
 end
-

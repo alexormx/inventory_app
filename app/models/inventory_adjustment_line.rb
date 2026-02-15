@@ -44,6 +44,5 @@ class InventoryAdjustmentLine < ApplicationRecord
     return unless reason.blank? || ALLOWED_DECREASE_REASONS.exclude?(reason)
 
     errors.add(:reason, "must be one of: #{ALLOWED_DECREASE_REASONS.join(', ')}")
-
   end
 end

@@ -64,7 +64,7 @@ class InventoryLocation < ApplicationRecord
   scope :roots, -> { where(parent_id: nil) }
   scope :by_type, ->(type) { where(location_type: type) }
   scope :ordered, -> { order(:position, :name) }
-  scope :with_children_count, -> {
+  scope :with_children_count, lambda {
     left_joins(:children)
       .group(:id)
       .select('inventory_locations.*, COUNT(children_inventory_locations.id) as children_count')
@@ -266,9 +266,9 @@ class InventoryLocation < ApplicationRecord
   def parent_cannot_be_descendant
     return unless parent_id.present? && id.present?
 
-    if descendants.map(&:id).include?(parent_id)
-      errors.add(:parent_id, 'no puede ser un descendiente de esta ubicación')
-    end
+    return unless descendants.map(&:id).include?(parent_id)
+
+    errors.add(:parent_id, 'no puede ser un descendiente de esta ubicación')
   end
 
   def location_type_must_be_valid
@@ -281,9 +281,8 @@ class InventoryLocation < ApplicationRecord
                     LOCATION_TYPES
                   end
 
-    unless valid_types.include?(location_type)
-      errors.add(:location_type, "no es un tipo válido. Tipos válidos: #{valid_types.join(', ')}")
-    end
+    return if valid_types.include?(location_type)
+
+    errors.add(:location_type, "no es un tipo válido. Tipos válidos: #{valid_types.join(', ')}")
   end
 end
-

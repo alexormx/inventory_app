@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require "active_support/core_ext/integer/time"
+require 'active_support/core_ext/integer/time'
 
 Rails.application.configure do
   # Settings specified here will take precedence over those in config/application.rb.
@@ -18,7 +18,7 @@ Rails.application.configure do
   config.action_controller.perform_caching = true
 
   # Cache assets for far-future expiry since they are all digest stamped.
-  config.public_file_server.headers = { "cache-control" => "public, max-age=#{1.year.to_i}" }
+  config.public_file_server.headers = { 'cache-control' => "public, max-age=#{1.year.to_i}" }
 
   # Enable serving of images, stylesheets, and JavaScripts from an asset server.
   # config.asset_host = "http://assets.example.com"
@@ -41,10 +41,10 @@ Rails.application.configure do
   config.logger   = ActiveSupport::TaggedLogging.logger($stdout)
 
   # Change to "debug" to log everything (including potentially personally-identifiable information!)
-  config.log_level = ENV.fetch("RAILS_LOG_LEVEL", "info")
+  config.log_level = ENV.fetch('RAILS_LOG_LEVEL', 'info')
 
   # Prevent health checks from clogging up the logs.
-  config.silence_healthcheck_path = "/up"
+  config.silence_healthcheck_path = '/up'
 
   # Don't log any deprecations.
   config.active_support.report_deprecations = false
@@ -60,15 +60,15 @@ Rails.application.configure do
   config.action_mailer.delivery_method = :smtp
   config.action_mailer.raise_delivery_errors = true
   config.action_mailer.perform_deliveries = true
-  config.action_mailer.default_url_options = { host: "pasatiempos.com.mx" }
-  config.action_mailer.asset_host = "https://pasatiempos.com.mx"
+  config.action_mailer.default_url_options = { host: 'pasatiempos.com.mx' }
+  config.action_mailer.asset_host = 'https://pasatiempos.com.mx'
 
   ActionMailer::Base.smtp_settings = {
-    address: "smtp-relay.brevo.com",
-    port: "587",
-    domain: "pasatiempos.com.mx",
-    user_name: "93616f001@smtp-brevo.com",
-    password: ENV.fetch("BREVO_SMTP_PASSWORD", nil),
+    address: 'smtp-relay.brevo.com',
+    port: '587',
+    domain: 'pasatiempos.com.mx',
+    user_name: '93616f001@smtp-brevo.com',
+    password: ENV.fetch('BREVO_SMTP_PASSWORD', nil),
     authentication: :login,
     enable_starttls_auto: true
   }
@@ -101,19 +101,19 @@ Rails.application.configure do
   # Skip DNS rebinding protection for the default health check endpoint.
   # config.host_authorization = { exclude: ->(request) { request.path == "/up" } }
 
-  if ENV["REDIS_URL"]
-    frontend_cable_url = ENV.fetch("ACTION_CABLE_FRONTEND_URL", nil)
-    app_host = ENV.fetch("APP_HOST", nil)
+  if ENV['REDIS_URL']
+    frontend_cable_url = ENV.fetch('ACTION_CABLE_FRONTEND_URL', nil)
+    app_host = ENV.fetch('APP_HOST', nil)
     config.action_cable.url =
       frontend_cable_url.presence ||
       (app_host.present? ? "wss://#{app_host}/cable" : nil)
 
     redis_config = {
-      adapter: "redis",
-      url: ENV["REDIS_URL"]
+      adapter: 'redis',
+      url: ENV['REDIS_URL']
     }
 
-    redis_config[:ssl_params] = { verify_mode: OpenSSL::SSL::VERIFY_NONE } if ENV["ACTION_CABLE_REDIS_SSL_MODE"] == "insecure"
+    redis_config[:ssl_params] = { verify_mode: OpenSSL::SSL::VERIFY_NONE } if ENV['ACTION_CABLE_REDIS_SSL_MODE'] == 'insecure'
 
     config.action_cable.cable = redis_config
   end

@@ -42,7 +42,6 @@ module Admin
       return if current_user&.role == 'admin'
 
       redirect_to root_path, alert: 'No autorizado'
-      
     end
   end
 end

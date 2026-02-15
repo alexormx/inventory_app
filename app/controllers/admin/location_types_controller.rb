@@ -17,8 +17,7 @@ module Admin
       @location_type.icon = 'bi-geo-alt'
     end
 
-    def edit
-    end
+    def edit; end
 
     def create
       @location_type = LocationType.new(location_type_params)
@@ -68,11 +67,11 @@ module Admin
     end
 
     def location_type_params
-      params.require(:location_type).permit(:name, :code, :icon, :color, :position, :active)
+      params.expect(location_type: %i[name code icon color position active])
     end
 
     def move_up
-      previous_type = LocationType.where('position < ?', @location_type.position).order(position: :desc).first
+      previous_type = LocationType.where(position: ...@location_type.position).order(position: :desc).first
       return unless previous_type
 
       swap_positions(@location_type, previous_type)

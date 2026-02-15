@@ -57,7 +57,6 @@ module Admin
       return if @customer.role == 'customer'
 
       redirect_to admin_customers_path, alert: 'Not a customer.'
-      
     end
 
     def user_params

@@ -46,7 +46,6 @@ class PurchaseOrder < ApplicationRecord
     return unless expected_delivery_date.present? && order_date.present? && expected_delivery_date < order_date
 
     errors.add(:expected_delivery_date, 'must be after the order date')
-    
   end
 
   public
@@ -119,9 +118,9 @@ class PurchaseOrder < ApplicationRecord
     # Total MXN (si la moneda no es MXN aplicar tipo de cambio). Siempre lo recalculamos a partir del total_order_cost actual.
     self.total_cost_mxn = if currency == 'MXN'
                             total_order_cost
-    else
-      (total_order_cost * exchange_rate).round(2)
-    end
+                          else
+                            (total_order_cost * exchange_rate).round(2)
+                          end
   rescue StandardError => e
     Rails.logger.error "[PurchaseOrder#recalculate_totals] #{e.class}: #{e.message}"
   end
@@ -138,7 +137,6 @@ class PurchaseOrder < ApplicationRecord
     return unless actual_delivery_date < expected_delivery_date
 
     errors.add(:actual_delivery_date, 'must be after or equal to expected delivery date')
-    
   end
 
   def generate_custom_id
@@ -191,5 +189,4 @@ class PurchaseOrder < ApplicationRecord
 
     scope.where(status: %i[available in_transit], sale_order_id: nil).delete_all
   end
-
 end

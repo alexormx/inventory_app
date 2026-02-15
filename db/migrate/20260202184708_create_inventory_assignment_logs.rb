@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class CreateInventoryAssignmentLogs < ActiveRecord::Migration[8.0]
   def change
     create_table :inventory_assignment_logs do |t|

@@ -48,4 +48,3 @@ module Introspection
     end
   end
 end
-

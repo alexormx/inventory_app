@@ -45,8 +45,6 @@ module SaleOrders
 
       @sale_order.update_columns(subtotal: it, total_tax: 0, total_order_value: it, updated_at: Time.current)
       @sale_order.reload
-        
-      
     end
 
     def items_total

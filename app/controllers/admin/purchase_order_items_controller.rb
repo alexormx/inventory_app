@@ -2,6 +2,5 @@
 
 module Admin
   class PurchaseOrderItemsController < ApplicationController
-
   end
 end

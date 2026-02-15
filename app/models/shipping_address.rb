@@ -57,4 +57,3 @@ class ShippingAddress < ApplicationRecord
     self.class.where(user_id: user_id, default: true).where.not(id: id).update_all(default: false)
   end
 end
-

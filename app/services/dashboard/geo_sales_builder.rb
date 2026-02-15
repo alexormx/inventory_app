@@ -82,7 +82,7 @@ module Dashboard
     end
 
     def base_scope
-      SaleOrder.where(status: %w[Confirmed In\ Transit Delivered])
+      SaleOrder.where(status: ['Confirmed', 'In Transit', 'Delivered'])
     end
 
     def normalize_text(text)

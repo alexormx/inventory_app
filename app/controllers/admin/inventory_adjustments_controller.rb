@@ -85,23 +85,24 @@ module Admin
 
     def set_inventory_adjustment
       @inventory_adjustment = InventoryAdjustment
-        .includes(
-          :user, :applied_by, :reversed_by,
-          inventory_adjustment_lines: :product,
-          inventory_adjustment_entries: [:inventory, { inventory_adjustment_line: :product }]
-        )
-        .find(params[:id])
+                              .includes(
+                                :user, :applied_by, :reversed_by,
+                                inventory_adjustment_lines: :product,
+                                inventory_adjustment_entries: [:inventory, { inventory_adjustment_line: :product }]
+                              )
+                              .find(params[:id])
     end
 
     def inventory_adjustment_params
-      params.require(:inventory_adjustment).permit(
-        :status,
-        :adjustment_type,
-        :found_at,
-        :reference,
-        :note,
-        :user_id,
-        inventory_adjustment_lines_attributes: %i[id product_id quantity direction reason unit_cost note item_condition selling_price _destroy]
+      params.expect(
+        inventory_adjustment: [:status,
+                               :adjustment_type,
+                               :found_at,
+                               :reference,
+                               :note,
+                               :user_id,
+                               { inventory_adjustment_lines_attributes: [%i[id product_id quantity direction reason unit_cost note item_condition selling_price
+                                                                            _destroy]] }]
       )
     end
   end

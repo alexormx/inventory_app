@@ -17,7 +17,7 @@ module Api
             before_total = sales_order.total_order_value
             sales_order.recalculate_totals!(persist: true)
             sales_order.reload
-            Rails.logger.info({ at: 'Api::V1::PaymentsController#create:recalc', sales_order_id: sales_order.id, before_total: before_total&.to_s, 
+            Rails.logger.info({ at: 'Api::V1::PaymentsController#create:recalc', sales_order_id: sales_order.id, before_total: before_total&.to_s,
                                 after_total: sales_order.total_order_value.to_s, items_count: sales_order.sale_order_items.count }.to_json)
           rescue StandardError => e
             Rails.logger.error({ at: 'Api::V1::PaymentsController#create:recalc_error', sales_order_id: sales_order.id, error: e.message }.to_json)
@@ -95,7 +95,7 @@ module Api
           missing_vs_param = (amount_param - sales_order.total_paid).round(2)
 
           if missing_vs_param <= 0
-            render json: { status: 'success', message: 'SaleOrder already fully paid for provided amount', sales_order_id: sales_order.id }, 
+            render json: { status: 'success', message: 'SaleOrder already fully paid for provided amount', sales_order_id: sales_order.id },
                    status: :ok and return
           end
 
@@ -127,7 +127,7 @@ module Api
 
         # Si aún el total efectivo es 0 o el faltante <= 0, salir con 422 para no confundir
         if amount_missing <= 0
-          render json: { status: 'error', message: 'No payable amount (total is zero or already covered)', totals: { effective_total: effective_total.to_s, order_total: sales_order.total_order_value.to_s, paid: sales_order.total_paid.to_s } }, 
+          render json: { status: 'error', message: 'No payable amount (total is zero or already covered)', totals: { effective_total: effective_total.to_s, order_total: sales_order.total_order_value.to_s, paid: sales_order.total_paid.to_s } },
                  status: :unprocessable_entity and return
         end
 

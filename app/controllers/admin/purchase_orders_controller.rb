@@ -158,17 +158,17 @@ module Admin
     end
 
     def purchase_order_params
-      params.require(:purchase_order).permit(
-        :user_id, :order_date, :expected_delivery_date,
-        :tax_cost, :currency, :shipping_cost,
-        :other_cost, :discount, :status, :notes,
-        :actual_delivery_date, :exchange_rate,
-        :subtotal, :total_order_cost, :total_cost_mxn, :total_volume, :total_weight,
-        purchase_order_items_attributes: [
-          :id, :product_id, :quantity, :unit_cost,
-          :unit_additional_cost, :unit_compose_cost, :unit_compose_cost_in_mxn,
-          :total_line_cost, :total_line_volume, :total_line_weight, :total_line_cost_in_mxn, :_destroy
-        ]
+      params.expect(
+        purchase_order: [:user_id, :order_date, :expected_delivery_date,
+                         :tax_cost, :currency, :shipping_cost,
+                         :other_cost, :discount, :status, :notes,
+                         :actual_delivery_date, :exchange_rate,
+                         :subtotal, :total_order_cost, :total_cost_mxn, :total_volume, :total_weight,
+                         { purchase_order_items_attributes: [%i[
+                           id product_id quantity unit_cost
+                           unit_additional_cost unit_compose_cost unit_compose_cost_in_mxn
+                           total_line_cost total_line_volume total_line_weight total_line_cost_in_mxn _destroy
+                         ]] }]
       )
     end
 

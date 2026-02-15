@@ -31,6 +31,6 @@ class NormalizeProductStatusAndAddCheck < ActiveRecord::Migration[8.0]
     return unless ActiveRecord::Base.connection.adapter_name.downcase.include?('postgres')
 
     execute 'ALTER TABLE products DROP CONSTRAINT IF EXISTS products_status_check;'
-    
+
   end
 end

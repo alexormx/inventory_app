@@ -23,8 +23,8 @@ class AddApplyReverseColumnsToInventoryAdjustments < ActiveRecord::Migration[8.0
 
     add_column :inventory_adjustments, :reversed_by_id, :bigint
     add_index :inventory_adjustments, :reversed_by_id unless index_exists?(:inventory_adjustments, :reversed_by_id)
-    add_foreign_key :inventory_adjustments, :users, column: :reversed_by_id unless foreign_key_exists?(:inventory_adjustments, :users, 
+    add_foreign_key :inventory_adjustments, :users, column: :reversed_by_id unless foreign_key_exists?(:inventory_adjustments, :users,
                                                                                                        column: :reversed_by_id)
-    
+
   end
 end

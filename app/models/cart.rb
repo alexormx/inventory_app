@@ -44,7 +44,7 @@ class Cart
     if condition.present?
       @session[:cart][pid]&.delete(condition.to_s)
       # Limpiar producto si ya no tiene condiciones
-      @session[:cart].delete(pid) if @session[:cart][pid]&.empty?
+      @session[:cart].delete(pid) if @session[:cart][pid] && @session[:cart][pid].empty?
     else
       # Eliminar todas las condiciones del producto
       @session[:cart].delete(pid)
@@ -74,7 +74,7 @@ class Cart
 
   # Carga los items - se puede llamar múltiples veces sin problema de cache stale
   def load_items
-    @items ||= build_items
+    @load_items ||= build_items
   end
 
   # Fuerza recarga de items (útil después de modificaciones)
@@ -138,12 +138,12 @@ class Cart
     current = quantity_for(product_id, condition: condition)
     new_total = current + quantity.to_i
 
-    if condition.to_s == 'brand_new'
-      new_total <= MAX_NEW_ITEMS_PER_PRODUCT
-    else
-      # Coleccionables: máximo 1 por condición
-      new_total <= MAX_COLLECTIBLE_ITEMS_PER_PIECE
-    end
+    new_total <= if condition.to_s == 'brand_new'
+                   MAX_NEW_ITEMS_PER_PRODUCT
+                 else
+                   # Coleccionables: máximo 1 por condición
+                   MAX_COLLECTIBLE_ITEMS_PER_PIECE
+                 end
   end
 
   def max_allowed(condition)
@@ -161,12 +161,12 @@ class Cart
 
     migrated = {}
     @session[:cart].each do |product_id, value|
-      if value.is_a?(Hash)
-        migrated[product_id] = value
-      else
-        # Legacy: valor numérico -> migrar a brand_new
-        migrated[product_id] = { 'brand_new' => value.to_i }
-      end
+      migrated[product_id] = if value.is_a?(Hash)
+                               value
+                             else
+                               # Legacy: valor numérico -> migrar a brand_new
+                               { 'brand_new' => value.to_i }
+                             end
     end
     @session[:cart] = migrated
   end

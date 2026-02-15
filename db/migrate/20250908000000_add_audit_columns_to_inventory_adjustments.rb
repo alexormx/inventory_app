@@ -11,4 +11,3 @@ class AddAuditColumnsToInventoryAdjustments < ActiveRecord::Migration[8.0]
     # NOP
   end
 end
-

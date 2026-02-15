@@ -74,7 +74,7 @@ module SaleOrders
       # asignado del que necesitan
       scope = SaleOrderItem.joins(:sale_order)
                            .includes(:product, :sale_order)
-                           .where(sale_orders: { status: ['Pending', 'Confirmed'] })
+                           .where(sale_orders: { status: %w[Pending Confirmed] })
 
       scope = scope.where(sale_orders: { id: @sale_order_ids }) if @sale_order_ids.present?
 
@@ -103,9 +103,7 @@ module SaleOrders
       available_scope = Inventory.where(product_id: product.id, status: :available, sale_order_id: nil)
 
       # Si el SOI tiene condición específica, filtrar por ella
-      if soi.respond_to?(:item_condition) && soi.item_condition.present?
-        available_scope = available_scope.where(item_condition: soi.item_condition)
-      end
+      available_scope = available_scope.where(item_condition: soi.item_condition) if soi.respond_to?(:item_condition) && soi.item_condition.present?
 
       available_inventory = available_scope.order(created_at: :asc).limit(to_assign)
 

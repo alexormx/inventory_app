@@ -348,22 +348,25 @@ module Api
         end
       end
 
-        private
+      private
 
-        def render_success(sales_order, extra)
-          return if performed?
-          render json: { status: 'success', sales_order: sales_order, extra: extra }, status: :created
-        end
+      def render_success(sales_order, extra)
+        return if performed?
 
-        def render_unprocessable_entity(exception)
-          return if performed?
-          render json: { status: 'error', errors: exception.record.errors.full_messages }, status: :unprocessable_entity
-        end
+        render json: { status: 'success', sales_order: sales_order, extra: extra }, status: :created
+      end
 
-        def render_internal_error(exception)
-          return if performed?
-          render json: { status: 'error', message: exception.message }, status: :internal_server_error
-        end
+      def render_unprocessable_entity(exception)
+        return if performed?
+
+        render json: { status: 'error', errors: exception.record.errors.full_messages }, status: :unprocessable_entity
+      end
+
+      def render_internal_error(exception)
+        return if performed?
+
+        render json: { status: 'error', message: exception.message }, status: :internal_server_error
+      end
 
       # POST /api/v1/sales_orders/:id/recalculate_and_pay
       # Recalcula totales desde las líneas y crea el pago faltante (Completed) y shipment (si Delivered) evitando bloqueos.
@@ -477,8 +480,6 @@ module Api
           render json: { status: 'error', message: e.message }, status: :internal_server_error
         end
       end
-
-      private
 
       def sales_order_params
         params.expect(sales_order: %i[id order_date subtotal tax_rate total_tax discount total_order_value status email notes

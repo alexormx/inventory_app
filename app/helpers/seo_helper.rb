@@ -10,8 +10,12 @@ module SeoHelper
   def product_json_ld(product)
     return unless product
 
-    on_hand = product.current_on_hand rescue 0
-    availability = if on_hand > 0
+    on_hand = begin
+      product.current_on_hand
+    rescue StandardError
+      0
+    end
+    availability = if on_hand.positive?
                      'https://schema.org/InStock'
                    elsif product.backorder_allowed?
                      'https://schema.org/BackOrder'
@@ -79,7 +83,7 @@ module SeoHelper
 
   # Genera JSON-LD BreadcrumbList para SEO
   def breadcrumb_json_ld(breadcrumbs)
-    return unless breadcrumbs.present?
+    return if breadcrumbs.blank?
 
     items = breadcrumbs.each_with_index.map do |crumb, index|
       item = {
@@ -103,7 +107,8 @@ module SeoHelper
   # Genera JSON-LD Organization para la página principal
   def organization_json_ld
     site_name = seo_site_name
-    site_description = SiteSetting.get('seo_meta_description', 'Tienda especializada en modelos a escala, autos de colección y figuras. Productos originales de las mejores marcas.')
+    site_description = SiteSetting.get('seo_meta_description',
+                                       'Tienda especializada en modelos a escala, autos de colección y figuras. Productos originales de las mejores marcas.')
 
     # Organization schema
     org_data = {
@@ -141,14 +146,14 @@ module SeoHelper
     }
 
     safe_join([
-      tag.script(org_data.to_json.html_safe, type: 'application/ld+json'),
-      tag.script(website_data.to_json.html_safe, type: 'application/ld+json')
-    ])
+                tag.script(org_data.to_json.html_safe, type: 'application/ld+json'),
+                tag.script(website_data.to_json.html_safe, type: 'application/ld+json')
+              ])
   end
 
   # Genera JSON-LD ItemList para páginas de catálogo
   def product_list_json_ld(products)
-    return unless products.present?
+    return if products.blank?
 
     items = products.each_with_index.map do |product, index|
       image_url = if product.product_images.attached?
@@ -205,12 +210,8 @@ module SeoHelper
 
   def catalog_meta_description
     desc = 'Explora nuestra colección de modelos a escala, autos de colección y figuras.'
-    if params[:categories].present?
-      desc += " Categorías: #{params[:categories].join(', ')}."
-    end
-    if params[:brands].present?
-      desc += " Marcas: #{params[:brands].join(', ')}."
-    end
+    desc += " Categorías: #{params[:categories].join(', ')}." if params[:categories].present?
+    desc += " Marcas: #{params[:brands].join(', ')}." if params[:brands].present?
     desc + " Productos originales con envío seguro a todo México. #{seo_site_name}."
   end
 

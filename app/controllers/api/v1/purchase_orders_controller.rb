@@ -10,7 +10,7 @@ module Api
       def create
         user = User.find_by(email: purchase_order_params[:email])
         unless user
-          render json: { status: 'error', message: "User not found for email #{purchase_order_params[:email]}" }, 
+          render json: { status: 'error', message: "User not found for email #{purchase_order_params[:email]}" },
                  status: :unprocessable_entity and return
         end
 
@@ -52,4 +52,3 @@ module Api
     end
   end
 end
-

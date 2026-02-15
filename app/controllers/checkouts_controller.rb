@@ -172,18 +172,15 @@ class CheckoutsController < ApplicationController
       else
         redirect_to checkout_step1_path
       end
-
-
-
     end
   end
 
   # Página de agradecimiento con resumen del pedido
   def thank_you
     @order = current_user.sale_orders.find_by(id: params[:order_id])
-    unless @order
-      redirect_to root_path, alert: 'Pedido no encontrado.' and return
-    end
+    return if @order
+
+    redirect_to root_path, alert: 'Pedido no encontrado.' and return
   end
 
   private

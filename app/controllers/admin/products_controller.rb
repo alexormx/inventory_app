@@ -6,7 +6,7 @@ module Admin
     before_action :authenticate_user!
     before_action :authorize_admin!
     before_action :set_product, only: %i[show edit update destroy purge_image activate deactivate assign_preorders
-                                       discontinue reverse_discontinue]
+                                         discontinue reverse_discontinue]
     before_action :fix_custom_attributes_param, only: %i[create update]
     before_action :load_counts, only: %i[index drafts active inactive]
 
@@ -91,7 +91,7 @@ module Admin
 
       respond_to do |format|
         format.html { redirect_to edit_admin_product_path(@product), notice: 'Image removed successfully.' }
-        format.turbo_stream { render turbo_stream: turbo_stream.remove("image_#{image_id}")} # optional: for dynamic deletion
+        format.turbo_stream { render turbo_stream: turbo_stream.remove("image_#{image_id}") } # optional: for dynamic deletion
       end
     end
 
@@ -150,7 +150,7 @@ module Admin
           stock_reserved: reserved,
           stock_in_transit: in_transit,
           stock_pre_reserved: pre_reserved,
-          stock_sellable: available + in_transit  # What can potentially be sold
+          stock_sellable: available + in_transit # What can potentially be sold
         }
       }
     end
@@ -184,9 +184,7 @@ module Admin
     # Mark product as discontinued and convert all "new" inventory to "misb" with new price
     def discontinue
       price = params[:price].to_d
-      if price <= 0
-        return render json: { error: 'El precio debe ser mayor a 0' }, status: :unprocessable_entity
-      end
+      return render json: { error: 'El precio debe ser mayor a 0' }, status: :unprocessable_entity if price <= 0
 
       service = Products::DiscontinueService.new(@product)
       result = service.discontinue!(misb_price: price)

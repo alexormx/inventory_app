@@ -49,7 +49,6 @@ module Admin
       SiteSetting.set('backorder_eta_days', backorder_days, 'integer')
       flash[:notice] = 'Tiempos estimados guardados.'
       redirect_to admin_settings_path and return
-
     end
 
     # Temporal: sincronización de estados de inventario (stub)

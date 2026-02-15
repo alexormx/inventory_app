@@ -7,6 +7,6 @@ class AddSaleOrderItemIdToInventories < ActiveRecord::Migration[8.0]
     return if index_exists?(:inventories, :sale_order_item_id)
 
     add_index :inventories, :sale_order_item_id
-    
+
   end
 end

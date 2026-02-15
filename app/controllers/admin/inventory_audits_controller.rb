@@ -45,17 +45,17 @@ module Admin
     def pending_assignments_summary
       # SOIs de SOs activas (Pending/Confirmed) que podrían necesitar inventario
       active_sois = SaleOrderItem
-        .joins(:sale_order)
-        .where(sale_orders: { status: ['Pending', 'Confirmed'] })
-        .includes(:product)
+                    .joins(:sale_order)
+                    .where(sale_orders: { status: %w[Pending Confirmed] })
+                    .includes(:product)
 
       # Calcular cantidad asignada real contando inventarios vinculados
       # (reserved o sold con sale_order_item_id apuntando a este SOI)
       assigned_counts = Inventory
-        .where(sale_order_item_id: active_sois.select(:id))
-        .where(status: [:reserved, :sold])
-        .group(:sale_order_item_id)
-        .count
+                        .where(sale_order_item_id: active_sois.select(:id))
+                        .where(status: %i[reserved sold])
+                        .group(:sale_order_item_id)
+                        .count
 
       active_sois.filter_map do |soi|
         actual_assigned = assigned_counts[soi.id] || 0
@@ -80,4 +80,3 @@ module Admin
     end
   end
 end
-

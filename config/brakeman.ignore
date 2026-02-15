@@ -1,0 +1,26 @@
+{
+  "ignored_warnings": [
+    {
+      "fingerprint": "054ba0862266d8f467dd304b80f7b84d46328e4b13ef8b26d52063b32295b1fa",
+      "note": "False positive: Inventory.statuses[] returns integer enum values, not user input"
+    },
+    {
+      "fingerprint": "837d11a7ab6d2e23df826e4911bb3cfcc62fabbdec02d66a3bf002fd80105ccd",
+      "note": "False positive: Arel.sql with safe literal column name and validated sort direction (asc/desc)"
+    },
+    {
+      "fingerprint": "fd552b471e92c05e37126e8a1e0be8c1c175f2d207dbe14e7294fc49ce125cbe",
+      "note": "False positive: Arel.sql with safe literal column name and validated sort direction (asc/desc)"
+    },
+    {
+      "fingerprint": "975b67d78f5b7cc29b9df14cadfaba7a42504a7ad2ea83425d6dc02dfc9b0675",
+      "note": "False positive: Bulk UPDATE with internally-generated IDs from service logic, no user input"
+    },
+    {
+      "fingerprint": "715ee6d743a8af33c7b930d728708ce19c765fb40e2ad9d2b974db04d92dc7d1",
+      "note": "Accepted risk: Ruby 3.2.3 EOL is 2026-03-31, will upgrade before then"
+    }
+  ],
+  "updated": "2026-02-14",
+  "brakeman_version": "7.0.0"
+}

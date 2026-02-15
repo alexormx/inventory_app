@@ -104,7 +104,6 @@ class SaleOrderItem < ApplicationRecord
     errors.add(:base, "No hay suficientes unidades reservadas para reducir #{to_remove}. " \
                       "(Vendidas: #{sold_count}, Reservadas: #{reserved_count})")
     throw :abort
-
   end
 
   # Ajusta preorder_quantity/backordered_quantity para que no excedan la nueva cantidad,
@@ -181,7 +180,6 @@ class SaleOrderItem < ApplicationRecord
 
   # Al eliminar una línea, cancelar preventas ligadas y revertir pre_* en inventario
   def cleanup_preorders_and_preassignments
-
     # 1) Cancelar PreorderReservation vinculadas a esta SO y producto
     cancelled = PreorderReservation.statuses[:cancelled]
     PreorderReservation.where(sale_order_id: sale_order_id, product_id: product_id)
@@ -197,25 +195,24 @@ class SaleOrderItem < ApplicationRecord
     Preorders::PreorderAllocator.new(product).call
   rescue StandardError => e
     Rails.logger.error "[SOI#cleanup_preorders_and_preassignments] #{e.class}: #{e.message}"
-
   end
 
   # Luego de confirmar la eliminación, intenta asignar preventas pendientes con el inventario liberado
   after_destroy_commit :allocate_preorders_after_release
 
   def allocate_preorders_after_release
-
     Preorders::PreorderAllocator.new(product).call
   rescue StandardError => e
     Rails.logger.error "[SOI#allocate_preorders_after_release] #{e.class}: #{e.message}"
-
   end
 
   # Asegura que toda pieza ligada a (SO, producto) tenga el sale_order_item_id correcto
   def backfill_inventory_links
     return unless sale_order_id.present? && product_id.present?
+
     scope = Inventory.where(sale_order_id: sale_order_id, product_id: product_id, sale_order_item_id: nil)
     return unless scope.exists?
+
     begin
       scope.update_all(sale_order_item_id: id, updated_at: Time.current)
     rescue StandardError => e
@@ -242,7 +239,6 @@ class SaleOrderItem < ApplicationRecord
     return unless preorder_quantity.to_i + backordered_quantity.to_i > quantity.to_i
 
     errors.add(:base, 'La suma de cantidades pendientes excede la cantidad total')
-
   end
 
   # FUTURO: Soporte para backorders

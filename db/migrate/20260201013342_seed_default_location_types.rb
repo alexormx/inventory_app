@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class SeedDefaultLocationTypes < ActiveRecord::Migration[8.0]
   def up
     # Seed default location types (using Font Awesome icons)
@@ -14,7 +16,7 @@ class SeedDefaultLocationTypes < ActiveRecord::Migration[8.0]
     ]
 
     defaults.each do |attrs|
-      execute <<-SQL
+      execute <<-SQL.squish
         INSERT INTO location_types (code, name, icon, color, position, active, created_at, updated_at)
         VALUES ('#{attrs[:code]}', '#{attrs[:name]}', '#{attrs[:icon]}', '#{attrs[:color]}', #{attrs[:position]}, true, NOW(), NOW())
         ON CONFLICT (code) DO NOTHING

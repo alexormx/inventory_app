@@ -15,6 +15,8 @@ module Admin
       @payment_method = PaymentMethod.new(active: true, position: PaymentMethod.maximum(:position).to_i + 1)
     end
 
+    def edit; end
+
     def create
       @payment_method = PaymentMethod.new(payment_method_params)
       if @payment_method.save
@@ -23,8 +25,6 @@ module Admin
         render :new, status: :unprocessable_entity
       end
     end
-
-    def edit; end
 
     def update
       if @payment_method.update(payment_method_params)
@@ -51,8 +51,8 @@ module Admin
     end
 
     def payment_method_params
-      params.require(:payment_method).permit(:name, :code, :description, :instructions, :active, :position,
-                                             :account_number, :account_holder, :bank_name)
+      params.expect(payment_method: %i[name code description instructions active position
+                                       account_number account_holder bank_name])
     end
   end
 end

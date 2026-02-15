@@ -68,4 +68,3 @@ module Products
     end
   end
 end
-

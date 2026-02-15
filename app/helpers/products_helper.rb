@@ -7,6 +7,7 @@ module ProductsHelper
 
   def display_stock_count(count)
     return '0' if count.nil? || count <= 0
+
     count > MAX_DISPLAY_STOCK ? '>10' : count.to_s
   end
 
@@ -68,8 +69,6 @@ module ProductsHelper
       return "Disponible aprox el #{spanish_short_date(estimated_date)}" if estimated_date
 
       return "Disponible en ~#{preorder_eta} días"
-
-
 
     elsif product.backorder_allowed
       return "Disponible en ~#{backorder_eta} días"
@@ -142,11 +141,9 @@ module ProductsHelper
   private
 
   def asset_exists?(logical_path)
-
     Rails.application.assets&.find_asset(logical_path) || (Rails.application.config.assets.compile == false && Rails.application.assets_manifest.assets[logical_path])
   rescue StandardError
     false
-
   end
 
   # Helper para ActiveStorage
@@ -158,15 +155,12 @@ module ProductsHelper
     sizes_attr = "(max-width: #{widths.max}px) 100vw, #{widths.max}px"
     original_variants = {}
     widths.each do |w|
-
       resize_opt = square ? [w, w] : [w, nil]
       original_variants[w] = attachment.variant(resize_to_limit: resize_opt)
     rescue StandardError
-
     end
     sources = []
     %i[avif webp].each do |fmt|
-
       variant_urls = widths.map do |w|
         variant = attachment.variant(resize_to_limit: [w, w], format: fmt)
         [variant, w]
@@ -183,7 +177,6 @@ module ProductsHelper
       sources << content_tag(:source, nil, type: "image/#{fmt}", srcset: srcset, sizes: sizes_attr)
     rescue StandardError
       next
-
     end
     largest_w = original_variants.keys.max
     fallback_variant = largest_w ? original_variants[largest_w] : attachment

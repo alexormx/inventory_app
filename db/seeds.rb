@@ -31,9 +31,12 @@ end
 # Payment Methods (idempotent)
 if defined?(PaymentMethod) && PaymentMethod.count.zero?
   [
-    { name: 'Transferencia Bancaria', code: 'transferencia_bancaria', description: 'Pago por SPEI o transferencia', instructions: "Realiza tu transferencia a la cuenta:\nBanco: BBVA\nCLABE: 012345678901234567\nBeneficiario: Pasatiempos a Escala", position: 1 },
-    { name: 'Depósito OXXO', code: 'efectivo', description: 'Pago en efectivo en OXXO', instructions: "Deposita en cualquier OXXO a la tarjeta:\nNúmero: 4152 3138 0000 0000\nBeneficiario: Pasatiempos a Escala", position: 2 },
-    { name: 'Tarjeta de Crédito/Débito', code: 'tarjeta_de_credito', description: 'Pago con tarjeta (próximamente)', instructions: 'Pago con tarjeta en línea - Próximamente disponible', active: false, position: 3 }
+    { name: 'Transferencia Bancaria', code: 'transferencia_bancaria', description: 'Pago por SPEI o transferencia',
+      instructions: "Realiza tu transferencia a la cuenta:\nBanco: BBVA\nCLABE: 012345678901234567\nBeneficiario: Pasatiempos a Escala", position: 1 },
+    { name: 'Depósito OXXO', code: 'efectivo', description: 'Pago en efectivo en OXXO',
+      instructions: "Deposita en cualquier OXXO a la tarjeta:\nNúmero: 4152 3138 0000 0000\nBeneficiario: Pasatiempos a Escala", position: 2 },
+    { name: 'Tarjeta de Crédito/Débito', code: 'tarjeta_de_credito', description: 'Pago con tarjeta (próximamente)',
+      instructions: 'Pago con tarjeta en línea - Próximamente disponible', active: false, position: 3 }
   ].each do |attrs|
     PaymentMethod.find_or_create_by!(code: attrs[:code]) do |pm|
       pm.assign_attributes(attrs)
@@ -80,7 +83,6 @@ seed_log "Admin ready: #{admin.email} (id=#{admin.id})"
 
 seed_log 'Creating suppliers...'
 5.times do
-
   User.find_or_create_by!(
     email: Faker::Internet.unique.email,
     role: 'supplier'
@@ -94,7 +96,6 @@ seed_log 'Creating suppliers...'
   end
  rescue ActiveRecord::RecordInvalid => e
    seed_log "Supplier error: #{e.record.errors.full_messages.join(', ')}"
-
 end
 
 # Customers (algunos offline sin email)
@@ -142,7 +143,6 @@ users_for_stats.each do |u|
   # PurchaseOrders (para suppliers)
   if u.role == 'supplier'
     2.times do
-
       PurchaseOrder.create!(
         user: u,
         order_date: Faker::Date.between(from: 30.days.ago, to: Time.zone.today),
@@ -160,14 +160,12 @@ users_for_stats.each do |u|
       )
      rescue ActiveRecord::RecordInvalid => e
        seed_log "PurchaseOrder error for user ##{u.id}: #{e.record.errors.full_messages.join(', ')}"
-
     end
   end
 
   # SaleOrders (para customers) con líneas para poblar Sellers/Rentables
   if u.role == 'customer'
     2.times do
-
       so = SaleOrder.create!(
         user: u,
         order_date: Faker::Date.between(from: 30.days.ago, to: Time.zone.today),
@@ -207,7 +205,6 @@ users_for_stats.each do |u|
       )
      rescue ActiveRecord::RecordInvalid => e
        seed_log "SaleOrder error for user ##{u.id}: #{e.record.errors.full_messages.join(', ')}"
-
     end
   end
 
@@ -228,7 +225,6 @@ end
 
 seed_log 'Creating draft products...'
 50.times do |i|
-
   upsert_product!(
     product_name: "Draft - #{Faker::Commerce.product_name}",
     product_sku: "SKU_DRAFT_#{1000 + i}",
@@ -248,12 +244,10 @@ seed_log 'Creating draft products...'
   )
 rescue ActiveRecord::RecordInvalid => e
   seed_log "Draft product error: #{e.record.errors.full_messages.join(', ')}"
-
 end
 
 seed_log 'Creating active products...'
 50.times do |i|
-
   upsert_product!(
     product_name: "Active - #{Faker::Commerce.product_name}",
     product_sku: "SKU_ACTIVE_#{1000 + i}",
@@ -273,12 +267,10 @@ seed_log 'Creating active products...'
   )
 rescue ActiveRecord::RecordInvalid => e
   seed_log "Active product error: #{e.record.errors.full_messages.join(', ')}"
-
 end
 
 seed_log 'Creating inactive products...'
 50.times do |i|
-
   upsert_product!(
     product_name: "Inactive - #{Faker::Commerce.product_name}",
     product_sku: "SKU_INACTIVE_#{1000 + i}",
@@ -298,7 +290,6 @@ seed_log 'Creating inactive products...'
   )
 rescue ActiveRecord::RecordInvalid => e
   seed_log "Inactive product error: #{e.record.errors.full_messages.join(', ')}"
-
 end
 
 seed_log 'Seeds completed.'

@@ -53,6 +53,7 @@ module VisitorLogsHelper
   # Devuelve código ISO para bandera (2 letras minúsculas)
   def country_flag_code(country_code)
     return nil if country_code.blank?
+
     country_code.downcase
   end
 end

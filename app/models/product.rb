@@ -82,7 +82,6 @@ class Product < ApplicationRecord
     return unless minimum_price.present? && selling_price.present? && minimum_price > selling_price
 
     errors.add(:minimum_price, 'cannot be higher than the selling price')
-
   end
 
   def recalculate_stats_if_needed
@@ -212,7 +211,7 @@ class Product < ApplicationRecord
 
   # ¿Tiene piezas coleccionables (no nuevas)?
   def has_collectibles?
-    available_by_condition.any? { |c| c[:collectible] && c[:count] > 0 }
+    available_by_condition.any? { |c| c[:collectible] && c[:count].positive? }
   end
 
   # Total disponible (todas las condiciones)
@@ -289,6 +288,5 @@ class Product < ApplicationRecord
       PurchaseOrders::RecalculateCostsForProductService.new(self).call
       PurchaseOrders::RecalculateDistributedCostsForProductService.new(self).call
     end
-
   end
 end

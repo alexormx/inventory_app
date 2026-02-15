@@ -42,7 +42,7 @@ module InventoryReconciliation
           inv_id = inv.id
           inv.destroy!
           begin
-            ::InventoryEvent.create!(inventory_id: inv_id, product_id: inv.product_id, event_type: 'reconciliation_orphan_destroyed', 
+            ::InventoryEvent.create!(inventory_id: inv_id, product_id: inv.product_id, event_type: 'reconciliation_orphan_destroyed',
                                      metadata: { purchase_order_id: inv.purchase_order_id })
           rescue StandardError
             nil
@@ -77,7 +77,7 @@ module InventoryReconciliation
               source: 'po_regular'
             )
             begin
-              ::InventoryEvent.create!(inventory_id: inv.id, product_id: poi.product_id, event_type: 'reconciliation_missing_created', 
+              ::InventoryEvent.create!(inventory_id: inv.id, product_id: poi.product_id, event_type: 'reconciliation_missing_created',
                                        metadata: { purchase_order_id: poi.purchase_order_id, purchase_order_item_id: poi.id })
             rescue StandardError
               nil

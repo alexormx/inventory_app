@@ -102,9 +102,9 @@ group :test do
   gem 'launchy' # Open HTML pages in the default browser
   gem 'rails-controller-testing', '1.0.5' # Helps test controllers
   gem 'rspec-rails' # RSpec testing framework
+  gem 'rswag-specs' # API documentation specs
   gem 'selenium-webdriver' # Browser automation for system tests
   gem 'shoulda-matchers', '~> 5.0' # Simplifies model testing
-  gem 'rswag-specs' # API documentation specs
 end
 
 # 🔹 **Production Group*

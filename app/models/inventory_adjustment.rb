@@ -98,7 +98,5 @@ class InventoryAdjustment < ApplicationRecord
     return unless changed?
 
     errors.add(:base, 'Cannot modify an applied adjustment. Reverse it first.')
-
   end
 end
-

@@ -3,17 +3,17 @@
 Rails.application.routes.draw do
   mount Rswag::Ui::Engine => '/api-docs'
   mount Rswag::Api::Engine => '/api-docs'
-  get "pages/privacy_notice"
-  get "carts/show"
-  get "products/index"
-  get "products/show"
-  post "/accept_cookies", to: "users#accept_cookies", as: :accept_cookies
+  get 'pages/privacy_notice'
+  get 'carts/show'
+  get 'products/index'
+  get 'products/show'
+  post '/accept_cookies', to: 'users#accept_cookies', as: :accept_cookies
 
   # Newsletter subscription
   resources :newsletter_subscribers, only: [:create]
 
   # User profile
-  resource :profile, only: [:show, :edit, :update]
+  resource :profile, only: %i[show edit update]
 
   # Devise authentication for all users
   devise_for :users
@@ -45,14 +45,14 @@ Rails.application.routes.draw do
     post 'preorders_audit/fix', to: 'preorders_audits#fix', as: :preorders_audits_fix
     resources :visitor_logs, only: [:index]
 
-    #Inventory Management views
-    get "inventory", to: "inventory#index", as: :inventory
-    get "inventory/unlocated", to: "inventory#unlocated", as: :inventory_unlocated
-    get "inventory/unlocated_items/:product_id", to: "inventory#unlocated_items", as: :inventory_unlocated_items
-    post "inventory/bulk_assign_location", to: "inventory#bulk_assign_location", as: :inventory_bulk_assign_location
-    get "inventory/transfer", to: "inventory#transfer", as: :inventory_transfer
-    get "inventory/location_items/:location_id", to: "inventory#location_items", as: :inventory_location_items
-    post "inventory/execute_transfer", to: "inventory#execute_transfer", as: :inventory_execute_transfer
+    # Inventory Management views
+    get 'inventory', to: 'inventory#index', as: :inventory
+    get 'inventory/unlocated', to: 'inventory#unlocated', as: :inventory_unlocated
+    get 'inventory/unlocated_items/:product_id', to: 'inventory#unlocated_items', as: :inventory_unlocated_items
+    post 'inventory/bulk_assign_location', to: 'inventory#bulk_assign_location', as: :inventory_bulk_assign_location
+    get 'inventory/transfer', to: 'inventory#transfer', as: :inventory_transfer
+    get 'inventory/location_items/:location_id', to: 'inventory#location_items', as: :inventory_location_items
+    post 'inventory/execute_transfer', to: 'inventory#execute_transfer', as: :inventory_execute_transfer
     resources :inventory do
       member do
         get :items
@@ -110,11 +110,11 @@ Rails.application.routes.draw do
         post  :reverse_discontinue
       end
       # Image removal for ActiveStorage
-      delete "images/:image_id", to: "products#purge_image", as: :purge_image
+      delete 'images/:image_id', to: 'products#purge_image', as: :purge_image
 
       # Product search as JSON
       collection do
-        get "search"
+        get 'search'
       end
     end
 
@@ -165,7 +165,7 @@ Rails.application.routes.draw do
         get  :delivered_orders_debt_audit
         post :run_delivered_orders_debt_audit
         # Permitir GET directo (fallback) para evitar errores si el usuario refresca la URL POST
-        get  :run_delivered_orders_debt_audit, to: redirect("/admin/settings/delivered_orders_debt_audit")
+        get  :run_delivered_orders_debt_audit, to: redirect('/admin/settings/delivered_orders_debt_audit')
         post :reset_product_dimensions
         post :recalc_all_po_alpha_costs
         post :mark_distributed_costs
@@ -221,7 +221,6 @@ Rails.application.routes.draw do
       post :apply, on: :member
       post :reverse, on: :member
     end
-
   end
   # Public product views
   get '/catalog', to: 'products#index', as: :catalog
@@ -229,7 +228,7 @@ Rails.application.routes.draw do
 
   # Shopping Cart routes
   resources :cart_items, only: %i[create update destroy]
-  get "/cart", to: "carts#show", as: :cart
+  get '/cart', to: 'carts#show', as: :cart
 
   # Customer shipping addresses
   resources :shipping_addresses, only: %i[index new create edit update destroy] do
@@ -238,7 +237,7 @@ Rails.application.routes.draw do
     end
   end
 
-  #checkout process with multiple steps
+  # checkout process with multiple steps
   get '/checkout/step1', to: 'checkouts#step1', as: :checkout_step1
   post '/checkout/step1', to: 'checkouts#step1_submit'
 
@@ -248,7 +247,7 @@ Rails.application.routes.draw do
   get '/checkout/step3', to: 'checkouts#step3', as: :checkout_step3
   post '/checkout/complete', to: 'checkouts#complete', as: :checkout_complete
 
-  get "/checkout/thank_you", to: "checkouts#thank_you", as: :checkout_thank_you
+  get '/checkout/thank_you', to: 'checkouts#thank_you', as: :checkout_thank_you
 
   # Customer orders
   resources :orders, only: %i[index show] do
@@ -258,8 +257,8 @@ Rails.application.routes.draw do
   end
 
   # Static pages
-  get "/aviso-de-privacidad", to: "pages#privacy_notice", as: :privacy_notice
-  get "/terminos-y-condiciones", to: "pages#terms", as: :terms
+  get '/aviso-de-privacidad', to: 'pages#privacy_notice', as: :privacy_notice
+  get '/terminos-y-condiciones', to: 'pages#terms', as: :terms
 
   namespace :api do
     namespace :v1 do
@@ -293,11 +292,11 @@ Rails.application.routes.draw do
   end
 
   # Health check (lightweight; avoids hitting DB on boot)
-  get "up" => "health#show", as: :rails_health_check
+  get 'up' => 'health#show', as: :rails_health_check
 
   # Sitemap for search engines (dynamically generated)
-  get "sitemap.xml", to: "sitemaps#show", as: :sitemap, defaults: { format: :xml }
+  get 'sitemap.xml', to: 'sitemaps#show', as: :sitemap, defaults: { format: :xml }
 
   # Public-facing root (if any)
-  root "home#index"
+  root 'home#index'
 end

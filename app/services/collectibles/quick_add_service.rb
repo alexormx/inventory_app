@@ -37,21 +37,15 @@ module Collectibles
     def find_or_create_product
       if @params[:use_existing_product] == '1' && @params[:existing_product_id].present?
         @product = Product.find_by(id: @params[:existing_product_id])
-        if @product.nil?
-          @errors << 'Producto no encontrado'
-        end
+        @errors << 'Producto no encontrado' if @product.nil?
       else
         product_attrs = @params[:product] || {}
         @product = Product.new(product_attrs)
 
         # Generar SKU si no se proporciona
-        if @product.product_sku.blank?
-          @product.product_sku = generate_sku(@product)
-        end
+        @product.product_sku = generate_sku(@product) if @product.product_sku.blank?
 
-        unless @product.save
-          @errors.concat(@product.errors.full_messages)
-        end
+        @errors.concat(@product.errors.full_messages) unless @product.save
       end
     end
 
@@ -70,17 +64,18 @@ module Collectibles
         source: 'manual'
       )
 
-      unless @inventory.save
-        @errors.concat(@inventory.errors.full_messages)
-      end
+      return if @inventory.save
+
+      @errors.concat(@inventory.errors.full_messages)
     end
 
     def attach_images
       images = @params.dig(:inventory, :piece_images)
-      return unless images.present?
+      return if images.blank?
 
       images.each do |image|
-        next unless image.present?
+        next if image.blank?
+
         @inventory.piece_images.attach(image)
       end
     end

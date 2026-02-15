@@ -42,14 +42,12 @@ module ApplicationHelper
 
   # Comprueba si un asset precompilado o en pipeline existe (no lanza excepciones)
   def asset_exists?(logical_path)
-
     Rails.application.assets&.find_asset(logical_path) || (
     Rails.application.config.assets.compile == false &&
     Rails.application.assets_manifest&.assets&.key?(logical_path)
   )
   rescue StandardError
     false
-
   end
 
   # Preload simplificado para la imagen LCP de home (collection_shelf-960w.*)
@@ -82,7 +80,6 @@ module ApplicationHelper
       'image/webp' => :webp,
       'image/jpeg' => nil
     }.each do |mime, fmt|
-
       variant_opts = { resize_to_limit: [600, 600] }
       variant_opts[:format] = fmt if fmt
       url = url_for(attachment.variant(**variant_opts))
@@ -100,7 +97,6 @@ module ApplicationHelper
       tags << tag.link(rel: 'preload', as: 'image', href: url, fetchpriority: 'high', type: mime)
     rescue StandardError => e
       Rails.logger.debug { "[lcp_preload_product_image] fallo variante #{mime}: #{e.message}" }
-
     end
     safe_join(tags)
   end

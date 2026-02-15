@@ -10,14 +10,12 @@ module Introspection
     def call
       models = ActiveRecord::Base.descendants.select { |m| m.name.present? && m.table_exists? }
       data = models.map do |m|
-        
         c = safe_count(m)
         next if !@include_zero && c.zero?
 
         { model: m.name, table: m.table_name, count: c }
       rescue StandardError => e
         { model: m.name, table: m.table_name, error: e.message }
-        
       end.compact
       sorted = data.sort_by { |h| - (h[:count] || 0) }
       {
@@ -39,4 +37,3 @@ module Introspection
     end
   end
 end
-

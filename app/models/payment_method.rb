@@ -31,18 +31,18 @@ class PaymentMethod < ApplicationRecord
     parts = []
 
     if account_number.present?
-      parts << "#{bank_name.present? ? "Banco: #{bank_name}" : ''}"
+      parts << (bank_name.present? ? "Banco: #{bank_name}" : '').to_s
       parts << "#{clabe_or_card_label}: #{account_number}"
       parts << "Beneficiario: #{account_holder}" if account_holder.present?
     end
 
     parts << instructions if instructions.present?
-    parts.reject(&:blank?).join("\n")
+    parts.compact_blank.join("\n")
   end
 
   # Determina si es CLABE (18 dígitos) o tarjeta
   def clabe_or_card_label
-    return 'Número' unless account_number.present?
+    return 'Número' if account_number.blank?
 
     digits_only = account_number.gsub(/\D/, '')
     digits_only.length == 18 ? 'CLABE' : 'Tarjeta/Cuenta'

@@ -38,4 +38,3 @@ module Introspection
     info.to_json
   end
 end
-

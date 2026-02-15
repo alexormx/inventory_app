@@ -35,7 +35,6 @@ class ApplicationController < ActionController::Base
 
     flash[:alert] = 'Acceso denegado: Solo los administradores pueden acceder a esta sección.'
     redirect_to root_path
-    
   end
 
   def track_visitor
@@ -69,7 +68,6 @@ class ApplicationController < ActionController::Base
     sign_out current_user
     flash[:alert] = 'Debes confirmar tu correo electrónico antes de continuar.'
     redirect_to new_user_session_path
-    
   end
 
   def set_locale

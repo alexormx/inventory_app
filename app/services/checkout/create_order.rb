@@ -37,17 +37,15 @@ module Checkout
         condition = item[:condition]
 
         # Para coleccionables, validar disponibilidad específica por condición
-        if condition != 'brand_new'
-          available = product.inventories.where(status: :available, item_condition: condition).count
-          if qty > available
-            errors << "#{product.product_name} (#{item[:label]}) no tiene suficiente stock (disponible: #{available})"
-          end
-        else
+        if condition == 'brand_new'
           split = InventoryServices::AvailabilitySplitter.new(product, qty).call
           availability_map["#{product.id}_#{condition}"] = split
           if split.pending.positive? && split.pending_type.nil?
             errors << "Producto #{product.product_name} no tiene suficiente stock y no permite preventa/backorder"
           end
+        else
+          available = product.inventories.where(status: :available, item_condition: condition).count
+          errors << "#{product.product_name} (#{item[:label]}) no tiene suficiente stock (disponible: #{available})" if qty > available
         end
       end
       return fail_with(errors) if errors.any?
@@ -86,20 +84,18 @@ module Checkout
             next
           end
 
-          if condition != 'brand_new'
-            # Para coleccionables, validar disponibilidad específica
-            available = locked_product.inventories.where(status: :available, item_condition: condition).count
-            if qty > available
-              revalidation_errors << "#{locked_product.product_name} (#{item[:label]}) ya no está disponible"
-            end
-            revalidated[key] = { collectible: true, available: available }
-          else
+          if condition == 'brand_new'
             split = InventoryServices::AvailabilitySplitter.new(locked_product, qty).call
             revalidated[key] = split
 
             if split.pending.positive? && split.pending_type.nil?
               revalidation_errors << "Producto #{locked_product.product_name} quedó sin stock suficiente durante el checkout (disponible: #{split.immediate}, solicitado: #{qty})"
             end
+          else
+            # Para coleccionables, validar disponibilidad específica
+            available = locked_product.inventories.where(status: :available, item_condition: condition).count
+            revalidation_errors << "#{locked_product.product_name} (#{item[:label]}) ya no está disponible" if qty > available
+            revalidated[key] = { collectible: true, available: available }
           end
         end
 
@@ -198,11 +194,9 @@ module Checkout
 
       # Backfill suave: asegurar sale_order_item_id en inventarios reservados de esta orden
       begin
-        if sale_order
-          sale_order.sale_order_items.find_each do |soi|
-            Inventory.where(sale_order_id: sale_order.id, product_id: soi.product_id, sale_order_item_id: nil)
-                     .update_all(sale_order_item_id: soi.id, updated_at: Time.current)
-          end
+        sale_order&.sale_order_items&.find_each do |soi|
+          Inventory.where(sale_order_id: sale_order.id, product_id: soi.product_id, sale_order_item_id: nil)
+                   .update_all(sale_order_item_id: soi.id, updated_at: Time.current)
         end
       rescue StandardError => e
         Rails.logger.error "[Checkout::CreateOrder] Soft backfill error: #{e.class}: #{e.message}"

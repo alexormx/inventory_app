@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class UpdateLocationTypeIconsToFontAwesome < ActiveRecord::Migration[8.0]
   def up
     # Map Bootstrap Icons to Font Awesome equivalents
@@ -14,7 +16,7 @@ class UpdateLocationTypeIconsToFontAwesome < ActiveRecord::Migration[8.0]
     }
 
     icon_mappings.each do |old_icon, new_icon|
-      execute <<-SQL
+      execute <<-SQL.squish
         UPDATE location_types SET icon = '#{new_icon}' WHERE icon = '#{old_icon}'
       SQL
     end
@@ -35,7 +37,7 @@ class UpdateLocationTypeIconsToFontAwesome < ActiveRecord::Migration[8.0]
     }
 
     icon_mappings.each do |old_icon, new_icon|
-      execute <<-SQL
+      execute <<-SQL.squish
         UPDATE location_types SET icon = '#{new_icon}' WHERE icon = '#{old_icon}'
       SQL
     end

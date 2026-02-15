@@ -185,7 +185,11 @@ module Admin
       rev_sql_arel = Arel.sql(REV_SQL)
       cogs_sql_arel = Arel.sql(COGS_SQL)
 
-      @total_products = Product.active.count rescue Product.count
+      @total_products = begin
+        Product.active.count
+      rescue StandardError
+        Product.count
+      end
       @total_users = User.count
 
       @sales_ytd = SaleOrderItem.joins(:sale_order).merge(@so_ytd).sum(rev_sql_arel).to_d
@@ -213,7 +217,11 @@ module Admin
       @purchases_total_mxn = @po_scope.sum(:total_order_cost).to_d if @purchases_total_mxn.zero?
 
       @avg_ticket_ytd = @orders_count_ytd.positive? ? (@sales_ytd / @orders_count_ytd) : 0.to_d
-      @visits_total = VisitorLog.sum(:visit_count) rescue nil
+      @visits_total = begin
+        VisitorLog.sum(:visit_count)
+      rescue StandardError
+        nil
+      end
       @conversion_rate_ytd = @visits_total.to_i.positive? ? (@orders_count_ytd.to_d / @visits_total.to_d) : nil
 
       load_customer_metrics
@@ -298,7 +306,7 @@ module Admin
       @alerts = []
 
       # Stock crítico
-      if @critical_stock_count.to_i > 0
+      if @critical_stock_count.to_i.positive?
         @alerts << {
           type: 'danger',
           icon: 'fa-box-open',
@@ -310,7 +318,7 @@ module Admin
 
       # Órdenes pendientes de envío
       pending_shipments = SaleOrder.where(status: 'Confirmed').count
-      if pending_shipments > 0
+      if pending_shipments.positive?
         @alerts << {
           type: 'warning',
           icon: 'fa-truck',
@@ -322,7 +330,7 @@ module Admin
 
       # Órdenes de compra en tránsito
       in_transit_pos = PurchaseOrder.where(status: 'In Transit').count
-      if in_transit_pos > 0
+      if in_transit_pos.positive?
         @alerts << {
           type: 'info',
           icon: 'fa-ship',
@@ -335,7 +343,11 @@ module Admin
       # Productos sin stock (agotados) - productos activos sin inventario disponible
       # Usamos subquery para evitar N+1 y contar solo productos sin inventario available
       products_with_stock = Inventory.where(status: :available).select(:product_id).distinct
-      out_of_stock = Product.active.where.not(id: products_with_stock).count rescue 0
+      out_of_stock = begin
+        Product.active.where.not(id: products_with_stock).count
+      rescue StandardError
+        0
+      end
       if out_of_stock > 5
         @alerts << {
           type: 'warning',
@@ -447,7 +459,7 @@ module Admin
                    .merge(scope)
                    .group('users.id')
                    .select("users.id, COUNT(DISTINCT sale_orders.id) AS orders_count, SUM(#{REV_SQL}) AS revenue")
-                   .index_by { |r| r.id }
+                   .index_by(&:id)
                    .transform_values { |r| { orders_count: r.attributes['orders_count'].to_i, revenue: r.attributes['revenue'].to_d } }
     end
 
@@ -561,20 +573,18 @@ module Admin
       load_category_charts
     end
 
-    def load_cashflow_chart(trend_start, trend_range, months_keys, month_key_expr)
+    def load_cashflow_chart(_trend_start, trend_range, months_keys, month_key_expr)
       month_key_expr_po = month_group_expr('purchase_orders', 'order_date')
       rev_sql_arel = Arel.sql(REV_SQL)
 
       inflow_map = SaleOrderItem.joins(:sale_order)
-                                 .merge(@so_scope.where(order_date: trend_range, status: PAID_STATUSES))
-                                 .group(Arel.sql(month_key_expr))
-                                 .sum(rev_sql_arel)
+                                .merge(@so_scope.where(order_date: trend_range, status: PAID_STATUSES))
+                                .group(Arel.sql(month_key_expr))
+                                .sum(rev_sql_arel)
 
       outflow_po_costs = @po_scope.where(order_date: trend_range)
       outflow_map = outflow_po_costs.group(Arel.sql(month_key_expr_po)).sum(:total_cost_mxn)
-      if outflow_map.values.all? { |v| v.to_d.zero? }
-        outflow_map = outflow_po_costs.group(Arel.sql(month_key_expr_po)).sum(:total_order_cost)
-      end
+      outflow_map = outflow_po_costs.group(Arel.sql(month_key_expr_po)).sum(:total_order_cost) if outflow_map.values.all? { |v| v.to_d.zero? }
 
       inflow_norm = inflow_map.transform_keys { |k| normalize_month_key(k) }
       outflow_norm = outflow_map.transform_keys { |k| normalize_month_key(k) }
@@ -603,34 +613,30 @@ module Admin
       current_year_start = Date.new(current_year, 1, 1)
       current_year_end = Date.new(current_year, 12, 31).end_of_day
       inflow_current = SaleOrderItem.joins(:sale_order)
-                                     .merge(@so_scope.where(order_date: current_year_start..current_year_end, status: PAID_STATUSES))
-                                     .group(Arel.sql(month_key_expr_so))
-                                     .sum(rev_sql_arel)
-                                     .transform_keys { |k| normalize_month_key(k) }
+                                    .merge(@so_scope.where(order_date: current_year_start..current_year_end, status: PAID_STATUSES))
+                                    .group(Arel.sql(month_key_expr_so))
+                                    .sum(rev_sql_arel)
+                                    .transform_keys { |k| normalize_month_key(k) }
 
       # Egresos (compras) por mes - año actual
       outflow_current_scope = @po_scope.where(order_date: current_year_start..current_year_end)
       outflow_current = outflow_current_scope.group(Arel.sql(month_key_expr_po)).sum(:total_cost_mxn)
-      if outflow_current.values.all? { |v| v.to_d.zero? }
-        outflow_current = outflow_current_scope.group(Arel.sql(month_key_expr_po)).sum(:total_order_cost)
-      end
+      outflow_current = outflow_current_scope.group(Arel.sql(month_key_expr_po)).sum(:total_order_cost) if outflow_current.values.all? { |v| v.to_d.zero? }
       outflow_current = outflow_current.transform_keys { |k| normalize_month_key(k) }
 
       # Ingresos (ventas pagadas) por mes - año anterior
       prev_year_start = Date.new(prev_year, 1, 1)
       prev_year_end = Date.new(prev_year, 12, 31).end_of_day
       inflow_prev = SaleOrderItem.joins(:sale_order)
-                                  .merge(@so_scope.where(order_date: prev_year_start..prev_year_end, status: PAID_STATUSES))
-                                  .group(Arel.sql(month_key_expr_so))
-                                  .sum(rev_sql_arel)
-                                  .transform_keys { |k| normalize_month_key(k) }
+                                 .merge(@so_scope.where(order_date: prev_year_start..prev_year_end, status: PAID_STATUSES))
+                                 .group(Arel.sql(month_key_expr_so))
+                                 .sum(rev_sql_arel)
+                                 .transform_keys { |k| normalize_month_key(k) }
 
       # Egresos (compras) por mes - año anterior
       outflow_prev_scope = @po_scope.where(order_date: prev_year_start..prev_year_end)
       outflow_prev = outflow_prev_scope.group(Arel.sql(month_key_expr_po)).sum(:total_cost_mxn)
-      if outflow_prev.values.all? { |v| v.to_d.zero? }
-        outflow_prev = outflow_prev_scope.group(Arel.sql(month_key_expr_po)).sum(:total_order_cost)
-      end
+      outflow_prev = outflow_prev_scope.group(Arel.sql(month_key_expr_po)).sum(:total_order_cost) if outflow_prev.values.all? { |v| v.to_d.zero? }
       outflow_prev = outflow_prev.transform_keys { |k| normalize_month_key(k) }
 
       # Generar keys por mes para cada año
@@ -778,10 +784,14 @@ module Admin
                                .group('products.id')
                                .select('products.id AS product_id, SUM(inventories.purchase_cost) AS cogs_total')
 
-      cogs_rows = cogs_rows_inv.any? ? cogs_rows_inv : SaleOrderItem.joins(:sale_order, :product)
-                                                                    .merge(scope)
-                                                                    .group('products.id')
-                                                                    .select("products.id AS product_id, SUM(#{COGS_SQL}) AS cogs_total")
+      cogs_rows = if cogs_rows_inv.any?
+                    cogs_rows_inv
+                  else
+                    SaleOrderItem.joins(:sale_order, :product)
+                                 .merge(scope)
+                                 .group('products.id')
+                                 .select("products.id AS product_id, SUM(#{COGS_SQL}) AS cogs_total")
+                  end
 
       sales_map = sales_rows.index_by { |r| r.attributes['product_id'].to_i }
       cogs_map = cogs_rows.index_by { |r| r.attributes['product_id'].to_i }
@@ -831,7 +841,9 @@ module Admin
       by_qty = base.select('products.id, products.product_name, products.brand, products.category, COUNT(inventories.id) AS units_count, SUM(inventories.purchase_cost) AS inventory_value')
                    .order('units_count DESC')
                    .limit(10)
-                   .map { |r| format_inventory_row(r, include_qty: true) }
+                   .map do |r|
+        format_inventory_row(r, include_qty: true)
+      end
 
       [by_value, by_qty]
     end
@@ -928,7 +940,10 @@ module Admin
                .select('users.id, users.name, COUNT(inventories.id) AS units_reserved, SUM(inventories.purchase_cost) AS reserved_value')
                .order('reserved_value DESC')
                .limit(10)
-               .map { |r| { user_id: r.id, name: r.name.presence || r.id, units_reserved: r.attributes['units_reserved'].to_i, reserved_value: r.attributes['reserved_value'].to_d } }
+               .map do |r|
+        { user_id: r.id, name: r.name.presence || r.id, units_reserved: r.attributes['units_reserved'].to_i,
+          reserved_value: r.attributes['reserved_value'].to_d }
+      end
     end
 
     def combine_sales_reserved(sales_rows, reserved_rows)
@@ -955,14 +970,20 @@ module Admin
                                 .merge(scope.where(status: PAID_STATUSES))
                                 .group('users.id', 'users.name')
                                 .select("users.id AS user_id, users.name, COUNT(DISTINCT sale_orders.id) AS orders_count, SUM(#{REV_SQL}) AS revenue")
-                                .map { |r| { user_id: r.attributes['user_id'].to_i, name: r.name.presence || r.attributes['user_id'], orders_count: r.attributes['orders_count'].to_i, revenue: r.attributes['revenue'].to_d } }
+                                .map do |r|
+        { user_id: r.attributes['user_id'].to_i, name: r.name.presence || r.attributes['user_id'],
+          orders_count: r.attributes['orders_count'].to_i, revenue: r.attributes['revenue'].to_d }
+      end
 
       reserved_rows = Inventory.joins(sale_order: :user)
                                .merge(scope)
                                .where(status: reserved_statuses)
                                .group('users.id', 'users.name')
                                .select('users.id AS user_id, users.name, COUNT(inventories.id) AS units_reserved, SUM(inventories.purchase_cost) AS reserved_value')
-                               .map { |r| { user_id: r.attributes['user_id'].to_i, name: r.name.presence || r.attributes['user_id'], units_reserved: r.attributes['units_reserved'].to_i, reserved_value: r.attributes['reserved_value'].to_d } }
+                               .map do |r|
+        { user_id: r.attributes['user_id'].to_i, name: r.name.presence || r.attributes['user_id'],
+          units_reserved: r.attributes['units_reserved'].to_i, reserved_value: r.attributes['reserved_value'].to_d }
+      end
 
       case metric
       when 'reserved'
@@ -1032,6 +1053,7 @@ module Admin
 
     def extract_month_index(key)
       return key.month if key.respond_to?(:month)
+
       Date.parse(key).month if key.is_a?(String)
     rescue ArgumentError
       nil
@@ -1039,6 +1061,7 @@ module Admin
 
     def extract_year_index(key)
       return key.year if key.respond_to?(:year)
+
       key.to_s[0, 4].to_i if key.is_a?(String)
     end
 

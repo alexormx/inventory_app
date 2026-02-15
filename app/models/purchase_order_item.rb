@@ -28,7 +28,6 @@ class PurchaseOrderItem < ApplicationRecord
 
     errors.add(:base, "Not enough free inventory to reduce quantity by #{desired_removal}.")
     throw :abort
-
   end
 
   def ensure_enough_free_inventory_to_remove
@@ -37,7 +36,6 @@ class PurchaseOrderItem < ApplicationRecord
 
     errors.add(:base, 'Cannot remove line: not enough free inventory to remove.')
     throw :abort
-
   end
 
   def free_inventory_scope

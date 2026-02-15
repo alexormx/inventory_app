@@ -91,4 +91,3 @@ class MonthlyTracker
     @memory ||= {}
   end
 end
-

@@ -99,13 +99,13 @@ module Dashboard
         month_expr = month_group_expr
 
         raw = joined
-          .select(
-            Arel.sql("#{month_expr} AS period_month"),
-            Arel.sql("#{REV_SQL} AS revenue"),
-            Arel.sql("#{COGS_SQL} AS cogs"),
-            Arel.sql('COUNT(DISTINCT sale_orders.id) AS orders')
-          )
-          .group(Arel.sql(month_expr))
+              .select(
+                Arel.sql("#{month_expr} AS period_month"),
+                Arel.sql("#{REV_SQL} AS revenue"),
+                Arel.sql("#{COGS_SQL} AS cogs"),
+                Arel.sql('COUNT(DISTINCT sale_orders.id) AS orders')
+              )
+              .group(Arel.sql(month_expr))
 
         raw.each_with_object({}) do |row, hash|
           key = normalize_month_key(row.period_month)
@@ -138,7 +138,7 @@ module Dashboard
     end
 
     def base_scope
-      SaleOrder.where(status: %w[Confirmed In\ Transit Delivered])
+      SaleOrder.where(status: ['Confirmed', 'In Transit', 'Delivered'])
     end
 
     def db_adapter

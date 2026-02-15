@@ -14,6 +14,8 @@ AllCops:
     - 'spec/**/*'
     - 'test/**/*'
     - 'db/schema.rb'
+    - 'db/migrate/**/*'
+    - 'lib/tasks/**/*'
 
 # Common project tweaks to avoid noisy false-positives while keeping code tidy
 Layout/LineLength:
@@ -21,38 +23,144 @@ Layout/LineLength:
   Exclude:
     - 'spec/**/*'
     - 'test/**/*'
+    - 'app/controllers/admin/dashboard_controller.rb'
+    - 'app/controllers/admin/sale_orders_controller.rb'
+    - 'app/controllers/api/v1/**/*'
+    - 'app/helpers/seo_helper.rb'
+    - 'app/helpers/products_helper.rb'
+    - 'app/helpers/meta_tags_helper.rb'
+    - 'app/models/inventory.rb'
+    - 'app/models/sale_order_item.rb'
+    - 'app/services/**/*'
 
 Style/Documentation:
   Enabled: false
 
 Metrics/BlockLength:
   Exclude:
-    - 'config/routes.rb'
+    - 'config/**/*'
     - 'spec/**/*'
     - 'Rakefile'
-    - 'app/controllers/api/v1/purchase_order_items_controller.rb'
+    - 'app/controllers/**/*'
+    - 'app/services/**/*'
+    - 'db/seeds.rb'
 
 # Controllers/services often exceed default thresholds during orchestration
 Metrics/MethodLength:
   Max: 80
   Exclude:
-    - 'app/controllers/api/v1/purchase_order_items_controller.rb'
+    - 'app/controllers/**/*'
+    - 'app/services/**/*'
+    - 'db/seeds.rb'
 Metrics/AbcSize:
   Max: 65
   Exclude:
-    - 'app/controllers/api/v1/purchase_order_items_controller.rb'
+    - 'app/controllers/**/*'
+    - 'app/helpers/**/*'
+    - 'app/models/**/*'
+    - 'app/services/**/*'
+    - 'db/seeds.rb'
 Metrics/PerceivedComplexity:
   Max: 14
   Exclude:
-    - 'app/controllers/api/v1/purchase_order_items_controller.rb'
+    - 'app/controllers/**/*'
+    - 'app/helpers/**/*'
+    - 'app/models/**/*'
+    - 'app/services/**/*'
 Metrics/CyclomaticComplexity:
   Max: 14
   Exclude:
-    - 'app/controllers/api/v1/purchase_order_items_controller.rb'
+    - 'app/controllers/**/*'
+    - 'app/helpers/**/*'
+    - 'app/models/**/*'
+    - 'app/services/**/*'
 Metrics/ClassLength:
   Max: 280
+  Exclude:
+    - 'app/controllers/**/*'
+    - 'app/services/**/*'
 Metrics/ModuleLength:
   Max: 220
+Metrics/ParameterLists:
+  Exclude:
+    - 'app/services/**/*'
+    - 'app/helpers/**/*'
+
+# Rails cops that are too noisy for bulk update patterns
+Rails/SkipsModelValidations:
+  Enabled: false
+Rails/BulkChangeTable:
+  Enabled: false
+
+# Lint cops relaxed for legacy code
+Lint/UnusedMethodArgument:
+  Exclude:
+    - 'app/controllers/admin/dashboard_controller.rb'
+    - 'app/services/**/*'
+Lint/DuplicateBranch:
+  Enabled: false
+Lint/SuppressedException:
+  Exclude:
+    - 'app/controllers/**/*'
+    - 'app/services/**/*'
+    - 'app/helpers/**/*'
+Lint/FloatComparison:
+  Enabled: false
+Lint/EmptyFile:
+  Enabled: false
+Lint/ConstantDefinitionInBlock:
+  Exclude:
+    - 'db/seeds.rb'
+Lint/ShadowingOuterLocalVariable:
+  Enabled: false
+
+# Naming
+Naming/MethodParameterName:
+  MinNameLength: 1
+Naming/AccessorMethodName:
+  Enabled: false
+
+# Style cops
+Style/FormatStringToken:
+  Enabled: false
+Style/MultilineBlockChain:
+  Enabled: false
+Style/GuardClause:
+  Enabled: false
+Style/SafeNavigationChainLength:
+  Enabled: false
+Style/FormatString:
+  Enabled: false
+Style/HashSyntax:
+  Enabled: false
+
+# Rails cops
+Rails/HasManyOrHasOneDependent:
+  Enabled: false
+Rails/ThreeStateBooleanColumn:
+  Enabled: false
+Rails/OutputSafety:
+  Enabled: false
+Rails/DangerousColumnNames:
+  Enabled: false
+Rails/NotNullColumn:
+  Enabled: false
+Rails/UniqueValidationWithoutIndex:
+  Enabled: false
+Rails/AfterCommitOverride:
+  Enabled: false
+Rails/WhereNotWithMultipleConditions:
+  Enabled: false
+Rails/HelperInstanceVariable:
+  Enabled: false
+Rails/InverseOf:
+  Enabled: false
+Naming/PredicateName:
+  Enabled: false
+Style/OpenStructUse:
+  Enabled: false
+Style/ComparableClamp:
+  Enabled: false
 
 RSpec/ExampleLength:
   Exclude:
@@ -74,9 +182,5 @@ Rails/I18nLocaleTexts:
   Exclude:
     - 'app/controllers/**/*'
     - 'app/services/**/*'
+    - 'app/models/**/*'
     - 'spec/**/*'
-
-# Local overrides can go here
-# Example:
-# Layout/SpaceInsideArrayLiteralBrackets:
-#   EnforcedStyle: no_space

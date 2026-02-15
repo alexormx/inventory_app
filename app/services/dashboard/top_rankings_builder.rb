@@ -39,99 +39,93 @@ module Dashboard
 
     # Top products by inventory value
     def top_inventory
-      @top_inventory ||= begin
-        Product.left_joins(:inventories)
-          .where(inventories: { status: :available })
-          .group('products.id')
-          .select(
-            'products.id',
-            'products.product_name',
-            'products.product_sku',
-            'products.current_stock',
-            'products.average_purchase_cost',
-            'COUNT(inventories.id) AS inv_count',
-            'products.current_stock * products.average_purchase_cost AS inv_value'
-          )
-          .order(Arel.sql('products.current_stock * products.average_purchase_cost DESC'))
-          .limit(limit)
-          .map do |p|
-            {
-              id: p.id,
-              name: p.product_name,
-              sku: p.product_sku,
-              stock: p.current_stock,
-              avg_cost: p.average_purchase_cost.to_d,
-              value: p.inv_value.to_d
-            }
-          end
+      @top_inventory ||= Product.left_joins(:inventories)
+                                .where(inventories: { status: :available })
+                                .group('products.id')
+                                .select(
+                                  'products.id',
+                                  'products.product_name',
+                                  'products.product_sku',
+                                  'products.current_stock',
+                                  'products.average_purchase_cost',
+                                  'COUNT(inventories.id) AS inv_count',
+                                  'products.current_stock * products.average_purchase_cost AS inv_value'
+                                )
+                                .order(Arel.sql('products.current_stock * products.average_purchase_cost DESC'))
+                                .limit(limit)
+                                .map do |p|
+        {
+          id: p.id,
+          name: p.product_name,
+          sku: p.product_sku,
+          stock: p.current_stock,
+          avg_cost: p.average_purchase_cost.to_d,
+          value: p.inv_value.to_d
+        }
       end
     end
 
     # Top categories by revenue
     def top_categories
-      @top_categories ||= begin
-        base_items
-          .joins(:product)
-          .group('products.category')
-          .select(
-            'products.category AS category_name',
-            Arel.sql("#{REV_SQL} AS revenue"),
-            Arel.sql("#{COGS_SQL} AS cogs"),
-            Arel.sql("#{UNITS_SQL} AS units")
-          )
-          .order(Arel.sql("#{REV_SQL} DESC"))
-          .limit(limit)
-          .map do |row|
-            revenue = row.revenue.to_d
-            cogs = row.cogs.to_d
-            profit = revenue - cogs
-            margin = revenue.positive? ? ((profit / revenue) * 100).round(2) : 0
+      @top_categories ||= base_items
+                          .joins(:product)
+                          .group('products.category')
+                          .select(
+                            'products.category AS category_name',
+                            Arel.sql("#{REV_SQL} AS revenue"),
+                            Arel.sql("#{COGS_SQL} AS cogs"),
+                            Arel.sql("#{UNITS_SQL} AS units")
+                          )
+                          .order(Arel.sql("#{REV_SQL} DESC"))
+                          .limit(limit)
+                          .map do |row|
+        revenue = row.revenue.to_d
+        cogs = row.cogs.to_d
+        profit = revenue - cogs
+        margin = revenue.positive? ? ((profit / revenue) * 100).round(2) : 0
 
-            {
-              id: row.category_name,
-              name: row.category_name,
-              revenue: revenue,
-              cogs: cogs,
-              profit: profit,
-              margin: margin,
-              units: row.units.to_i
-            }
-          end
+        {
+          id: row.category_name,
+          name: row.category_name,
+          revenue: revenue,
+          cogs: cogs,
+          profit: profit,
+          margin: margin,
+          units: row.units.to_i
+        }
       end
     end
 
     # Top customers by revenue
     def top_customers
-      @top_customers ||= begin
-        base_orders
-          .joins(:user, :sale_order_items)
-          .group('users.id', 'users.email', 'users.name')
-          .select(
-            'users.id',
-            'users.email',
-            'users.name',
-            Arel.sql("#{REV_SQL} AS revenue"),
-            Arel.sql("#{COGS_SQL} AS cogs"),
-            Arel.sql('COUNT(DISTINCT sale_orders.id) AS order_count'),
-            Arel.sql("#{UNITS_SQL} AS units")
-          )
-          .order(Arel.sql("#{REV_SQL} DESC"))
-          .limit(limit)
-          .map do |row|
-            revenue = row.revenue.to_d
-            cogs = row.cogs.to_d
+      @top_customers ||= base_orders
+                         .joins(:user, :sale_order_items)
+                         .group('users.id', 'users.email', 'users.name')
+                         .select(
+                           'users.id',
+                           'users.email',
+                           'users.name',
+                           Arel.sql("#{REV_SQL} AS revenue"),
+                           Arel.sql("#{COGS_SQL} AS cogs"),
+                           Arel.sql('COUNT(DISTINCT sale_orders.id) AS order_count'),
+                           Arel.sql("#{UNITS_SQL} AS units")
+                         )
+                         .order(Arel.sql("#{REV_SQL} DESC"))
+                         .limit(limit)
+                         .map do |row|
+        revenue = row.revenue.to_d
+        cogs = row.cogs.to_d
 
-            {
-              id: row.id,
-              email: row.email,
-              name: row.name,
-              revenue: revenue,
-              cogs: cogs,
-              profit: revenue - cogs,
-              orders: row.order_count.to_i,
-              units: row.units.to_i
-            }
-          end
+        {
+          id: row.id,
+          email: row.email,
+          name: row.name,
+          revenue: revenue,
+          cogs: cogs,
+          profit: revenue - cogs,
+          orders: row.order_count.to_i,
+          units: row.units.to_i
+        }
       end
     end
 
@@ -173,13 +167,13 @@ module Dashboard
     end
 
     def base_orders
-      SaleOrder.where(status: %w[Confirmed In\ Transit Delivered])
+      SaleOrder.where(status: ['Confirmed', 'In Transit', 'Delivered'])
                .where(order_date: start_date..end_date)
     end
 
     def base_items
       SaleOrderItem.joins(:sale_order)
-                   .where(sale_orders: { status: %w[Confirmed In\ Transit Delivered] })
+                   .where(sale_orders: { status: ['Confirmed', 'In Transit', 'Delivered'] })
                    .where(sale_orders: { order_date: start_date..end_date })
     end
   end

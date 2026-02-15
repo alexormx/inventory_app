@@ -83,15 +83,12 @@ class ApplyInventoryAdjustmentService
       # Recalcular métricas de productos afectados
       product_ids = lines.map(&:product_id).uniq
       product_ids.each do |pid|
-
         Products::UpdateStatsService.new(Product.find(pid)).call
       rescue StandardError
         nil
-
       end
 
       movements
     end
   end
 end
-

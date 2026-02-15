@@ -15,6 +15,8 @@ module Admin
       @shipping_method = ShippingMethod.new(active: true, position: ShippingMethod.maximum(:position).to_i + 1)
     end
 
+    def edit; end
+
     def create
       @shipping_method = ShippingMethod.new(shipping_method_params)
       if @shipping_method.save
@@ -23,8 +25,6 @@ module Admin
         render :new, status: :unprocessable_entity
       end
     end
-
-    def edit; end
 
     def update
       if @shipping_method.update(shipping_method_params)
@@ -51,7 +51,7 @@ module Admin
     end
 
     def shipping_method_params
-      params.require(:shipping_method).permit(:name, :code, :description, :base_cost, :active, :position)
+      params.expect(shipping_method: %i[name code description base_cost active position])
     end
   end
 end

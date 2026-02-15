@@ -16,6 +16,5 @@ class DateValidator < ActiveModel::EachValidator
     return unless options[:after_or_equal_to] && value < record.send(options[:after_or_equal_to])
 
     record.errors.add(attribute, "must be on or after #{options[:after_or_equal_to].to_s.humanize}")
-    
   end
 end

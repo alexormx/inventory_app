@@ -25,7 +25,6 @@ class Shipment < ApplicationRecord
     return unless will_save_change_to_status?
 
     self.last_update = Time.current
-
   end
 
   def actual_not_before_estimated
@@ -34,7 +33,6 @@ class Shipment < ApplicationRecord
     return unless actual_delivery < estimated_delivery
 
     errors.add(:actual_delivery, 'no puede ser anterior a la fecha estimada')
-
   end
 
   def update_sale_order_totals_if_shipping_changed
@@ -42,7 +40,6 @@ class Shipment < ApplicationRecord
 
     sale_order.update!(shipping_cost: shipping_cost)
     sale_order.recalculate_totals!
-
   end
 
   # Cuando el estado del Shipment cambia, sincronizamos el SaleOrder relacionado
@@ -70,9 +67,7 @@ class Shipment < ApplicationRecord
         # Transicionar a In Transit solo si está en Preparing o Confirmed
         credit_allowed = (so.user.respond_to?(:credit_enabled) && so.user.credit_enabled) || so.credit_override
         if so.fully_paid? || credit_allowed
-          if %w[Preparing Confirmed].include?(so.status)
-            so.update!(status: 'In Transit')
-          end
+          so.update!(status: 'In Transit') if %w[Preparing Confirmed].include?(so.status)
         else
           update_column(:status, Shipment.statuses[:pending])
           Rails.logger.warn "[Shipment#sync] Blocked shipped without payment or credit (sale_order_id=#{so.id})"

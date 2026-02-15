@@ -9,7 +9,7 @@ class AddDirectionToInventoryAdjustmentLines < ActiveRecord::Migration[8.0]
     return if index_exists?(:inventory_adjustment_lines, :direction)
 
     add_index :inventory_adjustment_lines, :direction
-    
+
   end
 
   def down
@@ -19,7 +19,6 @@ class AddDirectionToInventoryAdjustmentLines < ActiveRecord::Migration[8.0]
     return unless column_exists?(:inventory_adjustment_lines, :direction)
 
     remove_column :inventory_adjustment_lines, :direction
-    
+
   end
 end
-

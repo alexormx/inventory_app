@@ -27,6 +27,6 @@ class ProfilesController < ApplicationController
   private
 
   def profile_params
-    params.require(:user).permit(:name, :phone, :address)
+    params.expect(user: %i[name phone address])
   end
 end

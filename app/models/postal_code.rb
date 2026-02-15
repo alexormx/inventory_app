@@ -25,4 +25,3 @@ class PostalCode < ApplicationRecord
     self.settlement_type = settlement_type.to_s.strip if settlement_type
   end
 end
-

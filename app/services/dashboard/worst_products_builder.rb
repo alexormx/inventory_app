@@ -45,13 +45,13 @@ module Dashboard
 
       # Get available inventory counts and costs
       inventory_data = Inventory.where(status: :available)
-        .joins(:product)
-        .group('products.id')
-        .select(
-          'products.id',
-          'COUNT(inventories.id) AS inv_count',
-          'SUM(inventories.purchase_cost) AS total_cost'
-        )
+                                .joins(:product)
+                                .group('products.id')
+                                .select(
+                                  'products.id',
+                                  'COUNT(inventories.id) AS inv_count',
+                                  'SUM(inventories.purchase_cost) AS total_cost'
+                                )
 
       inventory_data.each do |row|
         products_data[row.id] ||= empty_product_hash
@@ -61,15 +61,15 @@ module Dashboard
 
       # Get sales data
       sales_scope = SaleOrderItem.joins(:sale_order, :product)
-        .where(sale_orders: { status: %w[Confirmed In\ Transit Delivered] })
-        .where(sale_orders: { order_date: start_date..end_date })
-        .group('products.id')
-        .select(
-          'products.id',
-          'SUM(sale_order_items.quantity) AS units_sold',
-          'SUM(sale_order_items.quantity * COALESCE(sale_order_items.unit_final_price, 0)) AS revenue',
-          'SUM(sale_order_items.quantity * COALESCE(sale_order_items.unit_cost, 0)) AS cogs'
-        )
+                                 .where(sale_orders: { status: ['Confirmed', 'In Transit', 'Delivered'] })
+                                 .where(sale_orders: { order_date: start_date..end_date })
+                                 .group('products.id')
+                                 .select(
+                                   'products.id',
+                                   'SUM(sale_order_items.quantity) AS units_sold',
+                                   'SUM(sale_order_items.quantity * COALESCE(sale_order_items.unit_final_price, 0)) AS revenue',
+                                   'SUM(sale_order_items.quantity * COALESCE(sale_order_items.unit_cost, 0)) AS cogs'
+                                 )
 
       sales_scope.each do |row|
         products_data[row.id] ||= empty_product_hash
@@ -173,7 +173,11 @@ module Dashboard
     def global_metrics(products)
       margin_vals = products.pluck(:margin_pct).compact
       rot_vals = products.pluck(:rotation).compact
-      doh_vals = products.pluck(:doh).select { |v| v.finite? rescue false }
+      doh_vals = products.pluck(:doh).select do |v|
+        v.finite?
+      rescue StandardError
+        false
+      end
 
       {
         total_immobilized_capital: products.sum { |h| h[:immobilized_capital].to_f },
@@ -185,7 +189,17 @@ module Dashboard
 
     # Min-max normalization helper
     def normalize(values, value)
-      vals = values.compact.map { |v| (v.infinite? rescue true) ? nil : v }.compact
+      vals = values.compact.map do |v|
+        if begin
+          v.infinite?
+        rescue StandardError
+          true
+        end
+          nil
+        else
+          v
+        end
+      end.compact
       return 0.5 if value.nil?
       return 1.0 if value.respond_to?(:infinite?) && value.infinite?
       return 0.5 if vals.empty?

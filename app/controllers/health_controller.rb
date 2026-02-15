@@ -7,4 +7,3 @@ class HealthController < ApplicationController
     render plain: 'OK', status: :ok
   end
 end
-

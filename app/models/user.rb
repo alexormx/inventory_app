@@ -8,7 +8,7 @@ class User < ApplicationRecord
          :confirmable
 
   before_validation :normalize_blank_email
-  #before_validation :generate_placeholder_email, if: :offline_customer?
+  # before_validation :generate_placeholder_email, if: :offline_customer?
   before_create :generate_api_token, if: -> { admin? && api_token.blank? }
 
   has_many :purchase_orders, dependent: :restrict_with_error
@@ -21,7 +21,7 @@ class User < ApplicationRecord
   validates :phone, format: { with: /\A\d{10}\z/, message: 'Tiene que ser un numero de 10 digitos' }, allow_blank: true
   validates :discount_rate, numericality: { greater_than_or_equal_to: 0, less_than_or_equal_to: 100 }, allow_nil: true
 
-  #modify model to be able to create users without devise, not login.
+  # modify model to be able to create users without devise, not login.
   validates :password, presence: true, on: :create, unless: :created_by_admin?
   validates :email, uniqueness: true, allow_blank: true, unless: :offline_customer?
   validates :email, format: { with: URI::MailTo::EMAIL_REGEXP }, allow_blank: true
@@ -68,7 +68,6 @@ class User < ApplicationRecord
 
     errors.add(:base, 'Cannot delete user with associated orders')
     throw(:abort)
-    
   end
 
   def generate_api_token

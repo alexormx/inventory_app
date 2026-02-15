@@ -5,9 +5,7 @@ module CatalogHelper
   def catalog_dynamic_title
     parts = []
 
-    if params[:q].present?
-      return "Resultados para \"#{params[:q]}\""
-    end
+    return "Resultados para \"#{params[:q]}\"" if params[:q].present?
 
     categories = Array(params[:categories]).compact_blank
     brands = Array(params[:brands]).compact_blank
@@ -15,13 +13,9 @@ module CatalogHelper
     parts << categories.to_sentence if categories.any?
     parts << brands.to_sentence if brands.any?
 
-    if ActiveModel::Type::Boolean.new.cast(params[:in_stock])
-      parts << 'En Stock'
-    end
+    parts << 'En Stock' if ActiveModel::Type::Boolean.new.cast(params[:in_stock])
 
-    if ActiveModel::Type::Boolean.new.cast(params[:preorder])
-      parts << 'Preventa'
-    end
+    parts << 'Preventa' if ActiveModel::Type::Boolean.new.cast(params[:preorder])
 
     parts.any? ? parts.join(' - ') : 'Catálogo'
   end
@@ -30,7 +24,7 @@ module CatalogHelper
   def catalog_subtitle
     if params[:q].present?
       'Búsqueda en el catálogo'
-    elsif active_filters_count > 0
+    elsif active_filters_count.positive?
       "#{active_filters_count} filtro#{'s' if active_filters_count > 1} activo#{'s' if active_filters_count > 1}"
     else
       'Explora nuestra colección completa'

@@ -10,9 +10,7 @@ module Admin
     def search
       url = params[:url]
 
-      if url.blank?
-        return render json: { success: false, error: 'URL es requerida' }, status: :unprocessable_entity
-      end
+      return render json: { success: false, error: 'URL es requerida' }, status: :unprocessable_entity if url.blank?
 
       scraper = ImageScraperService.new(url)
       result = scraper.call
@@ -28,9 +26,7 @@ module Admin
     def download
       image_url = params[:image_url]
 
-      if image_url.blank?
-        return render json: { success: false, error: 'URL de imagen es requerida' }, status: :unprocessable_entity
-      end
+      return render json: { success: false, error: 'URL de imagen es requerida' }, status: :unprocessable_entity if image_url.blank?
 
       scraper = ImageScraperService.new(image_url)
       downloaded_file = scraper.download_image(image_url)
@@ -54,7 +50,6 @@ module Admin
           thumbnail: url_for(attached_image.variant(resize_to_limit: [200, 200]))
         }
       }, status: :ok
-
     rescue Down::NotFound => e
       render json: {
         success: false,
@@ -77,9 +72,9 @@ module Admin
     end
 
     def authorize_admin!
-      unless current_user&.admin?
-        render json: { error: 'Acceso denegado' }, status: :forbidden
-      end
+      return if current_user&.admin?
+
+      render json: { error: 'Acceso denegado' }, status: :forbidden
     end
   end
 end
