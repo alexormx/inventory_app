@@ -112,6 +112,8 @@ export default class extends Controller {
   _setSelection(location) {
     if (this.hasHiddenTarget) {
       this.hiddenTarget.value = location?.id || ""
+      // Dispatch change event so other controllers (e.g. bulk-location-assign) react
+      this.hiddenTarget.dispatchEvent(new Event('change', { bubbles: true }))
     }
     // Disparar evento para que otros controladores puedan reaccionar
     if (location) {
