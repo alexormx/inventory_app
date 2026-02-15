@@ -262,6 +262,11 @@ module Admin
 
       @total_unlocated = base_scope.count
       @location_options = InventoryLocation.active.nested_options
+
+      respond_to do |format|
+        format.html
+        format.turbo_stream # for search within turbo frame
+      end
     end
 
     # GET /admin/inventory/unlocated_items/:product_id - Detalle de piezas sin ubicar (AJAX)
@@ -274,6 +279,19 @@ module Admin
                         .limit(50)
 
       render partial: 'admin/inventory/unlocated_items_detail', locals: { items: @items, product: @product }
+    end
+
+    # GET /admin/inventory/location_contents/:location_id - Piezas en una ubicación (AJAX)
+    def location_contents
+      @location = InventoryLocation.find(params[:location_id])
+      @items = Inventory.includes(:product)
+                        .where(inventory_location_id: @location.id)
+                        .requiring_location
+                        .order('products.product_name')
+                        .references(:product)
+                        .limit(100)
+
+      render partial: 'admin/inventory/location_contents', locals: { items: @items, location: @location }
     end
 
     # POST /admin/inventory/bulk_assign_location - Asignar ubicación masivamente

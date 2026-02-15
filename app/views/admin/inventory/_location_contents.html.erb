@@ -1,0 +1,55 @@
+<% grouped = items.group_by { |inv| inv.product } %>
+<% if items.any? %>
+  <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+    <table class="table table-sm table-hover mb-0">
+      <thead class="table-light sticky-top">
+        <tr>
+          <th>Producto</th>
+          <th>SKU</th>
+          <th class="text-center">Piezas</th>
+          <th>Condición</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% grouped.each do |product, invs| %>
+          <% conditions = invs.group_by(&:item_condition) %>
+          <% conditions.each do |condition, cond_items| %>
+            <tr>
+              <td>
+                <strong class="small"><%= product&.product_name || '—' %></strong>
+              </td>
+              <td><code class="small"><%= product&.product_sku || '—' %></code></td>
+              <td class="text-center">
+                <span class="badge bg-primary"><%= cond_items.size %></span>
+              </td>
+              <td>
+                <% if condition.present? %>
+                  <span class="badge bg-light text-dark border small"><%= condition.humanize %></span>
+                <% else %>
+                  <span class="text-muted small">—</span>
+                <% end %>
+              </td>
+              <td>
+                <% statuses = cond_items.map(&:status).tally %>
+                <% statuses.each do |st, count| %>
+                  <span class="badge bg-<%= st == 'available' ? 'success' : 'info' %> small"><%= st %> (<%= count %>)</span>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+  <div class="text-muted small mt-1">
+    <i class="fas fa-info-circle"></i>
+    <%= items.size %> pieza<%= items.size == 1 ? '' : 's' %> en esta ubicación
+    <% if items.size >= 100 %>(mostrando primeras 100)<% end %>
+  </div>
+<% else %>
+  <div class="text-center text-muted py-3">
+    <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
+    <small>Esta ubicación está vacía</small>
+  </div>
+<% end %>

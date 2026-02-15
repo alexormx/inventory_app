@@ -1,6 +1,6 @@
 <%# Flash message %>
 <%= turbo_stream.replace "flash-messages" do %>
-  <div id="flash-messages">
+  <div id="flash-messages" class="container mt-3">
     <% if flash[:notice] %>
       <div class="alert alert-success alert-dismissible fade show" role="alert">
         <i class="fas fa-check-circle"></i> <%= flash[:notice] %>
@@ -37,52 +37,27 @@
   <% else %>
     <%# Actualizar el badge de cantidad sin ubicar %>
     <%= turbo_stream.replace "product-unlocated-count-#{product_id}" do %>
-      <span id="product-unlocated-count-<%= product_id %>" class="badge bg-warning text-dark fs-6"><%= data[:remaining] %></span>
-    <% end %>
-    <%# Actualizar el input max y resetear valor %>
-    <%= turbo_stream.replace "product-quantity-input-#{product_id}" do %>
-      <div id="product-quantity-input-<%= product_id %>" class="input-group input-group-sm" style="max-width: 180px; margin: 0 auto;">
-        <button type="button"
-                class="btn btn-outline-secondary"
-                title="Limpiar"
-                data-action="click->bulk-location-assign#clearQuantity">
-          <i class="fas fa-times"></i>
-        </button>
-        <input type="number"
-               name="assignments[<%= product_id %>]"
-               class="form-control text-center"
-               min="0"
-               max="<%= data[:remaining] %>"
-               value="0"
-               data-bulk-location-assign-target="quantityInput"
-               data-action="input->bulk-location-assign#quantityChanged">
-        <button type="button"
-                class="btn btn-outline-primary"
-                title="Asignar todo"
-                data-action="click->bulk-location-assign#assignAll">
-          <i class="fas fa-check-double"></i>
-        </button>
-      </div>
+      <span id="product-unlocated-count-<%= product_id %>" class="badge bg-warning text-dark"><%= data[:remaining] %></span>
     <% end %>
   <% end %>
 <% end %>
 
-<%# Resetear el contador del formulario y deshabilitar botón %>
+<%# Resetear el contador del carrito %>
 <%= turbo_stream.replace "bulk-assign-counter" do %>
-  <span id="bulk-assign-counter" class="fs-4 fw-bold" data-bulk-location-assign-target="counter">0</span>
+  <span class="fw-bold fs-5 text-muted" data-bulk-location-assign-target="counter" id="bulk-assign-counter">0</span>
 <% end %>
 
-<%# Si no quedan productos, mostrar mensaje de éxito %>
+<%# Si no quedan productos, mostrar mensaje de éxito en la tabla %>
 <% if @total_products == 0 %>
-  <%= turbo_stream.replace "unlocated-products-table" do %>
-    <div id="unlocated-products-table" class="card">
+  <%= turbo_stream.replace "unlocated-products-frame" do %>
+    <turbo-frame id="unlocated-products-frame">
       <div class="card-body text-center py-5">
-        <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
-        <h4>¡Todo el inventario tiene ubicación!</h4>
-        <p class="text-muted">No hay piezas de inventario pendientes de asignar ubicación.</p>
-        <%= link_to 'Ver Inventario', admin_inventory_path, class: 'btn btn-primary' %>
-        <%= link_to 'Ver Ubicaciones', admin_inventory_locations_path, class: 'btn btn-outline-secondary' %>
+        <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+        <h5>¡Todo el inventario tiene ubicación!</h5>
+        <p class="text-muted small">No hay piezas de inventario pendientes de asignar ubicación.</p>
+        <%= link_to 'Ver Inventario', admin_inventory_path, class: 'btn btn-primary btn-sm' %>
+        <%= link_to 'Ver Ubicaciones', admin_inventory_locations_path, class: 'btn btn-outline-secondary btn-sm' %>
       </div>
-    </div>
+    </turbo-frame>
   <% end %>
 <% end %>

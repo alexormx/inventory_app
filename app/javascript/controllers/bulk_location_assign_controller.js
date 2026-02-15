@@ -1,24 +1,295 @@
 import { Controller } from "@hotwired/stimulus"
 
-// Controlador para asignación masiva de ubicación a inventario
-// Maneja grupos colapsables por producto, selección parcial por cantidad, y submit
+// Controlador para asignación masiva de ubicación a inventario (v2 - con carrito)
+// Flujo: 1) Seleccionar ubicación  2) Buscar y agregar piezas al carrito  3) Asignar todo
 export default class extends Controller {
   static targets = [
-    "productGroup",    // Cada grupo de producto
-    "quantityInput",   // Input numérico para cantidad a asignar
-    "checkbox",        // Checkbox de cada grupo
-    "selectAll",       // Checkbox "seleccionar todo"
-    "counter",         // Contador de items seleccionados
-    "submitBtn",       // Botón de submit
-    "locationInput"    // Campo hidden de ubicación seleccionada
+    "productGroup",        // Cada fila <tr> de producto
+    "quantityInput",       // Input numérico de cantidad a agregar
+    "counter",             // Contador total de piezas en carrito
+    "submitBtn",           // Botón de asignar
+    "locationInput",       // Campo hidden de ubicación seleccionada
+    "locationIndicator",   // Indicador visual de ubicación seleccionada
+    "locationContents",    // Panel de piezas existentes en la ubicación
+    "locationContentsBody",// Contenido del panel de piezas existentes
+    "locationContentsIcon",// Icono de toggle del panel
+    "cartList",            // Lista de items en el carrito
+    "cartBadge",           // Badge del conteo del carrito
+    "cartEmpty",           // Estado vacío del carrito
+    "clearCartBtn"         // Botón vaciar carrito
   ]
 
-  connect() {
-    this._updateCounter()
-    this._updateSubmitState()
+  static values = {
+    locationContentsUrl: { type: String, default: "" }
   }
 
-  // Toggle colapsar/expandir un grupo de producto
+  connect() {
+    // Carrito en memoria: Map<productId, { name, sku, quantity, maxAvailable }>
+    this._cart = new Map()
+    this._selectedLocationId = null
+    this._selectedLocationName = ""
+    this._updateUI()
+  }
+
+  // ═══ UBICACIÓN ═══
+
+  // Cuando se selecciona una ubicación desde location-suggest
+  locationSelected() {
+    const locId = this.locationInputTarget.value.trim()
+    if (!locId) {
+      this._selectedLocationId = null
+      this._selectedLocationName = ""
+      this._hideLocationContents()
+      this._updateLocationIndicator()
+      this._updateUI()
+      return
+    }
+
+    this._selectedLocationId = locId
+    // Obtener nombre del hint del location-suggest
+    const hintEl = this.element.querySelector('[data-location-suggest-target="hint"]')
+    if (hintEl) {
+      this._selectedLocationName = hintEl.textContent.trim()
+    }
+
+    this._updateLocationIndicator()
+    this._loadLocationContents(locId)
+    this._updateUI()
+  }
+
+  _updateLocationIndicator() {
+    if (!this.hasLocationIndicatorTarget) return
+
+    if (this._selectedLocationId) {
+      this.locationIndicatorTarget.innerHTML = `
+        <div class="text-center">
+          <i class="fas fa-check-circle text-success fs-5"></i>
+          <div class="small fw-bold text-success mt-1">Ubicación lista</div>
+        </div>`
+    } else {
+      this.locationIndicatorTarget.innerHTML = `
+        <span><i class="fas fa-arrow-left me-1"></i> Selecciona una ubicación para comenzar</span>`
+    }
+  }
+
+  _loadLocationContents(locationId) {
+    if (!this.hasLocationContentsTarget) return
+
+    const url = this.locationContentsUrlValue.replace('__ID__', locationId)
+    this.locationContentsTarget.style.display = ''
+    this.locationContentsBodyTarget.innerHTML = `
+      <div class="text-center py-3 text-muted">
+        <i class="fas fa-spinner fa-spin"></i> Cargando piezas...
+      </div>`
+
+    fetch(url, { headers: { 'Accept': 'text/html', 'X-Requested-With': 'XMLHttpRequest' } })
+      .then(r => r.text())
+      .then(html => { this.locationContentsBodyTarget.innerHTML = html })
+      .catch(() => {
+        this.locationContentsBodyTarget.innerHTML = `
+          <div class="text-center py-3 text-danger">
+            <i class="fas fa-exclamation-triangle"></i> Error al cargar
+          </div>`
+      })
+  }
+
+  _hideLocationContents() {
+    if (this.hasLocationContentsTarget) {
+      this.locationContentsTarget.style.display = 'none'
+    }
+  }
+
+  toggleLocationContents() {
+    if (!this.hasLocationContentsBodyTarget) return
+    const body = this.locationContentsBodyTarget
+    const icon = this.hasLocationContentsIconTarget ? this.locationContentsIconTarget : null
+
+    if (body.style.display === 'none') {
+      body.style.display = ''
+      if (icon) icon.classList.replace('fa-chevron-down', 'fa-chevron-up')
+    } else {
+      body.style.display = 'none'
+      if (icon) icon.classList.replace('fa-chevron-up', 'fa-chevron-down')
+    }
+  }
+
+  // ═══ CARRITO ═══
+
+  // Agregar producto al carrito desde la tabla
+  addToCart(event) {
+    event.preventDefault()
+    if (!this._selectedLocationId) {
+      this._flashWarning("Primero selecciona una ubicación destino")
+      return
+    }
+
+    const row = event.currentTarget.closest('[data-bulk-location-assign-target="productGroup"]')
+    if (!row) return
+
+    const productId = row.dataset.productId
+    const productName = row.dataset.productName
+    const productSku = row.dataset.productSku
+    const maxAvailable = parseInt(row.dataset.unlocatedCount, 10) || 0
+    const input = row.querySelector('[data-bulk-location-assign-target="quantityInput"]')
+    let quantity = parseInt(input?.value, 10) || 0
+
+    if (quantity <= 0) {
+      this._flashWarning("La cantidad debe ser mayor a 0")
+      return
+    }
+
+    // Si ya existe en el carrito, sumar (sin exceder max)
+    if (this._cart.has(productId)) {
+      const existing = this._cart.get(productId)
+      const newQty = Math.min(existing.quantity + quantity, maxAvailable)
+      existing.quantity = newQty
+    } else {
+      quantity = Math.min(quantity, maxAvailable)
+      this._cart.set(productId, { name: productName, sku: productSku, quantity, maxAvailable })
+    }
+
+    // Feedback visual: flash verde en la fila
+    row.style.transition = 'background-color 0.3s'
+    row.style.backgroundColor = '#d1e7dd'
+    setTimeout(() => { row.style.backgroundColor = '' }, 600)
+
+    this._renderCart()
+    this._updateUI()
+  }
+
+  // Eliminar item del carrito
+  removeFromCart(event) {
+    event.preventDefault()
+    const productId = event.currentTarget.dataset.productId
+    this._cart.delete(productId)
+    this._renderCart()
+    this._updateUI()
+  }
+
+  // Vaciar carrito completo
+  clearCart(event) {
+    if (event) event.preventDefault()
+    this._cart.clear()
+    this._renderCart()
+    this._updateUI()
+  }
+
+  _renderCart() {
+    if (!this.hasCartListTarget) return
+
+    if (this._cart.size === 0) {
+      this.cartListTarget.innerHTML = `
+        <div class="text-center text-muted py-4" id="cart-empty-state">
+          <i class="fas fa-cart-plus fa-2x mb-2 d-block"></i>
+          <small>Agrega piezas desde la tabla de la izquierda</small>
+        </div>`
+      return
+    }
+
+    let html = '<div class="list-group list-group-flush">'
+    for (const [productId, item] of this._cart) {
+      html += `
+        <div class="list-group-item py-2 px-3 d-flex justify-content-between align-items-center"
+             id="cart-item-${productId}">
+          <div class="me-2" style="min-width: 0; flex: 1;">
+            <div class="fw-bold small text-truncate">${this._escapeHtml(item.name)}</div>
+            <code class="small text-muted">${this._escapeHtml(item.sku)}</code>
+          </div>
+          <div class="d-flex align-items-center gap-2 flex-shrink-0">
+            <span class="badge bg-primary">${item.quantity}</span>
+            <button type="button" class="btn btn-sm btn-outline-danger py-0 px-1"
+                    data-action="click->bulk-location-assign#removeFromCart"
+                    data-product-id="${productId}"
+                    title="Quitar del carrito">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+        </div>`
+    }
+    html += '</div>'
+    this.cartListTarget.innerHTML = html
+  }
+
+  _getCartTotal() {
+    let total = 0
+    for (const item of this._cart.values()) {
+      total += item.quantity
+    }
+    return total
+  }
+
+  // ═══ SUBMIT ═══
+
+  submitAssignment(event) {
+    event.preventDefault()
+    if (!this._selectedLocationId || this._cart.size === 0) return
+
+    const total = this._getCartTotal()
+    if (!confirm(`¿Asignar ${total} pieza${total === 1 ? '' : 's'} a la ubicación seleccionada?`)) return
+
+    // Construir assignments
+    const assignments = {}
+    for (const [productId, item] of this._cart) {
+      assignments[productId] = item.quantity
+    }
+
+    // Deshabilitar botón
+    this.submitBtnTarget.disabled = true
+    this.submitBtnTarget.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Asignando...'
+
+    // Obtener CSRF token
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content
+
+    // POST via fetch para recibir turbo stream response
+    const formData = new FormData()
+    formData.append('inventory_location_id', this._selectedLocationId)
+    for (const [productId, qty] of Object.entries(assignments)) {
+      formData.append(`assignments[${productId}]`, qty)
+    }
+
+    fetch('/admin/inventory/bulk_assign_location', {
+      method: 'POST',
+      headers: {
+        'X-CSRF-Token': csrfToken,
+        'Accept': 'text/vnd.turbo-stream.html, text/html'
+      },
+      body: formData
+    })
+      .then(response => {
+        if (response.ok) {
+          return response.text()
+        }
+        throw new Error('Error en la asignación')
+      })
+      .then(html => {
+        // Procesar turbo streams si los hay
+        if (html.includes('turbo-stream')) {
+          Turbo.renderStreamMessage(html)
+        }
+
+        // Limpiar carrito
+        this._cart.clear()
+        this._renderCart()
+        this._updateUI()
+
+        // Recargar piezas de la ubicación
+        if (this._selectedLocationId) {
+          this._loadLocationContents(this._selectedLocationId)
+        }
+      })
+      .catch(error => {
+        console.error('Bulk assign error:', error)
+        alert('Error al asignar. Intenta de nuevo.')
+      })
+      .finally(() => {
+        this.submitBtnTarget.disabled = false
+        this.submitBtnTarget.innerHTML = '<i class="fas fa-check me-1"></i> Asignar Todo a Ubicación'
+        this._updateUI()
+      })
+  }
+
+  // ═══ EXPAND / COLLAPSE ═══
+
   toggleGroup(event) {
     event.preventDefault()
     const button = event.currentTarget
@@ -31,39 +302,29 @@ export default class extends Controller {
     const isHidden = detailRow.style.display === 'none'
 
     if (isHidden) {
-      // Expandir - cargar contenido si es necesario
       detailRow.style.display = ''
       if (icon) icon.classList.replace('fa-chevron-right', 'fa-chevron-down')
 
-      // Cargar contenido via AJAX si aún no se ha cargado
       const detailContent = detailRow.querySelector('.detail-content')
       const url = button.dataset.url
 
       if (url && detailContent && !detailContent.dataset.loaded) {
-        fetch(url, {
-          headers: {
-            'Accept': 'text/html',
-            'X-Requested-With': 'XMLHttpRequest'
-          }
-        })
-          .then(response => response.text())
+        fetch(url, { headers: { 'Accept': 'text/html', 'X-Requested-With': 'XMLHttpRequest' } })
+          .then(r => r.text())
           .then(html => {
             detailContent.innerHTML = html
             detailContent.dataset.loaded = 'true'
           })
-          .catch(error => {
+          .catch(() => {
             detailContent.innerHTML = '<p class="text-danger p-3"><i class="fas fa-exclamation-triangle"></i> Error al cargar</p>'
-            console.error('Error loading inventory items:', error)
           })
       }
     } else {
-      // Colapsar
       detailRow.style.display = 'none'
       if (icon) icon.classList.replace('fa-chevron-down', 'fa-chevron-right')
     }
   }
 
-  // Expandir todos los grupos
   expandAll(event) {
     event.preventDefault()
     this.productGroupTargets.forEach(group => {
@@ -75,37 +336,23 @@ export default class extends Controller {
         detailRow.style.display = ''
         if (icon) icon.classList.replace('fa-chevron-right', 'fa-chevron-down')
 
-        // Cargar contenido si es necesario
         const detailContent = detailRow.querySelector('.detail-content')
         const url = button?.dataset.url
-
         if (url && detailContent && !detailContent.dataset.loaded) {
-          fetch(url, {
-            headers: {
-              'Accept': 'text/html',
-              'X-Requested-With': 'XMLHttpRequest'
-            }
-          })
-            .then(response => response.text())
-            .then(html => {
-              detailContent.innerHTML = html
-              detailContent.dataset.loaded = 'true'
-            })
-            .catch(error => {
-              detailContent.innerHTML = '<p class="text-danger p-3"><i class="fas fa-exclamation-triangle"></i> Error al cargar</p>'
-            })
+          fetch(url, { headers: { 'Accept': 'text/html', 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(r => r.text())
+            .then(html => { detailContent.innerHTML = html; detailContent.dataset.loaded = 'true' })
+            .catch(() => { detailContent.innerHTML = '<p class="text-danger p-3">Error</p>' })
         }
       }
     })
   }
 
-  // Colapsar todos los grupos
   collapseAll(event) {
     event.preventDefault()
     this.productGroupTargets.forEach(group => {
       const detailRow = group.nextElementSibling
       const icon = group.querySelector('.toggle-icon')
-
       if (detailRow && detailRow.classList.contains('detail-row')) {
         detailRow.style.display = 'none'
         if (icon) icon.classList.replace('fa-chevron-down', 'fa-chevron-right')
@@ -113,140 +360,56 @@ export default class extends Controller {
     })
   }
 
-  // Seleccionar/deseleccionar todos los productos
-  toggleSelectAll(event) {
-    const isChecked = event.currentTarget.checked
-    this.checkboxTargets.forEach(cb => {
-      cb.checked = isChecked
-    })
-    this._updateCounter()
-    this._updateSubmitState()
-  }
+  // ═══ HELPERS ═══
 
-  // Cuando cambia un checkbox individual
-  checkboxChanged() {
-    this._updateCounter()
-    this._updateSubmitState()
-    this._updateSelectAllState()
-  }
+  _updateUI() {
+    const total = this._getCartTotal()
+    const hasLocation = !!this._selectedLocationId
+    const hasItems = total > 0
 
-  // Cuando cambia el input de cantidad
-  quantityChanged(event) {
-    const input = event.currentTarget
-    const max = parseInt(input.max, 10) || 0
-    let value = parseInt(input.value, 10) || 0
-
-    // Validar rango
-    if (value < 0) value = 0
-    if (value > max) value = max
-    input.value = value
-
-    // Si el valor es > 0, marcar el checkbox automáticamente
-    const group = input.closest('[data-bulk-location-assign-target="productGroup"]')
-    const checkbox = group?.querySelector('[data-bulk-location-assign-target="checkbox"]')
-    if (checkbox) {
-      checkbox.checked = value > 0
+    // Counter
+    if (this.hasCounterTarget) {
+      this.counterTarget.textContent = total
+      this.counterTarget.classList.toggle('text-success', hasItems)
+      this.counterTarget.classList.toggle('text-muted', !hasItems)
     }
 
-    this._updateCounter()
-    this._updateSubmitState()
-    this._updateSelectAllState()
-  }
+    // Cart badge
+    if (this.hasCartBadgeTarget) {
+      this.cartBadgeTarget.textContent = this._cart.size
+    }
 
-  // Asignar todo el inventario de un producto
-  assignAll(event) {
-    const group = event.currentTarget.closest('[data-bulk-location-assign-target="productGroup"]')
-    const input = group?.querySelector('[data-bulk-location-assign-target="quantityInput"]')
-    const checkbox = group?.querySelector('[data-bulk-location-assign-target="checkbox"]')
+    // Submit button
+    if (this.hasSubmitBtnTarget) {
+      this.submitBtnTarget.disabled = !(hasLocation && hasItems)
+    }
 
-    if (input) {
-      input.value = input.max
-      if (checkbox) checkbox.checked = true
-      this._updateCounter()
-      this._updateSubmitState()
+    // Clear cart button
+    if (this.hasClearCartBtnTarget) {
+      this.clearCartBtnTarget.style.display = hasItems ? '' : 'none'
     }
   }
 
-  // Limpiar cantidad de un producto
-  clearQuantity(event) {
-    const group = event.currentTarget.closest('[data-bulk-location-assign-target="productGroup"]')
-    const input = group?.querySelector('[data-bulk-location-assign-target="quantityInput"]')
-    const checkbox = group?.querySelector('[data-bulk-location-assign-target="checkbox"]')
+  _flashWarning(message) {
+    const flashDiv = document.getElementById('flash-messages')
+    if (!flashDiv) { alert(message); return }
 
-    if (input) {
-      input.value = 0
-      if (checkbox) checkbox.checked = false
-      this._updateCounter()
-      this._updateSubmitState()
-    }
+    flashDiv.innerHTML = `
+      <div class="alert alert-warning alert-dismissible fade show" role="alert">
+        <i class="fas fa-exclamation-triangle"></i> ${this._escapeHtml(message)}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>`
+
+    setTimeout(() => {
+      const alert = flashDiv.querySelector('.alert')
+      if (alert) alert.remove()
+    }, 3000)
   }
 
-  // Evento cuando se selecciona una ubicación (desde location-suggest)
-  locationSelected(event) {
-    this._updateSubmitState()
-  }
-
-  // Actualizar contador de items seleccionados
-  _updateCounter() {
-    if (!this.hasCounterTarget) return
-
-    let totalSelected = 0
-    this.productGroupTargets.forEach(group => {
-      const checkbox = group.querySelector('[data-bulk-location-assign-target="checkbox"]')
-      const input = group.querySelector('[data-bulk-location-assign-target="quantityInput"]')
-      if (checkbox?.checked && input) {
-        totalSelected += parseInt(input.value, 10) || 0
-      }
-    })
-
-    this.counterTarget.textContent = totalSelected
-    this.counterTarget.classList.toggle('text-primary', totalSelected > 0)
-    this.counterTarget.classList.toggle('text-muted', totalSelected === 0)
-  }
-
-  // Actualizar estado del botón submit
-  _updateSubmitState() {
-    if (!this.hasSubmitBtnTarget) return
-
-    const hasLocation = this.hasLocationInputTarget && this.locationInputTarget.value.trim() !== ''
-    const hasSelection = this._getSelectedCount() > 0
-
-    this.submitBtnTarget.disabled = !(hasLocation && hasSelection)
-  }
-
-  // Actualizar estado del checkbox "seleccionar todo"
-  _updateSelectAllState() {
-    if (!this.hasSelectAllTarget) return
-
-    const total = this.checkboxTargets.length
-    const checked = this.checkboxTargets.filter(cb => cb.checked).length
-
-    this.selectAllTarget.checked = checked === total && total > 0
-    this.selectAllTarget.indeterminate = checked > 0 && checked < total
-  }
-
-  // Obtener conteo de items seleccionados
-  _getSelectedCount() {
-    let count = 0
-    this.productGroupTargets.forEach(group => {
-      const checkbox = group.querySelector('[data-bulk-location-assign-target="checkbox"]')
-      const input = group.querySelector('[data-bulk-location-assign-target="quantityInput"]')
-      if (checkbox?.checked && input) {
-        count += parseInt(input.value, 10) || 0
-      }
-    })
-    return count
-  }
-
-  // Preparar datos del formulario antes de submit
-  prepareSubmit(event) {
-    // Deshabilitar inputs de productos no seleccionados para no enviarlos
-    this.productGroupTargets.forEach(group => {
-      const checkbox = group.querySelector('[data-bulk-location-assign-target="checkbox"]')
-      const input = group.querySelector('[data-bulk-location-assign-target="quantityInput"]')
-      if (input) {
-        input.disabled = !checkbox?.checked || parseInt(input.value, 10) <= 0
-      }
-    })
+  _escapeHtml(str) {
+    if (!str) return ''
+    const div = document.createElement('div')
+    div.textContent = str
+    return div.innerHTML
   }
 }

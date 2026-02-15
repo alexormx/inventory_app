@@ -50,6 +50,7 @@ Rails.application.routes.draw do
     get 'inventory/unlocated', to: 'inventory#unlocated', as: :inventory_unlocated
     get 'inventory/unlocated_items/:product_id', to: 'inventory#unlocated_items', as: :inventory_unlocated_items
     post 'inventory/bulk_assign_location', to: 'inventory#bulk_assign_location', as: :inventory_bulk_assign_location
+    get 'inventory/location_contents/:location_id', to: 'inventory#location_contents', as: :inventory_location_contents
     get 'inventory/transfer', to: 'inventory#transfer', as: :inventory_transfer
     get 'inventory/location_items/:location_id', to: 'inventory#location_items', as: :inventory_location_items
     post 'inventory/execute_transfer', to: 'inventory#execute_transfer', as: :inventory_execute_transfer
