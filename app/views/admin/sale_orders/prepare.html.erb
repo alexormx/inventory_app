@@ -90,10 +90,10 @@
                              style="width: 1.25em; height: 1.25em;">
                     </td>
                     <td>
-                      <div class="fw-medium"><%= inv.product&.name || "—" %></div>
+                      <div class="fw-medium"><%= inv.product&.product_name || "—" %></div>
                     </td>
                     <td>
-                      <code><%= inv.product&.sku || "—" %></code>
+                      <code><%= inv.product&.product_sku || "—" %></code>
                     </td>
                     <td>
                       <% if inv.item_condition.present? %>
