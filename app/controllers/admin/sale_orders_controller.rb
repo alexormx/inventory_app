@@ -97,6 +97,13 @@ module Admin
                     alert: "Solo se puede preparar una orden Confirmada. Estado actual: #{@sale_order.status}" and return
       end
 
+      # Verificar que todas las piezas de inventario estén en bodega (no en tránsito del proveedor)
+      in_transit_pieces = @sale_order.inventories.where(status: %i[pre_reserved pre_sold in_transit])
+      if in_transit_pieces.exists?
+        redirect_to admin_sale_order_path(@sale_order),
+                    alert: "No se puede preparar: #{in_transit_pieces.count} pieza(s) aún en tránsito del proveedor. Espera a que lleguen al almacén." and return
+      end
+
       # Auto-crear shipment en pending si no existe
       if @sale_order.shipment.blank?
         order_base = @sale_order.order_date || Time.zone.today

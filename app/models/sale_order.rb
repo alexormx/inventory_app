@@ -82,11 +82,11 @@ class SaleOrder < ApplicationRecord
 
   def update_status_if_fully_paid!
     # Promueve Pending -> Confirmed si está totalmente pagada.
-    # Si baja el pago, permite degradar desde Confirmed -> Pending para habilitar edición.
-    # No degrada si está en Preparing, In Transit o Delivered (flujo avanzado).
+    # Si baja el pago, degrada a Pending desde Confirmed, Preparing o In Transit.
+    # Delivered no se degrada automáticamente (requiere acción manual).
     if fully_paid?
       update!(status: 'Confirmed') if status == 'Pending'
-    elsif %w[Confirmed].include?(status)
+    elsif %w[Confirmed Preparing In\ Transit].include?(status)
       update!(status: 'Pending')
     end
   end
@@ -316,7 +316,8 @@ class SaleOrder < ApplicationRecord
     ]
     # Transiciones que revierten inventario a reserved:
     demote = [
-      %w[Confirmed Pending], %w[Preparing Confirmed], ['In Transit', 'Preparing'],
+      %w[Confirmed Pending], %w[Preparing Pending], %w[Preparing Confirmed],
+      ['In Transit', 'Pending'], ['In Transit', 'Preparing'],
       %w[Delivered Confirmed], %w[Delivered Pending], %w[Delivered Preparing],
       ['Delivered', 'In Transit'], ['In Transit', 'Confirmed']
     ]

@@ -97,8 +97,15 @@
       <%# Botones de acción según estado %>
       <div class="text-center mt-3 d-flex justify-content-center gap-2 flex-wrap">
         <% if @sale_order.status == 'Confirmed' %>
-          <%= link_to prepare_admin_sale_order_path(@sale_order), class: "btn btn-primary" do %>
-            <i class="fa fa-box-open me-1"></i> 📦 Preparar Paquete
+          <% in_transit_count = @sale_order.inventories.where(status: %i[pre_reserved pre_sold in_transit]).count %>
+          <% if in_transit_count > 0 %>
+            <span class="btn btn-primary disabled" data-bs-toggle="tooltip" title="<%= in_transit_count %> pieza(s) aún en tránsito del proveedor">
+              <i class="fa fa-box-open me-1"></i> 📦 Preparar Paquete <i class="fa fa-clock ms-1"></i>
+            </span>
+          <% else %>
+            <%= link_to prepare_admin_sale_order_path(@sale_order), class: "btn btn-primary" do %>
+              <i class="fa fa-box-open me-1"></i> 📦 Preparar Paquete
+            <% end %>
           <% end %>
         <% elsif @sale_order.status == 'Preparing' %>
           <%= link_to prepare_admin_sale_order_path(@sale_order), class: "btn btn-outline-primary me-2" do %>
