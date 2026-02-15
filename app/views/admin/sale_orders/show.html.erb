@@ -104,6 +104,10 @@
           <%= link_to prepare_admin_sale_order_path(@sale_order), class: "btn btn-outline-primary me-2" do %>
             <i class="fa fa-box-open me-1"></i> Ver Picking List
           <% end %>
+        <% elsif @sale_order.status == 'In Transit' %>
+          <%= button_to deliver_admin_sale_order_path(@sale_order), method: :post, class: "btn btn-success", data: { turbo_confirm: "¿Confirmar que la orden fue entregada al cliente?" } do %>
+            <i class="fa fa-check-circle me-1"></i> ✅ Marcar como Entregada
+          <% end %>
         <% end %>
 
         <% if @sale_order.status == 'Canceled' %>

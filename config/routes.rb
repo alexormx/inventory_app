@@ -209,6 +209,7 @@ Rails.application.routes.draw do
         post :cancel
         get :prepare
         post :ship
+        post :deliver
         post :force_pending, to: 'sale_orders_status#force_pending'
         post :force_delivered, to: 'sale_orders_status#force_delivered'
         post :cancel_reservations, to: 'sale_orders#cancel_reservations'

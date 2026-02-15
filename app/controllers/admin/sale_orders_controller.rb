@@ -5,7 +5,7 @@ module Admin
   class SaleOrdersController < ApplicationController
     before_action :authenticate_user!
     before_action :authorize_admin!
-    before_action :set_sale_order, only: %i[show edit update destroy summary cancel prepare ship]
+    before_action :set_sale_order, only: %i[show edit update destroy summary cancel prepare ship deliver]
     before_action :load_counts, only: [:index]
 
     PER_PAGE = 20
@@ -146,6 +146,28 @@ module Admin
       else
         redirect_to prepare_admin_sale_order_path(@sale_order),
                     alert: "Error al despachar: #{shipment.errors.full_messages.join(', ')}"
+      end
+    end
+
+    # POST /admin/sale_orders/:id/deliver
+    # Marca el envío como delivered y transiciona In Transit → Delivered
+    def deliver
+      unless @sale_order.status == 'In Transit'
+        redirect_to admin_sale_order_path(@sale_order),
+                    alert: "Solo se puede marcar como entregada una orden en tránsito. Estado actual: #{@sale_order.status}" and return
+      end
+
+      shipment = @sale_order.shipment
+      redirect_to admin_sale_order_path(@sale_order), alert: 'No hay envío asignado.' and return unless shipment
+
+      if shipment.update(status: :delivered)
+        # El callback sync_sale_order_status_from_shipment se encarga de: In Transit → Delivered
+        @sale_order.reload
+        redirect_to admin_sale_order_path(@sale_order),
+                    notice: '✅ Orden marcada como entregada.'
+      else
+        redirect_to admin_sale_order_path(@sale_order),
+                    alert: "Error al marcar como entregada: #{shipment.errors.full_messages.join(', ')}"
       end
     end
 
