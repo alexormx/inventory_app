@@ -187,12 +187,12 @@
             <div
               data-controller="chart"
               data-chart-type="line"
-              data-chart-x="<%= raw((trend[:months] || []).to_json) %>"
-              data-chart-series="<%= raw([
+              data-chart-x="<%= (trend[:months] || []).to_json %>"
+              data-chart-series="<%= [
                 { name: 'Ingresos', data: (trend[:revenue] || []).map(&:to_f) },
                 { name: 'COGS',     data: (trend[:cogs] || []).map(&:to_f) },
                 { name: 'Utilidad', data: (trend[:profit] || []).map(&:to_f) }
-              ].to_json) %>"
+              ].to_json %>"
               style="height:300px"
             ></div>
           <% else %>
@@ -213,7 +213,7 @@
             <div
               data-controller="chart"
               data-chart-type="pie"
-              data-chart-series="<%= raw(@so_status_pie.to_json) %>"
+              data-chart-series="<%= @so_status_pie.to_json %>"
               style="height:165px"
             ></div>
           <% else %>
@@ -230,7 +230,7 @@
             <div
               data-controller="chart"
               data-chart-type="pie"
-              data-chart-series="<%= raw(@po_status_pie.to_json) %>"
+              data-chart-series="<%= @po_status_pie.to_json %>"
               style="height:165px"
             ></div>
           <% else %>
@@ -341,12 +341,12 @@
             <div
               data-controller="chart"
               data-chart-type="line"
-              data-chart-x="<%= raw((cf[:months] || []).to_json) %>"
-              data-chart-series="<%= raw([
+              data-chart-x="<%= (cf[:months] || []).to_json %>"
+              data-chart-series="<%= [
                 { name: 'Ingresos', data: (cf[:inflow] || []).map(&:to_f) },
                 { name: 'Egresos',  data: (cf[:outflow] || []).map { |v| -v.to_f } },
                 { name: 'Neto',     data: (cf[:net] || []).map(&:to_f) }
-              ].to_json) %>"
+              ].to_json %>"
               style="height:280px"
             ></div>
           <% else %>
@@ -370,11 +370,11 @@
             <div
               data-controller="chart"
               data-chart-type="bar"
-              data-chart-x="<%= raw((cfc[:months] || []).to_json) %>"
-              data-chart-series="<%= raw([
+              data-chart-x="<%= (cfc[:months] || []).to_json %>"
+              data-chart-series="<%= [
                 { name: "#{cfc[:current_year]} Neto", data: (cfc[:net_current] || []).map(&:to_f), type: 'bar' },
                 { name: "#{cfc[:prev_year]} Neto",    data: (cfc[:net_prev] || []).map(&:to_f), type: 'bar' }
-              ].to_json) %>"
+              ].to_json %>"
               style="height:240px"
             ></div>
             <div class="row mt-2 small text-muted">
@@ -415,8 +415,8 @@
             <div
               data-controller="chart"
               data-chart-type="stacked"
-              data-chart-x="<%= raw((cat[:months] || []).to_json) %>"
-              data-chart-series="<%= raw(cat_series.map { |s| s.merge(type: 'bar') }.to_json) %>"
+              data-chart-x="<%= (cat[:months] || []).to_json %>"
+              data-chart-series="<%= cat_series.map { |s| s.merge(type: 'bar') }.to_json %>"
               style="height:280px"
             ></div>
           <% else %>
@@ -441,8 +441,8 @@
                 <div
                   data-controller="chart"
                   data-chart-type="bar"
-                  data-chart-x="<%= raw((brand[:brands] || []).to_json) %>"
-                  data-chart-series='[{"name":"Utilidad","data":<%= raw(brand_data.to_json) %>}]'
+                  data-chart-x="<%= (brand[:brands] || []).to_json %>"
+                  data-chart-series="<%= [{ name: 'Utilidad', data: brand_data }].to_json %>"
                   style="height:130px"
                 ></div>
               <% else %>
@@ -463,8 +463,8 @@
                 <div
                   data-controller="chart"
                   data-chart-type="bar"
-                  data-chart-x="<%= raw((cat_profit[:categories] || []).to_json) %>"
-                  data-chart-series='[{"name":"Utilidad","data":<%= raw(cat_profit_data.to_json) %>}]'
+                  data-chart-x="<%= (cat_profit[:categories] || []).to_json %>"
+                  data-chart-series="<%= [{ name: 'Utilidad', data: cat_profit_data }].to_json %>"
                   style="height:130px"
                 ></div>
               <% else %>
