@@ -7,6 +7,7 @@ class SaleOrder < ApplicationRecord
   STATUSES = [
     'Pending',
     'Confirmed',
+    'Preparing',
     'In Transit',
     'Delivered',
     'Canceled',
@@ -15,8 +16,7 @@ class SaleOrder < ApplicationRecord
 
   CANONICAL_STATUS = {
     'pending' => 'Pending',
-    'confirmed' => 'Confirmed',
-    'in_transit' => 'In Transit',
+    'confirmed' => 'Confirmed',    'preparing' => 'Preparing',    'in_transit' => 'In Transit',
     'shipped' => 'In Transit', # si llega “shipped”, lo mapeamos a In Transit
     'delivered' => 'Delivered',
     'canceled' => 'Canceled',
@@ -82,11 +82,11 @@ class SaleOrder < ApplicationRecord
 
   def update_status_if_fully_paid!
     # Promueve Pending -> Confirmed si está totalmente pagada.
-    # Si baja el pago, permite degradar desde Confirmed o Delivered -> Pending para habilitar edición.
+    # Si baja el pago, permite degradar desde Confirmed -> Pending para habilitar edición.
+    # No degrada si está en Preparing, In Transit o Delivered (flujo avanzado).
     if fully_paid?
       update!(status: 'Confirmed') if status == 'Pending'
-      # Si ya está Delivered y se mantiene fully_paid, no cambiamos aquí.
-    elsif %w[Confirmed Delivered].include?(status)
+    elsif %w[Confirmed].include?(status)
       update!(status: 'Pending')
     end
   end
@@ -169,11 +169,18 @@ class SaleOrder < ApplicationRecord
 
   def ensure_payment_and_shipment_present
     # Solo validar al transicionar a un estado que exige pago/envío.
-    return unless saved_change_to_status?
+    # En updates: will_save_change_to_status? detecta transiciones pendientes.
+    # No aplica en creates (set_default_status maneja el estado inicial).
+    return if new_record?
+    return unless will_save_change_to_status?
 
     case status
     when 'Confirmed'
       errors.add(:payment, 'must exist to confirm the order') unless total_order_value.to_f == 0.0 || payments.any?
+    when 'Preparing'
+      # Para preparar paquete, debe estar pagada y tener shipment (auto-creado)
+      errors.add(:payment, 'must exist to prepare the order') unless total_order_value.to_f == 0.0 || payments.any?
+      errors.add(:shipment, 'must exist to prepare the order') if shipment.blank?
     when 'Shipped'
       # Para marcar como Shipped requerimos pago y envío existente
       errors.add(:payment, 'must exist to ship the order') unless total_order_value.to_f == 0.0 || payments.any?
@@ -254,6 +261,7 @@ class SaleOrder < ApplicationRecord
 
   def ensure_shipment_status_matches
     return unless status == 'Delivered'
+    # Si está en Preparing o In Transit, no forzamos el shipment a delivered
 
     # Si existe shipment, forzamos su estado a delivered (usa el enum como símbolo)
     if shipment.present?
@@ -298,18 +306,29 @@ class SaleOrder < ApplicationRecord
   def sync_inventory_status_for_payment_change
     previous, current = saved_change_to_status
     # Cubrimos transiciones entre Pending, Confirmed y Delivered para sincronizar sold/reserved y pre_*.
-    case [previous, current]
-    when %w[Pending Confirmed], %w[Confirmed Delivered], %w[Pending Delivered]
-      # Promoción de cobro/entrega: reserved -> sold ; pre_reserved -> pre_sold
+    # Transiciones que promueven inventario a sold:
+    #   Pending->Confirmed, Confirmed->Preparing, Preparing->In Transit,
+    #   *->Delivered (catch-all para saltos)
+    promote = [
+      %w[Pending Confirmed], %w[Confirmed Preparing], %w[Preparing In\ Transit],
+      %w[Confirmed Delivered], %w[Pending Delivered], %w[Preparing Delivered],
+      %w[In\ Transit Delivered], %w[Confirmed In\ Transit]
+    ]
+    # Transiciones que revierten inventario a reserved:
+    demote = [
+      %w[Confirmed Pending], %w[Preparing Confirmed], %w[In\ Transit Preparing],
+      %w[Delivered Confirmed], %w[Delivered Pending], %w[Delivered Preparing],
+      %w[Delivered In\ Transit], %w[In\ Transit Confirmed]
+    ]
+
+    if promote.include?([previous, current])
       inventories.where(status: [:reserved]).update_all(status: Inventory.statuses[:sold], status_changed_at: Time.current, updated_at: Time.current)
       inventories.where(status: [:pre_reserved]).update_all(status: Inventory.statuses[:pre_sold], status_changed_at: Time.current, updated_at: Time.current)
-    when %w[Confirmed Pending], %w[Delivered Confirmed], %w[Delivered Pending]
-      # Reversión (edición/corrección): sold -> reserved ; pre_sold -> pre_reserved
+    elsif demote.include?([previous, current])
       inventories.where(status: [:sold]).update_all(status: Inventory.statuses[:reserved], status_changed_at: Time.current, updated_at: Time.current)
       inventories.where(status: [:pre_sold]).update_all(status: Inventory.statuses[:pre_reserved], status_changed_at: Time.current, updated_at: Time.current)
-    else
-      # Otras transiciones no afectan inventario
     end
+    # Otras transiciones no afectan inventario
 
     # Broadcast Turbo Stream para refrescar la tabla y totales (si la vista está abierta)
     begin

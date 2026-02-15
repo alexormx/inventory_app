@@ -44,6 +44,7 @@ module Api
         mapping = {
           'pending' => 'Pending',
           'confirmed' => 'Confirmed',
+          'preparing' => 'Preparing',
           'shipped' => 'Shipped',
           'delivered' => 'Delivered',
           'canceled' => 'Canceled',
@@ -162,6 +163,7 @@ module Api
         mapping = {
           'pending' => 'Pending',
           'confirmed' => 'Confirmed',
+          'preparing' => 'Preparing',
           'shipped' => 'Shipped',
           'delivered' => 'Delivered',
           'canceled' => 'Canceled',

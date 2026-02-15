@@ -1,0 +1,197 @@
+<%
+  items_count = @sale_order.sale_order_items.sum(:quantity)
+  products_count = @sale_order.sale_order_items.count
+%>
+
+<div class="container-fluid px-0">
+  <%# Header %>
+  <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+    <h2 class="mb-0 d-flex align-items-center gap-2 flex-wrap">
+      <i class="fa fa-box-open text-primary"></i> Preparar Paquete — Orden #<%= @sale_order.id %>
+      <span class="badge bg-purple text-white">
+        <i class="fa fa-cog"></i> En Preparación
+      </span>
+    </h2>
+    <div class="d-flex gap-2 flex-wrap">
+      <%= link_to admin_sale_order_path(@sale_order), class: "btn btn-outline-secondary btn-sm" do %>
+        <i class="fa fa-arrow-left"></i> Volver a Orden
+      <% end %>
+    </div>
+  </div>
+
+  <%# Resumen rápido %>
+  <div class="row g-3 mb-4">
+    <div class="col-md-3 col-sm-6">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body text-center py-3">
+          <div class="text-muted small text-uppercase">Cliente</div>
+          <div class="h5 mb-0"><%= @sale_order.user&.name || "—" %></div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body text-center py-3">
+          <div class="text-muted small text-uppercase">Piezas a Recoger</div>
+          <div class="h4 mb-0 text-primary"><%= @inventories.size %></div>
+          <div class="small text-muted"><%= products_count %> productos</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body text-center py-3">
+          <div class="text-muted small text-uppercase">Ubicaciones</div>
+          <div class="h4 mb-0"><%= @grouped.keys.size %></div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body text-center py-3">
+          <div class="text-muted small text-uppercase">Peso Total</div>
+          <div class="h5 mb-0"><%= number_with_precision(@sale_order.total_weight_gr / 1000.0, precision: 2) %> kg</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%# Lista de picking agrupada por ubicación %>
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-transparent border-0">
+      <h5 class="mb-0"><i class="fa fa-map-marker-alt text-muted me-2"></i>Lista de Picking</h5>
+    </div>
+    <div class="card-body p-0">
+      <% @grouped.each do |location, inventories| %>
+        <div class="border-bottom">
+          <div class="px-3 py-2 bg-light d-flex align-items-center gap-2">
+            <i class="fa fa-warehouse text-primary"></i>
+            <strong><%= location %></strong>
+            <span class="badge bg-primary rounded-pill"><%= inventories.size %> pieza<%= 's' if inventories.size > 1 %></span>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th style="width: 60px;" class="text-center">✓</th>
+                  <th>Producto</th>
+                  <th>SKU</th>
+                  <th>Condición</th>
+                  <th>Estado</th>
+                  <th class="text-center">ID Pieza</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% inventories.each do |inv| %>
+                  <tr>
+                    <td class="text-center">
+                      <input type="checkbox" class="form-check-input picking-check"
+                             data-inventory-id="<%= inv.id %>"
+                             style="width: 1.25em; height: 1.25em;">
+                    </td>
+                    <td>
+                      <div class="fw-medium"><%= inv.product&.name || "—" %></div>
+                    </td>
+                    <td>
+                      <code><%= inv.product&.sku || "—" %></code>
+                    </td>
+                    <td>
+                      <% if inv.item_condition.present? %>
+                        <span class="badge bg-light text-dark border"><%= inv.item_condition.humanize %></span>
+                      <% else %>
+                        <span class="text-muted">—</span>
+                      <% end %>
+                    </td>
+                    <td>
+                      <span class="badge <%= inv.status == 'sold' ? 'bg-success' : 'bg-info' %>">
+                        <%= inv.status.humanize %>
+                      </span>
+                    </td>
+                    <td class="text-center">
+                      <small class="text-muted">#<%= inv.id %></small>
+                    </td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      <% end %>
+
+      <% if @inventories.empty? %>
+        <div class="text-center py-4 text-muted">
+          <i class="fa fa-inbox fa-2x mb-2"></i>
+          <p>No hay piezas asignadas a esta orden.</p>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <%# Envío — datos del shipment %>
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-transparent border-0">
+      <h5 class="mb-0"><i class="fa fa-shipping-fast text-muted me-2"></i>Datos de Envío</h5>
+    </div>
+    <div class="card-body">
+      <% shipment = @sale_order.shipment %>
+      <% if shipment %>
+        <%= form_tag ship_admin_sale_order_path(@sale_order), method: :post, class: "row g-3 align-items-end" do %>
+          <div class="col-md-4">
+            <label class="form-label">Paquetería / Carrier</label>
+            <input type="text" name="carrier" class="form-control"
+                   value="<%= shipment.carrier.presence %>"
+                   placeholder="Ej: Estafeta, FedEx, DHL, Correos de México">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Número de Rastreo</label>
+            <input type="text" name="tracking_number" class="form-control"
+                   value="<%= shipment.tracking_number.presence %>"
+                   placeholder="Opcional — puedes agregarlo después">
+            <small class="text-muted">Déjalo en blanco si aún no lo tienes.</small>
+          </div>
+          <div class="col-md-4 d-grid">
+            <button type="submit" class="btn btn-success btn-lg"
+                    data-controller="confirm"
+                    data-action="click->confirm#ask"
+                    data-confirm-message="¿Marcar el paquete como despachado? La orden pasará a 'En Tránsito'.">
+              <i class="fa fa-truck me-2"></i> Despachar Paquete
+            </button>
+          </div>
+        <% end %>
+      <% else %>
+        <div class="alert alert-warning">
+          <i class="fa fa-exclamation-triangle me-2"></i>
+          No se encontró un envío asociado. Esto no debería pasar — recarga la página.
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <%# Dirección de envío %>
+  <% if @sale_order.order_shipping_address.present? %>
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-header bg-transparent border-0">
+        <h5 class="mb-0"><i class="fa fa-map-pin text-muted me-2"></i>Dirección de Envío</h5>
+      </div>
+      <div class="card-body">
+        <% addr = @sale_order.order_shipping_address %>
+        <p class="mb-1"><strong><%= addr.recipient_name %></strong></p>
+        <p class="mb-1"><%= addr.street %> <%= addr.ext_number %><%= ", Int. #{addr.int_number}" if addr.int_number.present? %></p>
+        <p class="mb-1"><%= addr.neighborhood %>, <%= addr.city %></p>
+        <p class="mb-1"><%= addr.state %>, CP <%= addr.zip_code %></p>
+        <% if addr.phone.present? %>
+          <p class="mb-0"><i class="fa fa-phone me-1"></i> <%= addr.phone %></p>
+        <% end %>
+        <% if addr.delivery_instructions.present? %>
+          <p class="mb-0 mt-2 text-muted"><i class="fa fa-info-circle me-1"></i> <%= addr.delivery_instructions %></p>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+</div>
+
+<style>
+  .bg-purple { background-color: #7c3aed !important; }
+  .picking-check:checked { accent-color: #198754; }
+  tr:has(.picking-check:checked) { background-color: #d1e7dd !important; opacity: 0.7; }
+</style>

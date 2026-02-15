@@ -6,8 +6,8 @@
   this_month_count = @sale_orders.count { |so| so.order_date >= Date.current.beginning_of_month }
   overdue_count = @sale_orders.count { |so| so.due_date.present? && so.due_date < Date.current && so.attributes["balance_due_value"].to_d > 0 }
 
-  status_icons = { 'Pending' => 'clock', 'Confirmed' => 'check', 'In Transit' => 'shipping-fast', 'Delivered' => 'check-circle', 'Canceled' => 'times-circle' }
-  status_labels = { 'Pending' => 'Pendiente', 'Confirmed' => 'Confirmada', 'In Transit' => 'En Tránsito', 'Delivered' => 'Entregada', 'Canceled' => 'Cancelada' }
+  status_icons = { 'Pending' => 'clock', 'Confirmed' => 'check', 'Preparing' => 'box-open', 'In Transit' => 'shipping-fast', 'Delivered' => 'check-circle', 'Canceled' => 'times-circle' }
+  status_labels = { 'Pending' => 'Pendiente', 'Confirmed' => 'Confirmada', 'Preparing' => 'Preparando', 'In Transit' => 'En Tránsito', 'Delivered' => 'Entregada', 'Canceled' => 'Cancelada' }
 %>
 
 <%# Header con navegación %>
@@ -127,12 +127,13 @@
                 'all' => 'outline-secondary',
                 'Pending' => 'outline-warning',
                 'Confirmed' => 'outline-info',
+                'Preparing' => 'outline-purple',
                 'In Transit' => 'outline-primary',
                 'Delivered' => 'outline-success',
                 'Canceled' => 'outline-danger'
               }
             %>
-            <% ['all', 'Pending', 'Confirmed', 'In Transit', 'Delivered', 'Canceled'].each do |st| %>
+            <% ['all', 'Pending', 'Confirmed', 'Preparing', 'In Transit', 'Delivered', 'Canceled'].each do |st| %>
               <% is_active = current_status == st %>
               <% count = st == 'all' ? @sale_orders.total_count : (@counts_global[st] || 0) %>
               <%= button_tag name: :status, value: st,

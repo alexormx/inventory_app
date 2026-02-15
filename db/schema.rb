@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_02_14_230000) do
+ActiveRecord::Schema[8.0].define(version: 2026_02_14_234349) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -467,7 +467,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_14_230000) do
   end
 
   create_table "shipments", force: :cascade do |t|
-    t.string "tracking_number", null: false
+    t.string "tracking_number"
     t.string "carrier", null: false
     t.date "estimated_delivery", null: false
     t.date "actual_delivery"

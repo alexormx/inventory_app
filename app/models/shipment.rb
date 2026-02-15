@@ -3,7 +3,7 @@
 class Shipment < ApplicationRecord
   belongs_to :sale_order, primary_key: 'id'
 
-  validates :tracking_number, presence: true
+  validates :tracking_number, presence: true, unless: :pending?
   validates :carrier, presence: true
   validates :estimated_delivery, presence: true
   validates :shipping_cost, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true
@@ -25,7 +25,7 @@ class Shipment < ApplicationRecord
     return unless will_save_change_to_status?
 
     self.last_update = Time.current
-    
+
   end
 
   def actual_not_before_estimated
@@ -34,7 +34,7 @@ class Shipment < ApplicationRecord
     return unless actual_delivery < estimated_delivery
 
     errors.add(:actual_delivery, 'no puede ser anterior a la fecha estimada')
-    
+
   end
 
   def update_sale_order_totals_if_shipping_changed
@@ -42,7 +42,7 @@ class Shipment < ApplicationRecord
 
     sale_order.update!(shipping_cost: shipping_cost)
     sale_order.recalculate_totals!
-    
+
   end
 
   # Cuando el estado del Shipment cambia, sincronizamos el SaleOrder relacionado
@@ -54,32 +54,38 @@ class Shipment < ApplicationRecord
     begin
       case current
       when 'pending'
-        # Si el envío se regresa a pendiente, degradamos la orden:
-        # - Si está totalmente pagada, a Confirmed; en otro caso, a Pending
-        desired = so.fully_paid? ? 'Confirmed' : 'Pending'
-        so.update!(status: desired) unless so.status == desired
+        # Si el envío se regresa a pendiente:
+        # - Si la orden está In Transit, retroceder a Preparing
+        # - Si está en Preparing, mantener
+        # - Si está pagada, a Confirmed; en otro caso, a Pending
+        if so.status == 'In Transit'
+          so.update!(status: 'Preparing')
+        elsif so.status == 'Preparing'
+          # mantener
+        else
+          desired = so.fully_paid? ? 'Confirmed' : 'Pending'
+          so.update!(status: desired) unless so.status == desired
+        end
       when 'shipped'
-        # ESTRICTA B: si no hay pago y no hay crédito, no permitir pasar a In Transit
-        # Permitir si está totalmente pagada o si tiene crédito habilitado
+        # Transicionar a In Transit solo si está en Preparing o Confirmed
         credit_allowed = (so.user.respond_to?(:credit_enabled) && so.user.credit_enabled) || so.credit_override
         if so.fully_paid? || credit_allowed
-          so.update!(status: 'In Transit') if %w[Canceled Returned].exclude?(so.status) && so.status != 'In Transit'
+          if %w[Preparing Confirmed].include?(so.status)
+            so.update!(status: 'In Transit')
+          end
         else
-          # revertir status del shipment a pending y registrar
           update_column(:status, Shipment.statuses[:pending])
           Rails.logger.warn "[Shipment#sync] Blocked shipped without payment or credit (sale_order_id=#{so.id})"
         end
       when 'delivered'
-        # ESTRICTA B: si no hay pago y no hay crédito, no permitir Delivered
         credit_allowed = (so.user.respond_to?(:credit_enabled) && so.user.credit_enabled) || so.credit_override
         if so.fully_paid? || credit_allowed
           so.update!(status: 'Delivered') unless so.status == 'Delivered'
         else
-          update_column(:status, Shipment.statuses[:shipped]) # mantén shipped si llegó aquí
+          update_column(:status, Shipment.statuses[:shipped])
           Rails.logger.warn "[Shipment#sync] Blocked delivered without payment or credit (sale_order_id=#{so.id})"
         end
       when 'canceled'
-        # Si el envío se cancela y la orden no estaba entregada, cancelar la orden
         so.update!(status: 'Canceled') unless %w[Delivered Canceled].include?(so.status)
       when 'returned'
         so.update!(status: 'Returned') unless so.status == 'Returned'

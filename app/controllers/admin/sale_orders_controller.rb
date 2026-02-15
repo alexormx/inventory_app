@@ -4,7 +4,7 @@
 class Admin::SaleOrdersController < ApplicationController
   before_action :authenticate_user!
   before_action :authorize_admin!
-  before_action :set_sale_order, only: %i[show edit update destroy summary cancel]
+  before_action :set_sale_order, only: %i[show edit update destroy summary cancel prepare ship]
   before_action :load_counts, only: [:index]
 
   PER_PAGE = 20
@@ -85,6 +85,71 @@ class Admin::SaleOrdersController < ApplicationController
   def summary
     @order = @sale_order
     render 'orders/summary'
+  end
+
+  # GET /admin/sale_orders/:id/prepare
+  # Muestra la vista de picking: piezas agrupadas por ubicación para preparar el paquete.
+  # Transiciona Confirmed → Preparing y auto-crea shipment si no existe.
+  def prepare
+    unless %w[Confirmed Preparing].include?(@sale_order.status)
+      redirect_to admin_sale_order_path(@sale_order),
+                  alert: "Solo se puede preparar una orden Confirmada. Estado actual: #{@sale_order.status}" and return
+    end
+
+    # Auto-crear shipment en pending si no existe
+    if @sale_order.shipment.blank?
+      order_base = @sale_order.order_date || Time.zone.today
+      @sale_order.create_shipment!(
+        carrier: '',
+        estimated_delivery: order_base + 7,
+        status: :pending
+      )
+      @sale_order.reload
+    end
+
+    # Transicionar a Preparing si está en Confirmed
+    if @sale_order.status == 'Confirmed'
+      @sale_order.update!(status: 'Preparing')
+    end
+
+    # Cargar inventarios con ubicaciones para la vista de picking
+    @inventories = @sale_order.inventories
+                              .includes(:product, :inventory_location)
+                              .where(status: %i[reserved sold pre_reserved pre_sold])
+                              .order(:inventory_location_id, :id)
+
+    # Agrupar por ubicación para la vista
+    @grouped = @inventories.group_by { |inv| inv.inventory_location&.full_path || 'Sin ubicación' }
+  end
+
+  # POST /admin/sale_orders/:id/ship
+  # Marca el envío como shipped y transiciona Preparing → In Transit
+  def ship
+    unless @sale_order.status == 'Preparing'
+      redirect_to admin_sale_order_path(@sale_order),
+                  alert: "Solo se puede despachar una orden en Preparación. Estado actual: #{@sale_order.status}" and return
+    end
+
+    shipment = @sale_order.shipment
+    unless shipment
+      redirect_to admin_sale_order_path(@sale_order), alert: 'No hay envío asignado.' and return
+    end
+
+    # Actualizar tracking y carrier si se proporcionan
+    ship_attrs = {}
+    ship_attrs[:tracking_number] = params[:tracking_number] if params[:tracking_number].present?
+    ship_attrs[:carrier] = params[:carrier] if params[:carrier].present?
+    ship_attrs[:status] = :shipped
+
+    if shipment.update(ship_attrs)
+      # El callback sync_sale_order_status_from_shipment se encarga de: Preparing → In Transit
+      @sale_order.reload
+      redirect_to admin_sale_order_path(@sale_order),
+                  notice: '📦 Paquete despachado. Orden en tránsito.'
+    else
+      redirect_to prepare_admin_sale_order_path(@sale_order),
+                  alert: "Error al despachar: #{shipment.errors.full_messages.join(', ')}"
+    end
   end
 
   private
@@ -169,7 +234,7 @@ class Admin::SaleOrdersController < ApplicationController
   end
 
   def build_status_counts(filtered_scope) # rubocop:disable Metrics/AbcSize
-    statuses = %w[Pending Confirmed Shipped Delivered Canceled]
+    statuses = %w[Pending Confirmed Preparing Shipped Delivered Canceled]
 
     # Global counts (unaffected by filters)
     global_grouped = SaleOrder.group(:status).count

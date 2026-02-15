@@ -23,8 +23,9 @@
           </div>
           <div class="modal-body">
             <div class="mb-3">
-              <%= f.label :tracking_number %>
-              <%= f.text_field :tracking_number, class: "form-control", required: true %>
+              <%= f.label :tracking_number, "Número de Rastreo" %>
+              <%= f.text_field :tracking_number, class: "form-control", placeholder: "Opcional — agregar al despachar" %>
+              <small class="text-muted">Puedes dejarlo en blanco y agregarlo después.</small>
             </div>
             <div class="mb-3">
               <%= f.label :carrier %>

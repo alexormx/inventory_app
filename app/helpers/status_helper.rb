@@ -5,6 +5,7 @@ module StatusHelper
     {
       'Pending' => 'bg-warning text-dark',
       'Confirmed' => 'bg-info',
+      'Preparing' => 'bg-purple text-white',
       'Shipped' => 'bg-primary',
       'In Transit' => 'bg-primary',
       'Delivered' => 'bg-success',

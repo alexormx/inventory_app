@@ -3,7 +3,15 @@ require 'rails_helper'
 RSpec.describe Shipment, type: :model do
   describe 'Validations' do
     it { should validate_presence_of(:carrier) }
-    it { should validate_presence_of(:tracking_number) }
+    it 'requires tracking_number when shipped' do
+      shipment = build(:shipment, status: :shipped, tracking_number: nil)
+      expect(shipment).not_to be_valid
+      expect(shipment.errors[:tracking_number]).to be_present
+    end
+    it 'does not require tracking_number when pending' do
+      shipment = build(:shipment, status: :pending, tracking_number: nil)
+      expect(shipment).to be_valid
+    end
     it { should define_enum_for(:status).with_values(%i[pending shipped delivered canceled returned]) }
   end
 

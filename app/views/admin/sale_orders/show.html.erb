@@ -12,8 +12,8 @@
   is_overdue = @sale_order.due_date.present? && balance > 0 && Date.today > @sale_order.due_date
   days_overdue = is_overdue ? (Date.today - @sale_order.due_date).to_i : 0
 
-  status_icons = { 'Pending' => 'clock', 'Confirmed' => 'check', 'In Transit' => 'shipping-fast', 'Delivered' => 'check-circle', 'Canceled' => 'times-circle' }
-  status_labels = { 'Pending' => 'Pendiente', 'Confirmed' => 'Confirmada', 'In Transit' => 'En Tránsito', 'Delivered' => 'Entregada', 'Canceled' => 'Cancelada' }
+  status_icons = { 'Pending' => 'clock', 'Confirmed' => 'check', 'Preparing' => 'box-open', 'In Transit' => 'shipping-fast', 'Delivered' => 'check-circle', 'Canceled' => 'times-circle' }
+  status_labels = { 'Pending' => 'Pendiente', 'Confirmed' => 'Confirmada', 'Preparing' => 'Preparando', 'In Transit' => 'En Tránsito', 'Delivered' => 'Entregada', 'Canceled' => 'Cancelada' }
 %>
 
 <div class="container-fluid px-0">
@@ -65,9 +65,9 @@
     <div class="card-body py-3">
       <div class="d-flex justify-content-between align-items-center position-relative">
         <%
-          statuses = ['Pending', 'Confirmed', 'In Transit', 'Delivered']
+          statuses = ['Pending', 'Confirmed', 'Preparing', 'In Transit', 'Delivered']
           status_position = statuses.index(@sale_order.status) || 0
-          progress_percent = @sale_order.status == 'Canceled' ? 0 : ((status_position.to_f / 3) * 100)
+          progress_percent = @sale_order.status == 'Canceled' ? 0 : ((status_position.to_f / (statuses.size - 1)) * 100)
         %>
         <div class="progress position-absolute w-100" style="height: 4px; z-index: 0;">
           <div class="progress-bar bg-success" style="width: <%= progress_percent %>%"></div>
@@ -94,11 +94,22 @@
         <% end %>
       </div>
 
-      <% if @sale_order.status == 'Canceled' %>
-        <div class="text-center mt-3">
+      <%# Botones de acción según estado %>
+      <div class="text-center mt-3 d-flex justify-content-center gap-2 flex-wrap">
+        <% if @sale_order.status == 'Confirmed' %>
+          <%= link_to prepare_admin_sale_order_path(@sale_order), class: "btn btn-primary" do %>
+            <i class="fa fa-box-open me-1"></i> 📦 Preparar Paquete
+          <% end %>
+        <% elsif @sale_order.status == 'Preparing' %>
+          <%= link_to prepare_admin_sale_order_path(@sale_order), class: "btn btn-outline-primary me-2" do %>
+            <i class="fa fa-box-open me-1"></i> Ver Picking List
+          <% end %>
+        <% end %>
+
+        <% if @sale_order.status == 'Canceled' %>
           <span class="badge bg-danger"><i class="fa fa-times-circle me-1"></i>Orden Cancelada</span>
-        </div>
-      <% end %>
+        <% end %>
+      </div>
     </div>
   </div>
 

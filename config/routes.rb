@@ -207,6 +207,8 @@ Rails.application.routes.draw do
       member do
         get :summary
         post :cancel
+        get :prepare
+        post :ship
         post :force_pending, to: 'sale_orders_status#force_pending'
         post :force_delivered, to: 'sale_orders_status#force_delivered'
         post :cancel_reservations, to: 'sale_orders#cancel_reservations'
