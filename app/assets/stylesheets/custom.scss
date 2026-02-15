@@ -6,6 +6,20 @@ body:not(.app-ready) .btn[data-defer-until-ready] {
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+/* Custom purple utilities for Preparing status */
+.bg-purple       { background-color: #7c3aed !important; }
+.text-purple      { color: #7c3aed !important; }
+.btn-outline-purple {
+  color: #7c3aed;
+  border-color: #7c3aed;
+  &:hover, &.active {
+    color: #fff;
+    background-color: #7c3aed;
+    border-color: #7c3aed;
+  }
+}
+
 /* Utilidades para cards de productos */
 .product-card {
   display: flex;
