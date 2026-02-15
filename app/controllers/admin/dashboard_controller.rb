@@ -480,6 +480,16 @@ module Admin
       @po_total_ytd = @purchases_ytd
       @so_avg_ticket_ytd = @so_ytd.average(:total_order_value)&.to_d || 0.to_d
       @po_avg_ticket_ytd = @po_ytd.average(:total_cost_mxn)&.to_d || @po_ytd.average(:total_order_cost)&.to_d || 0.to_d
+
+      # Pie chart data for order status donut charts
+      so_colors = { 'Draft' => '#94a3b8', 'Reserved' => '#f59e0b', 'Confirmed' => '#3b82f6',
+                    'Preparing' => '#8b5cf6', 'Shipped' => '#06b6d4', 'Delivered' => '#10b981',
+                    'Canceled' => '#ef4444' }
+      @so_status_pie = @so_status_counts.map { |s, c| { name: s, value: c, itemStyle: { color: so_colors[s] || '#64748b' } } }
+
+      po_colors = { 'Draft' => '#94a3b8', 'Confirmed' => '#3b82f6', 'In Transit' => '#f59e0b',
+                    'Received' => '#10b981', 'Canceled' => '#ef4444' }
+      @po_status_pie = @po_status_counts.map { |s, c| { name: s, value: c, itemStyle: { color: po_colors[s] || '#64748b' } } }
     end
 
     # === Monthly/Yearly Tables ===

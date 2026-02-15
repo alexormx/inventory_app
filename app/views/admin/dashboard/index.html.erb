@@ -1,5 +1,5 @@
 <div class="container-fluid">
-  <!-- ========== HEADER ========== -->
+  <!-- ========== 1 · HEADER ========== -->
   <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
     <h2 class="mb-0"><i class="fa-solid fa-chart-line"></i> Dashboard</h2>
     <div class="d-flex align-items-center gap-2">
@@ -8,7 +8,7 @@
     </div>
   </div>
 
-  <!-- ========== ACCIONES RÁPIDAS ========== -->
+  <!-- ========== 2 · ACCIONES RÁPIDAS ========== -->
   <div class="d-flex flex-wrap gap-2 mb-3">
     <%= link_to new_admin_sale_order_path, class: 'btn btn-success btn-sm' do %>
       <i class="fa-solid fa-plus"></i> Nueva Venta
@@ -24,66 +24,58 @@
     <% end %>
   </div>
 
-  <!-- ========== ALERTAS ACTIVAS ========== -->
+  <!-- ========== 3 · ALERTAS ========== -->
   <% if @alerts.present? %>
-    <div class="row mb-3">
-      <div class="col-12">
-        <div class="d-flex flex-wrap gap-2">
-          <% @alerts.each do |alert| %>
-            <div class="alert alert-<%= alert[:type] %> py-2 px-3 mb-0 d-flex align-items-center gap-2 small" role="alert">
-              <i class="fa-solid <%= alert[:icon] %>"></i>
-              <span><%= alert[:message] %></span>
-              <%= link_to alert[:link_text], alert[:link], class: "alert-link ms-2 fw-semibold" %>
-            </div>
-          <% end %>
+    <div class="d-flex flex-wrap gap-2 mb-3">
+      <% @alerts.each do |alert| %>
+        <div class="alert alert-<%= alert[:type] %> py-2 px-3 mb-0 d-flex align-items-center gap-2 small" role="alert">
+          <i class="fa-solid <%= alert[:icon] %>"></i>
+          <span><%= alert[:message] %></span>
+          <%= link_to alert[:link_text], alert[:link], class: "alert-link ms-2 fw-semibold" %>
         </div>
-      </div>
+      <% end %>
     </div>
   <% end %>
 
-  <!-- ========== ACTIVIDAD RECIENTE ========== -->
-  <div class="row mb-3">
-    <div class="col-12">
-      <div class="card bg-light border-0">
-        <div class="card-body py-2">
-          <div class="d-flex flex-wrap gap-4 small">
-            <div class="d-flex align-items-center gap-2">
-              <i class="fa-solid fa-receipt text-success"></i>
-              <span class="text-muted">Última venta:</span>
-              <% if @last_sale %>
-                <%= link_to @last_sale.id, edit_admin_sale_order_path(@last_sale), class: 'fw-semibold text-decoration-none' %>
-                <span class="text-muted">(<%= time_ago_in_words(@last_sale.created_at) %>)</span>
-              <% else %>
-                <span class="text-muted">—</span>
-              <% end %>
-            </div>
-            <div class="d-flex align-items-center gap-2">
-              <i class="fa-solid fa-box text-primary"></i>
-              <span class="text-muted">Última compra recibida:</span>
-              <% if @last_purchase_received %>
-                <%= link_to @last_purchase_received.id, edit_admin_purchase_order_path(@last_purchase_received), class: 'fw-semibold text-decoration-none' %>
-                <span class="text-muted">(<%= time_ago_in_words(@last_purchase_received.updated_at) %>)</span>
-              <% else %>
-                <span class="text-muted">—</span>
-              <% end %>
-            </div>
-            <div class="d-flex align-items-center gap-2">
-              <i class="fa-solid fa-truck text-warning"></i>
-              <span class="text-muted">Próximo envío:</span>
-              <% if @next_shipment %>
-                <%= link_to @next_shipment.id, edit_admin_sale_order_path(@next_shipment), class: 'fw-semibold text-decoration-none' %>
-                <span class="text-muted">(pendiente desde <%= @next_shipment.order_date&.strftime('%d/%m') %>)</span>
-              <% else %>
-                <span class="text-success">Sin pendientes</span>
-              <% end %>
-            </div>
-          </div>
+  <!-- ========== 4 · ACTIVIDAD RECIENTE ========== -->
+  <div class="card bg-light border-0 mb-3">
+    <div class="card-body py-2">
+      <div class="d-flex flex-wrap gap-4 small">
+        <div class="d-flex align-items-center gap-2">
+          <i class="fa-solid fa-receipt text-success"></i>
+          <span class="text-muted">Última venta:</span>
+          <% if @last_sale %>
+            <%= link_to @last_sale.id, edit_admin_sale_order_path(@last_sale), class: 'fw-semibold text-decoration-none' %>
+            <span class="text-muted">(<%= time_ago_in_words(@last_sale.created_at) %>)</span>
+          <% else %>
+            <span class="text-muted">—</span>
+          <% end %>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <i class="fa-solid fa-box text-primary"></i>
+          <span class="text-muted">Última compra recibida:</span>
+          <% if @last_purchase_received %>
+            <%= link_to @last_purchase_received.id, edit_admin_purchase_order_path(@last_purchase_received), class: 'fw-semibold text-decoration-none' %>
+            <span class="text-muted">(<%= time_ago_in_words(@last_purchase_received.updated_at) %>)</span>
+          <% else %>
+            <span class="text-muted">—</span>
+          <% end %>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <i class="fa-solid fa-truck text-warning"></i>
+          <span class="text-muted">Próximo envío:</span>
+          <% if @next_shipment %>
+            <%= link_to @next_shipment.id, edit_admin_sale_order_path(@next_shipment), class: 'fw-semibold text-decoration-none' %>
+            <span class="text-muted">(pendiente desde <%= @next_shipment.order_date&.strftime('%d/%m') %>)</span>
+          <% else %>
+            <span class="text-success">Sin pendientes</span>
+          <% end %>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Leyenda de indicadores de salud -->
+  <!-- Leyenda de indicadores -->
   <div class="d-flex align-items-center gap-3 mb-3 small text-muted">
     <span><i class="fa-solid fa-circle text-success"></i> Buen rendimiento</span>
     <span><i class="fa-solid fa-circle text-warning"></i> Atención</span>
@@ -93,9 +85,9 @@
     </span>
   </div>
 
-  <!-- ========== SECCIÓN 1: KPIs Ejecutivos (Consolidados) ========== -->
-  <div class="row g-3 mb-2">
-    <div class="col-md-4 col-lg-3">
+  <!-- ========== 5 · KPIs PRIMARIOS ========== -->
+  <div class="row g-3 mb-3">
+    <div class="col-md-6 col-xl-3">
       <%= render "kpi_card",
         title: "Ingresos YTD",
         value: fmt_currency(@sales_ytd),
@@ -103,22 +95,22 @@
         delta: @kpi_deltas&.dig(:sales),
         spark_id: "sparkline-revenue",
         variant: "text-bg-success-subtle",
-        tooltip: "Total de ventas del año actual. Compara con el mismo periodo del año anterior.",
+        tooltip: "Total de ventas del año actual vs mismo periodo del año anterior.",
         health: @kpi_deltas&.dig(:sales).to_f >= 0 ? 'good' : 'warning'
       %>
     </div>
-    <div class="col-md-4 col-lg-3">
+    <div class="col-md-6 col-xl-3">
       <%= render "kpi_card",
         title: "Utilidad Bruta YTD",
         value: fmt_currency(@profit_ytd),
         ly: fmt_currency(@profit_prev),
         delta: @kpi_deltas&.dig(:profit),
         variant: "text-bg-primary-subtle",
-        tooltip: "Ganancia = Ventas - Costo de productos vendidos (COGS).",
+        tooltip: "Ganancia = Ventas - COGS.",
         health: @kpi_deltas&.dig(:profit).to_f >= 0 ? 'good' : 'danger'
       %>
     </div>
-    <div class="col-md-4 col-lg-3">
+    <div class="col-md-6 col-xl-3">
       <%= render "kpi_card",
         title: "Margen Bruto YTD",
         value: number_to_percentage(@margin_ytd * 100, precision: 1),
@@ -129,1074 +121,63 @@
         health: @margin_ytd >= 0.30 ? 'good' : (@margin_ytd >= 0.20 ? 'warning' : 'danger')
       %>
     </div>
-    <div class="col-md-4 col-lg-3">
-      <%= render "kpi_card",
-        title: "Valor de Inventario",
-        value: fmt_currency(@inventory_total_value),
-        ly: (@inventory_turnover_ytd.nil? ? nil : "Rotación: #{number_with_precision(@inventory_turnover_ytd, precision: 2, delimiter: ',')}"),
-        variant: "text-bg-info-subtle",
-        tooltip: "Valor del inventario disponible. Rotación = COGS / Inventario promedio.",
-        health: @inventory_turnover_ytd.to_f >= 2 ? 'good' : (@inventory_turnover_ytd.to_f >= 1 ? 'warning' : 'danger')
-      %>
-    </div>
-    <div class="col-md-4 col-lg-3">
+    <div class="col-md-6 col-xl-3">
       <%= render "kpi_card",
         title: "Flujo de Caja YTD",
         value: fmt_currency(@cashflow_ytd),
         ly: fmt_currency(@cashflow_prev),
         delta: @kpi_deltas&.dig(:cashflow),
         variant: "text-bg-secondary-subtle",
-        tooltip: "Ingresos cobrados menos salidas pagadas (SO pagadas vs PO).",
+        tooltip: "Ingresos cobrados menos salidas pagadas.",
         health: @cashflow_ytd.to_f >= 0 ? 'good' : 'danger'
       %>
     </div>
   </div>
 
+  <!-- ========== 6 · KPIs SECUNDARIOS ========== -->
   <div class="row g-3 mb-3">
-    <div class="col-md-4 col-lg-3">
-      <%= render "kpi_card",
-        title: "Inversión Total (Histórico)",
-        value: fmt_currency(@purchases_total_mxn),
-        variant: "text-bg-secondary-subtle",
-        tooltip: "Total invertido en compras de mercancía desde el inicio."
-      %>
+    <div class="col-6 col-md-4 col-xl">
+      <%= render 'kpi_stat', title: 'Valor Inventario', value: fmt_currency(@inventory_total_value), tooltip: "Valor del inventario disponible. Rotación: #{@inventory_turnover_ytd.nil? ? '—' : number_with_precision(@inventory_turnover_ytd, precision: 2, delimiter: ',')}", health: @inventory_turnover_ytd.to_f >= 2 ? 'good' : (@inventory_turnover_ytd.to_f >= 1 ? 'warning' : 'danger') %>
     </div>
-    <div class="col-md-4 col-lg-3">
-      <%= render "kpi_card",
-        title: "Ventas Históricas",
-        value: fmt_currency(@sales_total_mxn),
-        variant: "text-bg-success-subtle",
-        tooltip: "Total de ventas acumuladas desde el inicio de operaciones."
-      %>
+    <div class="col-6 col-md-4 col-xl">
+      <%= render 'kpi_stat', title: 'Órdenes Venta YTD', value: number_with_delimiter(@orders_count_ytd), tooltip: 'Cantidad de Sale Orders confirmadas este año.', health: @kpi_deltas&.dig(:orders).to_f >= 0 ? 'good' : 'warning' %>
     </div>
-    <div class="col-md-4 col-lg-3">
-      <%= render "kpi_card",
-        title: "Órdenes de Venta YTD",
-        value: number_with_delimiter(@orders_count_ytd),
-        ly: number_with_delimiter(@orders_prev),
-        delta: @kpi_deltas&.dig(:orders),
-        variant: "text-bg-primary-subtle",
-        tooltip: "Cantidad de Sale Orders confirmadas este año.",
-        health: @kpi_deltas&.dig(:orders).to_f >= 0 ? 'good' : 'warning'
-      %>
+    <div class="col-6 col-md-4 col-xl">
+      <%= render 'kpi_stat', title: 'Ticket Promedio', value: fmt_currency(@avg_ticket_ytd), tooltip: 'Valor promedio por orden de venta.', health: @avg_ticket_ytd.to_f >= 500 ? 'good' : (@avg_ticket_ytd.to_f >= 200 ? nil : 'warning') %>
     </div>
-    <div class="col-md-4 col-lg-3">
-      <%= render "kpi_card",
-        title: "Clientes Activos",
-        value: fmt_number(@active_customers_ytd),
-        ly: fmt_number(@active_customers_prev),
-        delta: @kpi_deltas&.dig(:customers),
-        variant: "text-bg-primary-subtle",
-        tooltip: "Clientes con al menos una orden en el periodo YTD.",
-        health: @kpi_deltas&.dig(:customers).to_f >= 0 ? 'good' : 'warning'
-      %>
+    <div class="col-6 col-md-4 col-xl">
+      <%= render 'kpi_stat', title: 'Clientes Activos', value: fmt_number(@active_customers_ytd), tooltip: 'Clientes con al menos una orden YTD.', health: @kpi_deltas&.dig(:customers).to_f >= 0 ? 'good' : 'warning' %>
+    </div>
+    <div class="col-6 col-md-4 col-xl">
+      <%= render 'kpi_stat', title: 'Conversión', value: fmt_percentage_ratio(@conversion_rate_ytd, precision: 2), tooltip: 'Porcentaje de visitas → órdenes.', health: @conversion_rate_ytd.to_f >= 0.03 ? 'good' : (@conversion_rate_ytd.to_f >= 0.01 ? 'warning' : 'danger') %>
+    </div>
+    <div class="col-6 col-md-4 col-xl">
+      <%= render 'kpi_stat', title: 'Stock Crítico', value: (@critical_stock_count.nil? ? '—' : fmt_number(@critical_stock_count)), tooltip: 'Productos por debajo del punto de reorden.', health: @critical_stock_count.to_i > 5 ? 'danger' : (@critical_stock_count.to_i > 0 ? 'warning' : 'good') %>
     </div>
   </div>
 
-  <!-- ========== SECCIÓN 2: KPIs Operativos (métricas tácticas) ========== -->
   <div class="row g-3 mb-4">
-    <div class="col-6 col-md-3 col-xl">
-      <%= render 'kpi_stat', title: 'Ticket Promedio', value: fmt_currency(@avg_ticket_ytd), tooltip: 'Valor promedio por orden de venta.', health: @avg_ticket_ytd.to_f >= 500 ? 'good' : (@avg_ticket_ytd.to_f >= 200 ? nil : 'warning') %>
+    <div class="col-6 col-md-3">
+      <%= render 'kpi_stat', title: 'Inversión Total', value: fmt_currency(@purchases_total_mxn), tooltip: 'Total invertido en compras desde el inicio.' %>
     </div>
-    <div class="col-6 col-md-3 col-xl">
-      <%= render 'kpi_stat', title: 'Conversión', value: fmt_percentage_ratio(@conversion_rate_ytd, precision: 2), tooltip: 'Porcentaje de visitas que se convierten en órdenes.', health: @conversion_rate_ytd.to_f >= 0.03 ? 'good' : (@conversion_rate_ytd.to_f >= 0.01 ? 'warning' : 'danger') %>
+    <div class="col-6 col-md-3">
+      <%= render 'kpi_stat', title: 'Ventas Históricas', value: fmt_currency(@sales_total_mxn), tooltip: 'Total de ventas acumuladas históricas.' %>
     </div>
-    <div class="col-6 col-md-3 col-xl">
-      <%= render 'kpi_stat', title: 'Stock Crítico', value: (@critical_stock_count.nil? ? '—' : fmt_number(@critical_stock_count)), tooltip: 'Productos por debajo del punto de reorden.', health: @critical_stock_count.to_i > 5 ? 'danger' : (@critical_stock_count.to_i > 0 ? 'warning' : 'good') %>
-    </div>
-    <div class="col-6 col-md-3 col-xl">
+    <div class="col-6 col-md-3">
       <%= render 'kpi_stat', title: 'Clientes Recurrentes', value: fmt_percentage_ratio(@recurring_customers_ratio, precision: 1), tooltip: 'Clientes que han comprado más de una vez.', health: @recurring_customers_ratio.to_f >= 0.3 ? 'good' : (@recurring_customers_ratio.to_f >= 0.15 ? 'warning' : nil) %>
     </div>
-    <div class="col-6 col-md-3 col-xl">
+    <div class="col-6 col-md-3">
       <%= render 'kpi_stat', title: 'Órdenes Compra YTD', value: number_with_delimiter(@po_count_ytd), tooltip: 'Purchase Orders creadas este año.', health: @kpi_deltas&.dig(:po_count).to_f >= 0 ? 'good' : nil %>
     </div>
   </div>
 
-  <!-- ========== SECCIÓN: Comparativa YTD vs Año Anterior ========== -->
+  <!-- ========== 7 · GRÁFICOS PRINCIPALES (Tendencia + Status Donuts) ========== -->
   <div class="row g-3 mb-4">
-    <div class="col-12">
-      <div class="card">
+    <!-- Tendencia de Ventas 12 meses -->
+    <div class="col-lg-8">
+      <div class="card h-100">
         <div class="card-header py-2">
-          <span class="fw-semibold"><i class="fa-solid fa-scale-balanced"></i> Comparativa YTD vs Año Anterior</span>
-        </div>
-        <div class="card-body py-3">
-          <div class="row g-3">
-            <!-- Ventas -->
-            <div class="col-md-4">
-              <div class="d-flex justify-content-between align-items-center mb-1">
-                <span class="small text-muted">Ventas</span>
-                <span class="small fw-semibold <%= @kpi_deltas&.dig(:sales).to_f >= 0 ? 'text-success' : 'text-danger' %>">
-                  <% if @kpi_deltas&.dig(:sales) %>
-                    <i class="fa-solid fa-arrow-<%= @kpi_deltas&.dig(:sales).to_f >= 0 ? 'up' : 'down' %>"></i>
-                    <%= number_to_percentage(@kpi_deltas&.dig(:sales).to_f * 100, precision: 1) %>
-                  <% else %>
-                    —
-                  <% end %>
-                </span>
-              </div>
-              <div class="progress" style="height: 24px;">
-                <% sales_pct_ytd = @sales_prev.to_f.positive? ? [(@sales_ytd.to_f / [@sales_prev.to_f * 1.5, @sales_ytd.to_f].max) * 100, 100].min : 50 %>
-                <% sales_pct_ly = @sales_prev.to_f.positive? ? [(@sales_prev.to_f / [@sales_prev.to_f * 1.5, @sales_ytd.to_f].max) * 100, 100].min : 50 %>
-                <div class="progress-bar bg-success" role="progressbar" style="width: <%= sales_pct_ytd %>%">
-                  <span class="small">YTD: <%= fmt_currency(@sales_ytd) %></span>
-                </div>
-              </div>
-              <div class="progress mt-1" style="height: 18px;">
-                <div class="progress-bar bg-secondary" role="progressbar" style="width: <%= sales_pct_ly %>%">
-                  <span class="small">LY: <%= fmt_currency(@sales_prev) %></span>
-                </div>
-              </div>
-            </div>
-            <!-- Utilidad -->
-            <div class="col-md-4">
-              <div class="d-flex justify-content-between align-items-center mb-1">
-                <span class="small text-muted">Utilidad Bruta</span>
-                <span class="small fw-semibold <%= @kpi_deltas&.dig(:profit).to_f >= 0 ? 'text-success' : 'text-danger' %>">
-                  <% if @kpi_deltas&.dig(:profit) %>
-                    <i class="fa-solid fa-arrow-<%= @kpi_deltas&.dig(:profit).to_f >= 0 ? 'up' : 'down' %>"></i>
-                    <%= number_to_percentage(@kpi_deltas&.dig(:profit).to_f * 100, precision: 1) %>
-                  <% else %>
-                    —
-                  <% end %>
-                </span>
-              </div>
-              <div class="progress" style="height: 24px;">
-                <% profit_pct_ytd = @profit_prev.to_f.positive? ? [(@profit_ytd.to_f / [@profit_prev.to_f * 1.5, @profit_ytd.to_f].max) * 100, 100].min : 50 %>
-                <% profit_pct_ly = @profit_prev.to_f.positive? ? [(@profit_prev.to_f / [@profit_prev.to_f * 1.5, @profit_ytd.to_f].max) * 100, 100].min : 50 %>
-                <div class="progress-bar bg-primary" role="progressbar" style="width: <%= profit_pct_ytd %>%">
-                  <span class="small">YTD: <%= fmt_currency(@profit_ytd) %></span>
-                </div>
-              </div>
-              <div class="progress mt-1" style="height: 18px;">
-                <div class="progress-bar bg-secondary" role="progressbar" style="width: <%= profit_pct_ly %>%">
-                  <span class="small">LY: <%= fmt_currency(@profit_prev) %></span>
-                </div>
-              </div>
-            </div>
-            <!-- Órdenes -->
-            <div class="col-md-4">
-              <div class="d-flex justify-content-between align-items-center mb-1">
-                <span class="small text-muted">Órdenes de Venta</span>
-                <span class="small fw-semibold <%= @kpi_deltas&.dig(:orders).to_f >= 0 ? 'text-success' : 'text-danger' %>">
-                  <% if @kpi_deltas&.dig(:orders) %>
-                    <i class="fa-solid fa-arrow-<%= @kpi_deltas&.dig(:orders).to_f >= 0 ? 'up' : 'down' %>"></i>
-                    <%= number_to_percentage(@kpi_deltas&.dig(:orders).to_f * 100, precision: 1) %>
-                  <% else %>
-                    —
-                  <% end %>
-                </span>
-              </div>
-              <div class="progress" style="height: 24px;">
-                <% orders_max = [@orders_count_ytd.to_f, @orders_prev.to_f].max %>
-                <% orders_pct_ytd = orders_max.positive? ? (@orders_count_ytd.to_f / orders_max) * 100 : 50 %>
-                <% orders_pct_ly = orders_max.positive? ? (@orders_prev.to_f / orders_max) * 100 : 50 %>
-                <div class="progress-bar bg-info" role="progressbar" style="width: <%= orders_pct_ytd %>%">
-                  <span class="small">YTD: <%= number_with_delimiter(@orders_count_ytd) %></span>
-                </div>
-              </div>
-              <div class="progress mt-1" style="height: 18px;">
-                <div class="progress-bar bg-secondary" role="progressbar" style="width: <%= orders_pct_ly %>%">
-                  <span class="small">LY: <%= number_with_delimiter(@orders_prev) %></span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ========== SECCIÓN 3: Productos (Top Sellers + Inventario) ========== -->
-  <div class="row g-3 mt-2">
-    <div class="col-xl-8">
-      <div class="card h-100" data-controller="tabs">
-        <div class="card-header d-flex justify-content-between align-items-center">
-          <span><i class="fa-solid fa-box"></i> Top Productos</span>
-          <div class="d-flex align-items-center gap-2">
-            <ul class="nav nav-tabs nav-tabs-sm card-header-tabs d-none d-md-flex" role="tablist">
-              <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-sellers" type="button" role="tab" aria-controls="tp-sellers" aria-selected="true">Vendedores</button></li>
-              <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-profit" type="button" role="tab" aria-controls="tp-profit">Rentables</button></li>
-            </ul>
-            <%= link_to admin_products_path, class: 'btn btn-sm btn-outline-primary ms-2 d-none d-lg-inline-block' do %>
-              <i class="fa-solid fa-list"></i> Ver todos
-            <% end %>
-          </div>
-          <select class="form-select form-select-sm d-md-none w-auto" aria-label="Seleccionar grupo" data-action="change->tabs#select">
-            <option value="#tp-sellers" selected>Vendedores</option>
-            <option value="#tp-profit">Rentables</option>
-          </select>
-        </div>
-        <div class="card-body p-0">
-          <div class="tab-content">
-            <!-- Vendedores main tab with subtabs -->
-            <div class="tab-pane fade show active" id="tp-sellers" role="tabpanel" data-tabs-target="panel">
-              <div data-controller="tabs">
-                <ul class="nav nav-tabs nav-tabs-sm px-3 pt-3 d-none d-md-flex" role="tablist">
-                  <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-sellers-ytd" type="button" role="tab" aria-controls="tp-sellers-ytd" aria-selected="true">YTD</button></li>
-                  <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-sellers-ly" type="button" role="tab" aria-controls="tp-sellers-ly">LY</button></li>
-                  <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-sellers-all" type="button" role="tab" aria-controls="tp-sellers-all">All</button></li>
-                </ul>
-                <div class="tab-content">
-                  <div class="tab-pane fade show active" id="tp-sellers-ytd" role="tabpanel" data-tabs-target="panel">
-                    <turbo-frame id="frame-sellers-ytd" src="<%= admin_dashboard_sellers_path(period: 'ytd') %>">
-                      <div class="table-responsive p-2 px-3">
-                        <table class="table table-sm mb-0">
-                          <thead>
-                            <tr>
-                              <th scope="col">Rank</th>
-                              <th scope="col">Producto</th>
-                              <th scope="col" class="text-end">Unidades</th>
-                              <th scope="col" class="text-end">Ingresos</th>
-                            </tr>
-                          </thead>
-                          <%= table_skeleton_rows(cols: 4, rows: 3) %>
-                        </table>
-                      </div>
-                    </turbo-frame>
-                  </div>
-                  <div class="tab-pane fade" id="tp-sellers-ly" role="tabpanel" data-tabs-target="panel">
-                    <turbo-frame id="frame-sellers-ly" src="<%= admin_dashboard_sellers_path(period: 'ly') %>">
-                      <div class="table-responsive p-2 px-3">
-                        <table class="table table-sm mb-0">
-                          <thead>
-                            <tr>
-                              <th scope="col">Rank</th>
-                              <th scope="col">Producto</th>
-                              <th scope="col" class="text-end">Unidades</th>
-                              <th scope="col" class="text-end">Ingresos</th>
-                            </tr>
-                          </thead>
-                          <%= table_skeleton_rows(cols: 4, rows: 3) %>
-                        </table>
-                      </div>
-                    </turbo-frame>
-                  </div>
-                  <div class="tab-pane fade" id="tp-sellers-all" role="tabpanel" data-tabs-target="panel">
-                    <turbo-frame id="frame-sellers-all" src="<%= admin_dashboard_sellers_path(period: 'all') %>">
-                      <div class="table-responsive p-2 px-3">
-                        <table class="table table-sm mb-0">
-                          <thead>
-                            <tr>
-                              <th scope="col">Rank</th>
-                              <th scope="col">Producto</th>
-                              <th scope="col" class="text-end">Unidades</th>
-                              <th scope="col" class="text-end">Ingresos</th>
-                            </tr>
-                          </thead>
-                          <%= table_skeleton_rows(cols: 4, rows: 3) %>
-                        </table>
-                      </div>
-                    </turbo-frame>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <!-- Rentables main tab with subtabs -->
-            <div class="tab-pane fade" id="tp-profit" role="tabpanel" data-tabs-target="panel">
-              <div data-controller="tabs">
-                <ul class="nav nav-tabs nav-tabs-sm px-3 pt-3 d-none d-md-flex" role="tablist">
-                  <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-profit-ytd" type="button" role="tab" aria-controls="tp-profit-ytd" aria-selected="true">YTD</button></li>
-                  <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-profit-ly" type="button" role="tab" aria-controls="tp-profit-ly">LY</button></li>
-                  <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-profit-all" type="button" role="tab" aria-controls="tp-profit-all">All</button></li>
-                </ul>
-                <div class="tab-content">
-                  <div class="tab-pane fade show active" id="tp-profit-ytd" role="tabpanel" data-tabs-target="panel">
-                    <turbo-frame id="frame-profit-ytd" src="<%= admin_dashboard_profitable_path(period: 'ytd') %>">
-                      <div class="table-responsive p-2 px-3">
-                        <table class="table table-sm mb-0">
-                          <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Ingresos</th><th class="text-end">COGS</th><th class="text-end">Utilidad</th></tr></thead>
-                          <%= table_skeleton_rows(cols: 5, rows: 3) %>
-                        </table>
-                      </div>
-                    </turbo-frame>
-                  </div>
-                  <div class="tab-pane fade" id="tp-profit-ly" role="tabpanel" data-tabs-target="panel">
-                    <turbo-frame id="frame-profit-ly" src="<%= admin_dashboard_profitable_path(period: 'ly') %>">
-                      <div class="table-responsive p-2 px-3">
-                        <table class="table table-sm mb-0">
-                          <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Ingresos</th><th class="text-end">COGS</th><th class="text-end">Utilidad</th></tr></thead>
-                          <%= table_skeleton_rows(cols: 5, rows: 3) %>
-                        </table>
-                      </div>
-                    </turbo-frame>
-                  </div>
-                  <div class="tab-pane fade" id="tp-profit-all" role="tabpanel" data-tabs-target="panel">
-                    <turbo-frame id="frame-profit-all" src="<%= admin_dashboard_profitable_path(period: 'all') %>">
-                      <div class="table-responsive p-2 px-3">
-                        <table class="table table-sm mb-0">
-                          <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Ingresos</th><th class="text-end">COGS</th><th class="text-end">Utilidad</th></tr></thead>
-                          <%= table_skeleton_rows(cols: 5, rows: 3) %>
-                        </table>
-                      </div>
-                    </turbo-frame>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="col-xl-4">
-      <div class="card h-100" data-controller="tabs">
-        <div class="card-header d-flex justify-content-between align-items-center">
-          <span><i class="fa-solid fa-boxes-stacked"></i> Top Inventario</span>
-          <div class="d-flex align-items-center gap-2 justify-content-end">
-            <ul class="nav nav-tabs nav-tabs-sm card-header-tabs d-none d-md-flex" role="tablist">
-              <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#ti-inv" type="button" role="tab" aria-controls="ti-inv" aria-selected="true">Inventario</button></li>
-              <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#ti-res" type="button" role="tab" aria-controls="ti-res">Apartados</button></li>
-              <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#ti-all" type="button" role="tab" aria-controls="ti-all">Todos</button></li>
-            </ul>
-            <select class="form-select form-select-sm d-md-none w-auto" aria-label="Seleccionar grupo" data-action="change->tabs#select">
-              <option value="#ti-inv" selected>Inventario</option>
-              <option value="#ti-res">Apartados</option>
-              <option value="#ti-all">Todos</option>
-            </select>
-          </div>
-        </div>
-        <div class="card-body p-0">
-          <div class="tab-content">
-            <!-- Grupo: Inventario -->
-            <div class="tab-pane fade show active" id="ti-inv" role="tabpanel" data-tabs-target="panel">
-              <div data-controller="tabs">
-                <ul class="nav nav-tabs nav-tabs-sm px-3 pt-3 d-none d-md-flex" role="tablist">
-                  <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#ti-inv-value" type="button" role="tab" aria-controls="ti-inv-value" aria-selected="true">Valor</button></li>
-                  <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#ti-inv-qty" type="button" role="tab" aria-controls="ti-inv-qty">Unidades</button></li>
-                </ul>
-                <div class="tab-content">
-                  <div class="tab-pane fade show active" id="ti-inv-value" role="tabpanel" data-tabs-target="panel">
-                    <turbo-frame id="frame-inventory-inv-value" src="<%= admin_dashboard_inventory_top_path(scope: 'inv', metric: 'value') %>">
-                      <div class="table-responsive p-2 px-3">
-                        <table class="table table-sm mb-0">
-                          <%= table_skeleton_rows(cols: 3, rows: 3) %>
-                        </table>
-                      </div>
-                    </turbo-frame>
-                  </div>
-                  <div class="tab-pane fade" id="ti-inv-qty" role="tabpanel" data-tabs-target="panel">
-                    <turbo-frame id="frame-inventory-inv-qty" src="<%= admin_dashboard_inventory_top_path(scope: 'inv', metric: 'qty') %>">
-                      <div class="table-responsive p-2 px-3">
-                        <table class="table table-sm mb-0">
-                          <%= table_skeleton_rows(cols: 4, rows: 3) %>
-                        </table>
-                      </div>
-                    </turbo-frame>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <!-- Grupo: Apartados -->
-            <div class="tab-pane fade" id="ti-res" role="tabpanel" data-tabs-target="panel">
-              <div data-controller="tabs">
-                <ul class="nav nav-tabs nav-tabs-sm px-3 pt-3 d-none d-md-flex" role="tablist">
-                  <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#ti-res-value" type="button" role="tab" aria-controls="ti-res-value" aria-selected="true">Valor</button></li>
-                  <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#ti-res-qty" type="button" role="tab" aria-controls="ti-res-qty">Unidades</button></li>
-                </ul>
-                <div class="tab-content">
-                  <div class="tab-pane fade show active" id="ti-res-value" role="tabpanel" data-tabs-target="panel">
-                    <turbo-frame id="frame-inventory-res-value" src="<%= admin_dashboard_inventory_top_path(scope: 'res', metric: 'value') %>">
-                      <div class="table-responsive p-2 px-3">
-                        <table class="table table-sm mb-0">
-                          <%= table_skeleton_rows(cols: 3, rows: 3) %>
-                        </table>
-                      </div>
-                    </turbo-frame>
-                  </div>
-                  <div class="tab-pane fade" id="ti-res-qty" role="tabpanel" data-tabs-target="panel">
-                    <turbo-frame id="frame-inventory-res-qty" src="<%= admin_dashboard_inventory_top_path(scope: 'res', metric: 'qty') %>">
-                      <div class="table-responsive p-2 px-3">
-                        <table class="table table-sm mb-0">
-                          <%= table_skeleton_rows(cols: 4, rows: 3) %>
-                        </table>
-                      </div>
-                    </turbo-frame>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <!-- Grupo: Todos -->
-            <div class="tab-pane fade" id="ti-all" role="tabpanel" data-tabs-target="panel">
-              <div data-controller="tabs">
-                <ul class="nav nav-tabs nav-tabs-sm px-3 pt-3 d-none d-md-flex" role="tablist">
-                  <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#ti-all-value" type="button" role="tab" aria-controls="ti-all-value" aria-selected="true">Valor</button></li>
-                  <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#ti-all-qty" type="button" role="tab" aria-controls="ti-all-qty">Unidades</button></li>
-                </ul>
-                <div class="tab-content">
-                  <div class="tab-pane fade show active" id="ti-all-value" role="tabpanel" data-tabs-target="panel">
-                    <turbo-frame id="frame-inventory-all-value" src="<%= admin_dashboard_inventory_top_path(scope: 'all', metric: 'value') %>">
-                      <div class="table-responsive p-2 px-3">
-                        <table class="table table-sm mb-0">
-                          <%= table_skeleton_rows(cols: 3, rows: 3) %>
-                        </table>
-                      </div>
-                    </turbo-frame>
-                  </div>
-                  <div class="tab-pane fade" id="ti-all-qty" role="tabpanel" data-tabs-target="panel">
-                    <turbo-frame id="frame-inventory-all-qty" src="<%= admin_dashboard_inventory_top_path(scope: 'all', metric: 'qty') %>">
-                      <div class="table-responsive p-2 px-3">
-                        <table class="table table-sm mb-0">
-                          <%= table_skeleton_rows(cols: 4, rows: 3) %>
-                        </table>
-                      </div>
-                    </turbo-frame>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ========== SECCIÓN 4: Categorías y Clientes ========== -->
-  <div class="row mt-4 g-3">
-    <div class="col-xl-6">
-      <div class="card h-100" data-controller="tabs">
-        <div class="card-header d-flex justify-content-between align-items-center">
-          <span><i class="fa-solid fa-layer-group"></i> Top Categorías</span>
-          <ul class="nav nav-tabs nav-tabs-sm card-header-tabs d-none d-md-flex" role="tablist">
-            <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tc-ytd" type="button" role="tab" aria-controls="tc-ytd" aria-selected="true">YTD</button></li>
-            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tc-ly" type="button" role="tab" aria-controls="tc-ly">LY</button></li>
-            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tc-all" type="button" role="tab" aria-controls="tc-all">All</button></li>
-          </ul>
-          <select class="form-select form-select-sm d-md-none w-auto" aria-label="Seleccionar periodo" data-action="change->tabs#select">
-            <option value="#tc-ytd" selected>YTD</option>
-            <option value="#tc-ly">LY</option>
-            <option value="#tc-all">All</option>
-          </select>
-        </div>
-        <div class="card-body p-0">
-          <div class="tab-content">
-            <!-- Grupo: YTD -->
-            <div class="tab-pane fade show active" id="tc-ytd" role="tabpanel" data-tabs-target="panel">
-              <div data-controller="tabs">
-                <ul class="nav nav-tabs nav-tabs-sm px-3 pt-3 d-none d-md-flex" role="tablist">
-                  <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tc-ytd-rev" type="button" role="tab" aria-controls="tc-ytd-rev" aria-selected="true">Ingresos</button></li>
-                  <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tc-ytd-prof" type="button" role="tab" aria-controls="tc-ytd-prof">Utilidad</button></li>
-                </ul>
-                <div class="tab-content">
-                  <div class="tab-pane fade show active" id="tc-ytd-rev" role="tabpanel" data-tabs-target="panel">
-                    <turbo-frame id="frame-cats-ytd-rev" src="<%= admin_dashboard_categories_rank_path(period: 'ytd', metric: 'rev') %>">
-                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0">
-                        <%= table_skeleton_rows(cols: 3, rows: 3) %>
-                      </table></div>
-                    </turbo-frame>
-                  </div>
-                  <div class="tab-pane fade" id="tc-ytd-prof" role="tabpanel" data-tabs-target="panel">
-                    <turbo-frame id="frame-cats-ytd-profit" src="<%= admin_dashboard_categories_rank_path(period: 'ytd', metric: 'profit') %>">
-                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0">
-                        <%= table_skeleton_rows(cols: 3, rows: 3) %>
-                      </table></div>
-                    </turbo-frame>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <!-- Grupo: LY -->
-            <div class="tab-pane fade" id="tc-ly" role="tabpanel" data-tabs-target="panel">
-              <div data-controller="tabs">
-                <ul class="nav nav-tabs nav-tabs-sm px-3 pt-3 d-none d-md-flex" role="tablist">
-                  <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tc-ly-rev" type="button" role="tab" aria-controls="tc-ly-rev" aria-selected="true">Ingresos</button></li>
-                  <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tc-ly-prof" type="button" role="tab" aria-controls="tc-ly-prof">Utilidad</button></li>
-                </ul>
-                <div class="tab-content">
-                  <div class="tab-pane fade show active" id="tc-ly-rev" role="tabpanel" data-tabs-target="panel">
-                    <turbo-frame id="frame-cats-ly-rev" src="<%= admin_dashboard_categories_rank_path(period: 'ly', metric: 'rev') %>">
-                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0">
-                        <%= table_skeleton_rows(cols: 3, rows: 3) %>
-                      </table></div>
-                    </turbo-frame>
-                  </div>
-                  <div class="tab-pane fade" id="tc-ly-prof" role="tabpanel" data-tabs-target="panel">
-                    <turbo-frame id="frame-cats-ly-profit" src="<%= admin_dashboard_categories_rank_path(period: 'ly', metric: 'profit') %>">
-                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0">
-                        <%= table_skeleton_rows(cols: 3, rows: 3) %>
-                      </table></div>
-                    </turbo-frame>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <!-- Grupo: All -->
-            <div class="tab-pane fade" id="tc-all" role="tabpanel" data-tabs-target="panel">
-              <div data-controller="tabs">
-                <ul class="nav nav-tabs nav-tabs-sm px-3 pt-3 d-none d-md-flex" role="tablist">
-                  <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tc-all-rev" type="button" role="tab" aria-controls="tc-all-rev" aria-selected="true">Ingresos</button></li>
-                  <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tc-all-prof" type="button" role="tab" aria-controls="tc-all-prof">Utilidad</button></li>
-                </ul>
-                <div class="tab-content">
-                  <div class="tab-pane fade show active" id="tc-all-rev" role="tabpanel" data-tabs-target="panel">
-                    <turbo-frame id="frame-cats-all-rev" src="<%= admin_dashboard_categories_rank_path(period: 'all', metric: 'rev') %>">
-                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0">
-                        <%= table_skeleton_rows(cols: 3, rows: 3) %>
-                      </table></div>
-                    </turbo-frame>
-                  </div>
-                  <div class="tab-pane fade" id="tc-all-prof" role="tabpanel" data-tabs-target="panel">
-                    <turbo-frame id="frame-cats-all-profit" src="<%= admin_dashboard_categories_rank_path(period: 'all', metric: 'profit') %>">
-                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0">
-                        <%= table_skeleton_rows(cols: 3, rows: 3) %>
-                      </table></div>
-                    </turbo-frame>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-  </div>
-  <div class="col-xl-6">
-      <div class="card h-100" data-controller="tabs">
-        <div class="card-header d-flex justify-content-between align-items-center">
-          <span><i class="fa-solid fa-user-group"></i> Top Clientes</span>
-          <ul class="nav nav-tabs nav-tabs-sm card-header-tabs d-none d-md-flex" role="tablist">
-            <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tcu-ytd" type="button" role="tab" aria-controls="tcu-ytd" aria-selected="true">YTD</button></li>
-            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tcu-ly" type="button" role="tab" aria-controls="tcu-ly">LY</button></li>
-            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tcu-all" type="button" role="tab" aria-controls="tcu-all">All</button></li>
-          </ul>
-          <select class="form-select form-select-sm d-md-none w-auto" aria-label="Seleccionar periodo" data-action="change->tabs#select">
-            <option value="#tcu-ytd" selected>YTD</option>
-            <option value="#tcu-ly">LY</option>
-            <option value="#tcu-all">All</option>
-          </select>
-        </div>
-        <div class="card-body p-0">
-          <div class="tab-content">
-            <!-- Grupo: YTD -->
-            <div class="tab-pane fade show active" id="tcu-ytd" role="tabpanel" data-tabs-target="panel">
-              <div data-controller="tabs">
-                <ul class="nav nav-tabs nav-tabs-sm px-3 pt-3 d-none d-md-flex" role="tablist">
-                  <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tcu-ytd-sales" type="button" role="tab" aria-controls="tcu-ytd-sales" aria-selected="true">Ventas</button></li>
-                  <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tcu-ytd-res" type="button" role="tab" aria-controls="tcu-ytd-res">Apartados</button></li>
-                  <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tcu-ytd-comb" type="button" role="tab" aria-controls="tcu-ytd-comb">Combinado</button></li>
-                </ul>
-                <div class="tab-content">
-                  <div class="tab-pane fade show active" id="tcu-ytd-sales" role="tabpanel" data-tabs-target="panel">
-                    <turbo-frame id="frame-cust-ytd-sales" src="<%= admin_dashboard_customers_rank_path(period: 'ytd', metric: 'sales') %>">
-                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0">
-                        <%= table_skeleton_rows(cols: 3, rows: 3) %>
-                      </table></div>
-                    </turbo-frame>
-                  </div>
-                  <div class="tab-pane fade" id="tcu-ytd-res" role="tabpanel" data-tabs-target="panel">
-                    <turbo-frame id="frame-cust-ytd-reserved" src="<%= admin_dashboard_customers_rank_path(period: 'ytd', metric: 'reserved') %>">
-                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0">
-                        <%= table_skeleton_rows(cols: 3, rows: 3) %>
-                      </table></div>
-                    </turbo-frame>
-                  </div>
-                  <div class="tab-pane fade" id="tcu-ytd-comb" role="tabpanel" data-tabs-target="panel">
-                    <turbo-frame id="frame-cust-ytd-combined" src="<%= admin_dashboard_customers_rank_path(period: 'ytd', metric: 'combined') %>">
-                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0">
-                        <%= table_skeleton_rows(cols: 3, rows: 3) %>
-                      </table></div>
-                    </turbo-frame>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <!-- Grupo: LY -->
-            <div class="tab-pane fade" id="tcu-ly" role="tabpanel" data-tabs-target="panel">
-              <div data-controller="tabs">
-                <ul class="nav nav-tabs nav-tabs-sm px-3 pt-3 d-none d-md-flex" role="tablist">
-                  <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tcu-ly-sales" type="button" role="tab" aria-controls="tcu-ly-sales" aria-selected="true">Ventas</button></li>
-                  <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tcu-ly-res" type="button" role="tab" aria-controls="tcu-ly-res">Apartados</button></li>
-                  <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tcu-ly-comb" type="button" role="tab" aria-controls="tcu-ly-comb">Combinado</button></li>
-                </ul>
-                <div class="tab-content">
-                  <div class="tab-pane fade show active" id="tcu-ly-sales" role="tabpanel" data-tabs-target="panel">
-                    <turbo-frame id="frame-cust-ly-sales" src="<%= admin_dashboard_customers_rank_path(period: 'ly', metric: 'sales') %>">
-                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0">
-                        <%= table_skeleton_rows(cols: 3, rows: 3) %>
-                      </table></div>
-                    </turbo-frame>
-                  </div>
-                  <div class="tab-pane fade" id="tcu-ly-res" role="tabpanel" data-tabs-target="panel">
-                    <turbo-frame id="frame-cust-ly-reserved" src="<%= admin_dashboard_customers_rank_path(period: 'ly', metric: 'reserved') %>">
-                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0">
-                        <%= table_skeleton_rows(cols: 3, rows: 3) %>
-                      </table></div>
-                    </turbo-frame>
-                  </div>
-                  <div class="tab-pane fade" id="tcu-ly-comb" role="tabpanel" data-tabs-target="panel">
-                    <turbo-frame id="frame-cust-ly-combined" src="<%= admin_dashboard_customers_rank_path(period: 'ly', metric: 'combined') %>">
-                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0">
-                        <%= table_skeleton_rows(cols: 3, rows: 3) %>
-                      </table></div>
-                    </turbo-frame>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <!-- Grupo: All -->
-            <div class="tab-pane fade" id="tcu-all" role="tabpanel" data-tabs-target="panel">
-              <div data-controller="tabs">
-                <ul class="nav nav-tabs nav-tabs-sm px-3 pt-3 d-none d-md-flex" role="tablist">
-                  <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tcu-all-sales" type="button" role="tab" aria-controls="tcu-all-sales" aria-selected="true">Ventas</button></li>
-                  <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tcu-all-res" type="button" role="tab" aria-controls="tcu-all-res">Apartados</button></li>
-                  <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tcu-all-comb" type="button" role="tab" aria-controls="tcu-all-comb">Combinado</button></li>
-                </ul>
-                <div class="tab-content">
-                  <div class="tab-pane fade show active" id="tcu-all-sales" role="tabpanel" data-tabs-target="panel">
-                    <turbo-frame id="frame-cust-all-sales" src="<%= admin_dashboard_customers_rank_path(period: 'all', metric: 'sales') %>">
-                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0">
-                        <%= table_skeleton_rows(cols: 3, rows: 3) %>
-                      </table></div>
-                    </turbo-frame>
-                  </div>
-                  <div class="tab-pane fade" id="tcu-all-res" role="tabpanel" data-tabs-target="panel">
-                    <turbo-frame id="frame-cust-all-reserved" src="<%= admin_dashboard_customers_rank_path(period: 'all', metric: 'reserved') %>">
-                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0">
-                        <%= table_skeleton_rows(cols: 3, rows: 3) %>
-                      </table></div>
-                    </turbo-frame>
-                  </div>
-                  <div class="tab-pane fade" id="tcu-all-comb" role="tabpanel" data-tabs-target="panel">
-                    <turbo-frame id="frame-cust-all-combined" src="<%= admin_dashboard_customers_rank_path(period: 'all', metric: 'combined') %>">
-                      <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0">
-                        <%= table_skeleton_rows(cols: 3, rows: 3) %>
-                      </table></div>
-                    </turbo-frame>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ========== SECCIÓN: Geografía (Colapsable) ========== -->
-  <div class="row mt-4">
-    <div class="col-12">
-      <div class="card">
-        <div class="card-header d-flex justify-content-between align-items-center" style="cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#geo-section" aria-expanded="false">
-          <span><i class="fa-solid fa-globe"></i> Análisis Geográfico</span>
-          <span class="text-muted small"><i class="fa-solid fa-chevron-down"></i> Click para expandir</span>
-        </div>
-      </div>
-    </div>
-  </div>
-  <div class="collapse" id="geo-section">
-    <div class="row mt-2 g-3">
-      <div class="col-xl-8">
-        <div class="card h-100" data-controller="tabs">
-        <div class="card-header d-flex justify-content-between align-items-center">
-          <span><i class="fa-solid fa-flag"></i> Ventas por Estado (México)</span>
-          <ul class="nav nav-tabs nav-tabs-sm card-header-tabs d-none d-md-flex" role="tablist">
-            <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#mx-ytd" type="button" role="tab" aria-controls="mx-ytd" aria-selected="true">YTD</button></li>
-            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#mx-ly" type="button" role="tab" aria-controls="mx-ly">Año Anterior</button></li>
-            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#mx-all" type="button" role="tab" aria-controls="mx-all">Histórico</button></li>
-          </ul>
-          <select class="form-select form-select-sm d-md-none w-auto" aria-label="Seleccionar periodo" data-action="change->tabs#select">
-            <option value="#mx-ytd" selected>YTD</option>
-            <option value="#mx-ly">Año Anterior</option>
-            <option value="#mx-all">Histórico</option>
-          </select>
-        </div>
-        <div class="card-body p-0">
-          <div class="tab-content">
-            <div class="tab-pane fade show active" id="mx-ytd" role="tabpanel" data-tabs-target="panel">
-              <div class="table-responsive">
-                <table class="table table-sm mb-0">
-                  <thead><tr><th>Estado</th><th class="text-end">Órdenes</th><th class="text-end">Ingresos</th></tr></thead>
-                  <tbody>
-                    <% @sales_by_mexico_states_ytd&.each do |r| %>
-                      <tr>
-                        <td><%= r[:state] %></td>
-                        <td class="text-end"><%= number_with_delimiter(r[:orders]) %></td>
-                        <td class="text-end">$ <%= number_with_precision(r[:revenue], precision: 2, delimiter: ',') %></td>
-                      </tr>
-                    <% end %>
-                    <% if @sales_by_mexico_states_ytd.blank? %>
-                      <tr><td colspan="3" class="text-center text-muted py-3">Sin datos</td></tr>
-                    <% end %>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-            <div class="tab-pane fade" id="mx-ly" role="tabpanel" data-tabs-target="panel">
-              <div class="table-responsive">
-                <table class="table table-sm mb-0">
-                  <thead><tr><th>Estado</th><th class="text-end">Órdenes</th><th class="text-end">Ingresos</th></tr></thead>
-                  <tbody>
-                    <% @sales_by_mexico_states_last_year&.each do |r| %>
-                      <tr>
-                        <td><%= r[:state] %></td>
-                        <td class="text-end"><%= number_with_delimiter(r[:orders]) %></td>
-                        <td class="text-end">$ <%= number_with_precision(r[:revenue], precision: 2, delimiter: ',') %></td>
-                      </tr>
-                    <% end %>
-                    <% if @sales_by_mexico_states_last_year.blank? %>
-                      <tr><td colspan="3" class="text-center text-muted py-3">Sin datos</td></tr>
-                    <% end %>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-            <div class="tab-pane fade" id="mx-all" role="tabpanel" data-tabs-target="panel">
-              <div class="table-responsive">
-                <table class="table table-sm mb-0">
-                  <thead><tr><th>Estado</th><th class="text-end">Órdenes</th><th class="text-end">Ingresos</th></tr></thead>
-                  <tbody>
-                    <% @sales_by_mexico_states_all_time&.each do |r| %>
-                      <tr>
-                        <td><%= r[:state] %></td>
-                        <td class="text-end"><%= number_with_delimiter(r[:orders]) %></td>
-                        <td class="text-end">$ <%= number_with_precision(r[:revenue], precision: 2, delimiter: ',') %></td>
-                      </tr>
-                    <% end %>
-                    <% if @sales_by_mexico_states_all_time.blank? %>
-                      <tr><td colspan="3" class="text-center text-muted py-3">Sin datos</td></tr>
-                    <% end %>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="col-xl-4">
-      <div class="card h-100" data-controller="tabs">
-        <div class="card-header d-flex justify-content-between align-items-center">
-          <span><i class="fa-solid fa-table"></i> Distribución de Ventas por País</span>
-          <ul class="nav nav-tabs nav-tabs-sm card-header-tabs d-none d-md-flex" role="tablist">
-            <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#cty-ytd" type="button" role="tab" aria-controls="cty-ytd" aria-selected="true">YTD</button></li>
-            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#cty-ly" type="button" role="tab" aria-controls="cty-ly">Año Anterior</button></li>
-            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#cty-all" type="button" role="tab" aria-controls="cty-all">Histórico</button></li>
-          </ul>
-          <select class="form-select form-select-sm d-md-none w-auto" aria-label="Seleccionar periodo" data-action="change->tabs#select">
-            <option value="#cty-ytd" selected>YTD</option>
-            <option value="#cty-ly">Año Anterior</option>
-            <option value="#cty-all">Histórico</option>
-          </select>
-        </div>
-        <div class="card-body p-0">
-          <div class="tab-content">
-            <div class="tab-pane fade show active" id="cty-ytd" role="tabpanel" data-tabs-target="panel">
-              <div class="table-responsive">
-                <table class="table table-sm mb-0">
-                  <thead><tr><th>País</th><th class="text-end">Órdenes</th><th class="text-end">Ingresos</th><th class="text-end">Participación</th></tr></thead>
-                  <tbody>
-                    <% @sales_by_country_ytd&.each do |r| %>
-                      <tr>
-                        <td><%= country_flag_emoji(r[:name]) %> <%= r[:name] %></td>
-                        <td class="text-end"><%= number_with_delimiter(r[:orders]) %></td>
-                        <td class="text-end">$ <%= number_with_precision(r[:revenue], precision: 2, delimiter: ',') %></td>
-                        <td class="text-end"><%= number_to_percentage((r[:share] * 100), precision: 1) %></td>
-                      </tr>
-                    <% end %>
-                    <% if @sales_by_country_ytd.blank? %>
-                      <tr><td colspan="4" class="text-center text-muted py-3">Sin datos</td></tr>
-                    <% end %>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-            <div class="tab-pane fade" id="cty-ly" role="tabpanel" data-tabs-target="panel">
-              <div class="table-responsive">
-                <table class="table table-sm mb-0">
-                  <thead><tr><th>País</th><th class="text-end">Órdenes</th><th class="text-end">Ingresos</th><th class="text-end">Participación</th></tr></thead>
-                  <tbody>
-                    <% @sales_by_country_last_year&.each do |r| %>
-                      <tr>
-                        <td><%= country_flag_emoji(r[:name]) %> <%= r[:name] %></td>
-                        <td class="text-end"><%= number_with_delimiter(r[:orders]) %></td>
-                        <td class="text-end">$ <%= number_with_precision(r[:revenue], precision: 2, delimiter: ',') %></td>
-                        <td class="text-end"><%= number_to_percentage((r[:share] * 100), precision: 1) %></td>
-                      </tr>
-                    <% end %>
-                    <% if @sales_by_country_last_year.blank? %>
-                      <tr><td colspan="4" class="text-center text-muted py-3">Sin datos</td></tr>
-                    <% end %>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-            <div class="tab-pane fade" id="cty-all" role="tabpanel" data-tabs-target="panel">
-              <div class="table-responsive">
-                <table class="table table-sm mb-0">
-                  <thead><tr><th>País</th><th class="text-end">Órdenes</th><th class="text-end">Ingresos</th><th class="text-end">Participación</th></tr></thead>
-                  <tbody>
-                    <% @sales_by_country_all_time&.each do |r| %>
-                      <tr>
-                        <td><%= country_flag_emoji(r[:name]) %> <%= r[:name] %></td>
-                        <td class="text-end"><%= number_with_delimiter(r[:orders]) %></td>
-                        <td class="text-end">$ <%= number_with_precision(r[:revenue], precision: 2, delimiter: ',') %></td>
-                        <td class="text-end"><%= number_to_percentage((r[:share] * 100), precision: 1) %></td>
-                      </tr>
-                    <% end %>
-                    <% if @sales_by_country_all_time.blank? %>
-                      <tr><td colspan="4" class="text-center text-muted py-3">Sin datos</td></tr>
-                    <% end %>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-  </div>
-
-  <!-- ========== SECCIÓN: Productos Problemáticos ========== -->
-  <div class="row mt-4 g-3">
-    <div class="col-lg-12">
-      <div class="card h-100 border-danger">
-        <div class="card-header d-flex justify-content-between align-items-center bg-danger-subtle">
-          <span><i class="fa-solid fa-triangle-exclamation"></i> Productos Problemáticos</span>
-          <div class="d-flex align-items-center gap-2">
-            <%= link_to admin_products_path(sort: 'margin_asc'), class: 'btn btn-sm btn-outline-danger' do %>
-              <i class="fa-solid fa-list"></i> Ver todos
-            <% end %>
-            <span class="badge bg-danger" data-bs-toggle="tooltip" title="Productos con bajo margen, poca rotación o capital inmovilizado. Score ponderado automático.">Requiere atención</span>
-          </div>
-        </div>
-        <div class="card-body">
-          <!-- KPIs resumen -->
-          <div class="row text-center mb-3">
-            <div class="col-6 col-md-3">
-              <div class="small text-muted">Capital Inmovilizado</div>
-              <div class="fs-5 fw-bold text-danger">$ <%= number_with_precision(@worst_global_total_immobilized_capital, precision: 2, delimiter: ',') %></div>
-            </div>
-            <div class="col-6 col-md-3">
-              <div class="small text-muted">Margen Promedio</div>
-              <div class="fs-5 fw-bold"><%= @worst_global_avg_margin_pct.nil? ? '—' : number_to_percentage(@worst_global_avg_margin_pct * 100, precision: 1) %></div>
-            </div>
-            <div class="col-6 col-md-3">
-              <div class="small text-muted">Rotación Promedio</div>
-              <div class="fs-5 fw-bold"><%= @worst_global_avg_rotation.nil? ? '—' : number_with_precision(@worst_global_avg_rotation, precision: 2, delimiter: ',') %></div>
-            </div>
-            <div class="col-6 col-md-3">
-              <div class="small text-muted">Días de Inventario (DOH)</div>
-              <div class="fs-5 fw-bold"><%= @worst_global_avg_doh.nil? ? '—' : number_with_precision(@worst_global_avg_doh, precision: 1, delimiter: ',') %></div>
-            </div>
-          </div>
-
-          <!-- Ranking Principal (siempre visible) -->
-          <div class="table-responsive">
-            <table class="table table-sm mb-0 table-hover">
-              <thead class="table-light"><tr><th style="width:60px">Rank</th><th>Producto</th><th class="text-end">Score</th><th class="text-end d-none d-md-table-cell">Margen</th><th class="text-end d-none d-md-table-cell">Rotación</th><th class="text-end d-none d-lg-table-cell">DOH</th><th class="text-end">Capital</th></tr></thead>
-              <tbody>
-                <% @worst_score_products&.first(10)&.each_with_index do |r, idx| %>
-                  <tr>
-                    <td class="text-muted">#<%= idx + 1 %></td>
-                    <td>
-                      <div class="small fw-semibold"><%= link_to r[:name], edit_admin_product_path(r[:id]) %></div>
-                      <div class="text-muted d-none d-sm-block" style="font-size: .75rem;">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
-                    </td>
-                    <td class="text-end"><span class="badge bg-secondary"><%= number_with_precision(r[:worst_score], precision: 2, delimiter: ',') %></span></td>
-                    <td class="text-end d-none d-md-table-cell <%= r[:margin_pct].to_f < 0.15 ? 'text-danger fw-bold' : '' %>"><%= r[:margin_pct].nil? ? '—' : number_to_percentage(r[:margin_pct] * 100, precision: 1) %></td>
-                    <td class="text-end d-none d-md-table-cell <%= r[:rotation].to_f < 1 ? 'text-warning fw-bold' : '' %>"><%= r[:rotation].nil? ? '—' : number_with_precision(r[:rotation], precision: 2, delimiter: ',') %></td>
-                    <td class="text-end d-none d-lg-table-cell"><%= r[:doh].infinite? ? '∞' : number_with_precision(r[:doh], precision: 0, delimiter: ',') %></td>
-                    <td class="text-end text-danger">$ <%= number_with_precision(r[:immobilized_capital], precision: 0, delimiter: ',') %></td>
-                  </tr>
-                <% end %>
-                <% if @worst_score_products.blank? %>
-                  <tr><td colspan="7" class="text-center text-muted py-3">Sin datos</td></tr>
-                <% end %>
-              </tbody>
-            </table>
-          </div>
-
-          <!-- Detalle por métrica (colapsable) -->
-          <div class="mt-3">
-            <button class="btn btn-sm btn-outline-secondary w-100" type="button" data-bs-toggle="collapse" data-bs-target="#worst-details" aria-expanded="false">
-              <i class="fa-solid fa-chevron-down"></i> Ver desglose por métrica
-            </button>
-            <div class="collapse mt-3" id="worst-details">
-              <div class="row g-3">
-                <div class="col-md-6 col-xl-3">
-                  <div class="card">
-                    <div class="card-header py-2 small fw-semibold"><i class="fa-solid fa-percent text-danger"></i> Peor Margen</div>
-                    <div class="card-body p-0">
-                      <ul class="list-group list-group-flush small">
-                        <% @worst_margin_products&.first(5)&.each do |r| %>
-                          <li class="list-group-item d-flex justify-content-between align-items-center py-1">
-                            <%= link_to r[:name].truncate(25), edit_admin_product_path(r[:id]), class: 'text-decoration-none' %>
-                            <span class="badge bg-danger"><%= r[:margin_pct].nil? ? '—' : number_to_percentage(r[:margin_pct] * 100, precision: 0) %></span>
-                          </li>
-                        <% end %>
-                        <% if @worst_margin_products.blank? %><li class="list-group-item text-muted text-center py-2">Sin datos</li><% end %>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-                <div class="col-md-6 col-xl-3">
-                  <div class="card">
-                    <div class="card-header py-2 small fw-semibold"><i class="fa-solid fa-rotate text-warning"></i> Peor Rotación</div>
-                    <div class="card-body p-0">
-                      <ul class="list-group list-group-flush small">
-                        <% @worst_rotation_products&.first(5)&.each do |r| %>
-                          <li class="list-group-item d-flex justify-content-between align-items-center py-1">
-                            <%= link_to r[:name].truncate(25), edit_admin_product_path(r[:id]), class: 'text-decoration-none' %>
-                            <span class="badge bg-warning text-dark"><%= r[:rotation].nil? ? '—' : number_with_precision(r[:rotation], precision: 2) %></span>
-                          </li>
-                        <% end %>
-                        <% if @worst_rotation_products.blank? %><li class="list-group-item text-muted text-center py-2">Sin datos</li><% end %>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-                <div class="col-md-6 col-xl-3">
-                  <div class="card">
-                    <div class="card-header py-2 small fw-semibold"><i class="fa-solid fa-clock text-info"></i> Mayor DOH</div>
-                    <div class="card-body p-0">
-                      <ul class="list-group list-group-flush small">
-                        <% @top_doh_products&.first(5)&.each do |r| %>
-                          <li class="list-group-item d-flex justify-content-between align-items-center py-1">
-                            <%= link_to r[:name].truncate(25), edit_admin_product_path(r[:id]), class: 'text-decoration-none' %>
-                            <span class="badge bg-info text-dark"><%= r[:doh].infinite? ? '∞' : number_with_precision(r[:doh], precision: 0) %> días</span>
-                          </li>
-                        <% end %>
-                        <% if @top_doh_products.blank? %><li class="list-group-item text-muted text-center py-2">Sin datos</li><% end %>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-                <div class="col-md-6 col-xl-3">
-                  <div class="card">
-                    <div class="card-header py-2 small fw-semibold"><i class="fa-solid fa-money-bill-wave text-danger"></i> Mayor Capital</div>
-                    <div class="card-body p-0">
-                      <ul class="list-group list-group-flush small">
-                        <% @top_immobilized_products&.first(5)&.each do |r| %>
-                          <li class="list-group-item d-flex justify-content-between align-items-center py-1">
-                            <%= link_to r[:name].truncate(25), edit_admin_product_path(r[:id]), class: 'text-decoration-none' %>
-                            <span class="badge bg-danger">$ <%= number_with_precision(r[:immobilized_capital], precision: 0, delimiter: ',') %></span>
-                          </li>
-                        <% end %>
-                        <% if @top_immobilized_products.blank? %><li class="list-group-item text-muted text-center py-2">Sin datos</li><% end %>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Gráfico de flujo de caja -->
-  <div class="row mt-4 g-3">
-    <div class="col-lg-12">
-      <div class="card h-100">
-        <div class="card-header d-flex justify-content-between align-items-center">
-          <span><i class="fa-solid fa-water"></i> Flujo de Caja (últimos 12 meses)</span>
-        </div>
-        <div class="card-body">
-          <% cf = @chart_cashflow || {} %>
-          <% cf_values = [cf[:inflow], cf[:outflow], cf[:net]].flatten.compact.map(&:to_f) %>
-          <% has_cf_data = cf_values.any? { |v| v != 0 } %>
-          <% if has_cf_data %>
-            <div
-              data-controller="chart"
-              data-chart-type="line"
-              data-chart-x="<%= raw((cf[:months] || []).to_json) %>"
-              data-chart-series="<%= raw([
-                { name: 'Inflow', data: (cf[:inflow] || []).map(&:to_f) },
-                { name: 'Outflow', data: (cf[:outflow] || []).map { |v| -v.to_f } },
-                { name: 'Neto', data: (cf[:net] || []).map(&:to_f) }
-              ].to_json) %>"
-              style="height:280px"
-            ></div>
-          <% else %>
-            <div class="text-muted text-center py-4">Sin datos de flujo de caja.</div>
-          <% end %>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Gráfico de comparativo de flujo de caja año vs año anterior -->
-  <div class="row mt-4 g-3">
-    <div class="col-lg-12">
-      <div class="card h-100">
-        <div class="card-header d-flex justify-content-between align-items-center">
-          <span><i class="fa-solid fa-scale-balanced"></i> Comparativo Flujo de Caja: <%= @chart_cashflow_comparison&.dig(:current_year) || Time.zone.now.year %> vs <%= @chart_cashflow_comparison&.dig(:prev_year) || Time.zone.now.year - 1 %></span>
-          <span class="badge bg-secondary small">Ingresos (Ventas) - Egresos (Compras)</span>
-        </div>
-        <div class="card-body">
-          <% cfc = @chart_cashflow_comparison || {} %>
-          <% cfc_values = [cfc[:net_current], cfc[:net_prev]].flatten.compact.map(&:to_f) %>
-          <% has_cfc_data = cfc_values.any? { |v| v != 0 } %>
-          <% if has_cfc_data %>
-            <div
-              data-controller="chart"
-              data-chart-type="bar"
-              data-chart-x="<%= raw((cfc[:months] || []).to_json) %>"
-              data-chart-series="<%= raw([
-                { name: "#{cfc[:current_year]} Flujo Neto", data: (cfc[:net_current] || []).map(&:to_f), type: 'bar' },
-                { name: "#{cfc[:prev_year]} Flujo Neto", data: (cfc[:net_prev] || []).map(&:to_f), type: 'bar' }
-              ].to_json) %>"
-              style="height:300px"
-            ></div>
-            <div class="row mt-3 small text-muted">
-              <div class="col-md-6">
-                <table class="table table-sm table-borderless mb-0">
-                  <thead>
-                    <tr>
-                      <th><%= cfc[:current_year] %></th>
-                      <th class="text-end">Ingresos</th>
-                      <th class="text-end">Egresos</th>
-                      <th class="text-end">Neto</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td>Total</td>
-                      <td class="text-end text-success"><%= number_to_currency((cfc[:inflow_current] || []).sum, unit: '$', precision: 0, delimiter: ',') %></td>
-                      <td class="text-end text-danger"><%= number_to_currency((cfc[:outflow_current] || []).sum, unit: '$', precision: 0, delimiter: ',') %></td>
-                      <td class="text-end fw-bold <%= (cfc[:net_current] || []).sum >= 0 ? 'text-success' : 'text-danger' %>">
-                        <%= number_to_currency((cfc[:net_current] || []).sum, unit: '$', precision: 0, delimiter: ',') %>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-              <div class="col-md-6">
-                <table class="table table-sm table-borderless mb-0">
-                  <thead>
-                    <tr>
-                      <th><%= cfc[:prev_year] %></th>
-                      <th class="text-end">Ingresos</th>
-                      <th class="text-end">Egresos</th>
-                      <th class="text-end">Neto</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td>Total</td>
-                      <td class="text-end text-success"><%= number_to_currency((cfc[:inflow_prev] || []).sum, unit: '$', precision: 0, delimiter: ',') %></td>
-                      <td class="text-end text-danger"><%= number_to_currency((cfc[:outflow_prev] || []).sum, unit: '$', precision: 0, delimiter: ',') %></td>
-                      <td class="text-end fw-bold <%= (cfc[:net_prev] || []).sum >= 0 ? 'text-success' : 'text-danger' %>">
-                        <%= number_to_currency((cfc[:net_prev] || []).sum, unit: '$', precision: 0, delimiter: ',') %>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          <% else %>
-            <div class="text-muted text-center py-4">Sin datos de comparativo de flujo de caja.</div>
-          <% end %>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Gráficos de tendencias -->
-  <div class="row mt-4 g-3">
-    <div class="col-lg-12">
-      <div class="card h-100">
-        <div class="card-header d-flex justify-content-between align-items-center">
-          <span><i class="fa-solid fa-chart-line"></i> Comparativa de Ventas (Últimos 12 meses)</span>
+          <span class="fw-semibold"><i class="fa-solid fa-chart-line"></i> Tendencia de Ventas (12 meses)</span>
         </div>
         <div class="card-body">
           <% trend = @chart_sales_trend || {} %>
@@ -1208,25 +189,224 @@
               data-chart-type="line"
               data-chart-x="<%= raw((trend[:months] || []).to_json) %>"
               data-chart-series="<%= raw([
-                { name: 'Revenue', data: (trend[:revenue] || []).map(&:to_f) },
-                { name: 'COGS',    data: (trend[:cogs] || []).map(&:to_f) },
-                { name: 'Profit',  data: (trend[:profit] || []).map(&:to_f) }
+                { name: 'Ingresos', data: (trend[:revenue] || []).map(&:to_f) },
+                { name: 'COGS',     data: (trend[:cogs] || []).map(&:to_f) },
+                { name: 'Utilidad', data: (trend[:profit] || []).map(&:to_f) }
               ].to_json) %>"
-              style="height:280px"
+              style="height:300px"
             ></div>
           <% else %>
-            <div class="text-muted text-center py-4">Sin datos para el periodo seleccionado.</div>
+            <div class="text-muted text-center py-5">Sin datos de ventas para el periodo.</div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <!-- Status Donuts: SO y PO -->
+    <div class="col-lg-4">
+      <div class="card mb-3">
+        <div class="card-header py-2">
+          <span class="fw-semibold"><i class="fa-solid fa-receipt"></i> Órdenes de Venta</span>
+        </div>
+        <div class="card-body p-2">
+          <% if @so_status_pie.present? && @so_status_pie.any? { |s| s[:value].to_i > 0 } %>
+            <div
+              data-controller="chart"
+              data-chart-type="pie"
+              data-chart-series="<%= raw(@so_status_pie.to_json) %>"
+              style="height:165px"
+            ></div>
+          <% else %>
+            <div class="text-muted text-center py-3 small">Sin órdenes de venta.</div>
+          <% end %>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header py-2">
+          <span class="fw-semibold"><i class="fa-solid fa-box"></i> Órdenes de Compra</span>
+        </div>
+        <div class="card-body p-2">
+          <% if @po_status_pie.present? && @po_status_pie.any? { |s| s[:value].to_i > 0 } %>
+            <div
+              data-controller="chart"
+              data-chart-type="pie"
+              data-chart-series="<%= raw(@po_status_pie.to_json) %>"
+              style="height:165px"
+            ></div>
+          <% else %>
+            <div class="text-muted text-center py-3 small">Sin órdenes de compra.</div>
           <% end %>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Gráfico de ventas por categoría -->
-  <div class="row mt-4 g-3">
-    <div class="col-lg-12">
+  <!-- ========== 8 · COMPARATIVA YTD vs AÑO ANTERIOR ========== -->
+  <div class="card mb-4">
+    <div class="card-header py-2">
+      <span class="fw-semibold"><i class="fa-solid fa-scale-balanced"></i> Comparativa YTD vs Año Anterior</span>
+    </div>
+    <div class="card-body py-3">
+      <div class="row g-3">
+        <!-- Ventas -->
+        <div class="col-md-4">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="small text-muted">Ventas</span>
+            <span class="small fw-semibold <%= @kpi_deltas&.dig(:sales).to_f >= 0 ? 'text-success' : 'text-danger' %>">
+              <% if @kpi_deltas&.dig(:sales) %>
+                <i class="fa-solid fa-arrow-<%= @kpi_deltas&.dig(:sales).to_f >= 0 ? 'up' : 'down' %>"></i>
+                <%= number_to_percentage(@kpi_deltas&.dig(:sales).to_f * 100, precision: 1) %>
+              <% else %>—<% end %>
+            </span>
+          </div>
+          <div class="progress" style="height: 24px;">
+            <% sales_pct_ytd = @sales_prev.to_f.positive? ? [(@sales_ytd.to_f / [@sales_prev.to_f * 1.5, @sales_ytd.to_f].max) * 100, 100].min : 50 %>
+            <div class="progress-bar bg-success" role="progressbar" style="width: <%= sales_pct_ytd %>%">
+              <span class="small">YTD: <%= fmt_currency(@sales_ytd) %></span>
+            </div>
+          </div>
+          <div class="progress mt-1" style="height: 18px;">
+            <% sales_pct_ly = @sales_prev.to_f.positive? ? [(@sales_prev.to_f / [@sales_prev.to_f * 1.5, @sales_ytd.to_f].max) * 100, 100].min : 50 %>
+            <div class="progress-bar bg-secondary" role="progressbar" style="width: <%= sales_pct_ly %>%">
+              <span class="small">LY: <%= fmt_currency(@sales_prev) %></span>
+            </div>
+          </div>
+        </div>
+        <!-- Utilidad -->
+        <div class="col-md-4">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="small text-muted">Utilidad Bruta</span>
+            <span class="small fw-semibold <%= @kpi_deltas&.dig(:profit).to_f >= 0 ? 'text-success' : 'text-danger' %>">
+              <% if @kpi_deltas&.dig(:profit) %>
+                <i class="fa-solid fa-arrow-<%= @kpi_deltas&.dig(:profit).to_f >= 0 ? 'up' : 'down' %>"></i>
+                <%= number_to_percentage(@kpi_deltas&.dig(:profit).to_f * 100, precision: 1) %>
+              <% else %>—<% end %>
+            </span>
+          </div>
+          <div class="progress" style="height: 24px;">
+            <% profit_pct_ytd = @profit_prev.to_f.positive? ? [(@profit_ytd.to_f / [@profit_prev.to_f * 1.5, @profit_ytd.to_f].max) * 100, 100].min : 50 %>
+            <div class="progress-bar bg-primary" role="progressbar" style="width: <%= profit_pct_ytd %>%">
+              <span class="small">YTD: <%= fmt_currency(@profit_ytd) %></span>
+            </div>
+          </div>
+          <div class="progress mt-1" style="height: 18px;">
+            <% profit_pct_ly = @profit_prev.to_f.positive? ? [(@profit_prev.to_f / [@profit_prev.to_f * 1.5, @profit_ytd.to_f].max) * 100, 100].min : 50 %>
+            <div class="progress-bar bg-secondary" role="progressbar" style="width: <%= profit_pct_ly %>%">
+              <span class="small">LY: <%= fmt_currency(@profit_prev) %></span>
+            </div>
+          </div>
+        </div>
+        <!-- Órdenes -->
+        <div class="col-md-4">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="small text-muted">Órdenes de Venta</span>
+            <span class="small fw-semibold <%= @kpi_deltas&.dig(:orders).to_f >= 0 ? 'text-success' : 'text-danger' %>">
+              <% if @kpi_deltas&.dig(:orders) %>
+                <i class="fa-solid fa-arrow-<%= @kpi_deltas&.dig(:orders).to_f >= 0 ? 'up' : 'down' %>"></i>
+                <%= number_to_percentage(@kpi_deltas&.dig(:orders).to_f * 100, precision: 1) %>
+              <% else %>—<% end %>
+            </span>
+          </div>
+          <div class="progress" style="height: 24px;">
+            <% orders_max = [@orders_count_ytd.to_f, @orders_prev.to_f].max %>
+            <% orders_pct_ytd = orders_max.positive? ? (@orders_count_ytd.to_f / orders_max) * 100 : 50 %>
+            <div class="progress-bar bg-info" role="progressbar" style="width: <%= orders_pct_ytd %>%">
+              <span class="small">YTD: <%= number_with_delimiter(@orders_count_ytd) %></span>
+            </div>
+          </div>
+          <div class="progress mt-1" style="height: 18px;">
+            <% orders_pct_ly = orders_max.positive? ? (@orders_prev.to_f / orders_max) * 100 : 50 %>
+            <div class="progress-bar bg-secondary" role="progressbar" style="width: <%= orders_pct_ly %>%">
+              <span class="small">LY: <%= number_with_delimiter(@orders_prev) %></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 9 · GRÁFICOS FINANCIEROS ========== -->
+  <div class="row g-3 mb-4">
+    <!-- Flujo de Caja 12 meses -->
+    <div class="col-lg-6">
       <div class="card h-100">
-        <div class="card-header"><i class="fa-solid fa-chart-column"></i> Ventas por Mes (apilado por categoría)</div>
+        <div class="card-header py-2">
+          <span class="fw-semibold"><i class="fa-solid fa-water"></i> Flujo de Caja (12 meses)</span>
+        </div>
+        <div class="card-body">
+          <% cf = @chart_cashflow || {} %>
+          <% cf_values = [cf[:inflow], cf[:outflow], cf[:net]].flatten.compact.map(&:to_f) %>
+          <% has_cf_data = cf_values.any? { |v| v != 0 } %>
+          <% if has_cf_data %>
+            <div
+              data-controller="chart"
+              data-chart-type="line"
+              data-chart-x="<%= raw((cf[:months] || []).to_json) %>"
+              data-chart-series="<%= raw([
+                { name: 'Ingresos', data: (cf[:inflow] || []).map(&:to_f) },
+                { name: 'Egresos',  data: (cf[:outflow] || []).map { |v| -v.to_f } },
+                { name: 'Neto',     data: (cf[:net] || []).map(&:to_f) }
+              ].to_json) %>"
+              style="height:280px"
+            ></div>
+          <% else %>
+            <div class="text-muted text-center py-4">Sin datos de flujo de caja.</div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <!-- Comparativo Flujo de Caja YoY -->
+    <div class="col-lg-6">
+      <div class="card h-100">
+        <div class="card-header py-2 d-flex justify-content-between align-items-center">
+          <span class="fw-semibold"><i class="fa-solid fa-scale-balanced"></i> Cashflow: <%= @chart_cashflow_comparison&.dig(:current_year) || Time.zone.now.year %> vs <%= @chart_cashflow_comparison&.dig(:prev_year) || Time.zone.now.year - 1 %></span>
+        </div>
+        <div class="card-body">
+          <% cfc = @chart_cashflow_comparison || {} %>
+          <% cfc_values = [cfc[:net_current], cfc[:net_prev]].flatten.compact.map(&:to_f) %>
+          <% has_cfc_data = cfc_values.any? { |v| v != 0 } %>
+          <% if has_cfc_data %>
+            <div
+              data-controller="chart"
+              data-chart-type="bar"
+              data-chart-x="<%= raw((cfc[:months] || []).to_json) %>"
+              data-chart-series="<%= raw([
+                { name: "#{cfc[:current_year]} Neto", data: (cfc[:net_current] || []).map(&:to_f), type: 'bar' },
+                { name: "#{cfc[:prev_year]} Neto",    data: (cfc[:net_prev] || []).map(&:to_f), type: 'bar' }
+              ].to_json) %>"
+              style="height:240px"
+            ></div>
+            <div class="row mt-2 small text-muted">
+              <div class="col-6">
+                <strong><%= cfc[:current_year] %></strong> —
+                <span class="text-success"><%= number_to_currency((cfc[:inflow_current] || []).sum, unit: '$', precision: 0, delimiter: ',') %></span> /
+                <span class="text-danger"><%= number_to_currency((cfc[:outflow_current] || []).sum, unit: '$', precision: 0, delimiter: ',') %></span> =
+                <strong class="<%= (cfc[:net_current] || []).sum >= 0 ? 'text-success' : 'text-danger' %>"><%= number_to_currency((cfc[:net_current] || []).sum, unit: '$', precision: 0, delimiter: ',') %></strong>
+              </div>
+              <div class="col-6">
+                <strong><%= cfc[:prev_year] %></strong> —
+                <span class="text-success"><%= number_to_currency((cfc[:inflow_prev] || []).sum, unit: '$', precision: 0, delimiter: ',') %></span> /
+                <span class="text-danger"><%= number_to_currency((cfc[:outflow_prev] || []).sum, unit: '$', precision: 0, delimiter: ',') %></span> =
+                <strong class="<%= (cfc[:net_prev] || []).sum >= 0 ? 'text-success' : 'text-danger' %>"><%= number_to_currency((cfc[:net_prev] || []).sum, unit: '$', precision: 0, delimiter: ',') %></strong>
+              </div>
+            </div>
+          <% else %>
+            <div class="text-muted text-center py-4">Sin datos de comparativo de flujo de caja.</div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 10 · GRÁFICOS ANALÍTICOS ========== -->
+  <div class="row g-3 mb-4">
+    <!-- Ventas por Categoría (stacked) -->
+    <div class="col-lg-6">
+      <div class="card h-100">
+        <div class="card-header py-2">
+          <span class="fw-semibold"><i class="fa-solid fa-chart-column"></i> Ventas Mensuales por Categoría</span>
+        </div>
         <div class="card-body">
           <% cat = @chart_monthly_by_category || {} %>
           <% cat_series = (cat[:series] || []) %>
@@ -1234,7 +414,7 @@
           <% if has_cat_data %>
             <div
               data-controller="chart"
-              data-chart-type="bar"
+              data-chart-type="stacked"
               data-chart-x="<%= raw((cat[:months] || []).to_json) %>"
               data-chart-series="<%= raw(cat_series.map { |s| s.merge(type: 'bar') }.to_json) %>"
               style="height:280px"
@@ -1245,52 +425,511 @@
         </div>
       </div>
     </div>
+
+    <!-- Rentabilidad por Marca + Categoría -->
+    <div class="col-lg-6">
+      <div class="row g-3">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-header py-2">
+              <span class="fw-semibold"><i class="fa-solid fa-city"></i> Rentabilidad por Marca</span>
+            </div>
+            <div class="card-body">
+              <% brand = @chart_brand_profit || {} %>
+              <% brand_data = (brand[:profit] || []).map(&:to_f) %>
+              <% if brand_data.any? { |v| v != 0 } %>
+                <div
+                  data-controller="chart"
+                  data-chart-type="bar"
+                  data-chart-x="<%= raw((brand[:brands] || []).to_json) %>"
+                  data-chart-series='[{"name":"Utilidad","data":<%= raw(brand_data.to_json) %>}]'
+                  style="height:130px"
+                ></div>
+              <% else %>
+                <div class="text-muted text-center py-3 small">Sin datos.</div>
+              <% end %>
+            </div>
+          </div>
+        </div>
+        <div class="col-12">
+          <div class="card">
+            <div class="card-header py-2">
+              <span class="fw-semibold"><i class="fa-solid fa-tags"></i> Rentabilidad por Categoría</span>
+            </div>
+            <div class="card-body">
+              <% cat_profit = @chart_category_profit || {} %>
+              <% cat_profit_data = (cat_profit[:profit] || []).map(&:to_f) %>
+              <% if cat_profit_data.any? { |v| v != 0 } %>
+                <div
+                  data-controller="chart"
+                  data-chart-type="bar"
+                  data-chart-x="<%= raw((cat_profit[:categories] || []).to_json) %>"
+                  data-chart-series='[{"name":"Utilidad","data":<%= raw(cat_profit_data.to_json) %>}]'
+                  style="height:130px"
+                ></div>
+              <% else %>
+                <div class="text-muted text-center py-3 small">Sin datos.</div>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <!-- Gráficos de rentabilidad -->
-  <div class="row mt-4 g-3">
-    <div class="col-lg-6">
-      <div class="card h-100">
-        <div class="card-header"><i class="fa-solid fa-city"></i> Rentabilidad por Marca</div>
-        <div class="card-body">
-          <% brand = @chart_brand_profit || {} %>
-          <% brand_data = (brand[:profit] || []).map(&:to_f) %>
-          <% if brand_data.any? { |v| v != 0 } %>
-            <div
-              data-controller="chart"
-              data-chart-type="bar"
-              data-chart-x="<%= raw((brand[:brands] || []).to_json) %>"
-              data-chart-series='[{"name":"Utilidad","data":<%= raw(brand_data.to_json) %>}]'
-              style="height:280px"
-            ></div>
-          <% else %>
-            <div class="text-muted text-center py-4">Sin datos de rentabilidad por marca.</div>
-          <% end %>
+  <!-- ========== 11 · RANKINGS: Productos + Inventario ========== -->
+  <div class="row g-3 mb-4">
+    <!-- Top Productos -->
+    <div class="col-xl-8">
+      <div class="card h-100" data-controller="tabs">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span><i class="fa-solid fa-box"></i> Top Productos</span>
+          <div class="d-flex align-items-center gap-2">
+            <ul class="nav nav-tabs nav-tabs-sm card-header-tabs d-none d-md-flex" role="tablist">
+              <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-sellers" type="button" role="tab" aria-selected="true">Vendedores</button></li>
+              <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-profit" type="button" role="tab">Rentables</button></li>
+            </ul>
+            <%= link_to admin_products_path, class: 'btn btn-sm btn-outline-primary ms-2 d-none d-lg-inline-block' do %>
+              <i class="fa-solid fa-list"></i> Ver todos
+            <% end %>
+          </div>
+          <select class="form-select form-select-sm d-md-none w-auto" data-action="change->tabs#select">
+            <option value="#tp-sellers" selected>Vendedores</option>
+            <option value="#tp-profit">Rentables</option>
+          </select>
+        </div>
+        <div class="card-body p-0">
+          <div class="tab-content">
+            <!-- Vendedores -->
+            <div class="tab-pane fade show active" id="tp-sellers" role="tabpanel" data-tabs-target="panel">
+              <div data-controller="tabs">
+                <ul class="nav nav-tabs nav-tabs-sm px-3 pt-3 d-none d-md-flex" role="tablist">
+                  <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-sellers-ytd" type="button" role="tab" aria-selected="true">YTD</button></li>
+                  <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-sellers-ly" type="button" role="tab">LY</button></li>
+                  <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-sellers-all" type="button" role="tab">All</button></li>
+                </ul>
+                <div class="tab-content">
+                  <% %w[ytd ly all].each do |period| %>
+                    <div class="tab-pane fade <%= period == 'ytd' ? 'show active' : '' %>" id="tp-sellers-<%= period %>" role="tabpanel" data-tabs-target="panel">
+                      <turbo-frame id="frame-sellers-<%= period %>" src="<%= admin_dashboard_sellers_path(period: period) %>">
+                        <div class="table-responsive p-2 px-3">
+                          <table class="table table-sm mb-0">
+                            <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Unidades</th><th class="text-end">Ingresos</th></tr></thead>
+                            <%= table_skeleton_rows(cols: 4, rows: 3) %>
+                          </table>
+                        </div>
+                      </turbo-frame>
+                    </div>
+                  <% end %>
+                </div>
+              </div>
+            </div>
+            <!-- Rentables -->
+            <div class="tab-pane fade" id="tp-profit" role="tabpanel" data-tabs-target="panel">
+              <div data-controller="tabs">
+                <ul class="nav nav-tabs nav-tabs-sm px-3 pt-3 d-none d-md-flex" role="tablist">
+                  <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-profit-ytd" type="button" role="tab" aria-selected="true">YTD</button></li>
+                  <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-profit-ly" type="button" role="tab">LY</button></li>
+                  <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-profit-all" type="button" role="tab">All</button></li>
+                </ul>
+                <div class="tab-content">
+                  <% %w[ytd ly all].each do |period| %>
+                    <div class="tab-pane fade <%= period == 'ytd' ? 'show active' : '' %>" id="tp-profit-<%= period %>" role="tabpanel" data-tabs-target="panel">
+                      <turbo-frame id="frame-profit-<%= period %>" src="<%= admin_dashboard_profitable_path(period: period) %>">
+                        <div class="table-responsive p-2 px-3">
+                          <table class="table table-sm mb-0">
+                            <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Ingresos</th><th class="text-end">COGS</th><th class="text-end">Utilidad</th></tr></thead>
+                            <%= table_skeleton_rows(cols: 5, rows: 3) %>
+                          </table>
+                        </div>
+                      </turbo-frame>
+                    </div>
+                  <% end %>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
-    <div class="col-lg-6">
-      <div class="card h-100">
-        <div class="card-header"><i class="fa-solid fa-tags"></i> Rentabilidad por Categoría</div>
-        <div class="card-body">
-          <% cat_profit = @chart_category_profit || {} %>
-          <% cat_profit_data = (cat_profit[:profit] || []).map(&:to_f) %>
-          <% if cat_profit_data.any? { |v| v != 0 } %>
-            <div
-              data-controller="chart"
-              data-chart-type="bar"
-              data-chart-x="<%= raw((cat_profit[:categories] || []).to_json) %>"
-              data-chart-series='[{"name":"Utilidad","data":<%= raw(cat_profit_data.to_json) %>}]'
-              style="height:280px"
-            ></div>
-          <% else %>
-            <div class="text-muted text-center py-4">Sin datos de rentabilidad por categoría.</div>
-          <% end %>
+
+    <!-- Top Inventario -->
+    <div class="col-xl-4">
+      <div class="card h-100" data-controller="tabs">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span><i class="fa-solid fa-boxes-stacked"></i> Top Inventario</span>
+          <div class="d-flex align-items-center gap-2 justify-content-end">
+            <ul class="nav nav-tabs nav-tabs-sm card-header-tabs d-none d-md-flex" role="tablist">
+              <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#ti-inv" type="button" role="tab" aria-selected="true">Inventario</button></li>
+              <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#ti-res" type="button" role="tab">Apartados</button></li>
+              <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#ti-all" type="button" role="tab">Todos</button></li>
+            </ul>
+            <select class="form-select form-select-sm d-md-none w-auto" data-action="change->tabs#select">
+              <option value="#ti-inv" selected>Inventario</option>
+              <option value="#ti-res">Apartados</option>
+              <option value="#ti-all">Todos</option>
+            </select>
+          </div>
+        </div>
+        <div class="card-body p-0">
+          <div class="tab-content">
+            <% %w[inv res all].each_with_index do |scope, idx| %>
+              <div class="tab-pane fade <%= idx == 0 ? 'show active' : '' %>" id="ti-<%= scope %>" role="tabpanel" data-tabs-target="panel">
+                <div data-controller="tabs">
+                  <ul class="nav nav-tabs nav-tabs-sm px-3 pt-3 d-none d-md-flex" role="tablist">
+                    <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#ti-<%= scope %>-value" type="button" role="tab" aria-selected="true">Valor</button></li>
+                    <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#ti-<%= scope %>-qty" type="button" role="tab">Unidades</button></li>
+                  </ul>
+                  <div class="tab-content">
+                    <% %w[value qty].each_with_index do |metric, midx| %>
+                      <div class="tab-pane fade <%= midx == 0 ? 'show active' : '' %>" id="ti-<%= scope %>-<%= metric %>" role="tabpanel" data-tabs-target="panel">
+                        <turbo-frame id="frame-inventory-<%= scope %>-<%= metric %>" src="<%= admin_dashboard_inventory_top_path(scope: scope, metric: metric) %>">
+                          <div class="table-responsive p-2 px-3">
+                            <table class="table table-sm mb-0">
+                              <%= table_skeleton_rows(cols: metric == 'value' ? 3 : 4, rows: 3) %>
+                            </table>
+                          </div>
+                        </turbo-frame>
+                      </div>
+                    <% end %>
+                  </div>
+                </div>
+              </div>
+            <% end %>
+          </div>
         </div>
       </div>
     </div>
   </div>
-  <!-- (Se eliminó el bloque final de "Producto top por categoría (Profit)") -->
+
+  <!-- ========== 12 · RANKINGS: Categorías + Clientes ========== -->
+  <div class="row g-3 mb-4">
+    <!-- Top Categorías -->
+    <div class="col-xl-6">
+      <div class="card h-100" data-controller="tabs">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span><i class="fa-solid fa-layer-group"></i> Top Categorías</span>
+          <ul class="nav nav-tabs nav-tabs-sm card-header-tabs d-none d-md-flex" role="tablist">
+            <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tc-ytd" type="button" role="tab" aria-selected="true">YTD</button></li>
+            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tc-ly" type="button" role="tab">LY</button></li>
+            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tc-all" type="button" role="tab">All</button></li>
+          </ul>
+          <select class="form-select form-select-sm d-md-none w-auto" data-action="change->tabs#select">
+            <option value="#tc-ytd" selected>YTD</option>
+            <option value="#tc-ly">LY</option>
+            <option value="#tc-all">All</option>
+          </select>
+        </div>
+        <div class="card-body p-0">
+          <div class="tab-content">
+            <% %w[ytd ly all].each_with_index do |period, pidx| %>
+              <div class="tab-pane fade <%= pidx == 0 ? 'show active' : '' %>" id="tc-<%= period %>" role="tabpanel" data-tabs-target="panel">
+                <div data-controller="tabs">
+                  <ul class="nav nav-tabs nav-tabs-sm px-3 pt-3 d-none d-md-flex" role="tablist">
+                    <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tc-<%= period %>-rev" type="button" role="tab" aria-selected="true">Ingresos</button></li>
+                    <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tc-<%= period %>-prof" type="button" role="tab">Utilidad</button></li>
+                  </ul>
+                  <div class="tab-content">
+                    <% { 'rev' => 'rev', 'prof' => 'profit' }.each_with_index do |(tab_key, metric), midx| %>
+                      <div class="tab-pane fade <%= midx == 0 ? 'show active' : '' %>" id="tc-<%= period %>-<%= tab_key %>" role="tabpanel" data-tabs-target="panel">
+                        <turbo-frame id="frame-cats-<%= period %>-<%= metric %>" src="<%= admin_dashboard_categories_rank_path(period: period, metric: metric) %>">
+                          <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0">
+                            <%= table_skeleton_rows(cols: 3, rows: 3) %>
+                          </table></div>
+                        </turbo-frame>
+                      </div>
+                    <% end %>
+                  </div>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Top Clientes -->
+    <div class="col-xl-6">
+      <div class="card h-100" data-controller="tabs">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span><i class="fa-solid fa-user-group"></i> Top Clientes</span>
+          <ul class="nav nav-tabs nav-tabs-sm card-header-tabs d-none d-md-flex" role="tablist">
+            <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tcu-ytd" type="button" role="tab" aria-selected="true">YTD</button></li>
+            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tcu-ly" type="button" role="tab">LY</button></li>
+            <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tcu-all" type="button" role="tab">All</button></li>
+          </ul>
+          <select class="form-select form-select-sm d-md-none w-auto" data-action="change->tabs#select">
+            <option value="#tcu-ytd" selected>YTD</option>
+            <option value="#tcu-ly">LY</option>
+            <option value="#tcu-all">All</option>
+          </select>
+        </div>
+        <div class="card-body p-0">
+          <div class="tab-content">
+            <% %w[ytd ly all].each_with_index do |period, pidx| %>
+              <div class="tab-pane fade <%= pidx == 0 ? 'show active' : '' %>" id="tcu-<%= period %>" role="tabpanel" data-tabs-target="panel">
+                <div data-controller="tabs">
+                  <ul class="nav nav-tabs nav-tabs-sm px-3 pt-3 d-none d-md-flex" role="tablist">
+                    <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tcu-<%= period %>-sales" type="button" role="tab" aria-selected="true">Ventas</button></li>
+                    <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tcu-<%= period %>-res" type="button" role="tab">Apartados</button></li>
+                    <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tcu-<%= period %>-comb" type="button" role="tab">Combinado</button></li>
+                  </ul>
+                  <div class="tab-content">
+                    <% { 'sales' => 'sales', 'res' => 'reserved', 'comb' => 'combined' }.each_with_index do |(tab_key, metric), midx| %>
+                      <div class="tab-pane fade <%= midx == 0 ? 'show active' : '' %>" id="tcu-<%= period %>-<%= tab_key %>" role="tabpanel" data-tabs-target="panel">
+                        <turbo-frame id="frame-cust-<%= period %>-<%= metric %>" src="<%= admin_dashboard_customers_rank_path(period: period, metric: metric) %>">
+                          <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0">
+                            <%= table_skeleton_rows(cols: 3, rows: 3) %>
+                          </table></div>
+                        </turbo-frame>
+                      </div>
+                    <% end %>
+                  </div>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 13 · PRODUCTOS PROBLEMÁTICOS ========== -->
+  <div class="card mb-4 border-danger">
+    <div class="card-header d-flex justify-content-between align-items-center bg-danger-subtle" style="cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#worst-section" aria-expanded="false">
+      <span><i class="fa-solid fa-triangle-exclamation"></i> Productos Problemáticos</span>
+      <div class="d-flex align-items-center gap-2">
+        <%= link_to admin_products_path(sort: 'margin_asc'), class: 'btn btn-sm btn-outline-danger' do %>
+          <i class="fa-solid fa-list"></i> Ver todos
+        <% end %>
+        <span class="badge bg-danger">Requiere atención</span>
+        <i class="fa-solid fa-chevron-down text-muted"></i>
+      </div>
+    </div>
+    <div class="collapse" id="worst-section">
+      <div class="card-body">
+        <!-- KPIs resumen -->
+        <div class="row text-center mb-3">
+          <div class="col-6 col-md-3">
+            <div class="small text-muted">Capital Inmovilizado</div>
+            <div class="fs-5 fw-bold text-danger">$ <%= number_with_precision(@worst_global_total_immobilized_capital, precision: 2, delimiter: ',') %></div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="small text-muted">Margen Promedio</div>
+            <div class="fs-5 fw-bold"><%= @worst_global_avg_margin_pct.nil? ? '—' : number_to_percentage(@worst_global_avg_margin_pct * 100, precision: 1) %></div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="small text-muted">Rotación Promedio</div>
+            <div class="fs-5 fw-bold"><%= @worst_global_avg_rotation.nil? ? '—' : number_with_precision(@worst_global_avg_rotation, precision: 2, delimiter: ',') %></div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="small text-muted">Días de Inventario (DOH)</div>
+            <div class="fs-5 fw-bold"><%= @worst_global_avg_doh.nil? ? '—' : number_with_precision(@worst_global_avg_doh, precision: 1, delimiter: ',') %></div>
+          </div>
+        </div>
+
+        <!-- Ranking Principal -->
+        <div class="table-responsive">
+          <table class="table table-sm mb-0 table-hover">
+            <thead class="table-light"><tr><th style="width:60px">Rank</th><th>Producto</th><th class="text-end">Score</th><th class="text-end d-none d-md-table-cell">Margen</th><th class="text-end d-none d-md-table-cell">Rotación</th><th class="text-end d-none d-lg-table-cell">DOH</th><th class="text-end">Capital</th></tr></thead>
+            <tbody>
+              <% @worst_score_products&.first(10)&.each_with_index do |r, idx| %>
+                <tr>
+                  <td class="text-muted">#<%= idx + 1 %></td>
+                  <td>
+                    <div class="small fw-semibold"><%= link_to r[:name], edit_admin_product_path(r[:id]) %></div>
+                    <div class="text-muted d-none d-sm-block" style="font-size: .75rem;">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
+                  </td>
+                  <td class="text-end"><span class="badge bg-secondary"><%= number_with_precision(r[:worst_score], precision: 2, delimiter: ',') %></span></td>
+                  <td class="text-end d-none d-md-table-cell <%= r[:margin_pct].to_f < 0.15 ? 'text-danger fw-bold' : '' %>"><%= r[:margin_pct].nil? ? '—' : number_to_percentage(r[:margin_pct] * 100, precision: 1) %></td>
+                  <td class="text-end d-none d-md-table-cell <%= r[:rotation].to_f < 1 ? 'text-warning fw-bold' : '' %>"><%= r[:rotation].nil? ? '—' : number_with_precision(r[:rotation], precision: 2, delimiter: ',') %></td>
+                  <td class="text-end d-none d-lg-table-cell"><%= r[:doh].infinite? ? '∞' : number_with_precision(r[:doh], precision: 0, delimiter: ',') %></td>
+                  <td class="text-end text-danger">$ <%= number_with_precision(r[:immobilized_capital], precision: 0, delimiter: ',') %></td>
+                </tr>
+              <% end %>
+              <% if @worst_score_products.blank? %>
+                <tr><td colspan="7" class="text-center text-muted py-3">Sin datos</td></tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Detalle por métrica (colapsable) -->
+        <div class="mt-3">
+          <button class="btn btn-sm btn-outline-secondary w-100" type="button" data-bs-toggle="collapse" data-bs-target="#worst-details" aria-expanded="false">
+            <i class="fa-solid fa-chevron-down"></i> Ver desglose por métrica
+          </button>
+          <div class="collapse mt-3" id="worst-details">
+            <div class="row g-3">
+              <div class="col-md-6 col-xl-3">
+                <div class="card">
+                  <div class="card-header py-2 small fw-semibold"><i class="fa-solid fa-percent text-danger"></i> Peor Margen</div>
+                  <div class="card-body p-0">
+                    <ul class="list-group list-group-flush small">
+                      <% @worst_margin_products&.first(5)&.each do |r| %>
+                        <li class="list-group-item d-flex justify-content-between align-items-center py-1">
+                          <%= link_to r[:name].truncate(25), edit_admin_product_path(r[:id]), class: 'text-decoration-none' %>
+                          <span class="badge bg-danger"><%= r[:margin_pct].nil? ? '—' : number_to_percentage(r[:margin_pct] * 100, precision: 0) %></span>
+                        </li>
+                      <% end %>
+                      <% if @worst_margin_products.blank? %><li class="list-group-item text-muted text-center py-2">Sin datos</li><% end %>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6 col-xl-3">
+                <div class="card">
+                  <div class="card-header py-2 small fw-semibold"><i class="fa-solid fa-rotate text-warning"></i> Peor Rotación</div>
+                  <div class="card-body p-0">
+                    <ul class="list-group list-group-flush small">
+                      <% @worst_rotation_products&.first(5)&.each do |r| %>
+                        <li class="list-group-item d-flex justify-content-between align-items-center py-1">
+                          <%= link_to r[:name].truncate(25), edit_admin_product_path(r[:id]), class: 'text-decoration-none' %>
+                          <span class="badge bg-warning text-dark"><%= r[:rotation].nil? ? '—' : number_with_precision(r[:rotation], precision: 2) %></span>
+                        </li>
+                      <% end %>
+                      <% if @worst_rotation_products.blank? %><li class="list-group-item text-muted text-center py-2">Sin datos</li><% end %>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6 col-xl-3">
+                <div class="card">
+                  <div class="card-header py-2 small fw-semibold"><i class="fa-solid fa-clock text-info"></i> Mayor DOH</div>
+                  <div class="card-body p-0">
+                    <ul class="list-group list-group-flush small">
+                      <% @top_doh_products&.first(5)&.each do |r| %>
+                        <li class="list-group-item d-flex justify-content-between align-items-center py-1">
+                          <%= link_to r[:name].truncate(25), edit_admin_product_path(r[:id]), class: 'text-decoration-none' %>
+                          <span class="badge bg-info text-dark"><%= r[:doh].infinite? ? '∞' : number_with_precision(r[:doh], precision: 0) %> días</span>
+                        </li>
+                      <% end %>
+                      <% if @top_doh_products.blank? %><li class="list-group-item text-muted text-center py-2">Sin datos</li><% end %>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6 col-xl-3">
+                <div class="card">
+                  <div class="card-header py-2 small fw-semibold"><i class="fa-solid fa-money-bill-wave text-danger"></i> Mayor Capital</div>
+                  <div class="card-body p-0">
+                    <ul class="list-group list-group-flush small">
+                      <% @top_immobilized_products&.first(5)&.each do |r| %>
+                        <li class="list-group-item d-flex justify-content-between align-items-center py-1">
+                          <%= link_to r[:name].truncate(25), edit_admin_product_path(r[:id]), class: 'text-decoration-none' %>
+                          <span class="badge bg-danger">$ <%= number_with_precision(r[:immobilized_capital], precision: 0, delimiter: ',') %></span>
+                        </li>
+                      <% end %>
+                      <% if @top_immobilized_products.blank? %><li class="list-group-item text-muted text-center py-2">Sin datos</li><% end %>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 14 · GEOGRAFÍA (colapsable) ========== -->
+  <div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center" style="cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#geo-section" aria-expanded="false">
+      <span><i class="fa-solid fa-globe"></i> Análisis Geográfico</span>
+      <span class="text-muted small"><i class="fa-solid fa-chevron-down"></i> Click para expandir</span>
+    </div>
+  </div>
+  <div class="collapse" id="geo-section">
+    <div class="row mb-4 g-3">
+      <!-- Ventas por Estado (México) -->
+      <div class="col-xl-8">
+        <div class="card h-100" data-controller="tabs">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <span><i class="fa-solid fa-flag"></i> Ventas por Estado (México)</span>
+            <ul class="nav nav-tabs nav-tabs-sm card-header-tabs d-none d-md-flex" role="tablist">
+              <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#mx-ytd" type="button" role="tab" aria-selected="true">YTD</button></li>
+              <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#mx-ly" type="button" role="tab">Año Anterior</button></li>
+              <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#mx-all" type="button" role="tab">Histórico</button></li>
+            </ul>
+            <select class="form-select form-select-sm d-md-none w-auto" data-action="change->tabs#select">
+              <option value="#mx-ytd" selected>YTD</option>
+              <option value="#mx-ly">Año Anterior</option>
+              <option value="#mx-all">Histórico</option>
+            </select>
+          </div>
+          <div class="card-body p-0">
+            <div class="tab-content">
+              <% { 'ytd' => @sales_by_mexico_states_ytd, 'ly' => @sales_by_mexico_states_last_year, 'all' => @sales_by_mexico_states_all_time }.each_with_index do |(period, data), idx| %>
+                <div class="tab-pane fade <%= idx == 0 ? 'show active' : '' %>" id="mx-<%= period %>" role="tabpanel" data-tabs-target="panel">
+                  <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                      <thead><tr><th>Estado</th><th class="text-end">Órdenes</th><th class="text-end">Ingresos</th></tr></thead>
+                      <tbody>
+                        <% data&.each do |r| %>
+                          <tr>
+                            <td><%= r[:state] %></td>
+                            <td class="text-end"><%= number_with_delimiter(r[:orders]) %></td>
+                            <td class="text-end">$ <%= number_with_precision(r[:revenue], precision: 2, delimiter: ',') %></td>
+                          </tr>
+                        <% end %>
+                        <% if data.blank? %>
+                          <tr><td colspan="3" class="text-center text-muted py-3">Sin datos</td></tr>
+                        <% end %>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Ventas por País -->
+      <div class="col-xl-4">
+        <div class="card h-100" data-controller="tabs">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <span><i class="fa-solid fa-table"></i> Ventas por País</span>
+            <ul class="nav nav-tabs nav-tabs-sm card-header-tabs d-none d-md-flex" role="tablist">
+              <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#cty-ytd" type="button" role="tab" aria-selected="true">YTD</button></li>
+              <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#cty-ly" type="button" role="tab">LY</button></li>
+              <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#cty-all" type="button" role="tab">All</button></li>
+            </ul>
+            <select class="form-select form-select-sm d-md-none w-auto" data-action="change->tabs#select">
+              <option value="#cty-ytd" selected>YTD</option>
+              <option value="#cty-ly">LY</option>
+              <option value="#cty-all">All</option>
+            </select>
+          </div>
+          <div class="card-body p-0">
+            <div class="tab-content">
+              <% { 'ytd' => @sales_by_country_ytd, 'ly' => @sales_by_country_last_year, 'all' => @sales_by_country_all_time }.each_with_index do |(period, data), idx| %>
+                <div class="tab-pane fade <%= idx == 0 ? 'show active' : '' %>" id="cty-<%= period %>" role="tabpanel" data-tabs-target="panel">
+                  <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                      <thead><tr><th>País</th><th class="text-end">Órdenes</th><th class="text-end">Ingresos</th><th class="text-end">Participación</th></tr></thead>
+                      <tbody>
+                        <% data&.each do |r| %>
+                          <tr>
+                            <td><%= country_flag_emoji(r[:name]) %> <%= r[:name] %></td>
+                            <td class="text-end"><%= number_with_delimiter(r[:orders]) %></td>
+                            <td class="text-end">$ <%= number_with_precision(r[:revenue], precision: 2, delimiter: ',') %></td>
+                            <td class="text-end"><%= number_to_percentage((r[:share] * 100), precision: 1) %></td>
+                          </tr>
+                        <% end %>
+                        <% if data.blank? %>
+                          <tr><td colspan="4" class="text-center text-muted py-3">Sin datos</td></tr>
+                        <% end %>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
 </div>
-
-<!-- Sin scripts inline: todos los charts usan Stimulus chart_controller -->

@@ -1,64 +1,52 @@
 import { Controller } from "@hotwired/stimulus"
-import { initLine, initBar, initPie, initSparkline, registerResizeObserver, unregisterResizeObserver } from "../dashboard/charts"
+import { initLine, initBar, initStackedBar, initPie, initSparkline, registerResizeObserver, unregisterResizeObserver } from "../dashboard/charts"
 import * as echarts from "echarts"
 
 // data-controller="chart"
-// data-chart-type="line|bar|pie|spark"
-// data-chart-x="[...json...]"
-// data-chart-series="[...json...]"
+// data-chart-type-value="line|bar|stacked|pie|spark"
+// data-chart-x-value="[...json...]"
+// data-chart-series-value="[...json...]"
+// data-chart-data-value="[...json...]"  (sparkline only)
 export default class extends Controller {
   static values = {
     type: String,
-    x: String,         // JSON array
-    series: String,    // JSON array of series
-    data: String       // for sparkline
+    x: String,
+    series: String,
+    data: String
   }
 
   connect() {
-    // ECharts is bundled statically to avoid dynamic import failures in prod
     if (!echarts) {
-      this.showFallback("No se pudo cargar el gráfico")
+      this.showFallback("No se pudo cargar ECharts")
       return
     }
-    this.init(echarts)
+    // Defer initialization to next animation frame so the container
+    // has its final dimensions (fixes zero-size init issue with Turbo)
+    this._raf = requestAnimationFrame(() => {
+      this._raf = null
+      this.initChart()
+    })
   }
 
-  init(echarts) {
+  initChart() {
     const type = this.typeValue || this.element.dataset.chartType
+    const x = this.safeParse(this.xValue || this.element.dataset.chartX, [])
+    const series = this.safeParse(this.seriesValue || this.element.dataset.chartSeries, [])
+    const data = this.safeParse(this.dataValue || this.element.dataset.chartData, [])
 
-    const safeParse = (raw, fallback) => {
-      if (raw == null) return fallback
-      const trimmed = typeof raw === 'string' ? raw.trim() : raw
-      if (trimmed === '' || trimmed === '[]' || trimmed === '{}') {
-        try {
-          // Return parsed simple empty structures if valid JSON empties
-          return JSON.parse(trimmed)
-        } catch (_) {
-          return fallback
-        }
-      }
-      try {
-        return JSON.parse(trimmed)
-      } catch (_) {
-        return fallback
-      }
-    }
-
-    const x = this.xValue ? safeParse(this.xValue, []) : (this.element.dataset.chartX ? safeParse(this.element.dataset.chartX, []) : [])
-    const series = this.seriesValue ? safeParse(this.seriesValue, []) : (this.element.dataset.chartSeries ? safeParse(this.element.dataset.chartSeries, []) : [])
-    const data = this.dataValue ? safeParse(this.dataValue, []) : (this.element.dataset.chartData ? safeParse(this.element.dataset.chartData, []) : [])
-
-    // Si no hay datos relevantes y tampoco tipo, no hacer nada para evitar trabajo inútil
     if (!type && series.length === 0 && data.length === 0) return
 
-    // Validación rápida: si faltan ejes/series, mostrar mensaje en lugar de dejar el canvas vacío
     const hasSeries = Array.isArray(series) && series.length > 0
     const hasX = Array.isArray(x) && x.length > 0
-    if ((type === 'line' || type === 'bar') && (!hasSeries || !hasX)) {
+    if ((type === 'line' || type === 'bar' || type === 'stacked') && (!hasSeries || !hasX)) {
       this.showFallback('Sin datos para este gráfico')
       return
     }
-    if ((type === 'spark' || type === 'sparkline') && !Array.isArray(data)) {
+    if (type === 'pie' && (!Array.isArray(series) || series.length === 0)) {
+      this.showFallback('Sin datos para este gráfico')
+      return
+    }
+    if ((type === 'spark' || type === 'sparkline') && (!Array.isArray(data) || data.length === 0)) {
       this.showFallback('Sin datos para este gráfico')
       return
     }
@@ -71,6 +59,9 @@ export default class extends Controller {
           break
         case 'bar':
           chart = initBar(echarts, this.element, { x, series })
+          break
+        case 'stacked':
+          chart = initStackedBar(echarts, this.element, { x, series })
           break
         case 'pie':
           chart = initPie(echarts, this.element, { series })
@@ -85,18 +76,31 @@ export default class extends Controller {
       if (chart) {
         this.chart = chart
         registerResizeObserver(this.element, chart)
+        // Force a resize after a short delay to handle any CSS transitions
+        setTimeout(() => { try { chart.resize() } catch (_) {} }, 150)
       }
     } catch (e) {
       console.error('[chart_controller] render error', e)
-      this.showFallback("No se pudo renderizar el gráfico")
+      this.showFallback("Error al renderizar el gráfico")
     }
   }
 
   disconnect() {
+    if (this._raf) { cancelAnimationFrame(this._raf); this._raf = null }
     if (this.chart) {
       try { this.chart.dispose() } catch (_e) {}
+      this.chart = null
     }
     unregisterResizeObserver(this.element)
+  }
+
+  safeParse(raw, fallback) {
+    if (raw == null || raw === '') return fallback
+    const trimmed = typeof raw === 'string' ? raw.trim() : raw
+    if (trimmed === '' || trimmed === '[]' || trimmed === '{}') {
+      try { return JSON.parse(trimmed) } catch (_) { return fallback }
+    }
+    try { return JSON.parse(trimmed) } catch (_) { return fallback }
   }
 
   showFallback(message) {
