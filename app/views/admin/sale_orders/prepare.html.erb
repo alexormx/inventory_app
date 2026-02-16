@@ -76,6 +76,7 @@
                   <th style="width: 60px;" class="text-center">✓</th>
                   <th>Producto</th>
                   <th>SKU</th>
+                  <th>Ubicación</th>
                   <th>Condición</th>
                   <th>Estado</th>
                   <th class="text-center">ID Pieza</th>
@@ -94,6 +95,9 @@
                     </td>
                     <td>
                       <code><%= inv.product&.product_sku || "—" %></code>
+                    </td>
+                    <td>
+                      <small class="text-muted"><%= inv.inventory_location&.full_path || 'Sin ubicación' %></small>
                     </td>
                     <td>
                       <% if inv.item_condition.present? %>
