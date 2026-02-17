@@ -168,14 +168,7 @@ class SaleOrderItem < ApplicationRecord
     end
 
     # Libera las reservadas de esta línea y limpia referencias + sold_price
-    so_inventory.where(status: Inventory.statuses[:reserved]).update_all(
-      status: Inventory.statuses[:available],
-      sale_order_id: nil,
-      sale_order_item_id: nil,
-      sold_price: nil,
-      status_changed_at: Time.current,
-      updated_at: Time.current
-    )
+    so_inventory.where(status: Inventory.statuses[:reserved]).update_all(release_reserved_attributes)
   end
 
   # Al eliminar una línea, cancelar preventas ligadas y revertir pre_* en inventario
@@ -190,7 +183,7 @@ class SaleOrderItem < ApplicationRecord
     pre_sold     = Inventory.statuses[:pre_sold]
     in_transit   = Inventory.statuses[:in_transit]
     Inventory.where(sale_order_id: sale_order_id, product_id: product_id, status: [pre_reserved, pre_sold])
-             .update_all(status: in_transit, sale_order_id: nil, sale_order_item_id: nil, status_changed_at: Time.current, updated_at: Time.current)
+         .update_all(release_preassigned_attributes(in_transit))
     # Intentar asignar preventas si hubiera pendientes y ahora hay inventario libre/in_transit
     Preorders::PreorderAllocator.new(product).call
   rescue StandardError => e
@@ -209,6 +202,7 @@ class SaleOrderItem < ApplicationRecord
   # Asegura que toda pieza ligada a (SO, producto) tenga el sale_order_item_id correcto
   def backfill_inventory_links
     return unless sale_order_id.present? && product_id.present?
+    return unless sale_order_item_link_supported?
 
     scope = Inventory.where(sale_order_id: sale_order_id, product_id: product_id, sale_order_item_id: nil)
     return unless scope.exists?
@@ -239,6 +233,33 @@ class SaleOrderItem < ApplicationRecord
     return unless preorder_quantity.to_i + backordered_quantity.to_i > quantity.to_i
 
     errors.add(:base, 'La suma de cantidades pendientes excede la cantidad total')
+  end
+
+  def release_reserved_attributes
+    attrs = {
+      status: Inventory.statuses[:available],
+      sale_order_id: nil,
+      sold_price: nil,
+      status_changed_at: Time.current,
+      updated_at: Time.current
+    }
+    attrs[:sale_order_item_id] = nil if sale_order_item_link_supported?
+    attrs
+  end
+
+  def release_preassigned_attributes(in_transit)
+    attrs = {
+      status: in_transit,
+      sale_order_id: nil,
+      status_changed_at: Time.current,
+      updated_at: Time.current
+    }
+    attrs[:sale_order_item_id] = nil if sale_order_item_link_supported?
+    attrs
+  end
+
+  def sale_order_item_link_supported?
+    Inventory.column_names.include?('sale_order_item_id')
   end
 
   # FUTURO: Soporte para backorders
