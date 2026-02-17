@@ -72,6 +72,11 @@ module Admin
       flash.now[:alert] = 'No se pudo eliminar la pieza por un problema de base de datos. Verifica migraciones pendientes en producción.'
       @sale_order.reload
       render :edit, status: :unprocessable_entity
+    rescue ActiveModel::UnknownAttributeError => e
+      Rails.logger.error("[SaleOrdersController#update] UnknownAttributeError al actualizar SO #{@sale_order&.id}: #{e.class} - #{e.message}")
+      flash.now[:alert] = 'No se pudo eliminar la pieza por una discrepancia de esquema. Verifica migraciones pendientes en producción.'
+      @sale_order.reload
+      render :edit, status: :unprocessable_entity
     end
 
     def destroy

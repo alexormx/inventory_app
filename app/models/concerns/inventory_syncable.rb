@@ -149,13 +149,15 @@ module InventorySyncable
 
   def release_inventory_items(items)
     items.each do |item|
-      item.update!(
+      attrs = {
         status: :available,
         sale_order_id: nil,
-        sale_order_item_id: nil,
         sold_price: nil,
         status_changed_at: Time.current
-      )
+      }
+      attrs[:sale_order_item_id] = nil if Inventory.column_names.include?('sale_order_item_id')
+
+      item.update!(attrs)
     end
   end
 end

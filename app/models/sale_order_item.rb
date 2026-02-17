@@ -5,6 +5,7 @@ class SaleOrderItem < ApplicationRecord
 
   belongs_to :sale_order
   belongs_to :product
+  has_many :inventory_assignment_logs, dependent: :nullify
 
   # Usar el mismo enum que Inventory para consistencia
   ITEM_CONDITIONS = Inventory::ITEM_CONDITIONS

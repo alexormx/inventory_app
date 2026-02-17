@@ -238,25 +238,24 @@ class SaleOrder < ApplicationRecord
     end
 
     # Libera las reservadas
-    inventories.where(status: %w[reserved pre_reserved pre_sold]).update_all(
-      status: Inventory.statuses[:available],
-      sale_order_id: nil,
-      sale_order_item_id: nil,
-      status_changed_at: Time.current,
-      updated_at: Time.current
-    )
+    inventories.where(status: %w[reserved pre_reserved pre_sold]).update_all(release_inventory_attributes)
   end
 
   def release_reserved_if_canceled
     return unless status == 'Canceled'
 
-    inventories.where(status: %w[reserved pre_reserved pre_sold]).update_all(
+    inventories.where(status: %w[reserved pre_reserved pre_sold]).update_all(release_inventory_attributes)
+  end
+
+  def release_inventory_attributes
+    attrs = {
       status: Inventory.statuses[:available],
       sale_order_id: nil,
-      sale_order_item_id: nil,
       status_changed_at: Time.current,
       updated_at: Time.current
-    )
+    }
+    attrs[:sale_order_item_id] = nil if Inventory.column_names.include?('sale_order_item_id')
+    attrs
   end
 
   def ensure_shipment_status_matches

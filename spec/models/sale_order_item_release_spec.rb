@@ -29,5 +29,24 @@ RSpec.describe SaleOrderItem, type: :model do
       expect(item.destroy).to be_falsey
       expect(item.errors.full_messages.join).to match(/No se puede eliminar la línea/)
     end
+
+    it 'nullifies inventory assignment logs references before destroy' do
+      item = create(:sale_order_item, sale_order: sale_order, product: product, quantity: 1, unit_cost: 10, unit_final_price: 10,
+                                      total_line_cost: 10)
+
+      log = InventoryAssignmentLog.create!(
+        sale_order: sale_order,
+        sale_order_item: item,
+        product: product,
+        assignment_type: :auto_assignment,
+        triggered_by: 'system',
+        quantity_assigned: 1,
+        quantity_pending: 0,
+        assigned_at: Time.current
+      )
+
+      expect { item.destroy! }.not_to raise_error
+      expect(log.reload.sale_order_item_id).to be_nil
+    end
   end
 end

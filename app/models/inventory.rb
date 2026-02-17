@@ -167,14 +167,30 @@ class Inventory < ApplicationRecord
 
   # Cuando una pieza vuelve a estar libre (available o in_transit), se debe desasociar de la orden
   def clear_sale_order_for_free_status
-    @will_clear_sale_order = sale_order_id.present? || sale_order_item_id.present? || sold_price.present?
+    @will_clear_sale_order = sale_order_id.present? || sale_order_item_id_present? || sold_price.present?
     self.sale_order_id = nil
-    self.sale_order_item_id = nil
+    self.sale_order_item_id = nil if sale_order_item_link_supported?
     self.sold_price = nil
   end
 
   def sale_order_cleared?
-    @will_clear_sale_order && sale_order_id.nil? && sale_order_item_id.nil?
+    @will_clear_sale_order && sale_order_id.nil? && sale_order_item_id_nil_or_missing?
+  end
+
+  def sale_order_item_id_present?
+    return false unless sale_order_item_link_supported?
+
+    sale_order_item_id.present?
+  end
+
+  def sale_order_item_id_nil_or_missing?
+    return true unless sale_order_item_link_supported?
+
+    sale_order_item_id.nil?
+  end
+
+  def sale_order_item_link_supported?
+    self.class.column_names.include?('sale_order_item_id')
   end
 
   def log_sale_order_cleared_event
