@@ -69,7 +69,7 @@ module Admin
       render :edit, status: :unprocessable_entity
     rescue ActiveRecord::StatementInvalid => e
       Rails.logger.error("[SaleOrdersController#update] StatementInvalid al actualizar SO #{@sale_order&.id}: #{e.class} - #{e.message}")
-      flash.now[:alert] = 'No se pudo eliminar la pieza por un problema de base de datos. Verifica migraciones pendientes en producción.'
+      flash.now[:alert] = 'No se pudo eliminar la pieza porque tiene registros relacionados de auditoría/asignación. Refresca la orden e intenta nuevamente.'
       @sale_order.reload
       render :edit, status: :unprocessable_entity
     rescue ActiveModel::UnknownAttributeError => e
