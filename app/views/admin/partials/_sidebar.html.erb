@@ -43,6 +43,15 @@
       <li class="nav-item px-2">
         <%= admin_sidebar_link 'Inventario', admin_inventory_path, icon: 'fa-warehouse', section: true %>
       </li>
+      <li class="nav-item px-2 ps-4">
+        <%= admin_sidebar_link 'Sin Ubicación', admin_inventory_unlocated_path, icon: 'fa-location-dot', section: true %>
+      </li>
+      <li class="nav-item px-2 ps-4">
+        <%= admin_sidebar_link 'Explorar Ubicaciones', admin_inventory_location_explorer_path, icon: 'fa-compass', section: true %>
+      </li>
+      <li class="nav-item px-2 ps-4">
+        <%= admin_sidebar_link 'Transferir', admin_inventory_transfer_path, icon: 'fa-exchange-alt', section: true %>
+      </li>
       <li class="nav-item px-2">
         <%= admin_sidebar_link 'Ajustes', admin_inventory_adjustments_path, icon: 'fa-scale-balanced' %>
       </li>

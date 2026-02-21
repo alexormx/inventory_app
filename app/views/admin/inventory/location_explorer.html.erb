@@ -1,0 +1,186 @@
+<div class="container mt-3">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <h3><i class="fas fa-map-marked-alt"></i> Explorador de Ubicación de Inventario</h3>
+      <p class="text-muted mb-0">Consulta piezas sin ubicación o selecciona una ubicación para ver su contenido.</p>
+    </div>
+    <div>
+      <%= link_to admin_inventory_path, class: 'btn btn-outline-secondary' do %>
+        <i class="fas fa-arrow-left"></i> Volver a Inventario
+      <% end %>
+    </div>
+  </div>
+
+  <div class="card mb-3">
+    <div class="card-body">
+      <%= form_with url: admin_inventory_location_explorer_path, method: :get, local: true, class: 'row g-2 align-items-end' do %>
+        <div class="col-md-3">
+          <label class="form-label fw-bold small mb-1">Modo</label>
+          <%= select_tag :mode,
+              options_for_select([
+                ['Sin ubicación', 'unlocated'],
+                ['Por ubicación', 'location']
+              ], @mode),
+              class: 'form-select',
+              onchange: 'this.form.requestSubmit()' %>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label fw-bold small mb-1">Vista</label>
+          <%= select_tag :view,
+              options_for_select([
+                ['Por producto', 'products'],
+                ['Por categoría (solo sin ubicación)', 'categories']
+              ], @view),
+              class: 'form-select',
+              disabled: @mode != 'unlocated' %>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label fw-bold small mb-1">Ubicación</label>
+          <%= select_tag :location_id,
+              options_for_select([['-- Seleccionar ubicación --', '']] + @location_options, @selected_location&.id),
+              class: 'form-select',
+              disabled: @mode != 'location' %>
+        </div>
+
+        <div class="col-md-2">
+          <label class="form-label fw-bold small mb-1">Buscar</label>
+          <%= text_field_tag :q, @q, class: 'form-control', placeholder: 'Nombre o SKU' %>
+        </div>
+
+        <div class="col-md-1">
+          <label class="form-label fw-bold small mb-1">Orden</label>
+          <%= select_tag :sort,
+              options_for_select([
+                ['Nombre A-Z', 'name'],
+                ['Más piezas ↓', 'count_desc'],
+                ['Menos piezas ↑', 'count_asc']
+              ], @sort),
+              class: 'form-select' %>
+        </div>
+
+        <div class="col-12 d-flex justify-content-end gap-2 mt-2">
+          <%= link_to 'Limpiar', admin_inventory_location_explorer_path(mode: @mode, view: @view), class: 'btn btn-outline-secondary btn-sm' %>
+          <%= submit_tag 'Aplicar', class: 'btn btn-primary btn-sm' %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="d-flex flex-wrap gap-2 mb-3">
+    <span class="badge bg-warning text-dark">
+      <i class="fas fa-box"></i> <%= @total_pieces %> piezas
+    </span>
+    <span class="badge bg-secondary"><%= @total_products %> productos</span>
+    <% if @view == 'categories' && @mode == 'unlocated' %>
+      <span class="badge bg-dark"><%= @total_categories || 0 %> categorías</span>
+    <% end %>
+    <% if @mode == 'location' %>
+      <% if @selected_location.present? %>
+        <span class="badge bg-info text-dark">
+          <i class="fas fa-location-dot"></i> <%= @selected_location.full_path %>
+        </span>
+      <% else %>
+        <span class="badge bg-danger">Selecciona una ubicación para ver resultados</span>
+      <% end %>
+    <% end %>
+  </div>
+
+  <div class="card">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <% if @view == 'categories' && @mode == 'unlocated' %>
+          <thead class="table-light">
+            <tr>
+              <th>Categoría</th>
+              <th width="160" class="text-center">Productos</th>
+              <th width="140" class="text-center">Piezas</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if @categories.present? && @categories.any? %>
+              <% @categories.each do |row| %>
+                <tr>
+                  <td><strong><%= row[:category] %></strong></td>
+                  <td class="text-center"><span class="badge bg-secondary"><%= row[:products_count] %></span></td>
+                  <td class="text-center"><span class="badge bg-primary"><%= row[:pieces_count] %></span></td>
+                </tr>
+              <% end %>
+            <% else %>
+              <tr>
+                <td colspan="3" class="text-center text-muted py-4">
+                  <i class="fas fa-inbox fa-2x d-block mb-2"></i>
+                  No hay artículos para los filtros seleccionados.
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        <% else %>
+          <thead class="table-light">
+            <tr>
+              <th>Producto</th>
+              <th width="180">SKU</th>
+              <th width="140" class="text-center">Piezas</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if @products.any? %>
+              <% @products.each do |product| %>
+                <tr>
+                  <td>
+                    <%= link_to product.product_name, admin_product_path(product), class: 'text-decoration-none fw-semibold' %>
+                  </td>
+                  <td><code><%= product.product_sku %></code></td>
+                  <td class="text-center">
+                    <span class="badge bg-primary"><%= @products_data[product.id] || 0 %></span>
+                  </td>
+                </tr>
+              <% end %>
+            <% else %>
+              <tr>
+                <td colspan="3" class="text-center text-muted py-4">
+                  <i class="fas fa-inbox fa-2x d-block mb-2"></i>
+                  No hay artículos para los filtros seleccionados.
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        <% end %>
+      </table>
+    </div>
+
+    <% if @total_pages && @total_pages > 1 %>
+      <div class="card-footer bg-light py-2">
+        <nav>
+          <ul class="pagination pagination-sm justify-content-center mb-0">
+            <% if @current_page > 1 %>
+              <li class="page-item">
+                <%= link_to admin_inventory_location_explorer_path(mode: @mode, view: @view, location_id: @selected_location&.id, q: @q, sort: @sort, page: @current_page - 1), class: 'page-link' do %>
+                  <i class="fas fa-chevron-left"></i>
+                <% end %>
+              </li>
+            <% end %>
+
+            <% start_page = [1, @current_page - 2].max %>
+            <% end_page = [@total_pages, @current_page + 2].min %>
+
+            <% (start_page..end_page).each do |page| %>
+              <li class="page-item <%= 'active' if page == @current_page %>">
+                <%= link_to page, admin_inventory_location_explorer_path(mode: @mode, view: @view, location_id: @selected_location&.id, q: @q, sort: @sort, page: page), class: 'page-link' %>
+              </li>
+            <% end %>
+
+            <% if @current_page < @total_pages %>
+              <li class="page-item">
+                <%= link_to admin_inventory_location_explorer_path(mode: @mode, view: @view, location_id: @selected_location&.id, q: @q, sort: @sort, page: @current_page + 1), class: 'page-link' do %>
+                  <i class="fas fa-chevron-right"></i>
+                <% end %>
+              </li>
+            <% end %>
+          </ul>
+        </nav>
+      </div>
+    <% end %>
+  </div>
+</div>

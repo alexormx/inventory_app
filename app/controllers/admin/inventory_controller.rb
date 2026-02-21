@@ -269,6 +269,109 @@ module Admin
       end
     end
 
+    # GET /admin/inventory/location_explorer - Vista unificada: sin ubicación o por ubicación
+    def location_explorer
+      @mode = params[:mode].presence_in(%w[unlocated location]) || 'unlocated'
+      @view = params[:view].presence_in(%w[products categories]) || 'products'
+      @view = 'products' if @mode == 'location'
+      @q = params[:q].to_s.strip
+      @sort = params[:sort].presence_in(%w[name count_desc count_asc]) || 'name'
+
+      @location_options = InventoryLocation.active.nested_options
+      @selected_location = nil
+
+      base_scope = Inventory.requiring_location
+
+      if @mode == 'unlocated'
+        base_scope = base_scope.where(inventory_location_id: nil)
+      else
+        @selected_location = InventoryLocation.find_by(id: params[:location_id])
+        base_scope = @selected_location ? base_scope.where(inventory_location_id: @selected_location.id) : base_scope.none
+      end
+
+      @products_data = base_scope.group(:product_id).count
+      product_ids = @products_data.keys
+      products_scope = Product.where(id: product_ids)
+
+      if @q.present?
+        term = "%#{@q.downcase}%"
+        products_scope = products_scope.where('LOWER(product_name) LIKE ? OR LOWER(product_sku) LIKE ?', term, term)
+      end
+
+      if @view == 'categories' && @mode == 'unlocated'
+        categories_scope = base_scope.joins(:product)
+        if @q.present?
+          term = "%#{@q.downcase}%"
+          categories_scope = categories_scope.where(
+            'LOWER(products.category) LIKE ? OR LOWER(products.product_name) LIKE ? OR LOWER(products.product_sku) LIKE ?',
+            term,
+            term,
+            term
+          )
+        end
+
+        grouped_rows = categories_scope
+                       .group("COALESCE(products.category, 'Sin categoría')")
+                       .pluck(
+                         Arel.sql("COALESCE(products.category, 'Sin categoría')"),
+                         Arel.sql('COUNT(inventories.id)'),
+                         Arel.sql('COUNT(DISTINCT products.id)')
+                       )
+
+        sorted_rows = case @sort
+                      when 'count_desc'
+                        grouped_rows.sort_by { |_category, pieces, _products| -pieces }
+                      when 'count_asc'
+                        grouped_rows.sort_by { |_category, pieces, _products| pieces }
+                      else
+                        grouped_rows.sort_by { |category, _pieces, _products| category.to_s.downcase }
+                      end
+
+        page_num = [params[:page].to_i, 1].max
+        per_page = 20
+        offset = (page_num - 1) * per_page
+        paged_rows = sorted_rows[offset, per_page] || []
+
+        @categories = paged_rows.map do |category, pieces_count, products_count|
+          {
+            category: category,
+            pieces_count: pieces_count,
+            products_count: products_count
+          }
+        end
+
+        @total_categories = sorted_rows.size
+        @total_products = products_scope.count
+        @current_page = page_num
+        @total_pages = (@total_categories.to_f / per_page).ceil
+      else
+        case @sort
+        when 'count_desc', 'count_asc'
+          sorted_ids = @products_data.sort_by { |_id, count| @sort == 'count_desc' ? -count : count }.map(&:first)
+          filtered_ids = products_scope.pluck(:id)
+          sorted_ids &= filtered_ids
+
+          page_num = [params[:page].to_i, 1].max
+          per_page = 20
+          offset = (page_num - 1) * per_page
+          paged_ids = sorted_ids[offset, per_page] || []
+
+          products_by_id = Product.where(id: paged_ids).index_by(&:id)
+          @products = paged_ids.map { |id| products_by_id[id] }.compact
+          @total_products = sorted_ids.size
+          @current_page = page_num
+          @total_pages = (@total_products.to_f / per_page).ceil
+        else
+          @products = products_scope.order(:product_name).page(params[:page]).per(20)
+          @total_products = products_scope.count
+          @current_page = @products.current_page
+          @total_pages = @products.total_pages
+        end
+      end
+
+      @total_pieces = base_scope.count
+    end
+
     # GET /admin/inventory/unlocated_items/:product_id - Detalle de piezas sin ubicar (AJAX)
     def unlocated_items
       @product = Product.find(params[:product_id])

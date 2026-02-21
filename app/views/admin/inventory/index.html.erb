@@ -51,6 +51,12 @@
     <%= link_to admin_inventory_transfer_path, class: "btn btn-outline-primary btn-sm" do %>
       <i class="fa fa-exchange-alt"></i> Transferir
     <% end %>
+    <%= link_to admin_inventory_location_explorer_path, class: "btn btn-outline-dark btn-sm" do %>
+      <i class="fa fa-compass"></i> Explorar Ubicaciones
+    <% end %>
+    <%= link_to admin_inventory_location_explorer_path(mode: 'unlocated', view: 'categories'), class: "btn btn-outline-warning btn-sm" do %>
+      <i class="fa fa-layer-group"></i> No Asignado por Categoría
+    <% end %>
     <%= link_to admin_inventory_path(request.query_parameters.merge(format: :csv)), class: "btn btn-outline-secondary btn-sm" do %>
       <i class="fa fa-download"></i> Exportar CSV
     <% end %>
