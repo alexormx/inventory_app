@@ -275,6 +275,7 @@ module Admin
       @view = params[:view].presence_in(%w[products categories]) || 'products'
       @view = 'products' if @mode == 'location'
       @q = params[:q].to_s.strip
+      @selected_category = params[:category].to_s.strip.presence
       @sort = params[:sort].presence_in(%w[name count_desc count_asc]) || 'name'
 
       @location_options = InventoryLocation.active.nested_options
@@ -293,6 +294,11 @@ module Admin
       product_ids = @products_data.keys
       products_scope = Product.where(id: product_ids)
 
+      raw_categories = base_scope.joins(:product).distinct.pluck('products.category')
+      normalized_categories = raw_categories.map { |category| category.to_s.strip }.reject(&:blank?).uniq.sort
+      @category_options = normalized_categories.map { |category| [category, category] }
+      @category_options << ['Sin categoría', '__uncategorized__']
+
       if @q.present?
         term = "%#{@q.downcase}%"
         products_scope = products_scope.where('LOWER(product_name) LIKE ? OR LOWER(product_sku) LIKE ?', term, term)
@@ -305,10 +311,18 @@ module Admin
           categories_products_scope = categories_products_scope.where('LOWER(category) LIKE ? OR LOWER(product_name) LIKE ? OR LOWER(product_sku) LIKE ?', term, term, term)
         end
 
+        if @selected_category.present?
+          if @selected_category == '__uncategorized__'
+            categories_products_scope = categories_products_scope.where(category: [nil, ''])
+          else
+            categories_products_scope = categories_products_scope.where(category: @selected_category)
+          end
+        end
+
         @total_categories = categories_products_scope
-                            .where.not(category: [nil, ''])
-                            .distinct
-                            .count(:category)
+                .pluck(Arel.sql("COALESCE(NULLIF(TRIM(category), ''), 'Sin categoría')"))
+                .uniq
+                .size
 
         @products = case @sort
                     when 'count_desc', 'count_asc'

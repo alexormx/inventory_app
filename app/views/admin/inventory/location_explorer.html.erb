@@ -49,6 +49,14 @@
           <%= text_field_tag :q, @q, class: 'form-control', placeholder: 'Nombre o SKU' %>
         </div>
 
+        <div class="col-md-2">
+          <label class="form-label fw-bold small mb-1">Categoría</label>
+          <%= select_tag :category,
+              options_for_select([['Todas', '']] + @category_options, @selected_category),
+              class: 'form-select',
+              disabled: !(@mode == 'unlocated' && @view == 'categories') %>
+        </div>
+
         <div class="col-md-1">
           <label class="form-label fw-bold small mb-1">Orden</label>
           <%= select_tag :sort,
@@ -160,7 +168,7 @@
           <ul class="pagination pagination-sm justify-content-center mb-0">
             <% if @current_page > 1 %>
               <li class="page-item">
-                <%= link_to admin_inventory_location_explorer_path(mode: @mode, view: @view, location_id: @selected_location&.id, q: @q, sort: @sort, page: @current_page - 1), class: 'page-link' do %>
+                <%= link_to admin_inventory_location_explorer_path(mode: @mode, view: @view, location_id: @selected_location&.id, q: @q, category: @selected_category, sort: @sort, page: @current_page - 1), class: 'page-link' do %>
                   <i class="fas fa-chevron-left"></i>
                 <% end %>
               </li>
@@ -171,13 +179,13 @@
 
             <% (start_page..end_page).each do |page| %>
               <li class="page-item <%= 'active' if page == @current_page %>">
-                <%= link_to page, admin_inventory_location_explorer_path(mode: @mode, view: @view, location_id: @selected_location&.id, q: @q, sort: @sort, page: page), class: 'page-link' %>
+                <%= link_to page, admin_inventory_location_explorer_path(mode: @mode, view: @view, location_id: @selected_location&.id, q: @q, category: @selected_category, sort: @sort, page: page), class: 'page-link' %>
               </li>
             <% end %>
 
             <% if @current_page < @total_pages %>
               <li class="page-item">
-                <%= link_to admin_inventory_location_explorer_path(mode: @mode, view: @view, location_id: @selected_location&.id, q: @q, sort: @sort, page: @current_page + 1), class: 'page-link' do %>
+                <%= link_to admin_inventory_location_explorer_path(mode: @mode, view: @view, location_id: @selected_location&.id, q: @q, category: @selected_category, sort: @sort, page: @current_page + 1), class: 'page-link' do %>
                   <i class="fas fa-chevron-right"></i>
                 <% end %>
               </li>

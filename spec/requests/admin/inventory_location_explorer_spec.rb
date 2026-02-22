@@ -80,5 +80,19 @@ RSpec.describe 'Admin::Inventory location explorer', type: :request do
       expect(response.body).to include('Categoría')
       expect(response.body).to include('Por categoría (solo sin ubicación)')
     end
+
+    it 'permite seleccionar una categoría específica para revisar' do
+      product_a = create(:product, skip_seed_inventory: true, product_name: 'Tamiya A', product_sku: 'TAM-A', category: 'model_kits')
+      product_b = create(:product, skip_seed_inventory: true, product_name: 'Funko B', product_sku: 'FUN-B', category: 'collectibles')
+
+      create(:inventory, product: product_a, status: :available, inventory_location_id: nil, purchase_cost: 10)
+      create(:inventory, product: product_b, status: :reserved, inventory_location_id: nil, purchase_cost: 10)
+
+      get admin_inventory_location_explorer_path(mode: 'unlocated', view: 'categories', category: 'model_kits')
+
+      expect(response).to have_http_status(:success)
+      expect(response.body).to include('Tamiya A')
+      expect(response.body).not_to include('Funko B')
+    end
   end
 end
