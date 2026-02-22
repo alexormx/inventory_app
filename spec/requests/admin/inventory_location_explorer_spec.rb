@@ -74,8 +74,10 @@ RSpec.describe 'Admin::Inventory location explorer', type: :request do
       get admin_inventory_location_explorer_path(mode: 'unlocated', view: 'categories', sort: 'count_desc')
 
       expect(response).to have_http_status(:success)
-      expect(response.body).to include('model_kits')
-      expect(response.body).to include('collectibles')
+      expect(response.body).to include('Tamiya A')
+      expect(response.body).to include('Tamiya B')
+      expect(response.body).to include('Funko C')
+      expect(response.body).to include('Categoría')
       expect(response.body).to include('Por categoría (solo sin ubicación)')
     end
   end

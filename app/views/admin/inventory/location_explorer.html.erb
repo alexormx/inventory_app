@@ -93,23 +93,27 @@
         <% if @view == 'categories' && @mode == 'unlocated' %>
           <thead class="table-light">
             <tr>
-              <th>Categoría</th>
-              <th width="160" class="text-center">Productos</th>
+              <th>Producto</th>
+              <th width="180">SKU</th>
+              <th width="220">Categoría</th>
               <th width="140" class="text-center">Piezas</th>
             </tr>
           </thead>
           <tbody>
-            <% if @categories.present? && @categories.any? %>
-              <% @categories.each do |row| %>
+            <% if @products.present? && @products.any? %>
+              <% @products.each do |product| %>
                 <tr>
-                  <td><strong><%= row[:category] %></strong></td>
-                  <td class="text-center"><span class="badge bg-secondary"><%= row[:products_count] %></span></td>
-                  <td class="text-center"><span class="badge bg-primary"><%= row[:pieces_count] %></span></td>
+                  <td>
+                    <%= link_to product.product_name, admin_product_path(product), class: 'text-decoration-none fw-semibold' %>
+                  </td>
+                  <td><code><%= product.product_sku %></code></td>
+                  <td><span class="badge bg-light text-dark border"><%= @product_categories[product.id] %></span></td>
+                  <td class="text-center"><span class="badge bg-primary"><%= @products_data[product.id] || 0 %></span></td>
                 </tr>
               <% end %>
             <% else %>
               <tr>
-                <td colspan="3" class="text-center text-muted py-4">
+                <td colspan="4" class="text-center text-muted py-4">
                   <i class="fas fa-inbox fa-2x d-block mb-2"></i>
                   No hay artículos para los filtros seleccionados.
                 </td>
