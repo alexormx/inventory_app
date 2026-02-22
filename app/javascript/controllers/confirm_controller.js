@@ -9,11 +9,7 @@ export default class extends Controller {
     if (!msg) return
     event.preventDefault(); event.stopPropagation()
     this.showModal(msg, () => {
-      if (this.element.tagName === 'FORM') {
-        this.element.submit()
-      } else if (this.element.closest('form')) {
-        this.element.closest('form').submit()
-      } else if (this.element.tagName === 'A' && this.element.href) {
+      if (this.element.tagName === 'A' && this.element.href) {
         const method = this.element.dataset.turboMethod
         if (method && method.toLowerCase() !== 'get') {
           const f = document.createElement('form')
@@ -23,6 +19,10 @@ export default class extends Controller {
           const tk = document.createElement('input'); tk.type='hidden'; tk.name='authenticity_token'; tk.value=token; f.appendChild(tk)
           document.body.appendChild(f); f.submit()
         } else { Turbo.visit(this.element.href) }
+      } else if (this.element.tagName === 'FORM') {
+        this.element.submit()
+      } else if (this.element.closest('form')) {
+        this.element.closest('form').submit()
       }
     })
   }
