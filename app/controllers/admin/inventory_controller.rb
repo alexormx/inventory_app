@@ -327,7 +327,7 @@ module Admin
                       @total_pages = (@total_products.to_f / per_page).ceil
                       paged_ids.map { |id| products_by_id[id] }.compact
                     else
-                      paged = categories_products_scope.order('COALESCE(category, \'Sin categoría\') ASC, product_name ASC').page(params[:page]).per(20)
+                      paged = categories_products_scope.order(Arel.sql("COALESCE(category, 'Sin categoría') ASC, product_name ASC")).page(params[:page]).per(20)
                       @total_products = categories_products_scope.count
                       @current_page = paged.current_page
                       @total_pages = paged.total_pages
