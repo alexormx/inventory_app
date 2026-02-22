@@ -12,7 +12,7 @@ gem 'rails', '~> 8.0.1'
 gem 'pg', '~> 1.1' # PostgreSQL as the database for Active Record
 
 # ✅ Web Server
-gem 'puma', '>= 5.0' # Puma web server
+gem 'puma', '>= 7.0.3' # Puma web server
 
 # ✅ Asset Pipeline & Frontend
 # gem "propshaft"  # Disabled to use Sprockets + Sass pipeline for SCSS
