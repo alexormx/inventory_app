@@ -140,6 +140,7 @@ Rails.application.routes.draw do
     resources :reports, only: [:index] do
       collection do
         get :inventory_items
+        get :inventory_items_with_locations
         get :cancellations
       end
     end

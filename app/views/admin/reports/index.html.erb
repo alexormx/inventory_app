@@ -21,6 +21,7 @@
 	<div class="card-body d-flex gap-2 flex-wrap">
 		<%= link_to "Download CSV", admin_inventory_path(request.query_parameters.merge(format: :csv)), class: "btn btn-outline-secondary btn-sm" %>
 		<%= link_to "All Inventory Items (CSV)", inventory_items_admin_reports_path, class: "btn btn-outline-primary btn-sm" %>
+		<%= link_to "Inventory Items with Location (CSV)", inventory_items_with_locations_admin_reports_path, class: "btn btn-outline-primary btn-sm" %>
 	</div>
 	<div class="card-footer text-muted small">Respects current filters if you navigate from Inventory (status, q).</div>
 </div>
