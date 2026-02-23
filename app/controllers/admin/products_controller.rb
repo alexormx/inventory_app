@@ -49,7 +49,7 @@ module Admin
         flash[:notice] = 'Product created successfully.'
         redirect_to admin_products_path
       else
-        flash.now[:alert] = 'Error creating product.'
+        flash.now[:alert] = "Error creating product: #{@product.errors.full_messages.join(', ')}"
         render :new
       end
     end
@@ -64,7 +64,7 @@ module Admin
         flash[:notice] = 'Product updated successfully.'
         redirect_to admin_product_path(@product)
       else
-        flash.now[:alert] = 'Error updating product.'
+        flash.now[:alert] = "Error updating product: #{@product.errors.full_messages.join(', ')}"
         render :edit
       end
     end

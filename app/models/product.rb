@@ -20,6 +20,7 @@ class Product < ApplicationRecord
   after_initialize :set_api_fallback_defaults,    if: :new_record?
 
   before_validation :normalize_custom_attributes
+  before_validation :normalize_numeric_inputs
   before_validation :ensure_whatsapp_code
   # --- Stats update on create (your logic) ---
   after_commit :recalculate_stats_if_needed, on: [:create]
@@ -164,6 +165,12 @@ class Product < ApplicationRecord
 
   def custom_attributes_must_be_object
     errors.add(:custom_attributes, 'must be an object') unless custom_attributes.is_a?(Hash)
+  end
+
+  def normalize_numeric_inputs
+    self.maximum_discount = 0 if maximum_discount.blank?
+    self.discount_limited_stock = 0 if discount_limited_stock.blank?
+    self.reorder_point = 0 if reorder_point.blank?
   end
 
   def ensure_whatsapp_code
