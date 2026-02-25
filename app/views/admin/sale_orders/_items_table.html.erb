@@ -82,7 +82,8 @@
 
               <%# Inventario %>
               <td>
-                <% invs = item.inventory_units.limit(50) %>
+                <% invs = item.inventory_units.includes(:inventory_location).limit(50) %>
+                <% show_piece_locations = %w[Pending Confirmed Preparing].include?(sale_order.status) %>
                 <% if invs.any? %>
                   <div class="d-flex flex-wrap gap-1 justify-content-center" style="max-width: 200px; margin: 0 auto;">
                     <% invs.each do |inv| %>
@@ -113,6 +114,21 @@
                       </span>
                     <% end %>
                   </div>
+                  <% if show_piece_locations %>
+                    <% collapse_id = "piece-locations-#{sale_order.id}-#{item.id}" %>
+                    <div class="text-center mt-2">
+                      <a class="small text-decoration-none" data-bs-toggle="collapse" href="#<%= collapse_id %>" role="button" aria-expanded="false" aria-controls="<%= collapse_id %>">
+                        Ver ubicaciones
+                      </a>
+                    </div>
+                    <div class="collapse mt-2" id="<%= collapse_id %>">
+                      <ul class="list-unstyled small mb-0 text-start">
+                        <% invs.each do |inv| %>
+                          <li>#<%= inv.id %> — <%= inv.inventory_location&.full_path || 'Sin ubicación' %></li>
+                        <% end %>
+                      </ul>
+                    </div>
+                  <% end %>
                 <% else %>
                   <div class="text-center">
                     <span class="badge bg-light text-muted border">0/<%= item.quantity %></span>
