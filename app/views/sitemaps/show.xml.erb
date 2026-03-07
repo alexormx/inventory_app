@@ -3,28 +3,28 @@
         xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
   <%# Página principal %>
   <url>
-    <loc><%= @host %></loc>
+    <loc><%= root_url %></loc>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
 
   <%# Catálogo %>
   <url>
-    <loc><%= @host %>/catalog</loc>
+    <loc><%= catalog_url %></loc>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
 
   <%# Aviso de privacidad %>
   <url>
-    <loc><%= @host %>/aviso-de-privacidad</loc>
+    <loc><%= privacy_notice_url %></loc>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
 
   <%# Términos y condiciones %>
   <url>
-    <loc><%= @host %>/terminos-y-condiciones</loc>
+    <loc><%= terms_url %></loc>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
@@ -32,14 +32,14 @@
   <%# Productos activos %>
   <% Product.where(status: 'active').find_each do |product| %>
   <url>
-    <loc><%= @host %>/products/<%= product.slug %></loc>
+    <loc><%= product_url(product) %></loc>
     <lastmod><%= product.updated_at.strftime('%Y-%m-%d') %></lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
     <% if product.product_images.attached? %>
     <image:image>
       <% blob = product.product_images.first.blob %>
-      <image:loc><%= rails_service_blob_proxy_url(blob.signed_id, blob.filename, host: @host) %></image:loc>
+      <image:loc><%= rails_service_blob_proxy_url(blob.signed_id, blob.filename, host: request.base_url) %></image:loc>
       <image:title><%= product.product_name %></image:title>
       <image:caption><%= "#{product.product_name} - #{product.brand}" %></image:caption>
     </image:image>

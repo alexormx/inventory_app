@@ -5,6 +5,8 @@ module MetaTagsHelper
   DEFAULT_SITE_TITLE = 'Tienda de Coleccionables y Autos a Escala'
   DEFAULT_META_DESCRIPTION = 'Tienda especializada en modelos a escala, autos de colección Hot Wheels, Greenlight, Majorette y más. Productos 100% originales con envío a todo México.'
   DEFAULT_KEYWORDS = 'autos a escala, hot wheels, greenlight, coleccionables, tienda de coleccionables, autos de colección, diecast, modelos a escala'
+  NOINDEX_CONTROLLERS = %w[carts checkouts profiles orders shipping_addresses].freeze
+  INDEXABLE_CATALOG_FILTERS = %w[categories brands].freeze
 
   def seo_settings
     {
@@ -31,6 +33,18 @@ module MetaTagsHelper
     end
   end
 
+  def meta_robots_content
+    if content_for?(:meta_robots)
+      strip_tags(content_for(:meta_robots).to_s).squish
+    elsif noindex_catalog_request?
+      'noindex, follow'
+    elsif noindex_request?
+      'noindex, nofollow'
+    else
+      'index, follow'
+    end
+  end
+
   def meta_keywords
     seo_settings[:keywords].presence || DEFAULT_KEYWORDS
   end
@@ -48,14 +62,9 @@ module MetaTagsHelper
     explicit = content_for?(:canonical_url) ? content_for(:canonical_url).to_s : nil
     explicit = explicit.split('?').first if explicit.present?
 
-    computed = explicit.presence || (request.base_url.to_s + request.path.to_s)
+    return catalog_canonical_url if request.path == catalog_path
 
-    # IMPORTANT: canonicalizar páginas filtradas del catálogo a /catalog
-    if request.path == catalog_path && request.query_parameters.present?
-      catalog_root_url
-    else
-      computed
-    end
+    explicit.presence || (request.base_url.to_s + request.path.to_s)
   end
 
   def page_title
@@ -128,5 +137,33 @@ module MetaTagsHelper
         'query-input' => 'required name=search_term_string'
       }
     }
+  end
+
+  private
+
+  def noindex_request?
+    controller_path.start_with?('devise/') || NOINDEX_CONTROLLERS.include?(controller_path)
+  end
+
+  def noindex_catalog_request?
+    return false unless request.path == catalog_path
+
+    query_keys = request.query_parameters.stringify_keys.keys - ['locale']
+    query_keys.present? && (query_keys - INDEXABLE_CATALOG_FILTERS).any?
+  end
+
+  def catalog_canonical_url
+    filters = canonical_catalog_filters
+    filters.present? ? catalog_url(filters) : catalog_root_url
+  end
+
+  def canonical_catalog_filters
+    categories = Array(request.query_parameters[:categories]).map(&:to_s).map(&:strip).reject(&:blank?).uniq.sort
+    brands = Array(request.query_parameters[:brands]).map(&:to_s).map(&:strip).reject(&:blank?).uniq.sort
+
+    {}.tap do |filters|
+      filters[:categories] = categories if categories.present?
+      filters[:brands] = brands if brands.present?
+    end
   end
 end

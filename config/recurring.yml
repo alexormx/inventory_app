@@ -9,17 +9,10 @@
 #   "0 4 * * 1"     = Every Monday at 4:00 AM
 
 production:
-  sitemap_refresh:
-    class: SitemapRefreshJob
-    schedule: "0 4 * * *"  # Every day at 4:00 AM (Mexico City time)
-    queue: default
+  # Sitemap served dynamically from /sitemap.xml
 
 development:
-  # Disabled in development - run manually with: SitemapRefreshJob.perform_later
-  # sitemap_refresh:
-  #   class: SitemapRefreshJob
-  #   schedule: "0 * * * *"  # Every hour for testing
-  #   queue: default
+  # No recurring sitemap generation
 
 test:
   # No recurring tasks in test environment

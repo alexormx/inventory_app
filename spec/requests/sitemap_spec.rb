@@ -8,7 +8,7 @@ RSpec.describe 'Sitemap', type: :request do
   end
 
   describe 'GET /sitemap.xml' do
-    it 'does not include parameterized URLs and uses ActiveStorage proxy URLs for images' do
+    it 'does not include parameterized URLs, includes legal pages, and uses ActiveStorage proxy URLs for images' do
       create(:product)
 
       get '/sitemap.xml'
@@ -22,6 +22,8 @@ RSpec.describe 'Sitemap', type: :request do
       expect(response.body).not_to include('/rails/active_storage/blobs/redirect/')
       expect(response.body).not_to include('categories%5B%5D=')
       expect(response.body).not_to include('brands%5B%5D=')
+      expect(response.body).to include('http://localhost/aviso-de-privacidad')
+      expect(response.body).to include('http://localhost/terminos-y-condiciones')
     end
   end
 end
