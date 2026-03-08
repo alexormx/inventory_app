@@ -252,11 +252,11 @@ module Admin
     def load_all_time_totals
       rev_sql_arel = Arel.sql(REV_SQL)
       @sales_total_mxn = SaleOrderItem.joins(:sale_order).merge(@so_scope).sum(rev_sql_arel).to_d
-      @cash_collected_total_mxn = Payment.joins(:sale_order)
-                                       .merge(@so_scope)
-                                       .where(status: 'Completed', payment_method: :efectivo)
-                                       .sum(:amount).to_d
-      @theoretical_cash_total_mxn = @cash_collected_total_mxn - @purchases_total_mxn
+        @collected_income_total_mxn = Payment.joins(:sale_order)
+                       .merge(@so_scope)
+                       .where(status: 'Completed')
+                       .sum(:amount).to_d
+        @historical_net_total_mxn = @collected_income_total_mxn - @purchases_total_mxn
       @so_total_all_time = @so_scope.count
       @po_total_all_time = @po_scope.count
       @po_items_qty_all_time = PurchaseOrderItem.joins(:purchase_order).merge(@po_scope).sum(:quantity).to_i

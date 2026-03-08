@@ -165,11 +165,11 @@
     </div>
     <div class="col-6 col-md-4 col-xl">
       <%= render 'kpi_stat',
-        title: 'Caja Teórica',
-        value: fmt_currency(@theoretical_cash_total_mxn),
-        help: "Cobrado en efectivo: #{fmt_currency(@cash_collected_total_mxn)}",
-        tooltip: 'Estimación de caja basada en pagos en efectivo completados menos compras históricas; es un indicador proxy y no el saldo real de caja.',
-        health: @theoretical_cash_total_mxn.to_f >= 0 ? 'good' : 'danger' %>
+        title: 'Balance Neto Histórico',
+        value: fmt_currency(@historical_net_total_mxn),
+        help: "Ingresos cobrados: #{fmt_currency(@collected_income_total_mxn)} · Egresos: #{fmt_currency(@purchases_total_mxn)}",
+        tooltip: 'Ingresos cobrados acumulados menos egresos históricos de compras. Es un indicador operativo y no sustituye una contabilidad formal.',
+        health: @historical_net_total_mxn.to_f >= 0 ? 'good' : 'danger' %>
     </div>
     <div class="col-6 col-md-4 col-xl">
       <%= render 'kpi_stat', title: 'Clientes Recurrentes', value: fmt_percentage_ratio(@recurring_customers_ratio, precision: 1), tooltip: 'Clientes que han comprado más de una vez.', health: @recurring_customers_ratio.to_f >= 0.3 ? 'good' : (@recurring_customers_ratio.to_f >= 0.15 ? 'warning' : nil) %>

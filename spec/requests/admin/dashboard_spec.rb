@@ -20,7 +20,7 @@ RSpec.describe "Admin Dashboard", type: :request do
         expect(response).to have_http_status(:success)
       end
 
-      it "shows theoretical cash based on cash payments minus purchases" do
+      it "shows historical net balance based on completed income minus purchases" do
         sign_in admin
 
         customer = create(:user)
@@ -35,7 +35,7 @@ RSpec.describe "Admin Dashboard", type: :request do
         create(:payment,
                sale_order: sale_order,
                amount: 100,
-               payment_method: 'efectivo',
+           payment_method: 'tarjeta_de_credito',
                status: 'Completed')
 
         create(:purchase_order,
@@ -49,9 +49,10 @@ RSpec.describe "Admin Dashboard", type: :request do
         get admin_dashboard_path
 
         expect(response).to have_http_status(:success)
-        expect(response.body).to include('Caja Teórica')
+        expect(response.body).to include('Balance Neto Histórico')
         expect(response.body).to include('$ 60.00')
-        expect(response.body).to include('Cobrado en efectivo: $ 100.00')
+        expect(response.body).to include('Ingresos cobrados: $ 100.00')
+        expect(response.body).to include('Egresos: $ 40.00')
       end
     end
 
