@@ -19,6 +19,40 @@ RSpec.describe "Admin Dashboard", type: :request do
         get admin_dashboard_path
         expect(response).to have_http_status(:success)
       end
+
+      it "shows theoretical cash based on cash payments minus purchases" do
+        sign_in admin
+
+        customer = create(:user)
+        sale_order = create(:sale_order,
+                            user: customer,
+                            status: 'Confirmed',
+                            order_date: Date.current,
+                            subtotal: 100,
+                            tax_rate: 0,
+                            total_tax: 0,
+                            total_order_value: 100)
+        create(:payment,
+               sale_order: sale_order,
+               amount: 100,
+               payment_method: 'efectivo',
+               status: 'Completed')
+
+        create(:purchase_order,
+               total_order_cost: 40,
+               total_cost_mxn: 40,
+               subtotal: 40,
+               status: 'Pending',
+               order_date: Date.current,
+               expected_delivery_date: Date.current + 5.days)
+
+        get admin_dashboard_path
+
+        expect(response).to have_http_status(:success)
+        expect(response.body).to include('Caja Teórica')
+        expect(response.body).to include('$ 60.00')
+        expect(response.body).to include('Cobrado en efectivo: $ 100.00')
+      end
     end
 
     context "when non-admin user" do
