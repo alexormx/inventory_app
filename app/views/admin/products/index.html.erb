@@ -1,15 +1,21 @@
-<h2 class="mb-3 d-flex align-items-center gap-2"><i class="fa fa-tags"></i> Products</h2>
+<div class="admin-page-header d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+  <div>
+    <p class="admin-page-eyebrow mb-1">Catálogo</p>
+    <h2 class="mb-0 d-flex align-items-center gap-2"><i class="fa fa-tags"></i> Productos</h2>
+  </div>
+  <span class="badge admin-page-badge">Gestiona borradores, productos activos y catálogo archivado</span>
+</div>
 
 <%= render partial: "admin/shared/status_counters", locals: {
   wrapper_id: "products_counts_global",
   counts: @counts_global,
   items: [
-    [:draft,    "Drafts",   "bg-secondary"],
-    [:active,   "Active",   "bg-success"],
-    [:inactive, "Inactive", "bg-danger"],
+    [:draft,    "Borradores",   "bg-secondary"],
+    [:active,   "Activos",      "bg-success"],
+    [:inactive, "Inactivos",    "bg-danger"],
   ],
   title: "Resumen",
-  cta_label: "New Product",
+  cta_label: "Nuevo producto",
   cta_path: new_admin_product_path
 } %>
 
@@ -72,9 +78,9 @@
   wrapper_id: "products_counts_filtered",
   counts: @counts,
   items: [
-    [:draft,    "Drafts",   "bg-secondary"],
-    [:active,   "Active",   "bg-success"],
-    [:inactive, "Inactive", "bg-danger"],
+    [:draft,    "Borradores", "bg-secondary"],
+    [:active,   "Activos",    "bg-success"],
+    [:inactive, "Inactivos",  "bg-danger"],
   ],
   hide_zero: true,
   extra_class: "mb-2",

@@ -1,4 +1,16 @@
 <%# Parcial: Campos de proveedor y fechas %>
+<% purchase_status_options = [["Pendiente", "Pending"], ["En tránsito", "In Transit"], ["Entregada", "Delivered"], ["Cancelada", "Canceled"]] %>
+
+<div class="col-12">
+  <div class="admin-order-section-intro">
+    <div>
+      <p class="admin-order-section-eyebrow mb-1">Abastecimiento</p>
+      <h6 class="admin-order-section-title mb-1">Proveedor, estado y fechas clave</h6>
+      <p class="admin-order-section-copy mb-0">Mantén alineados el proveedor responsable, el avance logístico y el calendario operativo de la orden.</p>
+    </div>
+  </div>
+</div>
+
 <div class="col-md-6">
   <%= f.label :user_id, "Proveedor", class: "form-label" %>
   <div data-controller="user-suggest" data-user-suggest-role-value="supplier" class="position-relative">
@@ -9,10 +21,10 @@
            value="<%= f.object.user&.name %>"
            data-action="input->user-suggest#input keydown->user-suggest#keydown">
     <%= f.hidden_field :user_id, data: { 'user-suggest-target': 'hidden' } %>
-    <div class="form-text" data-user-suggest-target="hint">
+    <div class="form-text admin-order-field-note" data-user-suggest-target="hint">
       <i class="fa fa-info-circle"></i> Selecciona el proveedor de esta orden
     </div>
-    <div data-user-suggest-target="results" style="z-index: 1050;"></div>
+    <div data-user-suggest-target="results" class="admin-user-suggest-results"></div>
   </div>
 </div>
 
@@ -20,14 +32,14 @@
   <%= f.label :status, "Estado de la Orden", class: "form-label" %>
   <div class="input-group">
     <%= f.select :status,
-        ["Pending", "In Transit", "Delivered", "Canceled"],
+        purchase_status_options,
         {},
         class: "form-select" %>
     <span class="input-group-text">
       <i class="fa fa-truck"></i>
     </span>
   </div>
-  <div class="form-text">
+  <div class="form-text admin-order-field-note">
     <i class="fa fa-info-circle"></i> El estado afecta el inventario automáticamente
   </div>
 </div>
@@ -54,9 +66,12 @@
     <span class="input-group-text"><i class="fa fa-calendar-day"></i></span>
     <%= f.date_field :actual_delivery_date, class: "form-control", placeholder: "Dejar vacío si aún no se entrega" %>
   </div>
+  <div class="form-text admin-order-field-note">
+    <i class="fa fa-info-circle"></i> Completa este campo cuando la mercancía llegue físicamente al almacén.
+  </div>
 </div>
 
 <div class="col-12">
   <%= f.label :notes, "Notas / Comentarios", class: "form-label" %>
-  <%= f.text_area :notes, class: "form-control", rows: 3, placeholder: "Información adicional sobre la orden..." %>
+  <%= f.text_area :notes, class: "form-control admin-order-textarea", rows: 3, placeholder: "Información adicional sobre la orden..." %>
 </div>

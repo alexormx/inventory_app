@@ -1,27 +1,33 @@
-<h2 class="mb-3 d-flex align-items-center gap-2"><i class="fa fa-file-excel-o"></i> Reports</h2>
-
-<div class="card mb-3">
-	<div class="card-header">Purchase Orders</div>
-	<div class="card-body d-flex gap-2 flex-wrap">
-		<%= link_to "Download CSV", admin_purchase_orders_path(request.query_parameters.merge(format: :csv)), class: "btn btn-outline-secondary btn-sm" %>
+<div class="admin-page-header d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+	<div>
+		<p class="admin-page-eyebrow mb-1">Análisis y exportación</p>
+		<h2 class="mb-0 d-flex align-items-center gap-2"><i class="fa fa-file-excel-o"></i> Reportes</h2>
 	</div>
-	<div class="card-footer text-muted small">Respects current filters if you navigate from PO list (status, q, sort).</div>
-	</div>
-
-<div class="card mb-3">
-	<div class="card-header">Sales Orders</div>
-	<div class="card-body d-flex gap-2 flex-wrap">
-		<%= link_to "Download CSV", admin_sale_orders_path(request.query_parameters.merge(format: :csv)), class: "btn btn-outline-secondary btn-sm" %>
-	</div>
-	<div class="card-footer text-muted small">Respects current filters if you navigate from SO list (status, q, sort).</div>
+	<span class="badge admin-page-badge">Exporta información operativa en CSV</span>
 </div>
 
 <div class="card mb-3">
-	<div class="card-header">Inventory</div>
+	<div class="card-header">Órdenes de compra</div>
 	<div class="card-body d-flex gap-2 flex-wrap">
-		<%= link_to "Download CSV", admin_inventory_path(request.query_parameters.merge(format: :csv)), class: "btn btn-outline-secondary btn-sm" %>
-		<%= link_to "All Inventory Items (CSV)", inventory_items_admin_reports_path, class: "btn btn-outline-primary btn-sm" %>
-		<%= link_to "Inventory Items with Location (CSV)", inventory_items_with_locations_admin_reports_path, class: "btn btn-outline-primary btn-sm" %>
+		<%= link_to "Descargar CSV", admin_purchase_orders_path(request.query_parameters.merge(format: :csv)), class: "btn btn-outline-secondary btn-sm" %>
 	</div>
-	<div class="card-footer text-muted small">Respects current filters if you navigate from Inventory (status, q).</div>
+	<div class="card-footer text-muted small">Respeta los filtros actuales si navegas desde la lista de órdenes de compra (estado, búsqueda y orden).</div>
+	</div>
+
+<div class="card mb-3">
+	<div class="card-header">Órdenes de venta</div>
+	<div class="card-body d-flex gap-2 flex-wrap">
+		<%= link_to "Descargar CSV", admin_sale_orders_path(request.query_parameters.merge(format: :csv)), class: "btn btn-outline-secondary btn-sm" %>
+	</div>
+	<div class="card-footer text-muted small">Respeta los filtros actuales si navegas desde la lista de órdenes de venta (estado, búsqueda y orden).</div>
+</div>
+
+<div class="card mb-3">
+	<div class="card-header">Inventario</div>
+	<div class="card-body d-flex gap-2 flex-wrap">
+		<%= link_to "Descargar CSV", admin_inventory_path(request.query_parameters.merge(format: :csv)), class: "btn btn-outline-secondary btn-sm" %>
+		<%= link_to "Todas las piezas de inventario (CSV)", inventory_items_admin_reports_path, class: "btn btn-outline-primary btn-sm" %>
+		<%= link_to "Piezas con ubicación (CSV)", inventory_items_with_locations_admin_reports_path, class: "btn btn-outline-primary btn-sm" %>
+	</div>
+	<div class="card-footer text-muted small">Respeta los filtros actuales si navegas desde inventario (estado y búsqueda).</div>
 </div>

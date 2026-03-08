@@ -6,18 +6,18 @@
                   when 'danger' then 'border-danger border-2'
                   else ''
                   end %>
-<div class="card h-100 <%= health_class %>"
+<div class="card admin-kpi-stat h-100 <%= health_class %>"
      <%= "data-bs-toggle=tooltip data-bs-placement=top title=#{local_assigns[:tooltip].inspect}" if local_assigns[:tooltip].present? %>>
   <div class="card-body py-2">
-    <div class="small text-muted d-flex align-items-center gap-1">
+    <div class="kpi-label small text-muted d-flex align-items-center gap-1">
       <%= title %>
       <% if local_assigns[:tooltip].present? %>
-        <i class="fa-solid fa-circle-info" style="font-size: 0.65rem; opacity: 0.5;"></i>
+        <i class="fa-solid fa-circle-info kpi-info-icon"></i>
       <% end %>
     </div>
-    <div class="fs-6 fw-bold"><%= value %></div>
+    <div class="kpi-value fs-6 fw-bold"><%= value %></div>
     <% if local_assigns[:help].present? %>
-      <div class="text-muted" style="font-size: .8rem;"><%= help %></div>
+      <div class="kpi-help text-muted"><%= help %></div>
     <% end %>
   </div>
 </div>

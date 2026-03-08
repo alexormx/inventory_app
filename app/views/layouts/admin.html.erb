@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
   <title>Admin Dashboard</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
@@ -27,7 +27,7 @@
   <%= javascript_include_tag "application", "data-turbo-track": "reload", defer: true %>
 </head>
 
-<body class="d-flex flex-column min-vh-100 bg-light">
+<body class="admin-shell d-flex flex-column min-vh-100 bg-light">
   <%= turbo_stream_from "flash" %>
   <%= turbo_stream_from "audit_progress_channel" %>
 
@@ -48,7 +48,7 @@
   <!-- Flash messages dentro del container-fluid -->
   <%= render "layouts/flash" %>
 
-        <main class="flex-grow-1 p-4">
+        <main class="admin-main flex-grow-1 p-3 p-lg-4">
           <%= yield %>
         </main>
 

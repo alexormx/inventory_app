@@ -1,6 +1,10 @@
-<h1 class="h4 mb-4">
-  <i class="fa fa-edit"></i> Editar Purchase Order #<%= @purchase_order.id %>
-</h1>
+<div class="admin-page-header d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+  <div>
+    <p class="admin-page-eyebrow mb-1">Abastecimiento</p>
+    <h1 class="h4 mb-0"><i class="fa fa-edit"></i> Editar orden de compra #<%= @purchase_order.id %></h1>
+  </div>
+  <span class="badge admin-page-badge">Actualiza productos, costos y fechas</span>
+</div>
 
 <% if @purchase_order.errors.any? %>
   <div class="alert alert-danger alert-dismissible fade show" role="alert">
@@ -20,8 +24,8 @@
   <%= form_with model: [:admin, @purchase_order], local: true, class: "row g-3" do |f| %>
     <div class="col-lg-9">
       <!-- Sección 1: Información Básica -->
-      <div class="card mb-3">
-        <div class="card-header bg-primary text-white">
+      <div class="card admin-order-card mb-3">
+        <div class="card-header admin-order-card-header">
           <h5 class="mb-0">
             <i class="fa fa-info-circle"></i> Información Básica
           </h5>
@@ -32,8 +36,8 @@
       </div>
 
       <!-- Sección 2: Productos -->
-      <div class="card mb-3">
-        <div class="card-header bg-success text-white">
+      <div class="card admin-order-card mb-3">
+        <div class="card-header admin-order-card-header">
           <h5 class="mb-0">
             <i class="fa fa-boxes"></i> Productos de la Orden
           </h5>
@@ -44,8 +48,8 @@
       </div>
 
       <!-- Sección 3: Costos y Totales -->
-      <div class="card mb-3">
-        <div class="card-header bg-warning text-dark">
+      <div class="card admin-order-card mb-3">
+        <div class="card-header admin-order-card-header">
           <h5 class="mb-0">
             <i class="fa fa-dollar-sign"></i> Costos Adicionales y Totales
           </h5>

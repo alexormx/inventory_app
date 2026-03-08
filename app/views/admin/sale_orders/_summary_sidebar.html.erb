@@ -1,6 +1,6 @@
 <%# Parcial: Panel de resumen lateral flotante para Sale Orders %>
-<div class="card sticky-top shadow-sm" style="top: 20px;">
-  <div class="card-header bg-gradient text-white" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+<div class="card admin-summary-sidebar sticky-top shadow-sm admin-sticky-sidebar">
+  <div class="card-header admin-summary-sidebar-header text-white">
     <h5 class="mb-0">
       <i class="fa fa-receipt"></i> Resumen de Venta
     </h5>
@@ -53,7 +53,7 @@
     </dl>
   </div>
 
-  <div class="card-footer bg-light">
+  <div class="card-footer admin-summary-sidebar-footer">
     <div class="d-grid gap-2">
       <%= f.submit "Guardar Orden", class: "btn btn-success btn-sm" %>
       <%= link_to "Cancelar", admin_sale_orders_path, class: "btn btn-outline-secondary btn-sm" %>
@@ -62,8 +62,8 @@
 </div>
 
 <!-- Info adicional -->
-<div class="card mt-3">
-  <div class="card-header bg-light">
+<div class="card admin-summary-sidebar-note mt-3">
+  <div class="card-header">
     <h6 class="mb-0 small">
       <i class="fa fa-info-circle"></i> Información
     </h6>

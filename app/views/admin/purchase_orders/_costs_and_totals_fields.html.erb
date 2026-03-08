@@ -1,9 +1,12 @@
 <%# Parcial: Campos de costos adicionales y totales %>
 <div class="col-12">
-  <h6 class="text-muted mb-3">
-    <i class="fa fa-dollar-sign"></i> Costos Adicionales
-    <small class="text-muted">(se distribuyen proporcionalmente por volumen)</small>
-  </h6>
+  <div class="admin-order-section-intro admin-order-section-intro--soft">
+    <div>
+      <p class="admin-order-section-eyebrow mb-1">Costeo</p>
+      <h6 class="admin-order-section-title mb-1"><i class="fa fa-dollar-sign me-2"></i>Costos adicionales y totales</h6>
+      <p class="admin-order-section-copy mb-0">Centraliza moneda, tipo de cambio y gastos extra para calcular el costo real de la compra.</p>
+    </div>
+  </div>
 </div>
 
 <div class="col-md-3">
@@ -64,58 +67,53 @@
 
 <div class="col-12 mt-4">
   <div class="row g-3">
-    <!-- Subtotal (solo productos) -->
     <div class="col-md-3">
-      <%= f.label :subtotal, "Subtotal (Productos)", class: "form-label small text-muted" %>
-      <div class="alert alert-primary mb-0 py-2">
-        <div class="fs-5 fw-bold" id="display-subtotal">
+      <div class="admin-order-metric admin-order-metric--highlight">
+        <div class="admin-order-metric-label">Subtotal de productos</div>
+        <div class="admin-order-metric-value" id="display-subtotal">
           <%= number_to_currency(purchase_order.subtotal, precision: 2) %>
         </div>
-        <small class="text-muted">Solo productos base</small>
+        <div class="admin-order-metric-note">Solo productos base</div>
       </div>
     </div>
 
-    <!-- Volumen Total -->
     <div class="col-md-2">
-      <%= f.label :total_volume, "Volumen Total", class: "form-label small text-muted" %>
-      <div class="bg-light border rounded p-2 text-center">
-        <div class="fw-semibold" id="display-volume">
+      <div class="admin-order-metric admin-order-metric--muted">
+        <div class="admin-order-metric-label">Volumen total</div>
+        <div class="admin-order-metric-value admin-order-metric-value--compact" id="display-volume">
           <%= number_with_precision(purchase_order.total_volume, precision: 2) %>
         </div>
-        <small class="text-muted">cm³</small>
+        <div class="admin-order-metric-note">cm³</div>
       </div>
     </div>
 
-    <!-- Peso Total -->
     <div class="col-md-2">
-      <%= f.label :total_weight, "Peso Total", class: "form-label small text-muted" %>
-      <div class="bg-light border rounded p-2 text-center">
-        <div class="fw-semibold" id="display-weight">
+      <div class="admin-order-metric admin-order-metric--muted">
+        <div class="admin-order-metric-label">Peso total</div>
+        <div class="admin-order-metric-value admin-order-metric-value--compact" id="display-weight">
           <%= number_with_precision(purchase_order.total_weight, precision: 2) %>
         </div>
-        <small class="text-muted">gr</small>
+        <div class="admin-order-metric-note">gr</div>
       </div>
     </div>
 
-    <!-- Total Orden (con extras) -->
     <div class="col-md-3">
-      <%= f.label :total_order_cost, "Total Orden", class: "form-label small text-muted" %>
-      <div class="alert alert-success mb-0 py-2">
-        <div class="fs-4 fw-bold" id="display-total">
+      <div class="admin-order-metric admin-order-metric--success">
+        <div class="admin-order-metric-label">Total de la orden</div>
+        <div class="admin-order-metric-value admin-order-metric-value--strong" id="display-total">
           <%= number_to_currency(purchase_order.total_order_cost, precision: 2) %>
         </div>
-        <small class="text-muted">Incluye todos los extras</small>
+        <div class="admin-order-metric-note">Incluye todos los extras</div>
       </div>
     </div>
 
-    <!-- Total en MXN -->
     <div class="col-md-2">
-      <%= f.label :total_cost_mxn, "Total MXN", class: "form-label small text-muted" %>
-      <div class="bg-light border rounded p-2 text-center">
-        <div class="fs-5 fw-semibold text-success" id="display-total-mxn">
+      <div class="admin-order-metric admin-order-metric--muted">
+        <div class="admin-order-metric-label">Total en MXN</div>
+        <div class="admin-order-metric-value admin-order-metric-value--accent" id="display-total-mxn">
           <%= number_to_currency(purchase_order.total_cost_mxn, unit: "$", precision: 2) %>
         </div>
-        <small class="text-muted">Pesos MX</small>
+        <div class="admin-order-metric-note">Pesos MX</div>
       </div>
     </div>
   </div>

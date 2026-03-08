@@ -1,12 +1,17 @@
 <div class="sidebar-inner vh-100 d-flex flex-column">
   <%# Header minimalista %>
-  <div class="sidebar-header px-2 py-2 border-bottom border-secondary">
+  <div class="sidebar-header px-2 py-2 border-bottom border-secondary-subtle">
     <div class="d-flex justify-content-between align-items-center">
-      <a href="<%= admin_dashboard_path %>" class="text-decoration-none d-flex align-items-center gap-2">
-        <i class="fa fa-store text-white sidebar-label"></i>
-        <span class="sidebar-label fw-bold text-white small">PASATIEMPOS</span>
+      <a href="<%= admin_dashboard_path %>" class="text-decoration-none d-flex align-items-center gap-2 sidebar-brand-link">
+        <span class="sidebar-brand-mark">
+          <i class="fa-solid fa-store"></i>
+        </span>
+        <span class="sidebar-label">
+          <span class="fw-bold text-white small d-block">Pasatiempos</span>
+          <span class="sidebar-brand-subtitle">Panel administrativo</span>
+        </span>
       </a>
-      <button class="sidebar-toggle-btn btn btn-sm btn-outline-light d-md-inline d-none js-sidebar-toggle" aria-label="Toggle sidebar" data-sidebar-toggle>
+      <button class="sidebar-toggle-btn btn btn-sm btn-outline-light d-md-inline d-none js-sidebar-toggle" aria-label="Colapsar navegación" data-sidebar-toggle>
         <i class="fa fa-bars"></i>
       </button>
     </div>
@@ -16,11 +21,13 @@
   <nav class="sidebar-nav flex-grow-1 py-1">
     <ul class="nav flex-column">
 
+      <li class="sidebar-section-title px-3 pt-2 pb-1">Resumen</li>
+
       <li class="nav-item px-2 mb-1">
-        <%= admin_sidebar_link 'Dashboard', admin_dashboard_path, icon: 'fa-chart-line' %>
+        <%= admin_sidebar_link 'Panel de control', admin_dashboard_path, icon: 'fa-chart-line' %>
       </li>
 
-      <li class="text-secondary my-2" role="separator" aria-hidden="true"><hr class="m-0"></li>
+      <li class="sidebar-section-title px-3 pt-3 pb-1">Operación</li>
 
       <li class="nav-item px-2">
         <%= admin_sidebar_link 'Órdenes de Compra', admin_purchase_orders_path, icon: 'fa-truck-loading' %>
@@ -32,7 +39,7 @@
         <%= admin_sidebar_link 'Preórdenes', admin_preorders_path, icon: 'fa-hourglass-half' %>
       </li>
 
-      <li class="text-secondary my-2" role="separator" aria-hidden="true"><hr class="m-0"></li>
+      <li class="sidebar-section-title px-3 pt-3 pb-1">Catálogo e inventario</li>
 
       <li class="nav-item px-2">
         <%= admin_sidebar_link 'Productos', admin_products_path, icon: 'fa-box-open' %>
@@ -59,7 +66,7 @@
         <%= admin_sidebar_link 'Ubicaciones', admin_inventory_locations_path, icon: 'fa-location-dot' %>
       </li>
 
-      <li class="text-secondary my-2" role="separator" aria-hidden="true"><hr class="m-0"></li>
+      <li class="sidebar-section-title px-3 pt-3 pb-1">Finanzas y análisis</li>
 
       <li class="nav-item px-2">
         <%= admin_sidebar_link 'Cuentas por Cobrar', admin_receivables_path, icon: 'fa-hand-holding-dollar' %>
@@ -68,7 +75,7 @@
         <%= admin_sidebar_link 'Reportes', admin_reports_path, icon: 'fa-chart-pie' %>
       </li>
 
-      <li class="text-secondary my-2" role="separator" aria-hidden="true"><hr class="m-0"></li>
+      <li class="sidebar-section-title px-3 pt-3 pb-1">Sistema</li>
 
       <li class="nav-item px-2">
         <%= admin_sidebar_link 'Usuarios', admin_users_path, icon: 'fa-users' %>
@@ -86,10 +93,10 @@
   </nav>
 
   <%# Footer con usuario %>
-  <div class="sidebar-footer border-top border-secondary px-2 py-2 mt-auto">
+  <div class="sidebar-footer border-top border-secondary-subtle px-2 py-2 mt-auto">
     <% if current_user %>
       <%= link_to edit_admin_user_path(current_user), class: "text-decoration-none d-flex align-items-center gap-2 sidebar-user-link" do %>
-        <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 mx-auto sidebar-user-avatar" style="width: 32px; height: 32px;">
+        <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 mx-auto sidebar-user-avatar">
           <i class="fa fa-user text-white small"></i>
         </div>
         <div class="sidebar-label overflow-hidden">

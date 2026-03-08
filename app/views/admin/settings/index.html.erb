@@ -1,5 +1,11 @@
-<h2 class="mb-3 d-flex align-items-center gap-2"><i class="fa fa-cog"></i> Admin - Settings</h2>
-<p class="text-muted">Modify application settings.</p>
+<div class="admin-page-header d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+	<div>
+		<p class="admin-page-eyebrow mb-1">Configuración central</p>
+		<h2 class="mb-0 d-flex align-items-center gap-2"><i class="fa fa-cog"></i> Ajustes del panel</h2>
+	</div>
+	<span class="badge admin-page-badge">Controla SEO, impuestos, sincronizaciones y utilidades</span>
+</div>
+<p class="text-muted">Administra parámetros clave de la aplicación y herramientas operativas.</p>
 
 <!-- Acceso rápido a configuraciones principales -->
 <div class="row mb-4">
@@ -55,7 +61,7 @@
 
 		<div class="alert alert-info small mb-3">
 			<i class="fa fa-info-circle me-1"></i>
-			<strong>SEO (Search Engine Optimization)</strong>: Esta información ayuda a que tu tienda aparezca en buscadores como Google cuando los usuarios busquen términos relacionados con tus productos.
+			<strong>SEO (Optimización para motores de búsqueda)</strong>: Esta información ayuda a que tu tienda aparezca en buscadores como Google cuando los usuarios busquen términos relacionados con tus productos.
 		</div>
 
 		<%= form_with url: admin_settings_path, method: :post, data: { turbo: false } do %>
@@ -93,10 +99,10 @@
 </div>
 
 <div class="alert alert-info" role="alert">
-	<strong>Documentation</strong>
+	<strong>Documentación</strong>
 	<ul class="mb-0">
 		<li>
-			Best Sellers (YTD/LY/All Time) cuentan solo órdenes <em>pagadas/confirmadas</em>:
+			Más vendidos (YTD/LY/Histórico) cuentan solo órdenes <em>pagadas/confirmadas</em>:
 			<code>Confirmed</code>, <code>Shipped</code>, <code>Delivered</code>. Se excluyen pendientes/canceladas.
 		</li>
 		<li>
@@ -112,7 +118,7 @@
 				Utilidad = Ingresos - COGS - Mermas.
 			</li>
 		<li>
-			Inventario: el <em>Average Purchase Cost</em> y <em>Inventory Value (MXN)</em> se calculan con costos compuestos en MXN
+			Inventario: el <em>Costo promedio de compra</em> y el <em>Valor de inventario (MXN)</em> se calculan con costos compuestos en MXN
 			(<code>total_line_cost_in_mxn</code> o <code>unit_compose_cost_in_mxn</code>), sin usar moneda origen.
 		</li>
 	</ul>
@@ -225,7 +231,7 @@
 				</select>
 			</div>
 			<div class="col-md-4">
-				<label class="form-label">Botón Dark Mode</label>
+				<label class="form-label">Botón de modo oscuro</label>
 				<select name="dark_mode_enabled" class="form-select form-select-sm">
 					<option value="true" <%= 'selected' if dark_enabled.to_s == 'true' %>>Activado</option>
 					<option value="false" <%= 'selected' if dark_enabled.to_s == 'false' %>>Desactivado</option>

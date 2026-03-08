@@ -4,6 +4,134 @@
   --dash-card-radius: .5rem;
 }
 
+.admin-page-header {
+  padding: 1.1rem 1.25rem;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 1rem;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.96));
+  box-shadow: 0 18px 45px -32px rgba(15, 23, 42, 0.45);
+}
+
+.admin-page-eyebrow {
+  margin: 0;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.admin-page-badge {
+  padding: 0.45rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: #ffffff;
+  color: #0f172a;
+}
+
+.admin-quick-actions .btn {
+  border-radius: 999px;
+  padding-inline: 0.9rem;
+  font-weight: 600;
+  box-shadow: 0 10px 20px -16px rgba(15, 23, 42, 0.5);
+}
+
+.admin-activity-card,
+.admin-kpi-card,
+.admin-kpi-stat {
+  border-radius: 1rem;
+  box-shadow: 0 18px 40px -34px rgba(15, 23, 42, 0.55);
+}
+
+.admin-legend {
+  padding: 0.25rem 0.15rem;
+}
+
+.admin-kpi-card .card-body,
+.admin-kpi-stat .card-body {
+  padding: 1rem 1rem 0.95rem;
+}
+
+.admin-kpi-card .kpi-label,
+.admin-kpi-stat .kpi-label {
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.admin-kpi-card .kpi-value {
+  letter-spacing: -0.02em;
+}
+
+.admin-kpi-card .kpi-delta,
+.admin-kpi-stat .kpi-help {
+  margin-top: 0.3rem;
+}
+
+.dashboard-meta {
+  font-size: 0.75rem;
+}
+
+.kpi-info-icon {
+  font-size: 0.7rem;
+  opacity: 0.55;
+}
+
+.kpi-sparkline {
+  width: 110px;
+  height: 46px;
+  flex: 0 0 auto;
+}
+
+.dashboard-chart {
+  width: 100%;
+}
+
+.dashboard-chart-xl { height: 300px; }
+.dashboard-chart-lg { height: 280px; }
+.dashboard-chart-md { height: 240px; }
+.dashboard-chart-sm { height: 165px; }
+.dashboard-chart-xs { height: 130px; }
+
+.dashboard-progress {
+  overflow: hidden;
+  border-radius: 999px;
+}
+
+.dashboard-progress-bar {
+  transition: width 0.25s ease;
+}
+
+.dashboard-progress-lg { height: 24px; }
+.dashboard-progress-sm { height: 18px; }
+
+.dashboard-collapsible-header {
+  cursor: pointer;
+}
+
+.collapse-indicator {
+  transition: transform 0.2s ease-in-out;
+}
+
+[data-bs-toggle="collapse"][aria-expanded="true"] .collapse-indicator {
+  transform: rotate(-180deg);
+}
+
+[data-bs-toggle="collapse"][aria-expanded="false"] .collapse-indicator {
+  transform: rotate(0deg);
+}
+
+@for $i from 0 through 100 {
+  .dashboard-progress-bar-#{$i} {
+    width: #{$i * 1%};
+  }
+}
+
+.dashboard-rank-col {
+  width: 60px;
+}
+
 .table-responsive.dashboard-scroll { max-height: 360px; overflow: auto; }
 
 thead th { position: sticky; top: 0; z-index: 1; background: var(--bs-body-bg, #fff); }

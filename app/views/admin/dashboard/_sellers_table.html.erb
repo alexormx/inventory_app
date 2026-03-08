@@ -21,7 +21,7 @@
             <td>
               <div class="small fw-semibold"><i class="fa-solid fa-box-open text-muted me-1"></i> <%= r[:name] %></div>
               <% if r[:brand].present? || r[:category].present? %>
-                <div class="text-muted" style="font-size: .75rem;">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
+                <div class="dashboard-meta text-muted">(<%= [r[:brand], r[:category]].compact.join(' - ') %>)</div>
               <% end %>
             </td>
             <td class="text-end"><%= number_with_delimiter(r[:units]) %></td>
