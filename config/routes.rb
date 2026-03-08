@@ -1,12 +1,10 @@
 # frozen_string_literal: true
 
 Rails.application.routes.draw do
-  mount Rswag::Ui::Engine => '/api-docs'
-  mount Rswag::Api::Engine => '/api-docs'
-  get 'pages/privacy_notice'
-  get 'carts/show'
-  get 'products/index'
-  get 'products/show'
+  get 'pages/privacy_notice', to: redirect('/aviso-de-privacidad', status: 301)
+  get 'carts/show', to: redirect('/cart', status: 301)
+  get 'products/index', to: redirect('/catalog', status: 301)
+  get 'products/show', to: redirect('/catalog', status: 301)
   post '/accept_cookies', to: 'users#accept_cookies', as: :accept_cookies
 
   # Newsletter subscription
@@ -17,6 +15,11 @@ Rails.application.routes.draw do
 
   # Devise authentication for all users
   devise_for :users
+
+  authenticate :user, lambda { |user| user.admin? } do
+    mount Rswag::Ui::Engine => '/api-docs'
+    mount Rswag::Api::Engine => '/api-docs'
+  end
 
   # Admin namespace
   namespace :admin do
