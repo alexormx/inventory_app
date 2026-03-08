@@ -157,16 +157,24 @@
   </div>
 
   <div class="row g-3 mb-4">
-    <div class="col-6 col-md-3">
+    <div class="col-6 col-md-4 col-xl">
       <%= render 'kpi_stat', title: 'Inversión Total', value: fmt_currency(@purchases_total_mxn), tooltip: 'Total invertido en compras desde el inicio.' %>
     </div>
-    <div class="col-6 col-md-3">
+    <div class="col-6 col-md-4 col-xl">
       <%= render 'kpi_stat', title: 'Ventas Históricas', value: fmt_currency(@sales_total_mxn), tooltip: 'Total de ventas acumuladas históricas.' %>
     </div>
-    <div class="col-6 col-md-3">
+    <div class="col-6 col-md-4 col-xl">
+      <%= render 'kpi_stat',
+        title: 'Caja Teórica',
+        value: fmt_currency(@theoretical_cash_total_mxn),
+        help: "Cobrado en efectivo: #{fmt_currency(@cash_collected_total_mxn)}",
+        tooltip: 'Estimación de caja basada en pagos en efectivo completados menos compras históricas; es un indicador proxy y no el saldo real de caja.',
+        health: @theoretical_cash_total_mxn.to_f >= 0 ? 'good' : 'danger' %>
+    </div>
+    <div class="col-6 col-md-4 col-xl">
       <%= render 'kpi_stat', title: 'Clientes Recurrentes', value: fmt_percentage_ratio(@recurring_customers_ratio, precision: 1), tooltip: 'Clientes que han comprado más de una vez.', health: @recurring_customers_ratio.to_f >= 0.3 ? 'good' : (@recurring_customers_ratio.to_f >= 0.15 ? 'warning' : nil) %>
     </div>
-    <div class="col-6 col-md-3">
+    <div class="col-6 col-md-4 col-xl">
       <%= render 'kpi_stat', title: 'Órdenes Compra YTD', value: number_with_delimiter(@po_count_ytd), tooltip: 'Purchase Orders creadas este año.', health: @kpi_deltas&.dig(:po_count).to_f >= 0 ? 'good' : nil %>
     </div>
   </div>
