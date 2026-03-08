@@ -336,6 +336,13 @@ aside#sidebar .nav-link i {
   color: var(--sidebar-icon);
 }
 
+aside#sidebar .sidebar-link-icon {
+  width: 1.2rem;
+  min-width: 1.2rem;
+  text-align: center;
+  flex: 0 0 1.2rem;
+}
+
 aside#sidebar .nav-link.active i,
 aside#sidebar .nav-link[aria-current="page"] i {
   color: #7dd3fc;
@@ -392,23 +399,35 @@ aside#sidebar .sidebar-toggle-btn:focus {
 .sidebar-collapsed aside#sidebar .sidebar-inner { padding: 12px 6px; }
 .sidebar-collapsed aside#sidebar { width: 60px !important; overflow-x: hidden; }
 
-.sidebar-collapsed aside#sidebar .nav-link {
-  justify-content: center;
-  padding-left: .25rem;
-  padding-right: .25rem;
-  margin-left: 0; /* evita que el margen horizontal cause overflow */
-  margin-right: 0; /* evita que el margen horizontal cause overflow */
+.sidebar-collapsed aside#sidebar .sidebar-section-title {
+  display: none;
 }
 
-.sidebar-collapsed aside#sidebar .nav-link i {
+.sidebar-collapsed aside#sidebar .nav-item {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+.sidebar-collapsed aside#sidebar .nav-link {
+  justify-content: center;
+  width: 44px;
+  min-height: 44px;
+  padding: 0;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.sidebar-collapsed aside#sidebar .nav-link i,
+.sidebar-collapsed aside#sidebar .sidebar-link-icon {
   margin-right: 0 !important;
+  font-size: 1rem;
 }
 
 /* En colapsado, evita borde izquierdo que suma ancho visual y puede forzar scroll */
 .sidebar-collapsed aside#sidebar .nav-link.active,
 .sidebar-collapsed aside#sidebar .nav-link[aria-current="page"] {
   border-left-width: 0;
-  padding-left: .25rem;
+  padding-left: 0;
 }
 
 /* Ocultar labels del sidebar inmediatamente cuando está colapsado (sin depender de JS) */

@@ -26,10 +26,10 @@ module AdminSidebarHelper
     aria = active ? { current: 'page' } : {}
 
     icon_class = icon.start_with?('fa-') ? icon : "fa-#{icon}"
-    icon_html = content_tag(:i, '', class: "fa #{icon_class} me-2")
+    icon_html = content_tag(:i, '', class: "fa-solid #{icon_class} me-2 sidebar-link-icon")
 
     link_to path, class: classes.join(' '), aria: aria do
-      safe_join([icon_html, content_tag(:span, label, class: 'sidebar-label')])
+      safe_join([icon_html, content_tag(:span, label, class: 'sidebar-label sidebar-link-label')])
     end
   end
 end
