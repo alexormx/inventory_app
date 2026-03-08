@@ -369,9 +369,7 @@ aside#sidebar .text-secondary {
 /* Colapsado: centrar headers/separadores y reducir sangrías para evitar jitter */
 .sidebar-collapsed aside#sidebar .text-secondary.sidebar-label,
 .sidebar-collapsed aside#sidebar .text-secondary { text-align: center; padding-left: 0 !important; padding-right: 0 !important; }
-.sidebar-collapsed aside#sidebar hr { margin-left: 8px; margin-right: 8px; }
-.sidebar-collapsed aside#sidebar .sidebar-inner .d-flex.justify-content-between { justify-content: center !important; }
-.sidebar-collapsed aside#sidebar .sidebar-toggle-btn { margin-left: 0; }
+.sidebar-collapsed aside#sidebar hr { margin-left: 4px; margin-right: 4px; }
 
 /* Botón hamburguesa: centrado, tamaño consistente y hover neutral */
 aside#sidebar .sidebar-toggle-btn {
@@ -396,11 +394,40 @@ aside#sidebar .sidebar-toggle-btn:focus {
 }
 
 /* Colapsado: mantener algo de padding para que no se pegue a la orilla */
-.sidebar-collapsed aside#sidebar .sidebar-inner { padding: 12px 6px; }
+.sidebar-collapsed aside#sidebar .sidebar-inner { padding: 8px 4px; }
 .sidebar-collapsed aside#sidebar { width: 60px !important; overflow-x: hidden; }
+
+/* Header colapsado: apilar icono de tienda y hamburguesa verticalmente */
+.sidebar-collapsed aside#sidebar .sidebar-header {
+  padding: 6px 4px !important;
+}
+.sidebar-collapsed aside#sidebar .sidebar-header .d-flex {
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.sidebar-collapsed aside#sidebar .sidebar-brand-mark {
+  width: 1.8rem;
+  height: 1.8rem;
+  border-radius: 0.6rem;
+  font-size: 0.85rem;
+}
+.sidebar-collapsed aside#sidebar .sidebar-toggle-btn {
+  width: 30px;
+  height: 30px;
+  margin-left: 0;
+  font-size: 0.8rem;
+  border-radius: 6px;
+}
 
 .sidebar-collapsed aside#sidebar .sidebar-section-title {
   display: none;
+}
+
+/* Nav compacto: reducir tamaño para que todo quepa sin scroll */
+.sidebar-collapsed aside#sidebar .sidebar-nav {
+  padding-top: 2px;
+  padding-bottom: 2px;
 }
 
 .sidebar-collapsed aside#sidebar .nav-item {
@@ -410,17 +437,19 @@ aside#sidebar .sidebar-toggle-btn:focus {
 
 .sidebar-collapsed aside#sidebar .nav-link {
   justify-content: center;
-  width: 44px;
-  min-height: 44px;
+  width: 36px;
+  height: 36px;
+  min-height: 36px;
   padding: 0;
-  margin-left: auto;
-  margin-right: auto;
+  margin: 1px auto;
+  border-radius: 0.6rem;
+  font-size: 0.85rem;
 }
 
 .sidebar-collapsed aside#sidebar .nav-link i,
 .sidebar-collapsed aside#sidebar .sidebar-link-icon {
   margin-right: 0 !important;
-  font-size: 1rem;
+  font-size: 0.9rem;
 }
 
 /* En colapsado, evita borde izquierdo que suma ancho visual y puede forzar scroll */
@@ -435,15 +464,17 @@ aside#sidebar .sidebar-toggle-btn:focus {
   display: none !important;
 }
 
-/* Footer usuario: centrar avatar cuando está colapsado */
+/* Footer usuario: compactar cuando está colapsado */
 .sidebar-collapsed aside#sidebar .sidebar-footer {
-  padding-left: 0 !important;
-  padding-right: 0 !important;
+  padding: 4px 0 !important;
 }
 .sidebar-collapsed aside#sidebar .sidebar-user-link {
   justify-content: center;
+  padding: 0.35rem;
 }
 .sidebar-collapsed aside#sidebar .sidebar-user-avatar {
+  width: 28px;
+  height: 28px;
   margin: 0 auto;
 }
 
