@@ -110,6 +110,40 @@ RSpec.describe "Admin Dashboard", type: :request do
          expect(response.body).to include('Ingresos: $ 300.00 · Egresos: $ 90.00')
          expect(response.body).to include('Ingresos: $ 600.00 · Egresos: $ 170.00')
       end
+
+      it "shows accurate recurring customers semantics and clarifies conversion baseline" do
+        target_year = 2200 + SecureRandom.random_number(200)
+
+        travel_to(Time.zone.local(target_year, 5, 15, 12, 0, 0)) do
+          sign_in admin
+
+          repeat_customer = create(:user)
+          one_time_customer = create(:user)
+
+          create(:sale_order, user: repeat_customer, status: 'Confirmed', order_date: Date.current.prev_year, subtotal: 90, tax_rate: 0, total_tax: 0, total_order_value: 90)
+          create(:sale_order, user: repeat_customer, status: 'Confirmed', order_date: Date.current, subtotal: 120, tax_rate: 0, total_tax: 0, total_order_value: 120)
+          create(:sale_order, user: one_time_customer, status: 'Confirmed', order_date: Date.current, subtotal: 80, tax_rate: 0, total_tax: 0, total_order_value: 80)
+
+          allow(VisitorLog).to receive(:sum).with(:visit_count).and_return(40)
+
+          get admin_dashboard_path
+
+          expect(response).to have_http_status(:success)
+          expect(response.body).to include('50.0%')
+          expect(response.body).to include('1 de 2 clientes activos')
+          expect(response.body).to include('Base acumulada:')
+          expect(response.body).to include('40 visitas registradas')
+        end
+      end
+
+      it "shows a custom period badge when filtering by range" do
+        sign_in admin
+
+        get admin_dashboard_path, params: { range: 'custom', start_date: '2026-01-01', end_date: '2026-01-31' }
+
+        expect(response).to have_http_status(:success)
+        expect(response.body).to include('Personalizado 01/01/2026–31/01/2026')
+      end
     end
 
     context "when non-admin user" do
