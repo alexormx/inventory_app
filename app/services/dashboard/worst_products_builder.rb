@@ -4,6 +4,8 @@ module Dashboard
   # Calculates "worst" product metrics: margin, rotation, DOH, immobilized capital.
   # Used to identify products that need attention/optimization.
   class WorstProductsBuilder
+    SALE_STATUSES = Dashboard::Metrics::SALE_STATUSES
+
     attr_reader :now, :start_date, :end_date, :weights, :limit
 
     def initialize(start_date: nil, end_date: nil, weights: {}, limit: 10, time_reference: Time.current)
@@ -61,21 +63,28 @@ module Dashboard
 
       # Get sales data
       sales_scope = SaleOrderItem.joins(:sale_order, :product)
-                                 .where(sale_orders: { status: ['Confirmed', 'In Transit', 'Delivered'] })
+                                 .where(sale_orders: { status: SALE_STATUSES })
                                  .where(sale_orders: { order_date: start_date..end_date })
                                  .group('products.id')
                                  .select(
                                    'products.id',
                                    'SUM(sale_order_items.quantity) AS units_sold',
-                                   'SUM(sale_order_items.quantity * COALESCE(sale_order_items.unit_final_price, 0)) AS revenue',
-                                   'SUM(sale_order_items.quantity * COALESCE(sale_order_items.unit_cost, 0)) AS cogs'
+                                   'SUM(sale_order_items.quantity * COALESCE(sale_order_items.unit_final_price, 0)) AS revenue'
                                  )
+
+      sold_inventory_scope = Inventory.joins(:product, :sale_order)
+                                    .where(status: :sold)
+                                    .where(sale_orders: { status: SALE_STATUSES, order_date: start_date..end_date })
+                                    .group('products.id')
+                                    .select('products.id', 'SUM(inventories.purchase_cost) AS cogs_total')
+
+      sold_inventory_cogs = sold_inventory_scope.index_by(&:id)
 
       sales_scope.each do |row|
         products_data[row.id] ||= empty_product_hash
         products_data[row.id][:units_sold] = row.units_sold.to_i
         products_data[row.id][:revenue] = row.revenue.to_d
-        products_data[row.id][:cogs] = row.cogs.to_d
+        products_data[row.id][:cogs] = sold_inventory_cogs[row.id]&.attributes&.dig('cogs_total').to_d
       end
 
       # Get product info
@@ -95,6 +104,7 @@ module Dashboard
         inv_count = data[:inv_count]
         inv_cost = data[:inv_total_cost]
         apc = product.average_purchase_cost.to_d
+        cogs = (units_sold * apc) if cogs.to_d.zero? && units_sold.positive?
 
         profit = revenue - cogs
         margin_pct = revenue.positive? ? ((profit / revenue) * 100).round(2) : nil

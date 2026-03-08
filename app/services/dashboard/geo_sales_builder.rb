@@ -4,6 +4,9 @@ module Dashboard
   # Builds geographic sales data based on heuristic address parsing.
   # Aggregates by country and Mexican states.
   class GeoSalesBuilder
+    REVENUE_SQL = Dashboard::Metrics::REV_SQL
+    SALE_STATUSES = Dashboard::Metrics::SALE_STATUSES
+
     attr_reader :now
 
     def initialize(time_reference: Time.current)
@@ -23,6 +26,10 @@ module Dashboard
     def geo_for_period(scope)
       country_totals = Hash.new { |h, k| h[k] = { revenue: 0.to_d, orders: 0 } }
       mx_state_totals = Hash.new { |h, k| h[k] = { revenue: 0.to_d, orders: 0 } }
+      revenue_by_order = SaleOrderItem.joins(:sale_order)
+                                    .merge(scope)
+                                    .group('sale_orders.id')
+                                    .sum(Arel.sql(REVENUE_SQL))
 
       scope.includes(:user).find_each do |so|
         addr = so.user&.address.to_s
@@ -34,11 +41,11 @@ module Dashboard
         country ||= (mx_state ? 'Mexico' : nil)
         country ||= 'Desconocido'
 
-        country_totals[country][:revenue] += so.total_order_value.to_d
+        country_totals[country][:revenue] += revenue_by_order[so.id].to_d
         country_totals[country][:orders] += 1
 
         if country == 'Mexico' && mx_state
-          mx_state_totals[mx_state][:revenue] += so.total_order_value.to_d
+          mx_state_totals[mx_state][:revenue] += revenue_by_order[so.id].to_d
           mx_state_totals[mx_state][:orders] += 1
         end
       end
@@ -82,7 +89,7 @@ module Dashboard
     end
 
     def base_scope
-      SaleOrder.where(status: ['Confirmed', 'In Transit', 'Delivered'])
+      SaleOrder.where(status: SALE_STATUSES)
     end
 
     def normalize_text(text)

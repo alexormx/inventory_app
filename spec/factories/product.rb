@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 FactoryBot.define do
-  sequence(:sku_seq)       { |n| "SKU-#{n.to_s.rjust(5, '0')}" }
+  sequence(:sku_seq)       { |n| "TEST-SKU-#{n.to_s.rjust(5, '0')}-#{SecureRandom.hex(2)}" }
   sequence(:whatsapp_seq)  { |n| "WGT#{n.to_s.rjust(3, '0')}-#{SecureRandom.hex(2)}" }
   sequence(:product_name_seq) { |n| "Sample Product #{n}" }
 
