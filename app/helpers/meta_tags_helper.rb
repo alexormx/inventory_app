@@ -62,6 +62,13 @@ module MetaTagsHelper
     explicit = content_for?(:canonical_url) ? content_for(:canonical_url).to_s : nil
     explicit = explicit.split('?').first if explicit.present?
 
+    # Brand/category landing pages use their own clean URL as canonical
+    if @seo_landing == :brand && @brand_name.present?
+      return brand_landing_url(brand_slug: @brand_name.parameterize)
+    elsif @seo_landing == :category && @category_name.present?
+      return category_landing_url(category_slug: @category_name.parameterize)
+    end
+
     return catalog_canonical_url if request.path == catalog_path
 
     explicit.presence || (request.base_url.to_s + request.path.to_s)

@@ -231,6 +231,9 @@ Rails.application.routes.draw do
   end
   # Public product views
   get '/catalog', to: 'products#index', as: :catalog
+  # SEO-friendly brand and category landing pages
+  get '/marca/:brand_slug', to: 'products#brand', as: :brand_landing
+  get '/categoria/:category_slug', to: 'products#category', as: :category_landing
   resources :products, only: [:show]
 
   # Shopping Cart routes

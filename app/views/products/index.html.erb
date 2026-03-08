@@ -1,10 +1,18 @@
 <% content_for :title, catalog_meta_title %>
 <% content_for :meta_description, catalog_meta_description %>
+<% if @seo_landing.present? %>
+  <% content_for :canonical_url, canonical_url %>
+<% end %>
 
 <%# JSON-LD Structured Data %>
 <% content_for :head do %>
   <%= breadcrumb_json_ld(catalog_breadcrumbs) %>
   <%= product_list_json_ld(@products.first(10)) if @products.present? %>
+  <% if @seo_landing == :brand && @brand_name.present? %>
+    <%= collection_page_json_ld(name: @brand_name, type: :brand, url: brand_landing_url(brand_slug: @brand_name.parameterize), products: @products) %>
+  <% elsif @seo_landing == :category && @category_name.present? %>
+    <%= collection_page_json_ld(name: @category_name, type: :category, url: category_landing_url(category_slug: @category_name.parameterize), products: @products) %>
+  <% end %>
 <% end %>
 
 <%# La lógica de filtros ahora está centralizada en FilterParamsHelper#filter_state %>

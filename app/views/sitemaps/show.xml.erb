@@ -15,6 +15,24 @@
     <priority>0.9</priority>
   </url>
 
+  <%# Landing pages por marca (SEO-friendly) %>
+  <% Product.where(status: 'active').distinct.pluck(:brand).compact.compact_blank.sort.each do |brand| %>
+  <url>
+    <loc><%= brand_landing_url(brand_slug: brand.parameterize) %></loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <% end %>
+
+  <%# Landing pages por categoría (SEO-friendly) %>
+  <% Product.where(status: 'active').distinct.pluck(:category).compact.compact_blank.sort.each do |category| %>
+  <url>
+    <loc><%= category_landing_url(category_slug: category.parameterize) %></loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <% end %>
+
   <%# Aviso de privacidad %>
   <url>
     <loc><%= privacy_notice_url %></loc>

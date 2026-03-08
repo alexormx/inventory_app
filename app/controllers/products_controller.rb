@@ -7,6 +7,35 @@ class ProductsController < ApplicationController
   before_action :ensure_public_product_active, only: :show
 
   PUBLIC_PER_PAGE = 15
+
+  # SEO-friendly brand landing page: /marca/:brand_slug
+  def brand
+    @brand_name = find_brand_by_slug(params[:brand_slug])
+    unless @brand_name
+      redirect_to catalog_path, alert: 'Marca no encontrada'
+      return
+    end
+
+    params[:brands] = [@brand_name]
+    @seo_landing = :brand
+    index
+    render :index
+  end
+
+  # SEO-friendly category landing page: /categoria/:category_slug
+  def category
+    @category_name = find_category_by_slug(params[:category_slug])
+    unless @category_name
+      redirect_to catalog_path, alert: 'Categoría no encontrada'
+      return
+    end
+
+    params[:categories] = [@category_name]
+    @seo_landing = :category
+    index
+    render :index
+  end
+
   def index
     @q      = params[:q].to_s.strip
     @sort   = params[:sort].presence || 'newest'
@@ -110,5 +139,23 @@ class ProductsController < ApplicationController
       format.html { redirect_to catalog_path, alert: msg }
       format.json { head :not_found }
     end
+  end
+
+  # --- SEO slug helpers ---
+
+  def to_seo_slug(name)
+    name.to_s.parameterize
+  end
+
+  def find_brand_by_slug(slug)
+    Product.publicly_visible
+           .distinct.pluck(:brand).compact.compact_blank
+           .find { |b| b.parameterize == slug }
+  end
+
+  def find_category_by_slug(slug)
+    Product.publicly_visible
+           .distinct.pluck(:category).compact.compact_blank
+           .find { |c| c.parameterize == slug }
   end
 end

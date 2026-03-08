@@ -187,6 +187,43 @@ module SeoHelper
     tag.script(data.to_json.html_safe, type: 'application/ld+json')
   end
 
+  # Genera JSON-LD CollectionPage para landing pages de marca/categoría
+  def collection_page_json_ld(name:, type:, url:, products: [])
+    data = {
+      '@context' => 'https://schema.org',
+      '@type' => 'CollectionPage',
+      'name' => name,
+      'url' => url,
+      'description' => if type == :brand
+                          "Colección completa de productos #{name} disponibles en #{seo_site_name}."
+                        else
+                          "Todos los productos de la categoría #{name} en #{seo_site_name}."
+                        end,
+      'isPartOf' => {
+        '@type' => 'WebSite',
+        'name' => seo_site_name,
+        'url' => root_url
+      }
+    }
+
+    if products.present?
+      data['mainEntity'] = {
+        '@type' => 'ItemList',
+        'numberOfItems' => products.respond_to?(:total_count) ? products.total_count : products.size,
+        'itemListElement' => products.first(20).each_with_index.map do |product, index|
+          {
+            '@type' => 'ListItem',
+            'position' => index + 1,
+            'url' => product_url(product),
+            'name' => product.product_name
+          }
+        end
+      }
+    end
+
+    tag.script(data.to_json.html_safe, type: 'application/ld+json')
+  end
+
   # Meta tags para producto
   def product_meta_title(product)
     "#{product.product_name} | #{product.brand} | #{seo_site_name}"
@@ -201,24 +238,44 @@ module SeoHelper
 
   # Meta tags para catálogo
   def catalog_meta_title
-    parts = ['Catálogo']
-    parts << params[:categories].join(', ') if params[:categories].present?
-    parts << params[:brands].join(', ') if params[:brands].present?
-    parts << "| #{seo_site_name}"
-    parts.join(' ')
+    # Landing pages SEO-friendly tienen prioridad
+    if @seo_landing == :brand && @brand_name.present?
+      "#{@brand_name} | Comprar #{@brand_name} en México | #{seo_site_name}"
+    elsif @seo_landing == :category && @category_name.present?
+      "#{@category_name} | #{seo_site_name}"
+    else
+      parts = ['Catálogo']
+      parts << params[:categories].join(', ') if params[:categories].present?
+      parts << params[:brands].join(', ') if params[:brands].present?
+      parts << "| #{seo_site_name}"
+      parts.join(' ')
+    end
   end
 
   def catalog_meta_description
-    desc = 'Explora nuestra colección de modelos a escala, autos de colección y figuras.'
-    desc += " Categorías: #{params[:categories].join(', ')}." if params[:categories].present?
-    desc += " Marcas: #{params[:brands].join(', ')}." if params[:brands].present?
-    desc + " Productos originales con envío seguro a todo México. #{seo_site_name}."
+    if @seo_landing == :brand && @brand_name.present?
+      "Compra productos #{@brand_name} originales en #{seo_site_name}. " \
+        "Amplio catálogo de #{@brand_name} con envío seguro a todo México. " \
+        'Modelos a escala, coleccionables y más. 100% originales.'
+    elsif @seo_landing == :category && @category_name.present?
+      "Explora nuestra selección de #{@category_name} en #{seo_site_name}. " \
+        'Productos originales con envío seguro a todo México. Modelos a escala, coleccionables y más.'
+    else
+      desc = 'Explora nuestra colección de modelos a escala, autos de colección y figuras.'
+      desc += " Categorías: #{params[:categories].join(', ')}." if params[:categories].present?
+      desc += " Marcas: #{params[:brands].join(', ')}." if params[:brands].present?
+      desc + " Productos originales con envío seguro a todo México. #{seo_site_name}."
+    end
   end
 
   # Canonical URL helper
   def canonical_url
-    # Para páginas de catálogo, remover parámetros de paginación del canonical
-    if controller_name == 'products' && action_name == 'index'
+    # Landing pages SEO-friendly usan su propia URL como canonical
+    if @seo_landing == :brand && @brand_name.present?
+      brand_landing_url(brand_slug: @brand_name.parameterize)
+    elsif @seo_landing == :category && @category_name.present?
+      category_landing_url(category_slug: @category_name.parameterize)
+    elsif controller_name == 'products' && action_name == 'index'
       catalog_url(request.query_parameters.except('page'))
     else
       request.original_url.split('?').first

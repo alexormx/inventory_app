@@ -38,6 +38,15 @@ module CatalogHelper
       { name: 'Catálogo', url: catalog_path }
     ]
 
+    # Landing pages SEO-friendly
+    if @seo_landing == :brand && @brand_name.present?
+      breadcrumbs << { name: @brand_name, url: nil }
+      return breadcrumbs
+    elsif @seo_landing == :category && @category_name.present?
+      breadcrumbs << { name: @category_name, url: nil }
+      return breadcrumbs
+    end
+
     # Agregar filtros activos a breadcrumbs
     breadcrumbs << { name: "Búsqueda: #{params[:q]}", url: nil } if params[:q].present?
 
