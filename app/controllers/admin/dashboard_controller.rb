@@ -193,12 +193,10 @@ module Admin
       @total_users = User.count
 
       @sales_ytd = SaleOrderItem.joins(:sale_order).merge(@so_ytd).sum(rev_sql_arel).to_d
-      @purchases_ytd = @po_ytd.sum(:total_cost_mxn).to_d
-      @purchases_ytd = @po_ytd.sum(:total_order_cost).to_d if @purchases_ytd.zero?
+      @purchases_ytd = purchase_total_for(@po_ytd)
 
-      @cash_in_ytd = SaleOrderItem.joins(:sale_order).merge(@so_ytd_paid).sum(rev_sql_arel).to_d
-      @cash_out_ytd = @po_ytd.sum(:total_cost_mxn).to_d
-      @cash_out_ytd = @po_ytd.sum(:total_order_cost).to_d if @cash_out_ytd.zero?
+      @cash_in_ytd = completed_income_total_for(@now.beginning_of_year.to_date..@now.end_of_day)
+      @cash_out_ytd = purchase_total_for(@po_ytd)
       @cashflow_ytd = @cash_in_ytd - @cash_out_ytd
 
       @cogs_ytd = SaleOrderItem.joins(:sale_order, :product).merge(@so_ytd).sum(cogs_sql_arel).to_d
@@ -213,8 +211,7 @@ module Admin
       @po_items_qty_ytd = PurchaseOrderItem.joins(:purchase_order).merge(@po_ytd).sum(:quantity).to_i
       @so_items_qty_ytd = SaleOrderItem.joins(:sale_order).merge(@so_ytd).sum(:quantity).to_i
 
-      @purchases_total_mxn = @po_scope.sum(:total_cost_mxn).to_d
-      @purchases_total_mxn = @po_scope.sum(:total_order_cost).to_d if @purchases_total_mxn.zero?
+      @purchases_total_mxn = purchase_total_for(@po_scope)
 
       @avg_ticket_ytd = @orders_count_ytd.positive? ? (@sales_ytd / @orders_count_ytd) : 0.to_d
       @visits_total = begin
@@ -227,6 +224,7 @@ module Admin
       load_customer_metrics
       load_critical_stock
       load_inventory_turnover
+      load_balance_summaries
       load_all_time_totals
     end
 
@@ -249,14 +247,24 @@ module Admin
       @inventory_turnover_ytd = @inventory_total_value.positive? ? (@cogs_ytd / @inventory_total_value) : nil
     end
 
+    def load_balance_summaries
+      month_range = @now.beginning_of_month.to_date..@now.end_of_day
+      year_range = @now.beginning_of_year.to_date..@now.end_of_day
+
+      @collected_income_month_mxn = completed_income_total_for(month_range)
+      @purchases_month_mxn = purchase_total_for(@po_scope.where(order_date: month_range))
+      @net_balance_month_mxn = @collected_income_month_mxn - @purchases_month_mxn
+
+      @collected_income_year_mxn = completed_income_total_for(year_range)
+      @purchases_year_mxn = purchase_total_for(@po_scope.where(order_date: year_range))
+      @net_balance_year_mxn = @collected_income_year_mxn - @purchases_year_mxn
+    end
+
     def load_all_time_totals
       rev_sql_arel = Arel.sql(REV_SQL)
       @sales_total_mxn = SaleOrderItem.joins(:sale_order).merge(@so_scope).sum(rev_sql_arel).to_d
-        @collected_income_total_mxn = Payment.joins(:sale_order)
-                       .merge(@so_scope)
-                       .where(status: 'Completed')
-                       .sum(:amount).to_d
-        @historical_net_total_mxn = @collected_income_total_mxn - @purchases_total_mxn
+      @collected_income_total_mxn = completed_income_total_for
+      @historical_net_total_mxn = @collected_income_total_mxn - @purchases_total_mxn
       @so_total_all_time = @so_scope.count
       @po_total_all_time = @po_scope.count
       @po_items_qty_all_time = PurchaseOrderItem.joins(:purchase_order).merge(@po_scope).sum(:quantity).to_i
@@ -281,9 +289,8 @@ module Admin
       @po_count_prev = po_prev_range.count
       @active_customers_prev = so_prev_range.select(:user_id).distinct.count
 
-      @cash_in_prev = SaleOrderItem.joins(:sale_order).merge(so_prev_range.where(status: PAID_STATUSES)).sum(rev_sql_arel).to_d
-      @cash_out_prev = po_prev_range.sum(:total_cost_mxn).to_d
-      @cash_out_prev = po_prev_range.sum(:total_order_cost).to_d if @cash_out_prev.zero?
+      @cash_in_prev = completed_income_total_for(range_prev_start..range_prev_end)
+      @cash_out_prev = purchase_total_for(po_prev_range)
       @cashflow_prev = @cash_in_prev - @cash_out_prev
 
       @kpi_deltas = {
@@ -299,6 +306,18 @@ module Admin
 
     def pct_delta(curr, prev)
       prev.to_d.positive? ? ((curr.to_d - prev.to_d) / prev.to_d) : nil
+    end
+
+    def completed_income_total_for(date_range = nil)
+      scope = Payment.joins(:sale_order).merge(@so_scope).where(status: 'Completed')
+      scope = scope.where(paid_at: date_range) if date_range.present?
+      scope.sum(:amount).to_d
+    end
+
+    def purchase_total_for(scope)
+      total = scope.sum(:total_cost_mxn).to_d
+      total = scope.sum(:total_order_cost).to_d if total.zero?
+      total
     end
 
     # === Alerts & Recent Activity ===
