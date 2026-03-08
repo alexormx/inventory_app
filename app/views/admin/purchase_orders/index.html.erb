@@ -297,7 +297,7 @@
                 <% if po.status == 'In Transit' || po.status == 'Pending' %>
                   <li><hr class="dropdown-divider"></li>
                   <li>
-                    <%= button_to confirm_receipt_admin_purchase_order_path(po), method: :patch, class: "dropdown-item text-success", form: { data: { controller: 'confirm', action: 'submit->confirm#ask', confirm_message: '¿Confirmas que recibiste todos los productos?' } } do %>
+                    <%= button_to confirm_receipt_admin_purchase_order_path(po), method: :patch, class: "dropdown-item text-success", form: { data: { controller: 'confirm', action: 'submit->confirm#ask', confirm_title: 'Confirmar recepción', confirm_message: 'Se registrará la recepción completa de esta orden y el inventario quedará disponible. ¿Deseas continuar?', confirm_confirm_label: 'Confirmar recepción' } } do %>
                       <i class="fa fa-check-circle me-2"></i>Confirmar recepción
                     <% end %>
                   </li>
@@ -311,7 +311,7 @@
                 <% end %>
                 <li><hr class="dropdown-divider"></li>
                 <li>
-                  <%= button_to admin_purchase_order_path(po), method: :delete, class: "dropdown-item text-danger", form: { data: { controller: 'confirm', action: 'submit->confirm#ask', confirm_message: '¿Estás seguro de eliminar esta orden?' } } do %>
+                  <%= button_to admin_purchase_order_path(po), method: :delete, class: "dropdown-item text-danger", form: { data: { controller: 'confirm', action: 'submit->confirm#ask', confirm_title: 'Eliminar orden de compra', confirm_message: 'Se eliminará esta orden de compra del sistema. ¿Deseas continuar?', confirm_confirm_label: 'Eliminar orden' } } do %>
                     <i class="fa fa-trash me-2"></i>Eliminar
                   <% end %>
                 </li>

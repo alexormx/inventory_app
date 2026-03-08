@@ -79,7 +79,7 @@
                   <% end %>
                   <% if InventoryLocation.where(location_type: lt.code).count == 0 %>
                     <%= link_to admin_location_type_path(lt),
-                                data: { turbo_method: :delete, turbo_confirm: "¿Eliminar tipo '#{lt.name}'?" },
+                                data: { turbo_method: :delete, turbo_confirm: "Se eliminará el tipo de ubicación '#{lt.name}'. ¿Deseas continuar?", confirm_title: 'Eliminar tipo de ubicación', confirm_confirm_label: 'Eliminar' },
                                 class: 'btn btn-sm btn-outline-danger' do %>
                       <i class="fas fa-trash"></i>
                     <% end %>

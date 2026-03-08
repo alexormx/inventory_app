@@ -6,7 +6,7 @@
   <%= button_to "🗑️ Delete Shipment",
       admin_sale_order_shipment_path(sale_order, sale_order.shipment),
       method: :delete,
-      form: { data: { controller: 'confirm', action: 'submit->confirm#ask', confirm_message: '¿Estás seguro de eliminar este envío?' }, class: "d-inline-block ms-2" },
+      form: { data: { controller: 'confirm', action: 'submit->confirm#ask', confirm_title: 'Eliminar envío', confirm_message: 'Se eliminará la información del envío asociada a esta orden. ¿Deseas continuar?', confirm_confirm_label: 'Eliminar envío' }, class: "d-inline-block ms-2" },
       class: "btn btn-outline-danger mb-3" %>
 <% else %>
   <%= link_to "➕ Add Shipment",

@@ -366,7 +366,9 @@
                                 method: :delete,
                                 data: { controller: 'confirm',
                                        action: 'click->confirm#ask',
-                                       confirm_message: '¿Eliminar esta imagen?',
+                              confirm_title: 'Eliminar imagen',
+                              confirm_message: 'Esta imagen se eliminará del producto y no podrá recuperarse desde esta pantalla. ¿Deseas continuar?',
+                              confirm_confirm_label: 'Eliminar imagen',
                                        turbo_method: :delete },
                                 class: "btn btn-sm btn-danger position-absolute top-0 end-0 m-1" do %>
                       <i class="fa-solid fa-trash"></i>

@@ -1,5 +1,6 @@
-import "@hotwired/turbo-rails"
+import { Turbo } from "@hotwired/turbo-rails"
 import "./controllers"   // index.js arranca Stimulus y registra todo
+import { confirmDialog } from "./lib/confirm_dialog"
 
 // noUiSlider styles
 
@@ -36,4 +37,10 @@ import "./components/show_password_requirements"
 
 // Production: disable verbose debug
 window.APP_DEBUG = false
+
+Turbo.config.forms.confirm = (message, element, submitter) => {
+	return confirmDialog(message, { element: submitter || element })
+}
+
+window.customConfirmDialog = confirmDialog
 

@@ -49,7 +49,7 @@
 
                     <%= button_to admin_sale_order_payment_path(payment.sale_order, payment),
                         method: :delete,
-                        data: { controller: 'confirm', action: 'click->confirm#ask', confirm_message: '¿Estás seguro de eliminar este pago?', turbo_stream: true },
+                        data: { controller: 'confirm', action: 'click->confirm#ask', confirm_title: 'Eliminar pago', confirm_message: 'Se eliminará este registro de pago de la orden de venta. ¿Deseas continuar?', confirm_confirm_label: 'Eliminar pago', turbo_stream: true },
                         class: "btn btn-sm btn-outline-danger", title: "Delete" do %>
                       <i class="fas fa-trash"></i>
                     <% end %>

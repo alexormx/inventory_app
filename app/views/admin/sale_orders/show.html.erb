@@ -52,7 +52,9 @@
                       data: {
                         controller: 'confirm',
                         action: 'click->confirm#ask',
-                        confirm_message: '¿Estás seguro? Esta acción liberará todos los inventarios reservados/vendidos y marcará la orden como cancelada.'
+                        confirm_title: 'Cancelar orden de venta',
+                        confirm_message: 'Se liberarán los inventarios reservados o vendidos asociados y la orden quedará marcada como cancelada. ¿Deseas continuar?',
+                        confirm_confirm_label: 'Cancelar orden'
                       } do %>
           <i class="fa fa-times"></i> Cancelar
         <% end %>
@@ -112,7 +114,7 @@
             <i class="fa fa-box-open me-1"></i> Ver Picking List
           <% end %>
         <% elsif @sale_order.status == 'In Transit' %>
-          <%= button_to deliver_admin_sale_order_path(@sale_order), method: :post, class: "btn btn-success", data: { turbo_confirm: "¿Confirmar que la orden fue entregada al cliente?" } do %>
+          <%= button_to deliver_admin_sale_order_path(@sale_order), method: :post, class: "btn btn-success", form: { data: { turbo_confirm: 'Se marcará esta orden como entregada al cliente. ¿Deseas continuar?', confirm_title: 'Marcar orden como entregada', confirm_confirm_label: 'Marcar como entregada' } } do %>
             <i class="fa fa-check-circle me-1"></i> ✅ Marcar como Entregada
           <% end %>
         <% end %>

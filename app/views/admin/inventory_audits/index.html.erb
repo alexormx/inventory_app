@@ -57,7 +57,9 @@
       <%= button_to 'Ejecutar Auto-Asignación', admin_inventory_audit_auto_assign_path,
                     method: :post, class: 'btn btn-success btn-sm',
                     data: { controller: 'confirm', action: 'click->confirm#ask',
-                            confirm_message: '¿Ejecutar auto-asignación? Esto asignará inventario disponible a Sale Orders pendientes.' } %>
+                confirm_title: 'Ejecutar auto-asignación',
+                confirm_message: 'Se asignará inventario disponible a órdenes de venta pendientes según la lógica actual del sistema. ¿Deseas continuar?',
+                confirm_confirm_label: 'Asignar inventario' } %>
     </div>
   </div>
 </div>
@@ -123,11 +125,11 @@
       <%= button_to 'Dry Run (orphans)', admin_inventory_reconciliations_path(mode: 'orphans', dry_run: '1'), method: :post, class: 'btn btn-outline-warning btn-sm' %>
       <%= button_to 'Dry Run (missing)', admin_inventory_reconciliations_path(mode: 'missing', dry_run: '1'), method: :post, class: 'btn btn-outline-info btn-sm' %>
       <%= button_to 'Aplicar (all)', admin_inventory_reconciliations_path(mode: 'all'), method: :post, class: 'btn btn-primary btn-sm',
-                    data: { controller: 'confirm', action: 'click->confirm#ask', confirm_message: '¿Aplicar reconciliación completa? Esto eliminará huérfanos y creará piezas faltantes.' } %>
+                    data: { controller: 'confirm', action: 'click->confirm#ask', confirm_title: 'Aplicar reconciliación completa', confirm_message: 'Se eliminarán registros huérfanos y se crearán piezas faltantes según la reconciliación detectada. ¿Deseas continuar?', confirm_confirm_label: 'Aplicar reconciliación' } %>
       <%= button_to 'Aplicar (solo orphans)', admin_inventory_reconciliations_path(mode: 'orphans'), method: :post, class: 'btn btn-warning btn-sm',
-                    data: { controller: 'confirm', action: 'click->confirm#ask', confirm_message: '¿Eliminar huérfanos? Operación irreversible.' } %>
+                    data: { controller: 'confirm', action: 'click->confirm#ask', confirm_title: 'Eliminar huérfanos', confirm_message: 'Se eliminarán registros huérfanos detectados por la auditoría. Esta acción no se puede deshacer. ¿Deseas continuar?', confirm_confirm_label: 'Eliminar huérfanos' } %>
       <%= button_to 'Aplicar (solo missing)', admin_inventory_reconciliations_path(mode: 'missing'), method: :post, class: 'btn btn-success btn-sm',
-                    data: { controller: 'confirm', action: 'click->confirm#ask', confirm_message: '¿Crear piezas faltantes? Verifica antes en dry-run.' } %>
+                    data: { controller: 'confirm', action: 'click->confirm#ask', confirm_title: 'Crear piezas faltantes', confirm_message: 'Se crearán piezas faltantes detectadas por la reconciliación. Se recomienda haber revisado antes el resultado en Dry Run. ¿Deseas continuar?', confirm_confirm_label: 'Crear piezas' } %>
     </div>
   </div>
 </div>

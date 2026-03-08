@@ -12,7 +12,7 @@
         <%= button_to 'Aplicar', apply_admin_inventory_adjustment_path(@inventory_adjustment), method: :post, class: 'btn btn-success' %>
         <%= link_to 'Editar', edit_admin_inventory_adjustment_path(@inventory_adjustment), class: 'btn btn-outline-secondary' %>
       <% else %>
-        <%= button_to 'Revertir', reverse_admin_inventory_adjustment_path(@inventory_adjustment), method: :post, class: 'btn btn-warning', data: { turbo_confirm: '¿Estás seguro de revertir este ajuste? Se deshará el efecto en inventario.' } %>
+        <%= button_to 'Revertir', reverse_admin_inventory_adjustment_path(@inventory_adjustment), method: :post, class: 'btn btn-warning', form: { data: { turbo_confirm: 'Se revertirá este ajuste y se desharán sus efectos en inventario. ¿Deseas continuar?', confirm_title: 'Revertir ajuste de inventario', confirm_confirm_label: 'Revertir ajuste' } } %>
       <% end %>
       <%= link_to 'Volver', admin_inventory_adjustments_path, class: 'btn btn-outline-dark' %>
     </div>

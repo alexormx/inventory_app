@@ -39,7 +39,7 @@
 <h3><%= t('.cancel_my_account') %></h3>
 
 <div><%= t('.unhappy') %> <%= button_to t('.cancel_my_account'), registration_path(resource_name),
-                                              data: { controller: 'confirm', action: 'click->confirm#ask', confirm_message: t('.are_you_sure') },
+                                              data: { controller: 'confirm', action: 'click->confirm#ask', confirm_title: 'Cancelar cuenta', confirm_message: t('.are_you_sure'), confirm_confirm_label: t('.cancel_my_account') },
                                               method: :delete %></div>
 
 <%= link_to t('devise.shared.links.back'), :back %>

@@ -70,7 +70,7 @@
           <i class="fas fa-edit"></i>
         <% end %>
         <%= link_to admin_product_path(product),
-                data: { controller: 'confirm', action: 'click->confirm#ask', confirm_message: '¿Estás seguro de eliminar este producto?', turbo_method: :delete, turbo_frame: "_top" },
+          data: { controller: 'confirm', action: 'click->confirm#ask', confirm_title: 'Eliminar producto', confirm_message: 'Se eliminará este producto del catálogo administrativo. ¿Deseas continuar?', confirm_confirm_label: 'Eliminar producto', turbo_method: :delete, turbo_frame: "_top" },
                 class: "btn btn-sm btn-outline-danger", title: "Eliminar" do %>
           <i class="fa-solid fa-trash"></i>
         <% end %>

@@ -82,7 +82,7 @@
       <% end %>
       <% if location.leaf? && direct_count == 0 %>
         <%= link_to admin_inventory_location_path(location),
-                    data: { turbo_method: :delete, turbo_confirm: "¿Eliminar '#{location.name}'?" },
+                    data: { turbo_method: :delete, turbo_confirm: "Se eliminará la ubicación '#{location.name}'. ¿Deseas continuar?", confirm_title: 'Eliminar ubicación', confirm_confirm_label: 'Eliminar' },
                     class: 'btn btn-sm btn-outline-danger',
                     title: 'Eliminar' do %>
           <i class="fas fa-trash"></i>

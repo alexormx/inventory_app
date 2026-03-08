@@ -1,3 +1,5 @@
+import { confirmDialog } from "../lib/confirm_dialog"
+
 import { Controller } from "@hotwired/stimulus"
 
 // Controlador para asignación masiva de ubicación a inventario (v2 - con carrito)
@@ -220,12 +222,16 @@ export default class extends Controller {
 
   // ═══ SUBMIT ═══
 
-  submitAssignment(event) {
+  async submitAssignment(event) {
     event.preventDefault()
     if (!this._selectedLocationId || this._cart.size === 0) return
 
     const total = this._getCartTotal()
-    if (!confirm(`¿Asignar ${total} pieza${total === 1 ? '' : 's'} a la ubicación seleccionada?`)) return
+    const confirmed = await confirmDialog(`¿Asignar ${total} pieza${total === 1 ? '' : 's'} a la ubicación seleccionada?`, {
+      title: "Confirmar asignación",
+      confirmLabel: "Asignar"
+    })
+    if (!confirmed) return
 
     // Construir assignments
     const assignments = {}

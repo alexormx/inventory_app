@@ -137,7 +137,13 @@
 		<%= button_to "Iniciar sincronización (temporal)", sync_inventory_statuses_admin_settings_path,
 									method: :post,
 									class: "btn btn-primary",
-									data: { controller: 'confirm', action: 'click->confirm#ask', confirm_message: '¿Confirmas iniciar la sincronización temporal?' } %>
+									data: {
+										controller: 'confirm',
+										action: 'click->confirm#ask',
+										confirm_title: 'Iniciar sincronización temporal',
+										confirm_message: 'Se volverán a evaluar los estados de inventario según la lógica actual de órdenes de compra y venta. ¿Deseas continuar?',
+										confirm_confirm_label: 'Iniciar sincronización'
+									} %>
 	</div>
 </div>
 
@@ -154,7 +160,13 @@
 		<%= button_to "Restaurar vínculos de SO Line en Inventario", backfill_inventory_sale_order_item_id_admin_settings_path,
 			method: :post,
 			class: "btn btn-outline-primary",
-			data: { controller: 'confirm', action: 'click->confirm#ask', confirm_message: "¿Ejecutar backfill de sale_order_item_id en inventario?" } %>
+			data: {
+				controller: 'confirm',
+				action: 'click->confirm#ask',
+				confirm_title: 'Restaurar vínculos de inventario',
+				confirm_message: 'Se completará el campo sale_order_item_id en inventario usando la mejor coincidencia disponible. ¿Deseas ejecutar este backfill ahora?',
+				confirm_confirm_label: 'Ejecutar backfill'
+			} %>
 	</div>
 </div>
 
@@ -170,7 +182,13 @@
 		<%= button_to "Iniciar backfill de Sale Orders", backfill_sale_orders_totals_admin_settings_path,
 									method: :post,
 									class: "btn btn-outline-primary",
-									data: { controller: 'confirm', action: 'click->confirm#ask', confirm_message: '¿Confirmas iniciar el backfill de Sale Orders?' } %>
+									data: {
+										controller: 'confirm',
+										action: 'click->confirm#ask',
+										confirm_title: 'Recalcular totales de órdenes de venta',
+										confirm_message: 'Se recalcularán impuestos y totales de órdenes de venta con valores vacíos o en cero. ¿Deseas continuar?',
+										confirm_confirm_label: 'Recalcular totales'
+									} %>
 	</div>
 </div>
 
@@ -283,7 +301,13 @@
 		<%= button_to "Iniciar reset de dimensiones y recálculo", reset_product_dimensions_admin_settings_path,
 			method: :post,
 			class: "btn btn-outline-warning",
-			data: { controller: 'confirm', action: 'click->confirm#ask', confirm_message: "¿Confirmas el reset global de dimensiones/peso y recálculo de costos?" } %>
+			data: {
+				controller: 'confirm',
+				action: 'click->confirm#ask',
+				confirm_title: 'Reset global de dimensiones',
+				confirm_message: 'Se restablecerán dimensiones y peso de todos los productos a los valores por defecto y luego se recalcularán los costos proporcionales de todas las órdenes de compra. ¿Deseas continuar?',
+				confirm_confirm_label: 'Ejecutar reset'
+			} %>
 	</div>
 </div>
 
@@ -300,7 +324,13 @@
 		<%= button_to "Recalcular alpha/compose costs (todas las POs)", recalc_all_po_alpha_costs_admin_settings_path,
 			method: :post,
 			class: "btn btn-outline-danger",
-			data: { controller: 'confirm', action: 'click->confirm#ask', confirm_message: "¿Confirmas recalcular alpha/compose costs de TODAS las Purchase Orders?" } %>
+			data: {
+				controller: 'confirm',
+				action: 'click->confirm#ask',
+				confirm_title: 'Recalcular costos de Purchase Orders',
+				confirm_message: 'Se redistribuirán costos adicionales y se recalcularán importes compuestos en todas las órdenes de compra. Este proceso puede tardar varios minutos. ¿Deseas continuar?',
+				confirm_confirm_label: 'Recalcular POs'
+			} %>
 	</div>
 </div>
 
@@ -332,7 +362,9 @@
 				<button type="submit" class="btn btn-outline-warning btn-sm"
 					data-controller="confirm"
 					data-action="click->confirm#ask"
-					data-confirm-message="¿Confirmas ejecutar la detección de costos distribuidos?">
+					data-confirm-title="Detectar costos distribuidos"
+					data-confirm-message="Se analizarán Purchase Orders para marcar aquellas que ya tienen costos distribuidos. Si el modo no es Dry Run, se guardarán cambios. ¿Deseas continuar?"
+					data-confirm-confirm-label="Ejecutar detección">
 					Ejecutar
 				</button>
 			</div>

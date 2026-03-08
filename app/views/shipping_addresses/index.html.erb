@@ -18,7 +18,7 @@
                 <%= button_to 'Default', make_default_shipping_address_path(addr), method: :patch, class: 'btn btn-sm btn-outline-primary' %>
               <% end %>
               <%= button_to 'Eliminar', shipping_address_path(addr), method: :delete,
-                            data: { controller: 'confirm', action: 'click->confirm#ask', confirm_message: '¿Eliminar dirección?' },
+                            data: { controller: 'confirm', action: 'click->confirm#ask', confirm_title: 'Eliminar dirección', confirm_message: 'Esta dirección dejará de estar disponible para futuras compras. ¿Deseas continuar?', confirm_confirm_label: 'Eliminar dirección' },
                             class: 'btn btn-sm btn-outline-danger' %>
             </div>
           </li>

@@ -57,10 +57,10 @@
                     <%= link_to edit_admin_payment_method_path(method), class: "btn btn-outline-primary", title: "Editar" do %>
                       <i class="fa fa-edit"></i>
                     <% end %>
-                    <%= button_to toggle_active_admin_payment_method_path(method), method: :patch, class: "btn btn-outline-#{method.active? ? 'warning' : 'success'}", title: method.active? ? 'Desactivar' : 'Activar', form: { data: { turbo_confirm: "¿#{method.active? ? 'Desactivar' : 'Activar'} '#{method.name}'?" } } do %>
+                    <%= button_to toggle_active_admin_payment_method_path(method), method: :patch, class: "btn btn-outline-#{method.active? ? 'warning' : 'success'}", title: method.active? ? 'Desactivar' : 'Activar', form: { data: { turbo_confirm: "El método de pago '#{method.name}' se #{method.active? ? 'desactivará' : 'activará'} para nuevas operaciones. ¿Deseas continuar?", confirm_title: "#{method.active? ? 'Desactivar' : 'Activar'} método de pago", confirm_confirm_label: method.active? ? 'Desactivar' : 'Activar' } } do %>
                       <i class="fa fa-<%= method.active? ? 'toggle-off' : 'toggle-on' %>"></i>
                     <% end %>
-                    <%= button_to admin_payment_method_path(method), method: :delete, class: "btn btn-outline-danger", title: "Eliminar", form: { data: { turbo_confirm: "¿Eliminar '#{method.name}'? Esta acción no se puede deshacer." } } do %>
+                    <%= button_to admin_payment_method_path(method), method: :delete, class: "btn btn-outline-danger", title: "Eliminar", form: { data: { turbo_confirm: "Se eliminará el método de pago '#{method.name}'. Esta acción no se puede deshacer. ¿Deseas continuar?", confirm_title: 'Eliminar método de pago', confirm_confirm_label: 'Eliminar' } } do %>
                       <i class="fa fa-trash"></i>
                     <% end %>
                   </div>

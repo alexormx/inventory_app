@@ -246,7 +246,7 @@
     <%= button_to confirm_receipt_admin_purchase_order_path(@purchase_order),
                   method: :patch,
                   class: "btn btn-success",
-                  data: { controller: 'confirm', action: 'click->confirm#ask', confirm_message: '¿Confirmas que recibiste todos los productos? Esto cambiará el estado del inventario a "disponible".' } do %>
+                  data: { controller: 'confirm', action: 'click->confirm#ask', confirm_title: 'Confirmar recepción', confirm_message: 'Se marcarán como recibidos todos los productos de esta orden y el inventario pasará a disponible. ¿Deseas continuar?', confirm_confirm_label: 'Confirmar recepción' } do %>
       <i class="fa fa-check-circle me-1"></i> Confirmar Recepción
     <% end %>
     <% if @purchase_order.user&.email.present? %>
@@ -381,7 +381,7 @@
     <%= button_to admin_purchase_order_path(@purchase_order),
                   method: :delete,
                   class: "btn btn-sm btn-outline-danger",
-                  form: { data: { controller: 'confirm', action: 'submit->confirm#ask', confirm_message: '¿Estás seguro de eliminar esta orden?' } } do %>
+                  form: { data: { controller: 'confirm', action: 'submit->confirm#ask', confirm_title: 'Eliminar orden de compra', confirm_message: 'Se eliminará esta orden de compra y ya no estará disponible en el panel. ¿Deseas continuar?', confirm_confirm_label: 'Eliminar orden' } } do %>
       <i class="fa fa-trash"></i> Eliminar
     <% end %>
   </div>
