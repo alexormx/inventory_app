@@ -73,12 +73,30 @@
     </div>
   <% end %>
 
-  <%# Pagos %>
-  <% completed_payments = @order.payments.where(status: 'Completed').order(:paid_at) %>
-  <% if completed_payments.any? %>
-    <div class="card mt-2 border-0 shadow-sm">
-      <div class="card-body py-2">
-        <h6 class="mb-2 fw-semibold">Pagos recibidos</h6>
+  <%# Resumen de pagos: Total / Pagado / Resta %>
+  <% paid = @order.total_paid.to_d %>
+  <% balance_due = (grand_total - paid).round(2) %>
+  <% is_paid = balance_due <= 0 %>
+  <div class="card mt-2 border-0 shadow-sm">
+    <div class="card-body py-2">
+      <h6 class="mb-2 fw-semibold"><i class="fa fa-money-bill-wave me-1 text-success"></i>Estado de Pago</h6>
+      <dl class="row mb-0 small">
+        <dt class="col-7">Total del Pedido:</dt>
+        <dd class="col-5 text-end fw-bold"><%= number_to_currency(grand_total) %></dd>
+
+        <dt class="col-7 text-muted">Pagado:</dt>
+        <dd class="col-5 text-end fw-bold text-success"><%= number_to_currency(paid) %></dd>
+
+        <dt class="col-7 border-top pt-1 mt-1">Resta por pagar:</dt>
+        <dd class="col-5 text-end border-top pt-1 mt-1 fw-bold <%= is_paid ? 'text-success' : 'text-danger' %>">
+          <%= is_paid ? '✓ Pagado' : number_to_currency(balance_due) %>
+        </dd>
+      </dl>
+
+      <% completed_payments = @order.payments.where(status: 'Completed').order(:paid_at) %>
+      <% if completed_payments.any? %>
+        <hr class="my-2">
+        <h6 class="mb-1 small fw-semibold text-muted">Detalle de pagos</h6>
         <ul class="list-unstyled small mb-0">
           <% completed_payments.each do |p| %>
             <li class="d-flex justify-content-between">
@@ -87,10 +105,9 @@
             </li>
           <% end %>
         </ul>
-        <div class="mt-2 text-end small text-muted">Total pagado: <strong><%= number_to_currency(@order.total_paid) %></strong></div>
-      </div>
+      <% end %>
     </div>
-  <% end %>
+  </div>
 
   <div class="d-flex gap-2 mt-3">
     <%= link_to 'Ver detalle completo', order_path(@order), class: 'btn btn-outline-secondary btn-sm' %>
