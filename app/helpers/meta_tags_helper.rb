@@ -46,7 +46,11 @@ module MetaTagsHelper
   end
 
   def meta_keywords
-    seo_settings[:keywords].presence || DEFAULT_KEYWORDS
+    if content_for?(:meta_keywords)
+      strip_tags(content_for(:meta_keywords).to_s).squish
+    else
+      seo_settings[:keywords].presence || DEFAULT_KEYWORDS
+    end
   end
 
   def site_root_url

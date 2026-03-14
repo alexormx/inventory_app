@@ -36,7 +36,7 @@ module SeoHelper
       '@type' => 'Product',
       'name' => product.product_name,
       'sku' => product.product_sku,
-      'description' => product.description.presence || "#{product.product_name} - #{product.brand} #{product.category}",
+      'description' => product_json_ld_description(product),
       'image' => image_url,
       'brand' => {
         '@type' => 'Brand',
@@ -79,6 +79,25 @@ module SeoHelper
     end
 
     tag.script(data.to_json.html_safe, type: 'application/ld+json')
+  end
+
+  # Build a keyword-rich description for JSON-LD Product schema
+  def product_json_ld_description(product)
+    attrs = product.parsed_custom_attributes
+    parts = []
+
+    if product.description.present?
+      parts << product.description.to_s.gsub(/\r\n|\n/, ' ').squish.truncate(300, separator: ' ')
+    end
+
+    type_label = product_type_label(product)
+    parts << "#{product.product_name} de #{product.brand}" if product.brand.present?
+    parts << type_label if type_label.present?
+    parts << "Escala #{attrs['escala']}" if attrs['escala'].present?
+    parts << attrs['material'] if attrs['material'].present?
+    parts << "Disponible en #{seo_site_name}"
+
+    parts.compact.reject(&:blank?).join('. ')
   end
 
   # Genera JSON-LD BreadcrumbList para SEO
@@ -226,15 +245,114 @@ module SeoHelper
 
   # Meta tags para producto
   def product_meta_title(product)
-    "#{product.product_name} | #{product.brand} | #{seo_site_name}"
+    attrs = product.parsed_custom_attributes
+    scale = attrs['escala'].presence
+    # Build keyword-rich title: "Product Name | Brand | Diecast Escala 1:64 | Store"
+    parts = [product.product_name, product.brand]
+    type_label = product_type_label(product)
+    parts << type_label if type_label.present?
+    parts << "Escala #{scale}" if scale.present?
+    parts << seo_site_name
+    parts.join(' | ')
   end
 
   def product_meta_description(product)
-    base = product.description.presence || "#{product.product_name} de #{product.brand}"
-    # Limitar a ~155 caracteres para SEO
-    truncated = base.truncate(155, separator: ' ')
-    "#{truncated} Compra en #{seo_site_name}. Envío seguro. Producto 100% original."
+    attrs = product.parsed_custom_attributes
+    scale = attrs['escala'].presence
+    material = attrs['material'].presence
+
+    # Build keyword-rich description for Google snippets
+    intro = "Compra #{product.product_name} de #{product.brand}"
+    intro += " escala #{scale}" if scale.present?
+    intro += ", #{material.downcase}" if material.present?
+    intro += '.'
+
+    # Add product description snippet if available
+    if product.description.present?
+      snippet = product.description.to_s.gsub(/\r\n|\n/, ' ').squish.truncate(100, separator: ' ')
+      intro += " #{snippet}"
+    end
+
+    # Ensure it ends with CTA and store branding
+    suffix = " Envío seguro a todo México. 100% original. #{seo_site_name}."
+    (intro + suffix).truncate(320, separator: ' ')
   end
+
+  # Per-product keywords based on actual product data
+  def product_meta_keywords(product)
+    attrs = product.parsed_custom_attributes
+    keywords = []
+
+    # Product-specific terms
+    keywords << product.product_name
+    keywords << product.brand
+    keywords << product.category
+
+    # Extract individual words from product name for partial matches
+    # e.g. "067 Toyota Hilux" -> "Toyota", "Hilux"
+    product.product_name.to_s.split(/\s+/).each do |word|
+      keywords << word if word.length > 2 && word != product.brand
+    end
+
+    # Type/material keywords
+    keywords << 'diecast' if attrs['material'].to_s.downcase.include?('die') || product.category.to_s.downcase.include?('diecast')
+    keywords << 'auto a escala' if product_is_diecast?(product)
+    keywords << 'modelo a escala' if product_is_diecast?(product)
+    keywords << 'coleccionable'
+    keywords << attrs['escala'] if attrs['escala'].present?
+    keywords << attrs['color'] if attrs['color'].present?
+
+    # Always include core store terms
+    keywords += %w[autos\ a\ escala diecast coleccionables modelos\ a\ escala]
+    keywords << product.brand.downcase if product.brand.present?
+
+    keywords.compact.map { |k| k.to_s.strip.downcase }.reject(&:blank?).uniq.first(15).join(', ')
+  end
+
+  # SEO-friendly image alt text
+  def product_image_alt(product, index: 0)
+    attrs = product.parsed_custom_attributes
+    alt = product.product_name.to_s.strip
+    alt += " #{product.brand}" if product.brand.present?
+    type_label = product_type_label(product)
+    alt += " #{type_label}" if type_label.present?
+    alt += " Escala #{attrs['escala']}" if attrs['escala'].present?
+    alt += " - Imagen #{index + 1}" if index > 0
+    alt
+  end
+
+  private
+
+  # Determine a human-friendly product type label for SEO
+  def product_type_label(product)
+    attrs = product.parsed_custom_attributes
+    material = attrs['material'].to_s.downcase
+    category = product.category.to_s.downcase
+
+    if material.include?('die') || category.include?('diecast') || category.include?('basico') || category.include?('premium')
+      'Auto a Escala Diecast'
+    elsif category.include?('figure') || category.include?('figura')
+      'Figura Coleccionable'
+    elsif category.include?('toy') || category.include?('juguete')
+      'Juguete Coleccionable'
+    else
+      'Coleccionable'
+    end
+  end
+
+  # Check if product is a diecast/scale model
+  def product_is_diecast?(product)
+    attrs = product.parsed_custom_attributes
+    material = attrs['material'].to_s.downcase
+    category = product.category.to_s.downcase
+    brand = product.brand.to_s.downcase
+
+    diecast_brands = %w[tomica hot\ wheels hotwheels greenlight majorette matchbox maisto jada mini\ gt autoworld m2]
+    material.include?('die') || category.include?('diecast') || category.include?('basico') || category.include?('premium') ||
+      diecast_brands.any? { |b| brand.include?(b) }
+  end
+
+  public
 
   # Meta tags para catálogo
   def catalog_meta_title

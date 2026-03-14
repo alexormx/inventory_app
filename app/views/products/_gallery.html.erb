@@ -7,7 +7,7 @@
         <div class="gallery-slide" data-index="<%= idx %>" aria-hidden="<%= idx == 0 ? 'false' : 'true' %>">
           <% begin %>
             <%= responsive_attachment_image img,
-                alt: product.product_name,
+                alt: product_image_alt(product, index: idx),
                 widths: [320,480,600],
                 css_class: "w-100 rounded shadow-sm bg-white",
                 square: true,
@@ -29,7 +29,7 @@
         <button type="button" class="thumb-btn p-0 border-0 bg-transparent" data-action="click->gallery#show" data-index="<%= index %>" aria-label="Ver imagen <%= index+1 %>">
           <% begin %>
             <%= responsive_attachment_image img,
-                  alt: "Miniatura #{index+1}",
+                  alt: "#{product_image_alt(product)} miniatura #{index+1}",
                   widths: [56,80],
                   css_class: "thumbnail-image img-thumbnail #{'border-primary' if index == 0}",
                   square: true,

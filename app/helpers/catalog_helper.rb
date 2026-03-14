@@ -61,12 +61,17 @@ module CatalogHelper
 
   # Genera breadcrumbs para la vista de producto individual
   def product_breadcrumbs(product)
-    [
+    crumbs = [
       { name: 'Inicio', url: root_path },
       { name: 'Catálogo', url: catalog_path },
-      { name: product.category, url: catalog_path(categories: [product.category]) },
-      { name: product.product_name, url: nil }
+      { name: product.category, url: catalog_path(categories: [product.category]) }
     ]
+    # Add brand breadcrumb linking to SEO-friendly brand landing page
+    if product.brand.present?
+      crumbs << { name: product.brand, url: brand_landing_path(brand_slug: product.brand.parameterize) }
+    end
+    crumbs << { name: product.product_name, url: nil }
+    crumbs
   end
 
   # Formato de rango de productos mostrados (ej: "Mostrando 1-12 de 45")
