@@ -22,6 +22,8 @@ import "./custom/navbar_toggle"
 import "./custom/admin_navbar_toggle"
 // Sidebar (admin): hamburguesa que colapsa/expande el sidebar
 import "./modules/sidebar_toggle"
+// Flash messages: auto‑dismiss + close button
+import "./modules/flash_messages"
 // Customer layout: polyfills para collapse/offcanvas sin Bootstrap JS
 import "./custom/bootstrap_polyfills"
 // Tema claro/oscuro (persistencia en localStorage)
