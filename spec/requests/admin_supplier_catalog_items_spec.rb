@@ -53,4 +53,16 @@ RSpec.describe "Admin::SupplierCatalogItems", type: :request do
       expect(Suppliers::TakaraTomyMall::BackfillItemService).to have_received(:new).with(catalog_item)
     end
   end
+
+  describe "POST /admin/supplier_catalog_items/:id/refresh_tomica_fandom" do
+    it "refreshes the Fandom source manually" do
+      service = instance_double(Suppliers::TomicaFandom::BackfillItemService, call: true)
+      allow(Suppliers::TomicaFandom::BackfillItemService).to receive(:new).with(catalog_item).and_return(service)
+
+      post refresh_tomica_fandom_admin_supplier_catalog_item_path(catalog_item)
+
+      expect(response).to redirect_to(admin_supplier_catalog_item_path(catalog_item))
+      expect(Suppliers::TomicaFandom::BackfillItemService).to have_received(:new).with(catalog_item)
+    end
+  end
 end

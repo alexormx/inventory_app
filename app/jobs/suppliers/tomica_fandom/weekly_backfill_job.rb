@@ -10,10 +10,35 @@ module Suppliers
       def perform
         run = SupplierSyncRun.create!(source: "tomica_fandom", mode: "weekly_backfill", status: "queued")
         run.start!
-        run.complete!(metadata: {
-          note: "Foundation job created for tertiary historical backfill by model name.",
-          timezone: "America/Mexico_City"
-        })
+
+        processed = 0
+        updated = 0
+        skipped = 0
+        errors = []
+
+        scope.find_each do |catalog_item|
+          processed += 1
+          result = Suppliers::TomicaFandom::BackfillItemService.new(catalog_item).call
+          updated += 1 if result.changed
+        rescue StandardError => e
+          skipped += 1
+          errors << "#{catalog_item.id}: #{e.message}"
+        end
+
+        run.complete!(
+          processed_count: processed,
+          updated_count: updated,
+          skipped_count: skipped,
+          error_count: errors.size,
+          error_samples: errors.first(10),
+          metadata: { timezone: "America/Mexico_City" }
+        )
+      end
+
+      private
+
+      def scope
+        SupplierCatalogItem.where.not(canonical_name: [nil, ""]).where("LOWER(COALESCE(canonical_series, '')) LIKE ?", "%tomica%")
       end
     end
   end

@@ -4,7 +4,7 @@ module Admin
   class SupplierCatalogItemsController < ApplicationController
     before_action :authenticate_user!
     before_action :authorize_admin!
-    before_action :set_supplier_catalog_item, only: [:show, :create_product, :link_product, :sync_product, :refresh_hlj, :refresh_takara_tomy_mall]
+    before_action :set_supplier_catalog_item, only: [:show, :create_product, :link_product, :sync_product, :refresh_hlj, :refresh_takara_tomy_mall, :refresh_tomica_fandom]
 
     def index
       @q = params[:q].to_s.strip
@@ -81,6 +81,13 @@ module Admin
       redirect_to admin_supplier_catalog_item_path(@supplier_catalog_item), notice: "Fuente Takara Tomy Mall actualizada."
     rescue StandardError => e
       redirect_to admin_supplier_catalog_item_path(@supplier_catalog_item), alert: "Error al refrescar Takara Tomy Mall: #{e.message}"
+    end
+
+    def refresh_tomica_fandom
+      Suppliers::TomicaFandom::BackfillItemService.new(@supplier_catalog_item).call
+      redirect_to admin_supplier_catalog_item_path(@supplier_catalog_item), notice: "Fuente Tomica Fandom actualizada."
+    rescue StandardError => e
+      redirect_to admin_supplier_catalog_item_path(@supplier_catalog_item), alert: "Error al refrescar Tomica Fandom: #{e.message}"
     end
 
     private

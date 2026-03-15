@@ -147,6 +147,7 @@ Rails.application.routes.draw do
         post :sync_product
         post :refresh_hlj
         post :refresh_takara_tomy_mall
+        post :refresh_tomica_fandom
       end
       collection do
         post :run_discovery
