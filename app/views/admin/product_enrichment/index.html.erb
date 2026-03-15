@@ -1,0 +1,131 @@
+<div class="admin-page-header d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+  <div>
+    <p class="admin-page-eyebrow mb-1">IA</p>
+    <h2 class="mb-0 d-flex align-items-center gap-2"><i class="fa fa-wand-magic-sparkles"></i> Enriquecimiento de Productos</h2>
+  </div>
+  <span class="badge admin-page-badge">Genera descripciones y atributos con IA</span>
+</div>
+
+<%# Contadores %>
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-2">
+    <div class="card text-center border-0 shadow-sm">
+      <div class="card-body py-3">
+        <h3 class="mb-1 text-danger"><%= @counts[:without_description] %></h3>
+        <small class="text-muted">Sin descripción</small>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-2">
+    <div class="card text-center border-0 shadow-sm">
+      <div class="card-body py-3">
+        <h3 class="mb-1 text-warning"><%= @counts[:queued] + @counts[:generating] %></h3>
+        <small class="text-muted">En proceso</small>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-2">
+    <div class="card text-center border-0 shadow-sm">
+      <div class="card-body py-3">
+        <h3 class="mb-1 text-primary"><%= @counts[:draft_generated] %></h3>
+        <small class="text-muted">Por revisar</small>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-2">
+    <div class="card text-center border-0 shadow-sm">
+      <div class="card-body py-3">
+        <h3 class="mb-1 text-success"><%= @counts[:published] %></h3>
+        <small class="text-muted">Publicados</small>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-2">
+    <div class="card text-center border-0 shadow-sm">
+      <div class="card-body py-3">
+        <h3 class="mb-1 text-secondary"><%= @counts[:failed] %></h3>
+        <small class="text-muted">Fallidos</small>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-2">
+    <div class="card border-0 shadow-sm">
+      <div class="card-body py-3 text-center">
+        <%= link_to queue_admin_product_enrichment_index_path, class: "btn btn-primary btn-sm" do %>
+          <i class="fa fa-list me-1"></i> Ver cola
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%# Borradores recientes %>
+<div class="card border-0 shadow-sm">
+  <div class="card-header bg-white d-flex justify-content-between align-items-center">
+    <h5 class="mb-0"><i class="fa fa-clock-rotate-left me-1"></i> Actividad reciente</h5>
+    <%= link_to "Templates de atributos", admin_category_attribute_templates_path, class: "btn btn-outline-secondary btn-sm" %>
+  </div>
+  <div class="card-body p-0">
+    <% if @recent_drafts.any? %>
+      <div class="table-responsive">
+        <table class="table table-hover table-sm mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Producto</th>
+              <th>Estado</th>
+              <th>Confianza</th>
+              <th>Modelo IA</th>
+              <th>Tokens</th>
+              <th>Costo</th>
+              <th>Fecha</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @recent_drafts.each do |draft| %>
+              <tr>
+                <td>
+                  <%= link_to draft.product.product_name, admin_product_path(draft.product), class: "text-decoration-none" %>
+                  <br><small class="text-muted"><%= draft.product.brand %></small>
+                </td>
+                <td><%= render_enrichment_status_badge(draft.status) %></td>
+                <td>
+                  <% if draft.confidence_score %>
+                    <span class="badge <%= draft.confidence_score >= 0.8 ? 'bg-success' : draft.confidence_score >= 0.6 ? 'bg-warning text-dark' : 'bg-danger' %>">
+                      <%= (draft.confidence_score * 100).round %>%
+                    </span>
+                  <% else %>
+                    <span class="text-muted">—</span>
+                  <% end %>
+                </td>
+                <td><small class="text-muted"><%= draft.ai_model || "—" %></small></td>
+                <td><small class="text-muted"><%= draft.total_tokens > 0 ? number_with_delimiter(draft.total_tokens) : "—" %></small></td>
+                <td><small class="text-muted"><%= draft.estimated_cost_cents ? "$#{'%.4f' % draft.estimated_cost_usd} USD" : "—" %></small></td>
+                <td><small class="text-muted"><%= time_ago_in_words(draft.created_at) %></small></td>
+                <td>
+                  <% if draft.draft_generated? %>
+                    <%= link_to admin_product_enrichment_path(draft), class: "btn btn-outline-primary btn-sm" do %>
+                      <i class="fa fa-eye"></i> Revisar
+                    <% end %>
+                  <% elsif draft.failed? %>
+                    <%= link_to admin_product_enrichment_path(draft), class: "btn btn-outline-danger btn-sm" do %>
+                      <i class="fa fa-exclamation-triangle"></i> Ver error
+                    <% end %>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% else %>
+      <div class="text-center py-5 text-muted">
+        <i class="fa fa-inbox fa-3x mb-3 d-block"></i>
+        <p>No hay borradores de enriquecimiento aún.</p>
+        <%= link_to queue_admin_product_enrichment_index_path, class: "btn btn-primary" do %>
+          <i class="fa fa-play me-1"></i> Comenzar a enriquecer productos
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+</div>

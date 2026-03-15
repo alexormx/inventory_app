@@ -66,6 +66,9 @@
           <%= button_tag "Activos", name: :status, value: "active", class: btnc.call("active", current_status) %>
           <%= button_tag "Inactivos", name: :status, value: "inactive", class: btnc.call("inactive", current_status) %>
         </div>
+        <%= link_to queue_admin_product_enrichment_index_path, class: "btn btn-sm btn-outline-warning ms-2", title: "Ver productos sin descripción" do %>
+          <i class="fa fa-wand-magic-sparkles me-1"></i>Sin descripción (<%= Product.without_description.count %>)
+        <% end %>
         <%= hidden_field_tag :status, current_status %>
         <%= link_to "Limpiar", admin_products_path, class: "btn btn-sm btn-outline-secondary ms-2", title: "Quitar búsqueda y status" %>
       </div>

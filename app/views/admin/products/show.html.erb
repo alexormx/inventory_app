@@ -185,6 +185,32 @@
         </div>
       </div>
     </div>
+
+    <%# Card de Descripción / Enriquecimiento IA %>
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-header bg-transparent border-0 py-3 d-flex justify-content-between align-items-center">
+        <h6 class="mb-0 fw-semibold"><i class="fa fa-file-lines text-primary me-2"></i>Descripción</h6>
+        <% current_draft = @product.current_draft %>
+        <% if current_draft&.draft_generated? %>
+          <%= link_to admin_product_enrichment_path(current_draft), class: "btn btn-sm btn-outline-primary" do %>
+            <i class="fa fa-eye me-1"></i>Revisar borrador
+          <% end %>
+        <% elsif current_draft&.queued? || current_draft&.generating? %>
+          <span class="btn btn-sm btn-outline-secondary disabled"><i class="fa fa-spinner fa-spin me-1"></i>Generando...</span>
+        <% else %>
+          <%= button_to generate_admin_product_enrichment_path(@product), method: :post, class: "btn btn-sm btn-primary" do %>
+            <i class="fa fa-wand-magic-sparkles me-1"></i>Generar con IA
+          <% end %>
+        <% end %>
+      </div>
+      <div class="card-body pt-0">
+        <% if @product.description.present? %>
+          <p style="white-space: pre-line;" class="small mb-0"><%= truncate(@product.description, length: 300) %></p>
+        <% else %>
+          <p class="text-muted fst-italic mb-0">Sin descripción — genera una con IA.</p>
+        <% end %>
+      </div>
+    </div>
   </div>
 
   <%# Columna derecha: Detalles %>

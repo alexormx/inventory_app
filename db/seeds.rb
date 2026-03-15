@@ -293,3 +293,6 @@ rescue ActiveRecord::RecordInvalid => e
 end
 
 seed_log 'Seeds completed.'
+
+# Enrichment templates
+load Rails.root.join("db/seeds/enrichment_templates.rb")

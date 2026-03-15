@@ -14,6 +14,7 @@ class Product < ApplicationRecord
   has_many_attached :product_images
   has_many :sale_order_items
   has_many :sale_orders, through: :sale_order_items
+  has_many :description_drafts, class_name: "ProductDescriptionDraft", dependent: :destroy
 
   # --- Financial & status defaults ---
   after_initialize :set_default_financial_fields, if: :new_record?
@@ -49,10 +50,25 @@ class Product < ApplicationRecord
   scope :publicly_visible, -> { active }
   scope :discontinued, -> { where(discontinued: true) }
   scope :in_production, -> { where(discontinued: false) }
+  scope :without_description, -> { where(description: [nil, ""]) }
+  scope :with_description, -> { where.not(description: [nil, ""]) }
 
   # --- Public helper for your current view (optional, can be removed later) ---
   def parsed_custom_attributes
     custom_attributes.is_a?(Hash) ? custom_attributes : {}
+  end
+
+  # --- Enrichment helpers ---
+  def current_draft
+    description_drafts.where.not(status: [:rejected, :failed]).order(created_at: :desc).first
+  end
+
+  def description_missing?
+    description.blank?
+  end
+
+  def attribute_template
+    CategoryAttributeTemplate.for_category(category)
   end
 
   # Normalize at assignment time: strip/downcase, default blank to 'draft'.

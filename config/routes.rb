@@ -123,6 +123,23 @@ Rails.application.routes.draw do
       end
     end
 
+    # Product Enrichment (AI descriptions + attributes)
+    resources :product_enrichment, only: [:index, :show] do
+      member do
+        post :generate
+        post :regenerate
+        patch :update_draft
+        post :publish
+        post :reject
+      end
+      collection do
+        get :queue
+      end
+    end
+
+    # Category Attribute Templates
+    resources :category_attribute_templates, except: [:show]
+
     # Deprecated standalone User Management (migrated to unified Users tabs)
     # resources :customers
     # resources :suppliers, only: [:index, :new, :create, :edit, :update]

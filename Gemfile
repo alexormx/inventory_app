@@ -26,6 +26,9 @@ gem 'turbo-rails' # SPA-like page accelerator
 # ✅ JSON API Support
 gem 'jbuilder' # Build JSON APIs
 
+# ✅ AI / LLM Integration
+gem 'ruby-openai', '~> 7.0' # OpenAI API client for product enrichment
+
 # ✅ Authentication
 gem 'devise', '~> 4.9' # User authentication and session handling
 
