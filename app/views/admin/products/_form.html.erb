@@ -57,7 +57,16 @@
           <small class="text-muted">Código único de producto</small>
         </div>
 
-        <div class="col-12 col-md-4">
+        <div class="col-12 col-md-3">
+          <%= f.label :whatsapp_code do %>
+            <i class="fa-brands fa-whatsapp text-success me-1"></i>
+            Código WA
+          <% end %>
+          <%= f.text_field :whatsapp_code, class: "form-control", placeholder: "Ej: ABC123" %>
+          <small class="text-muted">Identificador corto para enlaces o seguimiento por WhatsApp</small>
+        </div>
+
+        <div class="col-12 col-md-3">
           <%= f.label :brand do %>
             <i class="fa-solid fa-tag text-primary me-1"></i>
             Marca
@@ -65,7 +74,7 @@
           <%= f.text_field :brand, class: "form-control", placeholder: "Ej: LEGO" %>
         </div>
 
-        <div class="col-12 col-md-4">
+        <div class="col-12 col-md-3">
           <%= f.label :category do %>
             <i class="fa-solid fa-folder text-warning me-1"></i>
             Categoría
@@ -73,7 +82,7 @@
           <%= f.text_field :category, class: "form-control", placeholder: "Ej: Juguetes" %>
         </div>
 
-        <div class="col-12 col-md-4">
+        <div class="col-12 col-md-3">
           <%= f.label :status do %>
             <i class="fa-solid fa-circle-dot text-success me-1"></i>
             Estado

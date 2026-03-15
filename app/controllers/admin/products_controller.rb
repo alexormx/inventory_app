@@ -312,6 +312,7 @@ module Admin
     def product_params
       params.expect(
         product: [:product_sku,
+                  :whatsapp_code,
                   :barcode,
                   :supplier_product_code,
                   :brand,

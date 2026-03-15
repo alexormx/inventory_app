@@ -44,6 +44,26 @@ RSpec.describe "Admin::Products", type: :request do
     end
   end
 
+  describe "PATCH /admin/products/:id" do
+    it "updates whatsapp_code from the admin form" do
+      patch admin_product_path(product), params: {
+        product: {
+          product_sku: product.product_sku,
+          product_name: product.product_name,
+          brand: product.brand,
+          category: product.category,
+          selling_price: product.selling_price,
+          minimum_price: product.minimum_price,
+          maximum_discount: product.maximum_discount,
+          whatsapp_code: "WA-EDIT-#{SecureRandom.hex(2).upcase}"
+        }
+      }
+
+      expect(response).to redirect_to(admin_product_path(product))
+      expect(product.reload.whatsapp_code).to match(/\AWA-EDIT-/)
+    end
+  end
+
   describe "DELETE /admin/products/:id/images/:image_id" do
     it "purges one image and redirects to edit in HTML" do
       image = product.product_images.first
