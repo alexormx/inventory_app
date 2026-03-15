@@ -117,9 +117,32 @@ module Products
           raise GenerationError, "Invalid response structure: missing 'description_es'"
         end
 
+        unless structured_description?(parsed["description_es"])
+          raise GenerationError, "Invalid response structure: 'description_es' must include the required structured sections"
+        end
+
         parsed
       rescue JSON::ParserError => e
         raise GenerationError, "Failed to parse OpenAI JSON response: #{e.message}"
+      end
+
+      def structured_description?(description)
+        return false if description.blank?
+
+        normalized = description.to_s.strip
+        required_sections = [
+          "Resumen:",
+          "Ficha del modelo:",
+          "Puntos destacados:",
+          "Historia y contexto:",
+          "Cierre:"
+        ]
+
+        return false unless required_sections.all? { |section| normalized.include?(section) }
+        return false if normalized.length < 180
+
+        bullet_count = normalized.scan(/^\s*[-•*]\s+/).size
+        bullet_count >= 3
       end
 
       def estimate_cost(usage)

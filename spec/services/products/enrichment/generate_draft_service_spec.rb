@@ -14,7 +14,27 @@ RSpec.describe Products::Enrichment::GenerateDraftService do
           "message" => {
             "content" => {
               "product_name" => "067 Toyota Hilux",
-              "description_es" => "Réplica a escala 1:64 del Toyota Hilux fabricada por Tomica.",
+              "description_es" => <<~TEXT,
+                Resumen:
+                Réplica a escala del Toyota Hilux fabricada por Tomica, ideal para colección y exhibición por su acabado detallado y su perfil utilitario reconocible.
+
+                Ficha del modelo:
+                - Marca: Tomica
+                - Modelo: Toyota Hilux
+                - Escala: 1:64
+                - Material: Die-cast
+
+                Puntos destacados:
+                - Modelo numerado #067.
+                - Carrocería con presencia robusta y proporciones compactas.
+                - Pieza ideal para vitrinas temáticas de pickups y utilitarios.
+
+                Historia y contexto:
+                La Toyota Hilux es una de las pickups más conocidas a nivel mundial, apreciada por su resistencia y uso versátil. Esta miniatura traslada esa identidad a un formato coleccionable accesible y fácil de exhibir.
+
+                Cierre:
+                Una excelente opción para coleccionistas de Tomica y para quienes buscan sumar una pickup icónica a su colección de autos a escala.
+              TEXT
               "highlights" => ["Modelo numerado #067", "Die-cast metálico"],
               "attributes" => {
                 "color" => "Blanco",
@@ -74,7 +94,7 @@ RSpec.describe Products::Enrichment::GenerateDraftService do
       draft.reload
       expect(draft.ai_provider).to eq("openai")
       expect(draft.ai_model).to eq("gpt-4o-mini")
-      expect(draft.prompt_version).to eq("v1")
+      expect(draft.prompt_version).to eq("v2")
       expect(draft.tokens_input).to eq(500)
       expect(draft.tokens_output).to eq(300)
       expect(draft.generated_at).to be_present
@@ -163,6 +183,36 @@ RSpec.describe Products::Enrichment::GenerateDraftService do
         draft.reload
         expect(draft.status).to eq("failed")
         expect(draft.error_message).to include("description_es")
+      end
+    end
+
+    context "when OpenAI returns an unstructured description" do
+      let(:openai_response) do
+        {
+          "choices" => [
+            {
+              "message" => {
+                "content" => {
+                  "product_name" => "067 Toyota Hilux",
+                  "description_es" => "Réplica a escala 1:64 del Toyota Hilux fabricada por Tomica en un solo párrafo sin bloques ni viñetas.",
+                  "highlights" => ["Modelo numerado #067"],
+                  "attributes" => { "color" => "Blanco" },
+                  "seo_keywords" => ["tomica"],
+                  "warnings" => [],
+                  "confidence_score" => 0.8
+                }.to_json
+              }
+            }
+          ],
+          "usage" => {}
+        }
+      end
+
+      it "marks draft as failed with structure error" do
+        expect { service.call }.to raise_error(Products::Enrichment::GenerateDraftService::GenerationError)
+        draft.reload
+        expect(draft.status).to eq("failed")
+        expect(draft.error_message).to include("structured sections")
       end
     end
 
