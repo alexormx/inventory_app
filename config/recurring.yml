@@ -10,6 +10,17 @@
 
 production:
   # Sitemap served dynamically from /sitemap.xml
+  suppliers_hlj_weekly_discovery:
+    class: Suppliers::Hlj::WeeklyDiscoveryJob
+    schedule: "0 6 * * 1"
+
+  suppliers_takara_tomy_mall_weekly_backfill:
+    class: Suppliers::TakaraTomyMall::WeeklyBackfillJob
+    schedule: "30 6 * * 1"
+
+  suppliers_tomica_fandom_weekly_backfill:
+    class: Suppliers::TomicaFandom::WeeklyBackfillJob
+    schedule: "0 7 * * 1"
 
 development:
   # No recurring sitemap generation

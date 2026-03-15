@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_03_14_193525) do
+ActiveRecord::Schema[8.0].define(version: 2026_03_15_001000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -565,6 +565,86 @@ ActiveRecord::Schema[8.0].define(version: 2026_03_14_193525) do
     t.index ["key"], name: "index_site_settings_on_key", unique: true
   end
 
+  create_table "supplier_catalog_items", force: :cascade do |t|
+    t.string "source_key", default: "hlj", null: false
+    t.string "external_sku", null: false
+    t.string "barcode"
+    t.string "supplier_product_code"
+    t.bigint "product_id"
+    t.string "canonical_name", null: false
+    t.string "canonical_brand"
+    t.string "canonical_category"
+    t.string "canonical_series"
+    t.string "canonical_item_type"
+    t.date "canonical_release_date"
+    t.decimal "canonical_price", precision: 10, scale: 2
+    t.string "currency", default: "MXN", null: false
+    t.string "canonical_status"
+    t.string "source_url"
+    t.string "main_image_url"
+    t.text "image_urls", default: "[]", null: false
+    t.text "description_raw"
+    t.text "details_payload", default: "{}", null: false
+    t.text "raw_payload", default: "{}", null: false
+    t.string "content_checksum"
+    t.boolean "needs_review", default: false, null: false
+    t.datetime "last_seen_at"
+    t.datetime "last_status_change_at"
+    t.datetime "last_full_sync_at"
+    t.datetime "source_last_synced_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["barcode"], name: "index_supplier_catalog_items_on_barcode"
+    t.index ["canonical_status"], name: "index_supplier_catalog_items_on_canonical_status"
+    t.index ["last_seen_at"], name: "index_supplier_catalog_items_on_last_seen_at"
+    t.index ["product_id"], name: "index_supplier_catalog_items_on_product_id"
+    t.index ["source_key", "external_sku"], name: "idx_supplier_catalog_items_source_sku", unique: true
+  end
+
+  create_table "supplier_catalog_sources", force: :cascade do |t|
+    t.bigint "supplier_catalog_item_id", null: false
+    t.string "source", null: false
+    t.string "external_id"
+    t.string "source_url"
+    t.string "fetch_status", default: "pending", null: false
+    t.integer "last_http_status"
+    t.text "last_error_message"
+    t.text "image_urls", default: "[]", null: false
+    t.text "normalized_payload", default: "{}", null: false
+    t.text "raw_payload", default: "{}", null: false
+    t.text "metadata", default: "{}", null: false
+    t.string "content_checksum"
+    t.datetime "last_seen_at"
+    t.datetime "last_changed_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["external_id"], name: "index_supplier_catalog_sources_on_external_id"
+    t.index ["last_seen_at"], name: "index_supplier_catalog_sources_on_last_seen_at"
+    t.index ["supplier_catalog_item_id", "source"], name: "idx_supplier_catalog_sources_item_source", unique: true
+    t.index ["supplier_catalog_item_id"], name: "index_supplier_catalog_sources_on_supplier_catalog_item_id"
+  end
+
+  create_table "supplier_sync_runs", force: :cascade do |t|
+    t.string "source", null: false
+    t.string "mode", null: false
+    t.string "status", default: "queued", null: false
+    t.bigint "supplier_catalog_item_id"
+    t.integer "processed_count", default: 0, null: false
+    t.integer "created_count", default: 0, null: false
+    t.integer "updated_count", default: 0, null: false
+    t.integer "skipped_count", default: 0, null: false
+    t.integer "error_count", default: 0, null: false
+    t.datetime "started_at"
+    t.datetime "finished_at"
+    t.text "metadata", default: "{}", null: false
+    t.text "error_samples", default: "[]", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["source", "mode", "created_at"], name: "idx_supplier_sync_runs_source_mode_created"
+    t.index ["status"], name: "index_supplier_sync_runs_on_status"
+    t.index ["supplier_catalog_item_id"], name: "index_supplier_sync_runs_on_supplier_catalog_item_id"
+  end
+
   create_table "system_variables", force: :cascade do |t|
     t.string "name", null: false
     t.string "value"
@@ -656,5 +736,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_03_14_193525) do
   add_foreign_key "sale_orders", "users"
   add_foreign_key "shipments", "sale_orders"
   add_foreign_key "shipping_addresses", "users"
+  add_foreign_key "supplier_catalog_items", "products"
+  add_foreign_key "supplier_catalog_sources", "supplier_catalog_items"
+  add_foreign_key "supplier_sync_runs", "supplier_catalog_items"
   add_foreign_key "visitor_logs", "users"
 end

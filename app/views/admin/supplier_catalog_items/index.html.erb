@@ -1,0 +1,128 @@
+<div class="admin-page-header d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+  <div>
+    <p class="admin-page-eyebrow mb-1">Proveedor</p>
+    <h2 class="mb-0 d-flex align-items-center gap-2"><i class="fa-solid fa-cloud-arrow-down"></i> Catálogo proveedor</h2>
+  </div>
+  <div class="d-flex gap-2">
+    <%= button_to run_discovery_admin_supplier_catalog_items_path, method: :post, class: "btn btn-primary" do %>
+      <i class="fa-solid fa-arrows-rotate me-1"></i> Ejecutar descubrimiento HLJ
+    <% end %>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-3">
+    <div class="card border-0 shadow-sm"><div class="card-body py-3"><small class="text-muted d-block">Total</small><span class="fs-4 fw-bold"><%= @counts[:total] %></span></div></div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="card border-0 shadow-sm"><div class="card-body py-3"><small class="text-muted d-block">Vinculados</small><span class="fs-4 fw-bold text-success"><%= @counts[:linked] %></span></div></div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="card border-0 shadow-sm"><div class="card-body py-3"><small class="text-muted d-block">Sin vincular</small><span class="fs-4 fw-bold text-warning"><%= @counts[:unlinked] %></span></div></div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="card border-0 shadow-sm"><div class="card-body py-3"><small class="text-muted d-block">Future release</small><span class="fs-4 fw-bold text-primary"><%= @counts[:future_release] %></span></div></div>
+  </div>
+</div>
+
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-body">
+    <%= form_with url: admin_supplier_catalog_items_path, method: :get, local: true, class: "row g-3 align-items-end" do |f| %>
+      <div class="col-12 col-md-5">
+        <%= f.label :q, "Buscar", class: "form-label" %>
+        <%= f.text_field :q, value: @q, class: "form-control", placeholder: "Nombre, SKU externo o código de barras" %>
+      </div>
+      <div class="col-6 col-md-3">
+        <%= f.label :status, "Status HLJ", class: "form-label" %>
+        <%= f.select :status, options_for_select([["Todos", ""]] + @status_options.map { |status| [status.to_s.humanize, status] }, @status), {}, class: "form-select" %>
+      </div>
+      <div class="col-6 col-md-2">
+        <%= f.label :linked, "Vinculado", class: "form-label" %>
+        <%= f.select :linked, options_for_select([["Todos", ""], ["Sí", "yes"], ["No", "no"]], @link_filter), {}, class: "form-select" %>
+      </div>
+      <div class="col-12 col-md-2 d-grid">
+        <%= f.submit "Filtrar", class: "btn btn-outline-primary" %>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-12 col-xl-9">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white"><h5 class="mb-0">Artículos detectados</h5></div>
+      <div class="card-body p-0">
+        <% if @supplier_catalog_items.any? %>
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Artículo</th>
+                  <th>Status</th>
+                  <th>Precio</th>
+                  <th>Release</th>
+                  <th>Producto</th>
+                  <th class="text-end"></th>
+                </tr>
+              </thead>
+              <tbody>
+                <% @supplier_catalog_items.each do |item| %>
+                  <tr>
+                    <td>
+                      <div class="fw-semibold"><%= item.canonical_name %></div>
+                      <div class="small text-muted"><%= item.external_sku %> · <%= item.barcode.presence || "Sin barcode" %></div>
+                    </td>
+                    <td>
+                      <span class="badge <%= item.future_release? ? 'bg-primary' : item.canonical_status == 'in_stock' ? 'bg-success' : 'bg-secondary' %>"><%= item.canonical_status.presence || 'unknown' %></span>
+                    </td>
+                    <td><%= item.canonical_price ? number_to_currency(item.canonical_price) : "—" %></td>
+                    <td><%= item.canonical_release_date&.strftime("%Y-%m-%d") || "—" %></td>
+                    <td>
+                      <% if item.product.present? %>
+                        <%= link_to item.product.product_name, admin_product_path(item.product), class: "text-decoration-none" %>
+                      <% else %>
+                        <span class="text-muted">Sin vincular</span>
+                      <% end %>
+                    </td>
+                    <td class="text-end">
+                      <%= link_to admin_supplier_catalog_item_path(item), class: "btn btn-outline-primary btn-sm" do %>
+                        <i class="fa-solid fa-eye"></i> Ver
+                      <% end %>
+                    </td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+          <div class="p-3"><%= paginate @supplier_catalog_items %></div>
+        <% else %>
+          <div class="text-center text-muted py-5">
+            <i class="fa-solid fa-inbox fa-3x mb-3 d-block"></i>
+            <p class="mb-0">No hay artículos en catálogo proveedor.</p>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12 col-xl-3">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white"><h5 class="mb-0">Corridas recientes</h5></div>
+      <div class="card-body">
+        <% if @recent_runs.any? %>
+          <div class="vstack gap-3">
+            <% @recent_runs.each do |run| %>
+              <div class="border rounded p-2">
+                <div class="fw-semibold small"><%= run.source %> · <%= run.mode %></div>
+                <div class="small text-muted"><%= run.status %> · <%= l(run.created_at, format: :short) %></div>
+                <div class="small text-muted">Procesados: <%= run.processed_count %> · Errores: <%= run.error_count %></div>
+              </div>
+            <% end %>
+          </div>
+        <% else %>
+          <p class="text-muted mb-0">Aún no hay corridas registradas.</p>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>

@@ -140,6 +140,19 @@ Rails.application.routes.draw do
     # Category Attribute Templates
     resources :category_attribute_templates, except: [:show]
 
+    resources :supplier_catalog_items, only: [:index, :show] do
+      member do
+        post :create_product
+        post :link_product
+        post :sync_product
+        post :refresh_hlj
+        post :refresh_takara_tomy_mall
+      end
+      collection do
+        post :run_discovery
+      end
+    end
+
     # Deprecated standalone User Management (migrated to unified Users tabs)
     # resources :customers
     # resources :suppliers, only: [:index, :new, :create, :edit, :update]

@@ -15,6 +15,7 @@ class Product < ApplicationRecord
   has_many :sale_order_items
   has_many :sale_orders, through: :sale_order_items
   has_many :description_drafts, class_name: "ProductDescriptionDraft", dependent: :destroy
+  has_one :supplier_catalog_item, dependent: :nullify
 
   # --- Financial & status defaults ---
   after_initialize :set_default_financial_fields, if: :new_record?
@@ -76,6 +77,10 @@ class Product < ApplicationRecord
 
   def attribute_template
     CategoryAttributeTemplate.for_category(category)
+  end
+
+  def supplier_catalog_linked?
+    supplier_catalog_item.present?
   end
 
   # Normalize at assignment time: strip/downcase, default blank to 'draft'.

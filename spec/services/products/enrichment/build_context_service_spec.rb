@@ -50,4 +50,28 @@ RSpec.describe Products::Enrichment::BuildContextService do
       expect(context[:template]).to be_nil
     end
   end
+
+  context "when the product is linked to supplier catalog data" do
+    let!(:catalog_item) do
+      create(:supplier_catalog_item, product: product, external_sku: product.product_sku, barcode: product.barcode,
+                                    supplier_product_code: product.supplier_product_code)
+    end
+    let!(:hlj_source) do
+      create(:supplier_catalog_source, supplier_catalog_item: catalog_item, source: "hlj",
+                                       normalized_payload: { "stock_status_normalized" => "future_release" })
+    end
+    let!(:fandom_source) do
+      create(:supplier_catalog_source, supplier_catalog_item: catalog_item, source: "tomica_fandom",
+                                       normalized_payload: { "scale" => "1/64", "trivia" => ["5th vehicle assigned number 43"] })
+    end
+
+    it "includes supplier context" do
+      supplier_context = context[:supplier_context]
+
+      expect(supplier_context).to be_present
+      expect(supplier_context[:catalog_item][:external_sku]).to eq(product.product_sku)
+      expect(supplier_context[:catalog_item][:barcode]).to eq(product.barcode)
+      expect(supplier_context[:sources].map { |source| source[:source] }).to contain_exactly("hlj", "tomica_fandom")
+    end
+  end
 end

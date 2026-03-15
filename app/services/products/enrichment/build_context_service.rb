@@ -24,6 +24,7 @@ module Products
           supplier_code:     @product.supplier_product_code,
           launch_date:       @product.launch_date&.iso8601,
           discontinued:      @product.discontinued?,
+          supplier_context:  build_supplier_context,
           template:          build_template_context
         }
       end
@@ -49,6 +50,10 @@ module Products
           keys:        template.attribute_keys,
           required:    template.required_keys
         }
+      end
+
+      def build_supplier_context
+        Suppliers::Catalog::SupplierContextService.new(@product).call
       end
     end
   end

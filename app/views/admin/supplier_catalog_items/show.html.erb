@@ -1,0 +1,135 @@
+<div class="admin-page-header d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+  <div>
+    <p class="admin-page-eyebrow mb-1">Proveedor</p>
+    <h2 class="mb-0 d-flex align-items-center gap-2"><i class="fa-solid fa-boxes-stacked"></i> <%= @supplier_catalog_item.canonical_name %></h2>
+    <div class="text-muted small mt-1"><%= @supplier_catalog_item.external_sku %> · <%= @supplier_catalog_item.source_key.upcase %></div>
+  </div>
+  <div class="d-flex flex-wrap gap-2">
+    <%= button_to refresh_hlj_admin_supplier_catalog_item_path(@supplier_catalog_item), method: :post, class: "btn btn-outline-primary" do %>
+      <i class="fa-solid fa-arrows-rotate me-1"></i> Refrescar HLJ
+    <% end %>
+
+    <% if @supplier_catalog_item.barcode.present? %>
+      <%= button_to refresh_takara_tomy_mall_admin_supplier_catalog_item_path(@supplier_catalog_item), method: :post, class: "btn btn-outline-secondary" do %>
+        <i class="fa-solid fa-camera-retro me-1"></i> Refrescar Takara
+      <% end %>
+    <% end %>
+
+    <% if @supplier_catalog_item.product.present? %>
+      <%= button_to sync_product_admin_supplier_catalog_item_path(@supplier_catalog_item), method: :post, class: "btn btn-success" do %>
+        <i class="fa-solid fa-link me-1"></i> Sincronizar producto
+      <% end %>
+    <% else %>
+      <%= button_to create_product_admin_supplier_catalog_item_path(@supplier_catalog_item), method: :post, class: "btn btn-success" do %>
+        <i class="fa-solid fa-plus me-1"></i> Generar producto
+      <% end %>
+    <% end %>
+  </div>
+</div>
+
+<div class="row g-4 mb-4">
+  <div class="col-12 col-lg-8">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-white"><h5 class="mb-0">Resumen canónico</h5></div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-6 col-md-4"><small class="text-muted d-block">Status</small><span class="badge <%= @supplier_catalog_item.future_release? ? 'bg-primary' : @supplier_catalog_item.canonical_status == 'in_stock' ? 'bg-success' : 'bg-secondary' %>"><%= @supplier_catalog_item.canonical_status.presence || 'unknown' %></span></div>
+          <div class="col-6 col-md-4"><small class="text-muted d-block">Precio</small><strong><%= @supplier_catalog_item.canonical_price ? number_to_currency(@supplier_catalog_item.canonical_price) : "—" %></strong></div>
+          <div class="col-6 col-md-4"><small class="text-muted d-block">Release</small><strong><%= @supplier_catalog_item.canonical_release_date&.strftime("%Y-%m-%d") || "—" %></strong></div>
+          <div class="col-6 col-md-4"><small class="text-muted d-block">Marca</small><strong><%= @supplier_catalog_item.canonical_brand.presence || "—" %></strong></div>
+          <div class="col-6 col-md-4"><small class="text-muted d-block">Serie</small><strong><%= @supplier_catalog_item.canonical_series.presence || "—" %></strong></div>
+          <div class="col-6 col-md-4"><small class="text-muted d-block">Barcode</small><strong><%= @supplier_catalog_item.barcode.presence || "—" %></strong></div>
+          <div class="col-6 col-md-4"><small class="text-muted d-block">Review</small><strong><%= @supplier_catalog_item.needs_review? ? 'Sí' : 'No' %></strong></div>
+        </div>
+
+        <% if @supplier_catalog_item.description_raw.present? %>
+          <hr>
+          <h6>Descripción fuente</h6>
+          <p class="mb-0" style="white-space: pre-line;"><%= @supplier_catalog_item.description_raw %></p>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12 col-lg-4">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-white"><h5 class="mb-0">Vinculación</h5></div>
+      <div class="card-body">
+        <% if @supplier_catalog_item.product.present? %>
+          <p class="mb-2">Vinculado a:</p>
+          <%= link_to @supplier_catalog_item.product.product_name, admin_product_path(@supplier_catalog_item.product), class: "fw-semibold text-decoration-none" %>
+          <div class="small text-muted mb-3"><%= @supplier_catalog_item.product.product_sku %></div>
+        <% else %>
+          <p class="text-muted">Aún no hay producto vinculado.</p>
+        <% end %>
+
+        <%= form_with url: link_product_admin_supplier_catalog_item_path(@supplier_catalog_item), method: :post, local: true do |f| %>
+          <div class="mb-3">
+            <%= f.label :product_identifier, "Vincular con producto existente", class: "form-label" %>
+            <%= f.text_field :product_identifier, class: "form-control", placeholder: "ID, slug, SKU o código WA" %>
+            <small class="text-muted">Puedes usar ID, slug, SKU o código WA.</small>
+          </div>
+          <div class="d-grid">
+            <%= f.submit "Vincular producto", class: "btn btn-outline-secondary" %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-12 col-xl-7">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white"><h5 class="mb-0">Fuentes registradas</h5></div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-sm table-hover mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Fuente</th>
+                <th>Estado</th>
+                <th>Última vez vista</th>
+                <th>URL</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @sources.each do |source| %>
+                <tr>
+                  <td><strong><%= source.source %></strong></td>
+                  <td><span class="badge <%= source.fetch_status == 'ok' ? 'bg-success' : 'bg-secondary' %>"><%= source.fetch_status %></span></td>
+                  <td><%= source.last_seen_at ? l(source.last_seen_at, format: :short) : "—" %></td>
+                  <td>
+                    <% if source.source_url.present? %>
+                      <%= link_to "Abrir", source.source_url, target: "_blank", rel: "noopener", class: "btn btn-outline-primary btn-sm" %>
+                    <% else %>
+                      <span class="text-muted">—</span>
+                    <% end %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12 col-xl-5">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white"><h5 class="mb-0">Detalles normalizados</h5></div>
+      <div class="card-body">
+        <% if @supplier_catalog_item.details_payload.present? %>
+          <dl class="row mb-0">
+            <% @supplier_catalog_item.details_payload.each do |key, value| %>
+              <dt class="col-5 text-muted"><%= key.to_s.humanize %></dt>
+              <dd class="col-7"><%= value.is_a?(Array) ? value.join(', ') : value %></dd>
+            <% end %>
+          </dl>
+        <% else %>
+          <p class="text-muted mb-0">No hay detalles normalizados aún.</p>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
