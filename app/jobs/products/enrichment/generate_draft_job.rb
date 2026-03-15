@@ -7,6 +7,11 @@ module Products
     class GenerateDraftJob < ApplicationJob
       queue_as :enrichment
 
+      # Rate-limit errors get more retries with longer waits
+      retry_on Products::Enrichment::GenerateDraftService::RateLimitError,
+               wait: :polynomially_longer,
+               attempts: 5
+
       retry_on Products::Enrichment::GenerateDraftService::GenerationError,
                wait: :polynomially_longer,
                attempts: 3

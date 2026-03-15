@@ -10,8 +10,12 @@ module Products
     # 5. Persist results in ProductDescriptionDraft
     class GenerateDraftService
       class GenerationError < StandardError; end
+      class RateLimitError < GenerationError; end
 
       DEFAULT_MODEL = "gpt-4o-mini"
+
+      MAX_RETRIES     = 3
+      BASE_WAIT_SECS  = 5
 
       # Cost per 1M tokens (USD cents) — gpt-4o-mini pricing as of 2025
       COST_INPUT_PER_M  = 15   # $0.15 / 1M input tokens  → 15 cents
@@ -56,6 +60,13 @@ module Products
         )
 
         @draft
+      rescue RateLimitError => e
+        @draft.update!(
+          status:        :failed,
+          error_message: "#{e.class}: #{e.message}",
+          generated_at:  Time.current
+        )
+        raise # re-raise as-is so job retries with longer waits
       rescue StandardError => e
         @draft.update!(
           status:        :failed,
@@ -69,19 +80,31 @@ module Products
 
       def call_openai(prompt)
         client = OpenAI::Client.new
+        retries = 0
 
-        client.chat(
-          parameters: {
-            model:       @model,
-            messages:    [
-              { role: "system", content: prompt[:system] },
-              { role: "user",   content: prompt[:user] }
-            ],
-            temperature:     0.4,
-            response_format: { type: "json_object" },
-            max_tokens:      2000
-          }
-        )
+        begin
+          client.chat(
+            parameters: {
+              model:       @model,
+              messages:    [
+                { role: "system", content: prompt[:system] },
+                { role: "user",   content: prompt[:user] }
+              ],
+              temperature:     0.4,
+              response_format: { type: "json_object" },
+              max_tokens:      2000
+            }
+          )
+        rescue Faraday::TooManyRequestsError => e
+          retries += 1
+          if retries <= MAX_RETRIES
+            wait_time = BASE_WAIT_SECS * (2**(retries - 1)) # 5s, 10s, 20s
+            Rails.logger.warn("[Enrichment] OpenAI 429 rate limit for product #{@product.id}, retry #{retries}/#{MAX_RETRIES} in #{wait_time}s")
+            sleep(wait_time)
+            retry
+          end
+          raise RateLimitError, "OpenAI rate limit exceeded after #{MAX_RETRIES} retries: #{e.message}"
+        end
       end
 
       def parse_response(response)

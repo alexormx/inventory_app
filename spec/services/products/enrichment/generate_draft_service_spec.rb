@@ -178,5 +178,50 @@ RSpec.describe Products::Enrichment::GenerateDraftService do
         expect(draft.error_message).to include("timeout")
       end
     end
+
+    context "when OpenAI returns 429 rate limit" do
+      before do
+        stub_const("Products::Enrichment::GenerateDraftService::MAX_RETRIES", 1)
+        stub_const("Products::Enrichment::GenerateDraftService::BASE_WAIT_SECS", 0)
+        allow(openai_client).to receive(:chat).and_raise(
+          Faraday::TooManyRequestsError.new(status: 429)
+        )
+      end
+
+      it "raises RateLimitError after exhausting retries" do
+        expect { service.call }.to raise_error(Products::Enrichment::GenerateDraftService::RateLimitError)
+        draft.reload
+        expect(draft.status).to eq("failed")
+        expect(draft.error_message).to include("rate limit")
+      end
+
+      it "retries before failing" do
+        expect { service.call }.to raise_error(Products::Enrichment::GenerateDraftService::RateLimitError)
+        # 1 initial + 1 retry = 2 calls
+        expect(openai_client).to have_received(:chat).twice
+      end
+    end
+
+    context "when OpenAI 429 resolves on retry" do
+      before do
+        stub_const("Products::Enrichment::GenerateDraftService::BASE_WAIT_SECS", 0)
+        call_count = 0
+        allow(openai_client).to receive(:chat) do
+          call_count += 1
+          if call_count == 1
+            raise Faraday::TooManyRequestsError.new(status: 429)
+          else
+            openai_response
+          end
+        end
+      end
+
+      it "succeeds after transient 429" do
+        service.call
+        draft.reload
+        expect(draft.status).to eq("draft_generated")
+        expect(openai_client).to have_received(:chat).twice
+      end
+    end
   end
 end
