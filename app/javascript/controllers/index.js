@@ -16,6 +16,7 @@ import KvEditorController from "./kv_editor_controller"
 import ModalController from "./modal_controller"
 import NavbarController from "./navbar_controller"
 import PaymentModalController from "./payment_modal_controller"
+import PollingFrameController from "./polling_frame_controller"
 import ProductMetaController from "./product_meta_controller"
 import ShipmentGuardController from "./shipment_guard_controller"
 import SimpleAccordionController from "./simple_accordion_controller"
@@ -48,6 +49,7 @@ application.register("kv-editor", KvEditorController)
 application.register("modal", ModalController)
 application.register("navbar", NavbarController)
 application.register("payment-modal", PaymentModalController)
+application.register("polling-frame", PollingFrameController)
 application.register("product-meta", ProductMetaController)
 application.register("shipment-guard", ShipmentGuardController)
 application.register("simple-accordion", SimpleAccordionController)

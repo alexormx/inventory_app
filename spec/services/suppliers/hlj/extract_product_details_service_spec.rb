@@ -9,6 +9,10 @@ RSpec.describe Suppliers::Hlj::ExtractProductDetailsService do
   let(:document) do
     Nokogiri::HTML(<<~HTML)
       <html>
+        <head>
+          <meta property="og:title" content="No.43 Lamborghini Temerario">
+          <meta property="og:image" content="//www.hlj.com/productimages/tkt/tkt95078_0.jpg">
+        </head>
         <body>
           <h1>No.43 Lamborghini Temerario</h1>
           <div class="product-stock">In Stock</div>
@@ -48,8 +52,27 @@ RSpec.describe Suppliers::Hlj::ExtractProductDetailsService do
     expect(payload[:canonical_release_date]).to eq(Date.new(2026, 2, 21))
     expect(payload[:canonical_price]).to eq(74.29.to_d)
     expect(payload[:image_urls].size).to eq(2)
+    expect(payload[:image_urls].first).to start_with("https://")
     expect(payload[:normalized_payload]["stock_status_normalized"]).to eq("in_stock")
     expect(payload[:normalized_payload]["item_size"]).to eq("8.2 x 4 x 3 cm")
     expect(payload[:normalized_payload]["weight"]).to eq("50g")
+  end
+
+  it "ignores warehouse warning text as a product title" do
+    warning_doc = Nokogiri::HTML(<<~HTML)
+      <html>
+        <head>
+          <meta property="og:title" content="Kirby Play Wit Waddle Dee 3D Pouch">
+        </head>
+        <body>
+          <h1>After click "Buy Now", the item are placed in PRIVATE WAREHOUSE.</h1>
+          <p class="price">$13.48 MXN</p>
+        </body>
+      </html>
+    HTML
+
+    payload = described_class.new(warning_doc, source_url: source_url).call
+
+    expect(payload[:name]).to eq("Kirby Play Wit Waddle Dee 3D Pouch")
   end
 end

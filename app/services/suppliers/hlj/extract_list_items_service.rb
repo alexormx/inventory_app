@@ -23,7 +23,7 @@ module Suppliers
             name: name,
             source_url: absolute_url(href),
             listing_price_text: block.at_css(".price")&.text&.gsub(/\s+/, " ")&.strip,
-            listing_image_url: block.at_css("img")&.[]("src")
+            listing_image_url: absolute_url(block.at_css("img")&.[]("src"))
           }
         end
       end
@@ -31,6 +31,8 @@ module Suppliers
       private
 
       def absolute_url(href)
+        return nil if href.blank?
+        return "https:#{href}" if href.start_with?("//")
         return href if href.start_with?("http://", "https://")
 
         "#{BASE_URL}#{href}"

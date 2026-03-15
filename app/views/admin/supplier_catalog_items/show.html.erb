@@ -38,6 +38,17 @@
     <div class="card border-0 shadow-sm h-100">
       <div class="card-header bg-white"><h5 class="mb-0">Resumen canónico</h5></div>
       <div class="card-body">
+        <% if @supplier_catalog_item.main_image_url.present? %>
+          <div class="mb-4 d-flex flex-wrap gap-3 align-items-start">
+            <img src="<%= @supplier_catalog_item.main_image_url %>" alt="<%= @supplier_catalog_item.canonical_name %>" class="rounded border" style="width: 180px; max-width: 100%; height: auto;">
+            <div class="small text-muted">
+              <div><strong>Imagen principal</strong></div>
+              <div style="word-break: break-all;"><%= @supplier_catalog_item.main_image_url %></div>
+              <div class="mt-2">Total de imágenes detectadas: <strong><%= Array(@supplier_catalog_item.image_urls).size %></strong></div>
+            </div>
+          </div>
+        <% end %>
+
         <div class="row g-3">
           <div class="col-6 col-md-4"><small class="text-muted d-block">Status</small><span class="badge <%= @supplier_catalog_item.future_release? ? 'bg-primary' : @supplier_catalog_item.canonical_status == 'in_stock' ? 'bg-success' : 'bg-secondary' %>"><%= @supplier_catalog_item.canonical_status.presence || 'unknown' %></span></div>
           <div class="col-6 col-md-4"><small class="text-muted d-block">Precio</small><strong><%= @supplier_catalog_item.canonical_price ? number_to_currency(@supplier_catalog_item.canonical_price) : "—" %></strong></div>
@@ -52,6 +63,18 @@
           <hr>
           <h6>Descripción fuente</h6>
           <p class="mb-0" style="white-space: pre-line;"><%= @supplier_catalog_item.description_raw %></p>
+        <% end %>
+
+        <% if Array(@supplier_catalog_item.image_urls).any? %>
+          <hr>
+          <h6>Galería detectada</h6>
+          <div class="d-flex flex-wrap gap-3">
+            <% @supplier_catalog_item.image_urls.each do |image_url| %>
+              <a href="<%= image_url %>" target="_blank" rel="noopener" class="text-decoration-none">
+                <img src="<%= image_url %>" alt="Imagen del artículo" class="rounded border" style="width: 96px; height: 96px; object-fit: cover;">
+              </a>
+            <% end %>
+          </div>
         <% end %>
       </div>
     </div>
@@ -95,6 +118,7 @@
               <tr>
                 <th>Fuente</th>
                 <th>Estado</th>
+                <th>Fotos</th>
                 <th>Última vez vista</th>
                 <th>URL</th>
               </tr>
@@ -104,6 +128,7 @@
                 <tr>
                   <td><strong><%= source.source %></strong></td>
                   <td><span class="badge <%= source.fetch_status == 'ok' ? 'bg-success' : 'bg-secondary' %>"><%= source.fetch_status %></span></td>
+                  <td><%= Array(source.image_urls).size %></td>
                   <td><%= source.last_seen_at ? l(source.last_seen_at, format: :short) : "—" %></td>
                   <td>
                     <% if source.source_url.present? %>

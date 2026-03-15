@@ -1,0 +1,30 @@
+<% if run.present? %>
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+      <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
+        <div>
+          <h5 class="mb-1">Progreso del descubrimiento HLJ</h5>
+          <div class="text-muted small">
+            Estado: <strong><%= run.status %></strong>
+            · Inició <%= l(run.started_at || run.created_at, format: :short) %>
+            <% if run.stop_requested? %>
+              · Detención solicitada
+            <% end %>
+          </div>
+        </div>
+        <div class="text-end small text-muted">
+          <div><%= run.progress_label %></div>
+          <div>Creados <%= run.created_count %> · Actualizados <%= run.updated_count %> · Errores <%= run.error_count %></div>
+        </div>
+      </div>
+
+      <div class="progress" role="progressbar" aria-valuenow="<%= run.progress_percent %>" aria-valuemin="0" aria-valuemax="100" style="height: 18px;">
+        <div class="progress-bar <%= run.progress_state_class %>" style="width: <%= run.progress_percent %>%">
+          <%= run.progress_percent %>%
+        </div>
+      </div>
+
+      <div class="small text-muted mt-2"><%= run.progress_description %></div>
+    </div>
+  </div>
+<% end %>

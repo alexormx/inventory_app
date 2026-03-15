@@ -3,6 +3,13 @@
 module Suppliers
   module Hlj
     class ExtractProductDetailsService
+      INVALID_TEXT_PATTERNS = [
+        /\AAfter click "Buy Now"/i,
+        /\AHuman Verification\z/i,
+        /JavaScript is disabled/i,
+        /captcha/i
+      ].freeze
+
       def initialize(document, source_url:)
         @document = document
         @source_url = source_url
@@ -40,13 +47,25 @@ module Suppliers
       private
 
       def product_name(details)
-        title = clean_text(@document.at_css("h1")&.text)
-        title.presence || details["name"]
+        candidates = [
+          meta_content("og:title"),
+          meta_name_content("twitter:title"),
+          @document.at_css("h1")&.text,
+          @document.at_css(".product-item-name, .product-name, .product-title")&.text,
+          details["name"]
+        ]
+
+        candidates.map { |value| clean_text(value) }.find { |value| valid_text?(value) }
       end
 
       def extract_description
-        node = @document.at_css("h3 + p, h2 + p, .product-description, .description")
-        clean_text(node&.text)
+        candidates = [
+          @document.at_css(".product-description, .description")&.text,
+          @document.at_css("h3 + p, h2 + p")&.text,
+          meta_name_content("description")
+        ]
+
+        candidates.map { |value| clean_text(value) }.find { |value| valid_text?(value) }
       end
 
       def extract_details
@@ -60,7 +79,11 @@ module Suppliers
       end
 
       def extract_image_urls
-        @document.css(".fotorama a[href]").map { |node| node["href"] }.compact_blank.uniq
+        images = @document.css(".fotorama a[href], a[href*='productimages'], img[src*='productimages'], meta[property='og:image']").filter_map do |node|
+          node["href"] || node["src"] || node["content"]
+        end
+
+        images.map { |url| normalize_url(url) }.compact_blank.uniq
       end
 
       def availability_message
@@ -117,6 +140,25 @@ module Suppliers
 
       def normalize_key(key)
         key.downcase.gsub(/[()]/, "").gsub(/[^a-z0-9]+/, "_").gsub(/_+/, "_").sub(/_$/, "")
+      end
+
+      def meta_content(property)
+        @document.at_css(%(meta[property="#{property}"]))&.[]("content")
+      end
+
+      def meta_name_content(name)
+        @document.at_css(%(meta[name="#{name}"]))&.[]("content")
+      end
+
+      def normalize_url(url)
+        return nil if url.blank?
+        return "https:#{url}" if url.start_with?("//")
+
+        url
+      end
+
+      def valid_text?(value)
+        value.present? && INVALID_TEXT_PATTERNS.none? { |pattern| value.match?(pattern) }
       end
 
       def clean_text(text)

@@ -11,6 +11,7 @@ RSpec.describe Suppliers::Hlj::DiscoveryService do
         <ul class="pages"><li>1</li><li>2</li><li>Next</li></ul>
         <div class="search-widget-block">
           <a href="/no-43-lamborghini-temerario-tkt95078"></a>
+          <img src="//www.hlj.com/productimages/tkt/tkt95078_0.jpg">
           <div class="product-item-name">No.43 Lamborghini Temerario</div>
           <div class="price"><span id="TKT95078_price"></span>$74.29 MXN</div>
         </div>
@@ -35,8 +36,10 @@ RSpec.describe Suppliers::Hlj::DiscoveryService do
   end
 
   before do
+    allow(Kernel).to receive(:sleep)
+
     allow(connection).to receive(:get) do |url, &_block|
-      body = url.include?("Page=") || url == described_class::SEARCH_URL ? list_html : detail_html
+      body = url.start_with?(described_class::SEARCH_URL) ? list_html : detail_html
       instance_double(Faraday::Response, success?: true, status: 200, body: body)
     end
   end
@@ -55,5 +58,105 @@ RSpec.describe Suppliers::Hlj::DiscoveryService do
     expect(item.canonical_status).to eq("future_release")
     expect(run.status).to eq("completed")
     expect(run.processed_count).to eq(1)
+  end
+
+  it "falls back to the listing title when the detail page is blocked" do
+    allow(connection).to receive(:get) do |url, &_block|
+      body = if url.start_with?(described_class::SEARCH_URL)
+               list_html
+             else
+               <<~HTML
+                 <html>
+                   <head><title>Human Verification</title></head>
+                   <body><h1>JavaScript is disabled</h1></body>
+                 </html>
+               HTML
+             end
+      instance_double(Faraday::Response, success?: true, status: 200, body: body)
+    end
+
+    described_class.new(max_pages: 1, connection: connection).call
+
+    item = SupplierCatalogItem.last
+    expect(item.canonical_name).to eq("No.43 Lamborghini Temerario")
+    expect(item.main_image_url).to eq("https://www.hlj.com/productimages/tkt/tkt95078_0.jpg")
+  end
+
+  it "cancels the run when a stop is requested" do
+    run = create(:supplier_sync_run, source: "hlj", mode: "weekly_discovery", status: "queued")
+
+    allow(connection).to receive(:get) do |url, &_block|
+      if url.start_with?(described_class::SEARCH_URL)
+        run.start! if run.reload.status == "queued"
+        run.request_stop!
+        instance_double(Faraday::Response, success?: true, status: 200, body: list_html)
+      else
+        instance_double(Faraday::Response, success?: true, status: 200, body: detail_html)
+      end
+    end
+
+    described_class.new(max_pages: 1, connection: connection, run: run).call
+
+    expect(run.reload.status).to eq("cancelled")
+    expect(run.metadata["stop_requested"]).to be true
+    expect(run.metadata["cancelled_by_user"]).to be true
+    expect(SupplierCatalogItem.count).to eq(0)
+  end
+
+  it "stops after reaching the configured max_items" do
+    multi_list_html = <<~HTML
+      <html>
+        <ul class="pages"><li>1</li><li>1</li><li>Next</li></ul>
+        <div class="search-widget-block">
+          <a href="/item-1-tkt95078"></a>
+          <img src="//www.hlj.com/productimages/tkt/tkt95078_0.jpg">
+          <div class="product-item-name">No.43 Lamborghini Temerario</div>
+          <div class="price"><span id="TKT95078_price"></span>$74.29 MXN</div>
+        </div>
+        <div class="search-widget-block">
+          <a href="/item-2-tkt95079"></a>
+          <img src="//www.hlj.com/productimages/tkt/tkt95079_0.jpg">
+          <div class="product-item-name">No.44 Nissan GT-R</div>
+          <div class="price"><span id="TKT95079_price"></span>$70.00 MXN</div>
+        </div>
+      </html>
+    HTML
+
+    allow(connection).to receive(:get) do |url, &_block|
+      body = url.start_with?(described_class::SEARCH_URL) ? multi_list_html : detail_html
+      instance_double(Faraday::Response, success?: true, status: 200, body: body)
+    end
+
+    described_class.new(max_pages: 1, max_items: 1, fetch_detail: false, connection: connection).call
+
+    expect(SupplierCatalogItem.count).to eq(1)
+    expect(SupplierSyncRun.last.processed_count).to eq(1)
+  end
+
+  it "builds filtered HLJ listing URLs from discovery options" do
+    requested_urls = []
+
+    allow(connection).to receive(:get) do |url, &_block|
+      requested_urls << url
+      body = url.start_with?(described_class::SEARCH_URL) ? list_html : detail_html
+      instance_double(Faraday::Response, success?: true, status: 200, body: body)
+    end
+
+    described_class.new(
+      max_pages: 1,
+      word: "tomica",
+      makers: ["Takara Tomy", "Tomy", "Tomytec"],
+      genre_code: "Cars & Bikes",
+      fetch_detail: false,
+      connection: connection
+    ).call
+
+    listing_url = requested_urls.find { |url| url.start_with?(described_class::SEARCH_URL) }
+
+    expect(listing_url).to include("Word=tomica")
+    expect(listing_url).to include("Maker2=Takara+Tomy")
+    expect(listing_url).to include("Maker2=Tomy")
+    expect(listing_url).to include("Maker2=Tomytec")
+    expect(listing_url).to include("GenreCode2=Cars+%26+Bikes")
   end
 end
