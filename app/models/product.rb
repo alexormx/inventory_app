@@ -50,8 +50,15 @@ class Product < ApplicationRecord
   scope :publicly_visible, -> { active }
   scope :discontinued, -> { where(discontinued: true) }
   scope :in_production, -> { where(discontinued: false) }
-  scope :without_description, -> { where(description: [nil, ""]) }
-  scope :with_description, -> { where.not(description: [nil, ""]) }
+  # Placeholder descriptions that should be treated as "missing"
+  PLACEHOLDER_DESCRIPTIONS = ["Auto a escala"].freeze
+
+  scope :without_description, -> {
+    where(description: [nil, ""] + PLACEHOLDER_DESCRIPTIONS)
+  }
+  scope :with_description, -> {
+    where.not(description: [nil, ""] + PLACEHOLDER_DESCRIPTIONS)
+  }
 
   # --- Public helper for your current view (optional, can be removed later) ---
   def parsed_custom_attributes
@@ -64,7 +71,7 @@ class Product < ApplicationRecord
   end
 
   def description_missing?
-    description.blank?
+    description.blank? || self.class::PLACEHOLDER_DESCRIPTIONS.include?(description)
   end
 
   def attribute_template
