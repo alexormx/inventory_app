@@ -36,15 +36,15 @@ RSpec.describe Products::Enrichment::BuildPromptService do
     expect(result).to include(:system, :user, :version)
   end
 
-  it "uses prompt version v2" do
-    expect(result[:version]).to eq("v2")
+  it "uses prompt version v3" do
+    expect(result[:version]).to eq("v3")
   end
 
   it "includes system prompt with Spanish instructions" do
     expect(result[:system]).to include("español de México")
     expect(result[:system]).to include("REGLAS ESTRICTAS")
-    expect(result[:system]).to include("Resumen:")
-    expect(result[:system]).to include("Puntos destacados:")
+    expect(result[:system]).to include("2 o 3 párrafos")
+    expect(result[:system]).to include("La palabra \"null\" JAMÁS debe aparecer")
   end
 
   it "includes product data in user prompt" do
@@ -78,11 +78,12 @@ RSpec.describe Products::Enrichment::BuildPromptService do
     expect(result[:user]).to include("confidence_score")
   end
 
-  it "includes the required description structure instructions" do
+  it "includes natural description instructions" do
     user = result[:user]
-    expect(user).to include("FORMATO OBLIGATORIO DE LA DESCRIPCIÓN")
-    expect(user).to include("Ficha del modelo:")
-    expect(user).to include("Historia y contexto:")
+    expect(user).to include("ESTILO OBLIGATORIO DE LA DESCRIPCIÓN")
+    expect(user).to include("2 o 3 párrafos")
+    expect(user).to include("No uses encabezados visibles")
+    expect(user).to include("No escribas la palabra \"null\"")
     expect(user).to include("No uses HTML")
   end
 

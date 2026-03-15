@@ -12,6 +12,14 @@ module Products
       class GenerationError < StandardError; end
       class RateLimitError < GenerationError; end
 
+      BANNED_SECTION_HEADINGS = [
+        "Resumen:",
+        "Ficha del modelo:",
+        "Puntos destacados:",
+        "Historia y contexto:",
+        "Cierre:"
+      ].freeze
+
       DEFAULT_MODEL = "gpt-4o-mini"
 
       MAX_RETRIES     = 3
@@ -117,8 +125,10 @@ module Products
           raise GenerationError, "Invalid response structure: missing 'description_es'"
         end
 
-        unless structured_description?(parsed["description_es"])
-          raise GenerationError, "Invalid response structure: 'description_es' must include the required structured sections"
+        parsed["description_es"] = sanitize_description(parsed["description_es"])
+
+        unless natural_description?(parsed["description_es"])
+          raise GenerationError, "Invalid response structure: 'description_es' must be natural multi-paragraph copy without headings or null values"
         end
 
         parsed
@@ -126,23 +136,32 @@ module Products
         raise GenerationError, "Failed to parse OpenAI JSON response: #{e.message}"
       end
 
-      def structured_description?(description)
+      def sanitize_description(description)
+        description.to_s
+                   .gsub(/\r\n?/, "\n")
+                   .lines
+                   .map(&:rstrip)
+                   .join("\n")
+                   .gsub(/[ \t]+\n/, "\n")
+                   .gsub(/\n{3,}/, "\n\n")
+                   .strip
+      end
+
+      def natural_description?(description)
         return false if description.blank?
 
         normalized = description.to_s.strip
-        required_sections = [
-          "Resumen:",
-          "Ficha del modelo:",
-          "Puntos destacados:",
-          "Historia y contexto:",
-          "Cierre:"
-        ]
-
-        return false unless required_sections.all? { |section| normalized.include?(section) }
-        return false if normalized.length < 180
-
+        normalized_downcase = normalized.downcase
+        paragraphs = normalized.split(/\n{2,}/).map(&:strip).reject(&:blank?)
         bullet_count = normalized.scan(/^\s*[-•*]\s+/).size
-        bullet_count >= 3
+
+        return false if normalized.length < 140
+        return false if paragraphs.size < 2
+        return false if bullet_count >= 2
+        return false if BANNED_SECTION_HEADINGS.any? { |section| normalized_downcase.include?(section.downcase) }
+        return false if normalized_downcase.match?(/(^|[^a-záéíóúñ])null([^a-záéíóúñ]|$)/i)
+
+        true
       end
 
       def estimate_cost(usage)

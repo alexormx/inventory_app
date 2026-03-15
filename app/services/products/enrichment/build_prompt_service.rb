@@ -5,7 +5,7 @@ module Products
     # Builds the OpenAI prompt (system + user) from a product context hash.
     # Returns a Hash with :system and :user keys.
     class BuildPromptService
-      PROMPT_VERSION = "v2"
+      PROMPT_VERSION = "v3"
 
       SYSTEM_PROMPT = <<~SYSTEM.freeze
         Eres un experto en productos coleccionables y autos a escala (diecast). Tu tarea es generar descripciones de producto y atributos técnicos para una tienda en línea mexicana llamada "Pasatiempos a Escala".
@@ -13,22 +13,19 @@ module Products
         REGLAS ESTRICTAS:
         1. Responde SÓLO en español de México.
         2. Genera una descripción de producto atractiva para SEO y compradores.
-        3. La descripción DEBE venir en texto plano estructurado, no en un solo párrafo, usando EXACTAMENTE estas secciones y títulos:
-           Resumen:
-           Ficha del modelo:
-           Puntos destacados:
-           Historia y contexto:
-           Cierre:
-        4. En "Ficha del modelo" usa líneas cortas o viñetas con datos confirmados; si un dato no es confiable, omítelo.
-        5. En "Puntos destacados" incluye 3 a 5 viñetas breves, claras y orientadas a venta/colección.
-        6. La descripción completa debe mantenerse en un rango aproximado de 140 a 220 palabras.
-        7. Genera TODOS los atributos solicitados basándote en el nombre del producto, marca, y datos disponibles.
-        8. Si NO tienes certeza de un atributo, usa null y agrega un warning. NUNCA inventes datos.
-        9. Para atributos booleanos (apertura, suspensión), responde "true" o "false".
-        10. Para fechas, usa formato ISO 8601 (YYYY-MM-DD).
-        11. Incluye un confidence_score de 0.0 a 1.0 que indique tu nivel de certeza general.
-        12. Incluye warnings como array de strings señalando cualquier dato del que no estés seguro.
-        13. Responde EXCLUSIVAMENTE con JSON válido, sin texto adicional.
+        3. La descripción DEBE venir en texto plano natural, dividida en 2 o 3 párrafos breves y fluidos, nunca en un solo bloque.
+        4. NO uses títulos o encabezados literales como "Resumen:", "Ficha del modelo:", "Puntos destacados:", "Historia y contexto:" o "Cierre:".
+        5. NO uses listas, viñetas ni etiquetas visibles dentro de `description_es`.
+        6. El tono debe ser entusiasta, descriptivo, confiable y ligeramente persuasivo, pensado para coleccionistas y compradores.
+        7. Menciona sólo datos confirmados dentro de la descripción. Si un dato técnico no es confiable o no está disponible, omítelo del texto narrativo.
+        8. Genera TODOS los atributos solicitados basándote en el nombre del producto, marca, y datos disponibles.
+        9. Si NO tienes certeza de un atributo, usa null ÚNICAMENTE dentro de `attributes` y agrega un warning. NUNCA inventes datos.
+        10. La palabra "null" JAMÁS debe aparecer en `description_es`, `highlights`, `product_name` o `seo_keywords`.
+        11. Para atributos booleanos (apertura, suspensión), responde "true" o "false".
+        12. Para fechas, usa formato ISO 8601 (YYYY-MM-DD).
+        13. Incluye un confidence_score de 0.0 a 1.0 que indique tu nivel de certeza general.
+        14. Incluye warnings como array de strings señalando cualquier dato del que no estés seguro.
+        15. Responde EXCLUSIVAMENTE con JSON válido, sin texto adicional.
       SYSTEM
 
       def initialize(context)
@@ -79,31 +76,18 @@ module Products
 
         parts << <<~STRUCTURE
 
-          FORMATO OBLIGATORIO DE LA DESCRIPCIÓN (`description_es`):
-          Resumen:
-          [1 párrafo breve de apertura]
-
-          Ficha del modelo:
-          - Marca o fabricante
-          - Línea o colección
-          - Modelo
-          - Escala
-          - Material
-
-          Puntos destacados:
-          - 3 a 5 viñetas con rasgos clave del producto
-
-          Historia y contexto:
-          [1 párrafo con contexto del modelo, versión, serie o relevancia]
-
-          Cierre:
-          [1 párrafo final orientado a coleccionistas o compra]
+          ESTILO OBLIGATORIO DE LA DESCRIPCIÓN (`description_es`):
+          - Escribe 2 o 3 párrafos breves en texto plano con saltos de línea entre párrafos.
+          - Abre con una presentación atractiva del producto y su valor para un coleccionista o comprador.
+          - Integra de forma natural los detalles confirmados del modelo, la marca, la colección, el color o la propuesta de valor, sin sonar robótico.
+          - Cierra con una idea de deseo de compra o valor de exhibición, pero sin exageraciones vacías.
 
           IMPORTANTE:
-          - `description_es` debe quedar en texto plano con saltos de línea.
           - No uses HTML.
-          - No juntes todo en un solo párrafo.
-          - Mantén la estructura anterior incluso si algunos datos son limitados.
+          - No uses encabezados visibles ni títulos literales.
+          - No uses viñetas dentro de `description_es`.
+          - No escribas la palabra "null" dentro de `description_es`.
+          - Si faltan datos técnicos, omítelos del relato y repórtalos en `warnings` o como null dentro de `attributes`.
         STRUCTURE
 
         parts << build_template_instructions
@@ -133,7 +117,7 @@ module Products
           RESPONDE EXACTAMENTE con este esquema JSON:
           {
             "product_name": "string — nombre optimizado para SEO",
-            "description_es": "string — descripción estructurada en texto plano con las secciones Resumen, Ficha del modelo, Puntos destacados, Historia y contexto, Cierre",
+            "description_es": "string — descripción natural en español, en 2 o 3 párrafos, sin encabezados visibles, sin viñetas y sin la palabra null",
             "highlights": ["string — 3-5 puntos destacados del producto"],
             "attributes": {
               "key": "value para cada atributo de la categoría"

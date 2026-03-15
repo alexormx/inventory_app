@@ -15,25 +15,9 @@ RSpec.describe Products::Enrichment::GenerateDraftService do
             "content" => {
               "product_name" => "067 Toyota Hilux",
               "description_es" => <<~TEXT,
-                Resumen:
-                Réplica a escala del Toyota Hilux fabricada por Tomica, ideal para colección y exhibición por su acabado detallado y su perfil utilitario reconocible.
+                El Toyota Hilux de Tomica transmite desde el primer vistazo ese carácter robusto y confiable que convirtió a esta pickup en un referente. Su presencia compacta, el acabado cuidado y la silueta reconocible lo vuelven una pieza muy atractiva para quienes disfrutan exhibir modelos con personalidad propia dentro de una colección diecast.
 
-                Ficha del modelo:
-                - Marca: Tomica
-                - Modelo: Toyota Hilux
-                - Escala: 1:64
-                - Material: Die-cast
-
-                Puntos destacados:
-                - Modelo numerado #067.
-                - Carrocería con presencia robusta y proporciones compactas.
-                - Pieza ideal para vitrinas temáticas de pickups y utilitarios.
-
-                Historia y contexto:
-                La Toyota Hilux es una de las pickups más conocidas a nivel mundial, apreciada por su resistencia y uso versátil. Esta miniatura traslada esa identidad a un formato coleccionable accesible y fácil de exhibir.
-
-                Cierre:
-                Una excelente opción para coleccionistas de Tomica y para quienes buscan sumar una pickup icónica a su colección de autos a escala.
+                Esta miniatura resulta especialmente llamativa para vitrinas temáticas de utilitarios, vehículos japoneses o piezas numeradas de la marca. Es una opción con gran valor visual para regalar, complementar una colección de Tomica o sumar un modelo que combina identidad clásica, detalle y encanto coleccionable en un formato fácil de apreciar.
               TEXT
               "highlights" => ["Modelo numerado #067", "Die-cast metálico"],
               "attributes" => {
@@ -94,7 +78,7 @@ RSpec.describe Products::Enrichment::GenerateDraftService do
       draft.reload
       expect(draft.ai_provider).to eq("openai")
       expect(draft.ai_model).to eq("gpt-4o-mini")
-      expect(draft.prompt_version).to eq("v2")
+      expect(draft.prompt_version).to eq("v3")
       expect(draft.tokens_input).to eq(500)
       expect(draft.tokens_output).to eq(300)
       expect(draft.generated_at).to be_present
@@ -186,7 +170,7 @@ RSpec.describe Products::Enrichment::GenerateDraftService do
       end
     end
 
-    context "when OpenAI returns an unstructured description" do
+    context "when OpenAI returns a description with old visible headings" do
       let(:openai_response) do
         {
           "choices" => [
@@ -194,7 +178,13 @@ RSpec.describe Products::Enrichment::GenerateDraftService do
               "message" => {
                 "content" => {
                   "product_name" => "067 Toyota Hilux",
-                  "description_es" => "Réplica a escala 1:64 del Toyota Hilux fabricada por Tomica en un solo párrafo sin bloques ni viñetas.",
+                  "description_es" => <<~TEXT,
+                    Resumen:
+                    Réplica a escala del Toyota Hilux con gran presencia visual para colección.
+
+                    Historia y contexto:
+                    Una pickup icónica llevada a formato coleccionable.
+                  TEXT
                   "highlights" => ["Modelo numerado #067"],
                   "attributes" => { "color" => "Blanco" },
                   "seo_keywords" => ["tomica"],
@@ -212,7 +202,76 @@ RSpec.describe Products::Enrichment::GenerateDraftService do
         expect { service.call }.to raise_error(Products::Enrichment::GenerateDraftService::GenerationError)
         draft.reload
         expect(draft.status).to eq("failed")
-        expect(draft.error_message).to include("structured sections")
+        expect(draft.error_message).to include("without headings or null values")
+      end
+    end
+
+    context "when OpenAI returns null inside the description" do
+      let(:openai_response) do
+        {
+          "choices" => [
+            {
+              "message" => {
+                "content" => {
+                  "product_name" => "067 Toyota Hilux",
+                  "description_es" => <<~TEXT,
+                    El Toyota Hilux de Tomica destaca por su presencia robusta y su atractivo para colección. Escala: null y material confirmado por revisar.
+
+                    Es una pieza interesante para vitrinas temáticas y para quienes buscan pickups icónicas en formato compacto.
+                  TEXT
+                  "highlights" => ["Modelo numerado #067"],
+                  "attributes" => { "color" => "Blanco", "escala" => "null" },
+                  "seo_keywords" => ["tomica"],
+                  "warnings" => [],
+                  "confidence_score" => 0.8
+                }.to_json
+              }
+            }
+          ],
+          "usage" => {}
+        }
+      end
+
+      it "marks draft as failed" do
+        expect { service.call }.to raise_error(Products::Enrichment::GenerateDraftService::GenerationError)
+        draft.reload
+        expect(draft.status).to eq("failed")
+        expect(draft.error_message).to include("without headings or null values")
+      end
+    end
+
+    context "when OpenAI returns null only in attributes" do
+      let(:openai_response) do
+        {
+          "choices" => [
+            {
+              "message" => {
+                "content" => {
+                  "product_name" => "067 Toyota Hilux",
+                  "description_es" => <<~TEXT,
+                    El Toyota Hilux de Tomica ofrece una presencia fuerte y un estilo reconocible que luce muy bien en cualquier vitrina. Su diseño utilitario y el encanto clásico de la marca lo convierten en una pieza atractiva para coleccionistas que buscan modelos con identidad.
+
+                    Además de su valor visual, es una miniatura fácil de integrar en colecciones de pickups, vehículos japoneses o lanzamientos numerados. Funciona muy bien como regalo o como incorporación especial para quien disfruta piezas compactas con carácter y buen nivel de detalle.
+                  TEXT
+                  "highlights" => ["Modelo numerado #067"],
+                  "attributes" => { "color" => "Blanco", "escala" => "null", "apertura" => "false" },
+                  "seo_keywords" => ["tomica"],
+                  "warnings" => ["Escala no confirmada"],
+                  "confidence_score" => 0.8
+                }.to_json
+              }
+            }
+          ],
+          "usage" => {}
+        }
+      end
+
+      it "succeeds and normalizes null attributes" do
+        service.call
+        draft.reload
+        expect(draft.status).to eq("draft_generated")
+        expect(draft.draft_content).not_to include("null")
+        expect(draft.draft_attributes["escala"]).to be_nil
       end
     end
 
