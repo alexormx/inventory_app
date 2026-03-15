@@ -24,8 +24,13 @@ module Admin
     # List of products without description, ready to enrich
     def queue
       @products = Product.without_description
-                         .order(created_at: :desc)
-                         .page(params[:page]).per(20)
+                         .left_joins(:inventories)
+                         .select(
+                           "products.*",
+                           "COUNT(CASE WHEN inventories.status = 0 THEN 1 END) AS available_count",
+                           "COUNT(CASE WHEN inventories.status = 0 AND inventories.inventory_location_id IS NOT NULL THEN 1 END) AS located_count"
+                         )
+                         .group("products.id")
 
       if params[:brand].present?
         @products = @products.where(brand: params[:brand])
@@ -34,6 +39,19 @@ module Admin
       if params[:category].present?
         @products = @products.where(category: params[:category])
       end
+
+      case params[:sort]
+      when "name"
+        @products = @products.order("products.product_name ASC")
+      when "newest"
+        @products = @products.order("products.created_at DESC")
+      else # default: prioritized — located first, then by available inventory desc
+        @products = @products.order(
+          Arel.sql("located_count DESC, available_count DESC, products.product_name ASC")
+        )
+      end
+
+      @products = @products.page(params[:page]).per(20)
 
       @brands = Product.without_description.distinct.pluck(:brand).compact.sort
       @categories = Product.without_description.distinct.pluck(:category).compact.sort

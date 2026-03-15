@@ -23,6 +23,14 @@
                        class: "form-select form-select-sm" %>
       </div>
       <div class="col-auto">
+        <%= select_tag :sort, options_for_select([
+          ["Prioridad (inventario + ubicación)", "priority"],
+          ["Nombre A-Z", "name"],
+          ["Más recientes", "newest"]
+        ], params[:sort] || "priority"),
+                       class: "form-select form-select-sm" %>
+      </div>
+      <div class="col-auto">
         <button class="btn btn-primary btn-sm" type="submit"><i class="fa fa-filter me-1"></i> Filtrar</button>
       </div>
       <div class="col-auto">
@@ -42,7 +50,8 @@
           <th>Producto</th>
           <th>Marca</th>
           <th>Categoría</th>
-          <th>SKU</th>
+          <th class="text-center" title="Inventario disponible"><i class="fa fa-boxes-stacked"></i> Disp.</th>
+          <th class="text-center" title="Con ubicación confirmada"><i class="fa fa-location-dot"></i> Ubic.</th>
           <th>Template</th>
           <th>Borrador</th>
           <th></th>
@@ -56,7 +65,22 @@
             </td>
             <td><%= product.brand %></td>
             <td><%= product.category %></td>
-            <td><small class="text-muted"><%= product.product_sku %></small></td>
+            <td class="text-center">
+              <% avail = product.respond_to?(:available_count) ? product.available_count : 0 %>
+              <% if avail > 0 %>
+                <span class="badge bg-success"><%= avail %></span>
+              <% else %>
+                <span class="text-muted">0</span>
+              <% end %>
+            </td>
+            <td class="text-center">
+              <% loc = product.respond_to?(:located_count) ? product.located_count : 0 %>
+              <% if loc > 0 %>
+                <span class="badge bg-primary"><%= loc %></span>
+              <% else %>
+                <span class="text-muted">0</span>
+              <% end %>
+            </td>
             <td>
               <% if product.attribute_template %>
                 <span class="badge bg-success"><i class="fa fa-check"></i></span>
