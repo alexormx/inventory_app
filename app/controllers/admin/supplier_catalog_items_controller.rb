@@ -131,6 +131,7 @@ module Admin
       end
 
       if @disc_filter == "yes"
+        scope = scope.where.not(canonical_status: "discontinued")
         discontinued_ids = Product.where(discontinued: true).pluck(:id)
         scope = scope.where.not(product_id: discontinued_ids) if discontinued_ids.any?
       end
