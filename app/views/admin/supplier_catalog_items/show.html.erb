@@ -107,20 +107,35 @@
           <p class="text-muted">Aún no hay producto vinculado.</p>
         <% end %>
 
-        <%= form_with url: link_product_admin_supplier_catalog_item_path(@supplier_catalog_item), method: :post, local: true do |f| %>
-          <div class="mb-3">
-            <%= f.label :product_identifier, "Vincular con producto existente", class: "form-label" %>
-            <%= f.text_field :product_identifier, class: "form-control", placeholder: "ID, slug, SKU o código WA" %>
-            <small class="text-muted">Puedes usar ID, slug, SKU o código WA.</small>
+        <%= form_with url: link_product_admin_supplier_catalog_item_path(@supplier_catalog_item), method: :post, local: true,
+              data: { controller: "catalog-link", action: "product-search:selected->catalog-link#selectProduct" } do |f| %>
+          <div class="mb-3" data-controller="product-search" data-product-search-url-value="/admin/products/search">
+            <label class="form-label">Buscar producto para vincular</label>
+            <input type="text" class="form-control" placeholder="Escribe el nombre del producto..."
+                   data-product-search-target="input" data-action="input->product-search#input" autocomplete="off">
+            <div class="list-group mt-1" data-product-search-target="results" style="max-height: 280px; overflow-y: auto;"></div>
+          </div>
+          <input type="hidden" name="product_identifier" data-catalog-link-target="hiddenId">
+          <div class="d-none" data-catalog-link-target="selected">
+            <div class="alert alert-info py-2 px-3 mb-3 d-flex align-items-center justify-content-between small">
+              <div>
+                <i class="fa-solid fa-link me-1"></i>
+                <strong data-catalog-link-target="selectedName"></strong>
+                <span class="text-muted ms-1" data-catalog-link-target="selectedSku"></span>
+              </div>
+              <button type="button" class="btn btn-sm btn-outline-danger" data-action="catalog-link#clear">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </div>
           </div>
           <div class="d-grid">
-            <%= f.submit "Vincular producto", class: "btn btn-outline-secondary" %>
+            <%= f.submit "Vincular producto", class: "btn btn-outline-secondary", data: { catalog_link_target: "submitBtn" } %>
           </div>
         <% end %>
 
         <% if @candidate_products.present? %>
           <hr>
-          <h6 class="mb-2"><i class="fa-solid fa-magnifying-glass me-1"></i> Candidatos por nombre</h6>
+          <h6 class="mb-2"><i class="fa-solid fa-lightbulb me-1"></i> Sugerencias por nombre</h6>
           <div class="list-group list-group-flush small">
             <% @candidate_products.each do |product| %>
               <div class="list-group-item d-flex justify-content-between align-items-center px-0">
