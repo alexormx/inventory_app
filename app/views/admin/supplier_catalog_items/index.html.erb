@@ -58,9 +58,10 @@
             <table class="table table-hover align-middle mb-0">
               <thead class="table-light">
                 <tr>
+                  <th style="width: 52px"></th>
                   <th>Artículo</th>
                   <th>Status</th>
-                  <th>Precio</th>
+                  <th class="text-end">Precio</th>
                   <th>Release</th>
                   <th>Producto</th>
                   <th class="text-end"></th>
@@ -70,13 +71,30 @@
                 <% @supplier_catalog_items.each do |item| %>
                   <tr>
                     <td>
+                      <% if item.main_image_url.present? %>
+                        <img src="<%= item.main_image_url %>" alt="" style="width: 44px; height: 44px; object-fit: contain;" class="rounded border" loading="lazy">
+                      <% else %>
+                        <span class="d-inline-block rounded border bg-light text-center text-muted" style="width: 44px; height: 44px; line-height: 44px; font-size: 0.7rem;">—</span>
+                      <% end %>
+                    </td>
+                    <td>
                       <div class="fw-semibold"><%= item.canonical_name %></div>
                       <div class="small text-muted"><%= item.external_sku %> · <%= item.barcode.presence || "Sin barcode" %></div>
                     </td>
                     <td>
                       <span class="badge <%= item.future_release? ? 'bg-primary' : item.canonical_status == 'in_stock' ? 'bg-success' : 'bg-secondary' %>"><%= item.canonical_status.presence || 'unknown' %></span>
                     </td>
-                    <td><%= item.canonical_price ? number_to_currency(item.canonical_price) : "—" %></td>
+                    <td class="text-end">
+                      <% if item.canonical_price.present? %>
+                        <% if item.currency == "JPY" %>
+                          ¥<%= number_with_delimiter(item.canonical_price.to_i) %>
+                        <% else %>
+                          <%= number_to_currency(item.canonical_price) %>
+                        <% end %>
+                      <% else %>
+                        <span class="text-muted">—</span>
+                      <% end %>
+                    </td>
                     <td><%= item.canonical_release_date&.strftime("%Y-%m-%d") || "—" %></td>
                     <td>
                       <% if item.product.present? %>

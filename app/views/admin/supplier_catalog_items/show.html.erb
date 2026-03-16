@@ -51,7 +51,7 @@
 
         <div class="row g-3">
           <div class="col-6 col-md-4"><small class="text-muted d-block">Status</small><span class="badge <%= @supplier_catalog_item.future_release? ? 'bg-primary' : @supplier_catalog_item.canonical_status == 'in_stock' ? 'bg-success' : 'bg-secondary' %>"><%= @supplier_catalog_item.canonical_status.presence || 'unknown' %></span></div>
-          <div class="col-6 col-md-4"><small class="text-muted d-block">Precio</small><strong><%= @supplier_catalog_item.canonical_price ? number_to_currency(@supplier_catalog_item.canonical_price) : "—" %></strong></div>
+          <div class="col-6 col-md-4"><small class="text-muted d-block">Precio</small><strong><% if @supplier_catalog_item.canonical_price.present? %><% if @supplier_catalog_item.currency == "JPY" %>¥<%= number_with_delimiter(@supplier_catalog_item.canonical_price.to_i) %><% else %><%= number_to_currency(@supplier_catalog_item.canonical_price) %><% end %><% else %>—<% end %></strong></div>
           <div class="col-6 col-md-4"><small class="text-muted d-block">Release</small><strong><%= @supplier_catalog_item.canonical_release_date&.strftime("%Y-%m-%d") || "—" %></strong></div>
           <div class="col-6 col-md-4"><small class="text-muted d-block">Marca</small><strong><%= @supplier_catalog_item.canonical_brand.presence || "—" %></strong></div>
           <div class="col-6 col-md-4"><small class="text-muted d-block">Serie</small><strong><%= @supplier_catalog_item.canonical_series.presence || "—" %></strong></div>
