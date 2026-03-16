@@ -4,10 +4,11 @@ module Suppliers
   module Hlj
     class PreviewDiscoveryService
       SAMPLE_LIMIT = 16
+      MAX_PREVIEW_PAGES = 3
       Result = Struct.new(:total_found, :sample_items, :scanned_pages, :available_pages, :sample_limit, keyword_init: true)
 
       def initialize(max_pages: nil, word: nil, makers: [], genre_code: nil, connection: nil)
-        @max_pages = max_pages
+        @max_pages = max_pages || MAX_PREVIEW_PAGES
         @query = SearchQuery.new(word: word, makers: makers, genre_code: genre_code)
         @connection = connection
       end
@@ -15,8 +16,12 @@ module Suppliers
       def call
         items = []
 
-        pages_to_scan.times do |index|
-          document = fetch_document(@query.page_url(index + 1))
+        # Page 1 is already fetched by total_pages; reuse it
+        items.concat(Suppliers::Hlj::ExtractListItemsService.new(first_page_document).call)
+
+        # Fetch remaining pages (2..pages_to_scan)
+        (2..pages_to_scan).each do |page|
+          document = fetch_document(@query.page_url(page))
           items.concat(Suppliers::Hlj::ExtractListItemsService.new(document).call)
         end
 
@@ -31,10 +36,13 @@ module Suppliers
 
       private
 
+      def first_page_document
+        @first_page_document ||= fetch_document(@query.page_url(1))
+      end
+
       def total_pages
         @total_pages ||= begin
-          document = fetch_document(@query.page_url(1))
-          last_page = document.at_css(".pages li:nth-last-child(2)")&.text.to_i
+          last_page = first_page_document.at_css(".pages li:nth-last-child(2)")&.text.to_i
           last_page.positive? ? last_page : 1
         end
       end

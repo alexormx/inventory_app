@@ -36,14 +36,14 @@
       </div>
       <div class="col-6 col-md-2">
         <%= f.label :max_pages, "Máx. páginas", class: "form-label" %>
-        <%= f.number_field :max_pages, value: @discovery_form[:max_pages], min: 1, class: "form-control" %>
+        <%= f.number_field :max_pages, value: @discovery_form[:max_pages], min: 1, class: "form-control", placeholder: "Todas" %>
       </div>
       <div class="col-6 col-md-2">
         <%= f.label :max_items, "Máx. productos", class: "form-label" %>
-        <%= f.number_field :max_items, value: @discovery_form[:max_items], min: 1, class: "form-control" %>
+        <%= f.number_field :max_items, value: @discovery_form[:max_items], min: 1, class: "form-control", placeholder: "Todos" %>
       </div>
       <div class="col-12 col-md-8">
-        <button type="submit" class="btn btn-outline-secondary">
+        <button type="submit" class="btn btn-outline-secondary" data-turbo-submits-with="Consultando HLJ…">
           <i class="fa-solid fa-magnifying-glass me-1"></i> Consultar vista previa
         </button>
       </div>
@@ -57,12 +57,27 @@
     <div class="card-body">
       <h5 class="mb-3"><span class="badge bg-primary me-2">2</span> Vista previa — resultados sin guardar</h5>
 
+      <% if @discovery_preview.available_pages > @discovery_preview.scanned_pages %>
+        <div class="alert alert-info py-2 mb-3">
+          <i class="fa-solid fa-circle-info me-1"></i>
+          Se consultaron <strong><%= @discovery_preview.scanned_pages %></strong> de <strong><%= @discovery_preview.available_pages %></strong> páginas disponibles en HLJ.
+          La importación completa procesará todas las páginas.
+        </div>
+      <% end %>
+
       <div class="row g-3 mb-3">
         <div class="col-12 col-md-4">
           <div class="border rounded p-3 h-100">
-            <small class="text-muted d-block">Productos encontrados</small>
+            <small class="text-muted d-block">Productos encontrados (muestra)</small>
             <div class="fs-4 fw-bold"><%= @discovery_preview.total_found %></div>
             <div class="small text-muted">en <%= @discovery_preview.scanned_pages %> página(s) consultadas</div>
+          </div>
+        </div>
+        <div class="col-12 col-md-4">
+          <div class="border rounded p-3 h-100">
+            <small class="text-muted d-block">Páginas disponibles en HLJ</small>
+            <div class="fs-4 fw-bold"><%= @discovery_preview.available_pages %></div>
+            <div class="small text-muted">según la navegación detectada en HLJ</div>
           </div>
         </div>
         <div class="col-12 col-md-4">
@@ -70,13 +85,6 @@
             <small class="text-muted d-block">Muestra visible</small>
             <div class="fs-4 fw-bold"><%= @discovery_preview.sample_items.size %></div>
             <div class="small text-muted">primeros <%= @discovery_preview.sample_limit %> resultados</div>
-          </div>
-        </div>
-        <div class="col-12 col-md-4">
-          <div class="border rounded p-3 h-100">
-            <small class="text-muted d-block">Páginas disponibles</small>
-            <div class="fs-4 fw-bold"><%= @discovery_preview.available_pages %></div>
-            <div class="small text-muted">según la navegación detectada en HLJ</div>
           </div>
         </div>
       </div>

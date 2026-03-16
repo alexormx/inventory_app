@@ -191,8 +191,8 @@ module Admin
         word: params[:word].to_s,
         makers: params[:makers].to_s,
         genre_code: params[:genre_code].to_s,
-        max_pages: params[:max_pages].presence || 1,
-        max_items: params[:max_items].presence || 10
+        max_pages: params[:max_pages].presence,
+        max_items: params[:max_items].presence
       }
     end
 
