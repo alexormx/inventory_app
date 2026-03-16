@@ -87,7 +87,22 @@
         <% if @supplier_catalog_item.product.present? %>
           <p class="mb-2">Vinculado a:</p>
           <%= link_to @supplier_catalog_item.product.product_name, admin_product_path(@supplier_catalog_item.product), class: "fw-semibold text-decoration-none" %>
-          <div class="small text-muted mb-3"><%= @supplier_catalog_item.product.product_sku %></div>
+          <div class="small text-muted mb-2"><%= @supplier_catalog_item.product.product_sku %></div>
+
+          <% if @name_mismatch %>
+            <div class="alert alert-warning py-2 px-3 mb-3 small">
+              <i class="fa-solid fa-triangle-exclamation me-1"></i>
+              <strong>Posible error de vinculación</strong> — Los nombres no coinciden (similitud: <%= number_to_percentage(@name_similarity * 100, precision: 0) %>)
+              <div class="mt-1 text-muted" style="font-size: 0.8rem;">
+                <div><strong>Catálogo:</strong> <%= @supplier_catalog_item.canonical_name %></div>
+                <div><strong>Producto:</strong> <%= @supplier_catalog_item.product.product_name %></div>
+              </div>
+            </div>
+          <% elsif @name_similarity.present? %>
+            <div class="small text-success mb-3">
+              <i class="fa-solid fa-check-circle me-1"></i> Similitud de nombres: <%= number_to_percentage(@name_similarity * 100, precision: 0) %>
+            </div>
+          <% end %>
         <% else %>
           <p class="text-muted">Aún no hay producto vinculado.</p>
         <% end %>
@@ -100,6 +115,22 @@
           </div>
           <div class="d-grid">
             <%= f.submit "Vincular producto", class: "btn btn-outline-secondary" %>
+          </div>
+        <% end %>
+
+        <% if @candidate_products.present? %>
+          <hr>
+          <h6 class="mb-2"><i class="fa-solid fa-magnifying-glass me-1"></i> Candidatos por nombre</h6>
+          <div class="list-group list-group-flush small">
+            <% @candidate_products.each do |product| %>
+              <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                <div>
+                  <%= link_to product.product_name, admin_product_path(product), class: "text-decoration-none", target: "_blank" %>
+                  <div class="text-muted" style="font-size: 0.75rem;"><%= product.product_sku %></div>
+                </div>
+                <%= button_to "Vincular", link_product_admin_supplier_catalog_item_path(@supplier_catalog_item), params: { product_identifier: product.id }, method: :post, class: "btn btn-sm btn-outline-primary" %>
+              </div>
+            <% end %>
           </div>
         <% end %>
       </div>

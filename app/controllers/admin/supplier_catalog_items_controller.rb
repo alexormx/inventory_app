@@ -103,6 +103,7 @@ module Admin
     def show
       @sources = @supplier_catalog_item.supplier_catalog_sources.order(:source)
       @recent_runs = SupplierSyncRun.where(supplier_catalog_item: @supplier_catalog_item).recent.limit(10)
+      prepare_linking_analysis
     end
 
     def prepare_catalog_view
@@ -272,6 +273,46 @@ module Admin
     def active_discovery_run
       SupplierSyncRun.cancel_stale!
       SupplierSyncRun.genuinely_active.where(source: "hlj").order(created_at: :desc).first
+    end
+
+    def prepare_linking_analysis
+      catalog_name = @supplier_catalog_item.canonical_name.to_s
+
+      # Name similarity warning for linked products
+      if @supplier_catalog_item.product.present?
+        product_name = @supplier_catalog_item.product.product_name.to_s
+        @name_similarity = name_similarity_score(catalog_name, product_name)
+        @name_mismatch = @name_similarity < 0.3
+      end
+
+      # Candidate products by name keywords
+      keywords = extract_keywords(catalog_name)
+      if keywords.any?
+        conditions = keywords.map { "LOWER(product_name) LIKE ?" }
+        values = keywords.map { |kw| "%#{sanitize_sql_like(kw.downcase)}%" }
+        scope = Product.where(conditions.join(" OR "), *values)
+        scope = scope.where.not(id: @supplier_catalog_item.product_id) if @supplier_catalog_item.product_id.present?
+        @candidate_products = scope.limit(10)
+      else
+        @candidate_products = Product.none
+      end
+    end
+
+    def name_similarity_score(a, b)
+      words_a = a.downcase.gsub(/[^a-z0-9\s]/, " ").split.select { |w| w.length >= 2 }.to_set
+      words_b = b.downcase.gsub(/[^a-z0-9\s]/, " ").split.select { |w| w.length >= 2 }.to_set
+      return 0.0 if words_a.empty? || words_b.empty?
+
+      intersection = (words_a & words_b).size.to_f
+      intersection / [words_a.size, words_b.size].max
+    end
+
+    def extract_keywords(name)
+      name.to_s.downcase.gsub(/[^a-z0-9\s]/, " ").split.select { |w| w.length >= 3 }.uniq.first(6)
+    end
+
+    def sanitize_sql_like(string)
+      string.gsub(/[%_\\]/) { |m| "\\#{m}" }
     end
   end
 end
