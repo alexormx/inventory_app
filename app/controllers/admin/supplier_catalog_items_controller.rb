@@ -36,7 +36,7 @@ module Admin
 
     before_action :authenticate_user!
     before_action :authorize_admin!
-    before_action :set_supplier_catalog_item, only: [:show, :create_product, :link_product, :sync_product, :refresh_hlj, :refresh_takara_tomy_mall, :refresh_tomica_fandom]
+    before_action :set_supplier_catalog_item, only: [:show, :create_product, :link_product, :unlink_product, :clear_product_sku, :review_sync, :apply_sync, :sync_product, :refresh_hlj, :refresh_takara_tomy_mall, :refresh_tomica_fandom]
 
     def index
       prepare_catalog_view
