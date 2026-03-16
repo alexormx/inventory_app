@@ -29,11 +29,11 @@
 <div class="card border-0 shadow-sm mb-4">
   <div class="card-body">
     <%= form_with url: admin_supplier_catalog_items_path, method: :get, local: true, class: "row g-3 align-items-end" do |f| %>
-      <div class="col-12 col-md-5">
+      <div class="col-12 col-md-3">
         <%= f.label :q, "Buscar", class: "form-label" %>
-        <%= f.text_field :q, value: @q, class: "form-control", placeholder: "Nombre, SKU externo o código de barras" %>
+        <%= f.text_field :q, value: @q, class: "form-control", placeholder: "Nombre, SKU o barcode" %>
       </div>
-      <div class="col-6 col-md-3">
+      <div class="col-6 col-md-2">
         <%= f.label :status, "Status HLJ", class: "form-label" %>
         <%= f.select :status, options_for_select([["Todos", ""]] + @status_options.map { |status| [status.to_s.humanize, status] }, @status), {}, class: "form-select" %>
       </div>
@@ -41,7 +41,23 @@
         <%= f.label :linked, "Vinculado", class: "form-label" %>
         <%= f.select :linked, options_for_select([["Todos", ""], ["Sí", "yes"], ["No", "no"]], @link_filter), {}, class: "form-select" %>
       </div>
-      <div class="col-12 col-md-2 d-grid">
+      <div class="col-6 col-md-2">
+        <%= f.label :sort, "Ordenar", class: "form-label" %>
+        <%= f.select :sort, options_for_select([["Recientes", ""], ["Similitud nombre ↑", "similarity"]], @sort), {}, class: "form-select" %>
+      </div>
+      <div class="col-6 col-md-1">
+        <div class="form-check mt-4">
+          <%= f.check_box :dup_sku, { checked: @dup_sku_filter == "yes", class: "form-check-input" }, "yes", "" %>
+          <%= f.label :dup_sku, "SKU dup.", class: "form-check-label small" %>
+        </div>
+      </div>
+      <div class="col-6 col-md-1">
+        <div class="form-check mt-4">
+          <%= f.check_box :hide_discontinued, { checked: @disc_filter == "yes", class: "form-check-input" }, "yes", "" %>
+          <%= f.label :hide_discontinued, "Sin disc.", class: "form-check-label small" %>
+        </div>
+      </div>
+      <div class="col-12 col-md-1 d-grid">
         <%= f.submit "Filtrar", class: "btn btn-outline-primary" %>
       </div>
     <% end %>

@@ -112,6 +112,9 @@ module Admin
       @q = params[:q].to_s.strip
       @status = params[:status].to_s.strip
       @link_filter = params[:linked].to_s.strip
+      @dup_sku_filter = params[:dup_sku].to_s.strip
+      @disc_filter = params[:hide_discontinued].to_s.strip
+      @sort = params[:sort].to_s.strip
 
       scope = SupplierCatalogItem.includes(:product, :supplier_catalog_sources).recently_seen
       scope = scope.where("LOWER(canonical_name) LIKE ? OR LOWER(external_sku) LIKE ? OR LOWER(barcode) LIKE ?", term, term, term) if @q.present?
@@ -119,7 +122,28 @@ module Admin
       scope = scope.linked if @link_filter == "yes"
       scope = scope.unlinked if @link_filter == "no"
 
-      @supplier_catalog_items = scope.page(params[:page]).per(25)
+      if @dup_sku_filter == "yes"
+        dup_skus = Product.where.not(supplier_product_code: [nil, ""])
+                         .group(:supplier_product_code)
+                         .having("COUNT(*) > 1")
+                         .pluck(:supplier_product_code)
+        scope = scope.where(external_sku: dup_skus)
+      end
+
+      if @disc_filter == "yes"
+        discontinued_ids = Product.where(discontinued: true).pluck(:id)
+        scope = scope.where.not(product_id: discontinued_ids) if discontinued_ids.any?
+      end
+
+      if @sort == "similarity"
+        # Load all linked items, sort by similarity ascending, then paginate
+        all_items = scope.linked.to_a.select { |i| i.product.present? }
+          .sort_by { |i| helpers.name_similarity_score(i.canonical_name, i.product.product_name) }
+        @supplier_catalog_items = Kaminari.paginate_array(all_items).page(params[:page]).per(25)
+      else
+        @supplier_catalog_items = scope.page(params[:page]).per(25)
+      end
+
       @status_options = SupplierCatalogItem.distinct.order(:canonical_status).pluck(:canonical_status).compact
       @recent_runs = SupplierSyncRun.recent.limit(10)
       @counts = {
@@ -161,6 +185,14 @@ module Admin
     def unlink_product
       @supplier_catalog_item.update!(product_id: nil)
       redirect_to admin_supplier_catalog_item_path(@supplier_catalog_item), notice: "Producto desvinculado."
+    end
+
+    def clear_product_sku
+      product = Product.find(params[:product_id])
+      product.update!(supplier_product_code: nil)
+      redirect_to admin_supplier_catalog_item_path(@supplier_catalog_item), notice: "SKU proveedor eliminado de \"#{product.product_name}\"."
+    rescue ActiveRecord::RecordNotFound
+      redirect_to admin_supplier_catalog_item_path(@supplier_catalog_item), alert: "Producto no encontrado."
     end
 
     def sync_product

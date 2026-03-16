@@ -124,6 +124,9 @@
                     <% else %>
                       <%= button_to "Vincular", link_product_admin_supplier_catalog_item_path(@supplier_catalog_item), params: { product_identifier: product.id }, method: :post, class: "btn btn-sm btn-outline-primary" %>
                     <% end %>
+                    <%= button_to clear_product_sku_admin_supplier_catalog_item_path(@supplier_catalog_item), params: { product_id: product.id }, method: :post, class: "btn btn-sm btn-outline-warning", data: { turbo_confirm: "¿Quitar SKU proveedor de \"#{product.product_name}\"?" } do %>
+                      <i class="fa-solid fa-eraser me-1"></i>Quitar SKU
+                    <% end %>
                   </div>
                 </div>
               <% end %>

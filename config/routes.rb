@@ -145,6 +145,7 @@ Rails.application.routes.draw do
         post :create_product
         post :link_product
         post :unlink_product
+        post :clear_product_sku
         get  :review_sync
         post :apply_sync
         post :sync_product
