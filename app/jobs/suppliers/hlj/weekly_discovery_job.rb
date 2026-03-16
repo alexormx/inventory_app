@@ -29,6 +29,8 @@ module Suppliers
           word: normalized[:word],
           makers: normalized[:makers],
           genre_code: normalized[:genre_code],
+          scale: normalized[:scale],
+          series: normalized[:series],
           fetch_detail: normalized.key?(:fetch_detail) ? normalized[:fetch_detail] : true,
           run: run
         ).call
@@ -45,6 +47,8 @@ module Suppliers
           "word" => options[:word],
           "makers" => Array(options[:makers]).compact_blank,
           "genre_code" => options[:genre_code],
+          "scale" => options[:scale],
+          "series" => options[:series],
           "max_pages" => options[:max_pages],
           "max_items" => options[:max_items],
           "fetch_detail" => options.key?(:fetch_detail) ? options[:fetch_detail] : true

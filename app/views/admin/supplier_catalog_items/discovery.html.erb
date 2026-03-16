@@ -23,16 +23,28 @@
         <%= f.select :preset, options_for_select(@discovery_preset_options, @discovery_form[:preset]), {}, class: "form-select" %>
       </div>
       <div class="col-12 col-md-3">
-        <%= f.label :word, "Word", class: "form-label" %>
-        <%= f.text_field :word, value: @discovery_form[:word], class: "form-control", placeholder: "Ej. tomica" %>
+        <%= f.label :word, "Search", class: "form-label" %>
+        <%= f.text_field :word, value: @discovery_form[:word], class: "form-control", placeholder: "Ej. tomica premium" %>
       </div>
       <div class="col-12 col-md-3">
-        <%= f.label :makers, "Makers", class: "form-label" %>
+        <%= f.label :makers, "Manufacturer", class: "form-label" %>
         <%= f.text_field :makers, value: @discovery_form[:makers], class: "form-control", placeholder: "Takara Tomy, Tomy, Tomytec" %>
       </div>
       <div class="col-12 col-md-3">
-        <%= f.label :genre_code, "Género HLJ", class: "form-label" %>
-        <%= f.text_field :genre_code, value: @discovery_form[:genre_code], class: "form-control", placeholder: "Cars & Bikes" %>
+        <%= f.label :genre_code, "Category", class: "form-label" %>
+        <%= f.select :genre_code,
+              options_for_select([["— Todas —", ""]] + @genre_options.map { |g| [g, g] }, @discovery_form[:genre_code]),
+              {}, class: "form-select" %>
+      </div>
+      <div class="col-6 col-md-2">
+        <%= f.label :scale, "Scale", class: "form-label" %>
+        <%= f.select :scale,
+              options_for_select([["— Todas —", ""]] + @scale_options.map { |s| [s, s] }, @discovery_form[:scale]),
+              {}, class: "form-select" %>
+      </div>
+      <div class="col-12 col-md-3">
+        <%= f.label :series, "Series", class: "form-label" %>
+        <%= f.text_field :series, value: @discovery_form[:series], class: "form-control", placeholder: "Ej. Tomica Premium" %>
       </div>
       <div class="col-6 col-md-2">
         <%= f.label :max_pages, "Máx. páginas", class: "form-label" %>
@@ -42,7 +54,7 @@
         <%= f.label :max_items, "Máx. productos", class: "form-label" %>
         <%= f.number_field :max_items, value: @discovery_form[:max_items], min: 1, class: "form-control", placeholder: "Todos" %>
       </div>
-      <div class="col-12 col-md-8">
+      <div class="col-12 col-md-3">
         <button type="submit" class="btn btn-outline-secondary" data-turbo-submits-with="Consultando HLJ…">
           <i class="fa-solid fa-magnifying-glass me-1"></i> Consultar vista previa
         </button>
@@ -134,6 +146,8 @@
           <%= f.hidden_field :word, value: @discovery_form[:word] %>
           <%= f.hidden_field :makers, value: @discovery_form[:makers] %>
           <%= f.hidden_field :genre_code, value: @discovery_form[:genre_code] %>
+          <%= f.hidden_field :scale, value: @discovery_form[:scale] %>
+          <%= f.hidden_field :series, value: @discovery_form[:series] %>
           <%= f.hidden_field :max_pages, value: @discovery_form[:max_pages] %>
           <%= f.hidden_field :max_items, value: @discovery_form[:max_items] %>
           <button type="submit" name="discovery_mode" value="full" class="btn btn-primary">

@@ -7,11 +7,11 @@ module Suppliers
 
       SEARCH_URL = Suppliers::Hlj::SearchQuery::SEARCH_URL
 
-      def initialize(max_pages: nil, max_items: nil, word: nil, makers: [], genre_code: nil,
+      def initialize(max_pages: nil, max_items: nil, word: nil, makers: [], genre_code: nil, scale: nil, series: nil,
                      fetch_detail: true, delay_seconds: 0, connection: nil, run: nil, logger: Rails.logger)
         @max_pages = max_pages
         @max_items = max_items
-        @query = Suppliers::Hlj::SearchQuery.new(word: word, makers: makers, genre_code: genre_code)
+        @query = Suppliers::Hlj::SearchQuery.new(word: word, makers: makers, genre_code: genre_code, scale: scale, series: series)
         @fetch_detail = fetch_detail
         @delay_seconds = delay_seconds.to_f
         @connection = connection

@@ -5,21 +5,30 @@ module Admin
     HLJ_DISCOVERY_PRESETS = {
       "all" => {
         label: "Todo HLJ",
-        word: nil,
-        makers: [],
-        genre_code: nil
+        word: nil, makers: [], genre_code: nil, scale: nil, series: nil
       },
       "tomica" => {
-        label: "Solo Tomica",
+        label: "Buscar: tomica",
         word: "tomica",
-        makers: [],
-        genre_code: nil
+        makers: [], genre_code: nil, scale: nil, series: nil
       },
       "takara_cars" => {
-        label: "Tomica/Takara solo coches",
+        label: "Takara Tomy — Cars & Bikes",
         word: nil,
         makers: ["Takara Tomy", "Tomy", "Tomytec", "Takara Tomy A.R.T.S"],
-        genre_code: "Cars & Bikes"
+        genre_code: "Cars & Bikes", scale: nil, series: nil
+      },
+      "tomica_164" => {
+        label: "Tomica 1/64 — Cars & Bikes",
+        word: "tomica",
+        makers: ["Takara Tomy"],
+        genre_code: "Cars & Bikes", scale: "1/64", series: nil
+      },
+      "tomica_premium" => {
+        label: "Tomica Premium",
+        word: "tomica premium",
+        makers: ["Takara Tomy"],
+        genre_code: "Cars & Bikes", scale: nil, series: nil
       }
     }.freeze
 
@@ -46,7 +55,9 @@ module Admin
         max_pages: options[:max_pages],
         word: options[:word],
         makers: options[:makers],
-        genre_code: options[:genre_code]
+        genre_code: options[:genre_code],
+        scale: options[:scale],
+        series: options[:series]
       ).call
 
       prepare_discovery_view
@@ -119,6 +130,8 @@ module Admin
     def prepare_discovery_view
       @active_discovery_run = active_discovery_run
       @discovery_preset_options = HLJ_DISCOVERY_PRESETS.map { |key, config| [config[:label], key] }
+      @genre_options = Suppliers::Hlj::SearchQuery::GENRE_OPTIONS
+      @scale_options = Suppliers::Hlj::SearchQuery::SCALE_OPTIONS
       @discovery_form = discovery_form_defaults
       @recent_runs = SupplierSyncRun.recent.limit(10)
     end
@@ -191,6 +204,8 @@ module Admin
         word: params[:word].to_s,
         makers: params[:makers].to_s,
         genre_code: params[:genre_code].to_s,
+        scale: params[:scale].to_s,
+        series: params[:series].to_s,
         max_pages: params[:max_pages].presence,
         max_items: params[:max_items].presence
       }
@@ -212,6 +227,8 @@ module Admin
         word: params[:word].presence || preset[:word],
         makers: parsed_makers.presence || preset[:makers],
         genre_code: params[:genre_code].presence || preset[:genre_code],
+        scale: params[:scale].presence || preset[:scale],
+        series: params[:series].presence || preset[:series],
         max_pages: max_pages,
         max_items: max_items,
         fetch_detail: true
@@ -236,6 +253,8 @@ module Admin
       filters << "word=#{options[:word]}" if options[:word].present?
       filters << "makers=#{Array(options[:makers]).join(' / ')}" if Array(options[:makers]).any?
       filters << "género=#{options[:genre_code]}" if options[:genre_code].present?
+      filters << "escala=#{options[:scale]}" if options[:scale].present?
+      filters << "serie=#{options[:series]}" if options[:series].present?
       filters << "páginas=#{options[:max_pages]}" if options[:max_pages].present?
       filters << "productos=#{options[:max_items]}" if options[:max_items].present?
 
