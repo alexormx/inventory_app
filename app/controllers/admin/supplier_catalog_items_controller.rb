@@ -28,7 +28,11 @@ module Admin
     before_action :set_supplier_catalog_item, only: [:show, :create_product, :link_product, :sync_product, :refresh_hlj, :refresh_takara_tomy_mall, :refresh_tomica_fandom]
 
     def index
-      prepare_index_view
+      prepare_catalog_view
+    end
+
+    def discovery
+      prepare_discovery_view
     end
 
     def discovery_progress
@@ -45,19 +49,19 @@ module Admin
         genre_code: options[:genre_code]
       ).call
 
-      prepare_index_view
-      render :index
+      prepare_discovery_view
+      render :discovery
     rescue StandardError => e
-      prepare_index_view
+      prepare_discovery_view
       flash.now[:alert] = "Error al consultar vista previa HLJ: #{e.message}"
-      render :index, status: :unprocessable_content
+      render :discovery, status: :unprocessable_content
     end
 
     def run_discovery
       options = discovery_options_from_params
       Suppliers::Hlj::WeeklyDiscoveryJob.perform_later(options)
 
-      redirect_to admin_supplier_catalog_items_path,
+      redirect_to discovery_admin_supplier_catalog_items_path,
                   notice: discovery_notice(options)
     end
 
@@ -65,12 +69,12 @@ module Admin
       run = active_discovery_run
 
       if run.blank?
-        redirect_to admin_supplier_catalog_items_path, alert: "No hay una corrida HLJ activa para detener."
+        redirect_to discovery_admin_supplier_catalog_items_path, alert: "No hay una corrida HLJ activa para detener."
         return
       end
 
       run.request_stop!
-      redirect_to admin_supplier_catalog_items_path, notice: "Se solicitó detener la corrida HLJ activa."
+      redirect_to discovery_admin_supplier_catalog_items_path, notice: "Se solicitó detener la corrida HLJ activa."
     end
 
     def show
@@ -78,7 +82,7 @@ module Admin
       @recent_runs = SupplierSyncRun.where(supplier_catalog_item: @supplier_catalog_item).recent.limit(10)
     end
 
-    def prepare_index_view
+    def prepare_catalog_view
       @q = params[:q].to_s.strip
       @status = params[:status].to_s.strip
       @link_filter = params[:linked].to_s.strip
@@ -92,15 +96,19 @@ module Admin
       @supplier_catalog_items = scope.page(params[:page]).per(25)
       @status_options = SupplierCatalogItem.distinct.order(:canonical_status).pluck(:canonical_status).compact
       @recent_runs = SupplierSyncRun.recent.limit(10)
-      @active_discovery_run = active_discovery_run
-      @discovery_preset_options = HLJ_DISCOVERY_PRESETS.map { |key, config| [config[:label], key] }
-      @discovery_form = discovery_form_defaults
       @counts = {
         total: SupplierCatalogItem.count,
         linked: SupplierCatalogItem.linked.count,
         unlinked: SupplierCatalogItem.unlinked.count,
         future_release: SupplierCatalogItem.future_release.count
       }
+    end
+
+    def prepare_discovery_view
+      @active_discovery_run = active_discovery_run
+      @discovery_preset_options = HLJ_DISCOVERY_PRESETS.map { |key, config| [config[:label], key] }
+      @discovery_form = discovery_form_defaults
+      @recent_runs = SupplierSyncRun.recent.limit(10)
     end
 
     def create_product

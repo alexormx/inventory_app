@@ -1,0 +1,159 @@
+<div class="admin-page-header d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+  <div>
+    <p class="admin-page-eyebrow mb-1">Proveedor</p>
+    <h2 class="mb-0 d-flex align-items-center gap-2"><i class="fa-solid fa-cloud-arrow-down"></i> Descubrir nuevos productos en HLJ</h2>
+    <p class="text-muted mb-0 mt-2">Busca artículos nuevos en HLJ, revisa la vista previa, lanza la importación y monitorea el progreso de la corrida.</p>
+  </div>
+  <div class="d-flex gap-2">
+    <% if @active_discovery_run.present? %>
+      <%= button_to stop_discovery_admin_supplier_catalog_items_path, method: :post, class: "btn btn-outline-danger" do %>
+        <i class="fa-solid fa-stop me-1"></i> Detener descubrimiento
+      <% end %>
+    <% end %>
+    <%= link_to admin_supplier_catalog_items_path, class: "btn btn-outline-secondary" do %>
+      <i class="fa-solid fa-boxes-stacked me-1"></i> Ir a actualización y enriquecimiento
+    <% end %>
+  </div>
+</div>
+
+<% if @active_discovery_run.present? %>
+  <%= render "discovery_progress_frame", run: @active_discovery_run %>
+<% end %>
+
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-body">
+    <div class="row g-3 align-items-end">
+      <div class="col-12">
+        <h5 class="mb-1">Nuevo descubrimiento</h5>
+        <p class="text-muted mb-0">Configura filtros HLJ, obtén una vista previa sin guardar y luego ejecuta el scrapeo real cuando estés conforme.</p>
+      </div>
+    </div>
+
+    <%= form_with url: run_discovery_admin_supplier_catalog_items_path, method: :post, local: true, class: "row g-3 align-items-end mt-1" do |f| %>
+      <div class="col-12 col-md-3">
+        <%= f.label :preset, "Preset", class: "form-label" %>
+        <%= f.select :preset, options_for_select(@discovery_preset_options, @discovery_form[:preset]), {}, class: "form-select" %>
+      </div>
+      <div class="col-12 col-md-3">
+        <%= f.label :word, "Word", class: "form-label" %>
+        <%= f.text_field :word, value: @discovery_form[:word], class: "form-control", placeholder: "Ej. tomica" %>
+      </div>
+      <div class="col-12 col-md-3">
+        <%= f.label :makers, "Makers", class: "form-label" %>
+        <%= f.text_field :makers, value: @discovery_form[:makers], class: "form-control", placeholder: "Takara Tomy, Tomy, Tomytec" %>
+      </div>
+      <div class="col-12 col-md-3">
+        <%= f.label :genre_code, "Género HLJ", class: "form-label" %>
+        <%= f.text_field :genre_code, value: @discovery_form[:genre_code], class: "form-control", placeholder: "Cars & Bikes" %>
+      </div>
+      <div class="col-6 col-md-2">
+        <%= f.label :max_pages, "Máx. páginas", class: "form-label" %>
+        <%= f.number_field :max_pages, value: @discovery_form[:max_pages], min: 1, class: "form-control" %>
+      </div>
+      <div class="col-6 col-md-2">
+        <%= f.label :max_items, "Máx. productos", class: "form-label" %>
+        <%= f.number_field :max_items, value: @discovery_form[:max_items], min: 1, class: "form-control" %>
+      </div>
+      <div class="col-12 col-md-10 d-flex flex-wrap gap-2">
+        <button type="submit" formaction="<%= preview_discovery_admin_supplier_catalog_items_path %>" formmethod="post" class="btn btn-outline-secondary">
+          <i class="fa-solid fa-magnifying-glass me-1"></i> Vista previa HLJ
+        </button>
+        <% if @discovery_preview.present? %>
+          <button type="submit" name="discovery_mode" value="full" class="btn btn-primary">
+            <i class="fa-solid fa-arrows-rotate me-1"></i> Ejecutar descubrimiento HLJ
+          </button>
+          <button type="submit" name="discovery_mode" value="test" class="btn btn-outline-success">
+            <i class="fa-solid fa-vial-circle-check me-1"></i> Prueba rápida HLJ
+          </button>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<% if @discovery_preview.present? %>
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white">
+      <h5 class="mb-0">Vista previa HLJ</h5>
+    </div>
+    <div class="card-body">
+      <div class="row g-3 mb-3">
+        <div class="col-12 col-md-4">
+          <div class="border rounded p-3 h-100">
+            <small class="text-muted d-block">Productos encontrados</small>
+            <div class="fs-4 fw-bold"><%= @discovery_preview.total_found %></div>
+            <div class="small text-muted">en <%= @discovery_preview.scanned_pages %> página(s) consultadas</div>
+          </div>
+        </div>
+        <div class="col-12 col-md-4">
+          <div class="border rounded p-3 h-100">
+            <small class="text-muted d-block">Muestra visible</small>
+            <div class="fs-4 fw-bold"><%= @discovery_preview.sample_items.size %></div>
+            <div class="small text-muted">primeros <%= @discovery_preview.sample_limit %> resultados, sin guardar en BD</div>
+          </div>
+        </div>
+        <div class="col-12 col-md-4">
+          <div class="border rounded p-3 h-100">
+            <small class="text-muted d-block">Páginas disponibles</small>
+            <div class="fs-4 fw-bold"><%= @discovery_preview.available_pages %></div>
+            <div class="small text-muted">según la navegación detectada en HLJ</div>
+          </div>
+        </div>
+      </div>
+
+      <% if @discovery_preview.sample_items.any? %>
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Artículo</th>
+                <th>SKU externo</th>
+                <th>Precio listado</th>
+                <th>Imagen</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @discovery_preview.sample_items.each do |item| %>
+                <tr>
+                  <td>
+                    <div class="fw-semibold"><%= item[:name] %></div>
+                    <div class="small text-muted" style="word-break: break-all;"><%= item[:source_url] %></div>
+                  </td>
+                  <td><%= item[:external_sku] %></td>
+                  <td><%= item[:listing_price_text].presence || "—" %></td>
+                  <td>
+                    <% if item[:listing_image_url].present? %>
+                      <a href="<%= item[:listing_image_url] %>" target="_blank" rel="noopener">Ver imagen</a>
+                    <% else %>
+                      <span class="text-muted">—</span>
+                    <% end %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      <% else %>
+        <p class="text-muted mb-0">No se encontraron productos con esos filtros.</p>
+      <% end %>
+    </div>
+  </div>
+<% end %>
+
+<div class="row g-4">
+  <div class="col-12 col-xl-8">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white"><h5 class="mb-0">Qué hace esta vista</h5></div>
+      <div class="card-body">
+        <ul class="mb-0 ps-3">
+          <li>Descubre productos nuevos desde HLJ con filtros por preset, palabra, makers y categoría.</li>
+          <li>Muestra una vista previa sin tocar la base de datos antes de importar.</li>
+          <li>Lanza una corrida completa o una prueba rápida y monitorea su progreso en vivo.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="col-12 col-xl-4">
+    <%= render "recent_runs", recent_runs: @recent_runs %>
+  </div>
+</div>

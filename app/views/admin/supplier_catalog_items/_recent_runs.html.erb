@@ -1,0 +1,33 @@
+<div class="card border-0 shadow-sm">
+  <div class="card-header bg-white"><h5 class="mb-0">Corridas recientes</h5></div>
+  <div class="card-body">
+    <% if recent_runs.any? %>
+      <div class="vstack gap-3">
+        <% recent_runs.each do |run| %>
+          <div class="border rounded p-2">
+            <div class="fw-semibold small"><%= run.source %> · <%= run.mode %></div>
+            <div class="small text-muted"><%= run.status %> · <%= l(run.created_at, format: :short) %></div>
+            <div class="small text-muted">Procesados: <%= run.processed_count %> · Errores: <%= run.error_count %></div>
+            <% if run.metadata.present? %>
+              <% filters = [] %>
+              <% filters << "preset #{run.metadata['preset']}" if run.metadata['preset'].present? %>
+              <% filters << "word=#{run.metadata['word']}" if run.metadata['word'].present? %>
+              <% filters << "makers=#{Array(run.metadata['makers']).join(' / ')}" if Array(run.metadata['makers']).any? %>
+              <% filters << "género=#{run.metadata['genre_code']}" if run.metadata['genre_code'].present? %>
+              <% filters << "páginas=#{run.metadata['max_pages']}" if run.metadata['max_pages'].present? %>
+              <% filters << "productos=#{run.metadata['max_items']}" if run.metadata['max_items'].present? %>
+              <% if filters.any? %>
+                <div class="small text-muted"><%= filters.join(' · ') %></div>
+              <% end %>
+            <% end %>
+            <% if run.stop_requested? %>
+              <div class="small text-warning">Detención solicitada</div>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+    <% else %>
+      <p class="text-muted mb-0">Aún no hay corridas registradas.</p>
+    <% end %>
+  </div>
+</div>

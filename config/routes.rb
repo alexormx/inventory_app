@@ -150,6 +150,7 @@ Rails.application.routes.draw do
         post :refresh_tomica_fandom
       end
       collection do
+        get :discovery
         get :discovery_progress
         post :preview_discovery
         post :run_discovery

@@ -15,14 +15,32 @@ RSpec.describe "Admin::SupplierCatalogItems", type: :request do
       get admin_supplier_catalog_items_path
 
       expect(response).to have_http_status(:ok)
-      expect(response.body).to include("Catálogo proveedor")
+      expect(response.body).to include("Actualización y enriquecimiento del catálogo")
       expect(response.body).to include(catalog_item.canonical_name)
+      expect(response.body).not_to include("Vista previa HLJ")
+    end
+
+    it "links to the discovery page" do
+      get admin_supplier_catalog_items_path
+
+      expect(response.body).to include("Ir a descubrir nuevos productos")
+    end
+  end
+
+  describe "GET /admin/supplier_catalog_items/discovery" do
+    it "renders the discovery page" do
+      get discovery_admin_supplier_catalog_items_path
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("Descubrir nuevos productos en HLJ")
+      expect(response.body).to include("Vista previa HLJ")
+      expect(response.body).not_to include(catalog_item.canonical_name)
     end
 
     it "shows the stop button when a discovery run is active" do
       create(:supplier_sync_run, source: "hlj", mode: "weekly_discovery", status: "running", started_at: Time.current)
 
-      get admin_supplier_catalog_items_path
+      get discovery_admin_supplier_catalog_items_path
 
       expect(response.body).to include("Detener descubrimiento")
     end
@@ -62,7 +80,7 @@ RSpec.describe "Admin::SupplierCatalogItems", type: :request do
 
       post stop_discovery_admin_supplier_catalog_items_path
 
-      expect(response).to redirect_to(admin_supplier_catalog_items_path)
+      expect(response).to redirect_to(discovery_admin_supplier_catalog_items_path)
       expect(run.reload.metadata["stop_requested"]).to be true
     end
   end
@@ -81,7 +99,7 @@ RSpec.describe "Admin::SupplierCatalogItems", type: :request do
         max_items: "7"
       }
 
-      expect(response).to redirect_to(admin_supplier_catalog_items_path)
+      expect(response).to redirect_to(discovery_admin_supplier_catalog_items_path)
       expect(Suppliers::Hlj::WeeklyDiscoveryJob).to have_received(:perform_later).with(
         mode: "manual_test",
         preset: "takara_cars",
@@ -102,7 +120,7 @@ RSpec.describe "Admin::SupplierCatalogItems", type: :request do
         preset: "tomica"
       }
 
-      expect(response).to redirect_to(admin_supplier_catalog_items_path)
+      expect(response).to redirect_to(discovery_admin_supplier_catalog_items_path)
       expect(Suppliers::Hlj::WeeklyDiscoveryJob).to have_received(:perform_later).with(
         mode: "manual_test",
         preset: "tomica",
@@ -147,6 +165,7 @@ RSpec.describe "Admin::SupplierCatalogItems", type: :request do
       expect(response.body).to include("Vista previa HLJ")
       expect(response.body).to include("24")
       expect(response.body).to include("No.43 Lamborghini Temerario")
+      expect(response.body).to include("Ejecutar descubrimiento HLJ")
     end
   end
 

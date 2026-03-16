@@ -20,9 +20,9 @@ RSpec.describe 'Admin::Products pipeline', type: :request do
       expect(response).to have_http_status(:ok)
       body = response.body
       expect(body).to include('turbo-frame id="products_frame"')
-      expect(body).to include('Drafts (2)')
-      expect(body).to include('Active (1)')
-      expect(body).to include('Inactive (3)')
+      expect(body).to include('Borradores (2)')
+      expect(body).to include('Activos (1)')
+      expect(body).to include('Inactivos (3)')
     end
   end
 
