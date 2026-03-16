@@ -21,11 +21,21 @@ module Suppliers
         "1/200", "1/350", "1/400", "1/500", "1/700"
       ].freeze
 
-      def initialize(word: nil, makers: [], genre_code: nil, scale: nil, series: nil)
+      MAKER_OPTIONS = [
+        "Takara Tomy", "Tomy", "Tomytec", "Takara Tomy A.R.T.S",
+        "Bandai", "Tamiya", "Hasegawa", "Aoshima", "Fujimi",
+        "Good Smile Company", "Kotobukiya", "Max Factory", "Kaiyodo",
+        "MegaHouse", "Medicom", "Hot Toys", "Sentinel",
+        "Hobby Japan", "Ignition Model", "Kyosho",
+        "Ebbro", "F-Toys", "Revell", "Fine Molds",
+        "Platz", "Dragon", "Meng", "Trumpeter"
+      ].freeze
+
+      def initialize(word: nil, makers: [], genre_codes: [], scales: [], series: nil)
         @word = word.to_s.strip.presence
         @makers = Array(makers).compact_blank
-        @genre_code = genre_code.to_s.strip.presence
-        @scale = scale.to_s.strip.presence
+        @genre_codes = Array(genre_codes).compact_blank
+        @scales = Array(scales).compact_blank
         @series = series.to_s.strip.presence
       end
 
@@ -33,8 +43,8 @@ module Suppliers
         params = []
         params << ["Word", @word] if @word.present?
         @makers.each { |maker| params << ["Maker2", maker] }
-        params << ["GenreCode2", @genre_code] if @genre_code.present?
-        params << ["Scale2", @scale] if @scale.present?
+        @genre_codes.each { |gc| params << ["GenreCode2", gc] }
+        @scales.each { |s| params << ["Scale2", s] }
         params << ["Series2", @series] if @series.present?
         params << ["Page", page_number] if page_number.to_i > 1
 

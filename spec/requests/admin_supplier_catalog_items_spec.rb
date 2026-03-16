@@ -106,8 +106,8 @@ RSpec.describe "Admin::SupplierCatalogItems", type: :request do
         discovery_mode: "test",
         preset: "takara_cars",
         word: "tomica",
-        makers: "Takara Tomy, Tomy\nTomytec",
-        genre_code: "Cars & Bikes",
+        makers: ["Takara Tomy", "Tomy", "Tomytec"],
+        genre_codes: ["Cars & Bikes"],
         max_pages: "3",
         max_items: "7"
       }
@@ -118,7 +118,7 @@ RSpec.describe "Admin::SupplierCatalogItems", type: :request do
         preset: "takara_cars",
         word: "tomica",
         makers: ["Takara Tomy", "Tomy", "Tomytec"],
-        genre_code: "Cars & Bikes",
+        genre_codes: ["Cars & Bikes"],
         max_pages: 3,
         max_items: 7,
         fetch_detail: true
@@ -138,7 +138,6 @@ RSpec.describe "Admin::SupplierCatalogItems", type: :request do
         mode: "manual_test",
         preset: "tomica",
         word: "tomica",
-        makers: [],
         max_pages: 1,
         max_items: 5,
         fetch_detail: true

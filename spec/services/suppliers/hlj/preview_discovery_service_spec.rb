@@ -49,7 +49,7 @@ RSpec.describe Suppliers::Hlj::PreviewDiscoveryService do
         max_pages: 2,
         word: "tomica",
         makers: ["Takara Tomy"],
-        genre_code: "Cars & Bikes",
+        genre_codes: ["Cars & Bikes"],
         connection: connection
       ).call
     end.not_to change(SupplierCatalogItem, :count)

@@ -7,9 +7,9 @@ module Suppliers
       MAX_PREVIEW_PAGES = 3
       Result = Struct.new(:total_found, :sample_items, :scanned_pages, :available_pages, :sample_limit, keyword_init: true)
 
-      def initialize(max_pages: nil, word: nil, makers: [], genre_code: nil, scale: nil, series: nil, connection: nil)
+      def initialize(max_pages: nil, word: nil, makers: [], genre_codes: [], scales: [], series: nil, connection: nil)
         @max_pages = max_pages || MAX_PREVIEW_PAGES
-        @query = SearchQuery.new(word: word, makers: makers, genre_code: genre_code, scale: scale, series: series)
+        @query = SearchQuery.new(word: word, makers: makers, genre_codes: genre_codes, scales: scales, series: series)
         @connection = connection
       end
 

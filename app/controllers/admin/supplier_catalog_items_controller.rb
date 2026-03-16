@@ -5,30 +5,30 @@ module Admin
     HLJ_DISCOVERY_PRESETS = {
       "all" => {
         label: "Todo HLJ",
-        word: nil, makers: [], genre_code: nil, scale: nil, series: nil
+        word: nil, makers: [], genre_codes: [], scales: [], series: nil
       },
       "tomica" => {
         label: "Buscar: tomica",
         word: "tomica",
-        makers: [], genre_code: nil, scale: nil, series: nil
+        makers: [], genre_codes: [], scales: [], series: nil
       },
       "takara_cars" => {
         label: "Takara Tomy — Cars & Bikes",
         word: nil,
         makers: ["Takara Tomy", "Tomy", "Tomytec", "Takara Tomy A.R.T.S"],
-        genre_code: "Cars & Bikes", scale: nil, series: nil
+        genre_codes: ["Cars & Bikes"], scales: [], series: nil
       },
       "tomica_164" => {
         label: "Tomica 1/64 — Cars & Bikes",
         word: "tomica",
         makers: ["Takara Tomy"],
-        genre_code: "Cars & Bikes", scale: "1/64", series: nil
+        genre_codes: ["Cars & Bikes"], scales: ["1/64"], series: nil
       },
       "tomica_premium" => {
         label: "Tomica Premium",
         word: "tomica premium",
         makers: ["Takara Tomy"],
-        genre_code: "Cars & Bikes", scale: nil, series: nil
+        genre_codes: ["Cars & Bikes"], scales: [], series: nil
       }
     }.freeze
 
@@ -55,8 +55,8 @@ module Admin
         max_pages: options[:max_pages],
         word: options[:word],
         makers: options[:makers],
-        genre_code: options[:genre_code],
-        scale: options[:scale],
+        genre_codes: options[:genre_codes],
+        scales: options[:scales],
         series: options[:series]
       ).call
 
@@ -130,6 +130,7 @@ module Admin
     def prepare_discovery_view
       @active_discovery_run = active_discovery_run
       @discovery_preset_options = HLJ_DISCOVERY_PRESETS.map { |key, config| [config[:label], key] }
+      @maker_options = Suppliers::Hlj::SearchQuery::MAKER_OPTIONS
       @genre_options = Suppliers::Hlj::SearchQuery::GENRE_OPTIONS
       @scale_options = Suppliers::Hlj::SearchQuery::SCALE_OPTIONS
       @discovery_form = discovery_form_defaults
@@ -202,9 +203,9 @@ module Admin
       {
         preset: params[:preset].presence || "all",
         word: params[:word].to_s,
-        makers: params[:makers].to_s,
-        genre_code: params[:genre_code].to_s,
-        scale: params[:scale].to_s,
+        makers: array_param(:makers),
+        genre_codes: array_param(:genre_codes),
+        scales: array_param(:scales),
         series: params[:series].to_s,
         max_pages: params[:max_pages].presence,
         max_items: params[:max_items].presence
@@ -225,18 +226,25 @@ module Admin
         mode: mode,
         preset: preset_key,
         word: params[:word].presence || preset[:word],
-        makers: parsed_makers.presence || preset[:makers],
-        genre_code: params[:genre_code].presence || preset[:genre_code],
-        scale: params[:scale].presence || preset[:scale],
+        makers: array_param(:makers).presence || preset[:makers],
+        genre_codes: array_param(:genre_codes).presence || preset[:genre_codes],
+        scales: array_param(:scales).presence || preset[:scales],
         series: params[:series].presence || preset[:series],
         max_pages: max_pages,
         max_items: max_items,
         fetch_detail: true
-      }.compact
+      }.compact_blank
     end
 
     def parsed_makers
       params[:makers].to_s.split(/\s*,\s*|\n+/).map(&:strip).reject(&:blank?)
+    end
+
+    def array_param(key)
+      value = params[key]
+      return Array(value).compact_blank if value.is_a?(Array)
+
+      value.to_s.split(/\s*,\s*|\n+/).map(&:strip).reject(&:blank?)
     end
 
     def integer_param(key)
@@ -252,8 +260,8 @@ module Admin
       filters << "preset #{options[:preset]}" if options[:preset].present?
       filters << "word=#{options[:word]}" if options[:word].present?
       filters << "makers=#{Array(options[:makers]).join(' / ')}" if Array(options[:makers]).any?
-      filters << "género=#{options[:genre_code]}" if options[:genre_code].present?
-      filters << "escala=#{options[:scale]}" if options[:scale].present?
+      filters << "categoría=#{Array(options[:genre_codes]).join(' / ')}" if Array(options[:genre_codes]).any?
+      filters << "escala=#{Array(options[:scales]).join(' / ')}" if Array(options[:scales]).any?
       filters << "serie=#{options[:series]}" if options[:series].present?
       filters << "páginas=#{options[:max_pages]}" if options[:max_pages].present?
       filters << "productos=#{options[:max_items]}" if options[:max_items].present?

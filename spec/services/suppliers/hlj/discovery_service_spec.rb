@@ -146,7 +146,7 @@ RSpec.describe Suppliers::Hlj::DiscoveryService do
       max_pages: 1,
       word: "tomica",
       makers: ["Takara Tomy", "Tomy", "Tomytec"],
-      genre_code: "Cars & Bikes",
+      genre_codes: ["Cars & Bikes"],
       fetch_detail: false,
       connection: connection
     ).call

@@ -18,29 +18,34 @@
     <p class="text-muted mb-3">Define los criterios de búsqueda en HLJ. Nada se guarda hasta que tú lo indiques.</p>
 
     <%= form_with url: preview_discovery_admin_supplier_catalog_items_path, method: :post, data: { turbo: false }, class: "row g-3 align-items-end" do |f| %>
-      <div class="col-12 col-md-3">
+      <div class="col-12 col-md-2">
         <%= f.label :preset, "Preset", class: "form-label" %>
         <%= f.select :preset, options_for_select(@discovery_preset_options, @discovery_form[:preset]), {}, class: "form-select" %>
       </div>
-      <div class="col-12 col-md-3">
+      <div class="col-12 col-md-2">
         <%= f.label :word, "Search", class: "form-label" %>
         <%= f.text_field :word, value: @discovery_form[:word], class: "form-control", placeholder: "Ej. tomica premium" %>
       </div>
-      <div class="col-12 col-md-3">
-        <%= f.label :makers, "Manufacturer", class: "form-label" %>
-        <%= f.text_field :makers, value: @discovery_form[:makers], class: "form-control", placeholder: "Takara Tomy, Tomy, Tomytec" %>
+      <div class="col-12 col-md-4">
+        <%= f.label "makers[]", "Manufacturer", class: "form-label" %>
+        <%= select_tag "makers[]",
+              options_for_select(@maker_options.map { |m| [m, m] }, @discovery_form[:makers]),
+              multiple: true, class: "form-select", size: 4 %>
+        <div class="form-text">Ctrl+click para seleccionar varios</div>
+      </div>
+      <div class="col-12 col-md-4">
+        <%= f.label "genre_codes[]", "Category", class: "form-label" %>
+        <%= select_tag "genre_codes[]",
+              options_for_select(@genre_options.map { |g| [g, g] }, @discovery_form[:genre_codes]),
+              multiple: true, class: "form-select", size: 4 %>
+        <div class="form-text">Ctrl+click para seleccionar varias</div>
       </div>
       <div class="col-12 col-md-3">
-        <%= f.label :genre_code, "Category", class: "form-label" %>
-        <%= f.select :genre_code,
-              options_for_select([["— Todas —", ""]] + @genre_options.map { |g| [g, g] }, @discovery_form[:genre_code]),
-              {}, class: "form-select" %>
-      </div>
-      <div class="col-6 col-md-2">
-        <%= f.label :scale, "Scale", class: "form-label" %>
-        <%= f.select :scale,
-              options_for_select([["— Todas —", ""]] + @scale_options.map { |s| [s, s] }, @discovery_form[:scale]),
-              {}, class: "form-select" %>
+        <%= f.label "scales[]", "Scale", class: "form-label" %>
+        <%= select_tag "scales[]",
+              options_for_select(@scale_options.map { |s| [s, s] }, @discovery_form[:scales]),
+              multiple: true, class: "form-select", size: 4 %>
+        <div class="form-text">Ctrl+click para seleccionar varias</div>
       </div>
       <div class="col-12 col-md-3">
         <%= f.label :series, "Series", class: "form-label" %>
@@ -54,7 +59,7 @@
         <%= f.label :max_items, "Máx. productos", class: "form-label" %>
         <%= f.number_field :max_items, value: @discovery_form[:max_items], min: 1, class: "form-control", placeholder: "Todos" %>
       </div>
-      <div class="col-12 col-md-3">
+      <div class="col-12 col-md-2">
         <button type="submit" class="btn btn-outline-secondary" data-turbo-submits-with="Consultando HLJ…">
           <i class="fa-solid fa-magnifying-glass me-1"></i> Consultar vista previa
         </button>
@@ -144,9 +149,15 @@
         <%= form_with url: run_discovery_admin_supplier_catalog_items_path, method: :post, local: true, class: "d-flex flex-wrap gap-2" do |f| %>
           <%= f.hidden_field :preset, value: @discovery_form[:preset] %>
           <%= f.hidden_field :word, value: @discovery_form[:word] %>
-          <%= f.hidden_field :makers, value: @discovery_form[:makers] %>
-          <%= f.hidden_field :genre_code, value: @discovery_form[:genre_code] %>
-          <%= f.hidden_field :scale, value: @discovery_form[:scale] %>
+          <% Array(@discovery_form[:makers]).each do |maker| %>
+            <input type="hidden" name="makers[]" value="<%= maker %>" />
+          <% end %>
+          <% Array(@discovery_form[:genre_codes]).each do |gc| %>
+            <input type="hidden" name="genre_codes[]" value="<%= gc %>" />
+          <% end %>
+          <% Array(@discovery_form[:scales]).each do |s| %>
+            <input type="hidden" name="scales[]" value="<%= s %>" />
+          <% end %>
           <%= f.hidden_field :series, value: @discovery_form[:series] %>
           <%= f.hidden_field :max_pages, value: @discovery_form[:max_pages] %>
           <%= f.hidden_field :max_items, value: @discovery_form[:max_items] %>
