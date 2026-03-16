@@ -157,6 +157,11 @@ module Admin
       redirect_to admin_supplier_catalog_item_path(@supplier_catalog_item), alert: "Error al vincular producto: #{e.message}"
     end
 
+    def unlink_product
+      @supplier_catalog_item.update!(product_id: nil)
+      redirect_to admin_supplier_catalog_item_path(@supplier_catalog_item), notice: "Producto desvinculado."
+    end
+
     def sync_product
       if @supplier_catalog_item.product.blank?
         redirect_to admin_supplier_catalog_item_path(@supplier_catalog_item), alert: "Primero vincula o genera un producto."
@@ -283,6 +288,15 @@ module Admin
         product_name = @supplier_catalog_item.product.product_name.to_s
         @name_similarity = helpers.name_similarity_score(catalog_name, product_name)
         @name_mismatch = @name_similarity < 0.3
+      end
+
+      # Products matching by supplier_product_code (same SKU)
+      sku = @supplier_catalog_item.external_sku
+      if sku.present?
+        @sku_matching_products = Product.where(supplier_product_code: sku)
+        @sku_matching_products = @sku_matching_products.or(Product.where(supplier_product_code: sku.upcase)) if sku != sku.upcase
+      else
+        @sku_matching_products = Product.none
       end
 
       # Candidate products by name keywords

@@ -144,6 +144,7 @@ Rails.application.routes.draw do
       member do
         post :create_product
         post :link_product
+        post :unlink_product
         post :sync_product
         post :refresh_hlj
         post :refresh_takara_tomy_mall
