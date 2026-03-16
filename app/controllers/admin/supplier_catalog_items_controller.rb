@@ -77,6 +77,18 @@ module Admin
       redirect_to discovery_admin_supplier_catalog_items_path, notice: "Se solicitó detener la corrida HLJ activa."
     end
 
+    def cancel_discovery
+      run = SupplierSyncRun.active.where(source: "hlj").order(created_at: :desc).first
+
+      if run.blank?
+        redirect_to discovery_admin_supplier_catalog_items_path, alert: "No hay una corrida HLJ activa para cancelar."
+        return
+      end
+
+      run.cancel!
+      redirect_to discovery_admin_supplier_catalog_items_path, notice: "Corrida HLJ cancelada."
+    end
+
     def show
       @sources = @supplier_catalog_item.supplier_catalog_sources.order(:source)
       @recent_runs = SupplierSyncRun.where(supplier_catalog_item: @supplier_catalog_item).recent.limit(10)
@@ -231,7 +243,8 @@ module Admin
     end
 
     def active_discovery_run
-      SupplierSyncRun.active.where(source: "hlj").order(created_at: :desc).first
+      SupplierSyncRun.cancel_stale!
+      SupplierSyncRun.genuinely_active.where(source: "hlj").order(created_at: :desc).first
     end
   end
 end

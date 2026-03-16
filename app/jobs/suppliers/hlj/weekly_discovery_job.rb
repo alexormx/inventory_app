@@ -7,6 +7,13 @@ module Suppliers
 
       retry_on StandardError, wait: :polynomially_longer, attempts: 3
 
+      discard_on(StandardError) do |job, error|
+        run_id = job.arguments.first&.dig(:run_id) || job.arguments.first&.dig("run_id")
+        if run_id && (run = SupplierSyncRun.find_by(id: run_id))
+          run.fail!("Job descartado tras reintentos: #{error.message}")
+        end
+      end
+
       def perform(options = {})
         normalized = options.to_h.deep_symbolize_keys
         run = SupplierSyncRun.create!(
@@ -25,6 +32,9 @@ module Suppliers
           fetch_detail: normalized.key?(:fetch_detail) ? normalized[:fetch_detail] : true,
           run: run
         ).call
+      rescue StandardError => e
+        run&.fail!(e.message) if run&.persisted? && !run&.reload&.status&.in?(%w[completed failed cancelled])
+        raise
       end
 
       private

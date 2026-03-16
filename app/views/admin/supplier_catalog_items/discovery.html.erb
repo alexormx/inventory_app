@@ -2,34 +2,22 @@
   <div>
     <p class="admin-page-eyebrow mb-1">Proveedor</p>
     <h2 class="mb-0 d-flex align-items-center gap-2"><i class="fa-solid fa-cloud-arrow-down"></i> Descubrir nuevos productos en HLJ</h2>
-    <p class="text-muted mb-0 mt-2">Busca artículos nuevos en HLJ, revisa la vista previa, lanza la importación y monitorea el progreso de la corrida.</p>
+    <p class="text-muted mb-0 mt-2">Configura filtros, consulta una vista previa y, si te convence, lanza la importación.</p>
   </div>
   <div class="d-flex gap-2">
-    <% if @active_discovery_run.present? %>
-      <%= button_to stop_discovery_admin_supplier_catalog_items_path, method: :post, class: "btn btn-outline-danger" do %>
-        <i class="fa-solid fa-stop me-1"></i> Detener descubrimiento
-      <% end %>
-    <% end %>
     <%= link_to admin_supplier_catalog_items_path, class: "btn btn-outline-secondary" do %>
       <i class="fa-solid fa-boxes-stacked me-1"></i> Ir a actualización y enriquecimiento
     <% end %>
   </div>
 </div>
 
-<% if @active_discovery_run.present? %>
-  <%= render "discovery_progress_frame", run: @active_discovery_run %>
-<% end %>
-
+<%# ── Paso 1: Filtros + botón Vista previa ── %>
 <div class="card border-0 shadow-sm mb-4">
   <div class="card-body">
-    <div class="row g-3 align-items-end">
-      <div class="col-12">
-        <h5 class="mb-1">Nuevo descubrimiento</h5>
-        <p class="text-muted mb-0">Configura filtros HLJ, obtén una vista previa sin guardar y luego ejecuta el scrapeo real cuando estés conforme.</p>
-      </div>
-    </div>
+    <h5 class="mb-1"><span class="badge bg-primary me-2">1</span> Configura filtros</h5>
+    <p class="text-muted mb-3">Define los criterios de búsqueda en HLJ. Nada se guarda hasta que tú lo indiques.</p>
 
-    <%= form_with url: run_discovery_admin_supplier_catalog_items_path, method: :post, local: true, class: "row g-3 align-items-end mt-1" do |f| %>
+    <%= form_with url: preview_discovery_admin_supplier_catalog_items_path, method: :post, local: true, class: "row g-3 align-items-end" do |f| %>
       <div class="col-12 col-md-3">
         <%= f.label :preset, "Preset", class: "form-label" %>
         <%= f.select :preset, options_for_select(@discovery_preset_options, @discovery_form[:preset]), {}, class: "form-select" %>
@@ -54,29 +42,21 @@
         <%= f.label :max_items, "Máx. productos", class: "form-label" %>
         <%= f.number_field :max_items, value: @discovery_form[:max_items], min: 1, class: "form-control" %>
       </div>
-      <div class="col-12 col-md-10 d-flex flex-wrap gap-2">
-        <button type="submit" formaction="<%= preview_discovery_admin_supplier_catalog_items_path %>" formmethod="post" class="btn btn-outline-secondary">
-          <i class="fa-solid fa-magnifying-glass me-1"></i> Vista previa HLJ
+      <div class="col-12 col-md-8">
+        <button type="submit" class="btn btn-outline-secondary">
+          <i class="fa-solid fa-magnifying-glass me-1"></i> Consultar vista previa
         </button>
-        <% if @discovery_preview.present? %>
-          <button type="submit" name="discovery_mode" value="full" class="btn btn-primary">
-            <i class="fa-solid fa-arrows-rotate me-1"></i> Ejecutar descubrimiento HLJ
-          </button>
-          <button type="submit" name="discovery_mode" value="test" class="btn btn-outline-success">
-            <i class="fa-solid fa-vial-circle-check me-1"></i> Prueba rápida HLJ
-          </button>
-        <% end %>
       </div>
     <% end %>
   </div>
 </div>
 
+<%# ── Paso 2: Vista previa (solo si se consultó) ── %>
 <% if @discovery_preview.present? %>
   <div class="card border-0 shadow-sm mb-4">
-    <div class="card-header bg-white">
-      <h5 class="mb-0">Vista previa HLJ</h5>
-    </div>
     <div class="card-body">
+      <h5 class="mb-3"><span class="badge bg-primary me-2">2</span> Vista previa — resultados sin guardar</h5>
+
       <div class="row g-3 mb-3">
         <div class="col-12 col-md-4">
           <div class="border rounded p-3 h-100">
@@ -89,7 +69,7 @@
           <div class="border rounded p-3 h-100">
             <small class="text-muted d-block">Muestra visible</small>
             <div class="fs-4 fw-bold"><%= @discovery_preview.sample_items.size %></div>
-            <div class="small text-muted">primeros <%= @discovery_preview.sample_limit %> resultados, sin guardar en BD</div>
+            <div class="small text-muted">primeros <%= @discovery_preview.sample_limit %> resultados</div>
           </div>
         </div>
         <div class="col-12 col-md-4">
@@ -136,24 +116,54 @@
       <% else %>
         <p class="text-muted mb-0">No se encontraron productos con esos filtros.</p>
       <% end %>
+
+      <%# ── Paso 3: Ejecutar importación ── %>
+      <div class="border-top mt-4 pt-4">
+        <h5 class="mb-3"><span class="badge bg-success me-2">3</span> Ejecutar importación a base de datos</h5>
+        <p class="text-muted mb-3">Los productos se importarán al catálogo proveedor. Elige corrida completa o prueba rápida.</p>
+        <%= form_with url: run_discovery_admin_supplier_catalog_items_path, method: :post, local: true, class: "d-flex flex-wrap gap-2" do |f| %>
+          <%= f.hidden_field :preset, value: @discovery_form[:preset] %>
+          <%= f.hidden_field :word, value: @discovery_form[:word] %>
+          <%= f.hidden_field :makers, value: @discovery_form[:makers] %>
+          <%= f.hidden_field :genre_code, value: @discovery_form[:genre_code] %>
+          <%= f.hidden_field :max_pages, value: @discovery_form[:max_pages] %>
+          <%= f.hidden_field :max_items, value: @discovery_form[:max_items] %>
+          <button type="submit" name="discovery_mode" value="full" class="btn btn-primary">
+            <i class="fa-solid fa-arrows-rotate me-1"></i> Ejecutar descubrimiento completo
+          </button>
+          <button type="submit" name="discovery_mode" value="test" class="btn btn-outline-success">
+            <i class="fa-solid fa-vial-circle-check me-1"></i> Prueba rápida (pocos productos)
+          </button>
+        <% end %>
+      </div>
     </div>
   </div>
 <% end %>
 
-<div class="row g-4">
-  <div class="col-12 col-xl-8">
-    <div class="card border-0 shadow-sm">
-      <div class="card-header bg-white"><h5 class="mb-0">Qué hace esta vista</h5></div>
-      <div class="card-body">
-        <ul class="mb-0 ps-3">
-          <li>Descubre productos nuevos desde HLJ con filtros por preset, palabra, makers y categoría.</li>
-          <li>Muestra una vista previa sin tocar la base de datos antes de importar.</li>
-          <li>Lanza una corrida completa o una prueba rápida y monitorea su progreso en vivo.</li>
-        </ul>
+<%# ── Progreso en vivo (solo si hay una corrida activa de verdad) ── %>
+<% if @active_discovery_run.present? %>
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0"><i class="fa-solid fa-spinner fa-spin me-2"></i> Corrida en progreso</h5>
+        <div class="d-flex gap-2">
+          <%= button_to stop_discovery_admin_supplier_catalog_items_path, method: :post, class: "btn btn-outline-warning btn-sm" do %>
+            <i class="fa-solid fa-stop me-1"></i> Solicitar detención
+          <% end %>
+          <%= button_to cancel_discovery_admin_supplier_catalog_items_path, method: :post, class: "btn btn-outline-danger btn-sm",
+                data: { turbo_confirm: "¿Cancelar la corrida forzadamente? Se marcará como cancelada." } do %>
+            <i class="fa-solid fa-xmark me-1"></i> Cancelar
+          <% end %>
+        </div>
       </div>
+      <%= render "discovery_progress_frame", run: @active_discovery_run %>
     </div>
   </div>
-  <div class="col-12 col-xl-4">
+<% end %>
+
+<%# ── Corridas recientes ── %>
+<div class="row g-4">
+  <div class="col-12 col-xl-4 ms-auto">
     <%= render "recent_runs", recent_runs: @recent_runs %>
   </div>
 </div>

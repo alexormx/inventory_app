@@ -28,21 +28,34 @@ RSpec.describe "Admin::SupplierCatalogItems", type: :request do
   end
 
   describe "GET /admin/supplier_catalog_items/discovery" do
-    it "renders the discovery page" do
+    it "renders the discovery page with step-based flow" do
       get discovery_admin_supplier_catalog_items_path
 
       expect(response).to have_http_status(:ok)
       expect(response.body).to include("Descubrir nuevos productos en HLJ")
-      expect(response.body).to include("Vista previa HLJ")
+      expect(response.body).to include("Consultar vista previa")
+      expect(response.body).to include("Configura filtros")
       expect(response.body).not_to include(catalog_item.canonical_name)
+      expect(response.body).not_to include("Corrida en progreso")
     end
 
-    it "shows the stop button when a discovery run is active" do
+    it "shows progress and stop/cancel when a discovery run is genuinely active" do
       create(:supplier_sync_run, source: "hlj", mode: "weekly_discovery", status: "running", started_at: Time.current)
 
       get discovery_admin_supplier_catalog_items_path
 
-      expect(response.body).to include("Detener descubrimiento")
+      expect(response.body).to include("Corrida en progreso")
+      expect(response.body).to include("Solicitar detención")
+      expect(response.body).to include("Cancelar")
+    end
+
+    it "does not show stale runs as active" do
+      create(:supplier_sync_run, source: "hlj", mode: "weekly_discovery", status: "running",
+             started_at: 2.hours.ago, created_at: 2.hours.ago, updated_at: 2.hours.ago)
+
+      get discovery_admin_supplier_catalog_items_path
+
+      expect(response.body).not_to include("Corrida en progreso")
     end
   end
 
@@ -162,10 +175,21 @@ RSpec.describe "Admin::SupplierCatalogItems", type: :request do
       end.not_to change(SupplierCatalogItem, :count)
 
       expect(response).to have_http_status(:ok)
-      expect(response.body).to include("Vista previa HLJ")
+      expect(response.body).to include("Vista previa")
       expect(response.body).to include("24")
       expect(response.body).to include("No.43 Lamborghini Temerario")
-      expect(response.body).to include("Ejecutar descubrimiento HLJ")
+      expect(response.body).to include("Ejecutar descubrimiento completo")
+    end
+  end
+
+  describe "POST /admin/supplier_catalog_items/cancel_discovery" do
+    it "cancels the active discovery run" do
+      run = create(:supplier_sync_run, source: "hlj", mode: "weekly_discovery", status: "running", started_at: Time.current, metadata: {})
+
+      post cancel_discovery_admin_supplier_catalog_items_path
+
+      expect(response).to redirect_to(discovery_admin_supplier_catalog_items_path)
+      expect(run.reload.status).to eq("cancelled")
     end
   end
 

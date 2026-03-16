@@ -155,6 +155,7 @@ Rails.application.routes.draw do
         post :preview_discovery
         post :run_discovery
         post :stop_discovery
+        post :cancel_discovery
       end
     end
 

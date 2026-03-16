@@ -8,10 +8,14 @@ class SupplierSyncRun < ApplicationRecord
 
   validates :source, :mode, :status, presence: true
 
+  STALE_THRESHOLD = 30.minutes
+
   scope :recent, -> { order(created_at: :desc) }
   scope :active, -> { where(status: %w[queued running]) }
+  scope :genuinely_active, -> { active.where("updated_at > ?", STALE_THRESHOLD.ago) }
   scope :completed, -> { where(status: "completed") }
   scope :running, -> { where(status: "running") }
+  scope :stale, -> { active.where("updated_at <= ?", STALE_THRESHOLD.ago) }
 
   def start!
     update!(status: "running", started_at: Time.current)
@@ -97,6 +101,14 @@ class SupplierSyncRun < ApplicationRecord
 
   def cancel!(extra_attrs = {})
     update!({ status: "cancelled", finished_at: Time.current }.merge(extra_attrs))
+  end
+
+  def stale?
+    %w[queued running].include?(status) && updated_at <= STALE_THRESHOLD.ago
+  end
+
+  def self.cancel_stale!
+    stale.find_each { |run| run.cancel!(metadata: run.send(:merged_metadata, "auto_cancelled" => "stale")) }
   end
 
   private
