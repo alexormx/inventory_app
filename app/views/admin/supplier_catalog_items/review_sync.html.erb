@@ -1,0 +1,108 @@
+<div class="admin-page-header d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+  <div>
+    <p class="admin-page-eyebrow mb-1">Sincronización selectiva</p>
+    <h2 class="mb-0 d-flex align-items-center gap-2"><i class="fa-solid fa-arrows-left-right"></i> Revisar y aprobar sincronización</h2>
+    <div class="text-muted small mt-1">
+      <strong>Catálogo:</strong> <%= @supplier_catalog_item.canonical_name %> (<%= @supplier_catalog_item.external_sku %>)
+      &nbsp;→&nbsp;
+      <strong>Producto:</strong> <%= @product.product_name %> (<%= @product.product_sku %>)
+    </div>
+  </div>
+  <div>
+    <%= link_to admin_supplier_catalog_item_path(@supplier_catalog_item), class: "btn btn-outline-secondary" do %>
+      <i class="fa-solid fa-arrow-left me-1"></i> Volver al detalle
+    <% end %>
+  </div>
+</div>
+
+<%= form_with url: apply_sync_admin_supplier_catalog_item_path(@supplier_catalog_item), method: :post, local: true do |f| %>
+
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-header bg-white d-flex justify-content-between align-items-center">
+    <h5 class="mb-0"><i class="fa-solid fa-list-check me-2"></i>Campos a sincronizar</h5>
+    <div class="form-check">
+      <input type="checkbox" class="form-check-input" id="selectAll" onchange="document.querySelectorAll('.sync-check').forEach(c => c.checked = this.checked)">
+      <label class="form-check-label small" for="selectAll">Seleccionar todos</label>
+    </div>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th style="width: 50px"></th>
+            <th style="width: 160px">Campo</th>
+            <th>Valor en Catálogo (fuente)</th>
+            <th>Valor actual en Producto</th>
+            <th style="width: 100px" class="text-center">Estado</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @sync_fields.each do |field| %>
+            <tr class="<%= field[:different] ? '' : 'table-light' %>">
+              <td class="text-center">
+                <% if field[:different] %>
+                  <input type="checkbox" name="sync_fields[]" value="<%= field[:key] %>" class="form-check-input sync-check"
+                    <%= field[:key] == "images" ? "" : "checked" %>>
+                <% end %>
+              </td>
+              <td><strong><%= field[:label] %></strong></td>
+              <td>
+                <% if field[:is_images] && Array(@supplier_catalog_item.image_urls).any? %>
+                  <div class="d-flex flex-wrap gap-2 align-items-center">
+                    <span class="badge bg-info"><%= field[:catalog_val] %></span>
+                    <% Array(@supplier_catalog_item.image_urls).first(6).each do |url| %>
+                      <img src="<%= url %>" class="rounded border" style="width: 56px; height: 56px; object-fit: cover;" loading="lazy">
+                    <% end %>
+                    <% if Array(@supplier_catalog_item.image_urls).size > 6 %>
+                      <span class="text-muted small">+<%= Array(@supplier_catalog_item.image_urls).size - 6 %> más</span>
+                    <% end %>
+                  </div>
+                <% elsif field[:catalog_val].present? %>
+                  <span class="text-break"><%= field[:catalog_val] %></span>
+                <% else %>
+                  <span class="text-muted">—</span>
+                <% end %>
+              </td>
+              <td>
+                <% if field[:is_images] %>
+                  <div class="d-flex flex-wrap gap-2 align-items-center">
+                    <span class="badge bg-secondary"><%= field[:product_val] %></span>
+                    <% @product.product_images.limit(6).each do |img| %>
+                      <%= image_tag img, class: "rounded border", style: "width: 56px; height: 56px; object-fit: cover;", loading: "lazy" %>
+                    <% end %>
+                    <% if @product.product_images.count > 6 %>
+                      <span class="text-muted small">+<%= @product.product_images.count - 6 %> más</span>
+                    <% end %>
+                  </div>
+                <% elsif field[:product_val].present? %>
+                  <span class="text-break"><%= field[:product_val] %></span>
+                <% else %>
+                  <span class="text-muted">—</span>
+                <% end %>
+              </td>
+              <td class="text-center">
+                <% if field[:different] %>
+                  <span class="badge bg-warning text-dark"><i class="fa-solid fa-not-equal me-1"></i>Diferente</span>
+                <% else %>
+                  <span class="badge bg-success"><i class="fa-solid fa-equals me-1"></i>Igual</span>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="d-flex justify-content-between">
+  <%= link_to admin_supplier_catalog_item_path(@supplier_catalog_item), class: "btn btn-outline-secondary" do %>
+    <i class="fa-solid fa-xmark me-1"></i> Cancelar
+  <% end %>
+  <button type="submit" class="btn btn-success btn-lg">
+    <i class="fa-solid fa-check me-1"></i> Aplicar sincronización seleccionada
+  </button>
+</div>
+
+<% end %>

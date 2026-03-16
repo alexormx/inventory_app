@@ -145,6 +145,8 @@ Rails.application.routes.draw do
         post :create_product
         post :link_product
         post :unlink_product
+        get  :review_sync
+        post :apply_sync
         post :sync_product
         post :refresh_hlj
         post :refresh_takara_tomy_mall

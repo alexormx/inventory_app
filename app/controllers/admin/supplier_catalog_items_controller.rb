@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "open-uri"
+
 module Admin
   class SupplierCatalogItemsController < ApplicationController
     HLJ_DISCOVERY_PRESETS = {
@@ -148,7 +150,6 @@ module Admin
     def link_product
       product = Product.find_by_identifier!(params[:product_identifier])
       @supplier_catalog_item.update!(product: product)
-      Suppliers::Catalog::SyncProductService.new(@supplier_catalog_item, product: product).call
 
       redirect_to admin_supplier_catalog_item_path(@supplier_catalog_item), notice: "Producto vinculado correctamente."
     rescue ActiveRecord::RecordNotFound
@@ -168,10 +169,58 @@ module Admin
         return
       end
 
-      Suppliers::Catalog::SyncProductService.new(@supplier_catalog_item, product: @supplier_catalog_item.product, force_full_update: true).call
-      redirect_to admin_supplier_catalog_item_path(@supplier_catalog_item), notice: "Producto sincronizado con datos del catálogo proveedor."
+      redirect_to review_sync_admin_supplier_catalog_item_path(@supplier_catalog_item)
+    end
+
+    def review_sync
+      if @supplier_catalog_item.product.blank?
+        redirect_to admin_supplier_catalog_item_path(@supplier_catalog_item), alert: "Primero vincula un producto."
+        return
+      end
+
+      @product = @supplier_catalog_item.product
+      @sync_fields = build_sync_fields
+    end
+
+    def apply_sync
+      if @supplier_catalog_item.product.blank?
+        redirect_to admin_supplier_catalog_item_path(@supplier_catalog_item), alert: "Primero vincula un producto."
+        return
+      end
+
+      product = @supplier_catalog_item.product
+      selected = Array(params[:sync_fields])
+      catalog = @supplier_catalog_item
+
+      ActiveRecord::Base.transaction do
+        product.product_name        = catalog.canonical_name          if selected.include?("product_name")
+        product.brand               = catalog.canonical_brand         if selected.include?("brand") && catalog.canonical_brand.present?
+        product.barcode             = catalog.barcode                 if selected.include?("barcode") && catalog.barcode.present?
+        product.supplier_product_code = catalog.supplier_product_code if selected.include?("supplier_product_code") && catalog.supplier_product_code.present?
+        product.launch_date         = catalog.canonical_release_date  if selected.include?("launch_date") && catalog.canonical_release_date.present?
+        product.selling_price       = catalog.canonical_price         if selected.include?("selling_price") && catalog.canonical_price.present?
+        product.description         = catalog.description_raw         if selected.include?("description") && catalog.description_raw.present?
+        product.category            = catalog.canonical_category      if selected.include?("category") && catalog.canonical_category.present?
+
+        if selected.include?("images") && Array(catalog.image_urls).any?
+          Array(catalog.image_urls).each do |url|
+            next if url.blank?
+            begin
+              downloaded = URI.open(url)
+              filename = File.basename(URI.parse(url).path)
+              product.product_images.attach(io: downloaded, filename: filename, content_type: downloaded.content_type)
+            rescue StandardError => e
+              Rails.logger.warn("[SyncImages] Failed to download #{url}: #{e.message}")
+            end
+          end
+        end
+
+        product.save!
+      end
+
+      redirect_to admin_supplier_catalog_item_path(@supplier_catalog_item), notice: "Sincronización selectiva aplicada (#{selected.size} campos)."
     rescue StandardError => e
-      redirect_to admin_supplier_catalog_item_path(@supplier_catalog_item), alert: "Error al sincronizar producto: #{e.message}"
+      redirect_to review_sync_admin_supplier_catalog_item_path(@supplier_catalog_item), alert: "Error al sincronizar: #{e.message}"
     end
 
     def refresh_hlj
@@ -318,6 +367,31 @@ module Admin
 
     def sanitize_sql_like(string)
       string.gsub(/[%_\\]/) { |m| "\\#{m}" }
+    end
+
+    def build_sync_fields
+      catalog = @supplier_catalog_item
+      product = @product
+      fields = []
+
+      fields << { key: "product_name", label: "Nombre", catalog_val: catalog.canonical_name, product_val: product.product_name, different: catalog.canonical_name.present? && catalog.canonical_name != product.product_name }
+      fields << { key: "brand", label: "Marca", catalog_val: catalog.canonical_brand, product_val: product.brand, different: catalog.canonical_brand.present? && catalog.canonical_brand != product.brand }
+      fields << { key: "category", label: "Categoría", catalog_val: catalog.canonical_category, product_val: product.category, different: catalog.canonical_category.present? && catalog.canonical_category != product.category }
+      fields << { key: "barcode", label: "Barcode", catalog_val: catalog.barcode, product_val: product.barcode, different: catalog.barcode.present? && catalog.barcode != product.barcode }
+      fields << { key: "supplier_product_code", label: "Código proveedor", catalog_val: catalog.supplier_product_code, product_val: product.supplier_product_code, different: catalog.supplier_product_code.present? && catalog.supplier_product_code != product.supplier_product_code }
+      fields << { key: "launch_date", label: "Fecha lanzamiento", catalog_val: catalog.canonical_release_date&.to_s, product_val: product.launch_date&.to_s, different: catalog.canonical_release_date.present? && catalog.canonical_release_date.to_s != product.launch_date.to_s }
+
+      catalog_price = catalog.currency == "JPY" ? "¥#{catalog.canonical_price.to_i}" : catalog.canonical_price.to_s
+      product_price = product.selling_price.to_s
+      fields << { key: "selling_price", label: "Precio", catalog_val: catalog_price, product_val: "$#{product_price}", different: catalog.canonical_price.present? && catalog.canonical_price.to_f != product.selling_price.to_f }
+
+      fields << { key: "description", label: "Descripción", catalog_val: catalog.description_raw.to_s.truncate(120), product_val: product.description.to_s.truncate(120), different: catalog.description_raw.present? && catalog.description_raw != product.description }
+
+      catalog_images = Array(catalog.image_urls).size
+      product_images = product.product_images.count
+      fields << { key: "images", label: "Imágenes", catalog_val: "#{catalog_images} del proveedor", product_val: "#{product_images} en producto", different: catalog_images > 0, is_images: true }
+
+      fields
     end
   end
 end

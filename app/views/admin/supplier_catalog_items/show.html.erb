@@ -22,8 +22,8 @@
     <% end %>
 
     <% if @supplier_catalog_item.product.present? %>
-      <%= button_to sync_product_admin_supplier_catalog_item_path(@supplier_catalog_item), method: :post, class: "btn btn-success" do %>
-        <i class="fa-solid fa-link me-1"></i> Sincronizar producto
+      <%= link_to review_sync_admin_supplier_catalog_item_path(@supplier_catalog_item), class: "btn btn-success" do %>
+        <i class="fa-solid fa-arrows-left-right me-1"></i> Revisar sincronización
       <% end %>
     <% else %>
       <%= button_to create_product_admin_supplier_catalog_item_path(@supplier_catalog_item), method: :post, class: "btn btn-success" do %>
