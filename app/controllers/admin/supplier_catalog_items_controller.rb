@@ -281,7 +281,7 @@ module Admin
       # Name similarity warning for linked products
       if @supplier_catalog_item.product.present?
         product_name = @supplier_catalog_item.product.product_name.to_s
-        @name_similarity = name_similarity_score(catalog_name, product_name)
+        @name_similarity = helpers.name_similarity_score(catalog_name, product_name)
         @name_mismatch = @name_similarity < 0.3
       end
 
@@ -296,15 +296,6 @@ module Admin
       else
         @candidate_products = Product.none
       end
-    end
-
-    def name_similarity_score(a, b)
-      words_a = a.downcase.gsub(/[^a-z0-9\s]/, " ").split.select { |w| w.length >= 2 }.to_set
-      words_b = b.downcase.gsub(/[^a-z0-9\s]/, " ").split.select { |w| w.length >= 2 }.to_set
-      return 0.0 if words_a.empty? || words_b.empty?
-
-      intersection = (words_a & words_b).size.to_f
-      intersection / [words_a.size, words_b.size].max
     end
 
     def extract_keywords(name)

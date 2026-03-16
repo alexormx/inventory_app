@@ -99,6 +99,8 @@
                     <td>
                       <% if item.product.present? %>
                         <%= link_to item.product.product_name, admin_product_path(item.product), class: "text-decoration-none" %>
+                        <% score = name_similarity_score(item.canonical_name, item.product.product_name) %>
+                        <div class="small mt-1"><%= similarity_badge(score) %></div>
                       <% else %>
                         <span class="text-muted">Sin vincular</span>
                       <% end %>
