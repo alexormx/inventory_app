@@ -1,11 +1,14 @@
 # frozen_string_literal: true
 
+require "json"
+
 module Suppliers
   module Hlj
     class DiscoveryService
       class StopRequested < StandardError; end
 
       SEARCH_URL = Suppliers::Hlj::SearchQuery::SEARCH_URL
+      LIVE_PRICE_URL = "https://www.hlj.com/search/livePrice/".freeze
 
       def initialize(max_pages: nil, max_items: nil, word: nil, makers: [], genre_codes: [], scales: [], series: nil,
                      fetch_detail: true, delay_seconds: 0, connection: nil, run: nil, logger: Rails.logger)
@@ -14,7 +17,7 @@ module Suppliers
         @query = Suppliers::Hlj::SearchQuery.new(word: word, makers: makers, genre_codes: genre_codes, scales: scales, series: series)
         @fetch_detail = fetch_detail
         @delay_seconds = delay_seconds.to_f
-        @connection = connection
+        @connection = connection || Faraday.new
         @run = run || SupplierSyncRun.create!(source: "hlj", mode: "weekly_discovery", status: "queued")
         @logger = logger
       end
@@ -35,6 +38,7 @@ module Suppliers
           page_number = index + 1
           list_doc = fetch_document(page_url(page_number))
           items = Suppliers::Hlj::ExtractListItemsService.new(list_doc).call
+          enrich_with_live_prices!(items)
           persist_progress(
             processed: processed,
             created: created,
@@ -169,6 +173,8 @@ module Suppliers
           payload = merge_payloads(payload, detail_payload)
         end
 
+        jpy_price = item[:jpy_price] || item[:jpy_special_price]
+
         Suppliers::Catalog::ImportCatalogItemService.new(
           source: "hlj",
           external_sku: item[:external_sku],
@@ -182,12 +188,13 @@ module Suppliers
           canonical_series: payload[:canonical_series],
           canonical_item_type: payload[:canonical_item_type],
           canonical_release_date: payload[:canonical_release_date],
-          canonical_price: payload[:canonical_price],
+          canonical_price: jpy_price || payload[:canonical_price],
+          currency: jpy_price ? "JPY" : "MXN",
           description_raw: payload[:description_raw],
           image_urls: payload[:image_urls],
           main_image_url: payload[:main_image_url],
           normalized_payload: payload[:normalized_payload],
-          raw_payload: payload[:raw_payload]
+          raw_payload: payload[:raw_payload].merge(jpy_price: item[:jpy_price], jpy_special_price: item[:jpy_special_price]).compact
         ).call
       rescue StandardError => e
         @logger.warn("HLJ detail fallback for #{item[:external_sku]}: #{e.message}")
@@ -198,11 +205,12 @@ module Suppliers
           name: item[:name],
           source_url: item[:source_url],
           raw_status: nil,
-          canonical_price: parse_listing_price(item[:listing_price_text]),
+          canonical_price: item[:jpy_price] || item[:jpy_special_price] || parse_listing_price(item[:listing_price_text]),
+          currency: item[:jpy_price] ? "JPY" : "MXN",
           image_urls: Array(item[:listing_image_url]).compact,
           main_image_url: item[:listing_image_url],
           normalized_payload: {},
-          raw_payload: { listing_price_text: item[:listing_price_text], detail_error: e.message }
+          raw_payload: { listing_price_text: item[:listing_price_text], detail_error: e.message, jpy_price: item[:jpy_price], jpy_special_price: item[:jpy_special_price] }.compact
         ).call
       end
 
@@ -264,6 +272,31 @@ module Suppliers
 
       def reached_max_items?(processed)
         @max_items.present? && processed >= @max_items
+      end
+
+      def enrich_with_live_prices!(items)
+        skus = items.map { |i| i[:external_sku] }.compact
+        return if skus.empty?
+
+        response = @connection.get(LIVE_PRICE_URL) do |req|
+          req.headers["User-Agent"] = Suppliers::Hlj::FetchDocumentService::BASE_HEADERS["User-Agent"]
+          req.params["item_codes"] = skus.join(",")
+          req.options.timeout = 10
+        end
+
+        return unless response.success?
+
+        price_data = JSON.parse(response.body)
+        items.each do |item|
+          info = price_data[item[:external_sku]]
+          next unless info
+
+          item[:jpy_price] = info["JPYprice"]
+          item[:jpy_special_price] = info["JPYspecial_price"]
+          item[:stock_status] = info["stockStatusCode"]
+        end
+      rescue StandardError => e
+        @logger.warn("HLJ livePrice enrichment failed: #{e.message}")
       end
     end
   end

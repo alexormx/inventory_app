@@ -8,7 +8,7 @@ module Suppliers
       SAMPLE_LIMIT = 16
       MAX_PREVIEW_PAGES = 3
       LIVE_PRICE_URL = "https://www.hlj.com/search/livePrice/".freeze
-      Result = Struct.new(:total_found, :sample_items, :scanned_pages, :available_pages, :sample_limit, keyword_init: true)
+      Result = Struct.new(:total_found, :sample_items, :scanned_pages, :available_pages, :sample_limit, :items_per_page, keyword_init: true)
 
       def initialize(max_pages: nil, word: nil, makers: [], genre_codes: [], scales: [], series: nil, connection: nil)
         @max_pages = max_pages || MAX_PREVIEW_PAGES
@@ -36,7 +36,8 @@ module Suppliers
           sample_items: sample,
           scanned_pages: pages_to_scan,
           available_pages: total_pages,
-          sample_limit: SAMPLE_LIMIT
+          sample_limit: SAMPLE_LIMIT,
+          items_per_page: first_page_items_count
         )
       end
 
@@ -44,6 +45,10 @@ module Suppliers
 
       def first_page_document
         @first_page_document ||= fetch_document(@query.page_url(1))
+      end
+
+      def first_page_items_count
+        @first_page_items_count ||= Suppliers::Hlj::ExtractListItemsService.new(first_page_document).call.size
       end
 
       def total_pages
