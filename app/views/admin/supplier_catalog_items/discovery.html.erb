@@ -17,7 +17,7 @@
     <h5 class="mb-1"><span class="badge bg-primary me-2">1</span> Configura filtros</h5>
     <p class="text-muted mb-3">Define los criterios de búsqueda en HLJ. Nada se guarda hasta que tú lo indiques.</p>
 
-    <%= form_with url: preview_discovery_admin_supplier_catalog_items_path, method: :post, local: true, class: "row g-3 align-items-end" do |f| %>
+    <%= form_with url: preview_discovery_admin_supplier_catalog_items_path, method: :post, data: { turbo: false }, class: "row g-3 align-items-end" do |f| %>
       <div class="col-12 col-md-3">
         <%= f.label :preset, "Preset", class: "form-label" %>
         <%= f.select :preset, options_for_select(@discovery_preset_options, @discovery_form[:preset]), {}, class: "form-select" %>
