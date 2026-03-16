@@ -83,6 +83,8 @@ module Suppliers
           catalog_item.last_status_change_at = now if created || status_changed
           catalog_item.save!
 
+          auto_link_product!(catalog_item) if catalog_item.product_id.blank?
+
           catalog_source = catalog_item.supplier_catalog_sources.find_or_initialize_by(source: @source)
           previous_source_checksum = catalog_source.content_checksum
           catalog_source.assign_attributes(
@@ -125,6 +127,16 @@ module Suppliers
         return SupplierCatalogItem.find_by(supplier_product_code: @supplier_product_code) if @supplier_product_code.present?
 
         nil
+      end
+
+      def auto_link_product!(catalog_item)
+        product = Product.find_by(supplier_product_code: catalog_item.external_sku)
+        product ||= Product.find_by(barcode: catalog_item.barcode) if catalog_item.barcode.present?
+
+        return unless product
+        return if product.supplier_catalog_item.present?
+
+        catalog_item.update!(product_id: product.id)
       end
     end
   end
