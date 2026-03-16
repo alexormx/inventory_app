@@ -36,6 +36,10 @@ export default class extends Controller {
     const base = this.srcValue || this.element.getAttribute("src")
     if (!base) return
 
+    // Stop the timer; the new controller instance will restart it after Turbo
+    // replaces the frame content, preventing duplicate in-flight requests.
+    this.stop()
+
     const separator = base.includes("?") ? "&" : "?"
     this.element.setAttribute("src", `${base}${separator}_poll=${Date.now()}`)
   }
