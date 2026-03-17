@@ -157,7 +157,7 @@
   </div>
   <% if @products.total_pages > 1 %>
     <div class="card-footer bg-white">
-      <%= paginate @products, theme: 'bootstrap-5' %>
+      <%= paginate @products %>
     </div>
   <% end %>
 </div>
