@@ -11,7 +11,7 @@ module Suppliers
                      barcode: nil, supplier_product_code: nil, canonical_brand: nil, canonical_category: nil,
                      canonical_series: nil, canonical_item_type: nil, canonical_release_date: nil,
                      canonical_price: nil, currency: "MXN", description_raw: nil, image_urls: [],
-                     main_image_url: nil, sync_linked_product: true)
+                     main_image_url: nil, sync_linked_product: false)
         @source = source.to_s
         @external_sku = external_sku.to_s.strip
         @name = name.to_s.strip
