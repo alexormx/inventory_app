@@ -198,7 +198,7 @@ RSpec.describe "Admin::SupplierCatalogItems", type: :request do
         post create_product_admin_supplier_catalog_item_path(catalog_item)
       end.to change(Product, :count).by(1)
 
-      expect(response).to redirect_to(admin_supplier_catalog_item_path(catalog_item))
+      expect(response).to redirect_to(review_sync_admin_supplier_catalog_item_path(catalog_item))
       expect(catalog_item.reload.product).to be_present
     end
   end

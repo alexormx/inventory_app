@@ -17,12 +17,14 @@
 
 <%= form_with url: apply_sync_admin_supplier_catalog_item_path(@supplier_catalog_item), method: :post, local: true do |f| %>
 
+<%# ── SECTION 1: Syncable Fields ── %>
 <div class="card border-0 shadow-sm mb-4">
   <div class="card-header bg-white d-flex justify-content-between align-items-center">
-    <h5 class="mb-0"><i class="fa-solid fa-list-check me-2"></i>Campos a sincronizar</h5>
+    <h5 class="mb-0"><i class="fa-solid fa-list-check me-2 text-success"></i>Campos sincronizables</h5>
     <div class="form-check">
-      <input type="checkbox" class="form-check-input" id="selectAll" onchange="document.querySelectorAll('.sync-check').forEach(c => c.checked = this.checked)">
-      <label class="form-check-label small" for="selectAll">Seleccionar todos</label>
+      <input type="checkbox" class="form-check-input" id="selectAllSync"
+        onchange="document.querySelectorAll('.sync-check').forEach(c => c.checked = this.checked)">
+      <label class="form-check-label small" for="selectAllSync">Seleccionar todos</label>
     </div>
   </div>
   <div class="card-body p-0">
@@ -32,50 +34,30 @@
           <tr>
             <th style="width: 50px"></th>
             <th style="width: 160px">Campo</th>
-            <th>Valor en Catálogo (fuente)</th>
+            <th>Valor en Catálogo</th>
             <th>Valor actual en Producto</th>
             <th style="width: 100px" class="text-center">Estado</th>
           </tr>
         </thead>
         <tbody>
-          <% @sync_fields.each do |field| %>
+          <% @syncable_fields.each do |field| %>
             <tr class="<%= field[:different] ? '' : 'table-light' %>">
               <td class="text-center">
                 <% if field[:different] %>
-                  <input type="checkbox" name="sync_fields[]" value="<%= field[:key] %>" class="form-check-input sync-check"
-                    <%= field[:key] == "images" ? "" : "checked" %>>
+                  <input type="checkbox" name="sync_fields[]" value="<%= field[:key] %>"
+                    class="form-check-input sync-check" checked>
                 <% end %>
               </td>
               <td><strong><%= field[:label] %></strong></td>
               <td>
-                <% if field[:is_images] && Array(@supplier_catalog_item.image_urls).any? %>
-                  <div class="d-flex flex-wrap gap-2 align-items-center">
-                    <span class="badge bg-info"><%= field[:catalog_val] %></span>
-                    <% Array(@supplier_catalog_item.image_urls).first(6).each do |url| %>
-                      <img src="<%= url %>" class="rounded border" style="width: 56px; height: 56px; object-fit: cover;" loading="lazy">
-                    <% end %>
-                    <% if Array(@supplier_catalog_item.image_urls).size > 6 %>
-                      <span class="text-muted small">+<%= Array(@supplier_catalog_item.image_urls).size - 6 %> más</span>
-                    <% end %>
-                  </div>
-                <% elsif field[:catalog_val].present? %>
+                <% if field[:catalog_val].present? %>
                   <span class="text-break"><%= field[:catalog_val] %></span>
                 <% else %>
                   <span class="text-muted">—</span>
                 <% end %>
               </td>
               <td>
-                <% if field[:is_images] %>
-                  <div class="d-flex flex-wrap gap-2 align-items-center">
-                    <span class="badge bg-secondary"><%= field[:product_val] %></span>
-                    <% @product.product_images.limit(6).each do |img| %>
-                      <%= image_tag img, class: "rounded border", style: "width: 56px; height: 56px; object-fit: cover;", loading: "lazy" %>
-                    <% end %>
-                    <% if @product.product_images.count > 6 %>
-                      <span class="text-muted small">+<%= @product.product_images.count - 6 %> más</span>
-                    <% end %>
-                  </div>
-                <% elsif field[:product_val].present? %>
+                <% if field[:product_val].present? %>
                   <span class="text-break"><%= field[:product_val] %></span>
                 <% else %>
                   <span class="text-muted">—</span>
@@ -84,8 +66,10 @@
               <td class="text-center">
                 <% if field[:different] %>
                   <span class="badge bg-warning text-dark"><i class="fa-solid fa-not-equal me-1"></i>Diferente</span>
-                <% else %>
+                <% elsif field[:catalog_val].present? %>
                   <span class="badge bg-success"><i class="fa-solid fa-equals me-1"></i>Igual</span>
+                <% else %>
+                  <span class="badge bg-secondary">Sin dato</span>
                 <% end %>
               </td>
             </tr>
@@ -93,6 +77,92 @@
         </tbody>
       </table>
     </div>
+  </div>
+</div>
+
+<%# ── SECTION 2: Reference Fields ── %>
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-header bg-white">
+    <h5 class="mb-0"><i class="fa-solid fa-eye me-2 text-info"></i>Campos de referencia <span class="text-muted fw-normal small">(solo lectura)</span></h5>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th style="width: 160px">Campo</th>
+            <th>Valor en Catálogo</th>
+            <th>Valor actual en Producto</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @reference_fields.each do |field| %>
+            <tr>
+              <td>
+                <strong><%= field[:label] %></strong>
+                <% if field[:similarity] %>
+                  <br><%= similarity_badge(field[:similarity]) %>
+                <% end %>
+              </td>
+              <td>
+                <% if field[:catalog_val].present? %>
+                  <span class="text-break"><%= field[:catalog_val] %></span>
+                <% else %>
+                  <span class="text-muted">—</span>
+                <% end %>
+              </td>
+              <td>
+                <% if field[:product_val].present? %>
+                  <span class="text-break"><%= field[:product_val] %></span>
+                <% else %>
+                  <span class="text-muted">—</span>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<%# ── SECTION 3: Images ── %>
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-header bg-white">
+    <h5 class="mb-0"><i class="fa-solid fa-images me-2 text-primary"></i>Imágenes</h5>
+  </div>
+  <div class="card-body">
+    <%# Catalog images — select to add %>
+    <% if @catalog_images.any? %>
+      <h6 class="text-muted mb-2"><i class="fa-solid fa-cloud-arrow-down me-1"></i> Imágenes del catálogo <span class="fw-normal">(marcar para agregar al producto)</span></h6>
+      <div class="d-flex flex-wrap gap-3 mb-4">
+        <% @catalog_images.each_with_index do |url, idx| %>
+          <label class="position-relative d-inline-block" style="cursor: pointer;">
+            <input type="checkbox" name="add_images[]" value="<%= url %>" class="position-absolute top-0 start-0 m-1 form-check-input">
+            <img src="<%= url %>" class="rounded border" style="width: 100px; height: 100px; object-fit: cover;" loading="lazy"
+              title="Imagen catálogo #<%= idx + 1 %>">
+          </label>
+        <% end %>
+      </div>
+    <% else %>
+      <p class="text-muted mb-4"><i class="fa-solid fa-circle-info me-1"></i> No hay imágenes en el catálogo.</p>
+    <% end %>
+
+    <%# Product images — select to remove %>
+    <% if @product_images.any? %>
+      <h6 class="text-muted mb-2"><i class="fa-solid fa-box-open me-1"></i> Imágenes del producto <span class="fw-normal">(marcar para <strong class="text-danger">eliminar</strong>)</span></h6>
+      <div class="d-flex flex-wrap gap-3">
+        <% @product_images.each_with_index do |img, idx| %>
+          <label class="position-relative d-inline-block" style="cursor: pointer;">
+            <input type="checkbox" name="remove_images[]" value="<%= img.blob_id %>" class="position-absolute top-0 start-0 m-1 form-check-input">
+            <%= image_tag img, class: "rounded border", style: "width: 100px; height: 100px; object-fit: cover;", loading: "lazy",
+              title: "Imagen producto ##{idx + 1}" %>
+          </label>
+        <% end %>
+      </div>
+    <% else %>
+      <p class="text-muted"><i class="fa-solid fa-circle-info me-1"></i> El producto no tiene imágenes.</p>
+    <% end %>
   </div>
 </div>
 
