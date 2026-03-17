@@ -95,6 +95,40 @@ module Admin
       end
     end
 
+    def catalog_status
+      @q = params[:q].to_s.strip
+      @link_filter = params[:linked].to_s.strip
+      @sort = params[:sort].presence || "name_asc"
+
+      scope = Product.includes(:supplier_catalog_item).all
+
+      if @q.present?
+        term = "%#{@q.downcase}%"
+        scope = scope.where("LOWER(product_name) LIKE ? OR LOWER(product_sku) LIKE ?", term, term)
+      end
+
+      case @link_filter
+      when "yes"
+        scope = scope.joins(:supplier_catalog_item)
+      when "no"
+        scope = scope.left_joins(:supplier_catalog_item).where(supplier_catalog_items: { id: nil })
+      end
+
+      scope = case @sort
+              when "name_asc" then scope.order(product_name: :asc)
+              when "name_desc" then scope.order(product_name: :desc)
+              when "sku" then scope.order(product_sku: :asc)
+              when "recent" then scope.order(created_at: :desc)
+              else scope.order(product_name: :asc)
+              end
+
+      @products = scope.page(params[:page]).per(25)
+
+      @total = Product.count
+      @linked = Product.joins(:supplier_catalog_item).count
+      @unlinked = @total - @linked
+    end
+
     def search
       q = params[:query].to_s.strip
       return render json: [] if q.blank? || q.length < 3

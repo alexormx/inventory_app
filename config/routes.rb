@@ -120,6 +120,7 @@ Rails.application.routes.draw do
       # Product search as JSON
       collection do
         get 'search'
+        get 'catalog_status'
       end
     end
 

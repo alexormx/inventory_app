@@ -1,0 +1,163 @@
+<div class="admin-page-header d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+  <div>
+    <p class="admin-page-eyebrow mb-1">Productos</p>
+    <h2 class="mb-0"><i class="fa-solid fa-link me-2"></i>Estado de vinculación con catálogo</h2>
+  </div>
+  <div>
+    <%= link_to admin_products_path, class: "btn btn-outline-secondary" do %>
+      <i class="fa-solid fa-arrow-left me-1"></i> Volver a productos
+    <% end %>
+  </div>
+</div>
+
+<%# ── Contadores ── %>
+<div class="row g-3 mb-4">
+  <div class="col-md-4">
+    <%= link_to catalog_status_admin_products_path(linked: nil, q: @q, sort: @sort), class: "card border-0 shadow-sm text-decoration-none #{'border-start border-primary border-3' if @link_filter.blank?}" do %>
+      <div class="card-body text-center">
+        <div class="fs-2 fw-bold text-dark"><%= @total %></div>
+        <div class="text-muted small">Total productos</div>
+      </div>
+    <% end %>
+  </div>
+  <div class="col-md-4">
+    <%= link_to catalog_status_admin_products_path(linked: "yes", q: @q, sort: @sort), class: "card border-0 shadow-sm text-decoration-none #{'border-start border-success border-3' if @link_filter == 'yes'}" do %>
+      <div class="card-body text-center">
+        <div class="fs-2 fw-bold text-success"><%= @linked %></div>
+        <div class="text-muted small">Vinculados</div>
+      </div>
+    <% end %>
+  </div>
+  <div class="col-md-4">
+    <%= link_to catalog_status_admin_products_path(linked: "no", q: @q, sort: @sort), class: "card border-0 shadow-sm text-decoration-none #{'border-start border-warning border-3' if @link_filter == 'no'}" do %>
+      <div class="card-body text-center">
+        <div class="fs-2 fw-bold text-warning"><%= @unlinked %></div>
+        <div class="text-muted small">Sin vincular</div>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<%# ── Filtros ── %>
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-body">
+    <%= form_with url: catalog_status_admin_products_path, method: :get, local: true, class: "row g-2 align-items-end" do %>
+      <div class="col-md-5">
+        <label class="form-label small text-muted">Buscar</label>
+        <input type="text" name="q" value="<%= @q %>" class="form-control" placeholder="Nombre o SKU...">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label small text-muted">Ordenar</label>
+        <select name="sort" class="form-select">
+          <option value="name_asc" <%= "selected" if @sort == "name_asc" %>>Nombre A-Z</option>
+          <option value="name_desc" <%= "selected" if @sort == "name_desc" %>>Nombre Z-A</option>
+          <option value="sku" <%= "selected" if @sort == "sku" %>>SKU</option>
+          <option value="recent" <%= "selected" if @sort == "recent" %>>Más recientes</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label small text-muted">Vinculación</label>
+        <select name="linked" class="form-select">
+          <option value="">Todos</option>
+          <option value="yes" <%= "selected" if @link_filter == "yes" %>>Vinculados</option>
+          <option value="no" <%= "selected" if @link_filter == "no" %>>Sin vincular</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <button type="submit" class="btn btn-primary w-100"><i class="fa-solid fa-search me-1"></i> Filtrar</button>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<%# ── Tabla ── %>
+<div class="card border-0 shadow-sm">
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th style="width: 56px"></th>
+            <th>Producto</th>
+            <th>SKU</th>
+            <th>Estado</th>
+            <th>Catálogo vinculado</th>
+            <th class="text-center">Similitud</th>
+            <th style="width: 80px"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @products.each do |product| %>
+            <% catalog = product.supplier_catalog_item %>
+            <tr>
+              <td>
+                <% if product.product_images.attached? %>
+                  <%= image_tag product.product_images.first, class: "rounded", style: "width: 40px; height: 40px; object-fit: cover;" %>
+                <% else %>
+                  <div class="bg-light rounded d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                    <i class="fa-solid fa-image text-muted"></i>
+                  </div>
+                <% end %>
+              </td>
+              <td>
+                <strong><%= product.product_name %></strong>
+                <% if product.brand.present? %>
+                  <br><span class="text-muted small"><%= product.brand %></span>
+                <% end %>
+              </td>
+              <td><code><%= product.product_sku %></code></td>
+              <td>
+                <% if product.status == "active" %>
+                  <span class="badge bg-success">Activo</span>
+                <% elsif product.status == "draft" %>
+                  <span class="badge bg-secondary">Borrador</span>
+                <% else %>
+                  <span class="badge bg-warning text-dark">Inactivo</span>
+                <% end %>
+                <% if product.discontinued? %>
+                  <span class="badge bg-danger">Discontinuado</span>
+                <% end %>
+              </td>
+              <td>
+                <% if catalog %>
+                  <div>
+                    <%= link_to admin_supplier_catalog_item_path(catalog), class: "text-decoration-none" do %>
+                      <i class="fa-solid fa-link text-success me-1"></i>
+                      <span class="text-break"><%= catalog.canonical_name %></span>
+                    <% end %>
+                  </div>
+                  <div class="text-muted small"><%= catalog.external_sku %></div>
+                <% else %>
+                  <span class="text-muted"><i class="fa-solid fa-link-slash me-1"></i> Sin vincular</span>
+                <% end %>
+              </td>
+              <td class="text-center">
+                <% if catalog %>
+                  <% score = name_similarity_score(catalog.canonical_name, product.product_name) %>
+                  <%= similarity_badge(score) %>
+                <% else %>
+                  <span class="text-muted">—</span>
+                <% end %>
+              </td>
+              <td>
+                <%= link_to admin_product_path(product), class: "btn btn-sm btn-outline-primary", title: "Ver producto" do %>
+                  <i class="fa-solid fa-eye"></i>
+                <% end %>
+                <% if catalog %>
+                  <%= link_to review_sync_admin_supplier_catalog_item_path(catalog), class: "btn btn-sm btn-outline-success", title: "Revisar sync" do %>
+                    <i class="fa-solid fa-arrows-left-right"></i>
+                  <% end %>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <% if @products.total_pages > 1 %>
+    <div class="card-footer bg-white">
+      <%= paginate @products, theme: 'bootstrap-5' %>
+    </div>
+  <% end %>
+</div>
