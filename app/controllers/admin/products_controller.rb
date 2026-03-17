@@ -6,7 +6,7 @@ module Admin
     before_action :authenticate_user!
     before_action :authorize_admin!
     before_action :set_product, only: %i[show edit update destroy purge_image activate deactivate assign_preorders
-                                         discontinue reverse_discontinue]
+                                         discontinue reverse_discontinue link_catalog]
     before_action :fix_custom_attributes_param, only: %i[create update]
     before_action :load_counts, only: %i[index drafts active inactive]
 
@@ -127,6 +127,17 @@ module Admin
       @total = Product.count
       @linked = Product.joins(:supplier_catalog_item).count
       @unlinked = @total - @linked
+    end
+
+    def link_catalog
+      catalog_item = SupplierCatalogItem.find(params[:catalog_item_id])
+      catalog_item.update!(product: @product)
+      redirect_to catalog_status_admin_products_path(linked: params[:return_filter], q: params[:return_q], sort: params[:return_sort], page: params[:return_page]),
+                  notice: "\"#{@product.product_name}\" vinculado a catálogo \"#{catalog_item.canonical_name}\"."
+    rescue ActiveRecord::RecordNotFound
+      redirect_to catalog_status_admin_products_path, alert: "Artículo de catálogo no encontrado."
+    rescue StandardError => e
+      redirect_to catalog_status_admin_products_path, alert: "Error al vincular: #{e.message}"
     end
 
     def search

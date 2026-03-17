@@ -122,6 +122,10 @@ Rails.application.routes.draw do
         get 'search'
         get 'catalog_status'
       end
+
+      member do
+        post :link_catalog
+      end
     end
 
     # Product Enrichment (AI descriptions + attributes)
@@ -157,6 +161,7 @@ Rails.application.routes.draw do
       collection do
         get :discovery
         get :discovery_progress
+        get :search
         post :preview_discovery
         post :run_discovery
         post :stop_discovery

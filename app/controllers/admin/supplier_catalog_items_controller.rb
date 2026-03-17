@@ -108,6 +108,28 @@ module Admin
       prepare_linking_analysis
     end
 
+    def search
+      q = params[:query].to_s.strip
+      return render json: [] if q.blank? || q.length < 2
+
+      pattern = "%#{ActiveRecord::Base.sanitize_sql_like(q.downcase)}%"
+      items = SupplierCatalogItem
+              .where("LOWER(canonical_name) LIKE ? OR LOWER(external_sku) LIKE ?", pattern, pattern)
+              .order(:canonical_name)
+              .limit(20)
+
+      render json: items.map { |item|
+        {
+          id: item.id,
+          canonical_name: item.canonical_name,
+          external_sku: item.external_sku,
+          canonical_status: item.canonical_status,
+          main_image_url: item.main_image_url,
+          linked: item.product_id.present?
+        }
+      }
+    end
+
     def prepare_catalog_view
       @q = params[:q].to_s.strip
       @status = params[:status].to_s.strip

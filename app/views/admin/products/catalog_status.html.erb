@@ -147,9 +147,67 @@
                   <%= link_to review_sync_admin_supplier_catalog_item_path(catalog), class: "btn btn-sm btn-outline-success", title: "Revisar sync" do %>
                     <i class="fa-solid fa-arrows-left-right"></i>
                   <% end %>
+                <% else %>
+                  <button type="button" class="btn btn-sm btn-outline-warning" title="Buscar en catálogo"
+                    onclick="this.closest('tr').nextElementSibling.classList.toggle('d-none')">
+                    <i class="fa-solid fa-search"></i>
+                  </button>
                 <% end %>
               </td>
             </tr>
+            <%# Expandable search row for unlinked products %>
+            <% unless catalog %>
+              <tr class="d-none" id="search-row-<%= product.id %>">
+                <td colspan="7" class="bg-light">
+                  <div class="p-2" data-controller="catalog-item-search">
+                    <div class="row align-items-start">
+                      <div class="col-md-6">
+                        <label class="form-label small fw-semibold mb-1">
+                          <i class="fa-solid fa-magnifying-glass me-1"></i> Buscar artículo de catálogo para "<%= product.product_name %>"
+                        </label>
+                        <input type="text" class="form-control form-control-sm" placeholder="Nombre o SKU del catálogo..."
+                          data-catalog-item-search-target="input" data-action="input->catalog-item-search#input" autocomplete="off">
+                        <div class="list-group mt-1" data-catalog-item-search-target="results" style="max-height: 200px; overflow-y: auto;"></div>
+                      </div>
+                      <div class="col-md-6" id="catalog-selection-<%= product.id %>" style="display: none;">
+                        <label class="form-label small fw-semibold mb-1">Artículo seleccionado</label>
+                        <div class="alert alert-info py-2 px-3 mb-2 small d-flex align-items-center justify-content-between">
+                          <div>
+                            <i class="fa-solid fa-boxes-stacked me-1"></i>
+                            <strong id="catalog-selected-name-<%= product.id %>"></strong>
+                            <span class="text-muted ms-1" id="catalog-selected-sku-<%= product.id %>"></span>
+                          </div>
+                          <button type="button" class="btn btn-sm btn-outline-danger"
+                            onclick="document.getElementById('catalog-selection-<%= product.id %>').style.display='none'">
+                            <i class="fa-solid fa-xmark"></i>
+                          </button>
+                        </div>
+                        <%= form_with url: link_catalog_admin_product_path(product), method: :post, local: true, class: "d-inline" do %>
+                          <input type="hidden" name="catalog_item_id" id="catalog-item-id-<%= product.id %>">
+                          <input type="hidden" name="return_filter" value="<%= @link_filter %>">
+                          <input type="hidden" name="return_q" value="<%= @q %>">
+                          <input type="hidden" name="return_sort" value="<%= @sort %>">
+                          <input type="hidden" name="return_page" value="<%= params[:page] %>">
+                          <button type="submit" class="btn btn-sm btn-success">
+                            <i class="fa-solid fa-link me-1"></i> Vincular
+                          </button>
+                        <% end %>
+                      </div>
+                    </div>
+                  </div>
+                  <script>
+                    document.querySelector('#search-row-<%= product.id %> [data-controller="catalog-item-search"]')
+                      .addEventListener('catalog-item-search:selected', function(e) {
+                        var item = e.detail;
+                        document.getElementById('catalog-item-id-<%= product.id %>').value = item.id;
+                        document.getElementById('catalog-selected-name-<%= product.id %>').textContent = item.canonical_name;
+                        document.getElementById('catalog-selected-sku-<%= product.id %>').textContent = item.external_sku;
+                        document.getElementById('catalog-selection-<%= product.id %>').style.display = '';
+                      });
+                  </script>
+                </td>
+              </tr>
+            <% end %>
           <% end %>
         </tbody>
       </table>
