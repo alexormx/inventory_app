@@ -207,9 +207,19 @@
               <% @sources.each do |source| %>
                 <tr>
                   <td><strong><%= source.source %></strong></td>
-                  <td><span class="badge <%= source.fetch_status == 'ok' ? 'bg-success' : 'bg-secondary' %>"><%= source.fetch_status %></span></td>
+                  <td>
+                    <span class="badge <%= source.fetch_status == 'ok' ? 'bg-success' : 'bg-danger' %>"><%= source.fetch_status %></span>
+                    <% if source.fetch_status == 'failed' && source.last_error_message.present? %>
+                      <br><span class="small text-danger"><%= truncate(source.last_error_message, length: 80) %></span>
+                    <% end %>
+                  </td>
                   <td><%= Array(source.image_urls).size %></td>
-                  <td><%= source.last_seen_at ? l(source.last_seen_at, format: :short) : "—" %></td>
+                  <td>
+                    <%= source.last_seen_at ? l(source.last_seen_at, format: :short) : "—" %>
+                    <% if source.last_changed_at.present? && source.last_changed_at != source.last_seen_at %>
+                      <br><span class="small text-muted">Cambió: <%= l(source.last_changed_at, format: :short) %></span>
+                    <% end %>
+                  </td>
                   <td>
                     <% if source.source_url.present? %>
                       <%= link_to "Abrir", source.source_url, target: "_blank", rel: "noopener", class: "btn btn-outline-primary btn-sm" %>
