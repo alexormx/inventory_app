@@ -215,26 +215,22 @@ RSpec.describe "Admin::SupplierCatalogItems", type: :request do
   end
 
   describe "POST /admin/supplier_catalog_items/:id/refresh_takara_tomy_mall" do
-    it "refreshes the Takara source manually" do
-      service = instance_double(Suppliers::TakaraTomyMall::BackfillItemService, call: true)
-      allow(Suppliers::TakaraTomyMall::BackfillItemService).to receive(:new).with(catalog_item).and_return(service)
-
-      post refresh_takara_tomy_mall_admin_supplier_catalog_item_path(catalog_item)
+    it "enqueues a background job and redirects" do
+      expect {
+        post refresh_takara_tomy_mall_admin_supplier_catalog_item_path(catalog_item)
+      }.to have_enqueued_job(Suppliers::RefreshSourceJob).with(catalog_item.id, "takaratomy_mall")
 
       expect(response).to redirect_to(admin_supplier_catalog_item_path(catalog_item))
-      expect(Suppliers::TakaraTomyMall::BackfillItemService).to have_received(:new).with(catalog_item)
     end
   end
 
   describe "POST /admin/supplier_catalog_items/:id/refresh_tomica_fandom" do
-    it "refreshes the Fandom source manually" do
-      service = instance_double(Suppliers::TomicaFandom::BackfillItemService, call: true)
-      allow(Suppliers::TomicaFandom::BackfillItemService).to receive(:new).with(catalog_item).and_return(service)
-
-      post refresh_tomica_fandom_admin_supplier_catalog_item_path(catalog_item)
+    it "enqueues a background job and redirects" do
+      expect {
+        post refresh_tomica_fandom_admin_supplier_catalog_item_path(catalog_item)
+      }.to have_enqueued_job(Suppliers::RefreshSourceJob).with(catalog_item.id, "tomica_fandom")
 
       expect(response).to redirect_to(admin_supplier_catalog_item_path(catalog_item))
-      expect(Suppliers::TomicaFandom::BackfillItemService).to have_received(:new).with(catalog_item)
     end
   end
 end

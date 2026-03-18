@@ -24,7 +24,7 @@ module Suppliers
 
         response = @connection.get(API_URL) do |request|
           request.headers.update(@headers)
-          request.options.timeout = 20
+          request.options.timeout = 25
           request.options.open_timeout = 10
           request.params.update(
             action: "parse",

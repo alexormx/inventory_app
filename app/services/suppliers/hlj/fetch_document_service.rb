@@ -22,7 +22,7 @@ module Suppliers
       def call
         response = @connection.get(@url) do |request|
           request.headers.update(@headers)
-          request.options.timeout = 20
+          request.options.timeout = 25
           request.options.open_timeout = 10
         end
 

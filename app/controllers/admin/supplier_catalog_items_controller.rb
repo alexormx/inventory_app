@@ -327,24 +327,18 @@ module Admin
     end
 
     def refresh_hlj
-      Suppliers::Hlj::RefreshItemService.new(@supplier_catalog_item).call
-      redirect_to admin_supplier_catalog_item_path(@supplier_catalog_item), notice: "Artículo actualizado desde HLJ."
-    rescue StandardError => e
-      redirect_to admin_supplier_catalog_item_path(@supplier_catalog_item), alert: "Error al refrescar HLJ: #{e.message}"
+      Suppliers::RefreshSourceJob.perform_later(@supplier_catalog_item.id, "hlj")
+      redirect_to admin_supplier_catalog_item_path(@supplier_catalog_item), notice: "Actualización HLJ en proceso. Recarga la página en unos segundos."
     end
 
     def refresh_takara_tomy_mall
-      Suppliers::TakaraTomyMall::BackfillItemService.new(@supplier_catalog_item).call
-      redirect_to admin_supplier_catalog_item_path(@supplier_catalog_item), notice: "Fuente Takara Tomy Mall actualizada."
-    rescue StandardError => e
-      redirect_to admin_supplier_catalog_item_path(@supplier_catalog_item), alert: "Error al refrescar Takara Tomy Mall: #{e.message}"
+      Suppliers::RefreshSourceJob.perform_later(@supplier_catalog_item.id, "takaratomy_mall")
+      redirect_to admin_supplier_catalog_item_path(@supplier_catalog_item), notice: "Actualización Takara Tomy Mall en proceso. Recarga la página en unos segundos."
     end
 
     def refresh_tomica_fandom
-      Suppliers::TomicaFandom::BackfillItemService.new(@supplier_catalog_item).call
-      redirect_to admin_supplier_catalog_item_path(@supplier_catalog_item), notice: "Fuente Tomica Fandom actualizada."
-    rescue StandardError => e
-      redirect_to admin_supplier_catalog_item_path(@supplier_catalog_item), alert: "Error al refrescar Tomica Fandom: #{e.message}"
+      Suppliers::RefreshSourceJob.perform_later(@supplier_catalog_item.id, "tomica_fandom")
+      redirect_to admin_supplier_catalog_item_path(@supplier_catalog_item), notice: "Actualización Tomica Fandom en proceso. Recarga la página en unos segundos."
     end
 
     private
