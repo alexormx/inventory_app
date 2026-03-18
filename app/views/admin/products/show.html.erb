@@ -186,6 +186,94 @@
       </div>
     </div>
 
+    <%# Card de Sincronización con Catálogo %>
+    <% catalog = @product.supplier_catalog_item %>
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-header bg-transparent border-0 py-3 d-flex justify-content-between align-items-center">
+        <h6 class="mb-0 fw-semibold"><i class="fa fa-link text-primary me-2"></i>Catálogo Proveedor</h6>
+        <% if catalog %>
+          <%= link_to review_sync_admin_supplier_catalog_item_path(catalog), class: "btn btn-sm btn-outline-success" do %>
+            <i class="fa fa-arrows-left-right me-1"></i>Revisar sync
+          <% end %>
+        <% end %>
+      </div>
+      <div class="card-body pt-0">
+        <% if catalog %>
+          <div class="d-flex justify-content-between py-2 border-bottom">
+            <span class="text-muted">Artículo</span>
+            <span class="fw-medium text-end">
+              <%= link_to catalog.canonical_name, admin_supplier_catalog_item_path(catalog), class: "text-decoration-none" %>
+            </span>
+          </div>
+          <div class="d-flex justify-content-between py-2 border-bottom">
+            <span class="text-muted">Similitud nombre</span>
+            <span>
+              <% score = name_similarity_score(catalog.canonical_name, @product.product_name) %>
+              <%= similarity_badge(score) %>
+            </span>
+          </div>
+          <div class="d-flex justify-content-between py-2 border-bottom">
+            <span class="text-muted">Barcode</span>
+            <span>
+              <% p_bc = @product.barcode.presence %>
+              <% c_bc = catalog.barcode.presence %>
+              <% if p_bc && c_bc && p_bc == c_bc %>
+                <span class="badge bg-success"><i class="fa-solid fa-check me-1"></i>Coincide</span>
+                <span class="text-muted small ms-1"><%= p_bc %></span>
+              <% elsif p_bc && c_bc %>
+                <span class="badge bg-danger"><i class="fa-solid fa-xmark me-1"></i>Diferente</span>
+                <br><span class="small text-muted">Producto: <%= p_bc %></span>
+                <br><span class="small text-muted">Catálogo: <%= c_bc %></span>
+              <% elsif p_bc.nil? && c_bc %>
+                <span class="badge bg-warning text-dark">Falta en producto</span>
+                <span class="text-muted small ms-1"><%= c_bc %></span>
+              <% elsif p_bc && c_bc.nil? %>
+                <span class="badge bg-warning text-dark">Falta en catálogo</span>
+                <span class="text-muted small ms-1"><%= p_bc %></span>
+              <% else %>
+                <span class="text-muted">Sin barcode</span>
+              <% end %>
+            </span>
+          </div>
+          <div class="d-flex justify-content-between py-2 border-bottom">
+            <span class="text-muted">Cód. proveedor</span>
+            <span>
+              <% p_sc = @product.supplier_product_code.presence %>
+              <% c_sc = catalog.supplier_product_code.presence %>
+              <% if p_sc && c_sc && p_sc == c_sc %>
+                <span class="badge bg-success"><i class="fa-solid fa-check me-1"></i>Coincide</span>
+                <span class="text-muted small ms-1"><%= p_sc %></span>
+              <% elsif p_sc && c_sc %>
+                <span class="badge bg-danger"><i class="fa-solid fa-xmark me-1"></i>Diferente</span>
+                <br><span class="small text-muted">Producto: <%= p_sc %></span>
+                <br><span class="small text-muted">Catálogo: <%= c_sc %></span>
+              <% elsif p_sc.nil? && c_sc %>
+                <span class="badge bg-warning text-dark">Falta en producto</span>
+                <span class="text-muted small ms-1"><%= c_sc %></span>
+              <% elsif p_sc && c_sc.nil? %>
+                <span class="badge bg-warning text-dark">Falta en catálogo</span>
+                <span class="text-muted small ms-1"><%= p_sc %></span>
+              <% else %>
+                <span class="text-muted">Sin código</span>
+              <% end %>
+            </span>
+          </div>
+          <div class="d-flex justify-content-between py-2">
+            <span class="text-muted">SKU externo</span>
+            <span class="fw-medium font-monospace"><%= catalog.external_sku %></span>
+          </div>
+        <% else %>
+          <div class="text-center py-3">
+            <i class="fa fa-link-slash text-muted fa-2x mb-2"></i>
+            <p class="text-muted mb-2">Sin vincular a catálogo de proveedor</p>
+            <%= link_to catalog_status_admin_products_path(q: @product.product_name), class: "btn btn-sm btn-outline-primary" do %>
+              <i class="fa fa-search me-1"></i>Buscar en catálogo
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
     <%# Card de Descripción / Enriquecimiento IA %>
     <div class="card border-0 shadow-sm mb-4">
       <div class="card-header bg-transparent border-0 py-3 d-flex justify-content-between align-items-center">
