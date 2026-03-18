@@ -10,10 +10,10 @@
   </div>
 </div>
 
-<%# ── Contadores ── %>
-<div class="row g-3 mb-4">
+<%# ── Contadores vinculación ── %>
+<div class="row g-3 mb-3">
   <div class="col-md-4">
-    <%= link_to catalog_status_admin_products_path(linked: nil, q: @q, sort: @sort), class: "card border-0 shadow-sm text-decoration-none #{'border-start border-primary border-3' if @link_filter.blank?}" do %>
+    <%= link_to catalog_status_admin_products_path(linked: nil, barcode_match: nil, supplier_code_match: nil, q: @q, sort: @sort), class: "card border-0 shadow-sm text-decoration-none #{'border-start border-primary border-3' if @link_filter.blank? && @barcode_filter.blank? && @supplier_code_filter.blank?}" do %>
       <div class="card-body text-center">
         <div class="fs-2 fw-bold text-dark"><%= @total %></div>
         <div class="text-muted small">Total productos</div>
@@ -21,7 +21,7 @@
     <% end %>
   </div>
   <div class="col-md-4">
-    <%= link_to catalog_status_admin_products_path(linked: "yes", q: @q, sort: @sort), class: "card border-0 shadow-sm text-decoration-none #{'border-start border-success border-3' if @link_filter == 'yes'}" do %>
+    <%= link_to catalog_status_admin_products_path(linked: "yes", barcode_match: nil, supplier_code_match: nil, q: @q, sort: @sort), class: "card border-0 shadow-sm text-decoration-none #{'border-start border-success border-3' if @link_filter == 'yes' && @barcode_filter.blank? && @supplier_code_filter.blank?}" do %>
       <div class="card-body text-center">
         <div class="fs-2 fw-bold text-success"><%= @linked %></div>
         <div class="text-muted small">Vinculados</div>
@@ -29,10 +29,66 @@
     <% end %>
   </div>
   <div class="col-md-4">
-    <%= link_to catalog_status_admin_products_path(linked: "no", q: @q, sort: @sort), class: "card border-0 shadow-sm text-decoration-none #{'border-start border-warning border-3' if @link_filter == 'no'}" do %>
+    <%= link_to catalog_status_admin_products_path(linked: "no", barcode_match: nil, supplier_code_match: nil, q: @q, sort: @sort), class: "card border-0 shadow-sm text-decoration-none #{'border-start border-warning border-3' if @link_filter == 'no'}" do %>
       <div class="card-body text-center">
         <div class="fs-2 fw-bold text-warning"><%= @unlinked %></div>
         <div class="text-muted small">Sin vincular</div>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<%# ── Contadores código de barras (solo vinculados) ── %>
+<div class="row g-3 mb-3">
+  <div class="col-md-4">
+    <%= link_to catalog_status_admin_products_path(linked: "yes", barcode_match: "match", supplier_code_match: @supplier_code_filter.presence, q: @q, sort: @sort), class: "card border-0 shadow-sm text-decoration-none #{'border-start border-success border-3' if @barcode_filter == 'match'}" do %>
+      <div class="card-body text-center">
+        <div class="fs-4 fw-bold text-success"><i class="fa-solid fa-barcode me-1"></i><%= @barcode_match %></div>
+        <div class="text-muted small">Barcode coincide</div>
+      </div>
+    <% end %>
+  </div>
+  <div class="col-md-4">
+    <%= link_to catalog_status_admin_products_path(linked: "yes", barcode_match: "mismatch", supplier_code_match: @supplier_code_filter.presence, q: @q, sort: @sort), class: "card border-0 shadow-sm text-decoration-none #{'border-start border-danger border-3' if @barcode_filter == 'mismatch'}" do %>
+      <div class="card-body text-center">
+        <div class="fs-4 fw-bold text-danger"><i class="fa-solid fa-barcode me-1"></i><%= @barcode_mismatch %></div>
+        <div class="text-muted small">Barcode diferente</div>
+      </div>
+    <% end %>
+  </div>
+  <div class="col-md-4">
+    <%= link_to catalog_status_admin_products_path(linked: "yes", barcode_match: "no_barcode", supplier_code_match: @supplier_code_filter.presence, q: @q, sort: @sort), class: "card border-0 shadow-sm text-decoration-none #{'border-start border-secondary border-3' if @barcode_filter == 'no_barcode'}" do %>
+      <div class="card-body text-center">
+        <div class="fs-4 fw-bold text-secondary"><i class="fa-solid fa-barcode me-1"></i><%= @barcode_missing %></div>
+        <div class="text-muted small">Sin barcode</div>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<%# ── Contadores código de proveedor (solo vinculados) ── %>
+<div class="row g-3 mb-4">
+  <div class="col-md-4">
+    <%= link_to catalog_status_admin_products_path(linked: "yes", supplier_code_match: "match", barcode_match: @barcode_filter.presence, q: @q, sort: @sort), class: "card border-0 shadow-sm text-decoration-none #{'border-start border-success border-3' if @supplier_code_filter == 'match'}" do %>
+      <div class="card-body text-center">
+        <div class="fs-4 fw-bold text-success"><i class="fa-solid fa-hashtag me-1"></i><%= @supplier_code_match %></div>
+        <div class="text-muted small">Cód. proveedor coincide</div>
+      </div>
+    <% end %>
+  </div>
+  <div class="col-md-4">
+    <%= link_to catalog_status_admin_products_path(linked: "yes", supplier_code_match: "mismatch", barcode_match: @barcode_filter.presence, q: @q, sort: @sort), class: "card border-0 shadow-sm text-decoration-none #{'border-start border-danger border-3' if @supplier_code_filter == 'mismatch'}" do %>
+      <div class="card-body text-center">
+        <div class="fs-4 fw-bold text-danger"><i class="fa-solid fa-hashtag me-1"></i><%= @supplier_code_mismatch %></div>
+        <div class="text-muted small">Cód. proveedor diferente</div>
+      </div>
+    <% end %>
+  </div>
+  <div class="col-md-4">
+    <%= link_to catalog_status_admin_products_path(linked: "yes", supplier_code_match: "no_code", barcode_match: @barcode_filter.presence, q: @q, sort: @sort), class: "card border-0 shadow-sm text-decoration-none #{'border-start border-secondary border-3' if @supplier_code_filter == 'no_code'}" do %>
+      <div class="card-body text-center">
+        <div class="fs-4 fw-bold text-secondary"><i class="fa-solid fa-hashtag me-1"></i><%= @supplier_code_missing %></div>
+        <div class="text-muted small">Sin cód. proveedor</div>
       </div>
     <% end %>
   </div>
@@ -42,11 +98,11 @@
 <div class="card border-0 shadow-sm mb-4">
   <div class="card-body">
     <%= form_with url: catalog_status_admin_products_path, method: :get, local: true, class: "row g-2 align-items-end" do %>
-      <div class="col-md-5">
+      <div class="col-md-3">
         <label class="form-label small text-muted">Buscar</label>
         <input type="text" name="q" value="<%= @q %>" class="form-control" placeholder="Nombre o SKU...">
       </div>
-      <div class="col-md-3">
+      <div class="col-md-2">
         <label class="form-label small text-muted">Ordenar</label>
         <select name="sort" class="form-select">
           <option value="name_asc" <%= "selected" if @sort == "name_asc" %>>Nombre A-Z</option>
@@ -64,7 +120,25 @@
         </select>
       </div>
       <div class="col-md-2">
-        <button type="submit" class="btn btn-primary w-100"><i class="fa-solid fa-search me-1"></i> Filtrar</button>
+        <label class="form-label small text-muted">Barcode</label>
+        <select name="barcode_match" class="form-select">
+          <option value="">Todos</option>
+          <option value="match" <%= "selected" if @barcode_filter == "match" %>>Coincide</option>
+          <option value="mismatch" <%= "selected" if @barcode_filter == "mismatch" %>>Diferente</option>
+          <option value="no_barcode" <%= "selected" if @barcode_filter == "no_barcode" %>>Sin barcode</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label small text-muted">Cód. proveedor</label>
+        <select name="supplier_code_match" class="form-select">
+          <option value="">Todos</option>
+          <option value="match" <%= "selected" if @supplier_code_filter == "match" %>>Coincide</option>
+          <option value="mismatch" <%= "selected" if @supplier_code_filter == "mismatch" %>>Diferente</option>
+          <option value="no_code" <%= "selected" if @supplier_code_filter == "no_code" %>>Sin código</option>
+        </select>
+      </div>
+      <div class="col-md-1">
+        <button type="submit" class="btn btn-primary w-100"><i class="fa-solid fa-search"></i></button>
       </div>
     <% end %>
   </div>
@@ -83,6 +157,8 @@
             <th>Estado</th>
             <th>Catálogo vinculado</th>
             <th class="text-center">Similitud</th>
+            <th class="text-center">Barcode</th>
+            <th class="text-center">Cód. proveedor</th>
             <th style="width: 80px"></th>
           </tr>
         </thead>
@@ -139,6 +215,48 @@
                   <span class="text-muted">—</span>
                 <% end %>
               </td>
+              <td class="text-center">
+                <% if catalog %>
+                  <% p_bc = product.barcode.presence %>
+                  <% c_bc = catalog.barcode.presence %>
+                  <% if p_bc && c_bc && p_bc == c_bc %>
+                    <span class="badge bg-success" title="<%= p_bc %>"><i class="fa-solid fa-check me-1"></i>Coincide</span>
+                  <% elsif p_bc && c_bc && p_bc != c_bc %>
+                    <span class="badge bg-danger" title="Producto: <%= p_bc %> | Catálogo: <%= c_bc %>">
+                      <i class="fa-solid fa-xmark me-1"></i>Diferente
+                    </span>
+                  <% elsif p_bc.nil? && c_bc.nil? %>
+                    <span class="badge bg-light text-muted">Sin barcode</span>
+                  <% elsif p_bc.nil? %>
+                    <span class="badge bg-warning text-dark" title="Catálogo: <%= c_bc %>">Falta en producto</span>
+                  <% else %>
+                    <span class="badge bg-warning text-dark" title="Producto: <%= p_bc %>">Falta en catálogo</span>
+                  <% end %>
+                <% else %>
+                  <span class="text-muted">—</span>
+                <% end %>
+              </td>
+              <td class="text-center">
+                <% if catalog %>
+                  <% p_sc = product.supplier_product_code.presence %>
+                  <% c_sc = catalog.supplier_product_code.presence %>
+                  <% if p_sc && c_sc && p_sc == c_sc %>
+                    <span class="badge bg-success" title="<%= p_sc %>"><i class="fa-solid fa-check me-1"></i>Coincide</span>
+                  <% elsif p_sc && c_sc && p_sc != c_sc %>
+                    <span class="badge bg-danger" title="Producto: <%= p_sc %> | Catálogo: <%= c_sc %>">
+                      <i class="fa-solid fa-xmark me-1"></i>Diferente
+                    </span>
+                  <% elsif p_sc.nil? && c_sc.nil? %>
+                    <span class="badge bg-light text-muted">Sin código</span>
+                  <% elsif p_sc.nil? %>
+                    <span class="badge bg-warning text-dark" title="Catálogo: <%= c_sc %>">Falta en producto</span>
+                  <% else %>
+                    <span class="badge bg-warning text-dark" title="Producto: <%= p_sc %>">Falta en catálogo</span>
+                  <% end %>
+                <% else %>
+                  <span class="text-muted">—</span>
+                <% end %>
+              </td>
               <td>
                 <%= link_to admin_product_path(product), class: "btn btn-sm btn-outline-primary", title: "Ver producto" do %>
                   <i class="fa-solid fa-eye"></i>
@@ -158,7 +276,7 @@
             <%# Expandable search row for unlinked products %>
             <% unless catalog %>
               <tr class="d-none" id="search-row-<%= product.id %>">
-                <td colspan="7" class="bg-light">
+                <td colspan="9" class="bg-light">
                   <div class="p-2" data-controller="catalog-item-search">
                     <div class="row align-items-start">
                       <div class="col-md-6">

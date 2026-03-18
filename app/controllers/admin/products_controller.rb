@@ -98,6 +98,8 @@ module Admin
     def catalog_status
       @q = params[:q].to_s.strip
       @link_filter = params[:linked].to_s.strip
+      @barcode_filter = params[:barcode_match].to_s.strip
+      @supplier_code_filter = params[:supplier_code_match].to_s.strip
       @sort = params[:sort].presence || "name_asc"
 
       scope = Product.includes(:supplier_catalog_item).all
@@ -114,6 +116,32 @@ module Admin
         scope = scope.left_joins(:supplier_catalog_item).where(supplier_catalog_items: { id: nil })
       end
 
+      # Supplier code match filter (only applies to linked products)
+      case @supplier_code_filter
+      when "match"
+        scope = scope.joins(:supplier_catalog_item)
+          .where("products.supplier_product_code IS NOT NULL AND products.supplier_product_code != '' AND products.supplier_product_code = supplier_catalog_items.supplier_product_code")
+      when "mismatch"
+        scope = scope.joins(:supplier_catalog_item)
+          .where("products.supplier_product_code IS NOT NULL AND products.supplier_product_code != '' AND supplier_catalog_items.supplier_product_code IS NOT NULL AND supplier_catalog_items.supplier_product_code != '' AND products.supplier_product_code != supplier_catalog_items.supplier_product_code")
+      when "no_code"
+        scope = scope.joins(:supplier_catalog_item)
+          .where("products.supplier_product_code IS NULL OR products.supplier_product_code = '' OR supplier_catalog_items.supplier_product_code IS NULL OR supplier_catalog_items.supplier_product_code = ''")
+      end
+
+      # Barcode match filter (only applies to linked products)
+      case @barcode_filter
+      when "match"
+        scope = scope.joins(:supplier_catalog_item)
+          .where("products.barcode IS NOT NULL AND products.barcode != '' AND products.barcode = supplier_catalog_items.barcode")
+      when "mismatch"
+        scope = scope.joins(:supplier_catalog_item)
+          .where("products.barcode IS NOT NULL AND products.barcode != '' AND supplier_catalog_items.barcode IS NOT NULL AND supplier_catalog_items.barcode != '' AND products.barcode != supplier_catalog_items.barcode")
+      when "no_barcode"
+        scope = scope.joins(:supplier_catalog_item)
+          .where("products.barcode IS NULL OR products.barcode = '' OR supplier_catalog_items.barcode IS NULL OR supplier_catalog_items.barcode = ''")
+      end
+
       scope = case @sort
               when "name_asc" then scope.order(product_name: :asc)
               when "name_desc" then scope.order(product_name: :desc)
@@ -127,6 +155,20 @@ module Admin
       @total = Product.count
       @linked = Product.joins(:supplier_catalog_item).count
       @unlinked = @total - @linked
+
+      # Barcode match counters (among linked products)
+      @barcode_match = Product.joins(:supplier_catalog_item)
+        .where("products.barcode IS NOT NULL AND products.barcode != '' AND products.barcode = supplier_catalog_items.barcode").count
+      @barcode_mismatch = Product.joins(:supplier_catalog_item)
+        .where("products.barcode IS NOT NULL AND products.barcode != '' AND supplier_catalog_items.barcode IS NOT NULL AND supplier_catalog_items.barcode != '' AND products.barcode != supplier_catalog_items.barcode").count
+      @barcode_missing = @linked - @barcode_match - @barcode_mismatch
+
+      # Supplier code match counters (among linked products)
+      @supplier_code_match = Product.joins(:supplier_catalog_item)
+        .where("products.supplier_product_code IS NOT NULL AND products.supplier_product_code != '' AND products.supplier_product_code = supplier_catalog_items.supplier_product_code").count
+      @supplier_code_mismatch = Product.joins(:supplier_catalog_item)
+        .where("products.supplier_product_code IS NOT NULL AND products.supplier_product_code != '' AND supplier_catalog_items.supplier_product_code IS NOT NULL AND supplier_catalog_items.supplier_product_code != '' AND products.supplier_product_code != supplier_catalog_items.supplier_product_code").count
+      @supplier_code_missing = @linked - @supplier_code_match - @supplier_code_mismatch
     end
 
     def link_catalog
