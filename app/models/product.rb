@@ -16,6 +16,7 @@ class Product < ApplicationRecord
   has_many :sale_orders, through: :sale_order_items
   has_many :description_drafts, class_name: "ProductDescriptionDraft", dependent: :destroy
   has_one :supplier_catalog_item, dependent: :nullify
+  has_one :product_catalog_review, dependent: :destroy
 
   # --- Financial & status defaults ---
   after_initialize :set_default_financial_fields, if: :new_record?

@@ -1,0 +1,475 @@
+<div class="admin-page-header d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+  <div>
+    <p class="admin-page-eyebrow mb-1">Catálogo</p>
+    <h2 class="mb-0"><i class="fa-solid fa-magnifying-glass-arrow-right me-2"></i>Revisión de Catálogo</h2>
+  </div>
+  <div>
+    <%= link_to catalog_status_admin_products_path, class: "btn btn-outline-secondary" do %>
+      <i class="fa-solid fa-arrow-left me-1"></i> Vinculación Catálogo
+    <% end %>
+  </div>
+</div>
+
+<%# ── Filter bar ── %>
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-body">
+    <%= form_with url: admin_catalog_review_path, method: :get, local: true do %>
+      <div class="row g-3 align-items-end">
+        <div class="col-12">
+          <label class="form-label fw-semibold mb-2"><i class="fa-solid fa-filter me-1"></i>Condiciones a revisar</label>
+          <div class="d-flex flex-wrap gap-3">
+            <div class="form-check">
+              <input type="checkbox" name="modes[]" value="unlinked" id="mode_unlinked" class="form-check-input"
+                <%= "checked" if @modes.include?("unlinked") %>>
+              <label class="form-check-label" for="mode_unlinked">
+                <i class="fa-solid fa-link-slash text-warning me-1"></i>No vinculados
+              </label>
+            </div>
+            <div class="form-check">
+              <input type="checkbox" name="modes[]" value="missing_data" id="mode_missing" class="form-check-input"
+                <%= "checked" if @modes.include?("missing_data") %>>
+              <label class="form-check-label" for="mode_missing">
+                <i class="fa-solid fa-circle-question text-secondary me-1"></i>Sin barcode/código
+              </label>
+            </div>
+            <div class="form-check">
+              <input type="checkbox" name="modes[]" value="mismatch" id="mode_mismatch" class="form-check-input"
+                <%= "checked" if @modes.include?("mismatch") %>>
+              <label class="form-check-label" for="mode_mismatch">
+                <i class="fa-solid fa-not-equal text-danger me-1"></i>Barcode/código diferente
+              </label>
+            </div>
+            <div class="form-check">
+              <input type="checkbox" name="modes[]" value="low_similarity" id="mode_similarity" class="form-check-input"
+                <%= "checked" if @modes.include?("low_similarity") %>>
+              <label class="form-check-label" for="mode_similarity">
+                <i class="fa-solid fa-spell-check text-info me-1"></i>Baja similitud de nombre
+              </label>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label small">Buscar producto</label>
+          <input type="text" name="q" value="<%= @q %>" class="form-control form-control-sm" placeholder="Nombre o SKU...">
+        </div>
+        <div class="col-md-3">
+          <div class="form-check mt-2">
+            <input type="checkbox" name="show_reviewed" value="1" id="show_reviewed" class="form-check-input"
+              <%= "checked" if @show_reviewed %>>
+            <label class="form-check-label small" for="show_reviewed">Incluir ya revisados</label>
+          </div>
+        </div>
+        <div class="col-md-2">
+          <button type="submit" class="btn btn-primary btn-sm w-100">
+            <i class="fa-solid fa-filter me-1"></i>Aplicar
+          </button>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<% if @product.nil? %>
+  <%# ── No products to review ── %>
+  <div class="card border-0 shadow-sm">
+    <div class="card-body text-center py-5">
+      <i class="fa-solid fa-circle-check text-success fa-3x mb-3"></i>
+      <h4 class="text-muted">No hay productos pendientes de revisión</h4>
+      <p class="text-muted">Todos los productos que cumplen los filtros seleccionados ya han sido revisados o no existen.</p>
+      <% if !@show_reviewed && ProductCatalogReview.count > 0 %>
+        <p class="small text-muted">Hay <%= ProductCatalogReview.count %> producto(s) marcados como revisados. Activa "Incluir ya revisados" para verlos.</p>
+      <% end %>
+    </div>
+  </div>
+<% else %>
+
+<%# ── Progress & Navigation Header ── %>
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <span class="badge bg-primary fs-6">
+      Producto <%= @current_index + 1 %> de <%= @total_count %>
+    </span>
+    <% if @is_reviewed %>
+      <span class="badge bg-success ms-2"><i class="fa-solid fa-check me-1"></i>Revisado</span>
+    <% end %>
+  </div>
+  <div class="btn-group">
+    <% if @current_index > 0 %>
+      <%= link_to admin_catalog_review_path(modes: @modes, index: @current_index - 1, show_reviewed: @show_reviewed ? "1" : nil, q: @q.presence),
+          class: "btn btn-outline-secondary btn-sm", data: { nav: "prev" } do %>
+        <i class="fa-solid fa-chevron-left me-1"></i>Anterior
+      <% end %>
+    <% else %>
+      <button class="btn btn-outline-secondary btn-sm" disabled data-nav="prev"><i class="fa-solid fa-chevron-left me-1"></i>Anterior</button>
+    <% end %>
+    <% if @current_index < @total_count - 1 %>
+      <%= link_to admin_catalog_review_path(modes: @modes, index: @current_index + 1, show_reviewed: @show_reviewed ? "1" : nil, q: @q.presence),
+          class: "btn btn-outline-secondary btn-sm", data: { nav: "next" } do %>
+        Siguiente<i class="fa-solid fa-chevron-right ms-1"></i>
+      <% end %>
+    <% else %>
+      <button class="btn btn-outline-secondary btn-sm" disabled data-nav="next">Siguiente<i class="fa-solid fa-chevron-right ms-1"></i></button>
+    <% end %>
+  </div>
+</div>
+
+<%# ── Product Info Card ── %>
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-header bg-white d-flex justify-content-between align-items-center">
+    <h5 class="mb-0"><i class="fa-solid fa-box-open me-2 text-primary"></i>Producto</h5>
+    <%= link_to admin_product_path(@product), class: "btn btn-sm btn-outline-secondary", target: "_blank" do %>
+      <i class="fa-solid fa-external-link me-1"></i>Ver producto
+    <% end %>
+  </div>
+  <div class="card-body">
+    <div class="d-flex gap-3 align-items-start">
+      <% if @product.product_images.attached? %>
+        <%= image_tag @product.product_images.first.variant(resize_to_fill: [80, 80]),
+            class: "rounded border", style: "width: 80px; height: 80px; object-fit: cover;" %>
+      <% else %>
+        <div class="rounded border bg-light d-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+          <i class="fa-solid fa-image text-muted fa-2x"></i>
+        </div>
+      <% end %>
+      <div class="flex-grow-1">
+        <h5 class="mb-1"><%= @product.product_name %></h5>
+        <div class="text-muted small mb-2">
+          <span class="me-3"><i class="fa-solid fa-hashtag me-1"></i>SKU: <strong><%= @product.product_sku %></strong></span>
+          <span class="me-3"><i class="fa-solid fa-barcode me-1"></i>Barcode: <strong><%= @product.barcode.presence || "—" %></strong></span>
+          <span class="me-3"><i class="fa-solid fa-tag me-1"></i>Código prov.: <strong><%= @product.supplier_product_code.presence || "—" %></strong></span>
+          <% if @product.status == "active" %>
+            <span class="badge bg-success">Activo</span>
+          <% elsif @product.status == "draft" %>
+            <span class="badge bg-secondary">Borrador</span>
+          <% elsif @product.discontinued? %>
+            <span class="badge bg-danger">Discontinuado</span>
+          <% else %>
+            <span class="badge bg-warning text-dark">Inactivo</span>
+          <% end %>
+        </div>
+        <% if @catalog_item.present? %>
+          <div class="small">
+            <span class="badge bg-success"><i class="fa-solid fa-link me-1"></i>Vinculado</span>
+            <span class="ms-2 text-muted">Catálogo: <strong><%= @catalog_item.canonical_name %></strong></span>
+            <span class="ms-2"><%= similarity_badge(@name_similarity) %></span>
+          </div>
+        <% else %>
+          <span class="badge bg-warning text-dark"><i class="fa-solid fa-link-slash me-1"></i>No vinculado</span>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<% if @catalog_item.nil? %>
+  <%# ── UNLINKED: Suggestions + Manual Search ── %>
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white">
+      <h5 class="mb-0"><i class="fa-solid fa-wand-magic-sparkles me-2 text-warning"></i>Sugerencias de vinculación</h5>
+    </div>
+    <div class="card-body">
+      <% if @suggestions.any? %>
+        <div class="list-group mb-3">
+          <% @suggestions.each do |s| %>
+            <div class="list-group-item d-flex align-items-center justify-content-between">
+              <div class="d-flex align-items-center gap-2">
+                <% if s[:item].main_image_url.present? %>
+                  <img src="<%= s[:item].main_image_url %>" class="rounded border" style="width: 40px; height: 40px; object-fit: cover;" loading="lazy">
+                <% else %>
+                  <div class="rounded border bg-light d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                    <i class="fa-solid fa-image text-muted small"></i>
+                  </div>
+                <% end %>
+                <div>
+                  <strong><%= s[:item].canonical_name %></strong>
+                  <% if s[:item].respond_to?(:product_id) && s[:item].product_id.present? %>
+                    <span class="badge bg-warning text-dark ms-1 small">ya vinculado</span>
+                  <% end %>
+                  <br>
+                  <small class="text-muted">
+                    <%= s[:item].external_sku %>
+                    · <%= s[:item].canonical_status %>
+                    · <%= similarity_badge(s[:score]) %>
+                    <span class="badge bg-light text-dark border"><%= s[:match_reason] %></span>
+                  </small>
+                </div>
+              </div>
+              <%= form_with url: link_admin_catalog_review_path, method: :post, local: true, class: "d-inline" do %>
+                <input type="hidden" name="product_id" value="<%= @product.id %>">
+                <input type="hidden" name="catalog_item_id" value="<%= s[:item].id %>">
+                <input type="hidden" name="index" value="<%= @current_index %>">
+                <% @modes.each do |m| %>
+                  <input type="hidden" name="modes[]" value="<%= m %>">
+                <% end %>
+                <input type="hidden" name="show_reviewed" value="<%= @show_reviewed ? '1' : '0' %>">
+                <input type="hidden" name="q" value="<%= @q %>">
+                <button type="submit" class="btn btn-sm btn-outline-success">
+                  <i class="fa-solid fa-link me-1"></i>Vincular
+                </button>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      <% else %>
+        <p class="text-muted mb-3"><i class="fa-solid fa-circle-info me-1"></i>No se encontraron sugerencias automáticas.</p>
+      <% end %>
+
+      <%# Manual search %>
+      <h6 class="text-muted mt-3 mb-2"><i class="fa-solid fa-search me-1"></i>Buscar manualmente en catálogo</h6>
+      <div data-controller="catalog-item-search catalog-review"
+           data-catalog-item-search-url-value="<%= search_admin_supplier_catalog_items_path %>"
+           data-action="catalog-item-search:selected->catalog-review#selectItem">
+        <input type="text" class="form-control form-control-sm mb-2"
+               data-catalog-item-search-target="input"
+               data-action="input->catalog-item-search#input"
+               placeholder="Buscar por nombre o SKU de catálogo...">
+        <div data-catalog-item-search-target="results" class="list-group mb-2"></div>
+
+        <%# Selection & link form %>
+        <div data-catalog-review-target="selected" class="d-none alert alert-info py-2 d-flex align-items-center justify-content-between">
+          <div>
+            <strong data-catalog-review-target="selectedName"></strong>
+            <small class="text-muted ms-2" data-catalog-review-target="selectedSku"></small>
+          </div>
+          <%= form_with url: link_admin_catalog_review_path, method: :post, local: true, class: "d-inline" do %>
+            <input type="hidden" name="product_id" value="<%= @product.id %>">
+            <input type="hidden" name="catalog_item_id" value="" data-catalog-review-target="hiddenId">
+            <input type="hidden" name="index" value="<%= @current_index %>">
+            <% @modes.each do |m| %>
+              <input type="hidden" name="modes[]" value="<%= m %>">
+            <% end %>
+            <input type="hidden" name="show_reviewed" value="<%= @show_reviewed ? '1' : '0' %>">
+            <input type="hidden" name="q" value="<%= @q %>">
+            <button type="submit" class="btn btn-sm btn-success" data-catalog-review-target="submitBtn" disabled>
+              <i class="fa-solid fa-link me-1"></i>Vincular seleccionado
+            </button>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<% else %>
+  <%# ── LINKED: Name Edit + Sync Panel ── %>
+
+  <%# Name editing %>
+  <div class="card border-0 shadow-sm mb-4" data-controller="catalog-review">
+    <div class="card-header bg-white">
+      <h5 class="mb-0"><i class="fa-solid fa-pen me-2 text-info"></i>Nombre del producto</h5>
+    </div>
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label small text-muted">Nombre en Catálogo (referencia)</label>
+          <div class="form-control form-control-sm bg-light"><%= @catalog_item.canonical_name %></div>
+        </div>
+        <div class="col-md-6">
+          <%= form_with url: update_name_admin_catalog_review_path, method: :patch, local: true do %>
+            <label class="form-label small text-muted">Nombre del Producto (editable)</label>
+            <div class="input-group input-group-sm">
+              <input type="text" name="product_name" value="<%= @product.product_name %>" class="form-control">
+              <input type="hidden" name="product_id" value="<%= @product.id %>">
+              <input type="hidden" name="index" value="<%= @current_index %>">
+              <% @modes.each do |m| %>
+                <input type="hidden" name="modes[]" value="<%= m %>">
+              <% end %>
+              <input type="hidden" name="show_reviewed" value="<%= @show_reviewed ? '1' : '0' %>">
+              <input type="hidden" name="q" value="<%= @q %>">
+              <button type="submit" class="btn btn-outline-primary">
+                <i class="fa-solid fa-save me-1"></i>Guardar
+              </button>
+            </div>
+            <div class="mt-1">
+              <small class="text-muted">Similitud actual:</small> <%= similarity_badge(@name_similarity) %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%# Syncable fields %>
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+      <h5 class="mb-0"><i class="fa-solid fa-arrows-left-right me-2 text-success"></i>Sincronizar campos</h5>
+      <div class="form-check">
+        <input type="checkbox" class="form-check-input" id="selectAllSync"
+          onchange="document.querySelectorAll('.sync-check').forEach(c => c.checked = this.checked)">
+        <label class="form-check-label small" for="selectAllSync">Seleccionar todos</label>
+      </div>
+    </div>
+    <div class="card-body p-0">
+      <%= form_with url: sync_fields_admin_catalog_review_path, method: :post, local: true do %>
+        <input type="hidden" name="product_id" value="<%= @product.id %>">
+        <input type="hidden" name="index" value="<%= @current_index %>">
+        <% @modes.each do |m| %>
+          <input type="hidden" name="modes[]" value="<%= m %>">
+        <% end %>
+        <input type="hidden" name="show_reviewed" value="<%= @show_reviewed ? '1' : '0' %>">
+        <input type="hidden" name="q" value="<%= @q %>">
+
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th style="width: 50px"></th>
+                <th style="width: 160px">Campo</th>
+                <th>Valor en Catálogo</th>
+                <th>Valor actual en Producto</th>
+                <th style="width: 100px" class="text-center">Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @syncable_fields.each do |field| %>
+                <tr class="<%= field[:different] ? '' : 'table-light' %>">
+                  <td class="text-center">
+                    <% if field[:different] %>
+                      <input type="checkbox" name="sync_fields[]" value="<%= field[:key] %>"
+                        class="form-check-input sync-check" checked>
+                    <% end %>
+                  </td>
+                  <td><strong><%= field[:label] %></strong></td>
+                  <td>
+                    <% if field[:catalog_val].present? %>
+                      <span class="text-break"><%= field[:catalog_val] %></span>
+                    <% else %>
+                      <span class="text-muted">—</span>
+                    <% end %>
+                  </td>
+                  <td>
+                    <% if field[:product_val].present? %>
+                      <span class="text-break"><%= field[:product_val] %></span>
+                    <% else %>
+                      <span class="text-muted">—</span>
+                    <% end %>
+                  </td>
+                  <td class="text-center">
+                    <% if field[:different] %>
+                      <span class="badge bg-warning text-dark"><i class="fa-solid fa-not-equal me-1"></i>Diferente</span>
+                    <% elsif field[:catalog_val].present? %>
+                      <span class="badge bg-success"><i class="fa-solid fa-equals me-1"></i>Igual</span>
+                    <% else %>
+                      <span class="badge bg-secondary">Sin dato</span>
+                    <% end %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+
+        <%# Images section %>
+        <div class="px-3 py-3 border-top">
+          <% if @catalog_images.any? %>
+            <h6 class="text-muted mb-2"><i class="fa-solid fa-cloud-arrow-down me-1"></i>Imágenes del catálogo <span class="fw-normal">(marcar para agregar)</span></h6>
+            <div class="d-flex flex-wrap gap-3 mb-3">
+              <% @catalog_images.each_with_index do |url, idx| %>
+                <label class="position-relative d-inline-block" style="cursor: pointer;">
+                  <input type="checkbox" name="add_images[]" value="<%= url %>" class="position-absolute top-0 start-0 m-1 form-check-input">
+                  <img src="<%= url %>" class="rounded border" style="width: 80px; height: 80px; object-fit: cover;" loading="lazy">
+                </label>
+              <% end %>
+            </div>
+          <% end %>
+
+          <% if @product_images.any? %>
+            <h6 class="text-muted mb-2"><i class="fa-solid fa-box-open me-1"></i>Imágenes del producto <span class="fw-normal">(marcar para <strong class="text-danger">eliminar</strong>)</span></h6>
+            <div class="d-flex flex-wrap gap-3">
+              <% @product_images.each do |img| %>
+                <label class="position-relative d-inline-block" style="cursor: pointer;">
+                  <input type="checkbox" name="remove_images[]" value="<%= img.blob_id %>" class="position-absolute top-0 start-0 m-1 form-check-input">
+                  <%= image_tag img.variant(resize_to_fill: [80, 80]), class: "rounded border", style: "width: 80px; height: 80px; object-fit: cover;", loading: "lazy" %>
+                </label>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+
+        <div class="px-3 pb-3">
+          <button type="submit" class="btn btn-success">
+            <i class="fa-solid fa-check me-1"></i>Aplicar sincronización seleccionada
+          </button>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <%# Unlink option %>
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body d-flex justify-content-between align-items-center">
+      <div>
+        <small class="text-muted">Vinculado a: <strong><%= @catalog_item.canonical_name %></strong> (<%= @catalog_item.external_sku %>)</small>
+      </div>
+      <%= form_with url: unlink_admin_catalog_review_path, method: :post, local: true, class: "d-inline" do %>
+        <input type="hidden" name="product_id" value="<%= @product.id %>">
+        <input type="hidden" name="index" value="<%= @current_index %>">
+        <% @modes.each do |m| %>
+          <input type="hidden" name="modes[]" value="<%= m %>">
+        <% end %>
+        <input type="hidden" name="show_reviewed" value="<%= @show_reviewed ? '1' : '0' %>">
+        <input type="hidden" name="q" value="<%= @q %>">
+        <button type="submit" class="btn btn-sm btn-outline-danger"
+                onclick="return confirm('¿Desvincular este producto del catálogo?')">
+          <i class="fa-solid fa-link-slash me-1"></i>Desvincular
+        </button>
+      <% end %>
+    </div>
+  </div>
+<% end %>
+
+<%# ── Bottom Navigation + Review Actions ── %>
+<div class="d-flex justify-content-between align-items-center mt-4 mb-4">
+  <div>
+    <% if @current_index > 0 %>
+      <%= link_to admin_catalog_review_path(modes: @modes, index: @current_index - 1, show_reviewed: @show_reviewed ? "1" : nil, q: @q.presence),
+          class: "btn btn-outline-secondary", data: { nav: "prev" } do %>
+        <i class="fa-solid fa-chevron-left me-1"></i>Anterior
+      <% end %>
+    <% else %>
+      <button class="btn btn-outline-secondary" disabled data-nav="prev"><i class="fa-solid fa-chevron-left me-1"></i>Anterior</button>
+    <% end %>
+  </div>
+
+  <div class="d-flex gap-2">
+    <% if @is_reviewed %>
+      <%= form_with url: unmark_reviewed_admin_catalog_review_path, method: :post, local: true, class: "d-inline" do %>
+        <input type="hidden" name="product_id" value="<%= @product.id %>">
+        <input type="hidden" name="index" value="<%= @current_index %>">
+        <% @modes.each do |m| %>
+          <input type="hidden" name="modes[]" value="<%= m %>">
+        <% end %>
+        <input type="hidden" name="show_reviewed" value="<%= @show_reviewed ? '1' : '0' %>">
+        <input type="hidden" name="q" value="<%= @q %>">
+        <button type="submit" class="btn btn-outline-secondary">
+          <i class="fa-solid fa-rotate-left me-1"></i>Quitar revisado
+        </button>
+      <% end %>
+    <% else %>
+      <%= form_with url: mark_reviewed_admin_catalog_review_path, method: :post, local: true, class: "d-inline" do %>
+        <input type="hidden" name="product_id" value="<%= @product.id %>">
+        <input type="hidden" name="index" value="<%= @current_index %>">
+        <% @modes.each do |m| %>
+          <input type="hidden" name="modes[]" value="<%= m %>">
+        <% end %>
+        <input type="hidden" name="show_reviewed" value="<%= @show_reviewed ? '1' : '0' %>">
+        <input type="hidden" name="q" value="<%= @q %>">
+        <button type="submit" class="btn btn-success">
+          <i class="fa-solid fa-check me-1"></i>Marcar revisado y siguiente
+        </button>
+      <% end %>
+    <% end %>
+  </div>
+
+  <div>
+    <% if @current_index < @total_count - 1 %>
+      <%= link_to admin_catalog_review_path(modes: @modes, index: @current_index + 1, show_reviewed: @show_reviewed ? "1" : nil, q: @q.presence),
+          class: "btn btn-outline-secondary", data: { nav: "next" } do %>
+        Siguiente<i class="fa-solid fa-chevron-right ms-1"></i>
+      <% end %>
+    <% else %>
+      <button class="btn btn-outline-secondary" disabled data-nav="next">Siguiente<i class="fa-solid fa-chevron-right ms-1"></i></button>
+    <% end %>
+  </div>
+</div>
+
+<% end %>

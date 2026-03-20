@@ -100,6 +100,17 @@ Rails.application.routes.draw do
       end
     end
 
+    # Catalog Review (one-by-one product review workflow)
+    resource :catalog_review, only: [] do
+      get '/', action: :show, as: ''
+      post :link
+      post :unlink
+      post :sync_fields
+      patch :update_name
+      post :mark_reviewed
+      post :unmark_reviewed
+    end
+
     # Product Management
     get 'products/drafts', to: 'products#drafts', as: :products_drafts
     get 'products/active', to: 'products#active', as: :products_active

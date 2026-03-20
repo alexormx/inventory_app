@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_03_15_001000) do
+ActiveRecord::Schema[8.0].define(version: 2026_03_20_180400) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -322,6 +322,18 @@ ActiveRecord::Schema[8.0].define(version: 2026_03_15_001000) do
     t.index ["product_id"], name: "index_preorder_reservations_on_product_id"
     t.index ["sale_order_id"], name: "index_preorder_reservations_on_sale_order_id"
     t.index ["user_id"], name: "index_preorder_reservations_on_user_id"
+  end
+
+  create_table "product_catalog_reviews", force: :cascade do |t|
+    t.bigint "product_id", null: false
+    t.bigint "reviewed_by_id"
+    t.string "review_mode"
+    t.text "notes"
+    t.datetime "reviewed_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["product_id"], name: "index_product_catalog_reviews_on_product_id", unique: true
+    t.index ["reviewed_by_id"], name: "index_product_catalog_reviews_on_reviewed_by_id"
   end
 
   create_table "product_description_drafts", force: :cascade do |t|
@@ -724,6 +736,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_03_15_001000) do
   add_foreign_key "inventory_locations", "inventory_locations", column: "parent_id"
   add_foreign_key "order_shipping_addresses", "sale_orders"
   add_foreign_key "payments", "sale_orders"
+  add_foreign_key "product_catalog_reviews", "products"
+  add_foreign_key "product_catalog_reviews", "users", column: "reviewed_by_id"
   add_foreign_key "product_description_drafts", "products"
   add_foreign_key "product_description_drafts", "users", column: "published_by_id"
   add_foreign_key "products", "users", column: "last_supplier_id"
