@@ -210,12 +210,26 @@ module Admin
       product = @product
       suggestions = []
 
-      # By barcode
+      # By barcode (exact)
       if product.barcode.present?
         SupplierCatalogItem.unlinked.where(barcode: product.barcode).limit(3).each do |sci|
           score = name_similarity_score(sci.canonical_name, product.product_name)
           suggestions << { item: sci, score: score, match_reason: "barcode" }
         end
+      end
+
+      # By barcode (similar / partial match)
+      if product.barcode.present? && product.barcode.length >= 4
+        existing_ids = suggestions.map { |s| s[:item].id }
+        barcode_like = "%#{ActiveRecord::Base.sanitize_sql_like(product.barcode)}%"
+        SupplierCatalogItem.unlinked
+          .where.not(id: existing_ids)
+          .where("barcode LIKE ? OR ? LIKE '%' || barcode || '%'", barcode_like, product.barcode)
+          .where("barcode IS NOT NULL AND barcode != ''")
+          .limit(5).each do |sci|
+            score = name_similarity_score(sci.canonical_name, product.product_name)
+            suggestions << { item: sci, score: score, match_reason: "barcode similar" }
+          end
       end
 
       # By supplier_product_code
