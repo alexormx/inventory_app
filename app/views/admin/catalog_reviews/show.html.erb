@@ -161,15 +161,94 @@
   </div>
 </div>
 
+<%# ── Name Editing (always visible) ── %>
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-header bg-white">
+    <h5 class="mb-0"><i class="fa-solid fa-pen me-2 text-info"></i>Nombre del producto</h5>
+  </div>
+  <div class="card-body">
+    <div class="row g-3">
+      <% if @catalog_item.present? %>
+        <div class="col-md-6">
+          <label class="form-label small text-muted">Nombre en Catálogo (referencia)</label>
+          <div class="form-control form-control-sm bg-light"><%= @catalog_item.canonical_name %></div>
+        </div>
+      <% end %>
+      <div class="<%= @catalog_item.present? ? 'col-md-6' : 'col-12' %>">
+        <%= form_with url: update_name_admin_catalog_review_path, method: :patch, local: true do %>
+          <label class="form-label small text-muted">Nombre del Producto (editable)</label>
+          <div class="input-group input-group-sm">
+            <input type="text" name="product_name" value="<%= @product.product_name %>" class="form-control">
+            <input type="hidden" name="product_id" value="<%= @product.id %>">
+            <input type="hidden" name="index" value="<%= @current_index %>">
+            <% @modes.each do |m| %>
+              <input type="hidden" name="modes[]" value="<%= m %>">
+            <% end %>
+            <input type="hidden" name="show_reviewed" value="<%= @show_reviewed ? '1' : '0' %>">
+            <input type="hidden" name="q" value="<%= @q %>">
+            <button type="submit" class="btn btn-outline-primary">
+              <i class="fa-solid fa-save me-1"></i>Guardar
+            </button>
+          </div>
+          <% if @catalog_item.present? %>
+            <div class="mt-1">
+              <small class="text-muted">Similitud actual:</small> <%= similarity_badge(@name_similarity) %>
+            </div>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
+
 <% if @catalog_item.nil? %>
-  <%# ── UNLINKED: Suggestions + Manual Search ── %>
+  <%# ── UNLINKED: Manual Search + Suggestions ── %>
+
+  <%# Manual search (first) %>
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white">
+      <h5 class="mb-0"><i class="fa-solid fa-search me-2 text-primary"></i>Buscar manualmente en catálogo</h5>
+    </div>
+    <div class="card-body" data-controller="catalog-item-search catalog-review"
+         data-catalog-item-search-url-value="<%= search_admin_supplier_catalog_items_path %>"
+         data-action="catalog-item-search:selected->catalog-review#selectItem">
+      <input type="text" class="form-control form-control-sm mb-2"
+             data-catalog-item-search-target="input"
+             data-action="input->catalog-item-search#input"
+             placeholder="Buscar por nombre o SKU de catálogo...">
+      <div data-catalog-item-search-target="results" class="list-group mb-2"></div>
+
+      <%# Selection & link form %>
+      <div data-catalog-review-target="selected" class="d-none alert alert-info py-2 d-flex align-items-center justify-content-between">
+        <div>
+          <strong data-catalog-review-target="selectedName"></strong>
+          <small class="text-muted ms-2" data-catalog-review-target="selectedSku"></small>
+        </div>
+        <%= form_with url: link_admin_catalog_review_path, method: :post, local: true, class: "d-inline" do %>
+          <input type="hidden" name="product_id" value="<%= @product.id %>">
+          <input type="hidden" name="catalog_item_id" value="" data-catalog-review-target="hiddenId">
+          <input type="hidden" name="index" value="<%= @current_index %>">
+          <% @modes.each do |m| %>
+            <input type="hidden" name="modes[]" value="<%= m %>">
+          <% end %>
+          <input type="hidden" name="show_reviewed" value="<%= @show_reviewed ? '1' : '0' %>">
+          <input type="hidden" name="q" value="<%= @q %>">
+          <button type="submit" class="btn btn-sm btn-success" data-catalog-review-target="submitBtn" disabled>
+            <i class="fa-solid fa-link me-1"></i>Vincular seleccionado
+          </button>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <%# Suggestions (second) %>
   <div class="card border-0 shadow-sm mb-4">
     <div class="card-header bg-white">
       <h5 class="mb-0"><i class="fa-solid fa-wand-magic-sparkles me-2 text-warning"></i>Sugerencias de vinculación</h5>
     </div>
     <div class="card-body">
       <% if @suggestions.any? %>
-        <div class="list-group mb-3">
+        <div class="list-group">
           <% @suggestions.each do |s| %>
             <div class="list-group-item d-flex align-items-center justify-content-between">
               <div class="d-flex align-items-center gap-2">
@@ -211,82 +290,13 @@
           <% end %>
         </div>
       <% else %>
-        <p class="text-muted mb-3"><i class="fa-solid fa-circle-info me-1"></i>No se encontraron sugerencias automáticas.</p>
+        <p class="text-muted mb-0"><i class="fa-solid fa-circle-info me-1"></i>No se encontraron sugerencias automáticas.</p>
       <% end %>
-
-      <%# Manual search %>
-      <h6 class="text-muted mt-3 mb-2"><i class="fa-solid fa-search me-1"></i>Buscar manualmente en catálogo</h6>
-      <div data-controller="catalog-item-search catalog-review"
-           data-catalog-item-search-url-value="<%= search_admin_supplier_catalog_items_path %>"
-           data-action="catalog-item-search:selected->catalog-review#selectItem">
-        <input type="text" class="form-control form-control-sm mb-2"
-               data-catalog-item-search-target="input"
-               data-action="input->catalog-item-search#input"
-               placeholder="Buscar por nombre o SKU de catálogo...">
-        <div data-catalog-item-search-target="results" class="list-group mb-2"></div>
-
-        <%# Selection & link form %>
-        <div data-catalog-review-target="selected" class="d-none alert alert-info py-2 d-flex align-items-center justify-content-between">
-          <div>
-            <strong data-catalog-review-target="selectedName"></strong>
-            <small class="text-muted ms-2" data-catalog-review-target="selectedSku"></small>
-          </div>
-          <%= form_with url: link_admin_catalog_review_path, method: :post, local: true, class: "d-inline" do %>
-            <input type="hidden" name="product_id" value="<%= @product.id %>">
-            <input type="hidden" name="catalog_item_id" value="" data-catalog-review-target="hiddenId">
-            <input type="hidden" name="index" value="<%= @current_index %>">
-            <% @modes.each do |m| %>
-              <input type="hidden" name="modes[]" value="<%= m %>">
-            <% end %>
-            <input type="hidden" name="show_reviewed" value="<%= @show_reviewed ? '1' : '0' %>">
-            <input type="hidden" name="q" value="<%= @q %>">
-            <button type="submit" class="btn btn-sm btn-success" data-catalog-review-target="submitBtn" disabled>
-              <i class="fa-solid fa-link me-1"></i>Vincular seleccionado
-            </button>
-          <% end %>
-        </div>
-      </div>
     </div>
   </div>
 
 <% else %>
-  <%# ── LINKED: Name Edit + Sync Panel ── %>
-
-  <%# Name editing %>
-  <div class="card border-0 shadow-sm mb-4" data-controller="catalog-review">
-    <div class="card-header bg-white">
-      <h5 class="mb-0"><i class="fa-solid fa-pen me-2 text-info"></i>Nombre del producto</h5>
-    </div>
-    <div class="card-body">
-      <div class="row g-3">
-        <div class="col-md-6">
-          <label class="form-label small text-muted">Nombre en Catálogo (referencia)</label>
-          <div class="form-control form-control-sm bg-light"><%= @catalog_item.canonical_name %></div>
-        </div>
-        <div class="col-md-6">
-          <%= form_with url: update_name_admin_catalog_review_path, method: :patch, local: true do %>
-            <label class="form-label small text-muted">Nombre del Producto (editable)</label>
-            <div class="input-group input-group-sm">
-              <input type="text" name="product_name" value="<%= @product.product_name %>" class="form-control">
-              <input type="hidden" name="product_id" value="<%= @product.id %>">
-              <input type="hidden" name="index" value="<%= @current_index %>">
-              <% @modes.each do |m| %>
-                <input type="hidden" name="modes[]" value="<%= m %>">
-              <% end %>
-              <input type="hidden" name="show_reviewed" value="<%= @show_reviewed ? '1' : '0' %>">
-              <input type="hidden" name="q" value="<%= @q %>">
-              <button type="submit" class="btn btn-outline-primary">
-                <i class="fa-solid fa-save me-1"></i>Guardar
-              </button>
-            </div>
-            <div class="mt-1">
-              <small class="text-muted">Similitud actual:</small> <%= similarity_badge(@name_similarity) %>
-            </div>
-          <% end %>
-        </div>
-      </div>
-    </div>
-  </div>
+  <%# ── LINKED: Sync Panel ── %>
 
   <%# Syncable fields %>
   <div class="card border-0 shadow-sm mb-4">
