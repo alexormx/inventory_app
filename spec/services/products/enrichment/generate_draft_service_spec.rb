@@ -78,7 +78,7 @@ RSpec.describe Products::Enrichment::GenerateDraftService do
       draft.reload
       expect(draft.ai_provider).to eq("openai")
       expect(draft.ai_model).to eq("gpt-4o-mini")
-      expect(draft.prompt_version).to eq("v3")
+      expect(draft.prompt_version).to eq("v4")
       expect(draft.tokens_input).to eq(500)
       expect(draft.tokens_output).to eq(300)
       expect(draft.generated_at).to be_present

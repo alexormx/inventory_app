@@ -1,7 +1,7 @@
 <div class="admin-page-header d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
   <div>
     <p class="admin-page-eyebrow mb-1">IA › Enriquecimiento</p>
-    <h2 class="mb-0 d-flex align-items-center gap-2"><i class="fa fa-list-check"></i> Productos sin descripción</h2>
+    <h2 class="mb-0 d-flex align-items-center gap-2"><i class="fa fa-list-check"></i> Cola de Enriquecimiento</h2>
   </div>
   <div class="d-flex gap-2">
     <%= link_to admin_product_enrichment_index_path, class: "btn btn-outline-secondary btn-sm" do %>
@@ -9,6 +9,28 @@
     <% end %>
   </div>
 </div>
+
+<%# Scope tabs %>
+<ul class="nav nav-tabs mb-3">
+  <li class="nav-item">
+    <%= link_to queue_admin_product_enrichment_index_path(scope: "all", brand: params[:brand], category: params[:category], sort: params[:sort]),
+                class: "nav-link #{'active' if @scope == 'all'}" do %>
+      Todos <span class="badge bg-secondary ms-1"><%= @scope_counts[:all] %></span>
+    <% end %>
+  </li>
+  <li class="nav-item">
+    <%= link_to queue_admin_product_enrichment_index_path(scope: "no_description", brand: params[:brand], category: params[:category], sort: params[:sort]),
+                class: "nav-link #{'active' if @scope == 'no_description'}" do %>
+      Sin descripción <span class="badge bg-danger ms-1"><%= @scope_counts[:no_description] %></span>
+    <% end %>
+  </li>
+  <li class="nav-item">
+    <%= link_to queue_admin_product_enrichment_index_path(scope: "linked", brand: params[:brand], category: params[:category], sort: params[:sort]),
+                class: "nav-link #{'active' if @scope == 'linked'}" do %>
+      Vinculados <span class="badge bg-info ms-1"><%= @scope_counts[:linked] %></span>
+    <% end %>
+  </li>
+</ul>
 
 <%# Filtros %>
 <div class="card mb-4">
@@ -40,7 +62,7 @@
   </div>
 </div>
 
-<p class="text-muted mb-3"><%= @products.total_count %> productos sin descripción</p>
+<p class="text-muted mb-3"><%= @products.total_count %> productos en cola</p>
 
 <% if @products.any? %>
   <div class="table-responsive">
@@ -53,6 +75,7 @@
           <th class="text-center" title="Inventario disponible"><i class="fa fa-boxes-stacked"></i> Disp.</th>
           <th class="text-center" title="Con ubicación confirmada"><i class="fa fa-location-dot"></i> Ubic.</th>
           <th>Template</th>
+          <th class="text-center" title="Vinculado a catálogo de proveedor"><i class="fa fa-link"></i> Catálogo</th>
           <th>Borrador</th>
           <th></th>
         </tr>
@@ -62,6 +85,9 @@
           <tr>
             <td>
               <%= link_to product.product_name, admin_product_path(product), class: "text-decoration-none fw-semibold" %>
+              <% unless product.description_missing? %>
+                <span class="badge bg-light text-success ms-1" title="Ya tiene descripción"><i class="fa fa-file-lines"></i></span>
+              <% end %>
             </td>
             <td><%= product.brand %></td>
             <td><%= product.category %></td>
@@ -86,6 +112,13 @@
                 <span class="badge bg-success"><i class="fa fa-check"></i></span>
               <% else %>
                 <span class="badge bg-warning text-dark" title="Sin template para '#{product.category}'"><i class="fa fa-exclamation-triangle"></i></span>
+              <% end %>
+            </td>
+            <td class="text-center">
+              <% if product.supplier_catalog_linked? %>
+                <span class="badge bg-info" title="<%= product.supplier_catalog_item.canonical_name %>"><i class="fa fa-link"></i></span>
+              <% else %>
+                <span class="text-muted">—</span>
               <% end %>
             </td>
             <td>

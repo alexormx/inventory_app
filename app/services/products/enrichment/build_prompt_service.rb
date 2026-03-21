@@ -5,7 +5,7 @@ module Products
     # Builds the OpenAI prompt (system + user) from a product context hash.
     # Returns a Hash with :system and :user keys.
     class BuildPromptService
-      PROMPT_VERSION = "v3"
+      PROMPT_VERSION = "v4"
 
       SYSTEM_PROMPT = <<~SYSTEM.freeze
         Eres un experto en productos coleccionables y autos a escala (diecast). Tu tarea es generar descripciones de producto y atributos técnicos para una tienda en línea mexicana llamada "Pasatiempos a Escala".
@@ -74,6 +74,8 @@ module Products
           parts << @context[:description]
         end
 
+        parts << build_supplier_catalog_section
+
         parts << <<~STRUCTURE
 
           ESTILO OBLIGATORIO DE LA DESCRIPCIÓN (`description_es`):
@@ -94,6 +96,50 @@ module Products
         parts << build_json_schema
 
         parts.compact.join("\n")
+      end
+
+      def build_supplier_catalog_section
+        ctx = @context[:supplier_context]
+        return nil unless ctx
+
+        item = ctx[:catalog_item]
+        return nil unless item
+
+        lines = ["\nDATOS DEL CATÁLOGO DEL PROVEEDOR (fuente confiable, usar para enriquecer):"]
+        lines << "- Nombre canónico: #{item[:canonical_name]}" if item[:canonical_name].present?
+        lines << "- Marca proveedor: #{item[:canonical_brand]}" if item[:canonical_brand].present?
+        lines << "- Serie/Colección: #{item[:canonical_series]}" if item[:canonical_series].present?
+        lines << "- Tipo de artículo: #{item[:canonical_item_type]}" if item[:canonical_item_type].present?
+        lines << "- Fecha de lanzamiento: #{item[:canonical_release_date]}" if item[:canonical_release_date].present?
+        lines << "- Precio proveedor: #{item[:canonical_price]} #{item[:currency]}" if item[:canonical_price].present?
+        lines << "- Estado: #{item[:canonical_status]}" if item[:canonical_status].present?
+        lines << "- Código de barras: #{item[:barcode]}" if item[:barcode].present?
+        lines << "- URL fuente: #{item[:source_url]}" if item[:source_url].present?
+
+        if item[:description_raw].present?
+          lines << "\nDESCRIPCIÓN DEL PROVEEDOR (referencia, adaptar al estilo de la tienda):"
+          lines << item[:description_raw].truncate(2000)
+        end
+
+        if item[:details_payload].present? && item[:details_payload].is_a?(Hash) && item[:details_payload].any?
+          lines << "\nDETALLES TÉCNICOS DEL PROVEEDOR:"
+          item[:details_payload].each do |key, value|
+            lines << "  - #{key}: #{value}" if value.present?
+          end
+        end
+
+        sources = ctx[:sources]
+        if sources.present? && sources.any?
+          sources.each do |src|
+            next unless src[:normalized_payload].present? && src[:normalized_payload].is_a?(Hash)
+            lines << "\nFUENTE ADICIONAL (#{src[:source]}):"
+            src[:normalized_payload].each do |key, value|
+              lines << "  - #{key}: #{value}" if value.present?
+            end
+          end
+        end
+
+        lines.join("\n")
       end
 
       def build_template_instructions

@@ -19,6 +19,14 @@
   <div class="col-6 col-md-2">
     <div class="card text-center border-0 shadow-sm">
       <div class="card-body py-3">
+        <h3 class="mb-1 text-info"><%= @counts[:linked_catalog] %></h3>
+        <small class="text-muted">Vinculados catálogo</small>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-2">
+    <div class="card text-center border-0 shadow-sm">
+      <div class="card-body py-3">
         <h3 class="mb-1 text-warning"><%= @counts[:queued] + @counts[:generating] %></h3>
         <small class="text-muted">En proceso</small>
       </div>

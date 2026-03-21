@@ -11,6 +11,7 @@ module Admin
     def index
       @counts = {
         without_description: Product.without_description.count,
+        linked_catalog:      Product.joins(:supplier_catalog_item).count,
         queued:              ProductDescriptionDraft.queued.count,
         generating:          ProductDescriptionDraft.generating.count,
         draft_generated:     ProductDescriptionDraft.reviewable.count,
@@ -21,24 +22,31 @@ module Admin
     end
 
     # GET /admin/product_enrichment/queue
-    # List of products without description, ready to enrich
+    # List of products ready to enrich: without description OR linked to supplier catalog
     def queue
-      @products = Product.without_description
-                         .left_joins(:inventories)
-                         .select(
-                           "products.*",
-                           "COUNT(CASE WHEN inventories.status = 0 THEN 1 END) AS available_count",
-                           "COUNT(CASE WHEN inventories.status = 0 AND inventories.inventory_location_id IS NOT NULL THEN 1 END) AS located_count"
-                         )
-                         .group("products.id")
+      @scope = params[:scope].presence || "all"
 
-      if params[:brand].present?
-        @products = @products.where(brand: params[:brand])
+      base = Product.left_joins(:inventories)
+                     .select(
+                       "products.*",
+                       "COUNT(CASE WHEN inventories.status = 0 THEN 1 END) AS available_count",
+                       "COUNT(CASE WHEN inventories.status = 0 AND inventories.inventory_location_id IS NOT NULL THEN 1 END) AS located_count"
+                     )
+                     .group("products.id")
+
+      case @scope
+      when "no_description"
+        @products = base.without_description
+      when "linked"
+        @products = base.joins(:supplier_catalog_item)
+      else # "all" — without description OR linked to catalog
+        @products = base.left_joins(:supplier_catalog_item)
+                        .where("products.description IS NULL OR products.description = '' OR products.description IN (?) OR supplier_catalog_items.id IS NOT NULL",
+                               Product::PLACEHOLDER_DESCRIPTIONS)
       end
 
-      if params[:category].present?
-        @products = @products.where(category: params[:category])
-      end
+      @products = @products.where(brand: params[:brand]) if params[:brand].present?
+      @products = @products.where(category: params[:category]) if params[:category].present?
 
       case params[:sort]
       when "name"
@@ -53,8 +61,26 @@ module Admin
 
       @products = @products.page(params[:page]).per(20)
 
-      @brands = Product.without_description.distinct.pluck(:brand).compact.sort
-      @categories = Product.without_description.distinct.pluck(:category).compact.sort
+      # Preload supplier_catalog_item for catalog indicator
+      ActiveRecord::Associations::Preloader.new(records: @products, associations: :supplier_catalog_item).call
+
+      scope_base = case @scope
+                   when "no_description" then Product.without_description
+                   when "linked" then Product.joins(:supplier_catalog_item)
+                   else Product.left_joins(:supplier_catalog_item)
+                               .where("products.description IS NULL OR products.description = '' OR products.description IN (?) OR supplier_catalog_items.id IS NOT NULL",
+                                      Product::PLACEHOLDER_DESCRIPTIONS)
+                   end
+      @brands = scope_base.distinct.pluck(:brand).compact.sort
+      @categories = scope_base.distinct.pluck(:category).compact.sort
+
+      @scope_counts = {
+        all: Product.left_joins(:supplier_catalog_item)
+                     .where("products.description IS NULL OR products.description = '' OR products.description IN (?) OR supplier_catalog_items.id IS NOT NULL",
+                            Product::PLACEHOLDER_DESCRIPTIONS).distinct.count,
+        no_description: Product.without_description.count,
+        linked: Product.joins(:supplier_catalog_item).count
+      }
     end
 
     # GET /admin/product_enrichment/:id

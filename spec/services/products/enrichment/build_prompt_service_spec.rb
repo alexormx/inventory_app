@@ -37,7 +37,7 @@ RSpec.describe Products::Enrichment::BuildPromptService do
   end
 
   it "uses prompt version v3" do
-    expect(result[:version]).to eq("v3")
+    expect(result[:version]).to eq("v4")
   end
 
   it "includes system prompt with Spanish instructions" do
@@ -108,6 +108,55 @@ RSpec.describe Products::Enrichment::BuildPromptService do
 
     it "omits attributes section" do
       expect(result[:user]).not_to include("ATRIBUTOS ACTUALES")
+    end
+  end
+
+  context "with supplier catalog context" do
+    before do
+      context[:supplier_context] = {
+        catalog_item: {
+          canonical_name: "Tomica Premium 20 Toyota Hilux",
+          canonical_brand: "Tomica",
+          canonical_series: "Tomica Premium",
+          canonical_item_type: "diecast",
+          canonical_release_date: "2024-03-01",
+          canonical_price: 350.0,
+          currency: "JPY",
+          canonical_status: "available",
+          barcode: "4904810123456",
+          source_url: "https://example.com/product",
+          description_raw: "A detailed scale model of the Toyota Hilux pickup truck.",
+          details_payload: { "scale" => "1/64", "material" => "Zamac" }
+        },
+        sources: []
+      }
+    end
+
+    it "includes supplier catalog data in prompt" do
+      user = result[:user]
+      expect(user).to include("DATOS DEL CATÁLOGO DEL PROVEEDOR")
+      expect(user).to include("Tomica Premium 20 Toyota Hilux")
+      expect(user).to include("Tomica Premium")
+    end
+
+    it "includes supplier description" do
+      expect(result[:user]).to include("DESCRIPCIÓN DEL PROVEEDOR")
+      expect(result[:user]).to include("Toyota Hilux pickup truck")
+    end
+
+    it "includes supplier technical details" do
+      user = result[:user]
+      expect(user).to include("DETALLES TÉCNICOS DEL PROVEEDOR")
+      expect(user).to include("scale: 1/64")
+      expect(user).to include("material: Zamac")
+    end
+  end
+
+  context "without supplier catalog context" do
+    before { context[:supplier_context] = nil }
+
+    it "omits supplier catalog section" do
+      expect(result[:user]).not_to include("DATOS DEL CATÁLOGO DEL PROVEEDOR")
     end
   end
 end
