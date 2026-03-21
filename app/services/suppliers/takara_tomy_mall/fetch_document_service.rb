@@ -19,8 +19,8 @@ module Suppliers
       ALLOWED_HOSTS = /\A(takaratomymall\.jp|takaratomy\.queue-it\.net)\z/i
       MAX_REDIRECTS = 6
       MAX_RETRIES = 2
-      TIMEOUT = 12
-      OPEN_TIMEOUT = 8
+      TIMEOUT = 10
+      OPEN_TIMEOUT = 6
 
       Result = Struct.new(:document, :status, :url, keyword_init: true)
 

@@ -336,6 +336,9 @@ module Admin
     def refresh_takara_tomy_mall
       Suppliers::TakaraTomyMall::BackfillItemService.new(@supplier_catalog_item).call
       redirect_to admin_supplier_catalog_item_path(@supplier_catalog_item), notice: "Fuente Takara Tomy Mall actualizada."
+    rescue Faraday::TimeoutError, Net::ReadTimeout, Net::OpenTimeout => e
+      redirect_to admin_supplier_catalog_item_path(@supplier_catalog_item),
+        alert: "Takara Tomy Mall no respondió (timeout). El sitio bloquea conexiones desde servidores cloud. Intenta la actualización masiva desde un entorno local."
     rescue StandardError => e
       redirect_to admin_supplier_catalog_item_path(@supplier_catalog_item), alert: "Error al refrescar Takara Tomy Mall: #{e.message}"
     end
