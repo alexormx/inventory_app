@@ -20,9 +20,13 @@ module Products
         ActiveRecord::Base.transaction do
           product = @draft.product
 
+          structured = @draft.structured_output || {}
+
           product.update!(
             description:       @draft.draft_content,
-            custom_attributes: @draft.draft_attributes.presence || product.custom_attributes
+            custom_attributes: @draft.draft_attributes.presence || product.custom_attributes,
+            highlights:        structured["highlights"].presence || product.highlights,
+            seo_keywords:      structured["seo_keywords"].presence || product.seo_keywords
           )
 
           @draft.update!(

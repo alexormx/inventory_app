@@ -9,7 +9,11 @@ RSpec.describe Products::Enrichment::PublishDraftService do
     create(:product_description_draft, :draft_generated,
            product: product,
            draft_content: "New enriched description.",
-           draft_attributes: { "color" => "Azul", "escala" => "1:64" })
+           draft_attributes: { "color" => "Azul", "escala" => "1:64" },
+           structured_output: {
+             "highlights" => ["Escala 1:64", "Color azul metalizado"],
+             "seo_keywords" => ["auto a escala", "diecast azul"]
+           })
   end
 
   subject(:service) { described_class.new(draft, published_by: admin) }
@@ -25,6 +29,18 @@ RSpec.describe Products::Enrichment::PublishDraftService do
       service.call
       product.reload
       expect(product.custom_attributes).to include("color" => "Azul", "escala" => "1:64")
+    end
+
+    it "publishes highlights to product" do
+      service.call
+      product.reload
+      expect(product.highlights).to eq(["Escala 1:64", "Color azul metalizado"])
+    end
+
+    it "publishes seo_keywords to product" do
+      service.call
+      product.reload
+      expect(product.seo_keywords).to eq(["auto a escala", "diecast azul"])
     end
 
     it "marks draft as published" do

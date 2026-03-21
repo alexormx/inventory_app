@@ -31,6 +31,8 @@ class Product < ApplicationRecord
 
   # --- Custom attributes: always a JSON Hash ---
   attribute :custom_attributes, :json, default: -> { {} }
+  attribute :highlights, :json, default: -> { [] }
+  attribute :seo_keywords, :json, default: -> { [] }
   validate :custom_attributes_must_be_object
 
   # --- Create enums for the product status ---

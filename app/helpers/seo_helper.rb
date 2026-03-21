@@ -78,6 +78,11 @@ module SeoHelper
       end
     end
 
+    # SEO keywords from AI enrichment
+    if product.seo_keywords.is_a?(Array) && product.seo_keywords.any?
+      data['keywords'] = product.seo_keywords.join(', ')
+    end
+
     tag.script(data.to_json.html_safe, type: 'application/ld+json')
   end
 
@@ -181,6 +186,21 @@ module SeoHelper
                     asset_url('placeholder.png')
                   end
 
+      on_hand = begin
+        product.current_on_hand
+      rescue StandardError
+        0
+      end
+      availability = if on_hand.positive?
+                       'https://schema.org/InStock'
+                     elsif product.backorder_allowed?
+                       'https://schema.org/BackOrder'
+                     elsif product.preorder_available?
+                       'https://schema.org/PreOrder'
+                     else
+                       'https://schema.org/OutOfStock'
+                     end
+
       {
         '@type' => 'ListItem',
         'position' => index + 1,
@@ -192,6 +212,13 @@ module SeoHelper
           'brand' => {
             '@type' => 'Brand',
             'name' => product.brand
+          },
+          'offers' => {
+            '@type' => 'Offer',
+            'url' => product_url(product),
+            'priceCurrency' => 'MXN',
+            'price' => product.selling_price.to_f,
+            'availability' => availability
           }
         }
       }
@@ -280,6 +307,17 @@ module SeoHelper
 
   # Per-product keywords based on actual product data
   def product_meta_keywords(product)
+    # Prefer AI-generated seo_keywords if available
+    ai_keywords = product.seo_keywords if product.respond_to?(:seo_keywords)
+    if ai_keywords.is_a?(Array) && ai_keywords.any?
+      combined = ai_keywords.dup
+      # Always include core identifiers
+      combined << product.product_name
+      combined << product.brand
+      combined << product.category
+      return combined.compact.map { |k| k.to_s.strip.downcase }.reject(&:blank?).uniq.first(15).join(', ')
+    end
+
     attrs = product.parsed_custom_attributes
     keywords = []
 

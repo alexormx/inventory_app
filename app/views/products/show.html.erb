@@ -104,6 +104,19 @@
         </div>
       </div>
 
+      <% if @product.highlights.is_a?(Array) && @product.highlights.any? %>
+        <div class="card border-0 shadow-sm mt-4" id="destacados">
+          <div class="card-body">
+            <h2 class="h5 fw-semibold mb-3"><i class="fas fa-star text-warning me-2"></i>Puntos Destacados</h2>
+            <ul class="mb-0 ps-3">
+              <% @product.highlights.each do |highlight| %>
+                <li class="mb-1"><%= highlight %></li>
+              <% end %>
+            </ul>
+          </div>
+        </div>
+      <% end %>
+
       <div class="card border-0 shadow-sm mt-4" id="detalles">
         <div class="card-body">
           <h2 class="h5 fw-semibold mb-3"><i class="fas fa-list-alt text-primary me-2"></i>Detalles del Producto</h2>
