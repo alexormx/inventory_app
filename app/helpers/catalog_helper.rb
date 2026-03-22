@@ -66,12 +66,24 @@ module CatalogHelper
       { name: 'Catálogo', url: catalog_path },
       { name: product.category, url: catalog_path(categories: [product.category]) }
     ]
+
     # Add brand breadcrumb linking to SEO-friendly brand landing page
     if product.brand.present?
       crumbs << { name: product.brand, url: brand_landing_path(brand_slug: product.brand.parameterize) }
     end
+
+    if (series_name = product_series_name(product))
+      crumbs << { name: series_name, url: nil }
+    end
+
     crumbs << { name: product.product_name, url: nil }
     crumbs
+  end
+
+  def product_series_name(product)
+    product.supplier_catalog_item&.canonical_series.presence ||
+      product.parsed_custom_attributes['series'].presence ||
+      product.parsed_custom_attributes['serie'].presence
   end
 
   # Formato de rango de productos mostrados (ej: "Mostrando 1-12 de 45")
