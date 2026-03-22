@@ -37,5 +37,15 @@ RSpec.describe CatalogHelper, type: :helper do
 
       expect(crumbs.map { |crumb| crumb[:name] }).to include("Tomica Premium")
     end
+
+    it "prefers persisted product.series over derived sources" do
+      product.update!(series: "Tomica Limited Vintage Neo")
+      create(:supplier_catalog_item, product: product, canonical_series: "Tomica Limited Vintage")
+
+      crumbs = helper.product_breadcrumbs(product)
+
+      expect(crumbs.map { |crumb| crumb[:name] }).to include("Tomica Limited Vintage Neo")
+      expect(crumbs.map { |crumb| crumb[:name] }).not_to include("Tomica Limited Vintage")
+    end
   end
 end

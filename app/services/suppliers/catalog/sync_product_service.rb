@@ -63,6 +63,7 @@ module Suppliers
       def sync_safe_fields(created:)
         @product.barcode = @catalog_item.barcode if @catalog_item.barcode.present?
         @product.supplier_product_code = @catalog_item.supplier_product_code if @catalog_item.supplier_product_code.present?
+        @product.series = @catalog_item.canonical_series if @catalog_item.canonical_series.present? && (created || @force_full_update || @product.series.blank?)
         @product.launch_date = @catalog_item.canonical_release_date if @catalog_item.canonical_release_date.present? && (created || @force_full_update || @product.launch_date.blank?)
 
         if @catalog_item.canonical_price.present? && (created || @force_full_update || @product.selling_price.blank? || @product.selling_price.to_f <= 0)

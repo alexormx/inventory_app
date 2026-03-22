@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_03_21_191023) do
+ActiveRecord::Schema[8.0].define(version: 2026_03_21_202000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -417,6 +417,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_03_21_191023) do
     t.boolean "discontinued", default: false, null: false
     t.text "highlights", default: "[]"
     t.text "seo_keywords", default: "[]"
+    t.string "series"
     t.index "lower((product_name)::text)", name: "index_products_on_lower_product_name"
     t.index ["brand"], name: "index_products_on_brand"
     t.index ["category"], name: "index_products_on_category"
@@ -426,6 +427,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_03_21_191023) do
     t.index ["preferred_supplier_id"], name: "index_products_on_preferred_supplier_id"
     t.index ["product_name"], name: "index_products_on_product_name"
     t.index ["product_sku"], name: "index_products_on_product_sku", unique: true
+    t.index ["series"], name: "index_products_on_series"
     t.index ["slug"], name: "index_products_on_slug", unique: true
   end
 

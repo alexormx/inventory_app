@@ -12,6 +12,7 @@ RSpec.describe Suppliers::Catalog::SyncProductService do
       expect(result.created).to be true
       expect(result.product).to be_persisted
       expect(result.product.product_sku).to eq(catalog_item.external_sku)
+      expect(result.product.series).to eq(catalog_item.canonical_series)
       expect(result.product.status).to eq("draft")
       expect(catalog_item.reload.product).to eq(result.product)
       expect(result.product.parsed_custom_attributes.dig("supplier_catalog", "external_sku")).to eq(catalog_item.external_sku)
@@ -26,6 +27,7 @@ RSpec.describe Suppliers::Catalog::SyncProductService do
       expect(result.created).to be false
       expect(result.product).to eq(product)
       expect(product.reload.supplier_product_code).to eq("TKT95078")
+      expect(product.reload.series).to eq(catalog_item.canonical_series)
       expect(catalog_item.reload.product).to eq(product)
     end
   end

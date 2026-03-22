@@ -23,6 +23,7 @@ class Product < ApplicationRecord
   after_initialize :set_api_fallback_defaults,    if: :new_record?
 
   before_validation :normalize_custom_attributes
+  before_validation :sync_series_from_custom_attributes
   before_validation :normalize_numeric_inputs
   before_validation :ensure_whatsapp_code
   # --- Stats update on create (your logic) ---
@@ -196,6 +197,11 @@ class Product < ApplicationRecord
 
   def custom_attributes_must_be_object
     errors.add(:custom_attributes, 'must be an object') unless custom_attributes.is_a?(Hash)
+  end
+
+  def sync_series_from_custom_attributes
+    derived_series = parsed_custom_attributes['series'].presence || parsed_custom_attributes['serie'].presence
+    self.series = derived_series if derived_series.present? && series.blank?
   end
 
   def normalize_numeric_inputs

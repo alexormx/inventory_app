@@ -81,7 +81,8 @@ module CatalogHelper
   end
 
   def product_series_name(product)
-    product.supplier_catalog_item&.canonical_series.presence ||
+    product.series.presence ||
+      product.supplier_catalog_item&.canonical_series.presence ||
       product.parsed_custom_attributes['series'].presence ||
       product.parsed_custom_attributes['serie'].presence
   end
