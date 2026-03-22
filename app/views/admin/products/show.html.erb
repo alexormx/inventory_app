@@ -172,6 +172,10 @@
           <span class="fw-medium"><%= @product.brand.presence || '—' %></span>
         </div>
         <div class="d-flex justify-content-between py-2 border-bottom">
+          <span class="text-muted">Serie</span>
+          <span class="fw-medium"><%= @product.series.presence || '—' %></span>
+        </div>
+        <div class="d-flex justify-content-between py-2 border-bottom">
           <span class="text-muted">Categoría</span>
           <span class="fw-medium"><%= @product.category.presence || '—' %></span>
         </div>

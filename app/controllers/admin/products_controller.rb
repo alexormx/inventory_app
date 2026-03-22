@@ -402,6 +402,7 @@ module Admin
                   :whatsapp_code,
                   :barcode,
                   :supplier_product_code,
+                  :series,
                   :brand,
                   :category,
                   :description,

@@ -6,6 +6,9 @@
       <div class="text-muted small d-flex flex-wrap gap-3">
         <span>SKU: <strong><%= product.product_sku %></strong></span>
         <span>Marca: <strong><%= product.brand %></strong></span>
+        <% if product.series.present? %>
+          <span>Serie: <strong><%= product.series %></strong></span>
+        <% end %>
         <span>Categoría: <strong><%= product.category %></strong></span>
       </div>
     </div>

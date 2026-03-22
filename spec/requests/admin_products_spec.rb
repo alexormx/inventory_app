@@ -26,6 +26,7 @@ RSpec.describe "Admin::Products", type: :request do
             product_sku: "SKU-BLANK-DISCOUNT-#{SecureRandom.hex(3)}",
             product_name: 'Producto con descuento vacío',
             brand: 'Tomica',
+            series: 'Limited Vintage',
             category: 'diecast',
             selling_price: 199.99,
             minimum_price: 120.0,
@@ -40,6 +41,7 @@ RSpec.describe "Admin::Products", type: :request do
       expect(created.maximum_discount.to_d).to eq(0.to_d)
       expect(created.discount_limited_stock).to eq(0)
       expect(created.reorder_point).to eq(0)
+      expect(created.series).to eq('Limited Vintage')
       expect(response).to redirect_to(admin_products_path)
     end
   end
@@ -51,6 +53,7 @@ RSpec.describe "Admin::Products", type: :request do
           product_sku: product.product_sku,
           product_name: product.product_name,
           brand: product.brand,
+          series: 'Tomica Premium',
           category: product.category,
           selling_price: product.selling_price,
           minimum_price: product.minimum_price,
@@ -61,6 +64,7 @@ RSpec.describe "Admin::Products", type: :request do
 
       expect(response).to redirect_to(admin_product_path(product))
       expect(product.reload.whatsapp_code).to match(/\AWA-EDIT-/)
+      expect(product.reload.series).to eq('Tomica Premium')
     end
   end
 

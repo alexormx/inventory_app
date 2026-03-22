@@ -75,6 +75,15 @@
         </div>
 
         <div class="col-12 col-md-3">
+          <%= f.label :series do %>
+            <i class="fa-solid fa-layer-group text-info me-1"></i>
+            Serie
+          <% end %>
+          <%= f.text_field :series, class: "form-control", placeholder: "Ej: Limited Vintage" %>
+          <small class="text-muted">Línea o colección del producto</small>
+        </div>
+
+        <div class="col-12 col-md-3">
           <%= f.label :category do %>
             <i class="fa-solid fa-folder text-warning me-1"></i>
             Categoría
