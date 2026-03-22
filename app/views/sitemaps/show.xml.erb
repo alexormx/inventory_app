@@ -33,6 +33,15 @@
   </url>
   <% end %>
 
+  <%# Landing pages por serie (SEO-friendly) %>
+  <% Product.where(status: 'active').distinct.pluck(:series).compact.compact_blank.sort.each do |series| %>
+  <url>
+    <loc><%= series_landing_url(series_slug: series.parameterize) %></loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <% end %>
+
   <%# Aviso de privacidad %>
   <url>
     <loc><%= privacy_notice_url %></loc>

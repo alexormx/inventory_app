@@ -28,6 +28,7 @@ RSpec.describe CatalogHelper, type: :helper do
         "Tomica Limited Vintage",
         "LV-N321a Nissan Truck 4X4 King Cab"
       ])
+      expect(crumbs[4][:url]).to eq(helper.series_landing_path(series_slug: "tomica-limited-vintage"))
     end
 
     it "falls back to custom_attributes series when supplier catalog series is missing" do

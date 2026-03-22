@@ -6,7 +6,7 @@ module MetaTagsHelper
   DEFAULT_META_DESCRIPTION = 'Tienda especializada en modelos a escala, autos de colección Hot Wheels, Greenlight, Majorette y más. Productos 100% originales con envío a todo México.'
   DEFAULT_KEYWORDS = 'autos a escala, hot wheels, greenlight, coleccionables, tienda de coleccionables, autos de colección, diecast, modelos a escala'
   NOINDEX_CONTROLLERS = %w[carts checkouts profiles orders shipping_addresses].freeze
-  INDEXABLE_CATALOG_FILTERS = %w[categories brands].freeze
+  INDEXABLE_CATALOG_FILTERS = %w[categories brands series].freeze
 
   def seo_settings
     {
@@ -71,6 +71,8 @@ module MetaTagsHelper
       return brand_landing_url(brand_slug: @brand_name.parameterize)
     elsif @seo_landing == :category && @category_name.present?
       return category_landing_url(category_slug: @category_name.parameterize)
+    elsif @seo_landing == :series && @series_name.present?
+      return series_landing_url(series_slug: @series_name.parameterize)
     end
 
     return catalog_canonical_url if request.path == catalog_path
@@ -171,10 +173,12 @@ module MetaTagsHelper
   def canonical_catalog_filters
     categories = Array(request.query_parameters[:categories]).map(&:to_s).map(&:strip).reject(&:blank?).uniq.sort
     brands = Array(request.query_parameters[:brands]).map(&:to_s).map(&:strip).reject(&:blank?).uniq.sort
+    series = Array(request.query_parameters[:series]).map(&:to_s).map(&:strip).reject(&:blank?).uniq.sort
 
     {}.tap do |filters|
       filters[:categories] = categories if categories.present?
       filters[:brands] = brands if brands.present?
+      filters[:series] = series if series.present?
     end
   end
 end

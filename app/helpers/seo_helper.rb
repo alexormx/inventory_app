@@ -242,6 +242,8 @@ module SeoHelper
       'url' => url,
       'description' => if type == :brand
                           "Colección completa de productos #{name} disponibles en #{seo_site_name}."
+                        elsif type == :series
+                          "Todos los productos de la serie #{name} disponibles en #{seo_site_name}."
                         else
                           "Todos los productos de la categoría #{name} en #{seo_site_name}."
                         end,
@@ -399,10 +401,13 @@ module SeoHelper
       "#{@brand_name} | Comprar #{@brand_name} en México | #{seo_site_name}"
     elsif @seo_landing == :category && @category_name.present?
       "#{@category_name} | #{seo_site_name}"
+    elsif @seo_landing == :series && @series_name.present?
+      "#{@series_name} | #{seo_site_name}"
     else
       parts = ['Catálogo']
       parts << params[:categories].join(', ') if params[:categories].present?
       parts << params[:brands].join(', ') if params[:brands].present?
+      parts << params[:series].join(', ') if params[:series].present?
       parts << "| #{seo_site_name}"
       parts.join(' ')
     end
@@ -416,10 +421,14 @@ module SeoHelper
     elsif @seo_landing == :category && @category_name.present?
       "Explora nuestra selección de #{@category_name} en #{seo_site_name}. " \
         'Productos originales con envío seguro a todo México. Modelos a escala, coleccionables y más.'
+    elsif @seo_landing == :series && @series_name.present?
+      "Explora la serie #{@series_name} en #{seo_site_name}. " \
+        'Productos originales con envío seguro a todo México. Modelos a escala, coleccionables y más.'
     else
       desc = 'Explora nuestra colección de modelos a escala, autos de colección y figuras.'
       desc += " Categorías: #{params[:categories].join(', ')}." if params[:categories].present?
       desc += " Marcas: #{params[:brands].join(', ')}." if params[:brands].present?
+      desc += " Series: #{params[:series].join(', ')}." if params[:series].present?
       desc + " Productos originales con envío seguro a todo México. #{seo_site_name}."
     end
   end
@@ -431,6 +440,8 @@ module SeoHelper
       brand_landing_url(brand_slug: @brand_name.parameterize)
     elsif @seo_landing == :category && @category_name.present?
       category_landing_url(category_slug: @category_name.parameterize)
+    elsif @seo_landing == :series && @series_name.present?
+      series_landing_url(series_slug: @series_name.parameterize)
     elsif controller_name == 'products' && action_name == 'index'
       catalog_url(request.query_parameters.except('page'))
     else

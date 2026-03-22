@@ -75,15 +75,40 @@ RSpec.describe 'SEO Landing Pages', type: :request do
     end
   end
 
-  describe 'Sitemap includes brand and category landing pages' do
-    let!(:product) { create(:product, brand: 'Tomica', category: 'diecast', status: 'active') }
+  describe 'GET /serie/:series_slug (series landing)' do
+    let!(:product) { create(:product, series: 'Limited Vintage', category: 'diecast', brand: 'Tomica', status: 'active') }
 
-    it 'includes /marca/tomica and /categoria/diecast in sitemap' do
+    it 'renders catalog filtered by series with SEO meta tags' do
+      get series_landing_path(series_slug: 'limited-vintage')
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include('Limited Vintage')
+
+      canonical = response.body[%r{<link[^>]*rel="canonical"[^>]*href="([^"]+)"}i, 1]
+      expect(canonical).to include('/serie/limited-vintage')
+      expect(canonical).not_to include('series')
+
+      robots = response.body[%r{<meta[^>]*name="robots"[^>]*content="([^"]+)"}i, 1]
+      expect(robots).to eq('index, follow')
+    end
+
+    it 'redirects to catalog when series slug not found' do
+      get series_landing_path(series_slug: 'nonexistent-series-xyz')
+
+      expect(response).to redirect_to(catalog_path)
+    end
+  end
+
+  describe 'Sitemap includes brand and category landing pages' do
+    let!(:product) { create(:product, brand: 'Tomica', category: 'diecast', series: 'Limited Vintage', status: 'active') }
+
+    it 'includes /marca/tomica, /categoria/diecast and /serie/limited-vintage in sitemap' do
       get '/sitemap.xml'
 
       expect(response).to have_http_status(:ok)
       expect(response.body).to include('/marca/tomica')
       expect(response.body).to include('/categoria/diecast')
+      expect(response.body).to include('/serie/limited-vintage')
     end
   end
 end

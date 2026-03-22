@@ -26,6 +26,23 @@ RSpec.describe 'SEO meta tags', type: :request do
       expect(robots).to eq('index, follow')
     end
 
+    it 'keeps series filters in canonical and aligns og:url' do
+      create(:product, series: 'Limited Vintage')
+
+      get catalog_path, params: { series: ['Limited Vintage'] }
+      expect(response).to have_http_status(:ok)
+
+      canonical = response.body[%r{<link[^>]*rel="canonical"[^>]*href="([^"]+)"}i, 1]
+      expect(canonical).to be_present
+      expect(CGI.unescapeHTML(canonical)).to eq(catalog_url(series: ['Limited Vintage']))
+
+      og_url = response.body[%r{<meta[^>]*property="og:url"[^>]*content="([^"]+)"}i, 1]
+      expect(og_url).to eq(canonical)
+
+      robots = response.body[%r{<meta[^>]*name="robots"[^>]*content="([^"]+)"}i, 1]
+      expect(robots).to eq('index, follow')
+    end
+
     it 'strips noisy catalog params from canonical and marks page noindex' do
       create(:product)
 

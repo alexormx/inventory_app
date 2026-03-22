@@ -36,6 +36,20 @@ class ProductsController < ApplicationController
     render :index
   end
 
+  # SEO-friendly series landing page: /serie/:series_slug
+  def series
+    @series_name = find_series_by_slug(params[:series_slug])
+    unless @series_name
+      redirect_to catalog_path, alert: 'Serie no encontrada'
+      return
+    end
+
+    params[:series] = [@series_name]
+    @seo_landing = :series
+    index
+    render :index
+  end
+
   def index
     @q      = params[:q].to_s.strip
     @sort   = params[:sort].presence || 'newest'
@@ -43,6 +57,7 @@ class ProductsController < ApplicationController
     # Facetas básicas para filtros (ordenar en Ruby para evitar DISTINCT + ORDER BY en PG)
     @all_categories = Product.publicly_visible.distinct.pluck(:category).compact.compact_blank.sort_by { |c| c.to_s.downcase }
     @all_brands     = Product.publicly_visible.distinct.pluck(:brand).compact.compact_blank.sort_by { |b| b.to_s.downcase }
+    @all_series     = Product.publicly_visible.distinct.pluck(:series).compact.compact_blank.sort_by { |s| s.to_s.downcase }
 
     # Calcular rango de precios para el slider
     price_stats = Product.publicly_visible.pick(Arel.sql('MIN(selling_price) as min_price, MAX(selling_price) as max_price'))
@@ -63,6 +78,7 @@ class ProductsController < ApplicationController
     scope = base_scope
     selected_categories = Array(params[:categories]).compact_blank
     selected_brands     = Array(params[:brands]).compact_blank
+    selected_series     = Array(params[:series]).compact_blank
     price_min           = params[:price_min].presence
     price_max           = params[:price_max].presence
     in_stock_only       = ActiveModel::Type::Boolean.new.cast(params[:in_stock])
@@ -71,6 +87,7 @@ class ProductsController < ApplicationController
 
     scope = scope.where(category: selected_categories) if selected_categories.present?
     scope = scope.where(brand: selected_brands) if selected_brands.present?
+    scope = scope.where(series: selected_series) if selected_series.present?
     scope = scope.where(selling_price: price_min.to_f..) if price_min.present?
     scope = scope.where(selling_price: ..price_max.to_f) if price_max.present?
     scope = scope.joins(:inventories).where(inventories: { status: Inventory.statuses[:available] }).distinct if in_stock_only
@@ -115,6 +132,7 @@ class ProductsController < ApplicationController
     {
       categories: scope.where.not(category: [nil, '']).group(:category).count,
       brands: scope.where.not(brand: [nil, '']).group(:brand).count,
+      series: scope.where.not(series: [nil, '']).group(:series).count,
       in_stock: scope.joins(:inventories).where(inventories: { status: Inventory.statuses[:available] }).distinct.count,
       backorder: scope.where(backorder_allowed: true).count,
       preorder: scope.where(preorder_available: true).count
@@ -157,5 +175,11 @@ class ProductsController < ApplicationController
     Product.publicly_visible
            .distinct.pluck(:category).compact.compact_blank
            .find { |c| c.parameterize == slug }
+  end
+
+  def find_series_by_slug(slug)
+    Product.publicly_visible
+           .distinct.pluck(:series).compact.compact_blank
+           .find { |s| s.parameterize == slug }
   end
 end

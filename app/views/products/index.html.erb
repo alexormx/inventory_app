@@ -12,6 +12,8 @@
     <%= collection_page_json_ld(name: @brand_name, type: :brand, url: brand_landing_url(brand_slug: @brand_name.parameterize), products: @products) %>
   <% elsif @seo_landing == :category && @category_name.present? %>
     <%= collection_page_json_ld(name: @category_name, type: :category, url: category_landing_url(category_slug: @category_name.parameterize), products: @products) %>
+  <% elsif @seo_landing == :series && @series_name.present? %>
+    <%= collection_page_json_ld(name: @series_name, type: :series, url: series_landing_url(series_slug: @series_name.parameterize), products: @products) %>
   <% end %>
 <% end %>
 

@@ -28,6 +28,17 @@
       </span>
     <% end %>
 
+    <% filter_state.selected_series.each do |series| %>
+      <span class="filter-chip">
+        <i class="fas fa-layer-group me-1"></i><%= series %>
+        <%= link_to clear_series_url(series),
+                    class: "chip-remove",
+                    "aria-label": "Remover #{series}",
+                    title: "Remover filtro",
+                    data: { turbo_frame: "products_grid", turbo_action: "advance" } do %>&times;<% end %>
+      </span>
+    <% end %>
+
     <%# Chip de precio (solo para usuarios autenticados) %>
     <% if user_signed_in? && (filter_state.price_min || filter_state.price_max) %>
       <span class="filter-chip">

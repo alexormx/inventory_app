@@ -9,9 +9,11 @@ module CatalogHelper
 
     categories = Array(params[:categories]).compact_blank
     brands = Array(params[:brands]).compact_blank
+    series = Array(params[:series]).compact_blank
 
     parts << categories.to_sentence if categories.any?
     parts << brands.to_sentence if brands.any?
+    parts << series.to_sentence if series.any?
 
     parts << 'En Stock' if ActiveModel::Type::Boolean.new.cast(params[:in_stock])
 
@@ -45,6 +47,9 @@ module CatalogHelper
     elsif @seo_landing == :category && @category_name.present?
       breadcrumbs << { name: @category_name, url: nil }
       return breadcrumbs
+    elsif @seo_landing == :series && @series_name.present?
+      breadcrumbs << { name: @series_name, url: nil }
+      return breadcrumbs
     end
 
     # Agregar filtros activos a breadcrumbs
@@ -53,6 +58,12 @@ module CatalogHelper
     if params[:categories].present?
       Array(params[:categories]).compact_blank.each do |cat|
         breadcrumbs << { name: cat, url: nil }
+      end
+    end
+
+    if params[:series].present?
+      Array(params[:series]).compact_blank.each do |series|
+        breadcrumbs << { name: series, url: nil }
       end
     end
 
@@ -73,7 +84,7 @@ module CatalogHelper
     end
 
     if (series_name = product_series_name(product))
-      crumbs << { name: series_name, url: nil }
+      crumbs << { name: series_name, url: series_landing_path(series_slug: series_name.parameterize) }
     end
 
     crumbs << { name: product.product_name, url: nil }
@@ -108,6 +119,7 @@ module CatalogHelper
     count = 0
     count += Array(params[:categories]).compact_blank.size
     count += Array(params[:brands]).compact_blank.size
+    count += Array(params[:series]).compact_blank.size
     count += 1 if params[:price_min].present? || params[:price_max].present?
     count += 1 if ActiveModel::Type::Boolean.new.cast(params[:in_stock])
     count += 1 if ActiveModel::Type::Boolean.new.cast(params[:backorder])

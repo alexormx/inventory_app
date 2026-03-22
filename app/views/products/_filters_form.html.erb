@@ -166,6 +166,37 @@
   </div>
   <% end %>
 
+  <% if @all_series.present? %>
+  <div class="filter-block mb-3">
+    <h6 class="fw-semibold small text-uppercase text-muted mb-2">
+      <a class="text-decoration-none text-muted d-flex align-items-center justify-content-between" data-bs-toggle="collapse" href="#filterSeries<%= suffix %>" role="button" aria-expanded="false" aria-controls="filterSeries<%= suffix %>">
+        Series
+        <span>
+          <% if filter_state.selected_series.any? %>
+            <span class="badge bg-danger rounded-pill me-1"><%= filter_state.selected_series.size %></span>
+          <% end %>
+          <i class="fas fa-chevron-down"></i>
+        </span>
+      </a>
+    </h6>
+    <div class="collapse" id="filterSeries<%= suffix %>">
+      <div class="filter-scroll">
+        <% @all_series.each do |series| %>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="series[]" value="<%= series %>" id="series<%= suffix %>-<%= series.parameterize %>" <%= 'checked' if filter_state.selected_series.include?(series) %>>
+            <label class="form-check-label" for="series<%= suffix %>-<%= series.parameterize %>">
+              <%= series %>
+              <% if defined?(@facet_counts) && @facet_counts[:series] && @facet_counts[:series][series] %>
+                <span class="text-muted small">(<%= @facet_counts[:series][series] %>)</span>
+              <% end %>
+            </label>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+  <% end %>
+
   <div class="d-grid gap-2">
     <%# Ya hay autosubmit con Stimulus; no es necesario botón de 'Aplicar filtros' %>
     <% if suffix.to_s == 'Mobile' %>

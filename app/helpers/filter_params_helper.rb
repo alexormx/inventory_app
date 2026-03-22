@@ -9,6 +9,7 @@ module FilterParamsHelper
   # @return [OpenStruct] con los siguientes atributos:
   #   - selected_categories: Array de categorías seleccionadas
   #   - selected_brands: Array de marcas seleccionadas
+  #   - selected_series: Array de series seleccionadas
   #   - price_min: Precio mínimo (String o nil)
   #   - price_max: Precio máximo (String o nil)
   #   - in_stock_only: Boolean - filtrar solo productos en stock
@@ -34,6 +35,14 @@ module FilterParamsHelper
     brands = qp.delete('brands')
     new_brands = Array(brands).compact_blank - [brand]
     qp['brands'] = new_brands if new_brands.present?
+    catalog_path(qp)
+  end
+
+  def clear_series_url(series)
+    qp = normalized_catalog_query_parameters
+    series_values = qp.delete('series')
+    new_series = Array(series_values).compact_blank - [series]
+    qp['series'] = new_series if new_series.present?
     catalog_path(qp)
   end
 
@@ -88,6 +97,10 @@ module FilterParamsHelper
     brands = brands.compact_blank.uniq
     qp['brands'] = brands if brands.present?
 
+    series = Array(qp.delete('series')) + Array(qp.delete('series[]'))
+    series = series.compact_blank.uniq
+    qp['series'] = series if series.present?
+
     qp
   end
 
@@ -95,6 +108,7 @@ module FilterParamsHelper
     OpenStruct.new(
       selected_categories: (Array(params[:categories]) + Array(params['categories[]'])).compact_blank.uniq,
       selected_brands: (Array(params[:brands]) + Array(params['brands[]'])).compact_blank.uniq,
+      selected_series: (Array(params[:series]) + Array(params['series[]'])).compact_blank.uniq,
       price_min: params[:price_min].presence,
       price_max: params[:price_max].presence,
       in_stock_only: boolean_param(:in_stock),
@@ -103,6 +117,7 @@ module FilterParamsHelper
     ).tap do |state|
       state.has_filters = state.selected_categories.any? ||
                           state.selected_brands.any? ||
+                          state.selected_series.any? ||
                           state.price_min.present? ||
                           state.price_max.present? ||
                           state.in_stock_only ||
