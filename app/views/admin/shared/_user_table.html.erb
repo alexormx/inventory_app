@@ -211,6 +211,17 @@
                     </a>
                   </li>
                 <% end %>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                  <%= link_to admin_user_path(u),
+                        class: "dropdown-item text-danger",
+                        data: { turbo_method: :delete,
+                                turbo_confirm: "¿Eliminar al usuario \"#{u.name}\"? Esta acción no se puede deshacer. Si tiene órdenes asociadas, no se podrá eliminar.",
+                                confirm_title: "Eliminar usuario",
+                                confirm_confirm_label: "Eliminar" } do %>
+                    <i class="fa fa-trash text-danger"></i> Eliminar
+                  <% end %>
+                </li>
               </ul>
             </div>
           </td>

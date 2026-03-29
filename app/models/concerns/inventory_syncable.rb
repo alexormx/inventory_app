@@ -106,28 +106,13 @@ module InventorySyncable
   def append_pending_note(remaining)
     return unless respond_to?(:sale_order) && sale_order.persisted?
 
-    line_identifier = id || object_id # usa ID si existe, o fallback a object_id temporal si aún no está persistido
-    note_prefix = "🛑 Producto #{product.product_name} (#{product.product_sku}), línea #{line_identifier}:"
-
-    new_line = "#{note_prefix} cliente pidió #{quantity}, solo reservados #{quantity - remaining}"
-
-    # Elimina notas anteriores de esta misma línea (basado en ID)
-    existing_lines = sale_order.notes.to_s.split("\n")
-    filtered_lines = existing_lines.reject { |line| line.starts_with?(note_prefix) }
-
-    # Agrega la nueva nota
-    filtered_lines << new_line
-    sale_order.update!(notes: filtered_lines.join("\n"))
+    sale_order.upsert_pending_note(self, remaining)
   end
 
   def remove_pending_note
     return unless respond_to?(:sale_order) && sale_order.persisted?
 
-    line_identifier = id || object_id
-    note_prefix = "🛑 Producto #{product.product_name} (#{product.product_sku}), línea #{line_identifier}:"
-
-    updated_notes = sale_order.notes.to_s.split("\n").reject { |line| line.starts_with?(note_prefix) }
-    sale_order.update!(notes: updated_notes.join("\n"))
+    sale_order.remove_pending_note_for(self)
   end
 
   def inventory_status_from_order

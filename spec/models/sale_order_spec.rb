@@ -202,4 +202,119 @@ RSpec.describe SaleOrder, type: :model do
       expect(count).to eq(0)
     end
   end
+
+  # ---------------------------------------------------------------------------
+  # update_status_if_fully_paid! – Credit orders should NOT be demoted
+  # ---------------------------------------------------------------------------
+  describe '#update_status_if_fully_paid! with credit' do
+    let(:credit_customer) { create(:user, role: 'customer', credit_enabled: true, default_credit_terms: 'net30') }
+
+    let(:so) do
+      create(:sale_order, user: credit_customer, status: 'Pending',
+             subtotal: 100, tax_rate: 0, total_tax: 0, total_order_value: 100)
+    end
+
+    context 'when customer has credit_enabled' do
+      it 'does NOT demote Confirmed → Pending without payment' do
+        so.update_columns(status: 'Confirmed')
+        so.update_status_if_fully_paid!
+        expect(so.reload.status).to eq('Confirmed')
+      end
+
+      it 'does NOT demote Preparing → Pending without payment' do
+        so.update_columns(status: 'Preparing')
+        so.update_status_if_fully_paid!
+        expect(so.reload.status).to eq('Preparing')
+      end
+
+      it 'does NOT demote In Transit → Pending without payment' do
+        so.update_columns(status: 'In Transit')
+        so.update_status_if_fully_paid!
+        expect(so.reload.status).to eq('In Transit')
+      end
+
+      it 'still promotes Pending → Confirmed when fully paid' do
+        create(:payment, sale_order: so, amount: 100, status: 'Completed')
+        so.update_status_if_fully_paid!
+        expect(so.reload.status).to eq('Confirmed')
+      end
+    end
+
+    context 'when order has credit_override' do
+      let(:regular_customer) { create(:user, role: 'customer', credit_enabled: false) }
+      let(:override_so) do
+        create(:sale_order, user: regular_customer, status: 'Pending',
+               subtotal: 100, tax_rate: 0, total_tax: 0, total_order_value: 100,
+               credit_override: true)
+      end
+
+      it 'does NOT demote Confirmed → Pending without payment' do
+        override_so.update_columns(status: 'Confirmed')
+        override_so.update_status_if_fully_paid!
+        expect(override_so.reload.status).to eq('Confirmed')
+      end
+    end
+
+    context 'when NOT credit enabled (regression)' do
+      let(:regular_customer) { create(:user, role: 'customer', credit_enabled: false) }
+      let(:regular_so) do
+        create(:sale_order, user: regular_customer, status: 'Pending',
+               subtotal: 100, tax_rate: 0, total_tax: 0, total_order_value: 100)
+      end
+
+      it 'still demotes Confirmed → Pending without payment' do
+        regular_so.update_columns(status: 'Confirmed')
+        regular_so.update_status_if_fully_paid!
+        expect(regular_so.reload.status).to eq('Pending')
+      end
+    end
+  end
+
+  # ---------------------------------------------------------------------------
+  # Reservation notes management
+  # ---------------------------------------------------------------------------
+  describe 'reservation note management' do
+    let(:so) do
+      create(:sale_order, user: customer, status: 'Pending',
+             subtotal: 100, tax_rate: 0, total_tax: 0, total_order_value: 100)
+    end
+    let!(:soi) { create(:sale_order_item, sale_order: so, product: product, quantity: 3) }
+
+    describe '#upsert_pending_note' do
+      it 'adds a shortage note' do
+        so.upsert_pending_note(soi, 2)
+        expect(so.reload.notes).to include("🛑 Producto")
+        expect(so.notes).to include("cliente pidió 3, solo reservados 1")
+      end
+
+      it 'replaces existing note for same line' do
+        so.upsert_pending_note(soi, 2)
+        so.upsert_pending_note(soi, 1)
+        lines = so.reload.notes.split("\n").select { |l| l.include?("línea #{soi.id}") }
+        expect(lines.count).to eq(1)
+        expect(lines.first).to include("solo reservados 2")
+      end
+    end
+
+    describe '#remove_pending_note_for' do
+      it 'removes the note for a specific line' do
+        so.upsert_pending_note(soi, 2)
+        expect(so.reload.notes).to include("🛑 Producto")
+
+        so.remove_pending_note_for(soi)
+        expect(so.reload.notes).not_to include("🛑 Producto")
+      end
+
+      it 'preserves notes for other lines' do
+        product2 = create(:product, skip_seed_inventory: true)
+        soi2 = create(:sale_order_item, sale_order: so, product: product2, quantity: 1)
+        so.upsert_pending_note(soi, 2)
+        so.upsert_pending_note(soi2, 1)
+
+        so.remove_pending_note_for(soi)
+        expect(so.reload.notes).not_to include(product.product_name)
+        expect(so.notes).to include(product2.product_name)
+      end
+    end
+  end
 end

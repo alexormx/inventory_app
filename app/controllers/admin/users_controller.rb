@@ -5,7 +5,7 @@ module Admin
     before_action :authenticate_user!
     before_action :authorize_admin!
     before_action :load_counts, only: %i[index customers suppliers admins]
-    before_action :set_user, only: %i[edit update]
+    before_action :set_user, only: %i[edit update destroy]
 
     PER_PAGE = 20
 
@@ -236,6 +236,20 @@ module Admin
       else
         flash.now[:alert] = @user.errors.full_messages.to_sentence
         render :edit, status: :unprocessable_entity
+      end
+    end
+
+    def destroy
+      if @user == current_user
+        redirect_to admin_users_path, alert: 'No puedes eliminar tu propia cuenta.'
+        return
+      end
+
+      if @user.destroy
+        redirect_to admin_users_path, notice: "Usuario \"#{@user.name}\" eliminado exitosamente."
+      else
+        redirect_to admin_user_path(@user),
+                    alert: "No se pudo eliminar: #{@user.errors.full_messages.to_sentence}"
       end
     end
 

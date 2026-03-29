@@ -138,7 +138,23 @@ module SaleOrders
       end
 
       pending = to_assign - assigned_count
+
+      # Limpiar o actualizar notas de reserva pendiente en la orden
+      unless @dry_run
+        cleanup_reservation_notes(soi, sale_order, pending)
+      end
+
       { assigned: assigned_count, pending: pending }
+    end
+
+    def cleanup_reservation_notes(soi, sale_order, pending_after_assign)
+      if pending_after_assign <= 0
+        sale_order.remove_pending_note_for(soi)
+      elsif pending_after_assign > 0
+        sale_order.upsert_pending_note(soi, pending_after_assign)
+      end
+    rescue StandardError => e
+      Rails.logger.error "[AutoAssignInventoryService#cleanup_reservation_notes] #{e.class}: #{e.message}"
     end
   end
 end

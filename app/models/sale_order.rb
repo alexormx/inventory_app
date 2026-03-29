@@ -84,9 +84,10 @@ class SaleOrder < ApplicationRecord
     # Promueve Pending -> Confirmed si está totalmente pagada.
     # Si baja el pago, degrada a Pending desde Confirmed, Preparing o In Transit.
     # Delivered no se degrada automáticamente (requiere acción manual).
+    # Órdenes con crédito habilitado NO se degradan (pueden avanzar sin pago completo).
     if fully_paid?
       update!(status: 'Confirmed') if status == 'Pending'
-    elsif %w[Confirmed Preparing In\ Transit].include?(status)
+    elsif !credit_allowed? && %w[Confirmed Preparing In\ Transit].include?(status)
       update!(status: 'Pending')
     end
   end
@@ -144,6 +145,31 @@ class SaleOrder < ApplicationRecord
     { subtotal: sub, tax: tax, total: total }
   end
 
+  # --- Gestión de notas de reserva pendiente ---
+  # Usadas por InventorySyncable y AutoAssignInventoryService para
+  # mantener sincronizadas las notas "🛑 Producto..." en la orden.
+
+  # Agrega o actualiza una nota de faltante de inventario para una línea.
+  def upsert_pending_note(sale_order_item, shortfall)
+    product = sale_order_item.product
+    prefix = reservation_note_prefix(product, sale_order_item)
+    new_line = "#{prefix} cliente pidió #{sale_order_item.quantity}, solo reservados #{sale_order_item.quantity - shortfall}"
+
+    existing_lines = notes.to_s.split("\n")
+    filtered = existing_lines.reject { |line| line.start_with?(prefix) }
+    filtered << new_line
+    update!(notes: filtered.join("\n"))
+  end
+
+  # Elimina la nota de faltante para una línea cuando el inventario está completo.
+  def remove_pending_note_for(sale_order_item)
+    product = sale_order_item.product
+    prefix = reservation_note_prefix(product, sale_order_item)
+
+    updated = notes.to_s.split("\n").reject { |line| line.start_with?(prefix) }
+    update!(notes: updated.join("\n"))
+  end
+
   # Recalcula subtotal a partir de las líneas y vuelve a calcular impuestos y total.
   # Úsalo cuando cambien items, tax_rate, discount o shipping_cost.
   # public porque es llamado desde Shipment y SaleOrderItem callbacks.
@@ -162,6 +188,11 @@ class SaleOrder < ApplicationRecord
 
   private
 
+  def reservation_note_prefix(product, sale_order_item)
+    line_id = sale_order_item.id || sale_order_item.object_id
+    "🛑 Producto #{product.product_name} (#{product.product_sku}), línea #{line_id}:"
+  end
+
   # ¿Esta orden está autorizada para usar crédito?
   def credit_allowed?
     (user.respond_to?(:credit_enabled) && user.credit_enabled) || credit_override
@@ -176,14 +207,14 @@ class SaleOrder < ApplicationRecord
 
     case status
     when 'Confirmed'
-      errors.add(:payment, 'must exist to confirm the order') unless total_order_value.to_f == 0.0 || payments.any?
+      errors.add(:payment, 'must exist to confirm the order') unless total_order_value.to_f == 0.0 || payments.any? || credit_allowed?
     when 'Preparing'
-      # Para preparar paquete, debe estar pagada y tener shipment (auto-creado)
-      errors.add(:payment, 'must exist to prepare the order') unless total_order_value.to_f == 0.0 || payments.any?
+      # Para preparar paquete, debe estar pagada (o tener crédito) y tener shipment (auto-creado)
+      errors.add(:payment, 'must exist to prepare the order') unless total_order_value.to_f == 0.0 || payments.any? || credit_allowed?
       errors.add(:shipment, 'must exist to prepare the order') if shipment.blank?
     when 'Shipped'
-      # Para marcar como Shipped requerimos pago y envío existente
-      errors.add(:payment, 'must exist to ship the order') unless total_order_value.to_f == 0.0 || payments.any?
+      # Para marcar como Shipped requerimos pago (o crédito) y envío existente
+      errors.add(:payment, 'must exist to ship the order') unless total_order_value.to_f == 0.0 || payments.any? || credit_allowed?
       errors.add(:shipment, 'must exist to ship the order') if shipment.blank?
     when 'In Transit'
       # Permitir 'In Transit' sin exigir pago, pero debe existir shipment

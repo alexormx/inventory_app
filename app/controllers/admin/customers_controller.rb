@@ -60,7 +60,8 @@ module Admin
     end
 
     def user_params
-      params.expect(user: %i[name email phone address discount_rate created_offline notes])
+      params.expect(user: %i[name email phone address discount_rate created_offline notes
+                             credit_enabled default_credit_terms credit_limit])
     end
   end
 end

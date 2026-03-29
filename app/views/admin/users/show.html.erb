@@ -79,6 +79,33 @@
         </div>
       </div>
     </div>
+
+    <%# Credit info card %>
+    <% if @user.credit_enabled %>
+      <div class="col-md-3 col-sm-6">
+        <div class="card border-0 shadow-sm h-100 border-success border-1">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start">
+              <div>
+                <div class="text-muted small">Crédito</div>
+                <div class="h5 mb-0 text-success">
+                  <% terms_label = { 'net15' => '15 días', 'net30' => '30 días', 'net45' => '45 días', 'none' => 'Sin plazo' } %>
+                  <%= terms_label[@user.default_credit_terms.to_s] || 'Habilitado' %>
+                </div>
+                <div class="small text-muted">
+                  <% if @user.credit_limit.to_f > 0 %>
+                    Límite: <%= number_to_currency(@user.credit_limit, unit: '$', precision: 0) %>
+                  <% else %>
+                    Sin límite definido
+                  <% end %>
+                </div>
+              </div>
+              <div class="text-success opacity-25"><i class="fa fa-credit-card fa-2x"></i></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    <% end %>
   <% end %>
 
   <% if @user.role == 'supplier' %>

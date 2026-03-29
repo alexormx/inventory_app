@@ -151,5 +151,53 @@ RSpec.describe SaleOrders::AutoAssignInventoryService do
         expect(inventory_new.sale_order_id).to be_nil
       end
     end
+
+    # -----------------------------------------------------------------------
+    # Note cleanup after auto-assignment
+    # -----------------------------------------------------------------------
+    context 'limpieza de notas de reserva' do
+      let!(:sale_order) { create(:sale_order, user: customer, status: :pending) }
+      let!(:sale_order_item) { create(:sale_order_item, sale_order: sale_order, product: product, quantity: 2) }
+
+      it 'removes note when all inventory is assigned' do
+        # Simulate a pre-existing shortage note
+        sale_order.upsert_pending_note(sale_order_item, 2)
+        expect(sale_order.reload.notes).to include("🛑 Producto")
+
+        # Now make inventory available
+        create(:inventory, product: product, status: :available, sale_order: nil)
+        create(:inventory, product: product, status: :available, sale_order: nil)
+
+        result = described_class.new(triggered_by: 'admin_action').call
+        expect(result.success?).to be true
+
+        sale_order.reload
+        expect(sale_order.notes.to_s.strip).to eq('')
+      end
+
+      it 'updates note when inventory is partially assigned' do
+        sale_order.upsert_pending_note(sale_order_item, 2)
+
+        create(:inventory, product: product, status: :available, sale_order: nil)
+
+        result = described_class.new(triggered_by: 'admin_action').call
+        expect(result.success?).to be true
+
+        sale_order.reload
+        expect(sale_order.notes).to include("solo reservados 1")
+      end
+
+      it 'does not touch notes in dry_run mode' do
+        sale_order.upsert_pending_note(sale_order_item, 2)
+        original_notes = sale_order.reload.notes
+
+        create(:inventory, product: product, status: :available, sale_order: nil)
+        create(:inventory, product: product, status: :available, sale_order: nil)
+
+        described_class.new(triggered_by: 'admin_action', dry_run: true).call
+
+        expect(sale_order.reload.notes).to eq(original_notes)
+      end
+    end
   end
 end

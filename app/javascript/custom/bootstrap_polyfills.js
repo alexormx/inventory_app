@@ -8,6 +8,7 @@
     initCollapse();
     initOffcanvas();
     initTabs();
+    initDropdowns();
   }
 
   function initCollapse(){
@@ -133,6 +134,53 @@
     });
   }
 
+  function initDropdowns(){
+    const toggles = Array.from(document.querySelectorAll('[data-bs-toggle="dropdown"]'));
+    toggles.forEach((btn)=>{
+      if(btn.dataset.dropdownEnhanced === '1') return;
+      btn.dataset.dropdownEnhanced = '1';
+
+      const parent = btn.closest('.btn-group') || btn.closest('.dropdown') || btn.parentElement;
+      const menu = parent ? parent.querySelector('.dropdown-menu') : null;
+      if(!menu) return;
+
+      function open(){
+        closeAllDropdowns();
+        menu.classList.add('show');
+        btn.setAttribute('aria-expanded','true');
+      }
+      function close(){
+        menu.classList.remove('show');
+        btn.setAttribute('aria-expanded','false');
+      }
+      function toggle(){ menu.classList.contains('show') ? close() : open(); }
+
+      btn.addEventListener('click', (e)=>{ e.preventDefault(); e.stopPropagation(); toggle(); });
+
+      // Close when clicking a menu item (let the link navigate)
+      menu.addEventListener('click', (e)=>{
+        if(e.target.closest('.dropdown-item')) close();
+      });
+    });
+  }
+
+  function closeAllDropdowns(){
+    document.querySelectorAll('.dropdown-menu.show').forEach(m => m.classList.remove('show'));
+    document.querySelectorAll('[data-bs-toggle="dropdown"][aria-expanded="true"]').forEach(b => b.setAttribute('aria-expanded','false'));
+  }
+
+  // Close dropdowns on click outside
+  document.addEventListener('click', (e)=>{
+    if(!e.target.closest('.btn-group') && !e.target.closest('.dropdown')){
+      closeAllDropdowns();
+    }
+  });
+
+  // Close dropdowns on Escape
+  document.addEventListener('keydown', (e)=>{
+    if(e.key === 'Escape') closeAllDropdowns();
+  });
+
   document.addEventListener('turbo:load', ready);
-  document.addEventListener('turbo:render', ()=>{ initCollapse(); initOffcanvas(); initTabs(); });
+  document.addEventListener('turbo:render', ()=>{ initCollapse(); initOffcanvas(); initTabs(); initDropdowns(); });
 })();

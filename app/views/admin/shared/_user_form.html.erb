@@ -41,6 +41,29 @@
       <%= f.check_box :created_offline %>
       <span class="form-text text-muted">Offline customer?</span>
     </div>
+
+    <hr class="col-12 my-2">
+    <h6 class="col-12 text-muted"><i class="fa fa-credit-card me-1"></i>Crédito</h6>
+
+    <div class="col-md-4">
+      <div class="form-check mt-2">
+        <%= f.check_box :credit_enabled, class: "form-check-input", id: "user_credit_enabled" %>
+        <%= f.label :credit_enabled, "Habilitar crédito", class: "form-check-label" %>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <%= f.label :default_credit_terms, "Términos de crédito" %>
+      <%= f.select :default_credit_terms,
+            [["Sin crédito", "none"], ["15 días", "net15"], ["30 días", "net30"], ["45 días", "net45"]],
+            {}, class: "form-select" %>
+    </div>
+
+    <div class="col-md-4">
+      <%= f.label :credit_limit, "Límite de crédito" %>
+      <%= f.number_field :credit_limit, step: 0.01, min: 0, class: "form-control",
+            placeholder: "Sin límite" %>
+    </div>
   <% end %>
 
   <div class="col-md-12">
