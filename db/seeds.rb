@@ -55,6 +55,13 @@ end
 #     MovieGenre.find_or_create_by!(name: genre_name)
 #   end
 
+# === Development-only seed data below ===
+# Everything below this guard only runs in development/test — never in production.
+unless Rails.env.development? || Rails.env.test?
+  Rails.logger.info "[SEED] Skipping dev/test seed data in #{Rails.env}"
+  return
+end
+
 require 'faker'
 
 def seed_log(msg)
