@@ -31,6 +31,9 @@ module Suppliers
           genre_codes: Array(normalized[:genre_codes]).compact_blank,
           scales: Array(normalized[:scales]).compact_blank,
           series: normalized[:series],
+          date_added_within_days: normalized[:date_added_within_days],
+          date_arrivals_within_days: normalized[:date_arrivals_within_days],
+          review_feed: normalized[:review_feed],
           fetch_detail: normalized.key?(:fetch_detail) ? normalized[:fetch_detail] : true,
           run: run
         ).call
@@ -49,6 +52,9 @@ module Suppliers
           "genre_codes" => Array(options[:genre_codes]).compact_blank,
           "scales" => Array(options[:scales]).compact_blank,
           "series" => options[:series],
+          "date_added_within_days" => options[:date_added_within_days],
+          "date_arrivals_within_days" => options[:date_arrivals_within_days],
+          "review_feed" => options[:review_feed],
           "max_pages" => options[:max_pages],
           "max_items" => options[:max_items],
           "fetch_detail" => options.key?(:fetch_detail) ? options[:fetch_detail] : true

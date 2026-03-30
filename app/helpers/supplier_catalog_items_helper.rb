@@ -1,4 +1,28 @@
 module SupplierCatalogItemsHelper
+  def supplier_catalog_review_feed_label(feed)
+    case feed.to_s
+    when "recent_arrivals"
+      "Arrivals HLJ"
+    else
+      "Agregados HLJ"
+    end
+  end
+
+  def supplier_catalog_status_badge_class(status)
+    case status.to_s
+    when "in_stock", "low_stock"
+      "bg-success"
+    when "future_release", "backordered"
+      "bg-primary"
+    when "order_stop"
+      "bg-warning text-dark"
+    when "discontinued", "sold_out"
+      "bg-secondary"
+    else
+      "bg-light text-dark"
+    end
+  end
+
   # Computes name similarity as the fraction of words from the shorter name
   # found in the longer name, with fuzzy substring matching for partial words.
   def name_similarity_score(a, b)

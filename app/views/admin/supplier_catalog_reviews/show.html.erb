@@ -1,0 +1,230 @@
+<div class="admin-page-header d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+  <div>
+    <p class="admin-page-eyebrow mb-1">Proveedor</p>
+    <h2 class="mb-0"><i class="fa-solid fa-car-side me-2"></i>Revisión Tomica HLJ</h2>
+    <p class="text-muted mb-0 mt-2">Revisa uno por uno los artículos detectados por los feeds automáticos de HLJ.</p>
+  </div>
+  <div class="d-flex gap-2">
+    <%= link_to discovery_admin_supplier_catalog_items_path, class: "btn btn-outline-primary" do %>
+      <i class="fa-solid fa-magnifying-glass me-1"></i> Discovery HLJ
+    <% end %>
+    <%= link_to admin_supplier_catalog_items_path, class: "btn btn-outline-secondary" do %>
+      <i class="fa-solid fa-boxes-stacked me-1"></i> Catálogo proveedor
+    <% end %>
+  </div>
+</div>
+
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-body">
+    <%= form_with url: admin_supplier_catalog_review_path, method: :get, local: true do %>
+      <div class="row g-3 align-items-end">
+        <div class="col-md-3">
+          <label class="form-label small">Feed</label>
+          <%= select_tag :feed, options_for_select(@feed_options, @feed), class: "form-select form-select-sm" %>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label small">Vinculado</label>
+          <%= select_tag :linked, options_for_select([["Todos", ""], ["Sí", "yes"], ["No", "no"]], @linked), class: "form-select form-select-sm" %>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label small">Status</label>
+          <%= select_tag :status, options_for_select([["Todos", ""]] + @status_options.map { |status| [status.to_s.humanize, status] }, @status), class: "form-select form-select-sm" %>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label small">Buscar</label>
+          <%= text_field_tag :q, @q, class: "form-control form-control-sm", placeholder: "Nombre, SKU o barcode" %>
+        </div>
+        <div class="col-md-1">
+          <div class="form-check mt-4">
+            <%= check_box_tag :show_reviewed, "1", @show_reviewed, class: "form-check-input" %>
+            <%= label_tag :show_reviewed, "Revisados", class: "form-check-label small" %>
+          </div>
+        </div>
+        <div class="col-md-1 d-grid">
+          <%= submit_tag "Aplicar", class: "btn btn-primary btn-sm" %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<% if @supplier_catalog_item.nil? %>
+  <div class="card border-0 shadow-sm">
+    <div class="card-body text-center py-5">
+      <i class="fa-solid fa-circle-check text-success fa-3x mb-3"></i>
+      <h4 class="text-muted">No hay artículos pendientes para este feed</h4>
+      <p class="text-muted mb-0">Prueba con otro feed o activa la opción para incluir revisados.</p>
+    </div>
+  </div>
+<% else %>
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <span class="badge bg-primary fs-6">Artículo <%= @current_index + 1 %> de <%= @total_count %></span>
+      <% if @is_reviewed %>
+        <span class="badge bg-success ms-2"><i class="fa-solid fa-check me-1"></i>Revisado</span>
+      <% end %>
+      <span class="badge bg-dark-subtle text-dark ms-2"><%= supplier_catalog_review_feed_label(@feed) %></span>
+    </div>
+    <div class="btn-group">
+      <% if @current_index > 0 %>
+        <%= link_to admin_supplier_catalog_review_path(feed: @feed, linked: @linked.presence, status: @status.presence, q: @q.presence, show_reviewed: @show_reviewed ? "1" : nil, index: @current_index - 1), class: "btn btn-outline-secondary btn-sm" do %>
+          <i class="fa-solid fa-chevron-left me-1"></i>Anterior
+        <% end %>
+      <% else %>
+        <button class="btn btn-outline-secondary btn-sm" disabled><i class="fa-solid fa-chevron-left me-1"></i>Anterior</button>
+      <% end %>
+      <% if @current_index < @total_count - 1 %>
+        <%= link_to admin_supplier_catalog_review_path(feed: @feed, linked: @linked.presence, status: @status.presence, q: @q.presence, show_reviewed: @show_reviewed ? "1" : nil, index: @current_index + 1), class: "btn btn-outline-secondary btn-sm" do %>
+          Siguiente<i class="fa-solid fa-chevron-right ms-1"></i>
+        <% end %>
+      <% else %>
+        <button class="btn btn-outline-secondary btn-sm" disabled>Siguiente<i class="fa-solid fa-chevron-right ms-1"></i></button>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+      <h5 class="mb-0"><i class="fa-solid fa-box-open me-2 text-primary"></i>Artículo HLJ</h5>
+      <div class="d-flex gap-2">
+        <%= link_to admin_supplier_catalog_item_path(@supplier_catalog_item), class: "btn btn-sm btn-outline-secondary", target: "_blank" do %>
+          <i class="fa-solid fa-up-right-from-square me-1"></i>Detalle
+        <% end %>
+        <% if @supplier_catalog_item.source_url.present? %>
+          <%= link_to @supplier_catalog_item.source_url, class: "btn btn-sm btn-outline-primary", target: "_blank", rel: "noopener" do %>
+            <i class="fa-solid fa-globe me-1"></i>HLJ
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="d-flex flex-wrap gap-2 mb-4">
+        <%= button_to refresh_hlj_admin_supplier_catalog_item_path(@supplier_catalog_item), method: :post, class: "btn btn-outline-primary btn-sm" do %>
+          <i class="fa-solid fa-arrows-rotate me-1"></i>Refrescar HLJ
+        <% end %>
+
+        <% if @supplier_catalog_item.product.present? %>
+          <%= link_to review_sync_admin_supplier_catalog_item_path(@supplier_catalog_item), class: "btn btn-outline-success btn-sm" do %>
+            <i class="fa-solid fa-code-compare me-1"></i>Revisar sync con producto
+          <% end %>
+        <% else %>
+          <%= button_to create_product_admin_supplier_catalog_item_path(@supplier_catalog_item), method: :post, class: "btn btn-outline-success btn-sm" do %>
+            <i class="fa-solid fa-plus me-1"></i>Crear producto borrador
+          <% end %>
+        <% end %>
+
+        <%= link_to admin_supplier_catalog_item_path(@supplier_catalog_item), class: "btn btn-outline-secondary btn-sm" do %>
+          <i class="fa-solid fa-link me-1"></i>Vincular / gestionar detalle
+        <% end %>
+
+        <% if @supplier_catalog_item.product.present? %>
+          <%= link_to admin_product_path(@supplier_catalog_item.product), class: "btn btn-outline-dark btn-sm", target: "_blank" do %>
+            <i class="fa-solid fa-box me-1"></i>Ver producto vinculado
+          <% end %>
+        <% end %>
+      </div>
+
+      <div class="row g-4">
+        <div class="col-lg-4">
+          <% if @supplier_catalog_item.main_image_url.present? %>
+            <img src="<%= @supplier_catalog_item.main_image_url %>" alt="<%= @supplier_catalog_item.canonical_name %>" class="img-fluid rounded border" style="max-height: 280px; object-fit: contain; width: 100%;" loading="lazy">
+          <% else %>
+            <div class="rounded border bg-light d-flex align-items-center justify-content-center" style="height: 280px;">
+              <i class="fa-solid fa-image text-muted fa-3x"></i>
+            </div>
+          <% end %>
+        </div>
+        <div class="col-lg-8">
+          <h4 class="mb-2"><%= @supplier_catalog_item.canonical_name %></h4>
+          <div class="d-flex flex-wrap gap-2 mb-3">
+            <span class="badge <%= supplier_catalog_status_badge_class(@supplier_catalog_item.canonical_status) %>"><%= @supplier_catalog_item.canonical_status.presence || "unknown" %></span>
+            <span class="badge bg-light text-dark">SKU <%= @supplier_catalog_item.external_sku %></span>
+            <% if @review_timestamp.present? %>
+              <span class="badge bg-info-subtle text-info-emphasis"><%= supplier_catalog_review_feed_label(@feed) %>: <%= l(@review_timestamp, format: :short) %></span>
+            <% end %>
+          </div>
+
+          <div class="row g-3 small">
+            <div class="col-md-6"><strong>Barcode:</strong> <%= @supplier_catalog_item.barcode.presence || "—" %></div>
+            <div class="col-md-6"><strong>Código proveedor:</strong> <%= @supplier_catalog_item.supplier_product_code.presence || "—" %></div>
+            <div class="col-md-6"><strong>Marca:</strong> <%= @supplier_catalog_item.canonical_brand.presence || "—" %></div>
+            <div class="col-md-6"><strong>Serie:</strong> <%= @supplier_catalog_item.canonical_series.presence || "—" %></div>
+            <div class="col-md-6"><strong>Categoría:</strong> <%= @supplier_catalog_item.canonical_category.presence || "—" %></div>
+            <div class="col-md-6"><strong>Release:</strong> <%= @supplier_catalog_item.canonical_release_date&.to_s || "—" %></div>
+            <div class="col-md-6"><strong>Última vez visto:</strong> <%= @supplier_catalog_item.last_seen_at ? l(@supplier_catalog_item.last_seen_at, format: :short) : "—" %></div>
+            <div class="col-md-6"><strong>Último cambio de status:</strong> <%= @supplier_catalog_item.last_status_change_at ? l(@supplier_catalog_item.last_status_change_at, format: :short) : "—" %></div>
+            <div class="col-md-6"><strong>Precio:</strong>
+              <% if @supplier_catalog_item.canonical_price.present? %>
+                <%= @supplier_catalog_item.currency == "JPY" ? "¥#{number_with_delimiter(@supplier_catalog_item.canonical_price.to_i)}" : number_to_currency(@supplier_catalog_item.canonical_price) %>
+              <% else %>
+                —
+              <% end %>
+            </div>
+            <div class="col-md-6"><strong>Producto vinculado:</strong>
+              <% if @supplier_catalog_item.product.present? %>
+                <%= link_to @supplier_catalog_item.product.product_name, admin_product_path(@supplier_catalog_item.product), target: "_blank", class: "text-decoration-none" %>
+              <% else %>
+                Sin vincular
+              <% end %>
+            </div>
+          </div>
+
+          <% if @supplier_catalog_item.description_raw.present? %>
+            <div class="mt-3">
+              <label class="form-label small text-muted mb-1">Descripción</label>
+              <div class="border rounded p-3 bg-light-subtle small"><%= simple_format(@supplier_catalog_item.description_raw) %></div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <% if @recent_item_runs.any? %>
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-header bg-white"><h5 class="mb-0">Corridas recientes para este artículo</h5></div>
+      <div class="card-body">
+        <div class="vstack gap-2">
+          <% @recent_item_runs.each do |run| %>
+            <div class="border rounded p-2 small">
+              <div class="fw-semibold"><%= run.mode %></div>
+              <div class="text-muted"><%= run.status %> · <%= l(run.created_at, format: :short) %></div>
+              <% if run.metadata.present? %>
+                <div class="text-muted"><%= run.metadata.slice("preset", "review_feed", "date_added_within_days", "date_arrivals_within_days").values.compact.join(" · ") %></div>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+  <div class="card border-0 shadow-sm">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+      <h5 class="mb-0"><i class="fa-solid fa-clipboard-check me-2 text-success"></i>Revisión</h5>
+      <% if @is_reviewed && @review_record&.reviewed_at.present? %>
+        <small class="text-muted">Marcado el <%= l(@review_record.reviewed_at, format: :short) %></small>
+      <% end %>
+    </div>
+    <div class="card-body d-flex flex-wrap gap-2 align-items-center justify-content-between">
+      <div class="small text-muted">Este marcado es independiente por feed: additions y arrivals se revisan por separado.</div>
+      <div class="d-flex gap-2">
+        <% if @is_reviewed %>
+          <%= button_to unmark_reviewed_admin_supplier_catalog_review_path,
+                method: :post,
+                params: { supplier_catalog_item_id: @supplier_catalog_item.id, feed: @feed, index: @current_index, linked: @linked, status: @status, q: @q, show_reviewed: @show_reviewed ? "1" : nil },
+                class: "btn btn-outline-warning btn-sm" do %>
+            <i class="fa-solid fa-rotate-left me-1"></i>Quitar revisado
+          <% end %>
+        <% else %>
+          <%= button_to mark_reviewed_admin_supplier_catalog_review_path,
+                method: :post,
+                params: { supplier_catalog_item_id: @supplier_catalog_item.id, feed: @feed, index: @current_index, linked: @linked, status: @status, q: @q, show_reviewed: @show_reviewed ? "1" : nil },
+                class: "btn btn-success btn-sm" do %>
+            <i class="fa-solid fa-check me-1"></i>Marcar revisado
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+  </div>
+<% end %>

@@ -11,10 +11,20 @@ module Suppliers
       LIVE_PRICE_URL = "https://www.hlj.com/search/livePrice/".freeze
 
       def initialize(max_pages: nil, max_items: nil, word: nil, makers: [], genre_codes: [], scales: [], series: nil,
+                     date_added_within_days: nil, date_arrivals_within_days: nil, review_feed: nil,
                      fetch_detail: true, delay_seconds: 0, connection: nil, run: nil, logger: Rails.logger)
         @max_pages = max_pages
         @max_items = max_items
-        @query = Suppliers::Hlj::SearchQuery.new(word: word, makers: makers, genre_codes: genre_codes, scales: scales, series: series)
+        @query = Suppliers::Hlj::SearchQuery.new(
+          word: word,
+          makers: makers,
+          genre_codes: genre_codes,
+          scales: scales,
+          series: series,
+          date_added_within_days: date_added_within_days,
+          date_arrivals_within_days: date_arrivals_within_days
+        )
+        @review_feed = review_feed.presence
         @fetch_detail = fetch_detail
         @delay_seconds = delay_seconds.to_f
         @connection = connection || Faraday.new
@@ -193,6 +203,7 @@ module Suppliers
           description_raw: payload[:description_raw],
           image_urls: payload[:image_urls],
           main_image_url: payload[:main_image_url],
+          review_feed: @review_feed,
           normalized_payload: payload[:normalized_payload],
           raw_payload: payload[:raw_payload].merge(jpy_price: item[:jpy_price], jpy_special_price: item[:jpy_special_price]).compact
         ).call
@@ -209,6 +220,7 @@ module Suppliers
           currency: item[:jpy_price] ? "JPY" : "MXN",
           image_urls: Array(item[:listing_image_url]).compact,
           main_image_url: item[:listing_image_url],
+          review_feed: @review_feed,
           normalized_payload: {},
           raw_payload: { listing_price_text: item[:listing_price_text], detail_error: e.message, jpy_price: item[:jpy_price], jpy_special_price: item[:jpy_special_price] }.compact
         ).call

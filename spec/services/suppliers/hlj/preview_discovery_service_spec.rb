@@ -62,4 +62,24 @@ RSpec.describe Suppliers::Hlj::PreviewDiscoveryService do
     expect(requested_urls.first).to include("Maker2=Takara+Tomy")
     expect(requested_urls.first).to include("GenreCode2=Cars+%26+Bikes")
   end
+
+  it "passes added and arrivals date filters to HLJ" do
+    requested_urls = []
+
+    allow(connection).to receive(:get) do |url, &_block|
+      requested_urls << url
+      instance_double(Faraday::Response, success?: true, status: 200, body: page_one_html)
+    end
+
+    described_class.new(
+      max_pages: 1,
+      word: "tomica",
+      date_added_within_days: 10,
+      date_arrivals_within_days: 10,
+      connection: connection
+    ).call
+
+    expect(requested_urls.first).to include("dateAdded2=-10")
+    expect(requested_urls.first).to include("dateArrivals=-10")
+  end
 end

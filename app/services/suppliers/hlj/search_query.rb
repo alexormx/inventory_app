@@ -31,12 +31,15 @@ module Suppliers
         "Platz", "Dragon", "Meng", "Trumpeter"
       ].freeze
 
-      def initialize(word: nil, makers: [], genre_codes: [], scales: [], series: nil)
+      def initialize(word: nil, makers: [], genre_codes: [], scales: [], series: nil,
+                     date_added_within_days: nil, date_arrivals_within_days: nil)
         @word = word.to_s.strip.presence
         @makers = Array(makers).compact_blank
         @genre_codes = Array(genre_codes).compact_blank
         @scales = Array(scales).compact_blank
         @series = series.to_s.strip.presence
+        @date_added_within_days = positive_integer_or_nil(date_added_within_days)
+        @date_arrivals_within_days = positive_integer_or_nil(date_arrivals_within_days)
       end
 
       def page_url(page_number = 1)
@@ -46,10 +49,19 @@ module Suppliers
         @genre_codes.each { |gc| params << ["GenreCode2", gc] }
         @scales.each { |s| params << ["Scale2", s] }
         params << ["Series2", @series] if @series.present?
+        params << ["dateAdded2", "-#{@date_added_within_days}"] if @date_added_within_days.present?
+        params << ["dateArrivals", "-#{@date_arrivals_within_days}"] if @date_arrivals_within_days.present?
         params << ["Page", page_number] if page_number.to_i > 1
 
         query = params.map { |key, value| "#{CGI.escape(key)}=#{CGI.escape(value.to_s)}" }.join("&")
         query.present? ? "#{SEARCH_URL}?#{query}" : "#{SEARCH_URL}?"
+      end
+
+      private
+
+      def positive_integer_or_nil(value)
+        number = value.to_i
+        number.positive? ? number : nil
       end
     end
   end

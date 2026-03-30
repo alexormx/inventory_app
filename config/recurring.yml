@@ -10,6 +10,14 @@
 
 production:
   # Sitemap served dynamically from /sitemap.xml
+  suppliers_hlj_tomica_recent_additions_daily:
+    class: Suppliers::Hlj::TomicaRecentAdditionsJob
+    schedule: "0 5 * * *"
+
+  suppliers_hlj_tomica_recent_arrivals_daily:
+    class: Suppliers::Hlj::TomicaRecentArrivalsJob
+    schedule: "30 5 * * *"
+
   suppliers_hlj_weekly_discovery:
     class: Suppliers::Hlj::WeeklyDiscoveryJob
     schedule: "0 6 * * 1"

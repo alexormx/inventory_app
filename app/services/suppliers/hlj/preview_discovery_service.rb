@@ -10,9 +10,18 @@ module Suppliers
       LIVE_PRICE_URL = "https://www.hlj.com/search/livePrice/".freeze
       Result = Struct.new(:total_found, :sample_items, :scanned_pages, :available_pages, :sample_limit, :items_per_page, keyword_init: true)
 
-      def initialize(max_pages: nil, word: nil, makers: [], genre_codes: [], scales: [], series: nil, connection: nil)
+      def initialize(max_pages: nil, word: nil, makers: [], genre_codes: [], scales: [], series: nil,
+                     date_added_within_days: nil, date_arrivals_within_days: nil, connection: nil)
         @max_pages = max_pages || MAX_PREVIEW_PAGES
-        @query = SearchQuery.new(word: word, makers: makers, genre_codes: genre_codes, scales: scales, series: series)
+        @query = SearchQuery.new(
+          word: word,
+          makers: makers,
+          genre_codes: genre_codes,
+          scales: scales,
+          series: series,
+          date_added_within_days: date_added_within_days,
+          date_arrivals_within_days: date_arrivals_within_days
+        )
         @connection = connection || Faraday.new
       end
 
