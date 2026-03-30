@@ -41,6 +41,14 @@ RSpec.describe "Admin::SupplierCatalogReviews", type: :request do
       expect(response.body).to include("Arrivals HLJ")
     end
 
+    it "renders feed options with internal values and human labels" do
+      get admin_supplier_catalog_review_path(feed: "recent_arrivals")
+
+      expect(response.body).to include('option selected="selected" value="recent_arrivals"')
+      expect(response.body).to include('>Arrivals HLJ (10 días)</option>')
+      expect(response.body).to include('value="recent_additions"')
+    end
+
     it "excludes reviewed items for the selected feed by default" do
       create(:supplier_catalog_review, supplier_catalog_item: added_item, review_mode: "recent_additions")
 

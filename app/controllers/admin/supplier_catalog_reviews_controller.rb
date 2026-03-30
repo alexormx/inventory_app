@@ -66,7 +66,7 @@ module Admin
       @show_reviewed = params[:show_reviewed] == "1"
       @q = params[:q].to_s.strip
       @index = params[:index].to_i
-      @feed_options = FEED_OPTIONS.to_a
+      @feed_options = FEED_OPTIONS.map { |value, label| [label, value] }
     end
 
     def build_filtered_item_ids
