@@ -159,4 +159,43 @@ RSpec.describe Suppliers::Hlj::DiscoveryService do
     expect(listing_url).to include("Maker2=Tomytec")
     expect(listing_url).to include("GenreCode2=Cars+%26+Bikes")
   end
+
+  it "tracks recent additions timestamps when review feed is recent_additions" do
+    described_class.new(max_pages: 1, fetch_detail: false, review_feed: "recent_additions", connection: connection).call
+
+    item = SupplierCatalogItem.last
+    expect(item.last_hlj_recent_added_at).to be_present
+    expect(item.last_hlj_recent_arrival_at).to be_nil
+  end
+
+  it "tracks recent arrivals timestamps when review feed is recent_arrivals" do
+    described_class.new(max_pages: 1, fetch_detail: false, review_feed: "recent_arrivals", connection: connection).call
+
+    item = SupplierCatalogItem.last
+    expect(item.last_hlj_recent_arrival_at).to be_present
+    expect(item.last_hlj_recent_added_at).to be_nil
+  end
+
+  it "builds HLJ listing URLs with date filters" do
+    requested_urls = []
+
+    allow(connection).to receive(:get) do |url, &_block|
+      requested_urls << url
+      body = url.start_with?(described_class::SEARCH_URL) ? list_html : detail_html
+      instance_double(Faraday::Response, success?: true, status: 200, body: body)
+    end
+
+    described_class.new(
+      max_pages: 1,
+      word: "tomica",
+      date_added_within_days: 10,
+      date_arrivals_within_days: 10,
+      fetch_detail: false,
+      connection: connection
+    ).call
+
+    listing_url = requested_urls.find { |url| url.start_with?(described_class::SEARCH_URL) }
+    expect(listing_url).to include("dateAdded2=-10")
+    expect(listing_url).to include("dateArrivals=-10")
+  end
 end

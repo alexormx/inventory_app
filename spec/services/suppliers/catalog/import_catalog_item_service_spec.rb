@@ -61,4 +61,38 @@ RSpec.describe Suppliers::Catalog::ImportCatalogItemService do
       expect(updated.catalog_item.last_status_change_at).to be > original_changed_at
     end
   end
+
+  it "marks recent additions for review when requested" do
+    result = described_class.new(
+      source: "hlj",
+      external_sku: "TKT95079",
+      name: "No.44 Nissan GT-R",
+      source_url: "https://www.hlj.com/no-44-nissan-gt-r-tkt95079",
+      raw_status: "Future Release",
+      review_feed: "recent_additions",
+      normalized_payload: { "series" => "Tomica" },
+      raw_payload: { "stock_status_raw" => "Future Release" }
+    ).call
+
+    expect(result.catalog_item.last_hlj_recent_added_at).to be_present
+    expect(result.catalog_item.last_hlj_recent_arrival_at).to be_nil
+    expect(result.catalog_item.needs_review).to be true
+  end
+
+  it "marks recent arrivals for review when requested" do
+    result = described_class.new(
+      source: "hlj",
+      external_sku: "TKT95080",
+      name: "No.45 Toyota GR86",
+      source_url: "https://www.hlj.com/no-45-toyota-gr86-tkt95080",
+      raw_status: "In Stock",
+      review_feed: "recent_arrivals",
+      normalized_payload: { "series" => "Tomica" },
+      raw_payload: { "stock_status_raw" => "In Stock" }
+    ).call
+
+    expect(result.catalog_item.last_hlj_recent_arrival_at).to be_present
+    expect(result.catalog_item.last_hlj_recent_added_at).to be_nil
+    expect(result.catalog_item.canonical_status).to eq("in_stock")
+  end
 end

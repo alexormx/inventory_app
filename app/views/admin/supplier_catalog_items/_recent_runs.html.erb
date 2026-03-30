@@ -11,9 +11,12 @@
             <% if run.metadata.present? %>
               <% filters = [] %>
               <% filters << "preset #{run.metadata['preset']}" if run.metadata['preset'].present? %>
+              <% filters << "feed=#{run.metadata['review_feed']}" if run.metadata['review_feed'].present? %>
               <% filters << "word=#{run.metadata['word']}" if run.metadata['word'].present? %>
               <% filters << "makers=#{Array(run.metadata['makers']).join(' / ')}" if Array(run.metadata['makers']).any? %>
               <% filters << "género=#{run.metadata['genre_code']}" if run.metadata['genre_code'].present? %>
+              <% filters << "agregados=#{run.metadata['date_added_within_days']} días" if run.metadata['date_added_within_days'].present? %>
+              <% filters << "arrivals=#{run.metadata['date_arrivals_within_days']} días" if run.metadata['date_arrivals_within_days'].present? %>
               <% filters << "páginas=#{run.metadata['max_pages']}" if run.metadata['max_pages'].present? %>
               <% filters << "productos=#{run.metadata['max_items']}" if run.metadata['max_items'].present? %>
               <% if filters.any? %>

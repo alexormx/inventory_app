@@ -111,6 +111,12 @@ Rails.application.routes.draw do
       post :unmark_reviewed
     end
 
+    resource :supplier_catalog_review, only: [] do
+      get '/', action: :show, as: ''
+      post :mark_reviewed
+      post :unmark_reviewed
+    end
+
     # Product Management
     get 'products/drafts', to: 'products#drafts', as: :products_drafts
     get 'products/active', to: 'products#active', as: :products_active

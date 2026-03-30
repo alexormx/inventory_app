@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_03_21_202000) do
+ActiveRecord::Schema[8.0].define(version: 2026_03_29_111000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -610,11 +610,28 @@ ActiveRecord::Schema[8.0].define(version: 2026_03_21_202000) do
     t.datetime "source_last_synced_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.datetime "last_hlj_recent_added_at"
+    t.datetime "last_hlj_recent_arrival_at"
     t.index ["barcode"], name: "index_supplier_catalog_items_on_barcode"
     t.index ["canonical_status"], name: "index_supplier_catalog_items_on_canonical_status"
+    t.index ["last_hlj_recent_added_at"], name: "index_supplier_catalog_items_on_last_hlj_recent_added_at"
+    t.index ["last_hlj_recent_arrival_at"], name: "index_supplier_catalog_items_on_last_hlj_recent_arrival_at"
     t.index ["last_seen_at"], name: "index_supplier_catalog_items_on_last_seen_at"
     t.index ["product_id"], name: "index_supplier_catalog_items_on_product_id"
     t.index ["source_key", "external_sku"], name: "idx_supplier_catalog_items_source_sku", unique: true
+  end
+
+  create_table "supplier_catalog_reviews", force: :cascade do |t|
+    t.bigint "supplier_catalog_item_id", null: false
+    t.bigint "reviewed_by_id"
+    t.string "review_mode", null: false
+    t.text "notes"
+    t.datetime "reviewed_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["reviewed_by_id"], name: "index_supplier_catalog_reviews_on_reviewed_by_id"
+    t.index ["supplier_catalog_item_id", "review_mode"], name: "idx_supplier_catalog_reviews_item_mode", unique: true
+    t.index ["supplier_catalog_item_id"], name: "index_supplier_catalog_reviews_on_supplier_catalog_item_id"
   end
 
   create_table "supplier_catalog_sources", force: :cascade do |t|
@@ -755,6 +772,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_03_21_202000) do
   add_foreign_key "shipments", "sale_orders"
   add_foreign_key "shipping_addresses", "users"
   add_foreign_key "supplier_catalog_items", "products"
+  add_foreign_key "supplier_catalog_reviews", "supplier_catalog_items"
+  add_foreign_key "supplier_catalog_reviews", "users", column: "reviewed_by_id"
   add_foreign_key "supplier_catalog_sources", "supplier_catalog_items"
   add_foreign_key "supplier_sync_runs", "supplier_catalog_items"
   add_foreign_key "visitor_logs", "users"

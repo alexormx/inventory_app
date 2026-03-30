@@ -14,6 +14,22 @@ module Admin
         word: "tomica",
         makers: [], genre_codes: [], scales: [], series: nil
       },
+      "tomica_recent_additions" => {
+        label: "Tomica agregados 10 días",
+        word: "tomica",
+        makers: [], genre_codes: [], scales: [], series: nil,
+        date_added_within_days: 10,
+        date_arrivals_within_days: nil,
+        review_feed: "recent_additions"
+      },
+      "tomica_recent_arrivals" => {
+        label: "Tomica arrivals 10 días",
+        word: "tomica",
+        makers: [], genre_codes: [], scales: [], series: nil,
+        date_added_within_days: nil,
+        date_arrivals_within_days: 10,
+        review_feed: "recent_arrivals"
+      },
       "takara_cars" => {
         label: "Takara Tomy — Cars & Bikes",
         word: nil,
@@ -59,7 +75,9 @@ module Admin
         makers: options[:makers],
         genre_codes: options[:genre_codes],
         scales: options[:scales],
-        series: options[:series]
+        series: options[:series],
+        date_added_within_days: options[:date_added_within_days],
+        date_arrivals_within_days: options[:date_arrivals_within_days]
       ).call
 
       prepare_discovery_view
@@ -368,6 +386,8 @@ module Admin
         genre_codes: array_param(:genre_codes),
         scales: array_param(:scales),
         series: params[:series].to_s,
+        date_added_within_days: integer_param(:date_added_within_days),
+        date_arrivals_within_days: integer_param(:date_arrivals_within_days),
         max_pages: params[:max_pages].presence,
         max_items: params[:max_items].presence
       }
@@ -391,6 +411,9 @@ module Admin
         genre_codes: array_param(:genre_codes).presence || preset[:genre_codes],
         scales: array_param(:scales).presence || preset[:scales],
         series: params[:series].presence || preset[:series],
+        review_feed: preset[:review_feed],
+        date_added_within_days: integer_param(:date_added_within_days) || preset[:date_added_within_days],
+        date_arrivals_within_days: integer_param(:date_arrivals_within_days) || preset[:date_arrivals_within_days],
         max_pages: max_pages,
         max_items: max_items,
         fetch_detail: true
@@ -424,6 +447,8 @@ module Admin
       filters << "categoría=#{Array(options[:genre_codes]).join(' / ')}" if Array(options[:genre_codes]).any?
       filters << "escala=#{Array(options[:scales]).join(' / ')}" if Array(options[:scales]).any?
       filters << "serie=#{options[:series]}" if options[:series].present?
+      filters << "agregados=#{options[:date_added_within_days]} días" if options[:date_added_within_days].present?
+      filters << "arrivals=#{options[:date_arrivals_within_days]} días" if options[:date_arrivals_within_days].present?
       filters << "páginas=#{options[:max_pages]}" if options[:max_pages].present?
       filters << "productos=#{options[:max_items]}" if options[:max_items].present?
 

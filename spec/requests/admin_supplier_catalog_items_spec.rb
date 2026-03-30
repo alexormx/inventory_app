@@ -35,6 +35,7 @@ RSpec.describe "Admin::SupplierCatalogItems", type: :request do
       expect(response.body).to include("Descubrir nuevos productos en HLJ")
       expect(response.body).to include("Consultar vista previa")
       expect(response.body).to include("Configura filtros")
+      expect(response.body).to include("Revisar Tomica recientes")
       expect(response.body).not_to include(catalog_item.canonical_name)
       expect(response.body).not_to include("Corrida en progreso")
     end
@@ -140,6 +141,25 @@ RSpec.describe "Admin::SupplierCatalogItems", type: :request do
         word: "tomica",
         max_pages: 1,
         max_items: 5,
+        fetch_detail: true
+      )
+    end
+
+    it "passes Tomica arrivals preset date filters and review feed" do
+      allow(Suppliers::Hlj::WeeklyDiscoveryJob).to receive(:perform_later)
+
+      post run_discovery_admin_supplier_catalog_items_path, params: {
+        discovery_mode: "full",
+        preset: "tomica_recent_arrivals"
+      }
+
+      expect(response).to redirect_to(discovery_admin_supplier_catalog_items_path)
+      expect(Suppliers::Hlj::WeeklyDiscoveryJob).to have_received(:perform_later).with(
+        mode: "manual_discovery",
+        preset: "tomica_recent_arrivals",
+        word: "tomica",
+        review_feed: "recent_arrivals",
+        date_arrivals_within_days: 10,
         fetch_detail: true
       )
     end

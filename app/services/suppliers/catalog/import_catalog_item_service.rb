@@ -11,7 +11,7 @@ module Suppliers
                      barcode: nil, supplier_product_code: nil, canonical_brand: nil, canonical_category: nil,
                      canonical_series: nil, canonical_item_type: nil, canonical_release_date: nil,
                      canonical_price: nil, currency: "MXN", description_raw: nil, image_urls: [],
-                     main_image_url: nil, sync_linked_product: false)
+                     main_image_url: nil, sync_linked_product: false, review_feed: nil)
         @source = source.to_s
         @external_sku = external_sku.to_s.strip
         @name = name.to_s.strip
@@ -32,6 +32,7 @@ module Suppliers
         @image_urls = Array(image_urls).compact_blank
         @main_image_url = main_image_url.presence || @image_urls.first
         @sync_linked_product = sync_linked_product
+        @review_feed = review_feed.presence
       end
 
       def call
@@ -78,6 +79,8 @@ module Suppliers
             source_last_synced_at: now,
             last_full_sync_at: now
           )
+
+          apply_review_tracking!(catalog_item, now)
 
           status_changed = previous_status.present? && previous_status != normalized_status
           catalog_item.last_status_change_at = now if created || status_changed
@@ -137,6 +140,17 @@ module Suppliers
         return if product.supplier_catalog_item.present?
 
         catalog_item.update!(product_id: product.id)
+      end
+
+      def apply_review_tracking!(catalog_item, now)
+        case @review_feed
+        when "recent_additions"
+          catalog_item.last_hlj_recent_added_at = now
+          catalog_item.needs_review = true
+        when "recent_arrivals"
+          catalog_item.last_hlj_recent_arrival_at = now
+          catalog_item.needs_review = true
+        end
       end
     end
   end
