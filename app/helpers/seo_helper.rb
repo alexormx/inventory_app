@@ -26,7 +26,7 @@ module SeoHelper
                    end
 
     image_url = if product.product_images.attached?
-                  url_for(product.product_images.first)
+                  url_for(product.primary_product_image)
                 else
                   asset_url('placeholder.png')
                 end
@@ -181,7 +181,7 @@ module SeoHelper
 
     items = products.each_with_index.map do |product, index|
       image_url = if product.product_images.attached?
-                    url_for(product.product_images.first)
+                    url_for(product.primary_product_image)
                   else
                     asset_url('placeholder.png')
                   end

@@ -3,7 +3,7 @@
     <div class="d-flex align-items-center mb-2">
       <div class="position-relative me-2">
         <% if product.product_images.attached? %>
-          <%= image_tag product.product_images.first.variant(resize_to_fill: [64, 64]), class: "img-thumbnail" %>
+          <%= image_tag product.primary_product_image.variant(resize_to_fill: [64, 64]), class: "img-thumbnail" %>
           <% if product.product_images.count > 1 %>
             <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-secondary" style="font-size: 0.65rem;">
               +<%= product.product_images.count - 1 %>

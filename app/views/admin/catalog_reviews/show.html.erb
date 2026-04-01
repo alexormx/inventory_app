@@ -124,7 +124,7 @@
   <div class="card-body">
     <div class="d-flex gap-3 align-items-start">
       <% if @product.product_images.attached? %>
-        <%= image_tag @product.product_images.first.variant(resize_to_fill: [80, 80]),
+        <%= image_tag @product.primary_product_image.variant(resize_to_fill: [80, 80]),
             class: "rounded border", style: "width: 80px; height: 80px; object-fit: cover;" %>
       <% else %>
         <div class="rounded border bg-light d-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">

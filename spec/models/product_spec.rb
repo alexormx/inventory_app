@@ -148,4 +148,24 @@ RSpec.describe Product, type: :model do
       expect(product.total_available).to eq(3)
     end
   end
+
+  describe '#primary_product_image' do
+    let(:product) { create(:product, skip_seed_inventory: true) }
+
+    it 'returns the selected primary attachment first' do
+      second_attachment = product.product_images.attachments.second
+
+      product.set_primary_product_image!(second_attachment.id)
+
+      expect(product.reload.primary_product_image.id).to eq(second_attachment.id)
+      expect(product.ordered_product_images.first.id).to eq(second_attachment.id)
+    end
+
+    it 'falls back to the first available image when the stored primary attachment is missing' do
+      product.update_column(:primary_product_image_attachment_id, 999_999)
+
+      expect(product.reload.primary_product_image).to be_present
+      expect(product.primary_product_image.id).to eq(product.product_images.attachments.order(:created_at).first.id)
+    end
+  end
 end

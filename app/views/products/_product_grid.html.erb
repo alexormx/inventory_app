@@ -40,7 +40,7 @@
           <% if product.active? %>
             <%= link_to product_path(product), class: "d-block p-2", aria: { label: "Ver detalles de #{product.product_name}" }, data: { turbo_frame: "_top" } do %>
               <% if product.product_images.attached? %>
-                <%= responsive_attachment_image product.product_images.first,
+                <%= responsive_attachment_image product.primary_product_image,
                   alt: product.product_name,
                   widths: [60,96,150,200],
                   css_class: "product-image mx-auto d-block",
@@ -52,7 +52,7 @@
           <% else %>
             <div class="d-block p-2 opacity-50" title="Producto inactivo">
               <% if product.product_images.attached? %>
-                <%= responsive_attachment_image product.product_images.first,
+                <%= responsive_attachment_image product.primary_product_image,
                   alt: product.product_name,
                   widths: [60,96,150,200],
                   css_class: "product-image mx-auto d-block",

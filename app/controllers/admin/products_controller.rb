@@ -6,7 +6,7 @@ module Admin
     before_action :authenticate_user!
     before_action :authorize_admin!
     before_action :set_product, only: %i[show edit update destroy purge_image activate deactivate assign_preorders
-                                         discontinue reverse_discontinue link_catalog]
+                                         discontinue reverse_discontinue link_catalog set_primary_image]
     before_action :fix_custom_attributes_param, only: %i[create update]
     before_action :load_counts, only: %i[index drafts active inactive]
 
@@ -55,12 +55,11 @@ module Admin
     end
 
     def update
-      # Attach new images *without removing existing ones*
-      params[:product][:product_images]&.each do |image|
-        @product.product_images.attach(image)
-      end
-
       if @product.update(product_params.except(:product_images))
+        params[:product][:product_images]&.each do |image|
+          @product.product_images.attach(image)
+        end
+
         flash[:notice] = 'Product updated successfully.'
         redirect_to admin_product_path(@product)
       else
@@ -87,12 +86,22 @@ module Admin
     def purge_image
       image = @product.product_images.find(params[:image_id])
       image_id = image.id
+      was_primary = @product.primary_product_image_attachment_id == image.id
       image.purge # or purge_later for async
+      @product.update_column(:primary_product_image_attachment_id, nil) if was_primary
+      @product.reload.clear_primary_product_image_if_missing!
 
       respond_to do |format|
         format.html { redirect_to edit_admin_product_path(@product), notice: 'Image removed successfully.' }
         format.turbo_stream { render turbo_stream: turbo_stream.remove("image_#{image_id}") } # optional: for dynamic deletion
       end
+    end
+
+    def set_primary_image
+      @product.set_primary_product_image!(params[:image_id])
+      redirect_to edit_admin_product_path(@product, anchor: 'media'), notice: 'Imagen principal actualizada.'
+    rescue ActiveRecord::RecordNotFound
+      redirect_to edit_admin_product_path(@product, anchor: 'media'), alert: 'Imagen no encontrada para este producto.'
     end
 
     def catalog_status
@@ -206,7 +215,7 @@ module Admin
       render json: products.map { |product|
         thumb_url = if product.product_images.attached?
                       begin
-                        url_for(product.product_images.first.variant(resize_to_limit: [40, 40]).processed)
+                        url_for(product.primary_product_image.variant(resize_to_limit: [40, 40]).processed)
                       rescue StandardError => e
                         Rails.logger.warn("[Admin::ProductsController#search] Variant error for product=#{product.id}: #{e.class} #{e.message}")
                         helpers.asset_path('placeholder.png')
@@ -415,6 +424,7 @@ module Admin
                   :backorder_allowed,
                   :preorder_available,
                   :status,
+                  :primary_product_image_attachment_id,
                   :product_images,
                   :weight_gr,
                   :length_cm,

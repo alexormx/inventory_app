@@ -87,6 +87,33 @@ class Product < ApplicationRecord
     supplier_catalog_item.present?
   end
 
+  def ordered_product_images
+    attachments = product_images.attachments.includes(:blob).to_a
+    return attachments if attachments.size <= 1
+
+    primary_attachment = attachments.find { |attachment| attachment.id == primary_product_image_attachment_id }
+    return attachments unless primary_attachment
+
+    [primary_attachment] + (attachments - [primary_attachment])
+  end
+
+  def primary_product_image
+    ordered_product_images.first
+  end
+
+  def set_primary_product_image!(attachment_id)
+    attachment = product_images.attachments.find(attachment_id)
+    update!(primary_product_image_attachment_id: attachment.id)
+    attachment
+  end
+
+  def clear_primary_product_image_if_missing!
+    return if primary_product_image_attachment_id.blank?
+    return if product_images.attachments.where(id: primary_product_image_attachment_id).exists?
+
+    update_column(:primary_product_image_attachment_id, product_images.attachments.order(:created_at).pick(:id))
+  end
+
   # Normalize at assignment time: strip/downcase, default blank to 'draft'.
   # Invalid values pass through to be caught by enum validation (raises ArgumentError).
   def status=(value)

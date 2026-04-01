@@ -3,7 +3,7 @@
 <div class="product-gallery" data-controller="gallery">
   <div class="gallery-viewport position-relative" data-gallery-target="slides">
     <div class="gallery-track" data-gallery-target="track">
-      <% product.product_images.each_with_index do |img, idx| %>
+      <% product.ordered_product_images.each_with_index do |img, idx| %>
         <div class="gallery-slide" data-index="<%= idx %>" aria-hidden="<%= idx == 0 ? 'false' : 'true' %>">
           <% begin %>
             <%= responsive_attachment_image img,
@@ -25,7 +25,7 @@
   </div>
   <% if product.product_images.size > 1 %>
     <div class="gallery-thumbs d-flex flex-wrap gap-2 mt-3" data-gallery-target="thumbnails" data-action="keydown->gallery#keydown">
-      <% product.product_images.each_with_index do |img, index| %>
+      <% product.ordered_product_images.each_with_index do |img, index| %>
         <button type="button" class="thumb-btn p-0 border-0 bg-transparent" data-action="click->gallery#show" data-index="<%= index %>" aria-label="Ver imagen <%= index+1 %>">
           <% begin %>
             <%= responsive_attachment_image img,

@@ -1,7 +1,7 @@
 <% content_for :title, product_meta_title(@product) %>
 <% content_for :meta_description, product_meta_description(@product) %>
 <% content_for :meta_keywords, product_meta_keywords(@product) %>
-<% content_for :og_image, @product.product_images.attached? ? url_for(@product.product_images.first) : asset_url('logo.png') %>
+<% content_for :og_image, @product.product_images.attached? ? url_for(@product.primary_product_image) : asset_url('logo.png') %>
 <% content_for :og_type, 'product' %>
 <% content_for :canonical_url, product_url(@product) %>
 
@@ -162,7 +162,7 @@
                 <div class="related-product-item d-flex align-items-center gap-3 mb-3 pb-3 border-bottom">
                   <%= link_to product_path(related), class: "flex-shrink-0" do %>
                     <% if related.product_images.attached? %>
-                      <%= responsive_attachment_image related.product_images.first,
+                      <%= responsive_attachment_image related.primary_product_image,
                           alt: related.product_name,
                           widths: [60, 80],
                           css_class: "related-product-image rounded",

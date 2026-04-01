@@ -171,7 +171,7 @@
             <tr>
               <td>
                 <% if product.product_images.attached? %>
-                  <%= image_tag product.product_images.first, class: "rounded", style: "width: 40px; height: 40px; object-fit: cover;" %>
+                  <%= image_tag product.primary_product_image, class: "rounded", style: "width: 40px; height: 40px; object-fit: cover;" %>
                 <% else %>
                   <div class="bg-light rounded d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
                     <i class="fa-solid fa-image text-muted"></i>

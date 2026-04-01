@@ -65,7 +65,7 @@
     <priority>0.8</priority>
     <% if product.product_images.attached? %>
     <image:image>
-      <% blob = product.product_images.first.blob %>
+      <% blob = product.primary_product_image.blob %>
       <image:loc><%= rails_service_blob_proxy_url(blob.signed_id, blob.filename, host: request.base_url) %></image:loc>
       <image:title><%= product.product_name %></image:title>
       <image:caption><%= "#{product.product_name} - #{product.brand}" %></image:caption>

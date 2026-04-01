@@ -12,7 +12,7 @@
   <th scope="row">
     <div class="d-flex align-items-center gap-2">
       <% if product.product_images.attached? %>
-        <%= responsive_attachment_image product.product_images.first,
+        <%= responsive_attachment_image product.primary_product_image,
           alt: product.product_name,
           widths: [40,50,64],
           css_class: 'img-thumbnail',

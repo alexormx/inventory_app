@@ -73,7 +73,7 @@ module ApplicationHelper
   def lcp_preload_product_image(product)
     return '' unless product.respond_to?(:product_images) && product.product_images.attached?
 
-    attachment = product.product_images.first
+    attachment = product.primary_product_image
     tags = []
     {
       'image/avif' => :avif,

@@ -38,7 +38,7 @@
                       <td class="ps-3">
                         <div class="d-flex align-items-center gap-3">
                           <% if product.product_images.attached? %>
-                            <%= image_tag product.product_images.first.variant(resize_to_limit: [60, 60]), class: "rounded border", style: "width: 60px; height: 60px; object-fit: cover;" %>
+                            <%= image_tag product.primary_product_image.variant(resize_to_limit: [60, 60]), class: "rounded border", style: "width: 60px; height: 60px; object-fit: cover;" %>
                           <% else %>
                             <div class="bg-light rounded border d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
                               <i class="fa fa-image text-muted"></i>

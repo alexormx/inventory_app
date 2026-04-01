@@ -22,7 +22,7 @@
           <td>
             <div class="d-flex align-items-center">
               <% if product.product_images.attached? %>
-                <%= image_tag product.product_images.first.variant(resize_to_limit: [40, 40]), class: 'me-2 rounded' %>
+                <%= image_tag product.primary_product_image.variant(resize_to_limit: [40, 40]), class: 'me-2 rounded' %>
               <% else %>
                 <div class="me-2 bg-secondary rounded d-flex align-items-center justify-content-center" style="width:40px;height:40px;">
                   <i class="fas fa-image text-white small"></i>

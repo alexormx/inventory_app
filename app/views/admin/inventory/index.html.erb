@@ -258,7 +258,7 @@
           <div class="d-flex align-items-center gap-3">
             <% if product.product_images.attached? %>
               <%= link_to admin_product_path(product), title: "Ver producto" do %>
-                <%= image_tag product.product_images.first.variant(resize_to_fill: [50, 50]), class: "rounded border", style: "width: 50px; height: 50px; object-fit: cover;" %>
+                <%= image_tag product.primary_product_image.variant(resize_to_fill: [50, 50]), class: "rounded border", style: "width: 50px; height: 50px; object-fit: cover;" %>
               <% end %>
             <% else %>
               <div class="rounded bg-light d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">

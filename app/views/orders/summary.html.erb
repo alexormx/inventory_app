@@ -23,7 +23,7 @@
         <td>
           <div class="d-flex align-items-center gap-2">
             <% if prod&.product_images&.attached? %>
-              <% image = prod.product_images.first %>
+              <% image = prod.primary_product_image %>
               <%= image_tag image.variant(resize_to_fill: [36,36]).processed, class: "rounded border bg-white", alt: prod.product_name %>
             <% else %>
               <div class="placeholder rounded border bg-light d-flex align-items-center justify-content-center" style="width:36px;height:36px;font-size:.55rem;">N/A</div>

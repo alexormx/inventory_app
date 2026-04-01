@@ -66,6 +66,40 @@ RSpec.describe "Admin::Products", type: :request do
       expect(product.reload.whatsapp_code).to match(/\AWA-EDIT-/)
       expect(product.reload.series).to eq('Tomica Premium')
     end
+
+    it "does not attach new images when the product update is invalid" do
+      uploaded_file = fixture_file_upload('test1.png', 'image/png')
+
+      expect do
+        patch admin_product_path(product), params: {
+          product: {
+            product_sku: product.product_sku,
+            product_name: '',
+            brand: product.brand,
+            category: product.category,
+            selling_price: product.selling_price,
+            minimum_price: product.minimum_price,
+            maximum_discount: product.maximum_discount,
+            whatsapp_code: product.whatsapp_code,
+            product_images: [uploaded_file]
+          }
+        }
+      end.not_to change(ActiveStorage::Attachment, :count)
+
+      expect(response).to have_http_status(:ok)
+    end
+  end
+
+  describe "PATCH /admin/products/:id/set_primary_image" do
+    it "updates the primary image for the product" do
+      selected_image = product.product_images.attachments.second
+
+      patch set_primary_image_admin_product_path(product), params: { image_id: selected_image.id }
+
+      expect(response).to redirect_to(edit_admin_product_path(product, anchor: 'media'))
+      expect(product.reload.primary_product_image_attachment_id).to eq(selected_image.id)
+      expect(product.primary_product_image.id).to eq(selected_image.id)
+    end
   end
 
   describe "DELETE /admin/products/:id/images/:image_id" do

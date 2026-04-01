@@ -350,7 +350,7 @@
               Consejos para mejores resultados
             </h6>
             <ul class="mb-0">
-              <li>La <strong>primera imagen</strong> será la principal en el catálogo</li>
+              <li>Selecciona manualmente la <strong>imagen principal</strong> en la sección de imágenes actuales</li>
               <li>Usa imágenes <strong>cuadradas</strong> para mejor presentación (mín. 800x800px)</li>
               <li>Fondo <strong>blanco o transparente</strong> recomendado</li>
               <li>Muestra el producto desde <strong>diferentes ángulos</strong></li>
@@ -367,18 +367,26 @@
               Imágenes Actuales
             </label>
             <div class="row g-2">
-              <% @product.product_images.each_with_index do |image, index| %>
+              <% @product.ordered_product_images.each_with_index do |image, index| %>
                 <div id="image_<%= image.id %>" class="col-6 col-sm-4 col-md-3 col-lg-2">
                   <div class="card position-relative">
                     <%= image_tag image.variant(resize_to_limit: [200, 200]), class: "card-img-top" %>
                     <div class="card-body p-2">
-                      <small class="text-muted">
-                        <% if index == 0 %>
+                      <small class="text-muted d-block mb-2">
+                        <% if image.id == @product.primary_product_image&.id %>
                           <i class="fa-solid fa-star text-warning me-1"></i>Principal
                         <% else %>
                           Imagen <%= index + 1 %>
                         <% end %>
                       </small>
+                      <% unless image.id == @product.primary_product_image&.id %>
+                        <%= button_to set_primary_image_admin_product_path(@product, image_id: image.id),
+                              method: :patch,
+                              class: "btn btn-sm btn-outline-warning w-100",
+                              form: { data: { turbo: false } } do %>
+                          <i class="fa-solid fa-star me-1"></i>Hacer principal
+                        <% end %>
+                      <% end %>
                     </div>
                     <%= link_to admin_product_purge_image_path(@product, image_id: image.id),
                                 method: :delete,

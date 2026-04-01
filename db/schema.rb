@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_03_29_111000) do
+ActiveRecord::Schema[8.0].define(version: 2026_03_29_123000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -418,6 +418,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_03_29_111000) do
     t.text "highlights", default: "[]"
     t.text "seo_keywords", default: "[]"
     t.string "series"
+    t.bigint "primary_product_image_attachment_id"
     t.index "lower((product_name)::text)", name: "index_products_on_lower_product_name"
     t.index ["brand"], name: "index_products_on_brand"
     t.index ["category"], name: "index_products_on_category"
@@ -425,6 +426,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_03_29_111000) do
     t.index ["last_supplier_id"], name: "index_products_on_last_supplier_id"
     t.index ["launch_date"], name: "index_products_on_launch_date"
     t.index ["preferred_supplier_id"], name: "index_products_on_preferred_supplier_id"
+    t.index ["primary_product_image_attachment_id"], name: "index_products_on_primary_product_image_attachment_id"
     t.index ["product_name"], name: "index_products_on_product_name"
     t.index ["product_sku"], name: "index_products_on_product_sku", unique: true
     t.index ["series"], name: "index_products_on_series"

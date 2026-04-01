@@ -38,14 +38,14 @@ module Products
       def call
         @draft.update!(status: :generating)
 
-        context = BuildContextService.new(@product).call
-        prompt  = BuildPromptService.new(context).call
+        context = Products::Enrichment::BuildContextService.new(@product).call
+        prompt  = Products::Enrichment::BuildPromptService.new(context).call
 
         response = call_openai(prompt)
         parsed   = parse_response(response)
 
         template = @product.attribute_template
-        normalized_attrs = NormalizeAttributesService.new(parsed["attributes"], template).call
+        normalized_attrs = Products::Enrichment::NormalizeAttributesService.new(parsed["attributes"], template).call
 
         usage = response.dig("usage") || {}
 

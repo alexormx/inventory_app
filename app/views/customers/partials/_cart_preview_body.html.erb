@@ -20,7 +20,7 @@
       <li class="d-flex align-items-center mb-2 cart-preview-item" id="cart_item_<%= product.id %>_<%= condition %>">
         <div class="me-2 flex-shrink-0">
           <% if product.product_images.attached? %>
-            <%= image_tag product.product_images.first.variant(resize_to_fill: [40,40]), alt: product.product_name, class: 'rounded border cart-preview-thumb' %>
+            <%= image_tag product.primary_product_image.variant(resize_to_fill: [40,40]), alt: product.product_name, class: 'rounded border cart-preview-thumb' %>
           <% else %>
             <div class="cart-preview-thumb placeholder d-flex align-items-center justify-content-center rounded border"> <i class="fas fa-box-open text-muted"></i></div>
           <% end %>
