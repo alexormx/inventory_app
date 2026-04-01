@@ -3,7 +3,7 @@
   <div class="admin-order-section-intro admin-order-section-intro--soft">
     <div>
       <p class="admin-order-section-eyebrow mb-1">Costeo</p>
-      <h6 class="admin-order-section-title mb-1"><i class="fa fa-dollar-sign me-2"></i>Costos adicionales y totales</h6>
+      <h6 class="admin-order-section-title mb-1"><i class="fa-solid fa-dollar-sign me-2"></i>Costos adicionales y totales</h6>
       <p class="admin-order-section-copy mb-0">Centraliza moneda, tipo de cambio y gastos extra para calcular el costo real de la compra.</p>
     </div>
   </div>
@@ -16,7 +16,7 @@
         PurchaseOrder::CURRENCIES.map { |c| [c, c] },
         {},
         class: "form-select" %>
-    <span class="input-group-text"><i class="fa fa-coins"></i></span>
+    <span class="input-group-text"><i class="fa-solid fa-coins"></i></span>
   </div>
 </div>
 
@@ -31,14 +31,14 @@
     <span class="input-group-text">MXN</span>
   </div>
   <div class="form-text">
-    <i class="fa fa-info-circle"></i> Tipo de cambio a pesos mexicanos
+    <i class="fa-solid fa-circle-info"></i> Tipo de cambio a pesos mexicanos
   </div>
 </div>
 
 <div class="col-md-2">
   <%= f.label :shipping_cost, "Envío", class: "form-label" %>
   <div class="input-group input-group-sm">
-    <span class="input-group-text"><i class="fa fa-shipping-fast"></i></span>
+    <span class="input-group-text"><i class="fa-solid fa-truck-fast"></i></span>
     <%= f.number_field :shipping_cost,
         step: 0.01,
         class: "form-control" %>
@@ -48,7 +48,7 @@
 <div class="col-md-2">
   <%= f.label :tax_cost, "Impuestos", class: "form-label" %>
   <div class="input-group input-group-sm">
-    <span class="input-group-text"><i class="fa fa-receipt"></i></span>
+    <span class="input-group-text"><i class="fa-solid fa-receipt"></i></span>
     <%= f.number_field :tax_cost,
         step: 0.01,
         class: "form-control" %>
@@ -58,7 +58,7 @@
 <div class="col-md-2">
   <%= f.label :other_cost, "Otros", class: "form-label" %>
   <div class="input-group input-group-sm">
-    <span class="input-group-text"><i class="fa fa-ellipsis-h"></i></span>
+    <span class="input-group-text"><i class="fa-solid fa-ellipsis"></i></span>
     <%= f.number_field :other_cost,
         step: 0.01,
         class: "form-control" %>

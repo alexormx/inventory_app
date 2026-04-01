@@ -7,14 +7,14 @@
         class: "form-select form-select-sm d-inline w-auto" %>
 
       <%= f.submit class: "btn btn-sm btn-success", title: "Save" do %>
-        <i class="fas fa-check"></i>
+        <i class="fa-solid fa-check"></i>
       <% end %>
 
       <%= link_to cancel_edit_status_admin_inventory_path(item), 
                   data: { turbo_frame: "inventory_status_#{item.id}" },
                   class: "btn btn-sm btn-secondary", 
                   title: "Cancel" do %>
-        <i class="fas fa-times"></i>
+        <i class="fa-solid fa-xmark"></i>
       <% end %>
     </div>
   <% end %>

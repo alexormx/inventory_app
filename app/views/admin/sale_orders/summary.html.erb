@@ -71,11 +71,11 @@
 
 	<% if @sale_order.shipment.present? %>
 		<div class="alert alert-warning py-1 px-2 small mb-2">
-			<i class="fa fa-truck me-1"></i>Envío por <strong><%= @sale_order.shipment.carrier %></strong>
+			<i class="fa-solid fa-truck me-1"></i>Envío por <strong><%= @sale_order.shipment.carrier %></strong>
 		</div>
 	<% else %>
 		<div class="alert alert-warning py-1 px-2 small mb-2">
-			<i class="fa fa-truck me-1"></i>Aún no se ha seleccionado un método de entrega.
+			<i class="fa-solid fa-truck me-1"></i>Aún no se ha seleccionado un método de entrega.
 		</div>
 	<% end %>
 
@@ -85,7 +85,7 @@
 	<% is_paid = balance_due <= 0 %>
 	<div class="card mt-2 border-0 shadow-sm">
 		<div class="card-body py-2">
-			<h6 class="mb-2 fw-semibold"><i class="fa fa-money-bill-wave me-1 text-success"></i>Estado de Pago</h6>
+			<h6 class="mb-2 fw-semibold"><i class="fa-solid fa-money-bill-wave me-1 text-success"></i>Estado de Pago</h6>
 			<dl class="row mb-0 small">
 				<dt class="col-7">Total del Pedido:</dt>
 				<dd class="col-5 text-end fw-bold"><%= number_to_currency(grand_total) %></dd>
@@ -106,7 +106,7 @@
 				<ul class="list-unstyled small mb-0">
 					<% completed_payments.each do |p| %>
 						<li class="d-flex justify-content-between">
-							<span><i class="fa fa-check-circle text-success me-1"></i><%= p.payment_method.to_s.humanize %> (<%= l(p.paid_at, format: :short) if p.paid_at %>)</span>
+							<span><i class="fa-solid fa-circle-check text-success me-1"></i><%= p.payment_method.to_s.humanize %> (<%= l(p.paid_at, format: :short) if p.paid_at %>)</span>
 							<strong><%= number_to_currency(p.amount) %></strong>
 						</li>
 					<% end %>

@@ -1,12 +1,12 @@
 <div class="container mt-3">
   <div class="d-flex justify-content-between align-items-center mb-3">
     <div>
-      <h3><i class="fas fa-map-marked-alt"></i> Explorador de Ubicación de Inventario</h3>
+      <h3><i class="fa-solid fa-map-location-dot"></i> Explorador de Ubicación de Inventario</h3>
       <p class="text-muted mb-0">Consulta piezas sin ubicación o selecciona una ubicación para ver su contenido.</p>
     </div>
     <div>
       <%= link_to admin_inventory_path, class: 'btn btn-outline-secondary' do %>
-        <i class="fas fa-arrow-left"></i> Volver a Inventario
+        <i class="fa-solid fa-arrow-left"></i> Volver a Inventario
       <% end %>
     </div>
   </div>
@@ -78,7 +78,7 @@
 
   <div class="d-flex flex-wrap gap-2 mb-3">
     <span class="badge bg-warning text-dark">
-      <i class="fas fa-box"></i> <%= @total_pieces %> piezas
+      <i class="fa-solid fa-box"></i> <%= @total_pieces %> piezas
     </span>
     <span class="badge bg-secondary"><%= @total_products %> productos</span>
     <% if @view == 'categories' && @mode == 'unlocated' %>
@@ -87,7 +87,7 @@
     <% if @mode == 'location' %>
       <% if @selected_location.present? %>
         <span class="badge bg-info text-dark">
-          <i class="fas fa-location-dot"></i> <%= @selected_location.full_path %>
+          <i class="fa-solid fa-location-dot"></i> <%= @selected_location.full_path %>
         </span>
       <% else %>
         <span class="badge bg-danger">Selecciona una ubicación para ver resultados</span>
@@ -122,7 +122,7 @@
             <% else %>
               <tr>
                 <td colspan="4" class="text-center text-muted py-4">
-                  <i class="fas fa-inbox fa-2x d-block mb-2"></i>
+                  <i class="fa-solid fa-inbox fa-2x d-block mb-2"></i>
                   No hay artículos para los filtros seleccionados.
                 </td>
               </tr>
@@ -152,7 +152,7 @@
             <% else %>
               <tr>
                 <td colspan="3" class="text-center text-muted py-4">
-                  <i class="fas fa-inbox fa-2x d-block mb-2"></i>
+                  <i class="fa-solid fa-inbox fa-2x d-block mb-2"></i>
                   No hay artículos para los filtros seleccionados.
                 </td>
               </tr>
@@ -169,7 +169,7 @@
             <% if @current_page > 1 %>
               <li class="page-item">
                 <%= link_to admin_inventory_location_explorer_path(mode: @mode, view: @view, location_id: @selected_location&.id, q: @q, category: @selected_category, sort: @sort, page: @current_page - 1), class: 'page-link' do %>
-                  <i class="fas fa-chevron-left"></i>
+                  <i class="fa-solid fa-chevron-left"></i>
                 <% end %>
               </li>
             <% end %>
@@ -186,7 +186,7 @@
             <% if @current_page < @total_pages %>
               <li class="page-item">
                 <%= link_to admin_inventory_location_explorer_path(mode: @mode, view: @view, location_id: @selected_location&.id, q: @q, category: @selected_category, sort: @sort, page: @current_page + 1), class: 'page-link' do %>
-                  <i class="fas fa-chevron-right"></i>
+                  <i class="fa-solid fa-chevron-right"></i>
                 <% end %>
               </li>
             <% end %>

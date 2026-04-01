@@ -262,7 +262,7 @@
               <% end %>
             <% else %>
               <div class="rounded bg-light d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
-                <i class="fa fa-image text-muted"></i>
+                <i class="fa-solid fa-image text-muted"></i>
               </div>
             <% end %>
             <div>
@@ -270,9 +270,9 @@
                 <%= link_to product.product_name, admin_product_path(product), class: "text-decoration-none text-dark" %>
               </div>
               <div class="small text-muted">
-                <span class="me-3"><i class="fa fa-barcode me-1"></i><%= product.product_sku %></span>
+                <span class="me-3"><i class="fa-solid fa-barcode me-1"></i><%= product.product_sku %></span>
                 <% if product.average_purchase_cost.to_f > 0 %>
-                  <span><i class="fa fa-tag me-1"></i>Costo: <%= number_to_currency(product.average_purchase_cost, unit: '$', precision: 2) %></span>
+                  <span><i class="fa-solid fa-tag me-1"></i>Costo: <%= number_to_currency(product.average_purchase_cost, unit: '$', precision: 2) %></span>
                 <% end %>
               </div>
             </div>
@@ -285,7 +285,7 @@
                       data-toggle-inventory-target="button"
                       data-action="click->toggle-inventory#toggle"
                       class="btn btn-sm btn-outline-primary inventory-toggle">
-                <i class="fa fa-eye me-1"></i> Ver piezas
+                <i class="fa-solid fa-eye me-1"></i> Ver piezas
                 <span class="badge bg-primary text-white ms-1"><%= total_items %></span>
               </button>
             <% else %>
@@ -293,7 +293,7 @@
             <% end %>
 
             <%= link_to admin_product_path(product), class: "btn btn-sm btn-outline-secondary", title: "Ver producto" do %>
-              <i class="fa fa-external-link-alt"></i>
+              <i class="fa-solid fa-up-right-from-square"></i>
             <% end %>
           </div>
         </div>
@@ -307,7 +307,7 @@
             <% count = counts[key] || 0 %>
             <% next if count == 0 %>
             <span class="badge rounded-pill bg-<%= inventory_status_color(key) %>" title="<%= status_labels[key] %>">
-              <i class="fa fa-<%= status_icons[key] %> me-1"></i>
+              <i class="fa-solid fa-<%= status_icons[key] %> me-1"></i>
               <%= status_labels[key] %>
               <span class="fw-bold"><%= count %></span>
             </span>
@@ -336,11 +336,11 @@
 <% if @products_with_inventory.none? %>
   <div class="card border-0 shadow-sm">
     <div class="card-body text-center py-5">
-      <i class="fa fa-archive fa-3x text-muted mb-3"></i>
+      <i class="fa-solid fa-box-archive fa-3x text-muted mb-3"></i>
       <h5 class="text-muted">No hay productos con inventario</h5>
       <p class="text-muted mb-3">Ajusta los filtros o la búsqueda para ver resultados</p>
       <%= link_to admin_inventory_path, class: "btn btn-outline-primary" do %>
-        <i class="fa fa-times"></i> Limpiar filtros
+        <i class="fa-solid fa-xmark"></i> Limpiar filtros
       <% end %>
     </div>
   </div>

@@ -3,13 +3,13 @@
   <div id="flash-messages" class="container mt-3">
     <% if flash[:notice] %>
       <div class="alert alert-success alert-dismissible fade show" role="alert">
-        <i class="fas fa-check-circle"></i> <%= flash[:notice] %>
+        <i class="fa-solid fa-circle-check"></i> <%= flash[:notice] %>
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
       </div>
     <% end %>
     <% if flash[:alert] %>
       <div class="alert alert-danger alert-dismissible fade show" role="alert">
-        <i class="fas fa-exclamation-circle"></i> <%= flash[:alert] %>
+        <i class="fa-solid fa-circle-exclamation"></i> <%= flash[:alert] %>
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
       </div>
     <% end %>
@@ -20,7 +20,7 @@
 <%= turbo_stream.replace "unlocated-header-badges" do %>
   <span id="unlocated-header-badges">
     <span class="badge bg-warning text-dark ms-2">
-      <i class="fas fa-box"></i> <%= @total_unlocated %> piezas sin ubicar
+      <i class="fa-solid fa-box"></i> <%= @total_unlocated %> piezas sin ubicar
     </span>
     <span class="badge bg-secondary ms-1">
       <%= @total_products %> productos
@@ -52,7 +52,7 @@
   <%= turbo_stream.replace "unlocated-products-frame" do %>
     <turbo-frame id="unlocated-products-frame">
       <div class="card-body text-center py-5">
-        <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+        <i class="fa-solid fa-circle-check fa-3x text-success mb-3"></i>
         <h5>¡Todo el inventario tiene ubicación!</h5>
         <p class="text-muted small">No hay piezas de inventario pendientes de asignar ubicación.</p>
         <%= link_to 'Ver Inventario', admin_inventory_path, class: 'btn btn-primary btn-sm' %>

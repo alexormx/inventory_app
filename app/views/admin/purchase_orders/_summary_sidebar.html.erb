@@ -2,20 +2,20 @@
 <div class="card admin-summary-sidebar sticky-top shadow-sm admin-sticky-sidebar">
   <div class="card-header admin-summary-sidebar-header text-white">
     <h5 class="mb-0">
-      <i class="fa fa-receipt"></i> Resumen de compra
+      <i class="fa-solid fa-receipt"></i> Resumen de compra
     </h5>
   </div>
   <div class="card-body">
     <dl class="row mb-0 small">
       <dt class="col-7 text-muted">
-        <i class="fa fa-box"></i> Productos:
+        <i class="fa-solid fa-box"></i> Productos:
       </dt>
       <dd class="col-5 text-end fw-bold" id="summary-items-count">
         <%= purchase_order.purchase_order_items.count %>
       </dd>
 
       <dt class="col-7 text-muted">
-        <i class="fa fa-cubes"></i> Unidades:
+        <i class="fa-solid fa-cubes"></i> Unidades:
       </dt>
       <dd class="col-5 text-end" id="summary-total-qty">
         <%= purchase_order.purchase_order_items.sum(:quantity) %>
@@ -29,21 +29,21 @@
       </dd>
 
       <dt class="col-7 small text-muted">
-        <i class="fa fa-shipping-fast"></i> Envío:
+        <i class="fa-solid fa-truck-fast"></i> Envío:
       </dt>
       <dd class="col-5 text-end small text-muted" id="summary-shipping">
         <%= number_to_currency(purchase_order.shipping_cost, precision: 2) %>
       </dd>
 
       <dt class="col-7 small text-muted">
-        <i class="fa fa-receipt"></i> Impuestos:
+        <i class="fa-solid fa-receipt"></i> Impuestos:
       </dt>
       <dd class="col-5 text-end small text-muted" id="summary-tax">
         <%= number_to_currency(purchase_order.tax_cost, precision: 2) %>
       </dd>
 
       <dt class="col-7 small text-muted">
-        <i class="fa fa-ellipsis-h"></i> Otros:
+        <i class="fa-solid fa-ellipsis"></i> Otros:
       </dt>
       <dd class="col-5 text-end small text-muted" id="summary-other">
         <%= number_to_currency(purchase_order.other_cost, precision: 2) %>
@@ -52,7 +52,7 @@
       <hr class="my-2">
 
       <dt class="col-7 border-top pt-2 fs-6">
-        <i class="fa fa-calculator"></i> Total:
+        <i class="fa-solid fa-calculator"></i> Total:
       </dt>
       <dd class="col-5 text-end border-top pt-2 fs-5 fw-bold text-success" id="summary-total">
         <%= number_to_currency(purchase_order.total_order_cost, precision: 2) %>
@@ -77,16 +77,16 @@
 <div class="card admin-summary-sidebar-note mt-3">
   <div class="card-header">
     <h6 class="mb-0 small">
-      <i class="fa fa-info-circle"></i> Información
+      <i class="fa-solid fa-circle-info"></i> Información
     </h6>
   </div>
   <div class="card-body small text-muted">
     <p class="mb-2">
-      <i class="fa fa-check-circle text-success"></i>
+      <i class="fa-solid fa-circle-check text-success"></i>
       Los costos adicionales se distribuyen proporcionalmente según el volumen de cada producto.
     </p>
     <p class="mb-0">
-      <i class="fa fa-calculator text-primary"></i>
+      <i class="fa-solid fa-calculator text-primary"></i>
       El subtotal incluye solo el costo base de los productos. Los extras se suman después.
     </p>
   </div>

@@ -22,7 +22,7 @@
            data-action="input->user-suggest#input keydown->user-suggest#keydown">
     <%= f.hidden_field :user_id, data: { 'user-suggest-target': 'hidden' } %>
     <div class="form-text admin-order-field-note" data-user-suggest-target="hint">
-      <i class="fa fa-info-circle"></i> Selecciona el proveedor de esta orden
+      <i class="fa-solid fa-circle-info"></i> Selecciona el proveedor de esta orden
     </div>
     <div data-user-suggest-target="results" class="admin-user-suggest-results"></div>
   </div>
@@ -36,18 +36,18 @@
         {},
         class: "form-select" %>
     <span class="input-group-text">
-      <i class="fa fa-truck"></i>
+      <i class="fa-solid fa-truck"></i>
     </span>
   </div>
   <div class="form-text admin-order-field-note">
-    <i class="fa fa-info-circle"></i> El estado afecta el inventario automáticamente
+    <i class="fa-solid fa-circle-info"></i> El estado afecta el inventario automáticamente
   </div>
 </div>
 
 <div class="col-md-4">
   <%= f.label :order_date, "Fecha de Orden", class: "form-label" %>
   <div class="input-group">
-    <span class="input-group-text"><i class="fa fa-calendar"></i></span>
+    <span class="input-group-text"><i class="fa-solid fa-calendar"></i></span>
     <%= f.date_field :order_date, class: "form-control" %>
   </div>
 </div>
@@ -55,7 +55,7 @@
 <div class="col-md-4">
   <%= f.label :expected_delivery_date, "Entrega Esperada", class: "form-label" %>
   <div class="input-group">
-    <span class="input-group-text"><i class="fa fa-calendar-check"></i></span>
+    <span class="input-group-text"><i class="fa-solid fa-calendar-check"></i></span>
     <%= f.date_field :expected_delivery_date, class: "form-control" %>
   </div>
 </div>
@@ -63,11 +63,11 @@
 <div class="col-md-4">
   <%= f.label :actual_delivery_date, "Entrega Real", class: "form-label" %>
   <div class="input-group">
-    <span class="input-group-text"><i class="fa fa-calendar-day"></i></span>
+    <span class="input-group-text"><i class="fa-solid fa-calendar-day"></i></span>
     <%= f.date_field :actual_delivery_date, class: "form-control", placeholder: "Dejar vacío si aún no se entrega" %>
   </div>
   <div class="form-text admin-order-field-note">
-    <i class="fa fa-info-circle"></i> Completa este campo cuando la mercancía llegue físicamente al almacén.
+    <i class="fa-solid fa-circle-info"></i> Completa este campo cuando la mercancía llegue físicamente al almacén.
   </div>
 </div>
 

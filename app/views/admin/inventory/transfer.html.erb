@@ -3,14 +3,14 @@
 <div class="container-fluid mt-3" data-controller="inventory-transfer">
   <div class="d-flex justify-content-between align-items-center mb-3">
     <div>
-      <h3><i class="fas fa-exchange-alt"></i> Transferir Inventario entre Ubicaciones</h3>
+      <h3><i class="fa-solid fa-right-left"></i> Transferir Inventario entre Ubicaciones</h3>
       <p class="text-muted mb-0">
         Selecciona la ubicación origen y destino, luego marca las piezas que deseas mover.
       </p>
     </div>
     <div>
       <%= link_to admin_inventory_path, class: 'btn btn-outline-secondary' do %>
-        <i class="fas fa-arrow-left"></i> Volver a Inventario
+        <i class="fa-solid fa-arrow-left"></i> Volver a Inventario
       <% end %>
     </div>
   </div>
@@ -20,7 +20,7 @@
     <div class="col-md-6">
       <div class="card h-100">
         <div class="card-header bg-primary text-white">
-          <i class="fas fa-sign-out-alt"></i> Ubicación Origen
+          <i class="fa-solid fa-right-from-bracket"></i> Ubicación Origen
         </div>
         <div class="card-body">
           <div class="mb-3">
@@ -45,7 +45,7 @@
 
           <div class="border rounded" style="min-height: 300px; max-height: 500px; overflow-y: auto;">
             <div data-inventory-transfer-target="sourceItems" class="p-3 text-center text-muted">
-              <i class="fas fa-arrow-up fa-2x mb-2"></i>
+              <i class="fa-solid fa-arrow-up fa-2x mb-2"></i>
               <p>Selecciona una ubicación origen</p>
             </div>
           </div>
@@ -57,7 +57,7 @@
     <div class="col-md-6">
       <div class="card h-100">
         <div class="card-header bg-success text-white">
-          <i class="fas fa-sign-in-alt"></i> Ubicación Destino
+          <i class="fa-solid fa-right-to-bracket"></i> Ubicación Destino
         </div>
         <div class="card-body">
           <div class="mb-3">
@@ -80,13 +80,13 @@
             </div>
             <button type="button" class="btn btn-sm btn-outline-secondary"
                     data-action="click->inventory-transfer#refreshDestination">
-              <i class="fas fa-sync-alt"></i> Actualizar
+              <i class="fa-solid fa-arrows-rotate"></i> Actualizar
             </button>
           </div>
 
           <div class="border rounded" style="min-height: 300px; max-height: 500px; overflow-y: auto;">
             <div data-inventory-transfer-target="destItems" class="p-3 text-center text-muted">
-              <i class="fas fa-arrow-up fa-2x mb-2"></i>
+              <i class="fa-solid fa-arrow-up fa-2x mb-2"></i>
               <p>Selecciona una ubicación destino</p>
             </div>
           </div>
@@ -114,7 +114,7 @@
                   data-action="click->inventory-transfer#executeTransfer"
                   data-url="<%= admin_inventory_execute_transfer_path %>"
                   disabled>
-            <i class="fas fa-arrow-right me-2"></i>
+            <i class="fa-solid fa-arrow-right me-2"></i>
             Transferir al Destino
           </button>
         </div>

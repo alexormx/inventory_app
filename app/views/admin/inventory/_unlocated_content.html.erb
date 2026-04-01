@@ -5,12 +5,12 @@
   <%# ═══ HEADER ═══ %>
   <div class="d-flex justify-content-between align-items-center mb-3">
     <div>
-      <h3><i class="fas fa-map-marker-alt"></i> Asignación de Ubicación</h3>
+      <h3><i class="fa-solid fa-location-dot"></i> Asignación de Ubicación</h3>
       <p class="text-muted mb-0">
         Selecciona una ubicación, agrega piezas al carrito y asigna todo de una vez.
         <span id="unlocated-header-badges">
           <span class="badge bg-warning text-dark ms-2">
-            <i class="fas fa-box"></i> <%= @total_unlocated %> piezas sin ubicar
+            <i class="fa-solid fa-box"></i> <%= @total_unlocated %> piezas sin ubicar
           </span>
           <span class="badge bg-secondary ms-1">
             <%= @total_products %> productos
@@ -20,7 +20,7 @@
     </div>
     <div>
       <%= link_to admin_inventory_path, class: 'btn btn-outline-secondary' do %>
-        <i class="fas fa-arrow-left"></i> Volver
+        <i class="fa-solid fa-arrow-left"></i> Volver
       <% end %>
     </div>
   </div>
@@ -28,7 +28,7 @@
   <%# ═══ PASO 1: SELECCIONAR UBICACIÓN ═══ %>
   <div class="card mb-3 border-primary">
     <div class="card-header bg-primary text-white py-2">
-      <i class="fas fa-crosshairs me-1"></i>
+      <i class="fa-solid fa-crosshairs me-1"></i>
       <strong>Paso 1:</strong> Seleccionar Ubicación Destino
     </div>
     <div class="card-body py-3">
@@ -56,7 +56,7 @@
         <div class="col-md-4">
           <div id="location-selected-indicator" data-bulk-location-assign-target="locationIndicator"
                class="bg-light rounded p-2 text-center text-muted small" style="min-height: 58px; display: flex; align-items: center; justify-content: center;">
-            <span><i class="fas fa-arrow-left me-1"></i> Selecciona una ubicación para comenzar</span>
+            <span><i class="fa-solid fa-arrow-left me-1"></i> Selecciona una ubicación para comenzar</span>
           </div>
         </div>
       </div>
@@ -67,16 +67,16 @@
         <div class="border rounded">
           <div class="bg-light px-3 py-2 d-flex justify-content-between align-items-center border-bottom">
             <small class="fw-bold text-muted">
-              <i class="fas fa-boxes me-1"></i> Piezas actualmente en esta ubicación
+              <i class="fa-solid fa-boxes-stacked me-1"></i> Piezas actualmente en esta ubicación
             </small>
             <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2"
                     data-action="click->bulk-location-assign#toggleLocationContents">
-              <i class="fas fa-chevron-up" data-bulk-location-assign-target="locationContentsIcon"></i>
+              <i class="fa-solid fa-chevron-up" data-bulk-location-assign-target="locationContentsIcon"></i>
             </button>
           </div>
           <div id="location-contents-body" data-bulk-location-assign-target="locationContentsBody">
             <div class="text-center py-3 text-muted">
-              <i class="fas fa-spinner fa-spin"></i> Cargando...
+              <i class="fa-solid fa-spinner fa-spin"></i> Cargando...
             </div>
           </div>
         </div>
@@ -92,15 +92,15 @@
         <div class="card-header bg-light py-2">
           <div class="d-flex justify-content-between align-items-center">
             <div>
-              <i class="fas fa-search me-1"></i>
+              <i class="fa-solid fa-search me-1"></i>
               <strong>Paso 2:</strong> Buscar y agregar piezas
             </div>
             <div class="btn-group btn-group-sm">
               <button type="button" class="btn btn-outline-secondary" data-action="click->bulk-location-assign#expandAll">
-                <i class="fas fa-expand-alt"></i>
+                <i class="fa-solid fa-up-right-and-down-left-from-center"></i>
               </button>
               <button type="button" class="btn btn-outline-secondary" data-action="click->bulk-location-assign#collapseAll">
-                <i class="fas fa-compress-alt"></i>
+                <i class="fa-solid fa-down-left-and-up-right-to-center"></i>
               </button>
             </div>
           </div>
@@ -114,19 +114,19 @@
                           data: { turbo_frame: "unlocated-products-frame" } do %>
               <div class="col-md-6">
                 <div class="input-group input-group-sm">
-                  <span class="input-group-text"><i class="fas fa-search"></i></span>
+                  <span class="input-group-text"><i class="fa-solid fa-search"></i></span>
                   <%= text_field_tag :q, @q, class: 'form-control', placeholder: 'Buscar por nombre o SKU...' %>
                   <% if @q.present? %>
                     <%= link_to admin_inventory_unlocated_path(sort: @sort), class: 'btn btn-outline-secondary',
                                 data: { turbo_frame: "unlocated-products-frame" } do %>
-                      <i class="fas fa-times"></i>
+                      <i class="fa-solid fa-xmark"></i>
                     <% end %>
                   <% end %>
                 </div>
               </div>
               <div class="col-md-4">
                 <div class="input-group input-group-sm">
-                  <span class="input-group-text"><i class="fas fa-sort"></i></span>
+                  <span class="input-group-text"><i class="fa-solid fa-sort"></i></span>
                   <%= select_tag :sort, options_for_select([
                     ['Nombre A-Z', 'name'],
                     ['Más piezas ↓', 'count_desc'],
@@ -136,7 +136,7 @@
               </div>
               <div class="col-md-2 text-end">
                 <button type="submit" class="btn btn-sm btn-primary w-100">
-                  <i class="fas fa-filter"></i> Filtrar
+                  <i class="fa-solid fa-filter"></i> Filtrar
                 </button>
               </div>
             <% end %>
@@ -171,7 +171,7 @@
                                   class="btn btn-sm btn-link p-0 toggle-btn"
                                   data-action="click->bulk-location-assign#toggleGroup"
                                   data-url="<%= admin_inventory_unlocated_items_path(product_id: product.id) %>">
-                            <i class="fas fa-chevron-right toggle-icon"></i>
+                            <i class="fa-solid fa-chevron-right toggle-icon"></i>
                           </button>
                         </td>
                         <td>
@@ -180,7 +180,7 @@
                               <%= image_tag product.primary_product_image.variant(resize_to_limit: [36, 36]), class: 'me-2 rounded' %>
                             <% else %>
                               <div class="me-2 bg-secondary rounded d-flex align-items-center justify-content-center" style="width:36px;height:36px;">
-                                <i class="fas fa-image text-white small"></i>
+                                <i class="fa-solid fa-image text-white small"></i>
                               </div>
                             <% end %>
                             <div>
@@ -205,7 +205,7 @@
                                     class="btn btn-outline-success btn-sm"
                                     title="Agregar al carrito"
                                     data-action="click->bulk-location-assign#addToCart">
-                              <i class="fas fa-plus"></i>
+                              <i class="fa-solid fa-plus"></i>
                             </button>
                           </div>
                         </td>
@@ -214,7 +214,7 @@
                         <td colspan="4" class="p-0 border-0">
                           <div class="product-group-content ms-4">
                             <div class="detail-content p-2 text-center text-muted">
-                              <i class="fas fa-spinner fa-spin"></i> Cargando...
+                              <i class="fa-solid fa-spinner fa-spin"></i> Cargando...
                             </div>
                           </div>
                         </td>
@@ -233,7 +233,7 @@
                         <li class="page-item">
                           <%= link_to admin_inventory_unlocated_path(page: @current_page - 1, q: @q, sort: @sort),
                                       class: 'page-link', data: { turbo_frame: "unlocated-products-frame" } do %>
-                            <i class="fas fa-chevron-left"></i>
+                            <i class="fa-solid fa-chevron-left"></i>
                           <% end %>
                         </li>
                       <% end %>
@@ -272,7 +272,7 @@
                         <li class="page-item">
                           <%= link_to admin_inventory_unlocated_path(page: @current_page + 1, q: @q, sort: @sort),
                                       class: 'page-link', data: { turbo_frame: "unlocated-products-frame" } do %>
-                            <i class="fas fa-chevron-right"></i>
+                            <i class="fa-solid fa-chevron-right"></i>
                           <% end %>
                         </li>
                       <% end %>
@@ -283,14 +283,14 @@
             <% else %>
               <div class="text-center py-5">
                 <% if @q.present? %>
-                  <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                  <i class="fa-solid fa-search fa-3x text-muted mb-3"></i>
                   <h5>No se encontraron productos</h5>
                   <p class="text-muted small">No hay productos que coincidan con "<%= @q %>"</p>
                   <%= link_to 'Limpiar búsqueda', admin_inventory_unlocated_path,
                               class: 'btn btn-sm btn-outline-primary',
                               data: { turbo_frame: "unlocated-products-frame" } %>
                 <% else %>
-                  <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                  <i class="fa-solid fa-circle-check fa-3x text-success mb-3"></i>
                   <h5>¡Todo ubicado!</h5>
                   <p class="text-muted small">No hay piezas pendientes de asignar ubicación.</p>
                 <% end %>
@@ -305,7 +305,7 @@
     <div class="col-lg-4 mb-3">
       <div class="card border-success h-100">
         <div class="card-header bg-success text-white py-2">
-          <i class="fas fa-shopping-cart me-1"></i>
+          <i class="fa-solid fa-cart-shopping me-1"></i>
           <strong>Paso 3:</strong> Carrito de Asignación
           <span id="cart-badge" data-bulk-location-assign-target="cartBadge"
                 class="badge bg-white text-success ms-1">0</span>
@@ -316,7 +316,7 @@
                style="max-height: 50vh; overflow-y: auto;">
             <div class="text-center text-muted py-4" id="cart-empty-state"
                  data-bulk-location-assign-target="cartEmpty">
-              <i class="fas fa-cart-plus fa-2x mb-2 d-block"></i>
+              <i class="fa-solid fa-cart-plus fa-2x mb-2 d-block"></i>
               <small>Agrega piezas desde la tabla de la izquierda</small>
             </div>
           </div>
@@ -331,14 +331,14 @@
                   data-bulk-location-assign-target="submitBtn"
                   data-action="click->bulk-location-assign#submitAssignment"
                   disabled>
-            <i class="fas fa-check me-1"></i> Asignar Todo a Ubicación
+            <i class="fa-solid fa-check me-1"></i> Asignar Todo a Ubicación
           </button>
           <button type="button"
                   class="btn btn-outline-secondary w-100 mt-1 btn-sm"
                   data-action="click->bulk-location-assign#clearCart"
                   data-bulk-location-assign-target="clearCartBtn"
                   style="display: none;">
-            <i class="fas fa-trash me-1"></i> Vaciar Carrito
+            <i class="fa-solid fa-trash me-1"></i> Vaciar Carrito
           </button>
         </div>
       </div>

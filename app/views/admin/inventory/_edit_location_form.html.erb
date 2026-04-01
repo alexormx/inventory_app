@@ -20,14 +20,14 @@
       </div>
 
       <%= f.submit class: "btn btn-sm btn-success", title: "Guardar" do %>
-        <i class="fas fa-check"></i>
+        <i class="fa-solid fa-check"></i>
       <% end %>
 
       <%= link_to cancel_edit_location_admin_inventory_path(item),
                   data: { turbo_frame: "inventory_location_#{item.id}" },
                   class: "btn btn-sm btn-secondary",
                   title: "Cancelar" do %>
-        <i class="fas fa-times"></i>
+        <i class="fa-solid fa-xmark"></i>
       <% end %>
 
       <% if item.inventory_location_id.present? %>
@@ -35,7 +35,7 @@
                 class="btn btn-sm btn-outline-danger"
                 title="Quitar ubicación"
                 onclick="this.closest('form').querySelector('input[name=inventory_location_id]').value=''; this.closest('form').submit();">
-          <i class="fas fa-unlink"></i>
+          <i class="fa-solid fa-unlink"></i>
         </button>
       <% end %>
     </div>

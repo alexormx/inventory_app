@@ -7,14 +7,14 @@
   <%# Header %>
   <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
     <h2 class="mb-0 d-flex align-items-center gap-2 flex-wrap">
-      <i class="fa fa-box-open text-primary"></i> Preparar Paquete — Orden #<%= @sale_order.id %>
+      <i class="fa-solid fa-box-open text-primary"></i> Preparar Paquete — Orden #<%= @sale_order.id %>
       <span class="badge bg-purple text-white">
-        <i class="fa fa-cog"></i> En Preparación
+        <i class="fa-solid fa-gear"></i> En Preparación
       </span>
     </h2>
     <div class="d-flex gap-2 flex-wrap">
       <%= link_to admin_sale_order_path(@sale_order), class: "btn btn-outline-secondary btn-sm" do %>
-        <i class="fa fa-arrow-left"></i> Volver a Orden
+        <i class="fa-solid fa-arrow-left"></i> Volver a Orden
       <% end %>
     </div>
   </div>
@@ -59,13 +59,13 @@
   <%# Lista de picking agrupada por ubicación %>
   <div class="card border-0 shadow-sm mb-4">
     <div class="card-header bg-transparent border-0">
-      <h5 class="mb-0"><i class="fa fa-map-marker-alt text-muted me-2"></i>Lista de Picking</h5>
+      <h5 class="mb-0"><i class="fa-solid fa-location-dot text-muted me-2"></i>Lista de Picking</h5>
     </div>
     <div class="card-body p-0">
       <% @grouped.each do |location, inventories| %>
         <div class="border-bottom">
           <div class="px-3 py-2 bg-light d-flex align-items-center gap-2">
-            <i class="fa fa-warehouse text-primary"></i>
+            <i class="fa-solid fa-warehouse text-primary"></i>
             <strong><%= location %></strong>
             <span class="badge bg-primary rounded-pill"><%= inventories.size %> pieza<%= 's' if inventories.size > 1 %></span>
           </div>
@@ -124,7 +124,7 @@
 
       <% if @inventories.empty? %>
         <div class="text-center py-4 text-muted">
-          <i class="fa fa-inbox fa-2x mb-2"></i>
+          <i class="fa-solid fa-inbox fa-2x mb-2"></i>
           <p>No hay piezas asignadas a esta orden.</p>
         </div>
       <% end %>
@@ -134,7 +134,7 @@
   <%# Envío — datos del shipment %>
   <div class="card border-0 shadow-sm mb-4">
     <div class="card-header bg-transparent border-0">
-      <h5 class="mb-0"><i class="fa fa-shipping-fast text-muted me-2"></i>Datos de Envío</h5>
+      <h5 class="mb-0"><i class="fa-solid fa-truck-fast text-muted me-2"></i>Datos de Envío</h5>
     </div>
     <div class="card-body">
       <% shipment = @sale_order.shipment %>
@@ -160,13 +160,13 @@
                     data-confirm-title="Despachar paquete"
                     data-confirm-message="La orden pasará a En tránsito y se registrará el despacho del paquete. ¿Deseas continuar?"
                     data-confirm-confirm-label="Despachar paquete">
-              <i class="fa fa-truck me-2"></i> Despachar Paquete
+              <i class="fa-solid fa-truck me-2"></i> Despachar Paquete
             </button>
           </div>
         <% end %>
       <% else %>
         <div class="alert alert-warning">
-          <i class="fa fa-exclamation-triangle me-2"></i>
+          <i class="fa-solid fa-triangle-exclamation me-2"></i>
           No se encontró un envío asociado. Esto no debería pasar — recarga la página.
         </div>
       <% end %>
@@ -177,7 +177,7 @@
   <% if @sale_order.order_shipping_address.present? %>
     <div class="card border-0 shadow-sm mb-4">
       <div class="card-header bg-transparent border-0">
-        <h5 class="mb-0"><i class="fa fa-map-pin text-muted me-2"></i>Dirección de Envío</h5>
+        <h5 class="mb-0"><i class="fa-solid fa-map-pin text-muted me-2"></i>Dirección de Envío</h5>
       </div>
       <div class="card-body">
         <% addr = @sale_order.order_shipping_address %>
@@ -186,10 +186,10 @@
         <p class="mb-1"><%= addr.neighborhood %>, <%= addr.city %></p>
         <p class="mb-1"><%= addr.state %>, CP <%= addr.zip_code %></p>
         <% if addr.phone.present? %>
-          <p class="mb-0"><i class="fa fa-phone me-1"></i> <%= addr.phone %></p>
+          <p class="mb-0"><i class="fa-solid fa-phone me-1"></i> <%= addr.phone %></p>
         <% end %>
         <% if addr.delivery_instructions.present? %>
-          <p class="mb-0 mt-2 text-muted"><i class="fa fa-info-circle me-1"></i> <%= addr.delivery_instructions %></p>
+          <p class="mb-0 mt-2 text-muted"><i class="fa-solid fa-circle-info me-1"></i> <%= addr.delivery_instructions %></p>
         <% end %>
       </div>
     </div>

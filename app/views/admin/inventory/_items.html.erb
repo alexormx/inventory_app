@@ -16,7 +16,7 @@
       </div>
       <button type="button" class="btn btn-sm btn-outline-secondary"
               data-action="click->toggle-inventory#toggle">
-        <i class="fa fa-times"></i> Cerrar
+        <i class="fa-solid fa-xmark"></i> Cerrar
       </button>
     </div>
 
@@ -76,7 +76,7 @@
               <td>
                 <% if item.purchase_order_id.present? %>
                   <%= link_to admin_purchase_order_path(item.purchase_order_id), class: "text-decoration-none", data: { turbo_frame: "_top" } do %>
-                    <i class="fa fa-truck text-muted me-1"></i>PO #<%= item.purchase_order_id %>
+                    <i class="fa-solid fa-truck text-muted me-1"></i>PO #<%= item.purchase_order_id %>
                   <% end %>
                   <% if item.purchase_order_item_id.present? %>
                     <span class="text-muted small ms-1">(línea <%= item.purchase_order_item_id %>)</span>
@@ -84,7 +84,7 @@
                 <% elsif item.source == 'ledger_adjustment' && item.adjustment_reference.present? %>
                   <%# Ajuste positivo: el inventario fue CREADO por el ajuste %>
                   <span class="text-info">
-                    <i class="fa fa-sliders-h me-1"></i><%= item.adjustment_reference %>
+                    <i class="fa-solid fa-sliders me-1"></i><%= item.adjustment_reference %>
                   </span>
                 <% else %>
                   <span class="text-muted">—</span>
@@ -95,12 +95,12 @@
               <td>
                 <% if item.sale_order_id.present? %>
                   <%= link_to admin_sale_order_path(item.sale_order_id), class: "text-decoration-none", data: { turbo_frame: "_top" } do %>
-                    <i class="fa fa-shopping-cart text-muted me-1"></i>SO #<%= item.sale_order_id %>
+                    <i class="fa-solid fa-cart-shopping text-muted me-1"></i>SO #<%= item.sale_order_id %>
                   <% end %>
                 <% elsif item.source != 'ledger_adjustment' && item.adjustment_reference.present? %>
                   <%# Ajuste negativo: el inventario fue MARCADO como pérdida/daño por el ajuste %>
                   <span class="text-info">
-                    <i class="fa fa-sliders-h me-1"></i><%= item.adjustment_reference %>
+                    <i class="fa-solid fa-sliders me-1"></i><%= item.adjustment_reference %>
                   </span>
                 <% else %>
                   <span class="text-muted">—</span>
@@ -137,7 +137,7 @@
 
     <% if items.empty? %>
       <div class="text-center py-4 text-muted">
-        <i class="fa fa-inbox fa-2x mb-2"></i>
+        <i class="fa-solid fa-inbox fa-2x mb-2"></i>
         <p class="mb-0">No hay piezas con este estado</p>
       </div>
     <% end %>

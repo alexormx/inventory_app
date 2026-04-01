@@ -10,14 +10,14 @@
 
 <div class="d-flex align-items-center justify-content-between mb-3">
   <h2 class="mb-0 d-flex align-items-center gap-2">
-    <i class="fa fa-truck"></i> Órdenes de Compra
+    <i class="fa-solid fa-truck"></i> Órdenes de Compra
   </h2>
   <div class="d-flex gap-2">
     <%= link_to admin_purchase_orders_path(request.query_parameters.merge(format: :csv)), class: "btn btn-outline-success btn-sm", title: "Exportar CSV" do %>
-      <i class="fa fa-download"></i> CSV
+      <i class="fa-solid fa-download"></i> CSV
     <% end %>
     <%= link_to new_admin_purchase_order_path, class: "btn btn-primary btn-sm" do %>
-      <i class="fa fa-plus"></i> Nueva Orden
+      <i class="fa-solid fa-plus"></i> Nueva Orden
     <% end %>
   </div>
 </div>
@@ -40,7 +40,7 @@
             <div class="text-muted small">Pendientes</div>
             <div class="h5 mb-0 text-warning"><%= number_to_currency(pending_value, unit: '$', precision: 0) %></div>
           </div>
-          <div class="text-warning opacity-50"><i class="fa fa-clock fa-2x"></i></div>
+          <div class="text-warning opacity-50"><i class="fa-solid fa-clock fa-2x"></i></div>
         </div>
       </div>
     </div>
@@ -53,7 +53,7 @@
             <div class="text-muted small">En Tránsito</div>
             <div class="h5 mb-0 text-primary"><%= number_to_currency(in_transit_value, unit: '$', precision: 0) %></div>
           </div>
-          <div class="text-primary opacity-50"><i class="fa fa-shipping-fast fa-2x"></i></div>
+          <div class="text-primary opacity-50"><i class="fa-solid fa-truck-fast fa-2x"></i></div>
         </div>
       </div>
     </div>
@@ -66,7 +66,7 @@
             <div class="text-muted small">Retrasadas</div>
             <div class="h5 mb-0 <%= overdue_count > 0 ? 'text-danger' : 'text-success' %>"><%= overdue_count %></div>
           </div>
-          <div class="<%= overdue_count > 0 ? 'text-danger' : 'text-success' %> opacity-50"><i class="fa fa-exclamation-triangle fa-2x"></i></div>
+          <div class="<%= overdue_count > 0 ? 'text-danger' : 'text-success' %> opacity-50"><i class="fa-solid fa-triangle-exclamation fa-2x"></i></div>
         </div>
       </div>
     </div>
@@ -79,7 +79,7 @@
             <div class="text-muted small">Este Mes</div>
             <div class="h5 mb-0"><%= this_month_count %> órdenes</div>
           </div>
-          <div class="text-secondary opacity-50"><i class="fa fa-calendar fa-2x"></i></div>
+          <div class="text-secondary opacity-50"><i class="fa-solid fa-calendar fa-2x"></i></div>
         </div>
       </div>
     </div>
@@ -105,14 +105,14 @@
       <%= hidden_field_tag :dir, params[:dir] %>
       <div class="col-12 col-md-5">
         <div class="input-group input-group-sm">
-          <span class="input-group-text"><i class="fa fa-search"></i></span>
+          <span class="input-group-text"><i class="fa-solid fa-search"></i></span>
           <%= text_field_tag :q, @q, class: "form-control", placeholder: "Buscar por ID, proveedor o notas…", aria: { label: "Buscar órdenes de compra" } %>
           <% if @q.present? %>
             <%= link_to admin_purchase_orders_path(status: @status_filter), class: "btn btn-outline-secondary", title: "Limpiar búsqueda" do %>
-              <i class="fa fa-times"></i>
+              <i class="fa-solid fa-xmark"></i>
             <% end %>
           <% end %>
-          <button class="btn btn-primary" type="submit" title="Buscar"><i class="fa fa-search"></i></button>
+          <button class="btn btn-primary" type="submit" title="Buscar"><i class="fa-solid fa-search"></i></button>
         </div>
       </div>
       <div class="col-12 col-md-7">
@@ -120,19 +120,19 @@
           <% current_status = @status_filter.presence || "all" %>
           <div class="btn-group btn-group-sm" role="group" aria-label="Filtro de status">
             <%= button_tag name: :status, value: "all", class: "btn btn-outline-secondary #{current_status == 'all' ? 'active' : ''}", title: "Todos" do %>
-              <i class="fa fa-list"></i> Todos
+              <i class="fa-solid fa-list"></i> Todos
             <% end %>
             <%= button_tag name: :status, value: "Pending", class: "btn btn-outline-warning #{current_status == 'Pending' ? 'active' : ''}", title: "Pendientes" do %>
-              <i class="fa fa-clock"></i> Pendiente
+              <i class="fa-solid fa-clock"></i> Pendiente
             <% end %>
             <%= button_tag name: :status, value: "In Transit", class: "btn btn-outline-primary #{current_status == 'In Transit' ? 'active' : ''}", title: "En tránsito" do %>
-              <i class="fa fa-shipping-fast"></i> En Tránsito
+              <i class="fa-solid fa-truck-fast"></i> En Tránsito
             <% end %>
             <%= button_tag name: :status, value: "Delivered", class: "btn btn-outline-success #{current_status == 'Delivered' ? 'active' : ''}", title: "Entregados" do %>
-              <i class="fa fa-check-circle"></i> Entregado
+              <i class="fa-solid fa-circle-check"></i> Entregado
             <% end %>
             <%= button_tag name: :status, value: "Canceled", class: "btn btn-outline-danger #{current_status == 'Canceled' ? 'active' : ''}", title: "Cancelados" do %>
-              <i class="fa fa-times-circle"></i> Cancelado
+              <i class="fa-solid fa-circle-xmark"></i> Cancelado
             <% end %>
           </div>
         </div>
@@ -148,18 +148,18 @@
     <span class="text-muted small">Filtros activos:</span>
     <% if @q.present? %>
       <%= link_to admin_purchase_orders_path(status: @status_filter), class: "badge text-bg-secondary text-decoration-none" do %>
-        <i class="fa fa-search"></i> "<%= @q %>" <i class="fa fa-times ms-1"></i>
+        <i class="fa-solid fa-search"></i> "<%= @q %>" <i class="fa-solid fa-xmark ms-1"></i>
       <% end %>
     <% end %>
     <% if @status_filter.present? && @status_filter != 'all' %>
       <% status_labels = { 'Pending' => 'Pendiente', 'In Transit' => 'En Tránsito', 'Delivered' => 'Entregado', 'Canceled' => 'Cancelado' } %>
       <% status_colors = { 'Pending' => 'warning', 'In Transit' => 'primary', 'Delivered' => 'success', 'Canceled' => 'danger' } %>
       <%= link_to admin_purchase_orders_path(q: @q, status: 'all'), class: "badge text-bg-#{status_colors[@status_filter]} text-decoration-none" do %>
-        <i class="fa fa-filter"></i> <%= status_labels[@status_filter] %> <i class="fa fa-times ms-1"></i>
+        <i class="fa-solid fa-filter"></i> <%= status_labels[@status_filter] %> <i class="fa-solid fa-xmark ms-1"></i>
       <% end %>
     <% end %>
     <%= link_to admin_purchase_orders_path, class: "btn btn-sm btn-outline-danger" do %>
-      <i class="fa fa-times"></i> Limpiar todo
+      <i class="fa-solid fa-xmark"></i> Limpiar todo
     <% end %>
   </div>
 <% end %>
@@ -204,11 +204,11 @@
             <span class="fw-medium">#<%= po.id %></span>
             <% if is_overdue %>
               <span class="badge text-bg-danger ms-1" title="Retrasada <%= days_until_expected.abs %> días">
-                <i class="fa fa-exclamation-triangle"></i>
+                <i class="fa-solid fa-triangle-exclamation"></i>
               </span>
             <% elsif is_near_due %>
               <span class="badge text-bg-warning ms-1" title="Próxima en <%= days_until_expected %> días">
-                <i class="fa fa-clock"></i>
+                <i class="fa-solid fa-clock"></i>
               </span>
             <% end %>
           </td>
@@ -229,9 +229,9 @@
           <%# Fechas combinadas %>
           <td>
             <div class="small">
-              <div><i class="fa fa-calendar text-muted me-1"></i><%= l(po.order_date, format: :short) %></div>
+              <div><i class="fa-solid fa-calendar text-muted me-1"></i><%= l(po.order_date, format: :short) %></div>
               <div class="<%= 'text-danger fw-bold' if is_overdue %><%= 'text-warning' if is_near_due && !is_overdue %>">
-                <i class="fa fa-truck text-muted me-1"></i>
+                <i class="fa-solid fa-truck text-muted me-1"></i>
                 <%= l(po.expected_delivery_date, format: :short) if po.expected_delivery_date %>
                 <% if is_overdue %>
                   <span class="ms-1">(hace <%= days_until_expected.abs %>d)</span>
@@ -249,10 +249,10 @@
               status_labels = { 'Pending' => 'Pendiente', 'In Transit' => 'En Tránsito', 'Delivered' => 'Entregado', 'Canceled' => 'Cancelado' }
             %>
             <span class="badge <%= status_badge_class(po.status) %>">
-              <i class="fa fa-<%= status_icons[po.status] %> me-1"></i><%= status_labels[po.status] %>
+              <i class="fa-solid fa-<%= status_icons[po.status] %> me-1"></i><%= status_labels[po.status] %>
             </span>
             <% if po.costs_distributed_at.present? %>
-              <span class="badge text-bg-info ms-1" title="Costos distribuidos"><i class="fa fa-check"></i></span>
+              <span class="badge text-bg-info ms-1" title="Costos distribuidos"><i class="fa-solid fa-check"></i></span>
             <% end %>
           </td>
 
@@ -273,46 +273,46 @@
           <td class="text-end">
             <div class="btn-group btn-group-sm dropdown-hover" role="group">
               <%= link_to admin_purchase_order_path(po), class: "btn btn-outline-primary", title: "Ver detalle" do %>
-                <i class="fa fa-eye"></i>
+                <i class="fa-solid fa-eye"></i>
               <% end %>
               <button type="button" class="btn btn-outline-secondary dropdown-toggle" aria-expanded="false">
-                <i class="fa fa-ellipsis-v"></i>
+                <i class="fa-solid fa-ellipsis-vertical"></i>
               </button>
               <ul class="dropdown-menu dropdown-menu-end shadow-sm">
                 <li>
                   <%= link_to admin_purchase_order_path(po), class: "dropdown-item" do %>
-                    <i class="fa fa-eye me-2 text-muted"></i>Ver detalle
+                    <i class="fa-solid fa-eye me-2 text-muted"></i>Ver detalle
                   <% end %>
                 </li>
                 <li>
                   <%= link_to edit_admin_purchase_order_path(po), class: "dropdown-item" do %>
-                    <i class="fa fa-edit me-2 text-muted"></i>Editar
+                    <i class="fa-solid fa-pen-to-square me-2 text-muted"></i>Editar
                   <% end %>
                 </li>
                 <li>
                   <%= link_to summary_admin_purchase_order_path(po), class: "dropdown-item" do %>
-                    <i class="fa fa-file-alt me-2 text-muted"></i>Vista compacta
+                    <i class="fa-solid fa-file-lines me-2 text-muted"></i>Vista compacta
                   <% end %>
                 </li>
                 <% if po.status == 'In Transit' || po.status == 'Pending' %>
                   <li><hr class="dropdown-divider"></li>
                   <li>
                     <%= button_to confirm_receipt_admin_purchase_order_path(po), method: :patch, class: "dropdown-item text-success", form: { data: { controller: 'confirm', action: 'submit->confirm#ask', confirm_title: 'Confirmar recepción', confirm_message: 'Se registrará la recepción completa de esta orden y el inventario quedará disponible. ¿Deseas continuar?', confirm_confirm_label: 'Confirmar recepción' } } do %>
-                      <i class="fa fa-check-circle me-2"></i>Confirmar recepción
+                      <i class="fa-solid fa-circle-check me-2"></i>Confirmar recepción
                     <% end %>
                   </li>
                 <% end %>
                 <% if po.user&.email.present? %>
                   <li>
                     <a href="mailto:<%= po.user.email %>?subject=Orden de Compra %23<%= po.id %>" class="dropdown-item">
-                      <i class="fa fa-envelope me-2 text-muted"></i>Contactar proveedor
+                      <i class="fa-solid fa-envelope me-2 text-muted"></i>Contactar proveedor
                     </a>
                   </li>
                 <% end %>
                 <li><hr class="dropdown-divider"></li>
                 <li>
                   <%= button_to admin_purchase_order_path(po), method: :delete, class: "dropdown-item text-danger", form: { data: { controller: 'confirm', action: 'submit->confirm#ask', confirm_title: 'Eliminar orden de compra', confirm_message: 'Se eliminará esta orden de compra del sistema. ¿Deseas continuar?', confirm_confirm_label: 'Eliminar orden' } } do %>
-                    <i class="fa fa-trash me-2"></i>Eliminar
+                    <i class="fa-solid fa-trash me-2"></i>Eliminar
                   <% end %>
                 </li>
               </ul>
@@ -326,11 +326,11 @@
 
 <% if @purchase_orders.empty? %>
   <div class="text-center text-muted py-5">
-    <i class="fa fa-inbox fa-3x opacity-25 mb-3"></i>
+    <i class="fa-solid fa-inbox fa-3x opacity-25 mb-3"></i>
     <h5>No hay órdenes de compra</h5>
     <p class="small">Ajusta los filtros o crea una nueva orden.</p>
     <%= link_to new_admin_purchase_order_path, class: "btn btn-primary btn-sm" do %>
-      <i class="fa fa-plus"></i> Nueva Orden
+      <i class="fa-solid fa-plus"></i> Nueva Orden
     <% end %>
   </div>
 <% end %>
