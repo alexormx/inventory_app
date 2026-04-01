@@ -42,11 +42,11 @@
     <% reserved = inv_counts[[product.id, 'reserved']].to_i %>
 
     <div class="mb-2 small">
-      <span class="badge bg-light text-dark border" title="Comprados"><i class="fa fa-shopping-cart text-primary"></i> <%= purchased %></span>
-      <span class="badge bg-light text-dark border" title="Vendidos"><i class="fa fa-check text-success"></i> <%= sold %></span>
-      <span class="badge bg-success" title="Disponibles"><i class="fa fa-box"></i> <%= stock_on_hand %></span>
+      <span class="badge bg-light text-dark border" title="Comprados"><i class="fa-solid fa-cart-shopping text-primary"></i> <%= purchased %></span>
+      <span class="badge bg-light text-dark border" title="Vendidos"><i class="fa-solid fa-check text-success"></i> <%= sold %></span>
+      <span class="badge bg-success" title="Disponibles"><i class="fa-solid fa-box"></i> <%= stock_on_hand %></span>
       <% if reserved > 0 %>
-        <span class="badge bg-warning text-dark" title="Apartados"><i class="fa fa-bookmark"></i> <%= reserved %></span>
+        <span class="badge bg-warning text-dark" title="Apartados"><i class="fa-solid fa-bookmark"></i> <%= reserved %></span>
       <% end %>
     </div>
 
@@ -67,7 +67,7 @@
           <i class="fa-solid fa-eye"></i>
         <% end %>
         <%= link_to edit_admin_product_path(product), class: "btn btn-sm btn-outline-primary", title: "Editar", data: { turbo_frame: "_top" } do %>
-          <i class="fas fa-edit"></i>
+          <i class="fa-solid fa-pen-to-square"></i>
         <% end %>
         <%= link_to admin_product_path(product),
           data: { controller: 'confirm', action: 'click->confirm#ask', confirm_title: 'Eliminar producto', confirm_message: 'Se eliminará este producto del catálogo administrativo. ¿Deseas continuar?', confirm_confirm_label: 'Eliminar producto', turbo_method: :delete, turbo_frame: "_top" },

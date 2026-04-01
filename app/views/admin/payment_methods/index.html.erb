@@ -1,11 +1,11 @@
 <h2 class="mb-3 d-flex align-items-center gap-2">
-  <i class="fa fa-credit-card"></i> Métodos de Pago
+  <i class="fa-solid fa-credit-card"></i> Métodos de Pago
 </h2>
 
 <div class="d-flex justify-content-between align-items-center mb-3">
   <p class="text-muted mb-0">Configura los métodos de pago disponibles para los clientes.</p>
   <%= link_to new_admin_payment_method_path, class: "btn btn-primary" do %>
-    <i class="fa fa-plus me-1"></i> Nuevo Método
+    <i class="fa-solid fa-plus me-1"></i> Nuevo Método
   <% end %>
 </div>
 
@@ -55,13 +55,13 @@
                 <td class="text-end">
                   <div class="btn-group btn-group-sm">
                     <%= link_to edit_admin_payment_method_path(method), class: "btn btn-outline-primary", title: "Editar" do %>
-                      <i class="fa fa-edit"></i>
+                      <i class="fa-solid fa-pen-to-square"></i>
                     <% end %>
                     <%= button_to toggle_active_admin_payment_method_path(method), method: :patch, class: "btn btn-outline-#{method.active? ? 'warning' : 'success'}", title: method.active? ? 'Desactivar' : 'Activar', form: { data: { turbo_confirm: "El método de pago '#{method.name}' se #{method.active? ? 'desactivará' : 'activará'} para nuevas operaciones. ¿Deseas continuar?", confirm_title: "#{method.active? ? 'Desactivar' : 'Activar'} método de pago", confirm_confirm_label: method.active? ? 'Desactivar' : 'Activar' } } do %>
-                      <i class="fa fa-<%= method.active? ? 'toggle-off' : 'toggle-on' %>"></i>
+                      <i class="fa-solid fa-<%= method.active? ? 'toggle-off' : 'toggle-on' %>"></i>
                     <% end %>
                     <%= button_to admin_payment_method_path(method), method: :delete, class: "btn btn-outline-danger", title: "Eliminar", form: { data: { turbo_confirm: "Se eliminará el método de pago '#{method.name}'. Esta acción no se puede deshacer. ¿Deseas continuar?", confirm_title: 'Eliminar método de pago', confirm_confirm_label: 'Eliminar' } } do %>
-                      <i class="fa fa-trash"></i>
+                      <i class="fa-solid fa-trash"></i>
                     <% end %>
                   </div>
                 </td>
@@ -70,7 +70,7 @@
           <% else %>
             <tr>
               <td colspan="6" class="text-center text-muted py-4">
-                <i class="fa fa-inbox fa-2x mb-2 d-block"></i>
+                <i class="fa-solid fa-inbox fa-2x mb-2 d-block"></i>
                 No hay métodos de pago configurados.
                 <%= link_to "Crear el primero", new_admin_payment_method_path, class: "d-block mt-2" %>
               </td>
@@ -89,6 +89,6 @@
 
 <div class="mt-3">
   <%= link_to admin_settings_path, class: "btn btn-outline-secondary" do %>
-    <i class="fa fa-arrow-left me-1"></i> Volver a Settings
+    <i class="fa-solid fa-arrow-left me-1"></i> Volver a Settings
   <% end %>
 </div>

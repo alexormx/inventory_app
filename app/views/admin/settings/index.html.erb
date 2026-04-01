@@ -1,7 +1,7 @@
 <div class="admin-page-header d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
 	<div>
 		<p class="admin-page-eyebrow mb-1">Configuración central</p>
-		<h2 class="mb-0 d-flex align-items-center gap-2"><i class="fa fa-cog"></i> Ajustes del panel</h2>
+		<h2 class="mb-0 d-flex align-items-center gap-2"><i class="fa-solid fa-gear"></i> Ajustes del panel</h2>
 	</div>
 	<span class="badge admin-page-badge">Controla SEO, impuestos, sincronizaciones y utilidades</span>
 </div>
@@ -12,7 +12,7 @@
 	<div class="col-md-6 col-lg-3 mb-3">
 		<%= link_to admin_shipping_methods_path, class: "card text-decoration-none h-100 border-primary" do %>
 			<div class="card-body text-center">
-				<i class="fa fa-truck fa-2x text-primary mb-2"></i>
+				<i class="fa-solid fa-truck fa-2x text-primary mb-2"></i>
 				<h6 class="card-title mb-1">Métodos de Envío</h6>
 				<p class="card-text small text-muted mb-0"><%= ShippingMethod.active.count %> activos</p>
 			</div>
@@ -21,7 +21,7 @@
 	<div class="col-md-6 col-lg-3 mb-3">
 		<%= link_to admin_payment_methods_path, class: "card text-decoration-none h-100 border-success" do %>
 			<div class="card-body text-center">
-				<i class="fa fa-credit-card fa-2x text-success mb-2"></i>
+				<i class="fa-solid fa-credit-card fa-2x text-success mb-2"></i>
 				<h6 class="card-title mb-1">Métodos de Pago</h6>
 				<p class="card-text small text-muted mb-0"><%= PaymentMethod.active.count %> activos</p>
 			</div>
@@ -30,7 +30,7 @@
 	<div class="col-md-6 col-lg-3 mb-3">
 		<%= link_to admin_system_variables_path, class: "card text-decoration-none h-100 border-info" do %>
 			<div class="card-body text-center">
-				<i class="fa fa-database fa-2x text-info mb-2"></i>
+				<i class="fa-solid fa-database fa-2x text-info mb-2"></i>
 				<h6 class="card-title mb-1">Variables del Sistema</h6>
 				<p class="card-text small text-muted mb-0">Configuración avanzada</p>
 			</div>
@@ -39,7 +39,7 @@
 	<div class="col-md-6 col-lg-3 mb-3">
 		<%= link_to admin_inventory_audit_path, class: "card text-decoration-none h-100 border-warning" do %>
 			<div class="card-body text-center">
-				<i class="fa fa-warehouse fa-2x text-warning mb-2"></i>
+				<i class="fa-solid fa-warehouse fa-2x text-warning mb-2"></i>
 				<h6 class="card-title mb-1">Auditoría Inventario</h6>
 				<p class="card-text small text-muted mb-0">Reconciliación PO ↔ Inv</p>
 			</div>
@@ -50,7 +50,7 @@
 <!-- SEO Configuration -->
 <div class="card mb-4">
 	<div class="card-header d-flex align-items-center gap-2">
-		<i class="fa fa-search"></i>
+		<i class="fa-solid fa-magnifying-glass"></i>
 		<span>Configuración SEO</span>
 	</div>
 	<div class="card-body">
@@ -60,7 +60,7 @@
 		<% seo_keywords = SiteSetting.get('seo_keywords', 'autos a escala, hot wheels, greenlight, coleccionables, tienda de coleccionables, autos de colección, diecast, modelos a escala, majorette, jada toys') %>
 
 		<div class="alert alert-info small mb-3">
-			<i class="fa fa-info-circle me-1"></i>
+			<i class="fa-solid fa-circle-info me-1"></i>
 			<strong>SEO (Optimización para motores de búsqueda)</strong>: Esta información ayuda a que tu tienda aparezca en buscadores como Google cuando los usuarios busquen términos relacionados con tus productos.
 		</div>
 
@@ -91,7 +91,7 @@
 			</div>
 
 			<div class="d-flex justify-content-between align-items-center">
-				<button class="btn btn-primary" name="save_seo" value="1"><i class="fa fa-save me-1"></i> Guardar configuración SEO</button>
+				<button class="btn btn-primary" name="save_seo" value="1"><i class="fa-solid fa-floppy-disk me-1"></i> Guardar configuración SEO</button>
 				<small class="text-muted">Los cambios se reflejarán inmediatamente en el sitio</small>
 			</div>
 		<% end %>
@@ -127,7 +127,7 @@
 
 <div class="card mb-4">
 		<div class="card-header d-flex align-items-center gap-2">
-			<i class="fa fa-sync"></i>
+			<i class="fa-solid fa-arrows-rotate"></i>
 			<span>Sincronización de estados de inventario</span>
 		</div>
 	<div class="card-body">
@@ -149,7 +149,7 @@
 
 <div class="card mb-4">
 	<div class="card-header d-flex align-items-center gap-2">
-		<i class="fa fa-link"></i>
+		<i class="fa-solid fa-link"></i>
 		<span>Backfill vínculos de SO Line en Inventario</span>
 	</div>
 	<div class="card-body">
@@ -172,7 +172,7 @@
 
 <div class="card mb-4">
 	<div class="card-header d-flex align-items-center gap-2">
-		<i class="fa fa-calculator"></i>
+		<i class="fa-solid fa-calculator"></i>
 		<span>Backfill de totales en Sale Orders</span>
 	</div>
 	<div class="card-body">
@@ -194,7 +194,7 @@
 
 <div class="card mb-4">
 	<div class="card-header d-flex align-items-center gap-2">
-		<i class="fa fa-search"></i>
+		<i class="fa-solid fa-magnifying-glass"></i>
 		<span>Auditoría de SO Delivered con Adeudo</span>
 	</div>
 	<div class="card-body">
@@ -205,7 +205,7 @@
 
 <div class="card mb-4">
 	<div class="card-header d-flex align-items-center gap-2">
-		<i class="fa fa-percentage"></i>
+		<i class="fa-solid fa-percent"></i>
 		<span>Configuración de Impuestos</span>
 	</div>
 	<div class="card-body">
@@ -233,7 +233,7 @@
 
 <div class="card mb-4">
 	<div class="card-header d-flex align-items-center gap-2">
-		<i class="fa fa-globe"></i>
+		<i class="fa-solid fa-globe"></i>
 		<span>Interfaz (Idioma / Tema)</span>
 	</div>
 	<div class="card-body">
@@ -264,7 +264,7 @@
 
 <div class="card mb-4">
 	<div class="card-header d-flex align-items-center gap-2">
-		<i class="fa fa-clock"></i>
+		<i class="fa-solid fa-clock"></i>
 		<span>Tiempos estimados (Preorden / Sobre pedido)</span>
 	</div>
 	<div class="card-body">
@@ -289,7 +289,7 @@
 
 <div class="card mb-4">
 	<div class="card-header d-flex align-items-center gap-2">
-		<i class="fa fa-ruler-combined"></i>
+		<i class="fa-solid fa-ruler-combined"></i>
 		<span>Reset Dimensiones/Peso de Productos</span>
 	</div>
 	<div class="card-body">
@@ -313,7 +313,7 @@
 
 <div class="card mb-4">
 	<div class="card-header d-flex align-items-center gap-2">
-		<i class="fa fa-cubes"></i>
+		<i class="fa-solid fa-cubes"></i>
 		<span>Recalcular Alpha / Compose Costs (PO)</span>
 	</div>
 	<div class="card-body">
@@ -336,7 +336,7 @@
 
 <div class="card mb-4">
 	<div class="card-header d-flex align-items-center gap-2">
-		<i class="fa fa-tags"></i>
+		<i class="fa-solid fa-tags"></i>
 		<span>Marcar POs con Costos Distribuidos</span>
 	</div>
 	<div class="card-body">
@@ -374,7 +374,7 @@
 
 <div class="card mb-4">
 	<div class="card-header d-flex align-items-center gap-2">
-		<i class="fa fa-warehouse"></i>
+		<i class="fa-solid fa-warehouse"></i>
 		<span>Auditoría de Inventario (SO ↔ Inventory)</span>
 	</div>
 	<div class="card-body">
@@ -399,7 +399,7 @@
 
 <div class="card">
 	<div class="card-header d-flex align-items-center gap-2">
-		<i class="fa fa-list"></i>
+		<i class="fa-solid fa-list"></i>
 		<span>Ejecuciones recientes (todas)</span>
 	</div>
 	<div class="card-body p-0">

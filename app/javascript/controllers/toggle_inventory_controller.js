@@ -56,11 +56,11 @@ export default class extends Controller {
     const countBadge = this.countValue > 0 ? `<span class="badge bg-primary text-white ms-1">${this.countValue}</span>` : ""
 
     if (this.expanded) {
-      btn.innerHTML = `<i class="fa fa-eye-slash me-1"></i> Ocultar ${countBadge}`
+      btn.innerHTML = `<i class="fa-solid fa-eye-slash me-1"></i> Ocultar ${countBadge}`
       btn.classList.remove("btn-outline-primary")
       btn.classList.add("btn-outline-secondary")
     } else {
-      btn.innerHTML = `<i class="fa fa-eye me-1"></i> Ver piezas ${countBadge}`
+      btn.innerHTML = `<i class="fa-solid fa-eye me-1"></i> Ver piezas ${countBadge}`
       btn.classList.remove("btn-outline-secondary")
       btn.classList.add("btn-outline-primary")
     }

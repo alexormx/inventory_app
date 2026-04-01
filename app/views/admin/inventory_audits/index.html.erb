@@ -4,7 +4,7 @@
 <%# Auto-asignación de inventario a Sale Orders %>
 <div class="card mb-3">
   <div class="card-header bg-success text-white">
-    <i class="bi bi-arrow-repeat"></i> Auto-Asignación de Inventario a Sale Orders
+    <i class="fa-solid fa-arrows-rotate"></i> Auto-Asignación de Inventario a Sale Orders
   </div>
   <div class="card-body">
     <p class="text-muted small">
@@ -47,7 +47,7 @@
       </details>
     <% else %>
       <div class="alert alert-success mb-3">
-        <i class="bi bi-check-circle"></i> Todas las líneas de Sale Orders activas tienen inventario asignado.
+        <i class="fa-solid fa-circle-check"></i> Todas las líneas de Sale Orders activas tienen inventario asignado.
       </div>
     <% end %>
 
@@ -68,7 +68,7 @@
 <% if @assignment_logs.present? %>
   <div class="card mb-3">
     <div class="card-header">
-      <i class="bi bi-journal-text"></i> Log de Asignaciones Recientes
+      <i class="fa-solid fa-book"></i> Log de Asignaciones Recientes
     </div>
     <div class="card-body p-0">
       <table class="table table-sm table-striped mb-0">

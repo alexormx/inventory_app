@@ -22,28 +22,28 @@
   <%# Header con navegación %>
   <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
     <h2 class="mb-0 d-flex align-items-center gap-2 flex-wrap">
-      <i class="fa fa-shopping-cart text-primary"></i> Orden de Venta #<%= @sale_order.id %>
+      <i class="fa-solid fa-cart-shopping text-primary"></i> Orden de Venta #<%= @sale_order.id %>
       <turbo-frame id="sale_order_status">
         <span class="badge <%= status_badge_class(@sale_order.status) %> d-inline-flex align-items-center gap-1">
-          <i class="fa fa-<%= status_icons[@sale_order.status] %>"></i>
+          <i class="fa-solid fa-<%= status_icons[@sale_order.status] %>"></i>
           <%= status_labels[@sale_order.status] %>
         </span>
       </turbo-frame>
       <% if is_fully_paid %>
-        <span class="badge bg-success"><i class="fa fa-check me-1"></i>Pagada</span>
+        <span class="badge bg-success"><i class="fa-solid fa-check me-1"></i>Pagada</span>
       <% elsif is_overdue %>
-        <span class="badge bg-danger"><i class="fa fa-exclamation-triangle me-1"></i>Vencida <%= days_overdue %>d</span>
+        <span class="badge bg-danger"><i class="fa-solid fa-triangle-exclamation me-1"></i>Vencida <%= days_overdue %>d</span>
       <% end %>
     </h2>
     <div class="d-flex gap-2 flex-wrap">
       <%= link_to admin_sale_orders_path, class: "btn btn-outline-secondary btn-sm" do %>
-        <i class="fa fa-arrow-left"></i> Volver
+        <i class="fa-solid fa-arrow-left"></i> Volver
       <% end %>
       <%= link_to summary_admin_sale_order_path(@sale_order), class: "btn btn-outline-info btn-sm" do %>
-        <i class="fa fa-file-alt"></i> Vista Compacta
+        <i class="fa-solid fa-file-lines"></i> Vista Compacta
       <% end %>
       <%= link_to edit_admin_sale_order_path(@sale_order), class: "btn btn-primary btn-sm" do %>
-        <i class="fa fa-edit"></i> Editar
+        <i class="fa-solid fa-pen-to-square"></i> Editar
       <% end %>
       <% unless @sale_order.status == "Canceled" %>
         <%= button_to cancel_admin_sale_order_path(@sale_order),
@@ -56,7 +56,7 @@
                         confirm_message: 'Se liberarán los inventarios reservados o vendidos asociados y la orden quedará marcada como cancelada. ¿Deseas continuar?',
                         confirm_confirm_label: 'Cancelar orden'
                       } do %>
-          <i class="fa fa-times"></i> Cancelar
+          <i class="fa-solid fa-xmark"></i> Cancelar
         <% end %>
       <% end %>
     </div>
@@ -84,11 +84,11 @@
           <div class="text-center position-relative" style="z-index: 1;">
             <div class="rounded-circle d-inline-flex align-items-center justify-content-center <%= is_canceled ? 'bg-secondary' : (is_completed ? 'bg-success' : 'bg-light border') %> text-white" style="width: 40px; height: 40px;">
               <% if is_canceled && idx == 0 %>
-                <i class="fa fa-times <%= is_canceled ? 'text-white' : '' %>"></i>
+                <i class="fa-solid fa-xmark <%= is_canceled ? 'text-white' : '' %>"></i>
               <% elsif is_completed %>
-                <i class="fa fa-check"></i>
+                <i class="fa-solid fa-check"></i>
               <% else %>
-                <i class="fa fa-<%= status_icons[st] %> text-muted"></i>
+                <i class="fa-solid fa-<%= status_icons[st] %> text-muted"></i>
               <% end %>
             </div>
             <div class="small mt-1 <%= is_current ? 'fw-bold text-primary' : 'text-muted' %>"><%= status_labels[st] %></div>
@@ -102,25 +102,25 @@
           <% in_transit_count = @sale_order.inventories.where(status: %i[pre_reserved pre_sold in_transit]).count %>
           <% if in_transit_count > 0 %>
             <span class="btn btn-primary disabled" data-bs-toggle="tooltip" title="<%= in_transit_count %> pieza(s) aún en tránsito del proveedor">
-              <i class="fa fa-box-open me-1"></i> 📦 Preparar Paquete <i class="fa fa-clock ms-1"></i>
+              <i class="fa-solid fa-box-open me-1"></i> 📦 Preparar Paquete <i class="fa-solid fa-clock ms-1"></i>
             </span>
           <% else %>
             <%= link_to prepare_admin_sale_order_path(@sale_order), class: "btn btn-primary" do %>
-              <i class="fa fa-box-open me-1"></i> 📦 Preparar Paquete
+              <i class="fa-solid fa-box-open me-1"></i> 📦 Preparar Paquete
             <% end %>
           <% end %>
         <% elsif @sale_order.status == 'Preparing' %>
           <%= link_to prepare_admin_sale_order_path(@sale_order), class: "btn btn-outline-primary me-2" do %>
-            <i class="fa fa-box-open me-1"></i> Ver Picking List
+            <i class="fa-solid fa-box-open me-1"></i> Ver Picking List
           <% end %>
         <% elsif @sale_order.status == 'In Transit' %>
           <%= button_to deliver_admin_sale_order_path(@sale_order), method: :post, class: "btn btn-success", form: { data: { turbo_confirm: 'Se marcará esta orden como entregada al cliente. ¿Deseas continuar?', confirm_title: 'Marcar orden como entregada', confirm_confirm_label: 'Marcar como entregada' } } do %>
-            <i class="fa fa-check-circle me-1"></i> ✅ Marcar como Entregada
+            <i class="fa-solid fa-circle-check me-1"></i> ✅ Marcar como Entregada
           <% end %>
         <% end %>
 
         <% if @sale_order.status == 'Canceled' %>
-          <span class="badge bg-danger"><i class="fa fa-times-circle me-1"></i>Orden Cancelada</span>
+          <span class="badge bg-danger"><i class="fa-solid fa-circle-xmark me-1"></i>Orden Cancelada</span>
         <% end %>
       </div>
     </div>
@@ -163,7 +163,7 @@
           <div class="card-body text-center py-3">
             <div class="text-muted small text-uppercase">Saldo</div>
             <% if is_fully_paid %>
-              <div class="h4 mb-0 text-success"><i class="fa fa-check-circle"></i> Pagada</div>
+              <div class="h4 mb-0 text-success"><i class="fa-solid fa-circle-check"></i> Pagada</div>
             <% else %>
               <div class="h4 mb-0 text-danger"><%= number_to_currency(balance, unit: '$', precision: 2) %></div>
               <div class="small text-muted">de <%= number_to_currency(@sale_order.total_order_value, unit: '$', precision: 0) %></div>
@@ -179,7 +179,7 @@
     <div class="col-lg-6">
       <div class="card border-0 shadow-sm h-100">
         <div class="card-header bg-transparent border-0 pb-0">
-          <h6 class="mb-0"><i class="fa fa-user text-muted me-2"></i>Cliente</h6>
+          <h6 class="mb-0"><i class="fa-solid fa-user text-muted me-2"></i>Cliente</h6>
         </div>
         <div class="card-body">
           <div class="d-flex align-items-center gap-3">
@@ -191,13 +191,13 @@
               <% if @sale_order.user&.email.present? %>
                 <div class="small text-muted">
                   <a href="mailto:<%= @sale_order.user.email %>" class="text-decoration-none">
-                    <i class="fa fa-envelope me-1"></i><%= @sale_order.user.email %>
+                    <i class="fa-solid fa-envelope me-1"></i><%= @sale_order.user.email %>
                   </a>
                 </div>
               <% end %>
               <% if @sale_order.user&.phone.present? %>
                 <div class="small text-muted">
-                  <i class="fa fa-phone me-1"></i><%= @sale_order.user.phone %>
+                  <i class="fa-solid fa-phone me-1"></i><%= @sale_order.user.phone %>
                 </div>
               <% end %>
             </div>
@@ -208,7 +208,7 @@
     <div class="col-lg-6">
       <div class="card border-0 shadow-sm h-100">
         <div class="card-header bg-transparent border-0 pb-0">
-          <h6 class="mb-0"><i class="fa fa-calendar text-muted me-2"></i>Fechas</h6>
+          <h6 class="mb-0"><i class="fa-solid fa-calendar text-muted me-2"></i>Fechas</h6>
         </div>
         <div class="card-body">
           <div class="row g-2">
@@ -241,7 +241,7 @@
   <% if has_credit %>
     <div class="alert <%= is_overdue ? 'alert-danger' : 'alert-warning' %> d-flex justify-content-between align-items-center py-2 mb-4">
       <div>
-        <i class="fa fa-credit-card me-2"></i>
+        <i class="fa-solid fa-credit-card me-2"></i>
         <strong>Venta a Crédito:</strong>
         <span class="badge bg-warning text-dark ms-1"><%= credit_terms.titleize %></span>
         <% if @sale_order.due_date.present? %>
@@ -249,7 +249,7 @@
         <% end %>
       </div>
       <% if is_overdue %>
-        <span class="badge bg-danger"><i class="fa fa-exclamation-triangle me-1"></i>Vencida hace <%= days_overdue %> días</span>
+        <span class="badge bg-danger"><i class="fa-solid fa-triangle-exclamation me-1"></i>Vencida hace <%= days_overdue %> días</span>
       <% end %>
     </div>
   <% end %>
@@ -257,7 +257,7 @@
   <%# Resumen financiero %>
   <div class="card border-0 shadow-sm mb-4">
     <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
-      <h6 class="mb-0"><i class="fa fa-calculator text-muted me-2"></i>Resumen Financiero</h6>
+      <h6 class="mb-0"><i class="fa-solid fa-calculator text-muted me-2"></i>Resumen Financiero</h6>
     </div>
     <div class="card-body">
       <div class="row g-3 text-center">
@@ -301,11 +301,11 @@
     <%= link_to new_admin_sale_order_payment_path(@sale_order),
         data: { turbo_frame: "modal_frame" },
         class: "btn btn-success" do %>
-      <i class="fa fa-credit-card me-1"></i> Registrar Pago
+      <i class="fa-solid fa-credit-card me-1"></i> Registrar Pago
     <% end %>
     <% if @sale_order.user&.email.present? %>
       <a href="mailto:<%= @sale_order.user.email %>?subject=Orden %23<%= @sale_order.id %>" class="btn btn-outline-secondary">
-        <i class="fa fa-envelope me-1"></i> Contactar Cliente
+        <i class="fa-solid fa-envelope me-1"></i> Contactar Cliente
       </a>
     <% end %>
   </div>
@@ -325,7 +325,7 @@
     <% else %>
       <div class="card border-0 shadow-sm mb-4">
         <div class="card-body text-center py-4">
-          <i class="fa fa-shipping-fast fa-2x text-muted mb-2"></i>
+          <i class="fa-solid fa-truck-fast fa-2x text-muted mb-2"></i>
           <p class="text-muted mb-0">No hay envío asignado</p>
         </div>
       </div>
@@ -340,7 +340,7 @@
   <% if @sale_order.notes.present? %>
     <div class="card border-0 shadow-sm mb-4">
       <div class="card-header bg-transparent border-0">
-        <h6 class="mb-0"><i class="fa fa-sticky-note text-muted me-2"></i>Notas</h6>
+        <h6 class="mb-0"><i class="fa-solid fa-note-sticky text-muted me-2"></i>Notas</h6>
       </div>
       <div class="card-body">
         <% @sale_order.notes.to_s.split("\n").each do |line| %>
@@ -352,7 +352,7 @@
 
   <%# Metadata %>
   <div class="text-muted small">
-    <i class="fa fa-clock me-1"></i>
+    <i class="fa-solid fa-clock me-1"></i>
     Creada: <%= @sale_order.created_at.strftime("%d/%m/%Y %H:%M") %> |
     Actualizada: <%= @sale_order.updated_at.strftime("%d/%m/%Y %H:%M") %>
   </div>

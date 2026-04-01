@@ -20,10 +20,10 @@
       </div>
       <div class="btn-group">
         <%= link_to new_admin_inventory_location_path(parent_id: @inventory_location.id), class: 'btn btn-success' do %>
-          <i class="fas fa-plus"></i> Agregar Sub-ubicación
+          <i class="fa-solid fa-plus"></i> Agregar Sub-ubicación
         <% end %>
         <%= link_to edit_admin_inventory_location_path(@inventory_location), class: 'btn btn-primary' do %>
-          <i class="fas fa-pencil-alt"></i> Editar
+          <i class="fa-solid fa-pen-to-square"></i> Editar
         <% end %>
       </div>
     </div>
@@ -99,7 +99,7 @@
 
       <% if @children.any? %>
         <hr>
-        <h6 class="text-muted"><i class="fas fa-sitemap"></i> Sub-ubicaciones (<%= @children.count %>)</h6>
+        <h6 class="text-muted"><i class="fa-solid fa-sitemap"></i> Sub-ubicaciones (<%= @children.count %>)</h6>
         <table class="table table-striped table-hover">
           <thead>
             <tr>
@@ -125,7 +125,7 @@
                 <td><%= child.children.count %></td>
                 <td>
                   <% if child_inv_count > 0 %>
-                    <span class="badge bg-info"><i class="fas fa-box"></i> <%= child_inv_count %></span>
+                    <span class="badge bg-info"><i class="fa-solid fa-box"></i> <%= child_inv_count %></span>
                   <% else %>
                     <span class="text-muted">0</span>
                   <% end %>
@@ -139,7 +139,7 @@
                 </td>
                 <td class="text-end">
                   <%= link_to edit_admin_inventory_location_path(child), class: 'btn btn-sm btn-outline-primary' do %>
-                    <i class="fas fa-pencil-alt"></i>
+                    <i class="fa-solid fa-pen-to-square"></i>
                   <% end %>
                 </td>
               </tr>
@@ -151,7 +151,7 @@
       <%# Tabla de Inventario en esta ubicación %>
       <hr>
       <h6 class="text-muted">
-        <i class="fas fa-boxes"></i> Inventario en esta Ubicación
+        <i class="fa-solid fa-boxes-stacked"></i> Inventario en esta Ubicación
         <span class="badge bg-secondary"><%= @direct_inventories.size %></span>
       </h6>
 
@@ -212,7 +212,7 @@
         </div>
       <% else %>
         <div class="text-center py-4 text-muted">
-          <i class="fas fa-inbox fa-2x mb-2"></i>
+          <i class="fa-solid fa-inbox fa-2x mb-2"></i>
           <p class="mb-0">No hay inventario directamente en esta ubicación</p>
           <% if @inventories_count > 0 %>
             <small>Hay <%= @inventories_count %> piezas en las sub-ubicaciones</small>

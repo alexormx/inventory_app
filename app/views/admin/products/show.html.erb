@@ -29,26 +29,26 @@
 <%# Header con navegación %>
 <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
   <h2 class="mb-0 d-flex align-items-center gap-2 flex-wrap">
-    <i class="fa fa-box text-primary"></i>
+    <i class="fa-solid fa-box text-primary"></i>
     <span class="text-truncate" style="max-width: 400px;"><%= @product.product_name %></span>
     <span class="badge bg-<%= status_colors[@product.status] %>">
-      <i class="fa fa-<%= status_icons[@product.status] %> me-1"></i><%= status_labels[@product.status] %>
+      <i class="fa-solid fa-<%= status_icons[@product.status] %> me-1"></i><%= status_labels[@product.status] %>
     </span>
     <% if no_stock %>
-      <span class="badge bg-danger"><i class="fa fa-exclamation-triangle me-1"></i>Sin Stock</span>
+      <span class="badge bg-danger"><i class="fa-solid fa-triangle-exclamation me-1"></i>Sin Stock</span>
     <% elsif low_stock %>
-      <span class="badge bg-warning text-dark"><i class="fa fa-exclamation-circle me-1"></i>Stock Bajo</span>
+      <span class="badge bg-warning text-dark"><i class="fa-solid fa-circle-exclamation me-1"></i>Stock Bajo</span>
     <% end %>
   </h2>
   <div class="d-flex gap-2 flex-wrap">
     <%= link_to admin_products_path, class: "btn btn-outline-secondary btn-sm" do %>
-      <i class="fa fa-arrow-left"></i> Volver
+      <i class="fa-solid fa-arrow-left"></i> Volver
     <% end %>
     <%= link_to product_path(@product), class: "btn btn-outline-info btn-sm", target: "_blank" do %>
-      <i class="fa fa-eye"></i> Ver Público
+      <i class="fa-solid fa-eye"></i> Ver Público
     <% end %>
     <%= link_to edit_admin_product_path(@product), class: "btn btn-primary btn-sm" do %>
-      <i class="fa fa-edit"></i> Editar
+      <i class="fa-solid fa-pen-to-square"></i> Editar
     <% end %>
   </div>
 </div>
@@ -65,7 +65,7 @@
             <div class="small text-muted"><%= number_to_currency(available_value, unit: '$', precision: 0) %> valor</div>
           </div>
           <div class="rounded-circle bg-success bg-opacity-10 p-2">
-            <i class="fa fa-check-circle text-success"></i>
+            <i class="fa-solid fa-circle-check text-success"></i>
           </div>
         </div>
       </div>
@@ -81,7 +81,7 @@
             <div class="small text-muted"><%= in_transit_count %> en tránsito</div>
           </div>
           <div class="rounded-circle bg-info bg-opacity-10 p-2">
-            <i class="fa fa-bookmark text-info"></i>
+            <i class="fa-solid fa-bookmark text-info"></i>
           </div>
         </div>
       </div>
@@ -97,7 +97,7 @@
             <div class="small text-muted">Min: <%= number_to_currency(@product.minimum_price, unit: '$', precision: 0) %></div>
           </div>
           <div class="rounded-circle bg-primary bg-opacity-10 p-2">
-            <i class="fa fa-tag text-primary"></i>
+            <i class="fa-solid fa-tag text-primary"></i>
           </div>
         </div>
       </div>
@@ -113,7 +113,7 @@
             <div class="small text-muted">Costo: <%= number_to_currency(@product.average_purchase_cost, unit: '$', precision: 2) %></div>
           </div>
           <div class="rounded-circle bg-<%= margin_percent >= 30 ? 'success' : (margin_percent >= 15 ? 'warning' : 'danger') %> bg-opacity-10 p-2">
-            <i class="fa fa-chart-line text-<%= margin_percent >= 30 ? 'success' : (margin_percent >= 15 ? 'warning' : 'danger') %>"></i>
+            <i class="fa-solid fa-chart-line text-<%= margin_percent >= 30 ? 'success' : (margin_percent >= 15 ? 'warning' : 'danger') %>"></i>
           </div>
         </div>
       </div>
@@ -133,7 +133,7 @@
               style: "object-fit: contain; max-height: 350px;" %>
         <% else %>
           <div class="text-center py-5 bg-light rounded">
-            <i class="fa fa-image fa-3x text-muted mb-2"></i>
+            <i class="fa-solid fa-image fa-3x text-muted mb-2"></i>
             <p class="text-muted mb-0">Sin imagen</p>
           </div>
         <% end %>
@@ -156,7 +156,7 @@
     <%# Info básica card %>
     <div class="card border-0 shadow-sm">
       <div class="card-header bg-transparent border-0 py-3">
-        <h6 class="mb-0 fw-semibold"><i class="fa fa-info-circle text-primary me-2"></i>Información Básica</h6>
+        <h6 class="mb-0 fw-semibold"><i class="fa-solid fa-circle-info text-primary me-2"></i>Información Básica</h6>
       </div>
       <div class="card-body pt-0">
         <div class="d-flex justify-content-between py-2 border-bottom">
@@ -194,10 +194,10 @@
     <% catalog = @product.supplier_catalog_item %>
     <div class="card border-0 shadow-sm mb-4">
       <div class="card-header bg-transparent border-0 py-3 d-flex justify-content-between align-items-center">
-        <h6 class="mb-0 fw-semibold"><i class="fa fa-link text-primary me-2"></i>Catálogo Proveedor</h6>
+        <h6 class="mb-0 fw-semibold"><i class="fa-solid fa-link text-primary me-2"></i>Catálogo Proveedor</h6>
         <% if catalog %>
           <%= link_to review_sync_admin_supplier_catalog_item_path(catalog), class: "btn btn-sm btn-outline-success" do %>
-            <i class="fa fa-arrows-left-right me-1"></i>Revisar sync
+            <i class="fa-solid fa-arrows-left-right me-1"></i>Revisar sync
           <% end %>
         <% end %>
       </div>
@@ -268,10 +268,10 @@
           </div>
         <% else %>
           <div class="text-center py-3">
-            <i class="fa fa-link-slash text-muted fa-2x mb-2"></i>
+            <i class="fa-solid fa-link-slash text-muted fa-2x mb-2"></i>
             <p class="text-muted mb-2">Sin vincular a catálogo de proveedor</p>
             <%= link_to catalog_status_admin_products_path(q: @product.product_name), class: "btn btn-sm btn-outline-primary" do %>
-              <i class="fa fa-search me-1"></i>Buscar en catálogo
+              <i class="fa-solid fa-magnifying-glass me-1"></i>Buscar en catálogo
             <% end %>
           </div>
         <% end %>
@@ -281,17 +281,17 @@
     <%# Card de Descripción / Enriquecimiento IA %>
     <div class="card border-0 shadow-sm mb-4">
       <div class="card-header bg-transparent border-0 py-3 d-flex justify-content-between align-items-center">
-        <h6 class="mb-0 fw-semibold"><i class="fa fa-file-lines text-primary me-2"></i>Descripción</h6>
+        <h6 class="mb-0 fw-semibold"><i class="fa-solid fa-file-lines text-primary me-2"></i>Descripción</h6>
         <% current_draft = @product.current_draft %>
         <% if current_draft&.draft_generated? %>
           <%= link_to admin_product_enrichment_path(current_draft), class: "btn btn-sm btn-outline-primary" do %>
-            <i class="fa fa-eye me-1"></i>Revisar borrador
+            <i class="fa-solid fa-eye me-1"></i>Revisar borrador
           <% end %>
         <% elsif current_draft&.queued? || current_draft&.generating? %>
-          <span class="btn btn-sm btn-outline-secondary disabled"><i class="fa fa-spinner fa-spin me-1"></i>Generando...</span>
+          <span class="btn btn-sm btn-outline-secondary disabled"><i class="fa-solid fa-spinner fa-spin me-1"></i>Generando...</span>
         <% else %>
           <%= button_to generate_admin_product_enrichment_path(@product), method: :post, class: "btn btn-sm btn-primary" do %>
-            <i class="fa fa-wand-magic-sparkles me-1"></i>Generar con IA
+            <i class="fa-solid fa-wand-magic-sparkles me-1"></i>Generar con IA
           <% end %>
         <% end %>
       </div>
@@ -310,9 +310,9 @@
     <%# Inventario detallado %>
     <div class="card border-0 shadow-sm mb-4">
       <div class="card-header bg-transparent border-0 py-3 d-flex justify-content-between align-items-center">
-        <h6 class="mb-0 fw-semibold"><i class="fa fa-cubes text-primary me-2"></i>Inventario Detallado</h6>
+        <h6 class="mb-0 fw-semibold"><i class="fa-solid fa-cubes text-primary me-2"></i>Inventario Detallado</h6>
         <%= link_to admin_inventory_path(q: @product.product_sku), class: "btn btn-sm btn-outline-primary" do %>
-          <i class="fa fa-search me-1"></i>Ver en Inventario
+          <i class="fa-solid fa-magnifying-glass me-1"></i>Ver en Inventario
         <% end %>
       </div>
       <div class="card-body pt-0">
@@ -375,7 +375,7 @@
                 <%= @product.reorder_point %> unidades
               </span>
               <% if available_count <= @product.reorder_point %>
-                <span class="text-danger small"><i class="fa fa-exclamation-triangle me-1"></i>¡Reabastecer!</span>
+                <span class="text-danger small"><i class="fa-solid fa-triangle-exclamation me-1"></i>¡Reabastecer!</span>
               <% end %>
             </div>
           </div>
@@ -388,7 +388,7 @@
       <div class="col-md-6">
         <div class="card border-0 shadow-sm h-100">
           <div class="card-header bg-transparent border-0 py-3">
-            <h6 class="mb-0 fw-semibold"><i class="fa fa-dollar-sign text-primary me-2"></i>Precios y Descuentos</h6>
+            <h6 class="mb-0 fw-semibold"><i class="fa-solid fa-dollar-sign text-primary me-2"></i>Precios y Descuentos</h6>
           </div>
           <div class="card-body pt-0">
             <div class="d-flex justify-content-between py-2 border-bottom">
@@ -415,7 +415,7 @@
       <div class="col-md-6">
         <div class="card border-0 shadow-sm h-100">
           <div class="card-header bg-transparent border-0 py-3">
-            <h6 class="mb-0 fw-semibold"><i class="fa fa-ruler-combined text-primary me-2"></i>Dimensiones</h6>
+            <h6 class="mb-0 fw-semibold"><i class="fa-solid fa-ruler-combined text-primary me-2"></i>Dimensiones</h6>
           </div>
           <div class="card-body pt-0">
             <div class="d-flex justify-content-between py-2 border-bottom">
@@ -440,7 +440,7 @@
       <div class="col-md-6">
         <div class="card border-0 shadow-sm h-100">
           <div class="card-header bg-transparent border-0 py-3 d-flex justify-content-between align-items-center">
-            <h6 class="mb-0 fw-semibold"><i class="fa fa-truck text-primary me-2"></i>Historial de Compras</h6>
+            <h6 class="mb-0 fw-semibold"><i class="fa-solid fa-truck text-primary me-2"></i>Historial de Compras</h6>
             <span class="badge bg-primary rounded-pill"><%= @product.total_purchase_order %> OC</span>
           </div>
           <div class="card-body pt-0">
@@ -471,7 +471,7 @@
       <div class="col-md-6">
         <div class="card border-0 shadow-sm h-100">
           <div class="card-header bg-transparent border-0 py-3 d-flex justify-content-between align-items-center">
-            <h6 class="mb-0 fw-semibold"><i class="fa fa-shopping-cart text-primary me-2"></i>Historial de Ventas</h6>
+            <h6 class="mb-0 fw-semibold"><i class="fa-solid fa-cart-shopping text-primary me-2"></i>Historial de Ventas</h6>
             <span class="badge bg-success rounded-pill"><%= @product.total_sales_order %> OV</span>
           </div>
           <div class="card-body pt-0">
@@ -503,7 +503,7 @@
     <%# Resumen financiero %>
     <div class="card border-0 shadow-sm mt-4">
       <div class="card-header bg-transparent border-0 py-3">
-        <h6 class="mb-0 fw-semibold"><i class="fa fa-chart-pie text-primary me-2"></i>Resumen Financiero</h6>
+        <h6 class="mb-0 fw-semibold"><i class="fa-solid fa-chart-pie text-primary me-2"></i>Resumen Financiero</h6>
       </div>
       <div class="card-body pt-0">
         <div class="row g-3">
@@ -543,24 +543,24 @@
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
       <div class="d-flex gap-2">
         <%= link_to edit_admin_product_path(@product), class: "btn btn-primary" do %>
-          <i class="fa fa-edit me-1"></i> Editar Producto
+          <i class="fa-solid fa-pen-to-square me-1"></i> Editar Producto
         <% end %>
         <%= link_to admin_inventory_path(q: @product.product_sku), class: "btn btn-outline-info" do %>
-          <i class="fa fa-cubes me-1"></i> Ver Inventario
+          <i class="fa-solid fa-cubes me-1"></i> Ver Inventario
         <% end %>
       </div>
       <div class="d-flex gap-2">
         <% if @product.active? %>
           <%= button_to deactivate_admin_product_path(@product), method: :patch, class: "btn btn-outline-warning", form: { data: { turbo_confirm: 'Este producto dejará de estar disponible para nuevas operaciones activas. ¿Deseas continuar?', confirm_title: 'Desactivar producto', confirm_confirm_label: 'Desactivar' } } do %>
-            <i class="fa fa-pause me-1"></i> Desactivar
+            <i class="fa-solid fa-pause me-1"></i> Desactivar
           <% end %>
         <% else %>
           <%= button_to activate_admin_product_path(@product), method: :patch, class: "btn btn-outline-success" do %>
-            <i class="fa fa-play me-1"></i> Activar
+            <i class="fa-solid fa-play me-1"></i> Activar
           <% end %>
         <% end %>
         <%= link_to admin_products_path, class: "btn btn-outline-secondary" do %>
-          <i class="fa fa-arrow-left me-1"></i> Volver a Lista
+          <i class="fa-solid fa-arrow-left me-1"></i> Volver a Lista
         <% end %>
       </div>
     </div>

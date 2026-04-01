@@ -17,7 +17,7 @@
          data-expanded="true"
          style="cursor: <%= location.has_children? ? 'pointer' : 'default' %>;">
       <% if location.has_children? %>
-        <i class="fas fa-chevron-down toggle-icon"></i>
+        <i class="fa-solid fa-chevron-down toggle-icon"></i>
       <% end %>
     </div>
 
@@ -38,27 +38,27 @@
           <% if location.has_children? && total_count != direct_count %>
             <%# Location with children: show direct and total %>
             <span class="badge bg-info" title="Piezas en esta ubicación">
-              <i class="fas fa-box"></i> <%= direct_count %>
+              <i class="fa-solid fa-box"></i> <%= direct_count %>
             </span>
             <span class="badge bg-secondary" title="Total piezas incluyendo sub-ubicaciones">
-              <i class="fas fa-boxes"></i> <%= total_count %>
+              <i class="fa-solid fa-boxes-stacked"></i> <%= total_count %>
             </span>
             <span class="badge bg-success" title="Costo total incluyendo sub-ubicaciones">
-              <i class="fas fa-dollar-sign"></i> <%= number_to_currency(total_cost, unit: '$', precision: 0) %>
+              <i class="fa-solid fa-dollar-sign"></i> <%= number_to_currency(total_cost, unit: '$', precision: 0) %>
             </span>
           <% else %>
             <%# Leaf location or all inventory is direct %>
             <span class="badge bg-info" title="Piezas en esta ubicación">
-              <i class="fas fa-box"></i> <%= direct_count %>
+              <i class="fa-solid fa-box"></i> <%= direct_count %>
             </span>
             <span class="badge bg-success" title="Costo de inventario">
-              <i class="fas fa-dollar-sign"></i> <%= number_to_currency(direct_cost, unit: '$', precision: 0) %>
+              <i class="fa-solid fa-dollar-sign"></i> <%= number_to_currency(direct_cost, unit: '$', precision: 0) %>
             </span>
           <% end %>
         </span>
       <% elsif !location.has_children? %>
         <span class="badge bg-light text-muted ms-2" title="Sin inventario">
-          <i class="fas fa-box-open"></i> 0
+          <i class="fa-solid fa-box-open"></i> 0
         </span>
       <% end %>
     </div>
@@ -68,24 +68,24 @@
       <%= link_to new_admin_inventory_location_path(parent_id: location.id),
                   class: 'btn btn-sm btn-outline-success me-1',
                   title: 'Agregar sub-ubicación' do %>
-        <i class="fas fa-plus"></i>
+        <i class="fa-solid fa-plus"></i>
       <% end %>
       <%= link_to admin_inventory_location_path(location),
                   class: 'btn btn-sm btn-outline-info me-1',
                   title: 'Ver detalles' do %>
-        <i class="fas fa-eye"></i>
+        <i class="fa-solid fa-eye"></i>
       <% end %>
       <%= link_to edit_admin_inventory_location_path(location),
                   class: 'btn btn-sm btn-outline-primary me-1',
                   title: 'Editar' do %>
-        <i class="fas fa-pencil-alt"></i>
+        <i class="fa-solid fa-pen-to-square"></i>
       <% end %>
       <% if location.leaf? && direct_count == 0 %>
         <%= link_to admin_inventory_location_path(location),
                     data: { turbo_method: :delete, turbo_confirm: "Se eliminará la ubicación '#{location.name}'. ¿Deseas continuar?", confirm_title: 'Eliminar ubicación', confirm_confirm_label: 'Eliminar' },
                     class: 'btn btn-sm btn-outline-danger',
                     title: 'Eliminar' do %>
-          <i class="fas fa-trash"></i>
+          <i class="fa-solid fa-trash"></i>
         <% end %>
       <% end %>
     </div>

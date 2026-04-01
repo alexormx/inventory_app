@@ -7,6 +7,7 @@ module Admin
     before_action :authorize_admin!
     before_action :set_product, only: %i[show edit update destroy purge_image activate deactivate assign_preorders
                                          discontinue reverse_discontinue link_catalog set_primary_image]
+    before_action :set_active_tab, only: %i[new edit create update]
     before_action :fix_custom_attributes_param, only: %i[create update]
     before_action :load_counts, only: %i[index drafts active inactive]
 
@@ -50,7 +51,7 @@ module Admin
         redirect_to admin_products_path
       else
         flash.now[:alert] = "Error creating product: #{@product.errors.full_messages.join(', ')}"
-        render :new
+        render :new, status: :unprocessable_entity
       end
     end
 
@@ -64,7 +65,7 @@ module Admin
         redirect_to admin_product_path(@product)
       else
         flash.now[:alert] = "Error updating product: #{@product.errors.full_messages.join(', ')}"
-        render :edit
+        render :edit, status: :unprocessable_entity
       end
     end
 
@@ -92,16 +93,16 @@ module Admin
       @product.reload.clear_primary_product_image_if_missing!
 
       respond_to do |format|
-        format.html { redirect_to edit_admin_product_path(@product), notice: 'Image removed successfully.' }
+        format.html { redirect_to edit_admin_product_path(@product, tab: 'media'), notice: 'Image removed successfully.' }
         format.turbo_stream { render turbo_stream: turbo_stream.remove("image_#{image_id}") } # optional: for dynamic deletion
       end
     end
 
     def set_primary_image
       @product.set_primary_product_image!(params[:image_id])
-      redirect_to edit_admin_product_path(@product, anchor: 'media'), notice: 'Imagen principal actualizada.'
+      redirect_to edit_admin_product_path(@product, tab: 'media'), notice: 'Imagen principal actualizada.'
     rescue ActiveRecord::RecordNotFound
-      redirect_to edit_admin_product_path(@product, anchor: 'media'), alert: 'Imagen no encontrada para este producto.'
+      redirect_to edit_admin_product_path(@product, tab: 'media'), alert: 'Imagen no encontrada para este producto.'
     end
 
     def catalog_status
@@ -357,6 +358,10 @@ module Admin
 
     def load_counts
       compute_counts
+    end
+
+    def set_active_tab
+      @active_tab = params[:active_tab].presence || params[:tab].presence || 'basic'
     end
 
     def compute_counts

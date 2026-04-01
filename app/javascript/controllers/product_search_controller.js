@@ -50,9 +50,9 @@ export default class extends Controller {
       let stockInfo = ''
       if (p.stock_available !== undefined) {
         const stockClass = p.stock_available > 0 ? 'text-success' : 'text-danger'
-        stockInfo = `<span class="ms-2 small ${stockClass}"><i class="bi bi-box-seam"></i> ${p.stock_available} disp.</span>`
+        stockInfo = `<span class="ms-2 small ${stockClass}"><i class="fa-solid fa-box"></i> ${p.stock_available} disp.</span>`
         if (p.stock_reserved > 0) {
-          stockInfo += `<span class="ms-1 small text-warning"><i class="bi bi-bookmark"></i> ${p.stock_reserved} apt.</span>`
+          stockInfo += `<span class="ms-1 small text-warning"><i class="fa-solid fa-bookmark"></i> ${p.stock_reserved} apt.</span>`
         }
       }
 

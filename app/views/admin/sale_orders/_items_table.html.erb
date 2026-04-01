@@ -1,9 +1,9 @@
 <div class="card border-0 shadow-sm mb-4">
   <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
-    <h6 class="mb-0"><i class="fa fa-boxes text-muted me-2"></i>Productos (<%= sale_order.sale_order_items.count %>)</h6>
+    <h6 class="mb-0"><i class="fa-solid fa-boxes-stacked text-muted me-2"></i>Productos (<%= sale_order.sale_order_items.count %>)</h6>
     <span class="badge bg-light text-dark border">
-      <i class="fa fa-weight me-1"></i><%= number_with_precision(sale_order.total_weight_gr/1000.0, precision: 2) %> kg |
-      <i class="fa fa-cube me-1"></i><%= number_with_precision(sale_order.total_volume_cm3, precision: 0) %> cm³
+      <i class="fa-solid fa-weight-hanging me-1"></i><%= number_with_precision(sale_order.total_weight_gr/1000.0, precision: 2) %> kg |
+      <i class="fa-solid fa-cube me-1"></i><%= number_with_precision(sale_order.total_volume_cm3, precision: 0) %> cm³
     </span>
   </div>
   <div class="card-body p-0">
@@ -32,7 +32,7 @@
                   <% end %>
                 <% else %>
                   <div class="rounded bg-light d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
-                    <i class="fa fa-image text-muted"></i>
+                    <i class="fa-solid fa-image text-muted"></i>
                   </div>
                 <% end %>
               </td>
@@ -47,7 +47,7 @@
                   <% end %>
                 </div>
                 <div class="small text-muted">
-                  <span class="me-2"><i class="fa fa-barcode me-1"></i><%= item.product&.product_sku || '—' %></span>
+                  <span class="me-2"><i class="fa-solid fa-barcode me-1"></i><%= item.product&.product_sku || '—' %></span>
                 </div>
               </td>
 
@@ -110,7 +110,7 @@
                     <span class="text-muted"><%= invs.size %>/<%= item.quantity %></span>
                     <% if item.missing_inventory_units > 0 %>
                       <span class="text-danger ms-1">
-                        <i class="fa fa-exclamation-triangle"></i> Faltan <%= item.missing_inventory_units %>
+                        <i class="fa-solid fa-triangle-exclamation"></i> Faltan <%= item.missing_inventory_units %>
                       </span>
                     <% end %>
                   </div>
@@ -133,7 +133,7 @@
                   <div class="text-center">
                     <span class="badge bg-light text-muted border">0/<%= item.quantity %></span>
                     <div class="small text-danger mt-1">
-                      <i class="fa fa-exclamation-triangle"></i> Sin asignar
+                      <i class="fa-solid fa-triangle-exclamation"></i> Sin asignar
                     </div>
                   </div>
                 <% end %>

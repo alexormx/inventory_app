@@ -3,7 +3,7 @@
   <div class="admin-order-section-intro admin-order-section-intro--soft">
     <div>
       <p class="admin-order-section-eyebrow mb-1">Cobro</p>
-      <h6 class="admin-order-section-title mb-1"><i class="fa fa-calculator me-2"></i>Cálculos financieros</h6>
+      <h6 class="admin-order-section-title mb-1"><i class="fa-solid fa-calculator me-2"></i>Cálculos financieros</h6>
       <p class="admin-order-section-copy mb-0">Ajusta impuestos y descuentos para revisar el importe final que se cobrará al cliente.</p>
     </div>
   </div>
@@ -12,25 +12,25 @@
 <div class="col-md-4">
   <%= f.label :tax_rate, "Tasa de Impuesto (%)", class: "form-label" %>
   <div class="input-group input-group-sm">
-    <span class="input-group-text"><i class="fa fa-percent"></i></span>
+    <span class="input-group-text"><i class="fa-solid fa-percent"></i></span>
     <%= f.number_field :tax_rate, step: 0.01, class: "form-control" %>
   </div>
   <div class="form-text admin-order-field-note">
-    <i class="fa fa-info-circle"></i> Porcentaje de impuesto (IVA)
+    <i class="fa-solid fa-circle-info"></i> Porcentaje de impuesto (IVA)
   </div>
 </div>
 
 <div class="col-md-4">
   <%= f.label :discount, "Descuento", class: "form-label" %>
   <div class="input-group input-group-sm">
-    <span class="input-group-text"><i class="fa fa-tags"></i></span>
+    <span class="input-group-text"><i class="fa-solid fa-tags"></i></span>
     <%= f.number_field :discount, step: 0.01, class: "form-control" %>
   </div>
 </div>
 
 <div class="col-md-4">
   <div class="admin-order-field-note pt-md-4 mt-md-2">
-    <i class="fa fa-circle-info"></i> El descuento se descuenta después del subtotal y antes del total final.
+    <i class="fa-solid fa-circle-info"></i> El descuento se descuenta después del subtotal y antes del total final.
   </div>
 </div>
 

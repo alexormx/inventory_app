@@ -65,12 +65,12 @@ export default class extends Controller {
     if (this._selectedLocationId) {
       this.locationIndicatorTarget.innerHTML = `
         <div class="text-center">
-          <i class="fas fa-check-circle text-success fs-5"></i>
+          <i class="fa-solid fa-circle-check text-success fs-5"></i>
           <div class="small fw-bold text-success mt-1">Ubicación lista</div>
         </div>`
     } else {
       this.locationIndicatorTarget.innerHTML = `
-        <span><i class="fas fa-arrow-left me-1"></i> Selecciona una ubicación para comenzar</span>`
+        <span><i class="fa-solid fa-arrow-left me-1"></i> Selecciona una ubicación para comenzar</span>`
     }
   }
 
@@ -81,7 +81,7 @@ export default class extends Controller {
     this.locationContentsTarget.style.display = ''
     this.locationContentsBodyTarget.innerHTML = `
       <div class="text-center py-3 text-muted">
-        <i class="fas fa-spinner fa-spin"></i> Cargando piezas...
+        <i class="fa-solid fa-spinner fa-spin"></i> Cargando piezas...
       </div>`
 
     fetch(url, { headers: { 'Accept': 'text/html', 'X-Requested-With': 'XMLHttpRequest' } })
@@ -90,7 +90,7 @@ export default class extends Controller {
       .catch(() => {
         this.locationContentsBodyTarget.innerHTML = `
           <div class="text-center py-3 text-danger">
-            <i class="fas fa-exclamation-triangle"></i> Error al cargar
+            <i class="fa-solid fa-triangle-exclamation"></i> Error al cargar
           </div>`
       })
   }
@@ -182,7 +182,7 @@ export default class extends Controller {
     if (this._cart.size === 0) {
       this.cartListTarget.innerHTML = `
         <div class="text-center text-muted py-4" id="cart-empty-state">
-          <i class="fas fa-cart-plus fa-2x mb-2 d-block"></i>
+          <i class="fa-solid fa-cart-plus fa-2x mb-2 d-block"></i>
           <small>Agrega piezas desde la tabla de la izquierda</small>
         </div>`
       return
@@ -203,7 +203,7 @@ export default class extends Controller {
                     data-action="click->bulk-location-assign#removeFromCart"
                     data-product-id="${productId}"
                     title="Quitar del carrito">
-              <i class="fas fa-times"></i>
+              <i class="fa-solid fa-times"></i>
             </button>
           </div>
         </div>`
@@ -241,7 +241,7 @@ export default class extends Controller {
 
     // Deshabilitar botón
     this.submitBtnTarget.disabled = true
-    this.submitBtnTarget.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Asignando...'
+    this.submitBtnTarget.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i> Asignando...'
 
     // Obtener CSRF token
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content
@@ -289,7 +289,7 @@ export default class extends Controller {
       })
       .finally(() => {
         this.submitBtnTarget.disabled = false
-        this.submitBtnTarget.innerHTML = '<i class="fas fa-check me-1"></i> Asignar Todo a Ubicación'
+        this.submitBtnTarget.innerHTML = '<i class="fa-solid fa-check me-1"></i> Asignar Todo a Ubicación'
         this._updateUI()
       })
   }
@@ -322,7 +322,7 @@ export default class extends Controller {
             detailContent.dataset.loaded = 'true'
           })
           .catch(() => {
-            detailContent.innerHTML = '<p class="text-danger p-3"><i class="fas fa-exclamation-triangle"></i> Error al cargar</p>'
+            detailContent.innerHTML = '<p class="text-danger p-3"><i class="fa-solid fa-triangle-exclamation"></i> Error al cargar</p>'
           })
       }
     } else {
@@ -402,7 +402,7 @@ export default class extends Controller {
 
     flashDiv.innerHTML = `
       <div class="alert alert-warning alert-dismissible fade show" role="alert">
-        <i class="fas fa-exclamation-triangle"></i> ${this._escapeHtml(message)}
+        <i class="fa-solid fa-triangle-exclamation"></i> ${this._escapeHtml(message)}
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
       </div>`
 

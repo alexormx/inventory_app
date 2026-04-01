@@ -239,7 +239,7 @@ function buildBlankPurchaseOrderItemRow(index) {
   const actionTd = document.createElement("td");
   const removeBtn = createElementWithClasses("button", ["btn", "btn-sm", "btn-outline-danger", "remove-item"]);
   removeBtn.type = "button";
-  removeBtn.innerHTML = `<i class="fa fa-trash"></i>`;
+  removeBtn.innerHTML = `<i class="fa-solid fa-trash"></i>`;
   actionTd.appendChild(removeBtn);
   tr.appendChild(actionTd);
 

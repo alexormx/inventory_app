@@ -3,11 +3,20 @@ import { Controller } from "@hotwired/stimulus"
 
 // Controlador para el formulario de productos con validación en tiempo real
 export default class extends Controller {
-  static targets = ["sellingPrice", "minPrice", "maxDiscount", "marginValue", "marginIndicator"]
+  static targets = ["sellingPrice", "minPrice", "maxDiscount", "marginValue", "marginIndicator", "currentTab"]
+  static values = { initialTab: String }
 
   connect() {
-    console.log("Product form controller connected")
+    this.handleTabShown = this.handleTabShown.bind(this)
+    this.tabButtons.forEach((button) => button.addEventListener("shown.bs.tab", this.handleTabShown))
+    this.initializeTooltips()
+    this.activateInitialTab()
     this.calculateMargin()
+  }
+
+  disconnect() {
+    this.tabButtons.forEach((button) => button.removeEventListener("shown.bs.tab", this.handleTabShown))
+    this.disposeTooltips()
   }
 
   calculateMargin() {
@@ -33,6 +42,8 @@ export default class extends Controller {
     // Validar que el precio mínimo no sea menor al precio con descuento máximo
     if (minimumPrice > 0 && minimumPrice < priceWithMaxDiscount) {
       this.showWarning(`⚠️ El precio mínimo ($${minimumPrice.toFixed(2)}) es menor al precio con descuento máximo ($${priceWithMaxDiscount.toFixed(2)})`)
+    } else {
+      this.clearWarning()
     }
 
     // Actualizar indicador visual según el margen
@@ -65,7 +76,7 @@ export default class extends Controller {
 
   showWarning(message) {
     // Mostrar advertencia temporal
-    const existingWarning = document.querySelector('.pricing-warning')
+    const existingWarning = this.element.querySelector('.pricing-warning')
     if (existingWarning) {
       existingWarning.remove()
     }
@@ -80,5 +91,69 @@ export default class extends Controller {
     if (this.hasMarginIndicatorTarget) {
       this.marginIndicatorTarget.insertAdjacentElement('afterend', warning)
     }
+  }
+
+  clearWarning() {
+    const existingWarning = this.element.querySelector('.pricing-warning')
+    if (existingWarning) {
+      existingWarning.remove()
+    }
+  }
+
+  handleTabShown(event) {
+    const target = event.target.dataset.bsTarget
+    if (!target) {
+      return
+    }
+
+    const tabId = target.replace('#', '')
+    if (this.hasCurrentTabTarget) {
+      this.currentTabTarget.value = tabId
+    }
+
+    const url = new URL(window.location)
+    url.searchParams.set('tab', tabId)
+    window.history.replaceState({}, '', url)
+  }
+
+  activateInitialTab() {
+    const tabId = this.currentTabTarget?.value || this.initialTabValue || 'basic'
+    const selector = `[data-bs-target="#${this.escapeSelector(tabId)}"]`
+    const targetButton = this.element.querySelector(selector)
+
+    if (targetButton && window.bootstrap?.Tab) {
+      window.bootstrap.Tab.getOrCreateInstance(targetButton).show()
+    }
+  }
+
+  initializeTooltips() {
+    if (!window.bootstrap?.Tooltip) {
+      return
+    }
+
+    this.tooltips = Array.from(this.element.querySelectorAll('[data-bs-toggle="tooltip"]')).map(
+      (element) => new window.bootstrap.Tooltip(element)
+    )
+  }
+
+  disposeTooltips() {
+    if (!this.tooltips) {
+      return
+    }
+
+    this.tooltips.forEach((tooltip) => tooltip.dispose())
+    this.tooltips = []
+  }
+
+  escapeSelector(value) {
+    if (window.CSS?.escape) {
+      return window.CSS.escape(value)
+    }
+
+    return value.replace(/([#.;?+*~':"!^$\[\]()=>|\/@])/g, "\\$1")
+  }
+
+  get tabButtons() {
+    return Array.from(this.element.querySelectorAll('#productFormTabs [data-bs-toggle="tab"]'))
   }
 }

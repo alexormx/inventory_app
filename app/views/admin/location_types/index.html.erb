@@ -1,17 +1,17 @@
 <div class="container mt-3">
   <div class="d-flex justify-content-between align-items-center mb-3">
     <div>
-      <h3><i class="fas fa-tags"></i> Tipos de Ubicación</h3>
+      <h3><i class="fa-solid fa-tags"></i> Tipos de Ubicación</h3>
       <p class="text-muted mb-0">Configura los tipos de ubicación disponibles para organizar tu almacén.</p>
     </div>
     <%= link_to new_admin_location_type_path, class: 'btn btn-primary' do %>
-      <i class="fas fa-plus"></i> Nuevo Tipo
+      <i class="fa-solid fa-plus"></i> Nuevo Tipo
     <% end %>
   </div>
 
   <div class="card">
     <div class="card-header bg-light">
-      <i class="fas fa-list-ol"></i> Tipos Configurados
+      <i class="fa-solid fa-list-ol"></i> Tipos Configurados
       <small class="text-muted ms-2">(El orden define la jerarquía sugerida)</small>
     </div>
     <div class="card-body p-0">
@@ -36,17 +36,17 @@
                   <div class="btn-group btn-group-sm">
                     <% if index > 0 %>
                       <%= link_to move_admin_location_type_path(lt, direction: 'up'), data: { turbo_method: :patch }, class: 'btn btn-outline-secondary', title: 'Subir' do %>
-                        <i class="fas fa-chevron-up"></i>
+                        <i class="fa-solid fa-chevron-up"></i>
                       <% end %>
                     <% else %>
-                      <button class="btn btn-outline-secondary" disabled><i class="fas fa-chevron-up"></i></button>
+                      <button class="btn btn-outline-secondary" disabled><i class="fa-solid fa-chevron-up"></i></button>
                     <% end %>
                     <% if index < @location_types.size - 1 %>
                       <%= link_to move_admin_location_type_path(lt, direction: 'down'), data: { turbo_method: :patch }, class: 'btn btn-outline-secondary', title: 'Bajar' do %>
-                        <i class="fas fa-chevron-down"></i>
+                        <i class="fa-solid fa-chevron-down"></i>
                       <% end %>
                     <% else %>
-                      <button class="btn btn-outline-secondary" disabled><i class="fas fa-chevron-down"></i></button>
+                      <button class="btn btn-outline-secondary" disabled><i class="fa-solid fa-chevron-down"></i></button>
                     <% end %>
                   </div>
                 </td>
@@ -75,13 +75,13 @@
                 </td>
                 <td class="text-end">
                   <%= link_to edit_admin_location_type_path(lt), class: 'btn btn-sm btn-outline-primary me-1' do %>
-                    <i class="fas fa-pencil-alt"></i> Editar
+                    <i class="fa-solid fa-pen-to-square"></i> Editar
                   <% end %>
                   <% if InventoryLocation.where(location_type: lt.code).count == 0 %>
                     <%= link_to admin_location_type_path(lt),
                                 data: { turbo_method: :delete, turbo_confirm: "Se eliminará el tipo de ubicación '#{lt.name}'. ¿Deseas continuar?", confirm_title: 'Eliminar tipo de ubicación', confirm_confirm_label: 'Eliminar' },
                                 class: 'btn btn-sm btn-outline-danger' do %>
-                      <i class="fas fa-trash"></i>
+                      <i class="fa-solid fa-trash"></i>
                     <% end %>
                   <% end %>
                 </td>
@@ -91,7 +91,7 @@
         </table>
       <% else %>
         <div class="p-4 text-center text-muted">
-          <i class="fas fa-inbox fa-3x"></i>
+          <i class="fa-solid fa-inbox fa-3x"></i>
           <p class="mt-2">No hay tipos de ubicación configurados.</p>
           <%= link_to 'Crear Primer Tipo', new_admin_location_type_path, class: 'btn btn-primary' %>
         </div>
@@ -101,7 +101,7 @@
 
   <div class="card mt-3">
     <div class="card-header bg-light">
-      <i class="fas fa-lightbulb"></i> Ayuda
+      <i class="fa-solid fa-lightbulb"></i> Ayuda
     </div>
     <div class="card-body">
       <p class="mb-2"><strong>¿Cómo funcionan los tipos?</strong></p>

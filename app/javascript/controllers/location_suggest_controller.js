@@ -28,7 +28,7 @@ export default class extends Controller {
         ? this.inputTarget.value.trim()
         : null
       if (name) {
-        this._renderHint(`<i class="fas fa-check-circle text-success"></i> Seleccionado: <strong>${this._escapeHtml(name)}</strong>`)
+        this._renderHint(`<i class="fa-solid fa-circle-check text-success"></i> Seleccionado: <strong>${this._escapeHtml(name)}</strong>`)
       }
     }
 
@@ -154,7 +154,7 @@ export default class extends Controller {
         this.inputTarget.value = `${loc.code} - ${loc.full_path}`
         this._setSelection(loc)
         this._clearResults()
-        this._renderHint(`<i class="fas fa-check-circle text-success"></i> <strong>${this._escapeHtml(loc.code)}</strong>: ${this._escapeHtml(loc.full_path)}`)
+        this._renderHint(`<i class="fa-solid fa-circle-check text-success"></i> <strong>${this._escapeHtml(loc.code)}</strong>: ${this._escapeHtml(loc.full_path)}`)
       })
       list.appendChild(btn)
     })

@@ -2,20 +2,20 @@
 <div class="card admin-summary-sidebar sticky-top shadow-sm admin-sticky-sidebar">
   <div class="card-header admin-summary-sidebar-header text-white">
     <h5 class="mb-0">
-      <i class="fa fa-receipt"></i> Resumen de Venta
+      <i class="fa-solid fa-receipt"></i> Resumen de Venta
     </h5>
   </div>
   <div class="card-body">
     <dl class="row mb-0 small">
       <dt class="col-7 text-muted">
-        <i class="fa fa-box"></i> Productos:
+        <i class="fa-solid fa-box"></i> Productos:
       </dt>
       <dd class="col-5 text-end fw-bold" id="summary-items-count">
         <%= sale_order.sale_order_items.count %>
       </dd>
 
       <dt class="col-7 text-muted">
-        <i class="fa fa-cubes"></i> Unidades:
+        <i class="fa-solid fa-cubes"></i> Unidades:
       </dt>
       <dd class="col-5 text-end" id="summary-total-qty">
         <%= sale_order.sale_order_items.sum(:quantity) %>
@@ -29,14 +29,14 @@
       </dd>
 
       <dt class="col-7 small text-muted">
-        <i class="fa fa-percent"></i> Impuesto (<%= sale_order.tax_rate %>%):
+        <i class="fa-solid fa-percent"></i> Impuesto (<%= sale_order.tax_rate %>%):
       </dt>
       <dd class="col-5 text-end small text-muted" id="summary-tax">
         <%= number_to_currency(sale_order.total_tax, precision: 2) %>
       </dd>
 
       <dt class="col-7 small text-muted">
-        <i class="fa fa-tags"></i> Descuento:
+        <i class="fa-solid fa-tags"></i> Descuento:
       </dt>
       <dd class="col-5 text-end small text-muted" id="summary-discount">
         <%= number_to_currency(sale_order.discount, precision: 2) %>
@@ -45,7 +45,7 @@
       <hr class="my-2">
 
       <dt class="col-7 border-top pt-2 fs-6">
-        <i class="fa fa-calculator"></i> Total:
+        <i class="fa-solid fa-calculator"></i> Total:
       </dt>
       <dd class="col-5 text-end border-top pt-2 fs-5 fw-bold text-success" id="summary-total">
         <%= number_to_currency(sale_order.total_order_value, precision: 2) %>
@@ -65,16 +65,16 @@
 <div class="card admin-summary-sidebar-note mt-3">
   <div class="card-header">
     <h6 class="mb-0 small">
-      <i class="fa fa-info-circle"></i> Información
+      <i class="fa-solid fa-circle-info"></i> Información
     </h6>
   </div>
   <div class="card-body small text-muted">
     <p class="mb-2">
-      <i class="fa fa-check-circle text-success"></i>
+      <i class="fa-solid fa-circle-check text-success"></i>
       El subtotal se calcula sumando cantidad × precio unitario de cada producto.
     </p>
     <p class="mb-0">
-      <i class="fa fa-calculator text-primary"></i>
+      <i class="fa-solid fa-calculator text-primary"></i>
       El total incluye impuestos y resta descuentos aplicados.
     </p>
   </div>

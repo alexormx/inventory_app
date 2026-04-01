@@ -2,7 +2,7 @@
   <div class="card-body">
     <% if payment_method.errors.any? %>
       <div class="alert alert-danger">
-        <h6 class="alert-heading"><i class="fa fa-exclamation-triangle me-2"></i>Errores:</h6>
+        <h6 class="alert-heading"><i class="fa-solid fa-triangle-exclamation me-2"></i>Errores:</h6>
         <ul class="mb-0">
           <% payment_method.errors.full_messages.each do |msg| %>
             <li><%= msg %></li>
@@ -43,7 +43,7 @@
     <!-- Datos de Cuenta Bancaria / OXXO -->
     <div class="card bg-light mb-3">
       <div class="card-header py-2">
-        <i class="fa fa-university me-1"></i> Datos de Cuenta (SPEI / OXXO / Tarjeta)
+        <i class="fa-solid fa-building-columns me-1"></i> Datos de Cuenta (SPEI / OXXO / Tarjeta)
       </div>
       <div class="card-body">
         <div class="row">
@@ -72,7 +72,7 @@
 
   <div class="card-footer d-flex justify-content-between">
     <%= link_to admin_payment_methods_path, class: "btn btn-outline-secondary" do %>
-      <i class="fa fa-arrow-left me-1"></i> Cancelar
+      <i class="fa-solid fa-arrow-left me-1"></i> Cancelar
     <% end %>
     <%= f.submit payment_method.persisted? ? "Guardar Cambios" : "Crear Método", class: "btn btn-primary" %>
   </div>

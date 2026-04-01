@@ -21,14 +21,14 @@
 
 <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
   <h2 class="mb-0 d-flex align-items-center gap-2">
-    <i class="fa fa-shopping-cart text-primary"></i> Órdenes de Venta
+    <i class="fa-solid fa-cart-shopping text-primary"></i> Órdenes de Venta
   </h2>
   <div class="d-flex gap-2 flex-wrap">
     <%= link_to admin_sale_orders_path(request.query_parameters.merge(format: :csv)), class: "btn btn-outline-secondary btn-sm" do %>
-      <i class="fa fa-download"></i> Exportar CSV
+      <i class="fa-solid fa-download"></i> Exportar CSV
     <% end %>
     <%= link_to new_admin_sale_order_path, class: "btn btn-primary btn-sm" do %>
-      <i class="fa fa-plus"></i> Nueva Orden
+      <i class="fa-solid fa-plus"></i> Nueva Orden
     <% end %>
   </div>
 </div>
@@ -45,7 +45,7 @@
             <div class="small text-muted"><%= @counts_global['Pending'] || 0 %> órdenes</div>
           </div>
           <div class="rounded-circle bg-warning bg-opacity-10 p-2">
-            <i class="fa fa-clock text-warning"></i>
+            <i class="fa-solid fa-clock text-warning"></i>
           </div>
         </div>
       </div>
@@ -61,7 +61,7 @@
             <div class="small text-muted"><%= with_balance_count %> con saldo</div>
           </div>
           <div class="rounded-circle bg-danger bg-opacity-10 p-2">
-            <i class="fa fa-exclamation-triangle text-danger"></i>
+            <i class="fa-solid fa-triangle-exclamation text-danger"></i>
           </div>
         </div>
       </div>
@@ -77,7 +77,7 @@
             <div class="small text-muted">requieren atención</div>
           </div>
           <div class="rounded-circle bg-info bg-opacity-10 p-2">
-            <i class="fa fa-calendar-times text-info"></i>
+            <i class="fa-solid fa-calendar-xmark text-info"></i>
           </div>
         </div>
       </div>
@@ -93,7 +93,7 @@
             <div class="small text-muted"><%= Date.current.strftime('%B %Y') %></div>
           </div>
           <div class="rounded-circle bg-success bg-opacity-10 p-2">
-            <i class="fa fa-calendar-check text-success"></i>
+            <i class="fa-solid fa-calendar-check text-success"></i>
           </div>
         </div>
       </div>
@@ -110,9 +110,9 @@
 
       <div class="col-12 col-lg-4">
         <div class="input-group input-group-sm">
-          <span class="input-group-text bg-light border-end-0"><i class="fa fa-search text-muted"></i></span>
+          <span class="input-group-text bg-light border-end-0"><i class="fa-solid fa-search text-muted"></i></span>
           <%= text_field_tag :q, @q, class: "form-control border-start-0", placeholder: "Buscar por ID, cliente…" %>
-          <button class="btn btn-primary" type="submit"><i class="fa fa-search"></i></button>
+          <button class="btn btn-primary" type="submit"><i class="fa-solid fa-search"></i></button>
         </div>
       </div>
 
@@ -139,7 +139,7 @@
               <%= button_tag name: :status, value: st,
                   class: "btn btn-#{chip_styles[st]} #{'active' if is_active}",
                   title: st == 'all' ? 'Todas' : status_labels[st] do %>
-                <% if st != 'all' %><i class="fa fa-<%= status_icons[st] %> me-1"></i><% end %>
+                <% if st != 'all' %><i class="fa-solid fa-<%= status_icons[st] %> me-1"></i><% end %>
                 <%= st == 'all' ? 'Todas' : status_labels[st] %>
                 <span class="badge bg-light text-dark ms-1"><%= count %></span>
               <% end %>
@@ -149,13 +149,13 @@
           <div class="form-check form-check-inline mb-0">
             <%= check_box_tag :due, 1, @due_filter, class: "form-check-input", id: "dueFilter" %>
             <label class="form-check-label small" for="dueFilter">
-              <i class="fa fa-exclamation-circle text-danger me-1"></i>Con adeudo
+              <i class="fa-solid fa-circle-exclamation text-danger me-1"></i>Con adeudo
             </label>
           </div>
 
           <% if @q.present? || (@status_filter.present? && @status_filter != 'all') || @due_filter %>
             <%= link_to admin_sale_orders_path, class: "btn btn-sm btn-outline-secondary" do %>
-              <i class="fa fa-times"></i> Limpiar
+              <i class="fa-solid fa-xmark"></i> Limpiar
             <% end %>
           <% end %>
         </div>
@@ -196,7 +196,7 @@
                 <span class="fw-medium">#<%= so.id %></span>
                 <% if is_overdue %>
                   <span class="badge bg-danger rounded-pill" title="Vencida hace <%= days_overdue %> días">
-                    <i class="fa fa-exclamation"></i>
+                    <i class="fa-solid fa-exclamation"></i>
                   </span>
                 <% end %>
               </div>
@@ -212,7 +212,7 @@
                   <div class="fw-medium text-truncate"><%= so.user&.name || "—" %></div>
                   <% if so.due_date.present? && has_balance %>
                     <div class="small <%= is_overdue ? 'text-danger' : 'text-muted' %>">
-                      <i class="fa fa-calendar-alt me-1"></i>Vence: <%= l(so.due_date, format: :short) %>
+                      <i class="fa-solid fa-calendar-days me-1"></i>Vence: <%= l(so.due_date, format: :short) %>
                     </div>
                   <% end %>
                 </div>
@@ -227,7 +227,7 @@
             <%# Estado %>
             <td>
               <span class="badge <%= status_badge_class(so.status) %> d-inline-flex align-items-center gap-1">
-                <i class="fa fa-<%= status_icons[so.status] %>"></i>
+                <i class="fa-solid fa-<%= status_icons[so.status] %>"></i>
                 <%= status_labels[so.status] %>
               </span>
             </td>
@@ -255,7 +255,7 @@
                 </span>
               <% else %>
                 <span class="badge bg-success">
-                  <i class="fa fa-check"></i> Pagada
+                  <i class="fa-solid fa-check"></i> Pagada
                 </span>
               <% end %>
             </td>
@@ -264,39 +264,39 @@
             <td class="text-end">
               <div class="btn-group btn-group-sm dropdown-hover" role="group">
                 <%= link_to admin_sale_order_path(so), class: "btn btn-outline-primary", title: "Ver detalle" do %>
-                  <i class="fa fa-eye"></i>
+                  <i class="fa-solid fa-eye"></i>
                 <% end %>
                 <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" aria-expanded="false">
-                  <i class="fa fa-ellipsis-v"></i>
+                  <i class="fa-solid fa-ellipsis-vertical"></i>
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end shadow-sm">
                   <li>
                     <%= link_to admin_sale_order_path(so), class: "dropdown-item" do %>
-                      <i class="fa fa-eye me-2 text-muted"></i>Ver detalle
+                      <i class="fa-solid fa-eye me-2 text-muted"></i>Ver detalle
                     <% end %>
                   </li>
                   <li>
                     <%= link_to edit_admin_sale_order_path(so), class: "dropdown-item" do %>
-                      <i class="fa fa-edit me-2 text-muted"></i>Editar
+                      <i class="fa-solid fa-pen-to-square me-2 text-muted"></i>Editar
                     <% end %>
                   </li>
                   <li>
                     <%= link_to summary_admin_sale_order_path(so), class: "dropdown-item" do %>
-                      <i class="fa fa-file-alt me-2 text-muted"></i>Vista compacta
+                      <i class="fa-solid fa-file-lines me-2 text-muted"></i>Vista compacta
                     <% end %>
                   </li>
                   <% if has_balance %>
                     <li><hr class="dropdown-divider"></li>
                     <li>
                       <%= link_to new_admin_sale_order_payment_path(so), class: "dropdown-item text-success" do %>
-                        <i class="fa fa-credit-card me-2"></i>Registrar pago
+                        <i class="fa-solid fa-credit-card me-2"></i>Registrar pago
                       <% end %>
                     </li>
                   <% end %>
                   <% if so.user&.email.present? %>
                     <li>
                       <a href="mailto:<%= so.user.email %>?subject=Orden %23<%= so.id %>" class="dropdown-item">
-                        <i class="fa fa-envelope me-2 text-muted"></i>Contactar cliente
+                        <i class="fa-solid fa-envelope me-2 text-muted"></i>Contactar cliente
                       </a>
                     </li>
                   <% end %>
@@ -321,11 +321,11 @@
 <%# Empty state %>
 <% if @sale_orders.empty? %>
   <div class="text-center py-5">
-    <i class="fa fa-shopping-cart fa-3x text-muted mb-3"></i>
+    <i class="fa-solid fa-cart-shopping fa-3x text-muted mb-3"></i>
     <h5 class="text-muted">No hay órdenes de venta</h5>
     <p class="text-muted">Ajusta los filtros o crea una nueva orden</p>
     <%= link_to new_admin_sale_order_path, class: "btn btn-primary" do %>
-      <i class="fa fa-plus"></i> Nueva Orden
+      <i class="fa-solid fa-plus"></i> Nueva Orden
     <% end %>
   </div>
 <% end %>

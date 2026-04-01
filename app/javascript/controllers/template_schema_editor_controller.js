@@ -45,7 +45,7 @@ export default class extends Controller {
       </div>
       <div class="col-md-2 text-end">
         <button type="button" class="btn btn-outline-danger btn-sm" data-action="template-schema-editor#removeRow">
-          <i class="fa fa-trash"></i>
+          <i class="fa-solid fa-trash"></i>
         </button>
       </div>
     `

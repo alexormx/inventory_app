@@ -28,7 +28,7 @@ export default class extends Controller {
     if (!url) {
       this.sourceItemsTarget.innerHTML = `
         <div class="p-3 text-center text-muted">
-          <i class="fas fa-arrow-up fa-2x mb-2"></i>
+          <i class="fa-solid fa-arrow-up fa-2x mb-2"></i>
           <p>Selecciona una ubicación origen</p>
         </div>
       `
@@ -39,7 +39,7 @@ export default class extends Controller {
 
     this.sourceItemsTarget.innerHTML = `
       <div class="p-4 text-center">
-        <i class="fas fa-spinner fa-spin fa-2x"></i>
+        <i class="fa-solid fa-spinner fa-spin fa-2x"></i>
         <p class="mt-2">Cargando...</p>
       </div>
     `
@@ -58,7 +58,7 @@ export default class extends Controller {
       console.error('Error loading source:', error)
       this.sourceItemsTarget.innerHTML = `
         <div class="p-3 text-center text-danger">
-          <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
+          <i class="fa-solid fa-triangle-exclamation fa-2x mb-2"></i>
           <p>Error al cargar</p>
         </div>
       `
@@ -74,7 +74,7 @@ export default class extends Controller {
     if (!url) {
       this.destItemsTarget.innerHTML = `
         <div class="p-3 text-center text-muted">
-          <i class="fas fa-arrow-up fa-2x mb-2"></i>
+          <i class="fa-solid fa-arrow-up fa-2x mb-2"></i>
           <p>Selecciona una ubicación destino</p>
         </div>
       `
@@ -85,7 +85,7 @@ export default class extends Controller {
 
     this.destItemsTarget.innerHTML = `
       <div class="p-4 text-center">
-        <i class="fas fa-spinner fa-spin fa-2x"></i>
+        <i class="fa-solid fa-spinner fa-spin fa-2x"></i>
         <p class="mt-2">Cargando...</p>
       </div>
     `
@@ -112,7 +112,7 @@ export default class extends Controller {
       console.error('Error loading destination:', error)
       this.destItemsTarget.innerHTML = `
         <div class="p-3 text-center text-danger">
-          <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
+          <i class="fa-solid fa-triangle-exclamation fa-2x mb-2"></i>
           <p>Error al cargar</p>
         </div>
       `
@@ -266,7 +266,7 @@ export default class extends Controller {
     const allItemIds = transfers.flatMap(t => t.item_ids)
 
     this.transferBtnTarget.disabled = true
-    this.transferBtnTarget.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Transfiriendo...'
+    this.transferBtnTarget.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i> Transfiriendo...'
 
     try {
       const response = await fetch(url, {
@@ -299,7 +299,7 @@ export default class extends Controller {
     }
 
     this.transferBtnTarget.disabled = false
-    this.transferBtnTarget.innerHTML = '<i class="fas fa-arrow-right me-2"></i> Transferir al Destino'
+    this.transferBtnTarget.innerHTML = '<i class="fa-solid fa-arrow-right me-2"></i> Transferir al Destino'
     this.updateUI()
   }
 

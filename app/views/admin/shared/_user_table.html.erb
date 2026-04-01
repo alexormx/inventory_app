@@ -71,13 +71,13 @@
             <div class="d-flex flex-column gap-1">
               <% if u.email.present? %>
                 <a href="mailto:<%= u.email %>" class="text-decoration-none small" title="<%= u.email %>">
-                  <i class="fa fa-envelope text-muted"></i>
+                  <i class="fa-solid fa-envelope text-muted"></i>
                   <span class="text-truncate" style="max-width: 120px; display: inline-block; vertical-align: middle;"><%= u.email.split('@').first %></span>
                 </a>
               <% end %>
               <% if u.phone.present? %>
                 <a href="tel:<%= u.phone %>" class="text-decoration-none small" title="<%= u.phone %>">
-                  <i class="fa fa-phone text-muted"></i>
+                  <i class="fa-solid fa-phone text-muted"></i>
                   <%= u.phone %>
                 </a>
               <% end %>
@@ -149,7 +149,7 @@
             <% if lv_time.present? %>
               <% visit_class = days_since_visit <= 30 ? 'text-bg-success' : days_since_visit <= 90 ? 'text-bg-warning' : 'text-bg-secondary' %>
               <span class="badge <%= visit_class %>" title="<%= lv_time.strftime('%Y-%m-%d %H:%M') %>">
-                <i class="fa fa-clock"></i> <%= distance_of_time_in_words_to_now(lv_time) %>
+                <i class="fa-solid fa-clock"></i> <%= distance_of_time_in_words_to_now(lv_time) %>
               </span>
             <% else %>
               <span class="badge text-bg-light">Nunca</span>
@@ -170,7 +170,7 @@
             <div class="btn-group">
               <% if edit_path %>
                 <%= link_to edit_path.call(u), class: "btn btn-outline-secondary btn-sm", data: { turbo_frame: "_top" }, title: "Editar" do %>
-                  <i class="fa fa-edit"></i>
+                  <i class="fa-solid fa-pen-to-square"></i>
                 <% end %>
               <% end %>
               <button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
@@ -179,19 +179,19 @@
               <ul class="dropdown-menu dropdown-menu-end">
                 <li>
                   <%= link_to admin_user_path(u), class: "dropdown-item" do %>
-                    <i class="fa fa-eye text-muted"></i> Ver detalle
+                    <i class="fa-solid fa-eye text-muted"></i> Ver detalle
                   <% end %>
                 </li>
                 <li>
                   <%= link_to admin_user_shipping_addresses_path(u), class: "dropdown-item" do %>
-                    <i class="fa fa-map-marker-alt text-muted"></i> Direcciones
+                    <i class="fa-solid fa-location-dot text-muted"></i> Direcciones
                   <% end %>
                 </li>
                 <% if u.role == 'customer' %>
                   <li><hr class="dropdown-divider"></li>
                   <li>
                     <%= link_to admin_sale_orders_path(user_id: u.id), class: "dropdown-item" do %>
-                      <i class="fa fa-shopping-cart text-success"></i> Ver ventas
+                      <i class="fa-solid fa-cart-shopping text-success"></i> Ver ventas
                     <% end %>
                   </li>
                 <% end %>
@@ -199,7 +199,7 @@
                   <li><hr class="dropdown-divider"></li>
                   <li>
                     <%= link_to admin_purchase_orders_path(supplier_id: u.id), class: "dropdown-item" do %>
-                      <i class="fa fa-truck text-primary"></i> Ver compras
+                      <i class="fa-solid fa-truck text-primary"></i> Ver compras
                     <% end %>
                   </li>
                 <% end %>
@@ -207,7 +207,7 @@
                   <li><hr class="dropdown-divider"></li>
                   <li>
                     <a href="mailto:<%= u.email %>" class="dropdown-item">
-                      <i class="fa fa-envelope text-muted"></i> Enviar email
+                      <i class="fa-solid fa-envelope text-muted"></i> Enviar email
                     </a>
                   </li>
                 <% end %>
@@ -219,7 +219,7 @@
                                 turbo_confirm: "¿Eliminar al usuario \"#{u.name}\"? Esta acción no se puede deshacer. Si tiene órdenes asociadas, no se podrá eliminar.",
                                 confirm_title: "Eliminar usuario",
                                 confirm_confirm_label: "Eliminar" } do %>
-                    <i class="fa fa-trash text-danger"></i> Eliminar
+                    <i class="fa-solid fa-trash text-danger"></i> Eliminar
                   <% end %>
                 </li>
               </ul>

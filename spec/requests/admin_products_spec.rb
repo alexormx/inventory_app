@@ -86,7 +86,28 @@ RSpec.describe "Admin::Products", type: :request do
         }
       end.not_to change(ActiveStorage::Attachment, :count)
 
-      expect(response).to have_http_status(:ok)
+      expect(response).to have_http_status(:unprocessable_entity)
+    end
+
+    it "preserves the active tab when the update is invalid" do
+      patch admin_product_path(product), params: {
+        active_tab: 'media',
+        product: {
+          product_sku: product.product_sku,
+          product_name: '',
+          brand: product.brand,
+          category: product.category,
+          selling_price: product.selling_price,
+          minimum_price: product.minimum_price,
+          maximum_discount: product.maximum_discount,
+          whatsapp_code: product.whatsapp_code
+        }
+      }
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response.body).to include('name="active_tab"')
+      expect(response.body).to include('value="media"')
+      expect(response.body).to include('No se pudo guardar el producto.')
     end
   end
 
@@ -96,7 +117,7 @@ RSpec.describe "Admin::Products", type: :request do
 
       patch set_primary_image_admin_product_path(product), params: { image_id: selected_image.id }
 
-      expect(response).to redirect_to(edit_admin_product_path(product, anchor: 'media'))
+      expect(response).to redirect_to(edit_admin_product_path(product, tab: 'media'))
       expect(product.reload.primary_product_image_attachment_id).to eq(selected_image.id)
       expect(product.primary_product_image.id).to eq(selected_image.id)
     end
@@ -111,7 +132,7 @@ RSpec.describe "Admin::Products", type: :request do
         delete admin_product_purge_image_path(product, image_id: image.id)
       end.to change(ActiveStorage::Attachment, :count).by(-1)
 
-      expect(response).to redirect_to(edit_admin_product_path(product))
+      expect(response).to redirect_to(edit_admin_product_path(product, tab: 'media'))
     end
 
     it "returns turbo stream remove action when requested as turbo stream" do

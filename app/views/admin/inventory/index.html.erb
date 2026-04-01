@@ -33,35 +33,35 @@
 <%# Header con navegación %>
 <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
   <h2 class="mb-0 d-flex align-items-center gap-2">
-    <i class="fa fa-archive text-primary"></i> Inventario
+    <i class="fa-solid fa-box-archive text-primary"></i> Inventario
   </h2>
   <div class="d-flex gap-2 flex-wrap">
     <%= link_to admin_inventory_locations_path, class: "btn btn-outline-success btn-sm" do %>
-      <i class="fa fa-map-marker-alt"></i> Con Ubicación
+      <i class="fa-solid fa-location-dot"></i> Con Ubicación
       <% if located_count > 0 %>
         <span class="badge bg-success ms-1"><%= number_with_delimiter(located_count) %></span>
       <% end %>
     <% end %>
     <%= link_to admin_inventory_unlocated_path, class: "btn btn-outline-warning btn-sm" do %>
-      <i class="fa fa-map-marker-alt"></i> Sin Ubicación
+      <i class="fa-solid fa-location-dot"></i> Sin Ubicación
       <% if unlocated_count > 0 %>
         <span class="badge bg-warning text-dark ms-1"><%= number_with_delimiter(unlocated_count) %></span>
       <% end %>
     <% end %>
     <%= link_to admin_inventory_transfer_path, class: "btn btn-outline-primary btn-sm" do %>
-      <i class="fa fa-exchange-alt"></i> Transferir
+      <i class="fa-solid fa-right-left"></i> Transferir
     <% end %>
     <%= link_to admin_inventory_location_explorer_path, class: "btn btn-outline-dark btn-sm" do %>
-      <i class="fa fa-compass"></i> Explorar Ubicaciones
+      <i class="fa-solid fa-compass"></i> Explorar Ubicaciones
     <% end %>
     <%= link_to admin_inventory_location_explorer_path(mode: 'unlocated', view: 'categories'), class: "btn btn-outline-warning btn-sm" do %>
-      <i class="fa fa-layer-group"></i> No Asignado por Categoría
+      <i class="fa-solid fa-layer-group"></i> No Asignado por Categoría
     <% end %>
     <%= link_to admin_inventory_path(request.query_parameters.merge(format: :csv)), class: "btn btn-outline-secondary btn-sm" do %>
-      <i class="fa fa-download"></i> Exportar CSV
+      <i class="fa-solid fa-download"></i> Exportar CSV
     <% end %>
     <%= link_to admin_inventory_adjustments_path, class: "btn btn-outline-info btn-sm" do %>
-      <i class="fa fa-sliders-h"></i> Ajustes
+      <i class="fa-solid fa-sliders"></i> Ajustes
     <% end %>
   </div>
 </div>
@@ -78,7 +78,7 @@
             <div class="small text-muted"><%= number_to_currency(available_value, unit: '$', precision: 0) %> valor</div>
           </div>
           <div class="rounded-circle bg-success bg-opacity-10 p-2">
-            <i class="fa fa-check-circle text-success"></i>
+            <i class="fa-solid fa-circle-check text-success"></i>
           </div>
         </div>
       </div>
@@ -94,7 +94,7 @@
             <div class="small text-muted"><%= number_to_currency(reserved_value, unit: '$', precision: 0) %> valor</div>
           </div>
           <div class="rounded-circle bg-info bg-opacity-10 p-2">
-            <i class="fa fa-bookmark text-info"></i>
+            <i class="fa-solid fa-bookmark text-info"></i>
           </div>
         </div>
       </div>
@@ -110,7 +110,7 @@
             <div class="small text-muted"><%= number_to_currency(in_transit_value, unit: '$', precision: 0) %> valor</div>
           </div>
           <div class="rounded-circle bg-primary bg-opacity-10 p-2">
-            <i class="fa fa-truck text-primary"></i>
+            <i class="fa-solid fa-truck text-primary"></i>
           </div>
         </div>
       </div>
@@ -126,7 +126,7 @@
             <div class="small text-muted"><%= number_to_currency(total_value, unit: '$', precision: 0) %> valor</div>
           </div>
           <div class="rounded-circle bg-secondary bg-opacity-10 p-2">
-            <i class="fa fa-cubes text-secondary"></i>
+            <i class="fa-solid fa-cubes text-secondary"></i>
           </div>
         </div>
       </div>
@@ -140,9 +140,9 @@
     <%= form_with url: admin_inventory_path, method: :get, local: true, class: "row g-2 align-items-center" do %>
       <div class="col-12 col-lg-4">
         <div class="input-group input-group-sm">
-          <span class="input-group-text bg-light border-end-0"><i class="fa fa-search text-muted"></i></span>
+          <span class="input-group-text bg-light border-end-0"><i class="fa-solid fa-search text-muted"></i></span>
           <%= text_field_tag :q, @q, class: "form-control border-start-0 inventory-search-input", placeholder: "Buscar por nombre o SKU…" %>
-          <button class="btn btn-primary" type="submit"><i class="fa fa-search"></i></button>
+          <button class="btn btn-primary" type="submit"><i class="fa-solid fa-search"></i></button>
         </div>
       </div>
 
@@ -179,7 +179,7 @@
               <%= button_tag name: :status, value: st,
                   class: "btn btn-sm btn-#{chip_styles[st]} #{'active' if is_active}",
                   title: st == 'all' ? 'Todos' : status_labels[st] do %>
-                <% if st != 'all' %><i class="fa fa-<%= status_icons[st] %> me-1"></i><% end %>
+                <% if st != 'all' %><i class="fa-solid fa-<%= status_icons[st] %> me-1"></i><% end %>
                 <%= st == 'all' ? 'Todos' : status_labels[st] %>
                 <span class="badge bg-light text-dark ms-1"><%= count %></span>
               <% end %>
@@ -191,7 +191,7 @@
                       data-dropdown-target="button"
                       data-action="click->dropdown#toggle"
                       aria-expanded="false">
-                <i class="fa fa-ellipsis-h"></i> Otros
+                <i class="fa-solid fa-ellipsis"></i> Otros
               </button>
               <ul class="dropdown-menu dropdown-menu-end" data-dropdown-target="menu">
                 <% other_statuses.each do |st| %>
@@ -199,7 +199,7 @@
                   <li>
                     <%= button_tag name: :status, value: st,
                         class: "dropdown-item d-flex justify-content-between align-items-center #{'active bg-primary text-white' if current_status == st}" do %>
-                      <span><i class="fa fa-<%= status_icons[st] %> me-2"></i><%= status_labels[st] %></span>
+                      <span><i class="fa-solid fa-<%= status_icons[st] %> me-2"></i><%= status_labels[st] %></span>
                       <span class="badge bg-light text-dark"><%= count %></span>
                     <% end %>
                   </li>
@@ -212,7 +212,7 @@
 
           <% if @q.present? || (current_status != 'all') %>
             <%= link_to admin_inventory_path, class: "btn btn-sm btn-outline-secondary" do %>
-              <i class="fa fa-times"></i> Limpiar
+              <i class="fa-solid fa-xmark"></i> Limpiar
             <% end %>
           <% end %>
         </div>
@@ -224,7 +224,7 @@
 <%# Contadores filtrados (solo si hay filtro activo) %>
 <% if @q.present? || (@status_filter.present? && @status_filter != 'all') %>
   <div class="d-flex flex-wrap gap-2 mb-3 small">
-    <span class="text-muted me-2"><i class="fa fa-filter"></i> Resultados:</span>
+    <span class="text-muted me-2"><i class="fa-solid fa-filter"></i> Resultados:</span>
     <% @inventory_counts.each do |status, count| %>
       <% next if count == 0 %>
       <span class="badge bg-<%= inventory_status_color(status.to_s) %>">

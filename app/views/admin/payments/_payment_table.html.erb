@@ -44,14 +44,14 @@
                     <%= link_to edit_admin_sale_order_payment_path(payment.sale_order, payment),
                         data: { turbo_frame: "modal_frame" },
                         class: "btn btn-sm btn-outline-primary", title: "Edit" do %>
-                      <i class="fas fa-pen"></i>
+                      <i class="fa-solid fa-pen"></i>
                     <% end %>
 
                     <%= button_to admin_sale_order_payment_path(payment.sale_order, payment),
                         method: :delete,
                         data: { controller: 'confirm', action: 'click->confirm#ask', confirm_title: 'Eliminar pago', confirm_message: 'Se eliminará este registro de pago de la orden de venta. ¿Deseas continuar?', confirm_confirm_label: 'Eliminar pago', turbo_stream: true },
                         class: "btn btn-sm btn-outline-danger", title: "Delete" do %>
-                      <i class="fas fa-trash"></i>
+                      <i class="fa-solid fa-trash"></i>
                     <% end %>
                   </div>
                 </td>

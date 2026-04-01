@@ -1,5 +1,24 @@
-<%= form_with model: [:admin, @product], local: false, data: { controller: "product-form" } do |f| %>
+<%= form_with model: [:admin, @product], local: false,
+    data: { controller: "product-form", product_form_initial_tab_value: @active_tab || 'basic' } do |f| %>
   <% req = ->(text){ raw("#{text} <span class=\"text-danger\">*</span>") } %>
+  <% if @product.errors.any? %>
+    <div class="alert alert-danger" role="alert">
+      <div class="d-flex align-items-start gap-2">
+        <i class="fa-solid fa-triangle-exclamation mt-1"></i>
+        <div>
+          <strong>No se pudo guardar el producto.</strong>
+          <div class="small mt-1">Corrige los siguientes campos y vuelve a intentar:</div>
+          <ul class="mb-0 mt-2 ps-3">
+            <% @product.errors.full_messages.each do |message| %>
+              <li><%= message %></li>
+            <% end %>
+          </ul>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+  <%= hidden_field_tag :active_tab, (@active_tab || 'basic'), data: { product_form_target: 'currentTab' } %>
 
   <!-- Navigation Tabs -->
   <ul class="nav nav-tabs mb-4" id="productFormTabs" role="tablist">
@@ -121,7 +140,7 @@
           <div class="input-group">
             <span class="input-group-text">$</span>
             <%= f.number_field :selling_price, step: 0.01, class: "form-control", required: true, min: 0,
-                data: { product_form_target: "sellingPrice", action: "blur->product-form#calculateMargin" } %>
+              data: { product_form_target: "sellingPrice", action: "input->product-form#calculateMargin blur->product-form#calculateMargin" } %>
             <span class="input-group-text">MXN</span>
           </div>
           <small class="text-muted">Precio al público</small>
@@ -136,7 +155,7 @@
           <% end %>
           <div class="input-group">
             <%= f.number_field :maximum_discount, step: 0.01, class: "form-control", min: 0, max: 100,
-                data: { product_form_target: "maxDiscount", action: "blur->product-form#calculateMargin" } %>
+              data: { product_form_target: "maxDiscount", action: "input->product-form#calculateMargin blur->product-form#calculateMargin" } %>
             <span class="input-group-text">%</span>
           </div>
         </div>
@@ -151,7 +170,7 @@
           <div class="input-group">
             <span class="input-group-text">$</span>
             <%= f.number_field :minimum_price, step: 0.01, class: "form-control", min: 0,
-                data: { product_form_target: "minPrice", action: "blur->product-form#calculateMargin" } %>
+              data: { product_form_target: "minPrice", action: "input->product-form#calculateMargin blur->product-form#calculateMargin" } %>
             <span class="input-group-text">MXN</span>
           </div>
         </div>
@@ -543,12 +562,3 @@
   </div>
 <% end %>
 
-<script>
-  // Inicializar tooltips de Bootstrap
-  document.addEventListener('DOMContentLoaded', function() {
-    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-      return new bootstrap.Tooltip(tooltipTriggerEl)
-    })
-  });
-</script>
