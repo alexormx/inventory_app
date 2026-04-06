@@ -10,7 +10,7 @@ RSpec.describe 'Admin::SaleOrders show piece locations', type: :request do
 
   before { sign_in admin }
 
-  it 'shows location toggle and location path when order is Confirmed' do
+  it 'shows piece locations inline when order is Confirmed' do
     sale_order = create(:sale_order, user: customer, status: 'Confirmed')
     sale_order_item = create(:sale_order_item, sale_order: sale_order, product: product, quantity: 1)
 
@@ -27,11 +27,12 @@ RSpec.describe 'Admin::SaleOrders show piece locations', type: :request do
     get admin_sale_order_path(sale_order)
 
     expect(response).to have_http_status(:ok)
-    expect(response.body).to include('Ver ubicaciones')
+    expect(response.body).to include('Ubicaciones')
     expect(response.body).to include(CGI.escapeHTML(location.full_path))
+    expect(response.body).to include("##{Inventory.last.id}")
   end
 
-  it 'hides location toggle when order is In Transit' do
+  it 'hides piece locations section when order is In Transit' do
     sale_order = create(:sale_order, user: customer, status: 'In Transit')
     sale_order_item = create(:sale_order_item, sale_order: sale_order, product: product, quantity: 1)
 
@@ -48,6 +49,7 @@ RSpec.describe 'Admin::SaleOrders show piece locations', type: :request do
     get admin_sale_order_path(sale_order)
 
     expect(response).to have_http_status(:ok)
-    expect(response.body).not_to include('Ver ubicaciones')
+    expect(response.body).not_to include(CGI.escapeHTML(location.full_path))
+    expect(response.body).not_to include("##{Inventory.last.id}")
   end
 end

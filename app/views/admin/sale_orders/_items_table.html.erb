@@ -115,18 +115,16 @@
                     <% end %>
                   </div>
                   <% if show_piece_locations %>
-                    <% collapse_id = "piece-locations-#{sale_order.id}-#{item.id}" %>
-                    <div class="text-center mt-2">
-                      <a class="small text-decoration-none" data-bs-toggle="collapse" href="#<%= collapse_id %>" role="button" aria-expanded="false" aria-controls="<%= collapse_id %>">
-                        Ver ubicaciones
-                      </a>
-                    </div>
-                    <div class="collapse mt-2" id="<%= collapse_id %>">
-                      <ul class="list-unstyled small mb-0 text-start">
+                    <div class="mt-2 small text-start">
+                      <div class="text-muted text-uppercase fw-semibold mb-1">Ubicaciones</div>
+                      <div class="d-grid gap-1">
                         <% invs.each do |inv| %>
-                          <li>#<%= inv.id %> — <%= inv.inventory_location&.full_path || 'Sin ubicación' %></li>
+                          <div class="border rounded-2 px-2 py-1 bg-light-subtle">
+                            <div class="fw-semibold text-dark">#<%= inv.id %></div>
+                            <div class="text-muted text-break"><%= inv.inventory_location&.full_path || 'Sin ubicación' %></div>
+                          </div>
                         <% end %>
-                      </ul>
+                      </div>
                     </div>
                   <% end %>
                 <% else %>
