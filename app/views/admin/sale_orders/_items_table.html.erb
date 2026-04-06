@@ -81,7 +81,7 @@
               </td>
 
               <%# Inventario %>
-              <td>
+              <td class="py-2">
                 <% invs = item.inventory_units.includes(:inventory_location).limit(50) %>
                 <% show_piece_locations = %w[Pending Confirmed Preparing].include?(sale_order.status) %>
                 <% grouped_locations = invs.group_by { |inv| inv.inventory_location&.full_path.presence || 'Sin ubicación' } %>
@@ -116,19 +116,18 @@
                     <% end %>
                   </div>
                   <% if show_piece_locations %>
-                    <div class="mt-2 small text-start">
-                      <div class="text-muted text-uppercase fw-semibold mb-1">Ubicaciones</div>
-                      <div class="d-grid gap-1">
+                    <div class="mt-1 d-grid gap-1 small text-start">
                         <% grouped_locations.each do |location_name, location_inventories| %>
-                          <div class="border rounded-2 px-2 py-1 bg-light-subtle">
-                            <div class="d-flex justify-content-between align-items-start gap-2">
-                              <div class="text-muted text-break"><%= location_name %></div>
-                              <span class="badge bg-white text-dark border"><%= location_inventories.size %> <%= location_inventories.size == 1 ? 'pieza' : 'piezas' %></span>
+                          <div class="border rounded-2 px-2 py-1 bg-white">
+                            <div class="d-flex flex-wrap align-items-center gap-1">
+                              <span class="badge bg-light text-dark border"><%= location_inventories.size %>x</span>
+                              <span class="fw-semibold text-dark"><%= location_inventories.map { |inv| "##{inv.id}" }.join(', ') %></span>
                             </div>
-                            <div class="fw-semibold text-dark mt-1">IDs: <%= location_inventories.map { |inv| "##{inv.id}" }.join(', ') %></div>
+                            <div class="text-muted text-break mt-1" style="line-height: 1.2;">
+                              <%= location_name %>
+                            </div>
                           </div>
                         <% end %>
-                      </div>
                     </div>
                   <% end %>
                 <% else %>
