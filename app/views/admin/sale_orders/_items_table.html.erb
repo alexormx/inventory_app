@@ -84,6 +84,7 @@
               <td>
                 <% invs = item.inventory_units.includes(:inventory_location).limit(50) %>
                 <% show_piece_locations = %w[Pending Confirmed Preparing].include?(sale_order.status) %>
+                <% grouped_locations = invs.group_by { |inv| inv.inventory_location&.full_path.presence || 'Sin ubicación' } %>
                 <% if invs.any? %>
                   <div class="d-flex flex-wrap gap-1 justify-content-center" style="max-width: 200px; margin: 0 auto;">
                     <% invs.each do |inv| %>
@@ -118,10 +119,13 @@
                     <div class="mt-2 small text-start">
                       <div class="text-muted text-uppercase fw-semibold mb-1">Ubicaciones</div>
                       <div class="d-grid gap-1">
-                        <% invs.each do |inv| %>
+                        <% grouped_locations.each do |location_name, location_inventories| %>
                           <div class="border rounded-2 px-2 py-1 bg-light-subtle">
-                            <div class="fw-semibold text-dark">#<%= inv.id %></div>
-                            <div class="text-muted text-break"><%= inv.inventory_location&.full_path || 'Sin ubicación' %></div>
+                            <div class="d-flex justify-content-between align-items-start gap-2">
+                              <div class="text-muted text-break"><%= location_name %></div>
+                              <span class="badge bg-white text-dark border"><%= location_inventories.size %> <%= location_inventories.size == 1 ? 'pieza' : 'piezas' %></span>
+                            </div>
+                            <div class="fw-semibold text-dark mt-1">IDs: <%= location_inventories.map { |inv| "##{inv.id}" }.join(', ') %></div>
                           </div>
                         <% end %>
                       </div>
