@@ -47,6 +47,14 @@ RSpec.describe "Admin::Products", type: :request do
   end
 
   describe "PATCH /admin/products/:id" do
+    it "renders the edit form without legacy remote submit" do
+      get edit_admin_product_path(product)
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).not_to include('data-remote="true"')
+      expect(response.body).to include('type="submit"')
+    end
+
     it "updates whatsapp_code from the admin form" do
       patch admin_product_path(product), params: {
         product: {
