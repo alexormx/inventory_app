@@ -10,9 +10,9 @@
         <i class="fa-solid fa-check"></i>
       <% end %>
 
-      <%= link_to cancel_edit_status_admin_inventory_path(item), 
+      <%= link_to cancel_edit_status_admin_inventory_path(item),
                   data: { turbo_frame: "inventory_status_#{item.id}" },
-                  class: "btn btn-sm btn-secondary", 
+                  class: "btn btn-sm btn-secondary",
                   title: "Cancel" do %>
         <i class="fa-solid fa-xmark"></i>
       <% end %>
