@@ -66,13 +66,31 @@ RSpec.describe "Admin::Products", type: :request do
           selling_price: product.selling_price,
           minimum_price: product.minimum_price,
           maximum_discount: product.maximum_discount,
-          whatsapp_code: "WA-EDIT-#{SecureRandom.hex(2).upcase}"
+          whatsapp_code: 'CD34'
         }
       }
 
       expect(response).to redirect_to(admin_product_path(product))
-      expect(product.reload.whatsapp_code).to match(/\AWA-EDIT-/)
+      expect(product.reload.whatsapp_code).to eq('CD34')
       expect(product.reload.series).to eq('Tomica Premium')
+    end
+
+    it "rejects invalid whatsapp_code format from the admin form" do
+      patch admin_product_path(product), params: {
+        product: {
+          product_sku: product.product_sku,
+          product_name: product.product_name,
+          brand: product.brand,
+          category: product.category,
+          selling_price: product.selling_price,
+          minimum_price: product.minimum_price,
+          maximum_discount: product.maximum_discount,
+          whatsapp_code: 'ABC1'
+        }
+      }
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response.body).to include('must use format AA00')
     end
 
     it "does not attach new images when the product update is invalid" do

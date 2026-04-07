@@ -4,6 +4,9 @@ class Product < ApplicationRecord
   extend FriendlyId
   friendly_id :product_name, use: :slugged
 
+  WHATSAPP_CODE_FORMAT = /\A[A-Z]{2}\d{2}\z/
+  MAX_WHATSAPP_CODE = 'ZZ99'
+
   belongs_to :preferred_supplier, class_name: 'User', optional: true
   belongs_to :last_supplier, class_name: 'User', optional: true
 
@@ -25,6 +28,7 @@ class Product < ApplicationRecord
   before_validation :normalize_custom_attributes
   before_validation :sync_series_from_custom_attributes
   before_validation :normalize_numeric_inputs
+  before_validation :normalize_whatsapp_code
   before_validation :ensure_whatsapp_code
   # --- Stats update on create (your logic) ---
   after_commit :recalculate_stats_if_needed, on: [:create]
@@ -49,6 +53,7 @@ class Product < ApplicationRecord
   validates :minimum_price, presence: true, numericality: { greater_than_or_equal_to: 0 }
   validates :discount_limited_stock, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
   validates :whatsapp_code, presence: true, uniqueness: true
+  validates :whatsapp_code, format: { with: WHATSAPP_CODE_FORMAT, message: 'must use format AA00' }, if: :enforce_whatsapp_code_format?
   validate  :minimum_price_not_exceed_selling_price
 
   # --- Scopes ---
@@ -128,7 +133,7 @@ class Product < ApplicationRecord
     record = nil
     record = find_by(slug: ident) if column_names.include?('slug')
     record ||= find_by(product_sku: ident)
-    record ||= find_by(whatsapp_code: ident)
+    record ||= find_by(whatsapp_code: ident.upcase)
     # Fallback: nombre normalizado a slug simple
     record ||= where("LOWER(REPLACE(product_name, ' ', '-')) = ?", ident.downcase).first
     # Solo usar ID si el identificador es estrictamente numérico
@@ -137,6 +142,48 @@ class Product < ApplicationRecord
   end
 
   private
+
+  def self.generate_next_whatsapp_code!
+    current_code = maximum_valid_whatsapp_code
+    attempts = 0
+
+    loop do
+      candidate = next_whatsapp_code_after(current_code)
+      return candidate unless exists?(whatsapp_code: candidate)
+
+      current_code = candidate
+      attempts += 1
+      raise StandardError, 'No available WA codes remaining' if attempts > 1000
+    end
+  end
+
+  def self.maximum_valid_whatsapp_code
+    where.not(whatsapp_code: nil)
+      .where("LENGTH(whatsapp_code) = 4")
+      .pluck(:whatsapp_code)
+      .select { |code| code.match?(WHATSAPP_CODE_FORMAT) }
+      .max
+  end
+
+  def self.next_whatsapp_code_after(current_code)
+    return 'AA00' if current_code.blank?
+    raise StandardError, 'No available WA codes remaining' if current_code == MAX_WHATSAPP_CODE
+
+    prefix = current_code[0, 2]
+    suffix = current_code[2, 2].to_i
+    return "#{prefix}#{format('%02d', suffix + 1)}" if suffix < 99
+
+    first_letter = prefix[0]
+    second_letter = prefix[1]
+
+    if second_letter < 'Z'
+      "#{first_letter}#{second_letter.succ}00"
+    else
+      raise StandardError, 'No available WA codes remaining' if first_letter == 'Z'
+
+      "#{first_letter.succ}A00"
+    end
+  end
 
   def minimum_price_not_exceed_selling_price
     return unless minimum_price.present? && selling_price.present? && minimum_price > selling_price
@@ -237,10 +284,20 @@ class Product < ApplicationRecord
     self.reorder_point = 0 if reorder_point.blank?
   end
 
+  def normalize_whatsapp_code
+    self.whatsapp_code = whatsapp_code.to_s.strip.upcase.presence
+  end
+
   def ensure_whatsapp_code
     return if whatsapp_code.present?
 
-    self.whatsapp_code = SecureRandom.alphanumeric(6).upcase
+    self.whatsapp_code = self.class.generate_next_whatsapp_code!
+  rescue StandardError => e
+    errors.add(:whatsapp_code, e.message)
+  end
+
+  def enforce_whatsapp_code_format?
+    new_record? || will_save_change_to_whatsapp_code?
   end
 
   public

@@ -2,7 +2,14 @@
 
 FactoryBot.define do
   sequence(:sku_seq)       { |n| "TEST-SKU-#{n.to_s.rjust(5, '0')}-#{SecureRandom.hex(2)}" }
-  sequence(:whatsapp_seq)  { |n| "WGT#{n.to_s.rjust(3, '0')}-#{SecureRandom.hex(2)}" }
+  sequence(:whatsapp_seq) do |n|
+    code_index = n - 1
+    prefix_index = code_index / 100
+    suffix_index = code_index % 100
+    first_letter = ('A'.ord + (prefix_index / 26)).chr
+    second_letter = ('A'.ord + (prefix_index % 26)).chr
+    "#{first_letter}#{second_letter}#{suffix_index.to_s.rjust(2, '0')}"
+  end
   sequence(:product_name_seq) { |n| "Sample Product #{n}" }
 
   factory :product do
@@ -31,7 +38,7 @@ FactoryBot.define do
     height_cm       { 4 }
 
     # Identifiers
-  whatsapp_code   { generate(:whatsapp_seq) } # ✅ required & unique (adds random hex to avoid collisions in non-isolated tests)
+  whatsapp_code   { generate(:whatsapp_seq) }
 
     custom_attributes { {} }
 

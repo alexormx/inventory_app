@@ -12,7 +12,7 @@ RSpec.describe Product, type: :model do
 
   describe 'whatsapp_code' do
     it 'requires uniqueness of whatsapp_code' do
-      code = "WGT#{SecureRandom.hex(3).upcase}" # minimize collision risk
+      code = 'AB12'
       # Create first product directly (skip factory callbacks that may introduce duplicates)
       Product.create!(
         product_sku: "SKU-UNIQ-#{SecureRandom.hex(4)}",
@@ -39,6 +39,8 @@ RSpec.describe Product, type: :model do
     end
 
     it "auto-generates whatsapp_code when blank" do
+      create(:product, whatsapp_code: 'AA99')
+
       product = Product.new(
         product_sku: "SKU-UNIQ-#{SecureRandom.hex(4)}",
         product_name: 'Name C',
@@ -50,7 +52,47 @@ RSpec.describe Product, type: :model do
         maximum_discount: 0
       )
       expect(product.valid?).to be true
-      expect(product.whatsapp_code).to be_present
+      expect(product.whatsapp_code).to eq('AB00')
+    end
+
+    it 'normalizes whatsapp_code to uppercase' do
+      product = Product.new(
+        product_sku: "SKU-UNIQ-#{SecureRandom.hex(4)}",
+        product_name: 'Name D',
+        brand: 'BrandZ',
+        category: 'diecast',
+        whatsapp_code: 'ab12',
+        selling_price: 100,
+        minimum_price: 50,
+        maximum_discount: 0
+      )
+
+      expect(product).to be_valid
+      expect(product.whatsapp_code).to eq('AB12')
+    end
+
+    it 'rejects invalid whatsapp_code formats' do
+      product = Product.new(
+        product_sku: "SKU-UNIQ-#{SecureRandom.hex(4)}",
+        product_name: 'Name E',
+        brand: 'BrandQ',
+        category: 'diecast',
+        whatsapp_code: 'ABC1',
+        selling_price: 100,
+        minimum_price: 50,
+        maximum_discount: 0
+      )
+
+      expect(product).not_to be_valid
+      expect(product.errors[:whatsapp_code]).to include('must use format AA00')
+    end
+
+    it 'allows legacy whatsapp_code values when unchanged' do
+      product = create(:product, whatsapp_code: 'AC10')
+      product.update_column(:whatsapp_code, 'WGT001')
+      product.product_name = 'Nombre actualizado'
+
+      expect(product).to be_valid
     end
   end
 

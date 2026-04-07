@@ -84,11 +84,11 @@ RSpec.describe 'API V1 Products', type: :request do
       produces 'application/json'
       security [api_token: []]
 
-      parameter name: :whatsapp_code, in: :query, type: :string, required: true, description: 'Product whatsapp code to check', example: 'WGT001'
+      parameter name: :whatsapp_code, in: :query, type: :string, required: true, description: 'Product whatsapp code to check', example: 'AB12'
 
       response '200', 'product exists' do
-        let!(:existing_product) { create(:product, whatsapp_code: 'WGT-EXISTS-001') }
-        let(:whatsapp_code) { 'WGT-EXISTS-001' }
+        let!(:existing_product) { create(:product, whatsapp_code: 'AB12') }
+        let(:whatsapp_code) { 'ab12' }
 
         schema type: :object,
                properties: {
@@ -99,7 +99,7 @@ RSpec.describe 'API V1 Products', type: :request do
       end
 
       response '200', 'product not found' do
-        let(:whatsapp_code) { 'WGT-NOT-FOUND-999' }
+        let(:whatsapp_code) { 'ZZ99' }
 
         schema type: :object,
                properties: {

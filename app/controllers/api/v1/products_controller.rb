@@ -32,7 +32,7 @@ module Api
       end
 
       def exists
-        ws_code = params[:whatsapp_code].to_s.strip
+        ws_code = params[:whatsapp_code].to_s.strip.upcase
         exists = Product.exists?(whatsapp_code: ws_code)
         render json: { exists: exists }, status: :ok
       end
