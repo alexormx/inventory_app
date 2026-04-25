@@ -1,0 +1,112 @@
+<div class="admin-page-header d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+  <div>
+    <p class="admin-page-eyebrow mb-1">Abastecimiento</p>
+    <h1 class="h4 mb-0"><i class="fa-solid fa-file-import"></i> Recepción desde PDF o imagen</h1>
+  </div>
+  <span class="badge admin-page-badge">OCR y resolución por Supplier ID</span>
+</div>
+
+<% if flash[:alert].present? %>
+  <div class="alert alert-danger" role="alert">
+    <i class="fa-solid fa-triangle-exclamation me-2"></i><%= flash[:alert] %>
+  </div>
+<% end %>
+
+<div class="row g-4">
+  <div class="col-lg-7">
+    <div class="card admin-order-card">
+      <div class="card-header admin-order-card-header">
+        <h5 class="mb-0"><i class="fa-solid fa-cloud-arrow-up"></i> Documento de recepción</h5>
+      </div>
+      <div class="card-body">
+        <%= form_with url: import_reception_admin_purchase_orders_path, local: true, multipart: true, class: "row g-3" do |f| %>
+          <div class="col-12">
+            <label class="form-label" for="reception_document">PDF o screenshot</label>
+            <%= file_field_tag :document, accept: ".pdf,image/png,image/jpeg,image/webp", class: "form-control", id: "reception_document", required: true %>
+            <div class="form-text">
+              El parser asume que la primera columna del documento es el Supplier ID.
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <%= label_tag "reception_user_id", "Proveedor", class: "form-label" %>
+            <div data-controller="user-suggest" data-user-suggest-role-value="supplier" class="position-relative">
+              <input type="text"
+                     class="form-control"
+                     data-user-suggest-target="input"
+                     placeholder="Empieza a escribir el nombre del proveedor..."
+                     data-action="input->user-suggest#input keydown->user-suggest#keydown">
+              <%= hidden_field_tag "reception[user_id]", @reception_defaults["user_id"], data: { "user-suggest-target": "hidden" }, id: "reception_user_id" %>
+              <div class="form-text admin-order-field-note" data-user-suggest-target="hint">
+                Se usará este proveedor para crear la orden de compra.
+              </div>
+              <div data-user-suggest-target="results" class="admin-user-suggest-results"></div>
+            </div>
+          </div>
+
+          <div class="col-md-3">
+            <%= label_tag "reception_order_date", "Fecha de orden", class: "form-label" %>
+            <%= date_field_tag "reception[order_date]", @reception_defaults["order_date"], class: "form-control", id: "reception_order_date" %>
+          </div>
+
+          <div class="col-md-3">
+            <%= label_tag "reception_expected_delivery_date", "Entrega esperada", class: "form-label" %>
+            <%= date_field_tag "reception[expected_delivery_date]", @reception_defaults["expected_delivery_date"], class: "form-control", id: "reception_expected_delivery_date" %>
+          </div>
+
+          <div class="col-md-4">
+            <%= label_tag "reception_status", "Estado", class: "form-label" %>
+            <%= select_tag "reception[status]",
+                options_for_select([["Pendiente", "Pending"], ["En tránsito", "In Transit"], ["Entregada", "Delivered"]], @reception_defaults["status"]),
+                class: "form-select",
+                id: "reception_status" %>
+          </div>
+
+          <div class="col-md-4">
+            <%= label_tag "reception_currency", "Moneda", class: "form-label" %>
+            <%= select_tag "reception[currency]",
+                options_for_select(PurchaseOrder::CURRENCIES, @reception_defaults["currency"]),
+                class: "form-select",
+                id: "reception_currency" %>
+          </div>
+
+          <div class="col-md-4">
+            <%= label_tag "reception_exchange_rate", "Tipo de cambio", class: "form-label" %>
+            <%= number_field_tag "reception[exchange_rate]", @reception_defaults["exchange_rate"], step: 0.0001, min: 0, class: "form-control", id: "reception_exchange_rate" %>
+          </div>
+
+          <div class="col-12">
+            <%= label_tag "reception_notes", "Notas base", class: "form-label" %>
+            <%= text_area_tag "reception[notes]", @reception_defaults["notes"], rows: 4, class: "form-control", id: "reception_notes", placeholder: "Observaciones adicionales para la orden..." %>
+          </div>
+
+          <div class="col-12 d-flex justify-content-end gap-2">
+            <%= link_to admin_purchase_orders_path, class: "btn btn-outline-secondary" do %>
+              Cancelar
+            <% end %>
+            <%= f.button type: :submit, class: "btn btn-primary" do %>
+              <i class="fa-solid fa-wand-magic-sparkles me-1"></i> Crear PO desde documento
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="card admin-order-card h-100">
+      <div class="card-header admin-order-card-header">
+        <h5 class="mb-0"><i class="fa-solid fa-diagram-project"></i> Flujo de resolución</h5>
+      </div>
+      <div class="card-body">
+        <ol class="mb-0 ps-3">
+          <li>Se extraen filas del PDF o screenshot usando OCR multimodal.</li>
+          <li>Cada Supplier ID se busca primero en productos existentes.</li>
+          <li>Si no existe producto, se revisa SupplierCatalogItem por supplier_product_code.</li>
+          <li>Si aún no existe, se consulta HLJ por Supplier ID y se crea el producto automáticamente.</li>
+          <li>Se crea una orden de compra y se abre en edición para revisión final.</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</div>

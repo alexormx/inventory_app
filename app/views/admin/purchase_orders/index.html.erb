@@ -16,6 +16,9 @@
     <%= link_to admin_purchase_orders_path(request.query_parameters.merge(format: :csv)), class: "btn btn-outline-success btn-sm", title: "Exportar CSV" do %>
       <i class="fa-solid fa-download"></i> CSV
     <% end %>
+    <%= link_to reception_admin_purchase_orders_path, class: "btn btn-outline-primary btn-sm" do %>
+      <i class="fa-solid fa-file-import"></i> Recepción PDF / imagen
+    <% end %>
     <%= link_to new_admin_purchase_order_path, class: "btn btn-primary btn-sm" do %>
       <i class="fa-solid fa-plus"></i> Nueva Orden
     <% end %>

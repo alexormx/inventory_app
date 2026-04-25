@@ -90,6 +90,10 @@ module Admin
       @purchase_order = PurchaseOrder.new(order_date: Time.zone.today)
     end
 
+    def reception
+      @reception_defaults = reception_defaults
+    end
+
     def edit; end
 
     def create
@@ -101,6 +105,34 @@ module Admin
         flash.now[:alert] = @purchase_order.errors.full_messages.to_sentence
         render :new, status: :unprocessable_entity
       end
+    end
+
+    def import_reception
+      result = PurchaseOrders::ReceptionImportService.new(
+        user: User.find(reception_params[:user_id]),
+        uploaded_file: params[:document],
+        order_date: reception_params[:order_date],
+        expected_delivery_date: reception_params[:expected_delivery_date],
+        status: reception_params[:status],
+        currency: reception_params[:currency],
+        exchange_rate: reception_params[:exchange_rate],
+        notes: reception_params[:notes]
+      ).call
+
+      notice = "Orden #{result.purchase_order.id} creada con #{result.resolved_rows.size} línea(s)"
+      notice += ". #{result.unresolved_rows.size} línea(s) quedaron sin resolver y se agregaron a notas" if result.unresolved_rows.any?
+
+      redirect_to edit_admin_purchase_order_path(result.purchase_order), notice: notice
+    rescue ActiveRecord::RecordNotFound
+      @reception_defaults = reception_defaults
+      flash.now[:alert] = "Selecciona un proveedor válido para continuar."
+      render :reception, status: :unprocessable_entity
+    rescue PurchaseOrders::ReceptionImportService::ImportError,
+           PurchaseOrders::ReceptionDocumentParserService::ParseError,
+           Suppliers::Hlj::ImportBySupplierCodeService::LookupError => e
+      @reception_defaults = reception_defaults
+      flash.now[:alert] = e.message
+      render :reception, status: :unprocessable_entity
     end
 
     def update
@@ -170,6 +202,25 @@ module Admin
                            total_line_cost total_line_volume total_line_weight total_line_cost_in_mxn _destroy
                          ]] }]
       )
+    end
+
+    def reception_params
+      params.expect(
+        reception: %i[
+          user_id order_date expected_delivery_date status currency exchange_rate notes
+        ]
+      )
+    end
+
+    def reception_defaults
+      {
+        "order_date" => Time.zone.today,
+        "expected_delivery_date" => 2.weeks.from_now.to_date,
+        "status" => "Pending",
+        "currency" => "JPY",
+        "exchange_rate" => 1,
+        "notes" => ""
+      }.merge(params.fetch(:reception, {}).to_unsafe_h)
     end
 
     def load_counts

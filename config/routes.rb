@@ -197,6 +197,8 @@ Rails.application.routes.draw do
       patch :confirm_receipt, on: :member
       get :summary, on: :member
       collection do
+        get :reception
+        post :import_reception
         get :line_audit
         post :rebalance_all_mismatches
       end
