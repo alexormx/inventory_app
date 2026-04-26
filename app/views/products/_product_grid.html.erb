@@ -10,7 +10,7 @@
   <%# Chips de filtros usando partial reutilizable %>
   <%= render 'filter_chips' %>
 
-  <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 g-3" id="product-grid-content" role="list">
+  <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 row-cols-xxl-6 g-2 g-md-3" id="product-grid-content" role="list">
     <% @products.each do |product| %>
       <% on_hand_cached = @on_hand_counts[product.id] || 0 %>
       <% in_transit_eta_cached = (defined?(@in_transit_etas) && @in_transit_etas[product.id]) || nil %>
