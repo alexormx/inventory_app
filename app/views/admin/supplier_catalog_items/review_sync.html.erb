@@ -51,17 +51,23 @@
               <td><strong><%= field[:label] %></strong></td>
               <td>
                 <% if field[:catalog_val].present? %>
-                  <span class="text-break"><%= field[:catalog_val] %></span>
+                  <div class="d-flex align-items-start gap-2">
+                    <span class="text-break flex-grow-1"><%= field[:catalog_val] %></span>
+                    <button type="button" class="btn btn-sm btn-outline-secondary"
+                      onclick="document.getElementById('product_sync_<%= field[:key] %>').value = this.dataset.value"
+                      data-value="<%= field[:catalog_val] %>" title="Copiar valor del catálogo al input">
+                      <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                  </div>
                 <% else %>
                   <span class="text-muted">—</span>
                 <% end %>
               </td>
               <td>
-                <% if field[:product_val].present? %>
-                  <span class="text-break"><%= field[:product_val] %></span>
-                <% else %>
-                  <span class="text-muted">—</span>
-                <% end %>
+                <input type="text" name="product_sync[<%= field[:key] %>]" id="product_sync_<%= field[:key] %>"
+                  value="<%= field[:product_val] %>" class="form-control form-control-sm"
+                  placeholder="<%= field[:label] %>">
+                <div class="small text-muted mt-1">Edita aquí para guardar manualmente. La casilla del catálogo tiene prioridad si está marcada.</div>
               </td>
               <td class="text-center">
                 <% if field[:different] %>

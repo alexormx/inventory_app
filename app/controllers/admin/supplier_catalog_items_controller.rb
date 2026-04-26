@@ -327,6 +327,36 @@ module Admin
           applied_count += 1
         end
 
+        # Manual edits to syncable fields — only applied when the catalog checkbox isn't selected
+        sync_overrides = params.fetch(:product_sync, {}).permit(:barcode, :supplier_product_code, :launch_date, :weight_gr, :length_cm, :width_cm, :height_cm)
+        sync_overrides.each do |attr, raw|
+          next if selected.include?(attr)
+          new_value = raw.to_s.strip
+          current = product.public_send(attr)
+
+          if new_value.blank?
+            if current.present?
+              product.public_send("#{attr}=", nil)
+              applied_count += 1
+            end
+            next
+          end
+
+          casted =
+            case attr
+            when "launch_date" then (Date.parse(new_value) rescue nil)
+            when "weight_gr", "length_cm", "width_cm", "height_cm" then new_value.to_f
+            else new_value
+            end
+          next if casted.nil?
+
+          changed = attr == "launch_date" ? casted != current : casted.to_s != current.to_s
+          if changed
+            product.public_send("#{attr}=", casted)
+            applied_count += 1
+          end
+        end
+
         # Individual image additions
         add_urls = Array(params[:add_images]).select(&:present?)
         add_urls.each do |url|
