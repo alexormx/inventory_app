@@ -128,7 +128,7 @@ module Admin
       render :reception_review
     rescue ActiveRecord::RecordNotFound
       @reception_defaults = reception_defaults
-      flash.now[:alert] = "Selecciona un proveedor válido para continuar."
+      flash.now[:alert] = 'Selecciona un proveedor válido para continuar.'
       render :reception, status: :unprocessable_entity
     rescue PurchaseOrders::ReceptionDocumentParserService::ParseError,
            PurchaseOrders::ReceptionCsvParserService::ParseError => e
@@ -158,7 +158,7 @@ module Admin
 
       redirect_to edit_admin_purchase_order_path(result.purchase_order), notice: notice
     rescue ActiveRecord::RecordNotFound
-      flash[:alert] = "Selecciona un proveedor válido para continuar."
+      flash[:alert] = 'Selecciona un proveedor válido para continuar.'
       redirect_to reception_admin_purchase_orders_path
     rescue PurchaseOrders::ReceptionImportService::ImportError,
            Suppliers::Hlj::ImportBySupplierCodeService::LookupError => e
@@ -251,7 +251,7 @@ module Admin
         attrs = attrs.symbolize_keys
         unit_cost =
           begin
-            cleaned = attrs[:unit_cost].to_s.gsub(/[^\d\.\-]/, "")
+            cleaned = attrs[:unit_cost].to_s.gsub(/[^\d\.\-]/, '')
             cleaned.present? ? BigDecimal(cleaned) : nil
           rescue ArgumentError
             nil
@@ -271,11 +271,11 @@ module Admin
     end
 
     def build_reception_parser(uploaded_file)
-      filename = uploaded_file.respond_to?(:original_filename) ? uploaded_file.original_filename.to_s : ""
-      content_type = uploaded_file.respond_to?(:content_type) ? uploaded_file.content_type.to_s : ""
+      filename = uploaded_file.respond_to?(:original_filename) ? uploaded_file.original_filename.to_s : ''
+      content_type = uploaded_file.respond_to?(:content_type) ? uploaded_file.content_type.to_s : ''
 
-      if filename.downcase.end_with?(".csv") || content_type.include?("csv") || content_type == "application/vnd.ms-excel"
-        PurchaseOrders::ReceptionCsvParserService.new(uploaded_file, default_currency: reception_params[:currency].presence || "JPY")
+      if filename.downcase.end_with?('.csv') || content_type.include?('csv') || content_type == 'application/vnd.ms-excel'
+        PurchaseOrders::ReceptionCsvParserService.new(uploaded_file, default_currency: reception_params[:currency].presence || 'JPY')
       else
         PurchaseOrders::ReceptionDocumentParserService.new(uploaded_file)
       end
@@ -296,12 +296,12 @@ module Admin
 
     def reception_defaults
       {
-        "order_date" => Time.zone.today,
-        "expected_delivery_date" => 2.weeks.from_now.to_date,
-        "status" => "Pending",
-        "currency" => "JPY",
-        "exchange_rate" => 1,
-        "notes" => ""
+        'order_date' => Time.zone.today,
+        'expected_delivery_date' => 2.weeks.from_now.to_date,
+        'status' => 'Pending',
+        'currency' => 'JPY',
+        'exchange_rate' => 1,
+        'notes' => ''
       }.merge(params.fetch(:reception, {}).to_unsafe_h)
     end
 

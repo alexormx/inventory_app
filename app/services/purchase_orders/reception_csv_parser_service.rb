@@ -1,12 +1,12 @@
 # frozen_string_literal: true
 
-require "csv"
+require 'csv'
 
 module PurchaseOrders
   class ReceptionCsvParserService
     class ParseError < StandardError; end
 
-    DEFAULT_CURRENCY = "JPY"
+    DEFAULT_CURRENCY = 'JPY'
 
     REQUIRED_COLUMNS = %w[item_code qty_shipped price].freeze
 
@@ -16,11 +16,11 @@ module PurchaseOrders
     end
 
     def call
-      raise ParseError, "Adjunta un CSV para continuar." if @uploaded_file.blank?
+      raise ParseError, 'Adjunta un CSV para continuar.' if @uploaded_file.blank?
 
       data = read_file
       table = CSV.parse(data, headers: true, skip_blanks: true, strip: true)
-      raise ParseError, "El CSV está vacío." if table.headers.compact.empty?
+      raise ParseError, 'El CSV está vacío.' if table.headers.compact.empty?
 
       header_index = build_header_index(table.headers)
       missing = REQUIRED_COLUMNS - header_index.keys
@@ -49,14 +49,14 @@ module PurchaseOrders
     def read_file
       path = @uploaded_file.respond_to?(:path) ? @uploaded_file.path : @uploaded_file.tempfile.path
       raw = File.binread(path)
-      raw.sub(/\A\xEF\xBB\xBF/, "").force_encoding("UTF-8")
+      raw.sub(/\A\xEF\xBB\xBF/, '').force_encoding('UTF-8')
     end
 
     def build_header_index(headers)
-      headers.each_with_index.each_with_object({}) do |(header, idx), hash|
+      headers.each_with_index.with_object({}) do |(header, idx), hash|
         next if header.nil?
 
-        key = header.to_s.strip.downcase.gsub(/\s+/, "_")
+        key = header.to_s.strip.downcase.gsub(/\s+/, '_')
         hash[key] = idx
       end
     end
@@ -68,7 +68,7 @@ module PurchaseOrders
 
       table.each do |csv_row|
         values = csv_row.fields
-        first = values[idx["item_code"]].to_s.strip
+        first = values[idx['item_code']].to_s.strip
 
         if capture_totals
           totals_row = {
@@ -81,24 +81,24 @@ module PurchaseOrders
           break
         end
 
-        if first.casecmp("merchandise").zero?
+        if first.casecmp('merchandise').zero?
           capture_totals = true
           next
         end
 
         next if first.blank?
 
-        qty = parse_quantity(values[idx["qty_shipped"]])
+        qty = parse_quantity(values[idx['qty_shipped']])
         next if qty.nil? || qty <= 0
 
         product_rows << {
           supplier_product_code: first,
-          product_name: values[idx["item_name"]].to_s.strip.presence,
-          barcode: normalize_barcode(idx["jancode"] && values[idx["jancode"]]),
+          product_name: values[idx['item_name']].to_s.strip.presence,
+          barcode: normalize_barcode(idx['jancode'] && values[idx['jancode']]),
           quantity: qty,
-          unit_cost: parse_decimal(values[idx["price"]]),
-          weight_gr: idx["weight"] ? parse_decimal(values[idx["weight"]]) : nil,
-          origin_country: idx["origin_country"] ? values[idx["origin_country"]].to_s.strip.presence : nil,
+          unit_cost: parse_decimal(values[idx['price']]),
+          weight_gr: idx['weight'] ? parse_decimal(values[idx['weight']]) : nil,
+          origin_country: idx['origin_country'] ? values[idx['origin_country']].to_s.strip.presence : nil,
           confidence: 1.0
         }
       end
@@ -115,7 +115,7 @@ module PurchaseOrders
     end
 
     def parse_quantity(value)
-      v = value.to_s.gsub(/[^\d\.\-]/, "")
+      v = value.to_s.gsub(/[^\d\.\-]/, '')
       return nil if v.blank?
 
       f = v.to_f
@@ -125,7 +125,7 @@ module PurchaseOrders
     def parse_decimal(value)
       return nil if value.nil?
 
-      cleaned = value.to_s.gsub(/[^\d\.\-]/, "")
+      cleaned = value.to_s.gsub(/[^\d\.\-]/, '')
       return nil if cleaned.blank?
 
       BigDecimal(cleaned)
