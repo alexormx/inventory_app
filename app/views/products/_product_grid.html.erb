@@ -3,19 +3,9 @@
 
   <% total_products = @products.total_count %>
 
-  <div class="d-flex align-items-start align-items-sm-center justify-content-between flex-wrap gap-2 mb-2">
-    <div class="text-muted small">
-      <% if @q.present? %>
-        Resultados para "<strong><%= @q %></strong>"
-      <% end %>
-    </div>
-
-    <div class="results-count d-inline-flex align-items-center bg-light rounded-pill px-3 py-2">
-      <i class="fas fa-box text-danger me-2" aria-hidden="true"></i>
-      <span class="fw-semibold text-dark"><%= number_with_delimiter(total_products) %></span>
-      <span class="text-muted ms-1"><%= total_products == 1 ? 'producto' : 'productos' %></span>
-    </div>
-  </div>
+  <% if @q.present? %>
+    <div class="text-muted small mb-2">Resultados para "<strong><%= @q %></strong>"</div>
+  <% end %>
 
   <%# Chips de filtros usando partial reutilizable %>
   <%= render 'filter_chips' %>
@@ -24,19 +14,20 @@
     <% @products.each do |product| %>
       <div class="col product-card-wrapper" data-product-id="<%= product.id %>" role="listitem">
         <article class="card h-100 border-0 shadow-sm d-flex flex-column catalog-item position-relative hover-lift">
-          <!-- Badges de disponibilidad -->
-          <% if product.active? %>
-            <% on_hand_cached = @on_hand_counts[product.id] || 0 %>
-            <span class="position-absolute top-0 start-0 m-1" role="status" aria-live="polite"><%= stock_badge(product, on_hand_override: on_hand_cached) %></span>
-          <% else %>
-            <span class="badge bg-secondary position-absolute top-0 start-0 m-1" role="status">No disp.</span>
-          <% end %>
-          <%# Badge "Nuevo" para productos recientes (últimos 14 días) %>
-          <% if product.created_at > 14.days.ago %>
-            <span class="badge bg-info position-absolute top-0 end-0 m-1" role="status" title="Agregado recientemente">
-              <i class="fas fa-sparkles me-1" aria-hidden="true"></i>Nuevo
-            </span>
-          <% end %>
+          <!-- Badges agrupados arriba para evitar traslapes -->
+          <div class="catalog-badges position-absolute top-0 start-0 end-0 d-flex justify-content-between align-items-start p-1" role="status" aria-live="polite">
+            <% if product.active? %>
+              <% on_hand_cached = @on_hand_counts[product.id] || 0 %>
+              <span><%= stock_badge(product, on_hand_override: on_hand_cached) %></span>
+            <% else %>
+              <span class="badge bg-secondary">No disp.</span>
+            <% end %>
+            <% if product.created_at > 14.days.ago %>
+              <span class="badge bg-info" title="Agregado recientemente">
+                <i class="fas fa-sparkles me-1" aria-hidden="true"></i>Nuevo
+              </span>
+            <% end %>
+          </div>
           <% if product.active? %>
             <%= link_to product_path(product), class: "d-block p-2", aria: { label: "Ver detalles de #{product.product_name}" }, data: { turbo_frame: "_top" } do %>
               <% if product.product_images.attached? %>
@@ -70,19 +61,28 @@
                 <span class="text-muted" aria-disabled="true"><%= product.product_name %></span>
               <% end %>
             </h2>
-            <p class="text-muted mb-1" style="font-size: 0.7rem;">
-              <%= product.brand %><% if product.whatsapp_code.present? %> · <span class="fw-semibold"><%= product.whatsapp_code %></span><% end %>
-            </p>
-            <% if user_signed_in? %>
-              <p class="card-text text-danger fw-bold small mb-2" role="text">
-                <span class="visually-hidden">Precio: </span><%= number_to_currency(product.selling_price) %>
-              </p>
-              <% if (eta = stock_eta(product)) %>
-                <p class="text-muted extra-small mb-2"><i class="fa fa-clock me-1" aria-hidden="true"></i><span class="visually-hidden">Disponible: </span><%= eta %></p>
+            <p class="catalog-card-meta text-muted mb-1">
+              <span class="catalog-brand"><%= product.brand %></span>
+              <% if product.whatsapp_code.present? %>
+                <span class="catalog-wa-code" title="Código para pedir por WhatsApp">
+                  <i class="fab fa-whatsapp text-success" aria-hidden="true"></i>
+                  <%= product.whatsapp_code %>
+                </span>
               <% end %>
-              <% if product.active? %>
-                <% on_hand = @on_hand_counts[product.id] || 0 %>
-                <% disabled = (on_hand <= 0 && !product.oversell_allowed?) %>
+            </p>
+            <p class="card-text text-danger fw-bold small mb-1" role="text">
+              <span class="visually-hidden">Precio: </span><%= number_to_currency(product.selling_price) %>
+            </p>
+            <p class="text-muted extra-small mb-2" title="El precio puede ajustarse al tipo de cambio del día de la compra">
+              <i class="fas fa-circle-info me-1" aria-hidden="true"></i>Sujeto a tipo de cambio
+            </p>
+            <% if (eta = stock_eta(product)) %>
+              <p class="text-muted extra-small mb-2"><i class="fa fa-clock me-1" aria-hidden="true"></i><span class="visually-hidden">Disponible: </span><%= eta %></p>
+            <% end %>
+            <% if product.active? %>
+              <% on_hand = @on_hand_counts[product.id] || 0 %>
+              <% disabled = (on_hand <= 0 && !product.oversell_allowed?) %>
+              <% if user_signed_in? %>
                 <%= button_to cart_items_path,
                               params: { product_id: product.id },
                               method: :post,
@@ -94,17 +94,14 @@
                   <span class="visually-hidden"><%= disabled ? 'Sin stock' : 'Agregar al carrito' %></span>
                 <% end %>
               <% else %>
-                <button class="btn btn-outline-secondary btn-sm mt-auto" disabled title="Producto no disponible" aria-label="Producto no disponible">
-                  <i class="fas fa-ban" aria-hidden="true"></i>
-                </button>
+                <%= link_to new_user_session_path, class: "btn btn-outline-danger btn-sm mt-auto", title: "Inicia sesión para agregar al carrito" do %>
+                  <i class="fas fa-sign-in-alt me-1" aria-hidden="true"></i><span class="d-none d-sm-inline">Iniciar sesión</span><span class="d-inline d-sm-none">Login</span>
+                <% end %>
               <% end %>
             <% else %>
-              <p class="text-muted small mb-2">
-                <i class="fas fa-lock me-1"></i>Inicia sesión para ver precio
-              </p>
-              <%= link_to new_user_session_path, class: "btn btn-outline-danger btn-sm mt-auto" do %>
-                <i class="fas fa-sign-in-alt me-1"></i>Iniciar Sesión
-              <% end %>
+              <button class="btn btn-outline-secondary btn-sm mt-auto" disabled title="Producto no disponible" aria-label="Producto no disponible">
+                <i class="fas fa-ban" aria-hidden="true"></i>
+              </button>
             <% end %>
           </div>
         </article>
@@ -130,17 +127,20 @@
         <% end %>
       </div>
 
-      <%# Sugerencias de categorías populares %>
-      <div class="empty-state-suggestions mt-4 pt-4 border-top">
-        <p class="text-muted small mb-3">¿Buscas algo específico? Explora nuestras categorías:</p>
-        <div class="d-flex flex-wrap justify-content-center gap-2">
-          <% ['Diecast', 'Figuras', 'Coleccionables', 'Juguetes'].each do |cat| %>
-            <%= link_to catalog_path(categories: [cat]), class: "btn btn-outline-secondary btn-sm", data: { turbo_frame: "products_grid", turbo_action: "advance" } do %>
-              <i class="fas fa-tag me-1"></i><%= cat %>
+      <%# Sugerencias de categorías reales (top por número de productos) %>
+      <% suggestion_categories = (defined?(@top_categories) && @top_categories.presence) || (@all_categories || []).first(4) %>
+      <% if suggestion_categories.present? %>
+        <div class="empty-state-suggestions mt-4 pt-4 border-top">
+          <p class="text-muted small mb-3">¿Buscas algo específico? Explora nuestras categorías:</p>
+          <div class="d-flex flex-wrap justify-content-center gap-2">
+            <% suggestion_categories.each do |cat| %>
+              <%= link_to catalog_path(categories: [cat]), class: "btn btn-outline-secondary btn-sm", data: { turbo_frame: "products_grid", turbo_action: "advance" } do %>
+                <i class="fas fa-tag me-1"></i><%= cat %>
+              <% end %>
             <% end %>
-          <% end %>
+          </div>
         </div>
-      </div>
+      <% end %>
     </div>
   <% end %>
 

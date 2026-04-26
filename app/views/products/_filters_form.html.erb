@@ -1,4 +1,7 @@
 <%# La lógica de filtros ahora está centralizada en FilterParamsHelper#filter_state %>
+<% is_mobile = suffix.to_s == 'Mobile' %>
+<% list_expanded = is_mobile ? '' : 'show' %>
+<% list_aria_expanded = is_mobile ? 'false' : 'true' %>
 
 <%= form_with url: catalog_path, method: :get, data: {
   turbo_frame: "products_grid",
@@ -53,7 +56,6 @@
     </div>
   </div>
 
-  <% if user_signed_in? %>
   <div class="filter-block mb-3">
     <h6 class="fw-semibold small text-uppercase text-muted mb-2">
       <a class="text-decoration-none text-muted d-flex align-items-center justify-content-between" data-bs-toggle="collapse" href="#filterPrice<%= suffix %>" role="button" aria-expanded="true" aria-controls="filterPrice<%= suffix %>">
@@ -73,41 +75,25 @@
            data-price-range-current-min-value="<%= params[:price_min] || @price_range_min %>"
            data-price-range-current-max-value="<%= params[:price_max] || @price_range_max %>">
 
-        <%# Slider visual %>
         <div class="mb-2 px-2 pt-2">
           <div data-price-range-target="slider" class="price-slider"></div>
         </div>
 
-        <%# Inputs numéricos ocultos que se actualizan con el slider %>
-        <input type="hidden"
-               name="price_min"
-               value="<%= params[:price_min] %>"
-               data-price-range-target="minInput"
-               data-debounce="true">
-        <input type="hidden"
-               name="price_max"
-               value="<%= params[:price_max] %>"
-               data-price-range-target="maxInput"
-               data-debounce="true">
+        <input type="hidden" name="price_min" value="<%= params[:price_min] %>" data-price-range-target="minInput" data-debounce="true">
+        <input type="hidden" name="price_max" value="<%= params[:price_max] %>" data-price-range-target="maxInput" data-debounce="true">
 
-        <%# Displays opcionales para mostrar valores actuales %>
         <div class="d-flex justify-content-between align-items-center text-muted small px-2">
-          <span>
-            <span data-price-range-target="minDisplay">$<%= params[:price_min] || @price_range_min %></span>
-          </span>
-          <span>
-            <span data-price-range-target="maxDisplay">$<%= params[:price_max] || @price_range_max %></span>
-          </span>
+          <span><span data-price-range-target="minDisplay">$<%= params[:price_min] || @price_range_min %></span></span>
+          <span><span data-price-range-target="maxDisplay">$<%= params[:price_max] || @price_range_max %></span></span>
         </div>
       </div>
     </div>
   </div>
-  <% end %>
 
   <% if @all_categories.present? %>
-  <div class="filter-block mb-3">
+  <div class="filter-block mb-3" data-controller="filter-list">
     <h6 class="fw-semibold small text-uppercase text-muted mb-2">
-      <a class="text-decoration-none text-muted d-flex align-items-center justify-content-between" data-bs-toggle="collapse" href="#filterCategories<%= suffix %>" role="button" aria-expanded="false" aria-controls="filterCategories<%= suffix %>">
+      <a class="text-decoration-none text-muted d-flex align-items-center justify-content-between" data-bs-toggle="collapse" href="#filterCategories<%= suffix %>" role="button" aria-expanded="<%= list_aria_expanded %>" aria-controls="filterCategories<%= suffix %>">
         Categorías
         <span>
           <% if filter_state.selected_categories.any? %>
@@ -117,10 +103,14 @@
         </span>
       </a>
     </h6>
-    <div class="collapse" id="filterCategories<%= suffix %>">
-      <div class="filter-scroll">
+    <div class="collapse <%= list_expanded %>" id="filterCategories<%= suffix %>">
+      <% if @all_categories.size > 8 %>
+        <input type="search" class="form-control form-control-sm filter-search mb-2" placeholder="Buscar categoría..."
+               data-filter-list-target="search" data-action="input->filter-list#filter" aria-label="Buscar categoría">
+      <% end %>
+      <div class="filter-scroll" data-filter-list-target="list">
         <% @all_categories.each do |c| %>
-          <div class="form-check">
+          <div class="form-check" data-filter-list-target="item" data-label="<%= c.to_s.downcase %>">
             <input class="form-check-input" type="checkbox" name="categories[]" value="<%= c %>" id="cat<%= suffix %>-<%= c.parameterize %>" <%= 'checked' if filter_state.selected_categories.include?(c) %>>
             <label class="form-check-label" for="cat<%= suffix %>-<%= c.parameterize %>">
               <%= c %>
@@ -136,9 +126,9 @@
   <% end %>
 
   <% if @all_brands.present? %>
-  <div class="filter-block mb-3">
+  <div class="filter-block mb-3" data-controller="filter-list">
     <h6 class="fw-semibold small text-uppercase text-muted mb-2">
-      <a class="text-decoration-none text-muted d-flex align-items-center justify-content-between" data-bs-toggle="collapse" href="#filterBrands<%= suffix %>" role="button" aria-expanded="false" aria-controls="filterBrands<%= suffix %>">
+      <a class="text-decoration-none text-muted d-flex align-items-center justify-content-between" data-bs-toggle="collapse" href="#filterBrands<%= suffix %>" role="button" aria-expanded="<%= list_aria_expanded %>" aria-controls="filterBrands<%= suffix %>">
         Marcas
         <span>
           <% if filter_state.selected_brands.any? %>
@@ -148,10 +138,14 @@
         </span>
       </a>
     </h6>
-    <div class="collapse" id="filterBrands<%= suffix %>">
-      <div class="filter-scroll">
+    <div class="collapse <%= list_expanded %>" id="filterBrands<%= suffix %>">
+      <% if @all_brands.size > 8 %>
+        <input type="search" class="form-control form-control-sm filter-search mb-2" placeholder="Buscar marca..."
+               data-filter-list-target="search" data-action="input->filter-list#filter" aria-label="Buscar marca">
+      <% end %>
+      <div class="filter-scroll" data-filter-list-target="list">
         <% @all_brands.each do |b| %>
-          <div class="form-check">
+          <div class="form-check" data-filter-list-target="item" data-label="<%= b.to_s.downcase %>">
             <input class="form-check-input" type="checkbox" name="brands[]" value="<%= b %>" id="brand<%= suffix %>-<%= b.parameterize %>" <%= 'checked' if filter_state.selected_brands.include?(b) %>>
             <label class="form-check-label" for="brand<%= suffix %>-<%= b.parameterize %>">
               <%= b %>
@@ -167,9 +161,9 @@
   <% end %>
 
   <% if @all_series.present? %>
-  <div class="filter-block mb-3">
+  <div class="filter-block mb-3" data-controller="filter-list">
     <h6 class="fw-semibold small text-uppercase text-muted mb-2">
-      <a class="text-decoration-none text-muted d-flex align-items-center justify-content-between" data-bs-toggle="collapse" href="#filterSeries<%= suffix %>" role="button" aria-expanded="false" aria-controls="filterSeries<%= suffix %>">
+      <a class="text-decoration-none text-muted d-flex align-items-center justify-content-between" data-bs-toggle="collapse" href="#filterSeries<%= suffix %>" role="button" aria-expanded="<%= list_aria_expanded %>" aria-controls="filterSeries<%= suffix %>">
         Series
         <span>
           <% if filter_state.selected_series.any? %>
@@ -179,10 +173,14 @@
         </span>
       </a>
     </h6>
-    <div class="collapse" id="filterSeries<%= suffix %>">
-      <div class="filter-scroll">
+    <div class="collapse <%= list_expanded %>" id="filterSeries<%= suffix %>">
+      <% if @all_series.size > 8 %>
+        <input type="search" class="form-control form-control-sm filter-search mb-2" placeholder="Buscar serie..."
+               data-filter-list-target="search" data-action="input->filter-list#filter" aria-label="Buscar serie">
+      <% end %>
+      <div class="filter-scroll" data-filter-list-target="list">
         <% @all_series.each do |series| %>
-          <div class="form-check">
+          <div class="form-check" data-filter-list-target="item" data-label="<%= series.to_s.downcase %>">
             <input class="form-check-input" type="checkbox" name="series[]" value="<%= series %>" id="series<%= suffix %>-<%= series.parameterize %>" <%= 'checked' if filter_state.selected_series.include?(series) %>>
             <label class="form-check-label" for="series<%= suffix %>-<%= series.parameterize %>">
               <%= series %>
@@ -199,7 +197,7 @@
 
   <div class="d-grid gap-2">
     <%# Ya hay autosubmit con Stimulus; no es necesario botón de 'Aplicar filtros' %>
-    <% if suffix.to_s == 'Mobile' %>
+    <% if is_mobile %>
       <button type="button" class="btn btn-danger btn-sm" data-bs-dismiss="offcanvas">Cerrar</button>
     <% end %>
     <a href="<%= catalog_path %>" class="btn btn-outline-secondary btn-sm" data-turbo-frame="products_grid" data-turbo-action="advance">Limpiar todo</a>

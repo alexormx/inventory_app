@@ -98,6 +98,11 @@ class ProductsController < ApplicationController
             when 'price_asc'  then scope.order(selling_price: :asc)
             when 'price_desc' then scope.order(selling_price: :desc)
             when 'name_asc'   then scope.order(Arel.sql('LOWER(product_name) ASC'))
+            when 'popular'
+              # Productos con más unidades vendidas históricas
+              scope.left_joins(:sale_order_items)
+                   .group('products.id')
+                   .order(Arel.sql('COALESCE(SUM(sale_order_items.quantity), 0) DESC, products.created_at DESC'))
             else # newest (deterministic)
               scope.order(created_at: :desc, id: :desc)
             end
@@ -108,6 +113,10 @@ class ProductsController < ApplicationController
     product_ids = @products.map(&:id)
     @on_hand_counts = Inventory.where(product_id: product_ids, status: :available)
                                .group(:product_id).count
+    # Top 4 categorías por número de productos para sugerir en el empty state
+    @top_categories = Product.publicly_visible.where.not(category: [nil, ''])
+                             .group(:category).order(Arel.sql('COUNT(*) DESC'))
+                             .limit(4).pluck(:category)
   end
 
   def show

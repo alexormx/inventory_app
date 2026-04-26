@@ -35,12 +35,30 @@
     </ol>
   </nav>
 
+  <%# Banner de confianza con señales de envío / pago %>
+  <div class="catalog-trust-banner mb-3" role="region" aria-label="Información de envío y pago">
+    <div class="d-flex flex-wrap gap-3 align-items-center small">
+      <span><i class="fas fa-truck text-danger me-1" aria-hidden="true"></i>Envío estándar a todo México</span>
+      <span><i class="fas fa-bookmark text-danger me-1" aria-hidden="true"></i>Apartados disponibles</span>
+      <span><i class="fas fa-coins text-danger me-1" aria-hidden="true"></i>Pago en pesos al tipo de cambio del día</span>
+      <span><i class="fab fa-whatsapp text-success me-1" aria-hidden="true"></i>Soporte por WhatsApp</span>
+    </div>
+  </div>
+
   <div class="catalog-header d-flex flex-column flex-lg-row align-items-lg-end justify-content-between gap-2 gap-lg-3 mb-3">
     <div class="catalog-title-wrapper">
-      <h1 class="catalog-title fw-semibold mb-1"><%= catalog_dynamic_title %></h1>
+      <h1 class="catalog-title fw-semibold mb-1 d-flex flex-wrap align-items-center gap-2">
+        <%= catalog_dynamic_title %>
+        <% if @products.respond_to?(:total_count) %>
+          <span class="catalog-title-count text-muted fw-normal" aria-label="<%= @products.total_count %> productos">
+            <%= number_with_delimiter(@products.total_count) %>
+            <small><%= @products.total_count == 1 ? 'producto' : 'productos' %></small>
+          </span>
+        <% end %>
+      </h1>
       <p class="text-muted small mb-0"><%= catalog_subtitle %></p>
     </div>
-    <%# Contador prominente y toggle de vista %>
+    <%# Toggle de vista %>
     <div class="d-flex align-items-center gap-3">
       <div class="btn-group view-toggle" role="group" aria-label="Cambiar vista">
         <button type="button" class="btn btn-outline-secondary btn-sm active" data-action="click->catalog-view#setGrid" data-catalog-view-target="gridBtn" title="Vista cuadrícula">
@@ -69,6 +87,7 @@
       <% end %>
       <select name="sort" class="form-select form-select-sm sort-select" aria-label="Ordenar productos">
         <option value="newest" <%= 'selected' if @sort=='newest' %>>Más recientes</option>
+        <option value="popular" <%= 'selected' if @sort=='popular' %>>Más vendidos</option>
         <option value="price_asc" <%= 'selected' if @sort=='price_asc' %>>Precio ↑</option>
         <option value="price_desc" <%= 'selected' if @sort=='price_desc' %>>Precio ↓</option>
         <option value="name_asc" <%= 'selected' if @sort=='name_asc' %>>Nombre A-Z</option>
@@ -96,7 +115,7 @@
     </div>
   </div>
 
-  <!-- ✅ Botón flotante para abrir filtros en mobile (fuera del grid) -->
+  <!-- Botón flotante para abrir filtros en mobile (fuera del grid) -->
   <button class="btn btn-danger d-md-none filter-toggle-btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#filtersOffcanvas" aria-controls="filtersOffcanvas">
     <i class="fas fa-filter me-2"></i>Filtros
     <% if active_filters_count > 0 %>
@@ -104,7 +123,17 @@
     <% end %>
   </button>
 
-  <!-- ✅ Offcanvas mobile -->
+  <!-- Botón flotante back-to-top -->
+  <button type="button"
+          class="btn btn-light back-to-top"
+          data-controller="back-to-top"
+          data-action="click->back-to-top#scrollUp"
+          aria-label="Volver al inicio"
+          title="Volver arriba">
+    <i class="fas fa-arrow-up" aria-hidden="true"></i>
+  </button>
+
+  <!-- Offcanvas mobile -->
   <div class="offcanvas offcanvas-start" tabindex="-1" id="filtersOffcanvas" aria-labelledby="filtersOffcanvasLabel">
     <div class="offcanvas-header">
       <h5 class="offcanvas-title" id="filtersOffcanvasLabel">
@@ -117,7 +146,3 @@
     </div>
   </div>
 </div>
-
-
-
-
