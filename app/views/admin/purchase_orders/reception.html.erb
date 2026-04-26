@@ -21,10 +21,10 @@
       <div class="card-body">
         <%= form_with url: preview_reception_admin_purchase_orders_path, local: true, multipart: true, class: "row g-3" do |f| %>
           <div class="col-12">
-            <label class="form-label" for="reception_document">PDF o screenshot</label>
-            <%= file_field_tag :document, accept: ".pdf,image/png,image/jpeg,image/webp", class: "form-control", id: "reception_document", required: true %>
+            <label class="form-label" for="reception_document">PDF, screenshot o CSV de invoice</label>
+            <%= file_field_tag :document, accept: ".pdf,.csv,image/png,image/jpeg,image/webp,text/csv", class: "form-control", id: "reception_document", required: true %>
             <div class="form-text">
-              El parser asume que la primera columna del documento es el Supplier ID.
+              CSV (Item Code, Item Name, Qty Shipped, Price, JanCode, Weight…) se procesa directo, sin OCR — más rápido y exacto. Para PDF/imagen se usa OCR multimodal.
             </div>
           </div>
 

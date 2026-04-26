@@ -112,7 +112,7 @@ module Admin
 
       @reception_defaults = reception_defaults
       @reception_form = reception_params.to_h.symbolize_keys
-      parsed = PurchaseOrders::ReceptionDocumentParserService.new(params[:document]).call
+      parsed = build_reception_parser(params[:document]).call
       @document_metadata = parsed.except(:rows)
       @uploaded_filename = params[:document].respond_to?(:original_filename) ? params[:document].original_filename : nil
 
@@ -130,7 +130,8 @@ module Admin
       @reception_defaults = reception_defaults
       flash.now[:alert] = "Selecciona un proveedor válido para continuar."
       render :reception, status: :unprocessable_entity
-    rescue PurchaseOrders::ReceptionDocumentParserService::ParseError => e
+    rescue PurchaseOrders::ReceptionDocumentParserService::ParseError,
+           PurchaseOrders::ReceptionCsvParserService::ParseError => e
       @reception_defaults = reception_defaults
       flash.now[:alert] = e.message
       render :reception, status: :unprocessable_entity
@@ -266,6 +267,17 @@ module Admin
           unit_cost: unit_cost,
           product_name: attrs[:product_name].to_s
         }
+      end
+    end
+
+    def build_reception_parser(uploaded_file)
+      filename = uploaded_file.respond_to?(:original_filename) ? uploaded_file.original_filename.to_s : ""
+      content_type = uploaded_file.respond_to?(:content_type) ? uploaded_file.content_type.to_s : ""
+
+      if filename.downcase.end_with?(".csv") || content_type.include?("csv") || content_type == "application/vnd.ms-excel"
+        PurchaseOrders::ReceptionCsvParserService.new(uploaded_file, default_currency: reception_params[:currency].presence || "JPY")
+      else
+        PurchaseOrders::ReceptionDocumentParserService.new(uploaded_file)
       end
     end
 
