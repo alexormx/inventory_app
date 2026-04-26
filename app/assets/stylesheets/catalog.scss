@@ -1,10 +1,10 @@
 /* Catálogo: estilos de layout, chips, sidebar y spinner */
 /* El catálogo ocupa más ancho que las otras páginas customer (cap del .container es 1320 en xxl).
-   Expandimos el main contenedor solo cuando contiene #catalog. */
-@supports selector(:has(*)) {
-  main.page-main:has(#catalog) {
-    max-width: min(1600px, 96vw);
-  }
+   Expandimos el main contenedor solo cuando contiene #catalog. Browsers que no soportan
+   :has() simplemente ignoran la regla (cae al ancho default del .container). */
+#{"main.page-main:has(#catalog)"} {
+  max-width: 1600px;
+  width: 96%;
 }
 
 #catalog { --catalog-gap-y: .75rem; }
