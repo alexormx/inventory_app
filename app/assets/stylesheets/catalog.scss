@@ -552,7 +552,7 @@ turbo-frame[busy]::after {
 }
 
 #catalog #product-grid-content.list-view .catalog-item {
-  flex-direction: row;
+  flex-direction: row !important; /* Bootstrap .flex-column usa !important; necesitamos ganarle */
   align-items: center;
   gap: .75rem;
   padding: .5rem .75rem;
@@ -583,17 +583,26 @@ turbo-frame[busy]::after {
   border-radius: 6px;
 }
 
-/* Badges: chips inline sobre el título, no flotantes encima de la imagen */
+/* Badges en list view: chips chicos apilados arriba-izquierda sobre el thumb */
 #catalog #product-grid-content.list-view .catalog-badges {
-  position: static !important;
-  display: inline-flex !important;
+  position: absolute !important;
+  top: 4px;
+  left: 4px;
+  right: auto;
+  bottom: auto;
   width: auto;
   padding: 0 !important;
-  margin: 0 0 .25rem 0;
-  gap: .35rem;
-  align-self: flex-start;
+  margin: 0;
+  display: inline-flex !important;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: .2rem;
 }
-#catalog #product-grid-content.list-view .catalog-badges .badge { font-size: .65rem; padding: .25rem .5rem; }
+#catalog #product-grid-content.list-view .catalog-badges .badge {
+  font-size: .58rem;
+  padding: .15rem .35rem;
+  line-height: 1;
+}
 
 /* Body principal con info */
 #catalog #product-grid-content.list-view .card-body {
@@ -721,8 +730,21 @@ turbo-frame[busy]::after {
   z-index: 20;
   pointer-events: none;
   gap: .25rem;
+  flex-wrap: wrap; /* si los badges no caben, el segundo cae a la siguiente línea */
 }
-#catalog .catalog-badges .badge { font-size: .7rem; }
+#catalog .catalog-badges .badge {
+  font-size: .7rem;
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+@media (max-width: 575.98px) {
+  #catalog .catalog-badges .badge {
+    font-size: .62rem;
+    padding: .25rem .45rem;
+  }
+}
 
 /* Filter search input dentro de listas largas */
 .catalog-sidebar-filters .filter-search {

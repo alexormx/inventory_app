@@ -1,16 +1,18 @@
 import { Controller } from "@hotwired/stimulus"
 
-// Controla el toggle entre vista grid y lista en el catálogo
+// Controla el toggle entre vista grid y lista en el catálogo.
+// Siempre arranca en grid; el cambio a lista vive dentro de la sesión actual
+// (no se persiste entre cargas para que la primera impresión sea consistente).
 export default class extends Controller {
   static targets = ["gridBtn", "listBtn"]
   static values = { view: { type: String, default: "grid" } }
 
   connect() {
-    this.viewValue = this.safeGetPreference() || "grid"
+    this.viewValue = "grid"
     this.applyView()
 
     // Cuando Turbo reemplaza el contenido del frame, el DOM del grid cambia.
-    // Reaplicamos la vista guardada para que el usuario no "pierda" el modo lista.
+    // Reaplicamos la vista actual para que el modo elegido se mantenga al filtrar.
     this._onTurboFrameRender = (event) => {
       if (event?.target?.id !== "products_grid") return
       this.applyView()
@@ -28,51 +30,33 @@ export default class extends Controller {
   setGrid() {
     this.viewValue = "grid"
     this.applyView()
-    this.safeSetPreference(this.viewValue)
   }
 
   setList() {
     this.viewValue = "list"
     this.applyView()
-    this.safeSetPreference(this.viewValue)
   }
 
   applyView() {
     const grid = document.getElementById("product-grid-content")
     if (!grid) return
 
-    // Toggle clases en el grid
+    const gridCols = ["row-cols-1", "row-cols-sm-2", "row-cols-md-3", "row-cols-lg-4", "row-cols-xl-5"]
+
     if (this.viewValue === "list") {
       grid.classList.add("list-view")
-      grid.classList.remove("row-cols-2", "row-cols-sm-2", "row-cols-md-3", "row-cols-lg-4", "row-cols-xl-5")
+      gridCols.forEach((cls) => grid.classList.remove(cls))
       grid.classList.add("row-cols-1")
       if (this.hasListBtnTarget) this.listBtnTarget.classList.add("active")
       if (this.hasGridBtnTarget) this.gridBtnTarget.classList.remove("active")
     } else {
-      grid.classList.remove("list-view", "row-cols-1")
-      grid.classList.add("row-cols-2", "row-cols-sm-2", "row-cols-md-3", "row-cols-lg-4", "row-cols-xl-5")
+      grid.classList.remove("list-view")
+      gridCols.forEach((cls) => grid.classList.add(cls))
       if (this.hasGridBtnTarget) this.gridBtnTarget.classList.add("active")
       if (this.hasListBtnTarget) this.listBtnTarget.classList.remove("active")
     }
   }
 
-  safeGetPreference() {
-    try {
-      return localStorage.getItem("catalogView")
-    } catch (_) {
-      return null
-    }
-  }
-
-  safeSetPreference(value) {
-    try {
-      localStorage.setItem("catalogView", value)
-    } catch (_) {
-      // Sin persistencia si el storage está bloqueado.
-    }
-  }
-
-  // Re-aplicar vista cuando Turbo actualiza el frame
   viewValueChanged() {
     this.applyView()
   }
