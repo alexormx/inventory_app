@@ -113,6 +113,19 @@ class ProductsController < ApplicationController
     product_ids = @products.map(&:id)
     @on_hand_counts = Inventory.where(product_id: product_ids, status: :available)
                                .group(:product_id).count
+    # Para productos sin stock pero con piezas en tránsito, calcular la fecha
+    # más próxima de llegada (de la PO con expected_delivery_date más temprana).
+    products_without_stock = product_ids - @on_hand_counts.keys
+    @in_transit_etas = if products_without_stock.any?
+                         Inventory.where(product_id: products_without_stock, status: :in_transit)
+                                  .joins(:purchase_order)
+                                  .where.not(purchase_orders: { expected_delivery_date: nil })
+                                  .where('purchase_orders.expected_delivery_date >= ?', Date.current)
+                                  .group(:product_id)
+                                  .minimum('purchase_orders.expected_delivery_date')
+                       else
+                         {}
+                       end
     # Top 4 categorías por número de productos para sugerir en el empty state
     @top_categories = Product.publicly_visible.where.not(category: [nil, ''])
                              .group(:category).order(Arel.sql('COUNT(*) DESC'))
