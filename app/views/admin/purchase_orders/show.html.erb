@@ -4,6 +4,7 @@
   is_near_due = days_to_delivery && days_to_delivery.between?(0, 3) && !['Delivered', 'Canceled'].include?(@purchase_order.status)
   items_count = @purchase_order.purchase_order_items.sum(:quantity)
   products_count = @purchase_order.purchase_order_items.count
+  total_lines_cost_mxn = @purchase_order.purchase_order_items.sum { |item| item.total_line_cost_in_mxn.to_d }
   status_icons = { 'Pending' => 'clock', 'In Transit' => 'shipping-fast', 'Delivered' => 'check-circle', 'Canceled' => 'times-circle' }
   status_labels = { 'Pending' => 'Pendiente', 'In Transit' => 'En Tránsito', 'Delivered' => 'Entregado', 'Canceled' => 'Cancelado' }
 %>
@@ -336,7 +337,7 @@
 
               <%# Total MXN %>
               <td class="text-end">
-                <div class="fw-bold text-success"><%= number_to_currency(item.total_line_cost_in_mxn, unit: '$', precision: 2) %></div>
+                <div class="fw-bold text-success"><%= number_to_currency(item.total_line_cost_in_mxn.to_d, unit: '$', precision: 2) %></div>
               </td>
             </tr>
           <% end %>
@@ -347,7 +348,7 @@
             <td class="text-center"><%= items_count %></td>
             <td colspan="3"></td>
             <td class="text-end"><%= number_to_currency(@purchase_order.subtotal, unit: currency_symbol_for(@purchase_order.currency), precision: 2) %></td>
-            <td class="text-end text-success"><%= number_to_currency(@purchase_order.purchase_order_items.sum(&:total_line_cost_in_mxn), unit: '$', precision: 2) %></td>
+            <td class="text-end text-success"><%= number_to_currency(total_lines_cost_mxn, unit: '$', precision: 2) %></td>
           </tr>
         </tfoot>
       </table>

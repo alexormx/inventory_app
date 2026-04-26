@@ -119,4 +119,24 @@ RSpec.describe "Admin Purchase Orders", type: :request do
       expect(response).to redirect_to(edit_admin_purchase_order_path(purchase_order))
     end
   end
+
+  describe "GET /admin/purchase_orders/:id" do
+    it "renders even when a line has nil total_line_cost_in_mxn" do
+      sign_in admin
+      purchase_order = create(:purchase_order, user: supplier)
+      create(
+        :purchase_order_item,
+        purchase_order: purchase_order,
+        product: product,
+        quantity: 2,
+        unit_cost: 100,
+        total_line_cost_in_mxn: nil
+      )
+
+      get admin_purchase_order_path(purchase_order)
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include(purchase_order.id)
+    end
+  end
 end
