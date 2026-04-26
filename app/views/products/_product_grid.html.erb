@@ -73,9 +73,11 @@
             <p class="card-text text-danger fw-bold small mb-1" role="text">
               <span class="visually-hidden">Precio: </span><%= number_to_currency(product.selling_price) %>
             </p>
-            <p class="text-muted extra-small mb-2" title="El precio puede ajustarse al tipo de cambio del día de la compra">
-              <i class="fas fa-circle-info me-1" aria-hidden="true"></i>Sujeto a tipo de cambio
-            </p>
+            <% unless user_signed_in? %>
+              <p class="catalog-fx-note text-muted mb-2" title="El precio puede ajustarse al tipo de cambio del día de la compra">
+                <i class="fas fa-circle-info me-1" aria-hidden="true"></i>Sujeto a tipo de cambio
+              </p>
+            <% end %>
             <% if (eta = stock_eta(product)) %>
               <p class="text-muted extra-small mb-2"><i class="fa fa-clock me-1" aria-hidden="true"></i><span class="visually-hidden">Disponible: </span><%= eta %></p>
             <% end %>
