@@ -286,6 +286,18 @@ module Admin
       applied_count = 0
 
       ActiveRecord::Base.transaction do
+        product_attrs = params.fetch(:product, {}).permit(:product_name, :brand, :category, :selling_price)
+        product_attrs.each do |attr, value|
+          new_value = attr == "selling_price" ? value.to_s.gsub(/[^\d.]/, "") : value.to_s.strip
+          next if new_value.blank?
+          current = product.public_send(attr).to_s
+          comparison = attr == "selling_price" ? new_value.to_f != current.to_f : new_value != current
+          if comparison
+            product.public_send("#{attr}=", new_value)
+            applied_count += 1
+          end
+        end
+
         if selected.include?("barcode") && catalog.barcode.present?
           product.barcode = catalog.barcode
           applied_count += 1
@@ -515,15 +527,19 @@ module Admin
       @syncable_fields << { key: "width_cm", label: "Ancho (cm)", catalog_val: parsed_dims[:width_cm]&.to_s, product_val: product.width_cm&.to_s, different: parsed_dims[:width_cm].present? && parsed_dims[:width_cm] != product.width_cm&.to_f }
       @syncable_fields << { key: "height_cm", label: "Alto (cm)", catalog_val: parsed_dims[:height_cm]&.to_s, product_val: product.height_cm&.to_s, different: parsed_dims[:height_cm].present? && parsed_dims[:height_cm] != product.height_cm&.to_f }
 
-      # Reference-only fields — informational, no sync
+      # Editable product fields — user can override the value to be saved on the product
       similarity = helpers.name_similarity_score(catalog.canonical_name, product.product_name)
-      catalog_price = catalog.currency == "JPY" ? "¥#{catalog.canonical_price.to_i}" : catalog.canonical_price.to_s
+      catalog_price_display = catalog.currency == "JPY" ? "¥#{catalog.canonical_price.to_i}" : catalog.canonical_price.to_s
 
+      @editable_product_fields = [
+        { key: "product_name", label: "Nombre", catalog_val: catalog.canonical_name, product_val: product.product_name, similarity: similarity },
+        { key: "brand", label: "Marca", catalog_val: catalog.canonical_brand, product_val: product.brand },
+        { key: "category", label: "Categoría", catalog_val: catalog.canonical_category, product_val: product.category },
+        { key: "selling_price", label: "Precio venta", catalog_val: catalog_price_display, product_val: product.selling_price.to_s, hint: catalog.currency == "JPY" ? "Catálogo en JPY — convierte antes de guardar" : nil }
+      ]
+
+      # Reference-only fields — informational, no sync
       @reference_fields = []
-      @reference_fields << { label: "Nombre", catalog_val: catalog.canonical_name, product_val: product.product_name, similarity: similarity }
-      @reference_fields << { label: "Marca", catalog_val: catalog.canonical_brand, product_val: product.brand }
-      @reference_fields << { label: "Categoría", catalog_val: catalog.canonical_category, product_val: product.category }
-      @reference_fields << { label: "Precio", catalog_val: catalog_price, product_val: "$#{product.selling_price}" }
       @reference_fields << { label: "Descripción", catalog_val: catalog.description_raw.to_s.truncate(200), product_val: product.description.to_s.truncate(200) }
 
       # Images — individual selection

@@ -80,6 +80,59 @@
   </div>
 </div>
 
+<%# ── SECTION 2a: Editable Product Fields ── %>
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-header bg-white">
+    <h5 class="mb-0"><i class="fa-solid fa-pen-to-square me-2 text-warning"></i>Datos del producto <span class="text-muted fw-normal small">(editable — se guarda con el botón Aplicar)</span></h5>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th style="width: 160px">Campo</th>
+            <th>Sugerido del catálogo</th>
+            <th>Valor a guardar en producto</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @editable_product_fields.each do |field| %>
+            <tr>
+              <td>
+                <strong><%= field[:label] %></strong>
+                <% if field[:similarity] %>
+                  <br><%= similarity_badge(field[:similarity]) %>
+                <% end %>
+              </td>
+              <td>
+                <% if field[:catalog_val].present? %>
+                  <div class="d-flex align-items-start gap-2">
+                    <span class="text-break flex-grow-1"><%= field[:catalog_val] %></span>
+                    <button type="button" class="btn btn-sm btn-outline-secondary"
+                      onclick="document.getElementById('product_<%= field[:key] %>').value = this.dataset.value"
+                      data-value="<%= field[:catalog_val] %>" title="Usar valor del catálogo">
+                      <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                  </div>
+                <% else %>
+                  <span class="text-muted">—</span>
+                <% end %>
+                <% if field[:hint].present? %>
+                  <div class="small text-warning mt-1"><i class="fa-solid fa-triangle-exclamation me-1"></i><%= field[:hint] %></div>
+                <% end %>
+              </td>
+              <td>
+                <input type="text" name="product[<%= field[:key] %>]" id="product_<%= field[:key] %>"
+                  value="<%= field[:product_val] %>" class="form-control form-control-sm">
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
 <%# ── SECTION 2: Reference Fields ── %>
 <div class="card border-0 shadow-sm mb-4">
   <div class="card-header bg-white">
