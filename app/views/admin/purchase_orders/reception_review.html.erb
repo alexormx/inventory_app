@@ -10,7 +10,7 @@
   <span class="badge admin-page-badge">Paso 2 de 2</span>
 </div>
 
-<%= form_with url: commit_reception_admin_purchase_orders_path, local: true, method: :post do %>
+<%= form_with url: commit_reception_admin_purchase_orders_path, local: true, method: :post, data: { turbo: false } do %>
   <%= hidden_field_tag "reception[user_id]", @reception_form[:user_id] %>
   <%= hidden_field_tag "reception[order_date]", @reception_form[:order_date] %>
   <%= hidden_field_tag "reception[expected_delivery_date]", @reception_form[:expected_delivery_date] %>
