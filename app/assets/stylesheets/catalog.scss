@@ -107,6 +107,14 @@
   box-shadow: 0 2px 4px rgba(23,162,184,0.2);
 }
 
+/* Badge dedicado para "Llega ~fecha" — navy con blanco para contraste fuerte */
+.badge.badge-incoming,
+#catalog .badge.badge-incoming {
+  background: linear-gradient(135deg, #1d4ed8 0%, #1e3a8a 100%) !important;
+  color: #fff !important;
+  box-shadow: 0 2px 4px rgba(29, 78, 216, 0.25);
+}
+
 #catalog .badge.bg-secondary {
   background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%) !important;
   box-shadow: 0 2px 4px rgba(108,117,125,0.2);

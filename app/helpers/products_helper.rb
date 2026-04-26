@@ -24,7 +24,7 @@ module ProductsHelper
                                 ['En stock', 'bg-success', 'Disponible para envío inmediato']
                               elsif in_transit_eta.present?
                                 eta_fmt = spanish_short_date(in_transit_eta)
-                                ["Llega ~#{eta_fmt}", 'bg-info text-dark', "En tránsito desde proveedor · Llegada estimada #{eta_fmt}"]
+                                ["Llega ~#{eta_fmt}", 'badge-incoming', "En tránsito desde proveedor · Llegada estimada #{eta_fmt}"]
                               elsif product.preorder_available
                                 if product.respond_to?(:launch_date) && product.launch_date.present?
                                   estimated_date = begin
