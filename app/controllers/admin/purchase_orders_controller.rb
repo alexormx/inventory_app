@@ -107,32 +107,62 @@ module Admin
       end
     end
 
-    def import_reception
+    def preview_reception
+      User.find(reception_params[:user_id])
+
+      @reception_defaults = reception_defaults
+      @reception_form = reception_params.to_h.symbolize_keys
+      parsed = PurchaseOrders::ReceptionDocumentParserService.new(params[:document]).call
+      @document_metadata = parsed.except(:rows)
+      @uploaded_filename = params[:document].respond_to?(:original_filename) ? params[:document].original_filename : nil
+
+      @review_rows = parsed[:rows].each_with_index.map do |row, idx|
+        resolution = PurchaseOrders::ReceptionProductResolverService.new(
+          row[:supplier_product_code],
+          product_name: row[:product_name],
+          barcode: row[:barcode]
+        ).call
+        { idx: idx, row: row, resolution: resolution }
+      end
+
+      render :reception_review
+    rescue ActiveRecord::RecordNotFound
+      @reception_defaults = reception_defaults
+      flash.now[:alert] = "Selecciona un proveedor válido para continuar."
+      render :reception, status: :unprocessable_entity
+    rescue PurchaseOrders::ReceptionDocumentParserService::ParseError => e
+      @reception_defaults = reception_defaults
+      flash.now[:alert] = e.message
+      render :reception, status: :unprocessable_entity
+    end
+
+    def commit_reception
+      decisions = parse_review_decisions
+
       result = PurchaseOrders::ReceptionImportService.new(
         user: User.find(reception_params[:user_id]),
-        uploaded_file: params[:document],
+        decisions: decisions,
+        document_metadata: review_document_metadata,
         order_date: reception_params[:order_date],
         expected_delivery_date: reception_params[:expected_delivery_date],
         status: reception_params[:status],
         currency: reception_params[:currency],
         exchange_rate: reception_params[:exchange_rate],
-        notes: reception_params[:notes]
+        notes: reception_params[:notes],
+        uploaded_filename: params[:uploaded_filename]
       ).call
 
       notice = "Orden #{result.purchase_order.id} creada con #{result.resolved_rows.size} línea(s)"
-      notice += ". #{result.unresolved_rows.size} línea(s) quedaron sin resolver y se agregaron a notas" if result.unresolved_rows.any?
+      notice += ". #{result.unresolved_rows.size} línea(s) quedaron sin resolver y se anotaron en la orden" if result.unresolved_rows.any?
 
       redirect_to edit_admin_purchase_order_path(result.purchase_order), notice: notice
     rescue ActiveRecord::RecordNotFound
-      @reception_defaults = reception_defaults
-      flash.now[:alert] = "Selecciona un proveedor válido para continuar."
-      render :reception, status: :unprocessable_entity
+      flash[:alert] = "Selecciona un proveedor válido para continuar."
+      redirect_to reception_admin_purchase_orders_path
     rescue PurchaseOrders::ReceptionImportService::ImportError,
-           PurchaseOrders::ReceptionDocumentParserService::ParseError,
            Suppliers::Hlj::ImportBySupplierCodeService::LookupError => e
-      @reception_defaults = reception_defaults
-      flash.now[:alert] = e.message
-      render :reception, status: :unprocessable_entity
+      flash[:alert] = e.message
+      redirect_to reception_admin_purchase_orders_path
     end
 
     def update
@@ -210,6 +240,46 @@ module Admin
           user_id order_date expected_delivery_date status currency exchange_rate notes
         ]
       )
+    end
+
+    def parse_review_decisions
+      raw = params[:decisions]
+      raw = raw.to_unsafe_h if raw.respond_to?(:to_unsafe_h)
+      Array(raw).map do |idx, attrs|
+        attrs = attrs.to_unsafe_h if attrs.respond_to?(:to_unsafe_h)
+        attrs = attrs.symbolize_keys
+        unit_cost =
+          begin
+            cleaned = attrs[:unit_cost].to_s.gsub(/[^\d\.\-]/, "")
+            cleaned.present? ? BigDecimal(cleaned) : nil
+          rescue ArgumentError
+            nil
+          end
+
+        {
+          idx: idx.to_i,
+          action: attrs[:action].to_s,
+          supplier_product_code: attrs[:supplier_product_code].to_s.strip,
+          product_id: attrs[:product_id].presence,
+          catalog_item_id: attrs[:catalog_item_id].presence,
+          quantity: attrs[:quantity].to_i,
+          unit_cost: unit_cost,
+          product_name: attrs[:product_name].to_s
+        }
+      end
+    end
+
+    def review_document_metadata
+      meta = params.fetch(:document_metadata, {}).permit(
+        :document_currency, :invoice_date, :invoice_number,
+        :subtotal, :shipping_cost, :other_cost, :document_total, notes: []
+      ).to_h
+      meta.symbolize_keys.tap do |h|
+        h[:shipping_cost] = BigDecimal(h[:shipping_cost].to_s) if h[:shipping_cost].present?
+        h[:other_cost] = BigDecimal(h[:other_cost].to_s) if h[:other_cost].present?
+      end
+    rescue ArgumentError
+      {}
     end
 
     def reception_defaults

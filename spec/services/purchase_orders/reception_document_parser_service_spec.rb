@@ -23,6 +23,7 @@ RSpec.describe PurchaseOrders::ReceptionDocumentParserService, type: :service do
                     {
                       supplier_product_code: "TMT33336",
                       product_name: "LV-N Ferrari F40 (1989) (Red)",
+                      barcode: "4543736333364",
                       quantity: 2,
                       unit_cost: "6,224",
                       confidence: 0.99
@@ -49,6 +50,7 @@ RSpec.describe PurchaseOrders::ReceptionDocumentParserService, type: :service do
         {
           supplier_product_code: "TMT33336",
           product_name: "LV-N Ferrari F40 (1989) (Red)",
+          barcode: "4543736333364",
           quantity: 2,
           unit_cost: 6224.to_d,
           confidence: 0.99

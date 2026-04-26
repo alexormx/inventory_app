@@ -19,7 +19,7 @@
         <h5 class="mb-0"><i class="fa-solid fa-cloud-arrow-up"></i> Documento de recepción</h5>
       </div>
       <div class="card-body">
-        <%= form_with url: import_reception_admin_purchase_orders_path, local: true, multipart: true, class: "row g-3" do |f| %>
+        <%= form_with url: preview_reception_admin_purchase_orders_path, local: true, multipart: true, class: "row g-3" do |f| %>
           <div class="col-12">
             <label class="form-label" for="reception_document">PDF o screenshot</label>
             <%= file_field_tag :document, accept: ".pdf,image/png,image/jpeg,image/webp", class: "form-control", id: "reception_document", required: true %>
@@ -85,7 +85,7 @@
               Cancelar
             <% end %>
             <%= f.button type: :submit, class: "btn btn-primary" do %>
-              <i class="fa-solid fa-wand-magic-sparkles me-1"></i> Crear PO desde documento
+              <i class="fa-solid fa-wand-magic-sparkles me-1"></i> Analizar documento
             <% end %>
           </div>
         <% end %>
@@ -101,10 +101,10 @@
       <div class="card-body">
         <ol class="mb-0 ps-3">
           <li>Se extraen filas del PDF o screenshot usando OCR multimodal.</li>
-          <li>Cada Supplier ID se busca primero en productos existentes.</li>
-          <li>Si no existe producto, se revisa SupplierCatalogItem por supplier_product_code.</li>
-          <li>Si aún no existe, se consulta HLJ por Supplier ID y se crea el producto automáticamente.</li>
-          <li>Se crea una orden de compra y se abre en edición para revisión final.</li>
+          <li>Cada Supplier ID se busca en productos existentes y se valida contra el nombre extraído.</li>
+          <li>Si no hay producto, se buscan candidatos en SupplierCatalogItem (por código y nombre).</li>
+          <li>Tú revisas fila por fila qué hacer: usar el producto, sincronizar un catalog item, importar de HLJ, u omitir.</li>
+          <li>Al confirmar se crea la orden de compra y se abre en edición.</li>
         </ol>
       </div>
     </div>

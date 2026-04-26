@@ -43,20 +43,28 @@ RSpec.describe "Admin Purchase Orders", type: :request do
     end
   end
 
-  describe "POST /admin/purchase_orders/import_reception" do
-    it "creates a purchase order through the reception importer and redirects to edit" do
+  describe "POST /admin/purchase_orders/preview_reception" do
+    it "parses the document and renders the review page" do
       sign_in admin
-      purchase_order = create(:purchase_order, user: supplier)
-      result = PurchaseOrders::ReceptionImportService::Result.new(
-        purchase_order: purchase_order,
-        resolved_rows: [{ supplier_product_code: "TKT95078" }],
-        unresolved_rows: [{ supplier_product_code: "MISS-001" }]
+      parser_double = instance_double(
+        PurchaseOrders::ReceptionDocumentParserService,
+        call: {
+          document_currency: "JPY",
+          invoice_date: "2026-01-13",
+          invoice_number: "2186307",
+          subtotal: 1000.to_d,
+          shipping_cost: 100.to_d,
+          other_cost: 0.to_d,
+          document_total: 1100.to_d,
+          rows: [
+            { supplier_product_code: "TKT95078", product_name: "Tomica", barcode: nil, quantity: 1, unit_cost: 500.to_d, confidence: 0.95 }
+          ],
+          notes: []
+        }
       )
-      service = instance_double(PurchaseOrders::ReceptionImportService, call: result)
+      allow(PurchaseOrders::ReceptionDocumentParserService).to receive(:new).and_return(parser_double)
 
-      allow(PurchaseOrders::ReceptionImportService).to receive(:new).and_return(service)
-
-      post import_reception_admin_purchase_orders_path, params: {
+      post preview_reception_admin_purchase_orders_path, params: {
         reception: {
           user_id: supplier.id,
           order_date: Date.current,
@@ -67,6 +75,45 @@ RSpec.describe "Admin Purchase Orders", type: :request do
           notes: "Recepción"
         },
         document: Rack::Test::UploadedFile.new(Rails.root.join("spec/fixtures/files/test1.png"), "image/png")
+      }
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("TKT95078")
+    end
+  end
+
+  describe "POST /admin/purchase_orders/commit_reception" do
+    it "creates a purchase order from the per-row decisions and redirects to edit" do
+      sign_in admin
+      purchase_order = create(:purchase_order, user: supplier)
+      result = PurchaseOrders::ReceptionImportService::Result.new(
+        purchase_order: purchase_order,
+        resolved_rows: [{ supplier_product_code: "TKT95078" }],
+        unresolved_rows: []
+      )
+      service = instance_double(PurchaseOrders::ReceptionImportService, call: result)
+      allow(PurchaseOrders::ReceptionImportService).to receive(:new).and_return(service)
+
+      post commit_reception_admin_purchase_orders_path, params: {
+        reception: {
+          user_id: supplier.id,
+          order_date: Date.current,
+          expected_delivery_date: Date.current + 7.days,
+          status: "Pending",
+          currency: "JPY",
+          exchange_rate: 1,
+          notes: "Recepción"
+        },
+        decisions: {
+          "0" => {
+            action: "use_existing",
+            supplier_product_code: "TKT95078",
+            product_id: product.id,
+            quantity: 1,
+            unit_cost: 500,
+            product_name: "Tomica"
+          }
+        }
       }
 
       expect(response).to redirect_to(edit_admin_purchase_order_path(purchase_order))

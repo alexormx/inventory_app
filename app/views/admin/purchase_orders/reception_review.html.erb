@@ -1,0 +1,184 @@
+<div class="admin-page-header d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+  <div>
+    <p class="admin-page-eyebrow mb-1">Abastecimiento</p>
+    <h1 class="h4 mb-0"><i class="fa-solid fa-list-check"></i> Revisión de líneas extraídas</h1>
+    <p class="text-muted mb-0 mt-1 small">
+      Revisa cada fila antes de crear la orden. Puedes usar el producto sugerido, sincronizar un catalog item,
+      importar desde HLJ, u omitir la línea.
+    </p>
+  </div>
+  <span class="badge admin-page-badge">Paso 2 de 2</span>
+</div>
+
+<%= form_with url: commit_reception_admin_purchase_orders_path, local: true, method: :post do %>
+  <%= hidden_field_tag "reception[user_id]", @reception_form[:user_id] %>
+  <%= hidden_field_tag "reception[order_date]", @reception_form[:order_date] %>
+  <%= hidden_field_tag "reception[expected_delivery_date]", @reception_form[:expected_delivery_date] %>
+  <%= hidden_field_tag "reception[status]", @reception_form[:status] %>
+  <%= hidden_field_tag "reception[currency]", @reception_form[:currency] %>
+  <%= hidden_field_tag "reception[exchange_rate]", @reception_form[:exchange_rate] %>
+  <%= hidden_field_tag "reception[notes]", @reception_form[:notes] %>
+  <%= hidden_field_tag "uploaded_filename", @uploaded_filename %>
+
+  <% @document_metadata.each do |key, value| %>
+    <% if value.is_a?(Array) %>
+      <% value.each do |v| %>
+        <%= hidden_field_tag "document_metadata[#{key}][]", v %>
+      <% end %>
+    <% else %>
+      <%= hidden_field_tag "document_metadata[#{key}]", value %>
+    <% end %>
+  <% end %>
+
+  <div class="card admin-order-card mb-4">
+    <div class="card-header admin-order-card-header d-flex justify-content-between align-items-center">
+      <h5 class="mb-0"><i class="fa-solid fa-file-invoice"></i> Datos del documento</h5>
+      <small class="text-muted"><%= @uploaded_filename %></small>
+    </div>
+    <div class="card-body row g-2 small">
+      <div class="col-md-3"><strong>Moneda:</strong> <%= @document_metadata[:document_currency] || "—" %></div>
+      <div class="col-md-3"><strong>Invoice #:</strong> <%= @document_metadata[:invoice_number] || "—" %></div>
+      <div class="col-md-3"><strong>Fecha:</strong> <%= @document_metadata[:invoice_date] || "—" %></div>
+      <div class="col-md-3"><strong>Total:</strong> <%= @document_metadata[:document_total] || "—" %></div>
+      <div class="col-md-3"><strong>Subtotal:</strong> <%= @document_metadata[:subtotal] || "—" %></div>
+      <div class="col-md-3"><strong>Shipping:</strong> <%= @document_metadata[:shipping_cost] || "—" %></div>
+      <div class="col-md-3"><strong>Otros cargos:</strong> <%= @document_metadata[:other_cost] || "—" %></div>
+    </div>
+  </div>
+
+  <div class="vstack gap-3 mb-4">
+    <% @review_rows.each do |entry| %>
+      <% idx = entry[:idx]; row = entry[:row]; resolution = entry[:resolution] %>
+      <% has_product = resolution.product_match.present? %>
+      <% has_catalog = resolution.catalog_matches.any? %>
+      <% has_name_candidates = resolution.name_candidates.any? %>
+      <% similarity = resolution.name_similarity %>
+      <% low_similarity = similarity && similarity < 0.5 %>
+      <% default_action = if has_product && !low_similarity then "use_existing"
+                          elsif has_catalog then "sync_catalog"
+                          elsif has_product && low_similarity then "use_existing"
+                          else "import_hlj"
+                          end %>
+
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+          <div>
+            <span class="badge bg-secondary me-2">#<%= idx + 1 %></span>
+            <strong><%= row[:supplier_product_code] %></strong>
+            <span class="text-muted ms-2"><%= row[:product_name] %></span>
+          </div>
+          <div class="small text-muted">
+            <span class="me-3"><i class="fa-solid fa-cubes me-1"></i>Qty: <%= row[:quantity] %></span>
+            <span><i class="fa-solid fa-tag me-1"></i><%= row[:unit_cost] %> <%= @document_metadata[:document_currency] %></span>
+          </div>
+        </div>
+        <div class="card-body">
+          <%= hidden_field_tag "decisions[#{idx}][supplier_product_code]", row[:supplier_product_code] %>
+          <%= hidden_field_tag "decisions[#{idx}][quantity]", row[:quantity] %>
+          <%= hidden_field_tag "decisions[#{idx}][unit_cost]", row[:unit_cost] %>
+          <%= hidden_field_tag "decisions[#{idx}][product_name]", row[:product_name] %>
+
+          <%# Option 1: Use existing matched product %>
+          <% if has_product %>
+            <% product = resolution.product_match %>
+            <div class="form-check mb-3 p-3 border rounded <%= low_similarity ? 'border-warning bg-warning-subtle' : 'border-success bg-success-subtle' %>">
+              <input type="radio" class="form-check-input" name="decisions[<%= idx %>][action]"
+                value="use_existing" id="action_<%= idx %>_use" <%= 'checked' if default_action == 'use_existing' %>>
+              <label class="form-check-label w-100" for="action_<%= idx %>_use">
+                <div class="d-flex justify-content-between align-items-start">
+                  <div>
+                    <strong>Usar producto existente</strong>
+                    <% if low_similarity %>
+                      <span class="badge bg-warning text-dark ms-2"><i class="fa-solid fa-triangle-exclamation me-1"></i>nombre poco similar</span>
+                    <% end %>
+                    <div class="small mt-1">
+                      <a href="<%= admin_product_path(product) %>" target="_blank"><%= product.product_name %></a>
+                      <span class="text-muted ms-2">SKU: <%= product.product_sku %> · Supplier: <%= product.supplier_product_code %></span>
+                    </div>
+                    <% if similarity %>
+                      <div class="small text-muted">Similitud nombre: <%= number_to_percentage((similarity * 100).round(0), precision: 0) %></div>
+                    <% end %>
+                  </div>
+                </div>
+              </label>
+              <%= hidden_field_tag "decisions[#{idx}][product_id]", product.id, id: "decisions_#{idx}_product_id_main" %>
+            </div>
+          <% end %>
+
+          <%# Option 1b: Pick from name candidates if no exact code match %>
+          <% if !has_product && has_name_candidates %>
+            <div class="form-check mb-3 p-3 border rounded">
+              <input type="radio" class="form-check-input" name="decisions[<%= idx %>][action]"
+                value="use_existing" id="action_<%= idx %>_candidate">
+              <label class="form-check-label w-100" for="action_<%= idx %>_candidate">
+                <strong>Usar producto existente por similitud de nombre</strong>
+                <select name="decisions[<%= idx %>][product_id]" class="form-select form-select-sm mt-2">
+                  <option value="">— elige un candidato —</option>
+                  <% resolution.name_candidates.each do |candidate| %>
+                    <option value="<%= candidate.id %>"><%= candidate.product_name %> (<%= candidate.supplier_product_code.presence || candidate.product_sku %>)</option>
+                  <% end %>
+                </select>
+              </label>
+            </div>
+          <% end %>
+
+          <%# Option 2: Sync from catalog %>
+          <% if has_catalog %>
+            <div class="form-check mb-3 p-3 border rounded border-info bg-info-subtle">
+              <input type="radio" class="form-check-input" name="decisions[<%= idx %>][action]"
+                value="sync_catalog" id="action_<%= idx %>_sync" <%= 'checked' if default_action == 'sync_catalog' %>>
+              <label class="form-check-label w-100" for="action_<%= idx %>_sync">
+                <strong>Sincronizar desde catálogo de proveedor</strong>
+                <span class="badge bg-info ms-2"><%= resolution.catalog_matches.size %> match(es)</span>
+                <div class="mt-2">
+                  <% resolution.catalog_matches.each_with_index do |item, ci| %>
+                    <div class="form-check">
+                      <input type="radio" class="form-check-input" name="decisions[<%= idx %>][catalog_item_id]"
+                        value="<%= item.id %>" id="catalog_<%= idx %>_<%= ci %>" <%= 'checked' if ci.zero? %>>
+                      <label class="form-check-label small" for="catalog_<%= idx %>_<%= ci %>">
+                        <a href="<%= admin_supplier_catalog_item_path(item) %>" target="_blank"><%= item.canonical_name %></a>
+                        <span class="text-muted ms-2">SKU: <%= item.external_sku %> · Code: <%= item.supplier_product_code %></span>
+                        <% if item.product_id.present? %>
+                          <span class="badge bg-secondary ms-1">ya vinculado</span>
+                        <% end %>
+                      </label>
+                    </div>
+                  <% end %>
+                </div>
+              </label>
+            </div>
+          <% end %>
+
+          <%# Option 3: Import from HLJ %>
+          <div class="form-check mb-3 p-3 border rounded">
+            <input type="radio" class="form-check-input" name="decisions[<%= idx %>][action]"
+              value="import_hlj" id="action_<%= idx %>_hlj" <%= 'checked' if default_action == 'import_hlj' %>>
+            <label class="form-check-label w-100" for="action_<%= idx %>_hlj">
+              <strong>Importar desde HLJ usando <%= row[:supplier_product_code] %></strong>
+              <div class="small text-muted">Consulta el sitio de HLJ y crea/sincroniza producto + catalog item.</div>
+            </label>
+          </div>
+
+          <%# Option 4: Skip %>
+          <div class="form-check p-3 border rounded">
+            <input type="radio" class="form-check-input" name="decisions[<%= idx %>][action]"
+              value="skip" id="action_<%= idx %>_skip">
+            <label class="form-check-label w-100" for="action_<%= idx %>_skip">
+              <strong class="text-danger">Omitir esta línea</strong>
+              <div class="small text-muted">No se incluirá en la orden.</div>
+            </label>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="d-flex justify-content-between gap-2">
+    <%= link_to reception_admin_purchase_orders_path, class: "btn btn-outline-secondary" do %>
+      <i class="fa-solid fa-arrow-left me-1"></i> Subir otro documento
+    <% end %>
+    <button type="submit" class="btn btn-primary">
+      <i class="fa-solid fa-check me-1"></i> Crear PO con las decisiones seleccionadas
+    </button>
+  </div>
+<% end %>

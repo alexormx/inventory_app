@@ -9,7 +9,7 @@ module PurchaseOrders
   class ReceptionDocumentParserService
     class ParseError < StandardError; end
 
-    DEFAULT_MODEL = "gpt-4o-mini".freeze
+    DEFAULT_MODEL = ENV.fetch("PO_RECEPTION_OCR_MODEL", "gpt-4o").freeze
     MAX_PDF_PAGES = 3
 
     def initialize(uploaded_file, client: OpenAI::Client.new, model: DEFAULT_MODEL)
@@ -30,7 +30,7 @@ module PurchaseOrders
           ],
           temperature: 0.1,
           response_format: { type: "json_object" },
-          max_tokens: 1800
+          max_tokens: 2400
         }
       )
 
@@ -61,6 +61,7 @@ module PurchaseOrders
             {
               "supplier_product_code": "TMT33336",
               "product_name": "LV-N Ferrari F40 (1989) (Red)",
+              "barcode": "4543736333364",
               "quantity": 2,
               "unit_cost": 6224,
               "confidence": 0.98
@@ -72,6 +73,9 @@ module PurchaseOrders
         Reglas:
         - En invoices de HobbyLink Japan, el supplier_product_code suele ser el primer token dentro de la columna Description.
         - Ejemplo real: "TMT33336 LV-N Ferrari F40 (1989) (Red)" -> supplier_product_code = "TMT33336" y product_name = "LV-N Ferrari F40 (1989) (Red)".
+        - El supplier_product_code es CRÍTICO: cópialo carácter por carácter sin omitir dígitos. Si no estás 100% seguro de un dígito, baja la confidence a < 0.9.
+        - product_name: copia el nombre completo del producto tal cual aparece (sin el código). Es necesario para validar el match contra productos existentes.
+        - barcode: si el documento muestra un EAN/JAN/UPC (13 dígitos típicamente), inclúyelo; si no aparece, usa null.
         - quantity debe ser entero positivo. Si no aparece y la fila parece válida, usa 1.
         - unit_cost debe ser numérico sin símbolos de moneda. Si no existe, usa null.
         - Extrae subtotal, freight como shipping_cost, y payment processing fee u otros cargos similares como other_cost.
@@ -115,6 +119,7 @@ module PurchaseOrders
         {
           supplier_product_code: supplier_product_code,
           product_name: row["product_name"].to_s.strip.presence,
+          barcode: row["barcode"].to_s.strip.presence,
           quantity: normalize_quantity(row["quantity"]),
           unit_cost: normalize_decimal(row["unit_cost"]),
           confidence: row["confidence"].to_f

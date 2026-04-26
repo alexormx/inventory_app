@@ -198,7 +198,8 @@ Rails.application.routes.draw do
       get :summary, on: :member
       collection do
         get :reception
-        post :import_reception
+        post :preview_reception
+        post :commit_reception
         get :line_audit
         post :rebalance_all_mismatches
       end
