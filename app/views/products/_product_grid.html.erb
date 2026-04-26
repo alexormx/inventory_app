@@ -79,7 +79,9 @@
                 <i class="fas fa-circle-info me-1" aria-hidden="true"></i>Sujeto a tipo de cambio
               </p>
             <% end %>
-            <% if product.active? && on_hand_cached <= 0 && (eta = stock_eta(product, in_transit_eta_override: in_transit_eta_cached)) %>
+            <%# El badge ya muestra "Llega ~fecha" cuando hay inventario en tránsito,
+                así que solo mostramos el ETA cuando viene de preventa/sobre-pedido. %>
+            <% if product.active? && on_hand_cached <= 0 && in_transit_eta_cached.blank? && (eta = stock_eta(product)) %>
               <p class="text-muted extra-small mb-2"><i class="fa fa-clock me-1" aria-hidden="true"></i><span class="visually-hidden">Disponible: </span><%= eta %></p>
             <% end %>
             <% if product.active? %>
