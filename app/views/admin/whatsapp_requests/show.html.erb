@@ -1,0 +1,127 @@
+<div class="admin-page-header d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+  <div>
+    <p class="admin-page-eyebrow mb-1">Pedido WhatsApp</p>
+    <h2 class="mb-0"><i class="fab fa-whatsapp text-success me-2"></i><%= @request.code %></h2>
+    <p class="text-muted mb-0 mt-1 small">
+      <% color = case @request.status when 'sent' then 'warning' when 'contacted' then 'info' when 'converted' then 'success' else 'secondary' end %>
+      <span class="badge bg-<%= color %>"><%= @request.status.humanize %></span>
+      · Recibido <%= @request.sent_at ? l(@request.sent_at, format: :short) : 'sin enviar' %>
+    </p>
+  </div>
+  <div class="d-flex gap-2">
+    <%= link_to admin_whatsapp_requests_path, class: "btn btn-outline-secondary" do %>
+      <i class="fas fa-arrow-left me-1"></i>Volver
+    <% end %>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-8">
+    <div class="card border-0 shadow-sm mb-3">
+      <div class="card-header bg-white"><h5 class="mb-0">Items</h5></div>
+      <div class="card-body p-0">
+        <table class="table mb-0 align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>Producto</th>
+              <th class="text-center">Cantidad</th>
+              <th class="text-end">Precio (snapshot)</th>
+              <th class="text-end">Subtotal</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @request.whatsapp_request_items.includes(:product).each do |item| %>
+              <tr>
+                <td>
+                  <%= link_to item.product.product_name, admin_product_path(item.product), target: "_blank" %>
+                  <div class="small text-muted">
+                    <%= item.product.brand %> · <%= item.product.supplier_product_code.presence || item.product.product_sku %>
+                  </div>
+                </td>
+                <td class="text-center"><%= item.quantity %></td>
+                <td class="text-end">
+                  <%= number_to_currency(item.unit_price_snapshot) %>
+                  <% if item.unit_price_snapshot.to_f != item.product.selling_price.to_f %>
+                    <div class="small text-warning">Hoy: <%= number_to_currency(item.product.selling_price) %></div>
+                  <% end %>
+                </td>
+                <td class="text-end fw-semibold"><%= number_to_currency(item.unit_price_snapshot.to_f * item.quantity) %></td>
+              </tr>
+            <% end %>
+          </tbody>
+          <tfoot class="table-light">
+            <tr>
+              <td colspan="3" class="text-end fw-semibold">Total estimado</td>
+              <td class="text-end fw-bold"><%= number_to_currency(@request.total_estimate) %></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+
+    <% if @request.customer_notes.present? %>
+      <div class="card border-0 shadow-sm mb-3">
+        <div class="card-header bg-white"><h6 class="mb-0">Notas del cliente</h6></div>
+        <div class="card-body small"><%= simple_format(@request.customer_notes) %></div>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="card border-0 shadow-sm mb-3">
+      <div class="card-header bg-white"><h6 class="mb-0">Cliente</h6></div>
+      <div class="card-body small">
+        <p class="mb-1"><strong>Nombre:</strong> <%= @request.customer_name.presence || '—' %></p>
+        <p class="mb-1"><strong>Teléfono:</strong> <%= @request.customer_phone.presence || '—' %></p>
+        <p class="mb-1"><strong>Email:</strong> <%= @request.customer_email.presence || '—' %></p>
+        <p class="mb-1"><strong>Usuario:</strong>
+          <% if @request.user %>
+            <%= link_to @request.user.email, edit_admin_user_path(@request.user), target: "_blank" rescue @request.user.email %>
+          <% else %>
+            Sin vincular
+          <% end %>
+        </p>
+      </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-3">
+      <div class="card-header bg-white"><h6 class="mb-0">Acciones</h6></div>
+      <div class="card-body d-grid gap-2">
+        <% if @request.sent? %>
+          <%= button_to mark_contacted_admin_whatsapp_request_path(@request), method: :patch, class: "btn btn-info" do %>
+            <i class="fas fa-comments me-1"></i>Marcar como contactado
+          <% end %>
+        <% end %>
+
+        <% if @request.sale_order_id.present? %>
+          <%= link_to admin_sale_order_path(@request.sale_order_id), class: "btn btn-success" do %>
+            <i class="fas fa-receipt me-1"></i>Ver Sale Order #<%= @request.sale_order_id %>
+          <% end %>
+        <% else %>
+          <% unless @request.canceled? %>
+            <%= button_to convert_to_sale_order_admin_whatsapp_request_path(@request), method: :post, class: "btn btn-primary",
+                          form: { data: { turbo_confirm: "¿Crear Sale Order desde este pedido?" } } do %>
+              <i class="fas fa-arrow-right me-1"></i>Convertir a Sale Order
+            <% end %>
+          <% end %>
+        <% end %>
+
+        <% unless @request.canceled? || @request.converted? %>
+          <%= button_to cancel_admin_whatsapp_request_path(@request), method: :patch, class: "btn btn-outline-danger",
+                        form: { data: { turbo_confirm: "¿Cancelar este pedido?" } } do %>
+            <i class="fas fa-times me-1"></i>Cancelar
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+
+    <% if @request.whatsapp_url.present? %>
+      <div class="card border-0 shadow-sm">
+        <div class="card-body small">
+          <strong>Enlace WhatsApp:</strong><br>
+          <a href="<%= @request.whatsapp_url %>" target="_blank" class="text-break"><%= @request.whatsapp_url %></a>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>

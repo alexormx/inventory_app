@@ -158,6 +158,21 @@
           </li>
         <% end %>
 
+        <!-- WhatsApp List (público, sea logueado o invitado) -->
+        <li class="nav-item">
+          <% wa_count = whatsapp_list_item_count %>
+          <%= link_to whatsapp_list_path,
+                class: "nav-item-link position-relative d-flex align-items-center #{'active' if controller_path == 'whatsapp_lists'}",
+                'data-nav-link': 'wa-list',
+                'aria-label': "Mi lista de WhatsApp (#{wa_count} items)" do %>
+            <i class="fab fa-whatsapp" aria-hidden="true"></i>
+            <span class="link-text">Lista WA</span>
+            <% if wa_count.positive? %>
+              <span id="wa-list-count" class="badge bg-success rounded-pill position-absolute top-0 start-100 translate-middle"><%= wa_count %></span>
+            <% end %>
+          <% end %>
+        </li>
+
       </ul>
     </div>
   </div>

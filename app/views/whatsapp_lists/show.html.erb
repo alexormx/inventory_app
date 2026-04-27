@@ -1,0 +1,116 @@
+<div class="container mt-4 wa-list-page">
+  <div class="d-flex flex-wrap align-items-center justify-content-between mb-3">
+    <h1 class="h3 mb-0"><i class="fab fa-whatsapp text-success me-2"></i>Mi lista para WhatsApp</h1>
+    <%= link_to catalog_path, class: "btn btn-outline-secondary btn-sm" do %>
+      <i class="fas fa-arrow-left me-1"></i>Seguir explorando
+    <% end %>
+  </div>
+
+  <p class="text-muted small mb-4">
+    Agrega productos sin registrarte. Al enviar generamos un código único (ej: <code>WA-2026-0042</code>)
+    que abre WhatsApp con tu lista lista para mandar. Te contactamos para confirmar precio,
+    disponibilidad y forma de pago.
+  </p>
+
+  <% if @items.empty? %>
+    <div class="card border-0 shadow-sm">
+      <div class="card-body text-center py-5">
+        <i class="fab fa-whatsapp fa-3x text-success-emphasis mb-3 opacity-50"></i>
+        <h5 class="text-muted mb-3">Tu lista está vacía</h5>
+        <p class="text-muted">Encuentra algo que te guste y dale al botón verde de WhatsApp.</p>
+        <%= link_to catalog_path, class: "btn btn-success" do %>
+          <i class="fas fa-search me-1"></i>Ir al catálogo
+        <% end %>
+      </div>
+    </div>
+  <% else %>
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover mb-0 align-middle">
+            <thead class="table-light">
+              <tr>
+                <th colspan="2">Producto</th>
+                <th class="text-center" style="width: 130px">Cantidad</th>
+                <th class="text-end" style="width: 120px">Precio</th>
+                <th class="text-end" style="width: 130px">Subtotal</th>
+                <th style="width: 60px"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @items.each do |item| %>
+                <tr>
+                  <td style="width: 80px">
+                    <% if item.product.product_images.attached? %>
+                      <%= image_tag item.product.primary_product_image.variant(resize_to_limit: [60,60]),
+                            alt: item.product.product_name, class: "rounded border", style: "width: 56px; height: 56px; object-fit: contain;" rescue image_tag('placeholder.png', class: "rounded", style: "width:56px;height:56px") %>
+                    <% else %>
+                      <%= image_tag 'placeholder.png', class: "rounded border", style: "width: 56px; height: 56px;" %>
+                    <% end %>
+                  </td>
+                  <td>
+                    <%= link_to item.product.product_name, product_path(item.product), class: "text-decoration-none text-dark fw-semibold" %>
+                    <div class="text-muted small">
+                      <%= item.product.brand %> · <%= item.product.supplier_product_code.presence || item.product.product_sku %>
+                    </div>
+                  </td>
+                  <td class="text-center">
+                    <%= form_with url: whatsapp_list_item_path(item), method: :patch, local: true, class: "d-inline-flex" do |f| %>
+                      <input type="number" name="quantity" min="1" value="<%= item.quantity %>" class="form-control form-control-sm" style="width: 80px">
+                      <button type="submit" class="btn btn-sm btn-link p-0 ms-1" title="Actualizar"><i class="fas fa-check"></i></button>
+                    <% end %>
+                  </td>
+                  <td class="text-end"><%= number_to_currency(item.unit_price_snapshot) %></td>
+                  <td class="text-end fw-semibold"><%= number_to_currency(item.unit_price_snapshot.to_f * item.quantity) %></td>
+                  <td class="text-end">
+                    <%= button_to whatsapp_list_item_path(item), method: :delete, class: "btn btn-sm btn-link text-danger p-0", form: { data: { turbo_confirm: "¿Quitar este item?" } } do %>
+                      <i class="fas fa-times"></i>
+                    <% end %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+            <tfoot class="table-light">
+              <tr>
+                <td colspan="4" class="text-end fw-semibold">Total estimado</td>
+                <td class="text-end fw-bold text-success"><%= number_to_currency(@request.total_estimate) %></td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white">
+        <h5 class="mb-0"><i class="fas fa-paper-plane me-2 text-success"></i>Enviar lista por WhatsApp</h5>
+      </div>
+      <div class="card-body">
+        <%= form_with url: send_whatsapp_list_path, method: :post, local: true, class: "row g-3" do |f| %>
+          <div class="col-md-6">
+            <label class="form-label">Tu nombre <span class="text-danger">*</span></label>
+            <%= text_field_tag "whatsapp_request[customer_name]", @request.customer_name, required: true, class: "form-control", placeholder: "Nombre y apellido" %>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Teléfono (opcional)</label>
+            <%= telephone_field_tag "whatsapp_request[customer_phone]", @request.customer_phone, class: "form-control", placeholder: "+52 ..." %>
+            <div class="form-text small">Lo usamos solo si necesitamos contactarte fuera de WhatsApp.</div>
+          </div>
+          <div class="col-12">
+            <label class="form-label">Notas para el pedido (opcional)</label>
+            <%= text_area_tag "whatsapp_request[customer_notes]", @request.customer_notes, rows: 3, class: "form-control", placeholder: "Ej: lo necesito antes del 15 de mayo, prefiero entrega en CDMX..." %>
+          </div>
+          <div class="col-12 d-flex justify-content-end gap-2">
+            <%= link_to catalog_path, class: "btn btn-outline-secondary" do %>
+              <i class="fas fa-arrow-left me-1"></i>Volver
+            <% end %>
+            <button type="submit" class="btn btn-success btn-lg">
+              <i class="fab fa-whatsapp me-2"></i>Enviar por WhatsApp
+            </button>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+</div>

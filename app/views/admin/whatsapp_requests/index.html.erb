@@ -1,0 +1,74 @@
+<div class="admin-page-header d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+  <div>
+    <p class="admin-page-eyebrow mb-1">Pedidos por canal alternativo</p>
+    <h2 class="mb-0"><i class="fab fa-whatsapp text-success me-2"></i>Pedidos WhatsApp</h2>
+  </div>
+  <div class="d-flex gap-2 small text-muted">
+    <% %i[sent contacted converted canceled].each do |st| %>
+      <span><strong><%= @counts[st.to_s] || 0 %></strong> <%= st %></span>
+    <% end %>
+  </div>
+</div>
+
+<%= form_with url: admin_whatsapp_requests_path, method: :get, local: true, class: "row g-2 mb-3" do %>
+  <div class="col-md-3">
+    <%= select_tag :status,
+          options_for_select([['Todos', '']] + WhatsappRequest.statuses.map { |k, _| [k.humanize, k] }.reject { |_, k| k == 'draft' }, @status_filter),
+          class: "form-select form-select-sm" %>
+  </div>
+  <div class="col-md-5">
+    <%= text_field_tag :q, @q, class: "form-control form-control-sm", placeholder: "Buscar por código, nombre, teléfono, email..." %>
+  </div>
+  <div class="col-md-2">
+    <%= submit_tag "Filtrar", class: "btn btn-primary btn-sm w-100" %>
+  </div>
+<% end %>
+
+<div class="card border-0 shadow-sm">
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Código</th>
+            <th>Status</th>
+            <th>Cliente</th>
+            <th>Items</th>
+            <th class="text-end">Total est.</th>
+            <th>Enviado</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @whatsapp_requests.each do |req| %>
+            <tr>
+              <td><strong><%= req.code %></strong></td>
+              <td>
+                <% color = case req.status when 'sent' then 'warning' when 'contacted' then 'info' when 'converted' then 'success' else 'secondary' end %>
+                <span class="badge bg-<%= color %>"><%= req.status.humanize %></span>
+              </td>
+              <td>
+                <%= req.customer_name.presence || '—' %>
+                <div class="small text-muted"><%= req.customer_phone.presence || req.customer_email.presence %></div>
+              </td>
+              <td><%= req.total_items %> piezas (<%= req.whatsapp_request_items.size %> productos)</td>
+              <td class="text-end"><%= number_to_currency(req.total_estimate) %></td>
+              <td><%= req.sent_at ? l(req.sent_at, format: :short) : '—' %></td>
+              <td class="text-end">
+                <%= link_to admin_whatsapp_request_path(req), class: "btn btn-sm btn-outline-primary" do %>
+                  Ver
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<% if @whatsapp_requests.respond_to?(:total_pages) && @whatsapp_requests.total_pages > 1 %>
+  <div class="d-flex justify-content-center mt-3">
+    <%= paginate @whatsapp_requests %>
+  </div>
+<% end %>

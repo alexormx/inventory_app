@@ -87,22 +87,33 @@
             <% if product.active? %>
               <% on_hand = @on_hand_counts[product.id] || 0 %>
               <% disabled = (on_hand <= 0 && !product.oversell_allowed?) %>
-              <% if user_signed_in? %>
-                <%= button_to cart_items_path,
-                              params: { product_id: product.id },
+              <div class="catalog-card-actions d-flex gap-1 mt-auto">
+                <% if user_signed_in? %>
+                  <%= button_to cart_items_path,
+                                params: { product_id: product.id },
+                                method: :post,
+                                class: "btn btn-danger btn-sm flex-grow-1 #{'disabled' if disabled}",
+                                disabled: disabled,
+                                title: (disabled ? 'Sin stock disponible' : 'Agregar al carrito'),
+                                aria: { label: (disabled ? 'Sin stock' : "Agregar #{product.product_name} al carrito") } do %>
+                    <i class="fas fa-cart-plus" aria-hidden="true"></i>
+                    <span class="visually-hidden"><%= disabled ? 'Sin stock' : 'Agregar al carrito' %></span>
+                  <% end %>
+                <% else %>
+                  <%= link_to new_user_session_path, class: "btn btn-outline-danger btn-sm flex-grow-1", title: "Inicia sesión para agregar al carrito" do %>
+                    <i class="fas fa-sign-in-alt" aria-hidden="true"></i>
+                    <span class="visually-hidden">Iniciar sesión</span>
+                  <% end %>
+                <% end %>
+                <%= button_to whatsapp_list_items_path, params: { product_id: product.id },
                               method: :post,
-                              class: "btn btn-danger btn-sm mt-auto #{'disabled' if disabled}",
-                              disabled: disabled,
-                              title: (disabled ? 'Sin stock disponible' : 'Agregar al carrito'),
-                              aria: { label: (disabled ? 'Sin stock' : "Agregar #{product.product_name} al carrito") } do %>
-                  <i class="fas fa-cart-plus" aria-hidden="true"></i>
-                  <span class="visually-hidden"><%= disabled ? 'Sin stock' : 'Agregar al carrito' %></span>
+                              class: "btn btn-outline-success btn-sm",
+                              title: "Agregar a lista de WhatsApp",
+                              aria: { label: "Agregar #{product.product_name} a lista de WhatsApp" },
+                              data: { turbo_frame: "_top" } do %>
+                  <i class="fab fa-whatsapp" aria-hidden="true"></i>
                 <% end %>
-              <% else %>
-                <%= link_to new_user_session_path, class: "btn btn-outline-danger btn-sm mt-auto", title: "Inicia sesión para agregar al carrito" do %>
-                  <i class="fas fa-sign-in-alt me-1" aria-hidden="true"></i><span class="d-none d-sm-inline">Iniciar sesión</span><span class="d-inline d-sm-none">Login</span>
-                <% end %>
-              <% end %>
+              </div>
             <% else %>
               <button class="btn btn-outline-secondary btn-sm mt-auto" disabled title="Producto no disponible" aria-label="Producto no disponible">
                 <i class="fas fa-ban" aria-hidden="true"></i>

@@ -1,0 +1,4 @@
+<%= link_to whatsapp_list_path, id: "wa-list-badge", class: "btn btn-sm btn-outline-success position-relative #{'d-none' if count.to_i.zero?}", title: "Mi lista de WhatsApp" do %>
+  <i class="fab fa-whatsapp"></i>
+  <span class="badge bg-success rounded-pill position-absolute top-0 start-100 translate-middle"><%= count %></span>
+<% end %>

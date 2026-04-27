@@ -295,6 +295,15 @@ Rails.application.routes.draw do
       post :apply, on: :member
       post :reverse, on: :member
     end
+
+    # Pedidos por WhatsApp (carrito alternativo)
+    resources :whatsapp_requests, only: %i[index show] do
+      member do
+        patch :mark_contacted
+        patch :cancel
+        post :convert_to_sale_order
+      end
+    end
   end
   # Public product views
   get '/catalog', to: 'products#index', as: :catalog
@@ -307,6 +316,13 @@ Rails.application.routes.draw do
   # Shopping Cart routes
   resources :cart_items, only: %i[create update destroy]
   get '/cart', to: 'carts#show', as: :cart
+
+  # WhatsApp List (preorden alternativa por WhatsApp)
+  get '/whatsapp-list', to: 'whatsapp_lists#show', as: :whatsapp_list
+  post '/whatsapp-list/items', to: 'whatsapp_lists#add_item', as: :whatsapp_list_items
+  patch '/whatsapp-list/items/:item_id', to: 'whatsapp_lists#update_item', as: :whatsapp_list_item
+  delete '/whatsapp-list/items/:item_id', to: 'whatsapp_lists#remove_item'
+  post '/whatsapp-list/send', to: 'whatsapp_lists#send_via_whatsapp', as: :send_whatsapp_list
 
   # Customer shipping addresses
   resources :shipping_addresses, only: %i[index new create edit update destroy] do

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_03_29_123000) do
+ActiveRecord::Schema[8.0].define(version: 2026_04_26_173600) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -520,10 +520,14 @@ ActiveRecord::Schema[8.0].define(version: 2026_03_29_123000) do
     t.string "credit_terms"
     t.date "due_date"
     t.string "idempotency_key"
+    t.string "origin"
+    t.bigint "whatsapp_request_id"
     t.index ["credit_override"], name: "index_sale_orders_on_credit_override"
     t.index ["due_date"], name: "index_sale_orders_on_due_date"
+    t.index ["origin"], name: "index_sale_orders_on_origin"
     t.index ["user_id", "idempotency_key"], name: "index_sale_orders_on_user_and_idempotency", unique: true
     t.index ["user_id"], name: "index_sale_orders_on_user_id"
+    t.index ["whatsapp_request_id"], name: "index_sale_orders_on_whatsapp_request_id"
   end
 
   create_table "shipments", force: :cascade do |t|
@@ -741,6 +745,43 @@ ActiveRecord::Schema[8.0].define(version: 2026_03_29_123000) do
     t.index ["user_id"], name: "index_visitor_logs_on_user_id"
   end
 
+  create_table "whatsapp_request_items", force: :cascade do |t|
+    t.bigint "whatsapp_request_id", null: false
+    t.bigint "product_id", null: false
+    t.integer "quantity", default: 1, null: false
+    t.decimal "unit_price_snapshot", precision: 12, scale: 2
+    t.text "item_notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["product_id"], name: "index_whatsapp_request_items_on_product_id"
+    t.index ["whatsapp_request_id", "product_id"], name: "idx_wa_request_items_unique", unique: true
+    t.index ["whatsapp_request_id"], name: "index_whatsapp_request_items_on_whatsapp_request_id"
+  end
+
+  create_table "whatsapp_requests", force: :cascade do |t|
+    t.string "code"
+    t.integer "status", default: 0, null: false
+    t.bigint "user_id"
+    t.string "session_token"
+    t.string "customer_name"
+    t.string "customer_phone"
+    t.string "customer_email"
+    t.text "customer_notes"
+    t.decimal "total_estimate", precision: 12, scale: 2, default: "0.0"
+    t.datetime "sent_at"
+    t.datetime "contacted_at"
+    t.datetime "converted_at"
+    t.string "sale_order_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["code"], name: "index_whatsapp_requests_on_code", unique: true
+    t.index ["sale_order_id"], name: "idx_whatsapp_requests_sale_order"
+    t.index ["session_token"], name: "index_whatsapp_requests_on_session_token"
+    t.index ["status"], name: "index_whatsapp_requests_on_status"
+    t.index ["user_id", "status"], name: "index_whatsapp_requests_on_user_id_and_status"
+    t.index ["user_id"], name: "index_whatsapp_requests_on_user_id"
+  end
+
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "canceled_order_items", "products"
@@ -779,4 +820,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_03_29_123000) do
   add_foreign_key "supplier_catalog_sources", "supplier_catalog_items"
   add_foreign_key "supplier_sync_runs", "supplier_catalog_items"
   add_foreign_key "visitor_logs", "users"
+  add_foreign_key "whatsapp_request_items", "products"
+  add_foreign_key "whatsapp_request_items", "whatsapp_requests"
+  add_foreign_key "whatsapp_requests", "sale_orders"
+  add_foreign_key "whatsapp_requests", "users"
 end
