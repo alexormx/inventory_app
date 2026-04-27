@@ -99,8 +99,7 @@
           <% end %>
         <% else %>
           <% unless @request.canceled? %>
-            <%= button_to convert_to_sale_order_admin_whatsapp_request_path(@request), method: :post, class: "btn btn-primary",
-                          form: { data: { turbo_confirm: "¿Crear Sale Order desde este pedido?" } } do %>
+            <%= link_to convert_admin_whatsapp_request_path(@request), class: "btn btn-primary" do %>
               <i class="fas fa-arrow-right me-1"></i>Convertir a Sale Order
             <% end %>
           <% end %>

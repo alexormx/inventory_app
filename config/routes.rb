@@ -301,6 +301,7 @@ Rails.application.routes.draw do
       member do
         patch :mark_contacted
         patch :cancel
+        get :convert
         post :convert_to_sale_order
       end
     end
@@ -323,6 +324,7 @@ Rails.application.routes.draw do
   patch '/whatsapp-list/items/:item_id', to: 'whatsapp_lists#update_item', as: :whatsapp_list_item
   delete '/whatsapp-list/items/:item_id', to: 'whatsapp_lists#remove_item'
   post '/whatsapp-list/send', to: 'whatsapp_lists#send_via_whatsapp', as: :send_whatsapp_list
+  get '/lista/:code', to: 'whatsapp_lists#track', as: :track_whatsapp_list, constraints: { code: %r{WA-\d{4}-\d{4}}i }
 
   # Customer shipping addresses
   resources :shipping_addresses, only: %i[index new create edit update destroy] do

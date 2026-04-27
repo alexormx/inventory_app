@@ -1,0 +1,44 @@
+<h2>Nuevo pedido por WhatsApp · <%= @request.code %></h2>
+
+<p>Un cliente envió una lista para WhatsApp. El cliente debería estar
+escribiendo al número configurado; revisa tu WhatsApp y verifica el código.</p>
+
+<table border="0" cellpadding="6" cellspacing="0" style="border-collapse: collapse; font-family: Arial, sans-serif; font-size: 14px;">
+  <tr><td><strong>Código:</strong></td><td><%= @request.code %></td></tr>
+  <tr><td><strong>Cliente:</strong></td><td><%= @request.customer_name %></td></tr>
+  <tr><td><strong>Teléfono:</strong></td><td><%= @request.customer_phone.presence || '—' %></td></tr>
+  <tr><td><strong>Email:</strong></td><td><%= @request.customer_email.presence || '—' %></td></tr>
+  <tr><td><strong>Total estimado:</strong></td><td><%= number_to_currency(@request.total_estimate) %></td></tr>
+  <% if @request.customer_notes.present? %>
+    <tr><td><strong>Notas:</strong></td><td><%= simple_format(@request.customer_notes) %></td></tr>
+  <% end %>
+</table>
+
+<h3 style="margin-top: 1.5rem;">Items</h3>
+<table border="1" cellpadding="6" cellspacing="0" style="border-collapse: collapse; font-family: Arial, sans-serif; font-size: 13px;">
+  <thead style="background:#f8f9fa;">
+    <tr>
+      <th align="left">Código</th>
+      <th align="left">Producto</th>
+      <th>Qty</th>
+      <th align="right">Precio</th>
+      <th align="right">Subtotal</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @request.whatsapp_request_items.includes(:product).each do |item| %>
+      <tr>
+        <td><%= item.product.supplier_product_code.presence || item.product.product_sku %></td>
+        <td><%= item.product.product_name %></td>
+        <td align="center"><%= item.quantity %></td>
+        <td align="right"><%= number_to_currency(item.unit_price_snapshot) %></td>
+        <td align="right"><%= number_to_currency(item.unit_price_snapshot.to_f * item.quantity) %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<p style="margin-top: 1.5rem;">
+  Ver en el panel:
+  <a href="<%= admin_whatsapp_request_url(@request) rescue '#' %>"><%= @request.code %></a>
+</p>

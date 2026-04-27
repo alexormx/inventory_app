@@ -39,15 +39,23 @@ module Admin
         flash[:notice] = 'Configuración SEO guardada exitosamente.'
         redirect_to admin_settings_path and return
       end
-      return unless request.post? && params[:save_eta]
+      if request.post? && params[:save_eta]
+        preorder_days = params[:preorder_eta_days].to_i
+        backorder_days = params[:backorder_eta_days].to_i
+        preorder_days = 60 if preorder_days <= 0
+        backorder_days = 60 if backorder_days <= 0
+        SiteSetting.set('preorder_eta_days', preorder_days, 'integer')
+        SiteSetting.set('backorder_eta_days', backorder_days, 'integer')
+        flash[:notice] = 'Tiempos estimados guardados.'
+        redirect_to admin_settings_path and return
+      end
 
-      preorder_days = params[:preorder_eta_days].to_i
-      backorder_days = params[:backorder_eta_days].to_i
-      preorder_days = 60 if preorder_days <= 0
-      backorder_days = 60 if backorder_days <= 0
-      SiteSetting.set('preorder_eta_days', preorder_days, 'integer')
-      SiteSetting.set('backorder_eta_days', backorder_days, 'integer')
-      flash[:notice] = 'Tiempos estimados guardados.'
+      return unless request.post? && params[:save_whatsapp]
+
+      phone = params[:whatsapp_orders_phone].to_s.gsub(/\D/, '')
+      SiteSetting.set('whatsapp_orders_phone', phone, 'string')
+      SiteSetting.set('whatsapp_admin_email', params[:whatsapp_admin_email].to_s.strip, 'string')
+      flash[:notice] = 'Configuración de WhatsApp guardada.'
       redirect_to admin_settings_path and return
     end
 

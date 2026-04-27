@@ -289,6 +289,37 @@
 
 <div class="card mb-4">
 	<div class="card-header d-flex align-items-center gap-2">
+		<i class="fab fa-whatsapp text-success"></i>
+		<span>Pedidos por WhatsApp</span>
+	</div>
+	<div class="card-body">
+		<% wa_phone = SiteSetting.get('whatsapp_orders_phone', '') %>
+		<% wa_admin_email = SiteSetting.get('whatsapp_admin_email', '') %>
+		<p class="small text-muted">
+			El teléfono se usa para construir el enlace <code>wa.me/&lt;numero&gt;?text=...</code> que abre WhatsApp con la lista del cliente.
+			Formato: solo dígitos con código de país, ej. <code>5215555551234</code>.
+			El email recibe una copia de cada nuevo pedido enviado (déjalo en blanco para deshabilitar).
+		</p>
+		<%= form_with url: admin_settings_path, method: :post, data: { turbo: false }, class: 'row gy-2 gx-3 align-items-end' do %>
+			<div class="col-md-5">
+				<label class="form-label">Teléfono de WhatsApp</label>
+				<input type="tel" name="whatsapp_orders_phone" class="form-control form-control-sm"
+				       value="<%= wa_phone %>" placeholder="5215555551234">
+			</div>
+			<div class="col-md-5">
+				<label class="form-label">Email para notificaciones (opcional)</label>
+				<input type="email" name="whatsapp_admin_email" class="form-control form-control-sm"
+				       value="<%= wa_admin_email %>" placeholder="ventas@pasatiempos.com.mx">
+			</div>
+			<div class="col-md-2">
+				<button class="btn btn-primary btn-sm w-100" name="save_whatsapp" value="1">Guardar</button>
+			</div>
+		<% end %>
+	</div>
+</div>
+
+<div class="card mb-4">
+	<div class="card-header d-flex align-items-center gap-2">
 		<i class="fa-solid fa-ruler-combined"></i>
 		<span>Reset Dimensiones/Peso de Productos</span>
 	</div>

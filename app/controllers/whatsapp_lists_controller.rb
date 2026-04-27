@@ -3,7 +3,7 @@
 class WhatsappListsController < ApplicationController
   layout 'customer'
 
-  before_action :load_request, except: [:add_item]
+  before_action :load_request, except: %i[add_item track]
 
   # GET /whatsapp-list
   def show
@@ -73,7 +73,8 @@ class WhatsappListsController < ApplicationController
     end
 
     @request.mark_sent!
-    url = @request.whatsapp_url
+    tracking_url = track_whatsapp_list_url(code: @request.code) rescue nil
+    url = @request.whatsapp_url(tracking_url: tracking_url)
     if url.blank?
       flash[:alert] = "Falta configurar el teléfono de WhatsApp del comercio."
       return redirect_to whatsapp_list_path
@@ -82,6 +83,14 @@ class WhatsappListsController < ApplicationController
     # Limpiamos el cookie para que el siguiente add inicie un draft nuevo
     cookies.delete(:wa_list_token)
     redirect_to url, allow_other_host: true
+  end
+
+  # GET /lista/:code  — tracking público sin login
+  def track
+    @tracked_request = WhatsappRequest.where.not(status: :draft).find_by!(code: params[:code].to_s.upcase)
+    render :track
+  rescue ActiveRecord::RecordNotFound
+    redirect_to whatsapp_list_path, alert: "No encontramos un pedido con ese código."
   end
 
   private

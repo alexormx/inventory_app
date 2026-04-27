@@ -30,6 +30,10 @@ production:
     class: Suppliers::TomicaFandom::WeeklyBackfillJob
     schedule: "0 7 * * 1"
 
+  whatsapp_requests_cleanup_drafts_daily:
+    class: WhatsappRequests::CleanupDraftsJob
+    schedule: "0 4 * * *"
+
 development:
   # No recurring sitemap generation
 

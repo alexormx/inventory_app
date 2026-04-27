@@ -15,6 +15,8 @@ class WhatsappRequest < ApplicationRecord
   scope :active, -> { where(status: %i[sent contacted]) }
   scope :for_admin, -> { where.not(status: :draft) }
 
+  after_update :notify_admin_if_just_sent, if: :saved_change_to_status?
+
   def total_items
     whatsapp_request_items.sum(:quantity)
   end
@@ -33,7 +35,7 @@ class WhatsappRequest < ApplicationRecord
     save!
   end
 
-  def whatsapp_message_body
+  def whatsapp_message_body(tracking_url: nil)
     lines = []
     lines << "Hola, quiero hacer un pedido por catálogo."
     lines << "Código: *#{code}*"
@@ -49,18 +51,28 @@ class WhatsappRequest < ApplicationRecord
     lines << "Total estimado: ~$#{format('%.0f', total_estimate.to_f)}"
     lines << ""
     lines << "Notas: #{customer_notes}" if customer_notes.present?
+    lines << "Estatus en línea: #{tracking_url}" if tracking_url.present?
     lines.join("\n")
   end
 
-  def whatsapp_url(phone_override: nil)
+  def whatsapp_url(phone_override: nil, tracking_url: nil)
     phone = phone_override || SiteSetting.get('whatsapp_orders_phone', '')
     return nil if phone.blank?
 
     digits = phone.to_s.gsub(/\D/, '')
-    "https://wa.me/#{digits}?text=#{CGI.escape(whatsapp_message_body)}"
+    "https://wa.me/#{digits}?text=#{CGI.escape(whatsapp_message_body(tracking_url: tracking_url))}"
   end
 
   private
+
+  def notify_admin_if_just_sent
+    return unless sent? && saved_change_to_status?[0] == 'draft'
+    return if SiteSetting.get('whatsapp_admin_email', '').to_s.strip.blank?
+
+    WhatsappRequestMailer.new_request_admin(id).deliver_later
+  rescue StandardError => e
+    Rails.logger.warn("[WhatsappRequest##{id}] notify failure: #{e.class}: #{e.message}")
+  end
 
   def generate_code
     year = Date.current.year

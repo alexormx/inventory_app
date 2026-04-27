@@ -1,0 +1,110 @@
+<div class="admin-page-header d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+  <div>
+    <p class="admin-page-eyebrow mb-1">Convertir a Sale Order</p>
+    <h2 class="mb-0"><%= @request.code %></h2>
+    <p class="text-muted small mb-0 mt-1">
+      Ajusta cantidades, precios o quita items que ya no estén disponibles antes de crear la orden de venta.
+    </p>
+  </div>
+  <%= link_to admin_whatsapp_request_path(@request), class: "btn btn-outline-secondary" do %>
+    <i class="fas fa-arrow-left me-1"></i>Volver al pedido
+  <% end %>
+</div>
+
+<%= form_with url: convert_to_sale_order_admin_whatsapp_request_path(@request), method: :post, local: true do %>
+
+<div class="card border-0 shadow-sm mb-3">
+  <div class="card-header bg-white"><h5 class="mb-0">Cliente</h5></div>
+  <div class="card-body">
+    <div class="row g-2 small">
+      <div class="col-md-6">
+        <strong>Solicitado por:</strong> <%= @request.customer_name %><br>
+        <span class="text-muted">
+          <%= @request.customer_phone.presence %>
+          <% if @request.customer_email.present? %> · <%= @request.customer_email %><% end %>
+        </span>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label small mb-1">Usuario a asociar</label>
+        <% if @resolved_user %>
+          <input type="hidden" name="user_id" value="<%= @resolved_user.id %>">
+          <div class="border rounded p-2 small bg-light">
+            <i class="fas fa-user me-1"></i><%= @resolved_user.name.presence || @resolved_user.email %>
+            <span class="text-muted">· <%= @resolved_user.email %></span>
+            <input type="hidden" name="user_id" value="<%= @resolved_user.id %>">
+          </div>
+        <% else %>
+          <input type="number" name="user_id" class="form-control form-control-sm" placeholder="ID de usuario existente" required>
+          <div class="form-text small">No encontramos un usuario con ese teléfono. Crea uno desde la sección Usuarios y pega el ID aquí.</div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card border-0 shadow-sm mb-3">
+  <div class="card-header bg-white d-flex justify-content-between align-items-center">
+    <h5 class="mb-0">Items a convertir</h5>
+    <small class="text-muted">Marca "omitir" para excluir un item de la orden final.</small>
+  </div>
+  <div class="card-body p-0">
+    <table class="table mb-0 align-middle">
+      <thead class="table-light">
+        <tr>
+          <th>Producto</th>
+          <th class="text-center" style="width: 100px">Cantidad</th>
+          <th class="text-end" style="width: 130px">Precio (snapshot)</th>
+          <th class="text-end" style="width: 150px">Precio para orden</th>
+          <th class="text-center" style="width: 80px">Omitir</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @items.each do |item| %>
+          <tr>
+            <td>
+              <%= link_to item.product.product_name, admin_product_path(item.product), target: "_blank" %>
+              <div class="small text-muted">
+                <%= item.product.brand %> · <%= item.product.supplier_product_code.presence || item.product.product_sku %>
+                · Stock: <%= item.product.current_on_hand %>
+              </div>
+            </td>
+            <td class="text-center">
+              <input type="number" name="items[<%= item.id %>][quantity]" min="0" value="<%= item.quantity %>" class="form-control form-control-sm" style="width: 80px">
+            </td>
+            <td class="text-end"><%= number_to_currency(item.unit_price_snapshot) %></td>
+            <td class="text-end">
+              <div class="input-group input-group-sm">
+                <span class="input-group-text">$</span>
+                <input type="number" step="0.01" name="items[<%= item.id %>][unit_price]" value="<%= '%.2f' % item.product.selling_price.to_f %>" class="form-control form-control-sm">
+              </div>
+              <% if item.unit_price_snapshot.to_f != item.product.selling_price.to_f %>
+                <div class="small text-warning"><i class="fas fa-triangle-exclamation me-1"></i>Cambió desde snapshot</div>
+              <% end %>
+            </td>
+            <td class="text-center">
+              <input type="checkbox" name="items[<%= item.id %>][skip]" value="1" class="form-check-input">
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card border-0 shadow-sm mb-3">
+  <div class="card-header bg-white"><h6 class="mb-0">Notas internas (opcional)</h6></div>
+  <div class="card-body">
+    <textarea name="internal_notes" rows="2" class="form-control form-control-sm" placeholder="Cualquier nota que quieras agregar a la orden de venta resultante..."></textarea>
+  </div>
+</div>
+
+<div class="d-flex justify-content-between">
+  <%= link_to admin_whatsapp_request_path(@request), class: "btn btn-outline-secondary" do %>
+    <i class="fas fa-xmark me-1"></i>Cancelar
+  <% end %>
+  <button type="submit" class="btn btn-success btn-lg">
+    <i class="fas fa-arrow-right me-1"></i>Crear Sale Order
+  </button>
+</div>
+
+<% end %>

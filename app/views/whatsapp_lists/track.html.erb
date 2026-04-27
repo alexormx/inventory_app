@@ -1,0 +1,61 @@
+<div class="container mt-4 wa-track-page" style="max-width: 720px;">
+  <div class="text-center mb-4">
+    <i class="fab fa-whatsapp text-success" style="font-size: 3rem;"></i>
+    <h1 class="h3 mt-2 mb-1">Pedido <code><%= @tracked_request.code %></code></h1>
+    <% color, label = case @tracked_request.status
+       when 'sent' then ['warning', 'Recibido — pendiente de contacto']
+       when 'contacted' then ['info', 'En conversación con el equipo']
+       when 'converted' then ['success', 'Convertido a orden de venta']
+       when 'canceled' then ['secondary', 'Cancelado']
+       else ['secondary', @tracked_request.status.humanize]
+       end %>
+    <span class="badge bg-<%= color %> fs-6"><%= label %></span>
+  </div>
+
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+      <p class="small text-muted mb-3">
+        <% if @tracked_request.sent? %>
+          Recibimos tu lista el <strong><%= l(@tracked_request.sent_at, format: :short) %></strong>.
+          Si todavía no nos has escrito por WhatsApp, hazlo desde el botón de tu mensaje original.
+          Cuando confirmemos disponibilidad y precios, te respondemos por el mismo chat.
+        <% elsif @tracked_request.contacted? %>
+          Estamos coordinando contigo por WhatsApp para confirmar el pedido. Si no recibes respuesta en 24h, vuélvenos a escribir mencionando este código.
+        <% elsif @tracked_request.converted? %>
+          Tu pedido ya está como orden de venta confirmada en nuestro sistema. Sigue las instrucciones de pago que te compartimos por WhatsApp.
+        <% elsif @tracked_request.canceled? %>
+          Este pedido fue cancelado. Si necesitas crear uno nuevo, regresa al catálogo.
+        <% end %>
+      </p>
+
+      <h6 class="text-muted small mb-2">Items</h6>
+      <ul class="list-group list-group-flush mb-3">
+        <% @tracked_request.whatsapp_request_items.includes(:product).each do |item| %>
+          <li class="list-group-item d-flex justify-content-between small">
+            <span>
+              <strong><%= item.quantity %>×</strong> <%= item.product.product_name %>
+              <span class="text-muted">· <%= item.product.supplier_product_code.presence || item.product.product_sku %></span>
+            </span>
+            <span class="text-end">
+              <%= number_to_currency(item.unit_price_snapshot.to_f * item.quantity) %>
+            </span>
+          </li>
+        <% end %>
+      </ul>
+
+      <div class="d-flex justify-content-between fw-bold">
+        <span>Total estimado</span>
+        <span class="text-success"><%= number_to_currency(@tracked_request.total_estimate) %></span>
+      </div>
+      <p class="small text-muted mt-2 mb-0">
+        Los precios pueden ajustarse al tipo de cambio del día y al confirmar disponibilidad.
+      </p>
+    </div>
+  </div>
+
+  <div class="text-center">
+    <%= link_to catalog_path, class: "btn btn-outline-secondary" do %>
+      <i class="fas fa-arrow-left me-1"></i>Volver al catálogo
+    <% end %>
+  </div>
+</div>
