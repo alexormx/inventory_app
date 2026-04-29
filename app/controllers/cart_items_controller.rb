@@ -145,6 +145,7 @@ class CartItemsController < ApplicationController
           tax_enabled: @cart.tax_enabled?,
           total_items: @cart.item_count,
           summary_pending_total: pending_totals[:pending_total],
+          summary_in_transit_total: pending_totals[:in_transit_total],
           summary_preorder_total: pending_totals[:preorder_total],
           summary_backorder_total: pending_totals[:backorder_total]
         }
@@ -178,6 +179,7 @@ class CartItemsController < ApplicationController
           tax_enabled: @cart.tax_enabled?,
           total_items: @cart.item_count,
           summary_pending_total: pending_totals[:pending_total],
+          summary_in_transit_total: pending_totals[:in_transit_total],
           summary_preorder_total: pending_totals[:preorder_total],
           summary_backorder_total: pending_totals[:backorder_total]
         }
@@ -193,7 +195,10 @@ class CartItemsController < ApplicationController
   end
 
   def available_for_condition(product, condition)
-    product.inventories.where(status: :available, item_condition: condition).count
+    # Considera inventario disponible + en tránsito (ya comprado, en camino al almacén)
+    product.inventories
+           .where(status: %i[available in_transit], item_condition: condition, sale_order_id: nil)
+           .count
   end
 
   def price_for_condition(product, condition)
@@ -221,16 +226,23 @@ class CartItemsController < ApplicationController
 
   def aggregate_pending
     pending_total = 0
+    in_transit_total = 0
     preorder_total = 0
     backorder_total = 0
     @cart.items.each do |item|
       product = item[:product]
       qty = item[:quantity]
       s = product.split_immediate_and_pending(qty)
+      in_transit_total += s[:in_transit_qty].to_i
       pending_total += s[:pending]
       preorder_total += (s[:pending_type] == :preorder ? s[:pending] : 0)
       backorder_total += (s[:pending_type] == :backorder ? s[:pending] : 0)
     end
-    { pending_total: pending_total, preorder_total: preorder_total, backorder_total: backorder_total }
+    {
+      pending_total: pending_total,
+      in_transit_total: in_transit_total,
+      preorder_total: preorder_total,
+      backorder_total: backorder_total
+    }
   end
 end

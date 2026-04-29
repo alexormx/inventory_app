@@ -105,13 +105,15 @@
                     <span class="visually-hidden">Iniciar sesión</span>
                   <% end %>
                 <% end %>
-                <%= button_to whatsapp_list_items_path, params: { product_id: product.id },
-                              method: :post,
-                              class: "btn btn-outline-success btn-sm",
-                              title: "Agregar a lista de WhatsApp",
-                              aria: { label: "Agregar #{product.product_name} a lista de WhatsApp" },
-                              data: { turbo_frame: "_top" } do %>
-                  <i class="fab fa-whatsapp" aria-hidden="true"></i>
+                <% if whatsapp_list_available? %>
+                  <%= button_to whatsapp_list_items_path, params: { product_id: product.id },
+                                method: :post,
+                                class: "btn btn-outline-success btn-sm",
+                                title: "Agregar a lista de WhatsApp",
+                                aria: { label: "Agregar #{product.product_name} a lista de WhatsApp" },
+                                data: { turbo_frame: "_top" } do %>
+                    <i class="fab fa-whatsapp" aria-hidden="true"></i>
+                  <% end %>
                 <% end %>
               </div>
             <% else %>

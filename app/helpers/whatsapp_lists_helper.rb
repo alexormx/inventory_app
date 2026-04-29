@@ -6,13 +6,15 @@ module WhatsappListsHelper
     request ? request.total_items : 0
   end
 
+  # La lista de WhatsApp es solo para invitados. Si el usuario está logeado debe usar el carrito.
+  def whatsapp_list_available?
+    !(respond_to?(:user_signed_in?) && user_signed_in?)
+  end
+
   def current_whatsapp_request_safe
-    if respond_to?(:user_signed_in?) && user_signed_in?
-      WhatsappRequest.where(user_id: current_user.id, status: WhatsappRequest.statuses[:draft]).order(created_at: :desc).first ||
-        whatsapp_request_by_token
-    else
-      whatsapp_request_by_token
-    end
+    return nil unless whatsapp_list_available?
+
+    whatsapp_request_by_token
   rescue StandardError
     nil
   end

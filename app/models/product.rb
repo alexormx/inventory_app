@@ -308,6 +308,12 @@ class Product < ApplicationRecord
     @current_on_hand ||= Inventory.where(product_id: id, status: [:available]).count
   end
 
+  # Inventario en tránsito (ya comprado, viene en camino al almacén).
+  # Se considera vendible aunque no esté físicamente disponible aún.
+  def in_transit_count
+    @in_transit_count ||= Inventory.where(product_id: id, status: :in_transit, sale_order_id: nil).count
+  end
+
   # Inventario disponible agrupado por condición con precio
   # Retorna: [{ condition: 'brand_new', label: 'Nuevo', count: 5, price: 150.0 }, ...]
   def available_by_condition
@@ -376,11 +382,37 @@ class Product < ApplicationRecord
     :stock
   end
 
-  # Desglose de cantidades inmediata vs pendiente según flags
+  # Desglose de cantidades inmediata vs pendiente según flags.
+  # immediate consume on_hand (available); in_transit_qty consume inventario en tránsito;
+  # pending cae a preorder/backorder según flags del producto.
   def split_immediate_and_pending(requested_qty)
     splitter = InventoryServices::AvailabilitySplitter.new(self, requested_qty)
     r = splitter.call
-    { requested: r.requested, on_hand: r.on_hand, immediate: r.immediate, pending: r.pending, pending_type: r.pending_type }
+    {
+      requested: r.requested,
+      on_hand: r.on_hand,
+      in_transit: r.in_transit,
+      immediate: r.immediate,
+      in_transit_qty: r.in_transit_qty,
+      pending: r.pending,
+      pending_type: r.pending_type
+    }
+  end
+
+  # Total vendible (lo que se puede meter al carrito / lista WA sin caer a preorder/backorder)
+  def sellable_count
+    current_on_hand + in_transit_count
+  end
+
+  # Inactiva el producto si no es preorderable, no es backorderable, y no tiene
+  # ni stock disponible ni inventario en tránsito. Solo aplica a productos en estado :active
+  # — no auto-reactiva: el admin debe reactivarlos manualmente cuando vuelva a haber stock.
+  def auto_deactivate_if_unavailable!
+    return unless active?
+    return if preorder_available || backorder_allowed
+    return if Inventory.where(product_id: id, status: %i[available in_transit]).exists?
+
+    update_columns(status: 'inactive', updated_at: Time.current)
   end
 
   # ---- Dimensiones / Peso helpers ----

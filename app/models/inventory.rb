@@ -130,6 +130,7 @@ class Inventory < ApplicationRecord
 
   def update_product_stock_quantities
     Products::UpdateStatsService.new(product).call
+    product.auto_deactivate_if_unavailable!
   rescue StandardError => e
     Rails.logger.error "[Inventory#update_product_stock_quantities] #{e.class}: #{e.message}"
   end

@@ -41,4 +41,26 @@ RSpec.describe InventoryServices::AvailabilitySplitter, type: :service do
       expect(r.pending_type).to eq(:backorder)
     end
   end
+
+  context 'inventario en tránsito' do
+    it 'consume in_transit antes de caer a preorder/backorder' do
+      allow(product).to receive(:current_on_hand).and_return(1)
+      allow(product).to receive(:in_transit_count).and_return(2)
+      r = described_class.new(product, 5).call
+      expect(r.immediate).to eq(1)
+      expect(r.in_transit_qty).to eq(2)
+      expect(r.pending).to eq(2)
+      expect(r.pending_type).to be_nil
+    end
+
+    it 'cubre por completo el faltante con in_transit cuando alcanza' do
+      allow(product).to receive(:current_on_hand).and_return(0)
+      allow(product).to receive(:in_transit_count).and_return(10)
+      r = described_class.new(product, 4).call
+      expect(r.immediate).to eq(0)
+      expect(r.in_transit_qty).to eq(4)
+      expect(r.pending).to eq(0)
+      expect(r.pending_type).to be_nil
+    end
+  end
 end

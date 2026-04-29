@@ -2,7 +2,7 @@ require 'rails_helper'
 
 RSpec.describe 'WhatsApp Lists', type: :request do
   before(:all) { Rails.application.reload_routes! }
-  let(:product) { create(:product, skip_seed_inventory: true, selling_price: 250, status: :active) }
+  let(:product) { create(:product, selling_price: 250, status: :active, seed_inventory_count: 3) }
 
   describe 'POST /whatsapp-list/items' do
     it 'creates a draft request and adds the product as guest' do
@@ -25,6 +25,40 @@ RSpec.describe 'WhatsApp Lists', type: :request do
       expect(WhatsappRequest.count).to eq(1)
       expect(WhatsappRequestItem.count).to eq(1)
       expect(WhatsappRequestItem.last.quantity).to eq(2)
+    end
+
+    context 'sin stock y sin preorder/backorder' do
+      let(:product) { create(:product, skip_seed_inventory: true, selling_price: 250, status: :active) }
+
+      it 'no agrega el producto' do
+        expect {
+          post whatsapp_list_items_path, params: { product_id: product.id }, headers: { 'Accept' => 'text/html' }
+        }.not_to change(WhatsappRequestItem, :count)
+      end
+    end
+
+    context 'producto preorderable sin stock' do
+      let(:product) do
+        create(:product, skip_seed_inventory: true, selling_price: 250, status: :active, preorder_available: true)
+      end
+
+      it 'permite agregarlo (oversell_allowed)' do
+        expect {
+          post whatsapp_list_items_path, params: { product_id: product.id }, headers: { 'Accept' => 'text/html' }
+        }.to change(WhatsappRequestItem, :count).by(1)
+      end
+    end
+
+    context 'al exceder el límite por producto' do
+      it 'rechaza agregar más del máximo permitido' do
+        Cart::MAX_NEW_ITEMS_PER_PRODUCT.times do
+          post whatsapp_list_items_path, params: { product_id: product.id }, headers: { 'Accept' => 'text/html' }
+        end
+        expect(WhatsappRequestItem.last.quantity).to eq(Cart::MAX_NEW_ITEMS_PER_PRODUCT)
+
+        post whatsapp_list_items_path, params: { product_id: product.id }, headers: { 'Accept' => 'text/html' }
+        expect(WhatsappRequestItem.last.quantity).to eq(Cart::MAX_NEW_ITEMS_PER_PRODUCT)
+      end
     end
   end
 

@@ -191,6 +191,55 @@ RSpec.describe Product, type: :model do
     end
   end
 
+  describe '#auto_deactivate_if_unavailable!' do
+    let(:product) do
+      create(:product, skip_seed_inventory: true, status: :active,
+                       preorder_available: false, backorder_allowed: false)
+    end
+
+    it 'inactiva el producto cuando no hay stock ni in_transit' do
+      product.auto_deactivate_if_unavailable!
+      expect(product.reload.status).to eq('inactive')
+    end
+
+    it 'no inactiva si hay inventario disponible' do
+      create(:inventory, product: product, status: :available, item_condition: :brand_new)
+      product.auto_deactivate_if_unavailable!
+      expect(product.reload.status).to eq('active')
+    end
+
+    it 'no inactiva si hay inventario en tránsito' do
+      create(:inventory, product: product, status: :in_transit, item_condition: :brand_new)
+      product.auto_deactivate_if_unavailable!
+      expect(product.reload.status).to eq('active')
+    end
+
+    it 'no inactiva si el producto permite preorder' do
+      product.update!(preorder_available: true)
+      product.auto_deactivate_if_unavailable!
+      expect(product.reload.status).to eq('active')
+    end
+
+    it 'no inactiva si el producto permite backorder' do
+      product.update!(backorder_allowed: true)
+      product.auto_deactivate_if_unavailable!
+      expect(product.reload.status).to eq('active')
+    end
+
+    it 'no toca productos que ya estaban inactivos o en draft' do
+      product.update!(status: :draft)
+      product.auto_deactivate_if_unavailable!
+      expect(product.reload.status).to eq('draft')
+    end
+
+    it 'se dispara cuando un inventario cambia a sold y deja al producto sin stock' do
+      inv = create(:inventory, product: product, status: :available, item_condition: :brand_new)
+      expect(product.reload.status).to eq('active')
+      inv.update!(status: :sold)
+      expect(product.reload.status).to eq('inactive')
+    end
+  end
+
   describe '#primary_product_image' do
     let(:product) { create(:product, skip_seed_inventory: true) }
 
