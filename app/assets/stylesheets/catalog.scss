@@ -33,13 +33,30 @@
   z-index: 10;
   border-color: rgba(220,53,69,0.25) !important;
 }
+/* Wrapper de imagen: área visual consistente, fondo neutro, padding estable */
+#catalog .catalog-card-media {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: .75rem;
+  background: #fff;
+  border-bottom: 1px solid #f1f3f5;
+  overflow: hidden;
+}
+#catalog .catalog-card-media--empty {
+  background: linear-gradient(180deg, #f8f9fa 0%, #f1f3f5 100%);
+}
+#catalog .catalog-card-media--empty .product-image {
+  opacity: .55;
+  filter: grayscale(.2);
+}
+
 #catalog .product-image {
   max-height: 180px;
   min-height: 180px;
   object-fit: contain;
   transition: transform .35s ease;
-  padding: .75rem;
-  background: #fff;
+  background: transparent;
 }
 #catalog .catalog-item:hover .product-image {
   transform: scale(1.04);
@@ -59,34 +76,47 @@
 
 /* Product card content spacing */
 #catalog .card-body {
-  padding: .75rem !important;
-  min-height: 100px;
+  padding: .85rem .85rem 1rem !important;
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: .35rem;
 }
 
+/* Title: 2 líneas máx con clamp para alinear filas */
+#catalog .catalog-card-title,
 #catalog .card-title {
-  white-space: normal;
-  overflow: visible;
-  text-overflow: unset;
   font-size: 0.95rem;
-  line-height: 1.4;
-  min-height: 2.8em;
-  margin-bottom: 0.5rem;
+  line-height: 1.35;
   font-weight: 600;
   color: #2c3e50;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 2.7em;
 }
 
-#catalog .catalog-item:hover .card-title {
+#catalog .catalog-item:hover .card-title,
+#catalog .catalog-item:hover .catalog-card-title {
   color: #dc3545;
 }
 
 /* Price styling */
-#catalog .card-text {
-  font-size: 1.05rem;
-  margin-bottom: 0.5rem;
+#catalog .catalog-card-price {
+  font-size: 1.1rem;
+  font-weight: 700;
   letter-spacing: -0.01em;
+  margin: .15rem 0 0;
+  line-height: 1.2;
+}
+
+/* ETA text */
+#catalog .catalog-card-eta {
+  margin: 0;
+  font-size: .72rem;
+  line-height: 1.2;
 }
 
 /* FX info icon next to price (replaces standalone FX note for guests) */
@@ -167,27 +197,26 @@
 /* Responsive adjustments */
 @media (min-width: 992px) {
   #catalog .product-image {
-    max-height: 170px;
-    min-height: 170px;
+    max-height: 180px;
+    min-height: 180px;
   }
-  #catalog .card-body { min-height: 90px; padding: .65rem !important; }
+  #catalog .card-body { padding: .85rem .85rem 1rem !important; }
 }
 @media (min-width: 1400px) {
   #catalog .product-image {
-    max-height: 160px;
-    min-height: 160px;
+    max-height: 190px;
+    min-height: 190px;
   }
 }
 
 @media (max-width: 575px) {
   #catalog .catalog-header { margin-bottom: .75rem; }
   #catalog .product-image {
-    max-height: 140px;
-    min-height: 140px;
+    max-height: 150px;
+    min-height: 150px;
   }
   #catalog .card-body {
     padding: 0.75rem !important;
-    min-height: 100px;
   }
 }
 
@@ -449,6 +478,17 @@ turbo-frame[busy]::after {
   color: #dc3545;
 }
 
+/* Pagination wrapper centrado: info arriba, paginador abajo */
+#catalog .catalog-pagination {
+  display: block;
+}
+#catalog .catalog-pagination .catalog-pagination-info {
+  font-size: .85rem;
+}
+#catalog .catalog-pagination-sep {
+  color: #adb5bd;
+}
+
 /* Pagination mejorada */
 .pagination {
   margin: 0;
@@ -609,6 +649,8 @@ turbo-frame[busy]::after {
   flex: 0 0 88px;
   max-width: 88px;
   padding: 0 !important;
+  border-bottom: 0 !important;
+  background: transparent !important;
 }
 
 #catalog #product-grid-content.list-view .product-image {
@@ -761,6 +803,7 @@ turbo-frame[busy]::after {
   pointer-events: none;
   gap: .25rem;
   flex-wrap: wrap; /* si los badges no caben, el segundo cae a la siguiente línea */
+  padding: .4rem .45rem 0;
 }
 #catalog .catalog-badges .badge {
   font-size: .7rem;
@@ -768,6 +811,7 @@ turbo-frame[busy]::after {
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
+  box-shadow: 0 1px 2px rgba(15,23,42,0.08);
 }
 @media (max-width: 575.98px) {
   #catalog .catalog-badges .badge {

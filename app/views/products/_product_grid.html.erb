@@ -10,14 +10,15 @@
   <%# Chips de filtros usando partial reutilizable %>
   <%= render 'filter_chips' %>
 
-  <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xxl-6 g-2 g-md-3" id="product-grid-content" role="list">
+  <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xxl-5 g-3 g-md-4" id="product-grid-content" role="list">
     <% @products.each do |product| %>
       <% on_hand_cached = @on_hand_counts[product.id] || 0 %>
       <% in_transit_eta_cached = (defined?(@in_transit_etas) && @in_transit_etas[product.id]) || nil %>
+      <% has_image = product.product_images.attached? %>
       <div class="col product-card-wrapper" data-product-id="<%= product.id %>" role="listitem">
         <article class="card h-100 border-0 shadow-sm d-flex flex-column catalog-item position-relative hover-lift">
           <!-- Badges agrupados arriba para evitar traslapes -->
-          <div class="catalog-badges position-absolute top-0 start-0 end-0 d-flex justify-content-between align-items-start p-1" role="status" aria-live="polite">
+          <div class="catalog-badges position-absolute top-0 start-0 end-0 d-flex justify-content-between align-items-start" role="status" aria-live="polite">
             <% if product.active? %>
               <span><%= stock_badge(product, on_hand_override: on_hand_cached, in_transit_eta_override: in_transit_eta_cached) %></span>
             <% else %>
@@ -30,8 +31,8 @@
             <% end %>
           </div>
           <% if product.active? %>
-            <%= link_to product_path(product), class: "d-block p-2", aria: { label: "Ver detalles de #{product.product_name}" }, data: { turbo_frame: "_top" } do %>
-              <% if product.product_images.attached? %>
+            <%= link_to product_path(product), class: "catalog-card-media d-block #{'catalog-card-media--empty' unless has_image}", aria: { label: "Ver detalles de #{product.product_name}" }, data: { turbo_frame: "_top" } do %>
+              <% if has_image %>
                 <%= responsive_attachment_image product.primary_product_image,
                   alt: product.product_name,
                   widths: [60,96,150,200],
@@ -42,8 +43,8 @@
               <% end %>
             <% end %>
           <% else %>
-            <div class="d-block p-2 opacity-50" title="Producto inactivo">
-              <% if product.product_images.attached? %>
+            <div class="catalog-card-media d-block opacity-50 <%= 'catalog-card-media--empty' unless has_image %>" title="Producto inactivo">
+              <% if has_image %>
                 <%= responsive_attachment_image product.primary_product_image,
                   alt: product.product_name,
                   widths: [60,96,150,200],
@@ -54,24 +55,26 @@
               <% end %>
             </div>
           <% end %>
-          <div class="card-body text-center p-2 d-flex flex-column w-100">
-            <h2 class="card-title h6 mb-1" title="<%= product.product_name %>">
+          <div class="card-body text-center d-flex flex-column w-100">
+            <h2 class="card-title catalog-card-title h6" title="<%= product.product_name %>">
               <% if product.active? %>
                 <%= link_to product.product_name, product_path(product), class: "text-decoration-none text-dark", data: { turbo_frame: "_top" } %>
               <% else %>
                 <span class="text-muted" aria-disabled="true"><%= product.product_name %></span>
               <% end %>
             </h2>
-            <p class="catalog-card-meta text-muted mb-1">
-              <span class="catalog-brand"><%= product.brand %></span>
+            <p class="catalog-card-meta text-muted">
+              <% if product.brand.present? %>
+                <span class="catalog-brand"><%= product.brand %></span>
+              <% end %>
               <% if product.whatsapp_code.present? %>
                 <span class="catalog-wa-code" title="Código para pedir por WhatsApp">
-                  <i class="fab fa-whatsapp text-success" aria-hidden="true"></i>
+                  <i class="fab fa-whatsapp" aria-hidden="true"></i>
                   <%= product.whatsapp_code %>
                 </span>
               <% end %>
             </p>
-            <p class="card-text text-danger fw-bold mb-1" role="text">
+            <p class="catalog-card-price text-danger" role="text">
               <span class="visually-hidden">Precio: </span><%= number_to_currency(product.selling_price) %>
               <% unless user_signed_in? %>
                 <i class="fas fa-circle-info catalog-fx-icon ms-1"
@@ -82,7 +85,7 @@
             <%# El badge ya muestra "Llega ~fecha" cuando hay inventario en tránsito,
                 así que solo mostramos el ETA cuando viene de preventa/sobre-pedido. %>
             <% if product.active? && on_hand_cached <= 0 && in_transit_eta_cached.blank? && (eta = stock_eta(product)) %>
-              <p class="text-muted extra-small mb-2"><i class="fa fa-clock me-1" aria-hidden="true"></i><span class="visually-hidden">Disponible: </span><%= eta %></p>
+              <p class="catalog-card-eta text-muted extra-small"><i class="fa fa-clock me-1" aria-hidden="true"></i><span class="visually-hidden">Disponible: </span><%= eta %></p>
             <% end %>
             <% if product.active? %>
               <% on_hand = @on_hand_counts[product.id] || 0 %>
@@ -160,20 +163,17 @@
     </div>
   <% end %>
 
-  <%# Paginación mejorada con info %>
+  <%# Paginación: info centrada arriba + paginador centrado abajo %>
   <% if @products.total_pages > 1 %>
-    <div class="mt-4" id="pagination-container">
-      <div class="d-flex flex-column flex-md-row align-items-center justify-content-between gap-3 mb-3">
-        <div class="text-muted small">
-          <%= products_range_text(@products) %>
-        </div>
-        <div class="d-flex align-items-center gap-2">
-          <span class="text-muted small">Página <%= @products.current_page %> de <%= @products.total_pages %></span>
-        </div>
+    <nav class="catalog-pagination mt-4" id="pagination-container" aria-label="Paginación de productos">
+      <div class="catalog-pagination-info text-center text-muted small mb-2">
+        <%= products_range_text(@products) %>
+        <span class="catalog-pagination-sep mx-2" aria-hidden="true">·</span>
+        <span>Página <strong class="text-dark"><%= @products.current_page %></strong> de <strong class="text-dark"><%= @products.total_pages %></strong></span>
       </div>
       <div class="d-flex justify-content-center" data-turbo-action="advance">
         <%= paginate @products %>
       </div>
-    </div>
+    </nav>
   <% end %>
 <% end %>
