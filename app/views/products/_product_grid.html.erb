@@ -88,7 +88,26 @@
             <% end %>
             <% if product.active? %>
               <% on_hand = @on_hand_counts[product.id] || 0 %>
-              <% disabled = (on_hand <= 0 && !product.oversell_allowed?) %>
+              <% has_in_transit = in_transit_eta_cached.present? %>
+              <% can_reserve = has_in_transit || product.oversell_allowed? %>
+              <% is_reservation = on_hand <= 0 && can_reserve %>
+              <% disabled = on_hand <= 0 && !can_reserve %>
+              <% reservation_tooltip = if has_in_transit
+                                          "Reserva · Llega #{spanish_short_date(in_transit_eta_cached)}"
+                                        elsif product.preorder_available
+                                          'Reserva · Preventa'
+                                        elsif product.backorder_allowed
+                                          'Reserva · Sobre pedido'
+                                        end %>
+              <% btn_label = if disabled then 'Sin stock'
+                             elsif is_reservation then 'Reservar'
+                             else 'Agregar'
+                             end %>
+              <% btn_icon  = is_reservation ? 'fa-bookmark' : 'fa-cart-plus' %>
+              <% btn_title = if disabled then 'Sin stock disponible'
+                             elsif is_reservation then reservation_tooltip
+                             else 'Agregar al carrito'
+                             end %>
               <div class="catalog-card-actions d-flex gap-1 mt-auto">
                 <% if user_signed_in? %>
                   <%= button_to cart_items_path,
@@ -96,9 +115,9 @@
                                 method: :post,
                                 class: "btn btn-danger btn-sm flex-grow-1 #{'disabled' if disabled}",
                                 disabled: disabled,
-                                title: (disabled ? 'Sin stock disponible' : 'Agregar al carrito'),
-                                aria: { label: (disabled ? 'Sin stock' : "Agregar #{product.product_name} al carrito") } do %>
-                    <i class="fas fa-cart-plus me-1" aria-hidden="true"></i><%= disabled ? 'Sin stock' : 'Agregar' %>
+                                title: btn_title,
+                                aria: { label: (disabled ? 'Sin stock' : "#{btn_label} #{product.product_name}") } do %>
+                    <i class="fas <%= btn_icon %> me-1" aria-hidden="true"></i><%= btn_label %>
                   <% end %>
                 <% else %>
                   <%= link_to new_user_session_path, class: "btn btn-outline-danger btn-sm flex-grow-1", title: "Inicia sesión para agregar al carrito" do %>
