@@ -1456,3 +1456,87 @@ turbo-frame[busy]::after {
     max-width: 100%;
   }
 }
+
+/* =============================================
+   Customer Catalog Spacious Cards
+   ============================================= */
+#catalog #product-grid-content {
+  --catalog-card-gap: 1.35rem;
+  row-gap: var(--catalog-card-gap);
+}
+
+#catalog #product-grid-content > .product-card-wrapper {
+  flex: 0 0 auto;
+  width: 100%;
+}
+
+#catalog .catalog-card-media {
+  aspect-ratio: 1 / .92;
+}
+
+#catalog #product-grid-content:not(.list-view) .catalog-badges--inline {
+  inset: auto;
+  margin: -.1rem 0 .2rem;
+  padding: 0;
+  position: static !important;
+  width: 100%;
+}
+
+#catalog #product-grid-content:not(.list-view) .catalog-badges--inline .badge {
+  box-shadow: none;
+  font-size: .64rem;
+  padding: .32rem .56rem;
+}
+
+#catalog .catalog-item {
+  min-height: 100%;
+}
+
+#catalog .catalog-card-title,
+#catalog .card-title {
+  min-height: 2.65em;
+}
+
+#catalog .catalog-card-price {
+  margin-top: .05rem;
+  margin-bottom: 0;
+}
+
+#catalog .catalog-card-meta {
+  margin-top: -.1rem;
+  min-height: 1.2rem;
+}
+
+@media (min-width: 576px) {
+  #catalog #product-grid-content > .product-card-wrapper {
+    width: 50%;
+  }
+}
+
+@media (min-width: 768px) {
+  #catalog #product-grid-content > .product-card-wrapper {
+    width: 50%;
+  }
+}
+
+@media (min-width: 992px) {
+  #catalog #product-grid-content > .product-card-wrapper {
+    width: 33.333333%;
+  }
+}
+
+@media (min-width: 1400px) {
+  #catalog #product-grid-content > .product-card-wrapper {
+    width: 25%;
+  }
+
+  #catalog .catalog-card-media {
+    aspect-ratio: 1 / .95;
+  }
+}
+
+@media (min-width: 1600px) {
+  #catalog #product-grid-content {
+    --catalog-card-gap: 1.5rem;
+  }
+}
