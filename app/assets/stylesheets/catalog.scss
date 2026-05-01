@@ -1540,3 +1540,46 @@ turbo-frame[busy]::after {
     --catalog-card-gap: 1.5rem;
   }
 }
+
+/* =============================================
+   Customer Catalog Image Proportions
+   ============================================= */
+#catalog #product-grid-content:not(.list-view) .catalog-card-media {
+  align-items: center;
+  aspect-ratio: 1 / .82;
+  display: flex !important;
+  justify-content: center;
+  padding: 1rem;
+}
+
+#catalog #product-grid-content:not(.list-view) .product-image {
+  height: auto;
+  max-height: none;
+  max-width: 285px;
+  min-height: 0;
+  width: 78%;
+}
+
+@media (min-width: 1400px) {
+  #catalog #product-grid-content:not(.list-view) .catalog-card-media {
+    aspect-ratio: 1 / .78;
+    padding: .95rem;
+  }
+
+  #catalog #product-grid-content:not(.list-view) .product-image {
+    max-width: 270px;
+    width: 78%;
+  }
+}
+
+@media (max-width: 575.98px) {
+  #catalog #product-grid-content:not(.list-view) .catalog-card-media {
+    aspect-ratio: 1 / .88;
+    padding: 1rem;
+  }
+
+  #catalog #product-grid-content:not(.list-view) .product-image {
+    max-width: 320px;
+    width: 84%;
+  }
+}
