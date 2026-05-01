@@ -51,6 +51,7 @@
       </div>
       <div class="col-12 col-md-5 text-md-end">
         <% current_status = params[:status].presence || "all" %>
+        <% current_location = params[:location].presence || "all" %>
         <% outline_for = ->(st) do
              case st
              when "draft" then "secondary"
@@ -70,7 +71,53 @@
           <i class="fa-solid fa-wand-magic-sparkles me-1"></i>Sin descripción (<%= Product.without_description.count %>)
         <% end %>
         <%= hidden_field_tag :status, current_status %>
+        <%= hidden_field_tag :location, current_location %>
         <%= link_to "Limpiar", admin_products_path, class: "btn btn-sm btn-outline-secondary ms-2", title: "Quitar búsqueda y status" %>
+      </div>
+
+      <%# Filtro por ubicación física + atajos rápidos %>
+      <% loc_btn = ->(loc) { ["btn", "btn-outline-primary", (current_location == loc ? "active" : nil)].compact.join(" ") } %>
+      <% shortcut_active_missing = (current_status == "active" && current_location == "missing") %>
+      <% shortcut_draftinactive_present = (current_status == "draft_or_inactive" && current_location == "present") %>
+      <div class="col-12 d-flex flex-wrap align-items-center gap-2 mt-2">
+        <span class="small text-muted me-1"><i class="fa-solid fa-location-dot me-1"></i>Ubicación:</span>
+        <div class="btn-group btn-group-sm" role="group" aria-label="Filtro por ubicación física">
+          <%= link_to "Todas", admin_products_path(request.query_parameters.merge(location: nil, page: nil).compact_blank),
+                       class: loc_btn.call("all"), title: "Todos los productos" %>
+          <%= link_to admin_products_path(request.query_parameters.merge(location: "missing", page: nil).compact_blank),
+                       class: loc_btn.call("missing"), title: "Productos con stock físico sin ubicación asignada" do %>
+            Sin ubicación
+            <% if @location_counts && @location_counts[:missing].to_i > 0 %>
+              <span class="badge bg-danger ms-1"><%= @location_counts[:missing] %></span>
+            <% end %>
+          <% end %>
+          <%= link_to admin_products_path(request.query_parameters.merge(location: "present", page: nil).compact_blank),
+                       class: loc_btn.call("present"), title: "Productos con ubicación física confirmada" do %>
+            Con ubicación
+            <% if @location_counts && @location_counts[:present].to_i > 0 %>
+              <span class="badge bg-success ms-1"><%= @location_counts[:present] %></span>
+            <% end %>
+          <% end %>
+        </div>
+
+        <span class="vr mx-1"></span>
+        <span class="small text-muted me-1">Atajos:</span>
+        <%= link_to admin_products_path(q: @q, sort: @sort, status: "active", location: "missing"),
+                     class: ["btn", "btn-sm", (shortcut_active_missing ? "btn-warning" : "btn-outline-warning")].join(" "),
+                     title: "Productos activos a los que les falta ubicación física" do %>
+          <i class="fa-solid fa-triangle-exclamation me-1"></i>Activos sin ubicación
+          <% if @shortcut_counts && @shortcut_counts[:active_missing].to_i > 0 %>
+            <span class="badge bg-light text-dark ms-1"><%= @shortcut_counts[:active_missing] %></span>
+          <% end %>
+        <% end %>
+        <%= link_to admin_products_path(q: @q, sort: @sort, status: "draft_or_inactive", location: "present"),
+                     class: ["btn", "btn-sm", (shortcut_draftinactive_present ? "btn-info" : "btn-outline-info")].join(" "),
+                     title: "Productos en borrador o inactivos que ya tienen ubicación; candidatos a publicar" do %>
+          <i class="fa-solid fa-rocket me-1"></i>Borrador/Inactivos con ubicación
+          <% if @shortcut_counts && @shortcut_counts[:draft_or_inactive_present].to_i > 0 %>
+            <span class="badge bg-light text-dark ms-1"><%= @shortcut_counts[:draft_or_inactive_present] %></span>
+          <% end %>
+        <% end %>
       </div>
     <% end %>
   </div>

@@ -13,7 +13,9 @@ Estado: <%= @sale_order.status %>
 ARTÍCULOS:
 <% @items.each do |item| %>
 - <%= item.product.product_name %>
-  SKU: <%= item.product.product_sku %>
+  <% if item.product.whatsapp_code.present? %>
+  Código: <%= item.product.whatsapp_code %>
+  <% end %>
   Cantidad: <%= item.quantity %> x <%= number_to_currency(item.unit_cost, unit: "$") %> = <%= number_to_currency(item.total_line_cost, unit: "$") %>
   <% if item.preorder_quantity > 0 %>
   (Incluye <%= item.preorder_quantity %> en preventa)

@@ -10,7 +10,7 @@
   <%# Chips de filtros usando partial reutilizable %>
   <%= render 'filter_chips' %>
 
-  <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 row-cols-xxl-4 g-4" id="product-grid-content" role="list">
+  <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 row-cols-xxl-5 g-4" id="product-grid-content" role="list">
     <% @products.each do |product| %>
       <% on_hand_cached = @on_hand_counts[product.id] || 0 %>
       <% in_transit_eta_cached = (defined?(@in_transit_etas) && @in_transit_etas[product.id]) || nil %>
@@ -50,7 +50,7 @@
                 <span class="badge bg-secondary">No disp.</span>
               <% end %>
               <% if product.created_at > 14.days.ago %>
-                <span class="badge bg-info" title="Agregado recientemente">
+                <span class="badge badge-new" title="Agregado recientemente">
                   <i class="fas fa-sparkles me-1" aria-hidden="true"></i>Nuevo
                 </span>
               <% end %>

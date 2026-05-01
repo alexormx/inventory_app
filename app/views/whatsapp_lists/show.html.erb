@@ -51,7 +51,7 @@
                   <td>
                     <%= link_to item.product.product_name, product_path(item.product), class: "text-decoration-none text-dark fw-semibold" %>
                     <div class="text-muted small">
-                      <%= item.product.brand %> · <%= item.product.supplier_product_code.presence || item.product.product_sku %>
+                      <%= item.product.brand %><% if item.product.whatsapp_code.present? %> · <%= item.product.whatsapp_code %><% end %>
                     </div>
                   </td>
                   <td class="text-center">

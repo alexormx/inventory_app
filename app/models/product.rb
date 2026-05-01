@@ -70,6 +70,20 @@ class Product < ApplicationRecord
     where.not(description: [nil, ""] + PLACEHOLDER_DESCRIPTIONS)
   }
 
+  # Productos con al menos un inventario en bodega (status que requieren ubicación)
+  # cuya ubicación física ya fue confirmada.
+  scope :with_confirmed_location, -> {
+    where(id: Inventory.where(status: Inventory::STATUSES_REQUIRING_LOCATION)
+                       .where.not(inventory_location_id: nil)
+                       .select(:product_id))
+  }
+  # Productos con al menos un inventario en bodega que aún no tiene ubicación asignada.
+  scope :missing_location, -> {
+    where(id: Inventory.where(status: Inventory::STATUSES_REQUIRING_LOCATION,
+                              inventory_location_id: nil)
+                       .select(:product_id))
+  }
+
   # --- Public helper for your current view (optional, can be removed later) ---
   def parsed_custom_attributes
     custom_attributes.is_a?(Hash) ? custom_attributes : {}

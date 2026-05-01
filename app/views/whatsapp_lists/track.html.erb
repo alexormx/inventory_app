@@ -34,7 +34,9 @@
           <li class="list-group-item d-flex justify-content-between small">
             <span>
               <strong><%= item.quantity %>×</strong> <%= item.product.product_name %>
-              <span class="text-muted">· <%= item.product.supplier_product_code.presence || item.product.product_sku %></span>
+              <% if item.product.whatsapp_code.present? %>
+                <span class="text-muted">· <%= item.product.whatsapp_code %></span>
+              <% end %>
             </span>
             <span class="text-end">
               <%= number_to_currency(item.unit_price_snapshot.to_f * item.quantity) %>

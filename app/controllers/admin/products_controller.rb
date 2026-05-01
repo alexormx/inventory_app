@@ -17,8 +17,10 @@ module Admin
     def index
       @q = params[:q].to_s.strip
       current_status = params[:status].presence || 'all'
+      current_location = params[:location].presence || 'all'
       scope = Product.all
-      scope = scope.where(status: current_status) if current_status != 'all'
+      scope = apply_status_filter(scope, current_status)
+      scope = apply_location_filter(scope, current_location)
       if @q.present?
         term = "%#{@q.downcase}%"
         scope = scope.where('LOWER(product_name) LIKE ? OR LOWER(product_sku) LIKE ?', term, term)
@@ -373,8 +375,7 @@ module Admin
       end
       # Aplicar también el filtro de status actual para los contadores inferiores
       current_status = params[:status].presence || 'all'
-      filtered_base = base
-      filtered_base = filtered_base.where(status: current_status) if current_status != 'all'
+      filtered_base = apply_status_filter(base, current_status)
       # Globales (no dependen de q)
       @counts_global = {
         draft: Product.where(status: 'draft').count,
@@ -387,6 +388,35 @@ module Admin
         active: filtered_base.where(status: 'active').count,
         inactive: filtered_base.where(status: 'inactive').count
       }
+      # Conteos de ubicación (dependen de q + status actual) y atajos rápidos
+      @location_counts = {
+        missing: filtered_base.missing_location.count,
+        present: filtered_base.with_confirmed_location.count
+      }
+      base_for_shortcuts = base
+      @shortcut_counts = {
+        active_missing: apply_status_filter(base_for_shortcuts, 'active').missing_location.count,
+        draft_or_inactive_present: apply_status_filter(base_for_shortcuts, 'draft_or_inactive').with_confirmed_location.count
+      }
+    end
+
+    def apply_status_filter(scope, current_status)
+      case current_status
+      when 'all', nil, ''
+        scope
+      when 'draft_or_inactive'
+        scope.where(status: %w[draft inactive])
+      else
+        scope.where(status: current_status)
+      end
+    end
+
+    def apply_location_filter(scope, current_location)
+      case current_location
+      when 'missing'  then scope.missing_location
+      when 'present'  then scope.with_confirmed_location
+      else scope
+      end
     end
 
     def fix_custom_attributes_param

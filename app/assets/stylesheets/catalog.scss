@@ -1186,12 +1186,13 @@ turbo-frame[busy]::after {
 }
 
 #catalog .badge {
-  border: 1px solid rgba(255,255,255,.75);
+  border: 1px solid rgba(15,23,42,.06);
   border-radius: 999px;
-  box-shadow: 0 8px 18px -14px rgba(15,23,42,.6);
-  font-size: .66rem;
-  letter-spacing: 0;
-  padding: .36rem .62rem;
+  box-shadow: 0 4px 10px -4px rgba(15,23,42,.22), 0 1px 2px rgba(15,23,42,.08);
+  font-size: .74rem;
+  font-weight: 700 !important;
+  letter-spacing: .15px;
+  padding: .42rem .72rem;
 }
 
 #catalog .badge.bg-success {
@@ -1223,6 +1224,14 @@ turbo-frame[busy]::after {
   background: #fee8eb !important;
   color: var(--catalog-accent-dark) !important;
 }
+
+#catalog .badge.badge-new {
+  background: linear-gradient(135deg, #f3e8ff 0%, #ede0ff 100%) !important;
+  color: #6b21a8 !important;
+  border: 1px solid #e0c8ff;
+  box-shadow: 0 4px 12px -4px rgba(124,58,237,.35), 0 1px 2px rgba(15,23,42,.08);
+}
+#catalog .badge.badge-new i { color: #9333ea; }
 
 #catalog .catalog-card-actions {
   gap: .45rem !important;

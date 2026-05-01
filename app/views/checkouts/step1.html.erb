@@ -53,7 +53,9 @@
                                 </span>
                               <% end %>
                             </div>
-                            <small class="text-muted">SKU: <%= product.product_sku %></small>
+                            <% if product.whatsapp_code.present? %>
+                              <small class="text-muted">Código: <%= product.whatsapp_code %></small>
+                            <% end %>
                             <% if product.brand.present? %>
                               <br><small class="text-muted"><%= product.brand %></small>
                             <% end %>

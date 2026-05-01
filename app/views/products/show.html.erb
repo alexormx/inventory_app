@@ -76,15 +76,6 @@
               </div>
             </div>
             <% end %>
-            <div class="col-sm-6">
-              <div class="d-flex align-items-center">
-                <i class="fas fa-barcode text-muted me-2"></i>
-                <div>
-                  <small class="text-muted d-block">SKU</small>
-                  <strong><%= @product.product_sku %></strong>
-                </div>
-              </div>
-            </div>
             <% if @product.barcode.present? %>
             <div class="col-sm-6">
               <div class="d-flex align-items-center">

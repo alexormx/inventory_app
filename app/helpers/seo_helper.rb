@@ -35,7 +35,6 @@ module SeoHelper
       '@context' => 'https://schema.org',
       '@type' => 'Product',
       'name' => product.product_name,
-      'sku' => product.product_sku,
       'description' => product_json_ld_description(product),
       'image' => image_url,
       'brand' => {

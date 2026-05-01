@@ -4,7 +4,6 @@
     <div>
       <h1 class="h3 fw-bold mb-1"><%= product.product_name %></h1>
       <div class="text-muted small d-flex flex-wrap gap-3">
-        <span>SKU: <strong><%= product.product_sku %></strong></span>
         <span>Marca: <strong><%= product.brand %></strong></span>
         <% if product.series.present? %>
           <span>Serie: <strong><%= product.series %></strong></span>

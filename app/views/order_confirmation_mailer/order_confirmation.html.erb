@@ -34,7 +34,9 @@
           <% @items.each do |item| %>
             <div class="item">
               <strong><%= item.product.product_name %></strong><br>
-              SKU: <%= item.product.product_sku %><br>
+              <% if item.product.whatsapp_code.present? %>
+                Código: <%= item.product.whatsapp_code %><br>
+              <% end %>
               Cantidad: <%= item.quantity %> x <%= number_to_currency(item.unit_cost, unit: "$") %> = <%= number_to_currency(item.total_line_cost, unit: "$") %>
               <% if item.preorder_quantity > 0 %>
                 <br><em>(Incluye <%= item.preorder_quantity %> en preventa)</em>
