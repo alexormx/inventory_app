@@ -6,7 +6,7 @@ class ProductsController < ApplicationController
   before_action :set_product, only: :show
   before_action :ensure_public_product_active, only: :show
 
-  PUBLIC_PER_PAGE = 15
+  PUBLIC_PER_PAGE = 24
 
   # SEO-friendly brand landing page: /marca/:brand_slug
   def brand

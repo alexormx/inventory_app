@@ -10,7 +10,7 @@
   <%# Chips de filtros usando partial reutilizable %>
   <%= render 'filter_chips' %>
 
-  <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 row-cols-xxl-6 g-2 g-md-3" id="product-grid-content" role="list">
+  <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xxl-6 g-2 g-md-3" id="product-grid-content" role="list">
     <% @products.each do |product| %>
       <% on_hand_cached = @on_hand_counts[product.id] || 0 %>
       <% in_transit_eta_cached = (defined?(@in_transit_etas) && @in_transit_etas[product.id]) || nil %>
@@ -71,14 +71,14 @@
                 </span>
               <% end %>
             </p>
-            <p class="card-text text-danger fw-bold small mb-1" role="text">
+            <p class="card-text text-danger fw-bold mb-1" role="text">
               <span class="visually-hidden">Precio: </span><%= number_to_currency(product.selling_price) %>
+              <% unless user_signed_in? %>
+                <i class="fas fa-circle-info catalog-fx-icon ms-1"
+                   title="Sujeto al tipo de cambio del día de la compra"
+                   aria-label="Sujeto al tipo de cambio del día de la compra"></i>
+              <% end %>
             </p>
-            <% unless user_signed_in? %>
-              <p class="catalog-fx-note text-muted mb-2" title="El precio puede ajustarse al tipo de cambio del día de la compra">
-                <i class="fas fa-circle-info me-1" aria-hidden="true"></i>Sujeto a tipo de cambio
-              </p>
-            <% end %>
             <%# El badge ya muestra "Llega ~fecha" cuando hay inventario en tránsito,
                 así que solo mostramos el ETA cuando viene de preventa/sobre-pedido. %>
             <% if product.active? && on_hand_cached <= 0 && in_transit_eta_cached.blank? && (eta = stock_eta(product)) %>
@@ -96,13 +96,11 @@
                                 disabled: disabled,
                                 title: (disabled ? 'Sin stock disponible' : 'Agregar al carrito'),
                                 aria: { label: (disabled ? 'Sin stock' : "Agregar #{product.product_name} al carrito") } do %>
-                    <i class="fas fa-cart-plus" aria-hidden="true"></i>
-                    <span class="visually-hidden"><%= disabled ? 'Sin stock' : 'Agregar al carrito' %></span>
+                    <i class="fas fa-cart-plus me-1" aria-hidden="true"></i><%= disabled ? 'Sin stock' : 'Agregar' %>
                   <% end %>
                 <% else %>
                   <%= link_to new_user_session_path, class: "btn btn-outline-danger btn-sm flex-grow-1", title: "Inicia sesión para agregar al carrito" do %>
-                    <i class="fas fa-sign-in-alt" aria-hidden="true"></i>
-                    <span class="visually-hidden">Iniciar sesión</span>
+                    <i class="fas fa-sign-in-alt me-1" aria-hidden="true"></i>Inicia sesión
                   <% end %>
                 <% end %>
                 <% if whatsapp_list_available? %>
