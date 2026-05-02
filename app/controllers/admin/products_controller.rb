@@ -18,9 +18,11 @@ module Admin
       @q = params[:q].to_s.strip
       current_status = params[:status].presence || 'all'
       current_location = params[:location].presence || 'all'
+      with_stock_only = ActiveModel::Type::Boolean.new.cast(params[:with_stock])
       scope = Product.all
       scope = apply_status_filter(scope, current_status)
       scope = apply_location_filter(scope, current_location)
+      scope = scope.with_stock if with_stock_only
       if @q.present?
         term = "%#{@q.downcase}%"
         scope = scope.where('LOWER(product_name) LIKE ? OR LOWER(product_sku) LIKE ?', term, term)
@@ -396,8 +398,17 @@ module Admin
       base_for_shortcuts = base
       @shortcut_counts = {
         active_missing: apply_status_filter(base_for_shortcuts, 'active').missing_location.count,
-        draft_or_inactive_present: apply_status_filter(base_for_shortcuts, 'draft_or_inactive').with_confirmed_location.count
+        draft_or_inactive_present: apply_status_filter(base_for_shortcuts, 'draft_or_inactive').with_confirmed_location.count,
+        draft_or_inactive_present_stock: apply_status_filter(base_for_shortcuts, 'draft_or_inactive').with_confirmed_location.with_stock.count
       }
+    end
+
+    def order_by_available_stock(scope, direction)
+      dir = direction.to_s.downcase == 'asc' ? 'ASC' : 'DESC'
+      available_status = Inventory.statuses[:available]
+      count_sql = "(SELECT COUNT(*) FROM inventories WHERE inventories.product_id = products.id AND inventories.status = #{available_status})"
+      scope.select("products.*, #{count_sql} AS available_stock_count")
+           .order(Arel.sql("#{count_sql} #{dir}, products.id #{dir}"))
     end
 
     def apply_status_filter(scope, current_status)
@@ -491,8 +502,8 @@ module Admin
       when 'sku'             then scope.order(Arel.sql('LOWER(product_sku) ASC'))
       when 'price_asc'       then scope.order(selling_price: :asc)
       when 'price_desc'      then scope.order(selling_price: :desc)
-      when 'stock_asc'       then scope.order(total_purchase_quantity: :asc)
-      when 'stock_desc'      then scope.order(total_purchase_quantity: :desc)
+      when 'stock_asc'       then order_by_available_stock(scope, :asc)
+      when 'stock_desc'      then order_by_available_stock(scope, :desc)
       when 'purchase_qty'    then scope.order(total_purchase_quantity: :desc)
       when 'purchase_value'  then scope.order(total_purchase_value: :desc)
       when 'sales_value'     then scope.order(total_sales_value: :desc)

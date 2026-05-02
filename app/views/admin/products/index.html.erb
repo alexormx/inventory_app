@@ -72,13 +72,18 @@
         <% end %>
         <%= hidden_field_tag :status, current_status %>
         <%= hidden_field_tag :location, current_location %>
+        <% if ActiveModel::Type::Boolean.new.cast(params[:with_stock]) %>
+          <%= hidden_field_tag :with_stock, "1" %>
+        <% end %>
         <%= link_to "Limpiar", admin_products_path, class: "btn btn-sm btn-outline-secondary ms-2", title: "Quitar búsqueda y status" %>
       </div>
 
       <%# Filtro por ubicación física + atajos rápidos %>
       <% loc_btn = ->(loc) { ["btn", "btn-outline-primary", (current_location == loc ? "active" : nil)].compact.join(" ") } %>
+      <% with_stock_active = ActiveModel::Type::Boolean.new.cast(params[:with_stock]) %>
       <% shortcut_active_missing = (current_status == "active" && current_location == "missing") %>
-      <% shortcut_draftinactive_present = (current_status == "draft_or_inactive" && current_location == "present") %>
+      <% shortcut_draftinactive_present = (current_status == "draft_or_inactive" && current_location == "present" && !with_stock_active) %>
+      <% shortcut_draftinactive_present_stock = (current_status == "draft_or_inactive" && current_location == "present" && with_stock_active) %>
       <div class="col-12 d-flex flex-wrap align-items-center gap-2 mt-2">
         <span class="small text-muted me-1"><i class="fa-solid fa-location-dot me-1"></i>Ubicación:</span>
         <div class="btn-group btn-group-sm" role="group" aria-label="Filtro por ubicación física">
@@ -116,6 +121,14 @@
           <i class="fa-solid fa-rocket me-1"></i>Borrador/Inactivos con ubicación
           <% if @shortcut_counts && @shortcut_counts[:draft_or_inactive_present].to_i > 0 %>
             <span class="badge bg-light text-dark ms-1"><%= @shortcut_counts[:draft_or_inactive_present] %></span>
+          <% end %>
+        <% end %>
+        <%= link_to admin_products_path(q: @q, sort: @sort, status: "draft_or_inactive", location: "present", with_stock: 1),
+                     class: ["btn", "btn-sm", (shortcut_draftinactive_present_stock ? "btn-success" : "btn-outline-success")].join(" "),
+                     title: "Borrador/Inactivos con ubicación Y al menos una pieza disponible — listos para publicar" do %>
+          <i class="fa-solid fa-circle-check me-1"></i>Listos para publicar
+          <% if @shortcut_counts && @shortcut_counts[:draft_or_inactive_present_stock].to_i > 0 %>
+            <span class="badge bg-light text-dark ms-1"><%= @shortcut_counts[:draft_or_inactive_present_stock] %></span>
           <% end %>
         <% end %>
       </div>

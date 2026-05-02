@@ -1,4 +1,4 @@
-<%= turbo_frame_tag "products_grid" do %>
+<%= turbo_frame_tag "products_grid", autoscroll: true, data: { autoscroll_block: "start", autoscroll_behavior: "smooth" } do %>
   <%# Chips de filtros activos dentro del frame para actualizar en cada request %>
 
   <% total_products = @products.total_count %>

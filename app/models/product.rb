@@ -83,6 +83,10 @@ class Product < ApplicationRecord
                               inventory_location_id: nil)
                        .select(:product_id))
   }
+  # Productos con al menos una pieza en estatus :available (vendible inmediato).
+  scope :with_stock, -> {
+    where(id: Inventory.where(status: :available).select(:product_id))
+  }
 
   # --- Public helper for your current view (optional, can be removed later) ---
   def parsed_custom_attributes

@@ -2044,3 +2044,313 @@ body:not(.admin-shell) > footer a:hover {
     border-radius: 22px !important;
   }
 }
+
+/* =============================================
+   Apple-style design system for customer surfaces
+   Scoped to non-admin layout, excluding /catalog
+   (the catalog has its own polished treatment).
+   ============================================= */
+:root {
+  --ui-ink: #111827;
+  --ui-muted: #6b7280;
+  --ui-soft: #f5f7fb;
+  --ui-panel: rgba(255, 255, 255, 0.92);
+  --ui-border: rgba(17, 24, 39, 0.08);
+  --ui-border-strong: rgba(17, 24, 39, 0.14);
+  --ui-accent: #c92a3a;
+  --ui-accent-dark: #a61e2d;
+  --ui-shadow-sm: 0 10px 30px -24px rgba(15, 23, 42, 0.38);
+  --ui-shadow-md: 0 22px 52px -36px rgba(15, 23, 42, 0.46);
+  --ui-shadow-lg: 0 28px 70px -42px rgba(15, 23, 42, 0.5);
+  --ui-radius-sm: 12px;
+  --ui-radius-md: 16px;
+  --ui-radius-lg: 22px;
+}
+
+#{"body:not(.admin-shell) main.page-main:not(:has(#catalog))"} {
+  /* Heading hierarchy */
+  h1, h2, h3 {
+    color: var(--ui-ink);
+    letter-spacing: -0.015em;
+    font-weight: 700;
+  }
+  h4, h5, h6 {
+    color: var(--ui-ink);
+    letter-spacing: -0.01em;
+  }
+
+  /* Cards */
+  .card {
+    border: 1px solid var(--ui-border);
+    border-radius: var(--ui-radius-md);
+    box-shadow: var(--ui-shadow-sm);
+    overflow: hidden;
+    transition: box-shadow .25s ease, transform .25s ease;
+    background: #fff;
+  }
+  .card.shadow-sm,
+  .card.shadow {
+    box-shadow: var(--ui-shadow-sm);
+  }
+  .card-header {
+    border-bottom: 1px solid var(--ui-border);
+    background: rgba(247, 248, 251, 0.65);
+    backdrop-filter: saturate(140%) blur(6px);
+    -webkit-backdrop-filter: saturate(140%) blur(6px);
+  }
+  .card-footer {
+    background: transparent;
+    border-top: 1px solid var(--ui-border);
+  }
+  .card-title {
+    color: var(--ui-ink);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .card.bg-light-subtle {
+    background: var(--ui-soft) !important;
+    border-color: var(--ui-border);
+  }
+  .card.sticky-top {
+    backdrop-filter: saturate(140%) blur(8px);
+    -webkit-backdrop-filter: saturate(140%) blur(8px);
+  }
+
+  /* Buttons — refined, Apple-leaning */
+  .btn {
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    border-radius: 12px;
+    padding: 0.55rem 1.1rem;
+    transition: transform .15s ease, box-shadow .2s ease, background-color .2s ease, border-color .2s ease;
+  }
+  .btn-primary,
+  .btn-danger {
+    background: var(--ui-accent);
+    border-color: var(--ui-accent);
+    box-shadow: 0 4px 14px -6px rgba(201, 42, 58, 0.45);
+  }
+  .btn-primary:hover:not(:disabled),
+  .btn-danger:hover:not(:disabled) {
+    background: var(--ui-accent-dark);
+    border-color: var(--ui-accent-dark);
+    transform: translateY(-1px);
+  }
+  .btn-primary:active:not(:disabled),
+  .btn-danger:active:not(:disabled) {
+    transform: translateY(0);
+  }
+  .btn-outline-primary {
+    color: var(--ui-accent);
+    border-color: var(--ui-accent);
+  }
+  .btn-outline-primary:hover {
+    background: var(--ui-accent);
+    border-color: var(--ui-accent);
+    color: #fff;
+  }
+  .btn-outline-danger {
+    color: var(--ui-accent);
+    border-color: var(--ui-accent);
+  }
+  .btn-outline-danger:hover {
+    background: var(--ui-accent);
+    border-color: var(--ui-accent);
+    color: #fff;
+  }
+  .btn-outline-secondary {
+    color: var(--ui-ink);
+    border-color: var(--ui-border-strong);
+    background: #fff;
+  }
+  .btn-outline-secondary:hover:not(:disabled) {
+    background: var(--ui-soft);
+    color: var(--ui-ink);
+    border-color: var(--ui-border-strong);
+  }
+  .btn-success {
+    box-shadow: 0 4px 14px -6px rgba(22, 163, 74, 0.4);
+  }
+  .btn-lg {
+    padding: 0.78rem 1.6rem;
+    font-size: 1rem;
+    border-radius: 14px;
+  }
+  .btn-sm {
+    padding: 0.38rem 0.78rem;
+    border-radius: 10px;
+    font-size: 0.85rem;
+  }
+  .btn:focus-visible {
+    box-shadow: 0 0 0 4px rgba(201, 42, 58, 0.15);
+  }
+
+  /* Form controls */
+  .form-control,
+  .form-select {
+    border-radius: 10px;
+    border-color: var(--ui-border-strong);
+    transition: border-color .15s ease, box-shadow .15s ease;
+    color: var(--ui-ink);
+  }
+  .form-control:focus,
+  .form-select:focus {
+    border-color: var(--ui-accent);
+    box-shadow: 0 0 0 4px rgba(201, 42, 58, 0.12);
+  }
+  .form-label {
+    color: var(--ui-ink);
+    font-weight: 500;
+  }
+  .form-text {
+    color: var(--ui-muted);
+  }
+  .input-group .form-control,
+  .input-group .form-select {
+    border-radius: 10px;
+  }
+  .input-group > .input-group-text {
+    background: var(--ui-soft);
+    border-color: var(--ui-border-strong);
+    color: var(--ui-muted);
+    border-radius: 10px;
+  }
+
+  /* Tables */
+  .table {
+    --bs-table-border-color: var(--ui-border);
+    color: var(--ui-ink);
+  }
+  .table thead th {
+    color: var(--ui-muted);
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--ui-border-strong);
+    padding-bottom: 0.65rem;
+  }
+  .table tbody tr {
+    transition: background-color .15s ease;
+  }
+  .table.table-hover tbody tr:hover,
+  .table tbody tr:hover {
+    background-color: var(--ui-soft);
+  }
+  .table tbody td,
+  .table tbody th {
+    border-color: var(--ui-border);
+    padding-top: 0.85rem;
+    padding-bottom: 0.85rem;
+  }
+  .table tfoot td {
+    border-top: 1px solid var(--ui-border-strong);
+    color: var(--ui-ink);
+  }
+
+  /* Alerts — pastel surfaces */
+  .alert {
+    border-radius: var(--ui-radius-sm);
+    border: 1px solid var(--ui-border);
+    padding: 0.85rem 1.1rem;
+  }
+  .alert-warning {
+    background: #fff7e6;
+    border-color: #ffe9b3;
+    color: #8a5a00;
+  }
+  .alert-success {
+    background: #e9f8ef;
+    border-color: #c5ecd2;
+    color: #137342;
+  }
+  .alert-info {
+    background: #e8f3ff;
+    border-color: #c9e0fb;
+    color: #1760a5;
+  }
+  .alert-danger {
+    background: #fee8eb;
+    border-color: #fbcdd1;
+    color: var(--ui-accent-dark);
+  }
+  .alert-light {
+    background: var(--ui-panel);
+    border-color: var(--ui-border);
+    color: var(--ui-ink);
+  }
+
+  /* Badges */
+  .badge {
+    font-weight: 600;
+    border-radius: 999px;
+    padding: 0.42em 0.72em;
+    letter-spacing: 0.15px;
+  }
+
+  /* List groups */
+  .list-group {
+    border-radius: var(--ui-radius-sm);
+    overflow: hidden;
+  }
+  .list-group-item {
+    border-color: var(--ui-border);
+    color: var(--ui-ink);
+  }
+
+  /* Links use brand red */
+  a {
+    color: var(--ui-accent);
+  }
+  a:hover {
+    color: var(--ui-accent-dark);
+  }
+  a.text-decoration-none.text-dark,
+  a.text-dark {
+    color: var(--ui-ink) !important;
+  }
+  a.text-muted,
+  .text-muted {
+    color: var(--ui-muted) !important;
+  }
+
+  /* Modals */
+  .modal-content {
+    border: 1px solid var(--ui-border);
+    border-radius: var(--ui-radius-lg);
+    box-shadow: var(--ui-shadow-lg);
+  }
+  .modal-header {
+    border-bottom-color: var(--ui-border);
+  }
+  .modal-footer {
+    border-top-color: var(--ui-border);
+  }
+
+  /* Subtle background for the page */
+  background: linear-gradient(180deg, #fafbfd 0%, #ffffff 80%);
+}
+
+/* Checkout progress bar — armonizado con la marca */
+body:not(.admin-shell) .checkout-progress-wrapper .progress-line-active {
+  background: var(--ui-accent) !important;
+}
+body:not(.admin-shell) .checkout-progress-wrapper .bg-primary {
+  background-color: var(--ui-accent) !important;
+}
+body:not(.admin-shell) .checkout-progress-wrapper .text-primary {
+  color: var(--ui-accent) !important;
+}
+body:not(.admin-shell) .checkout-progress-wrapper .rounded-circle {
+  box-shadow: var(--ui-shadow-sm);
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+body:not(.admin-shell) .checkout-progress-wrapper .rounded-circle:hover {
+  transform: translateY(-2px);
+}
+
+/* Devise auth pages: card-style centered form */
+body:not(.admin-shell) .devise-auth-shell {
+  max-width: 460px;
+  margin: 2rem auto;
+}
