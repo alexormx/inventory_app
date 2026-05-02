@@ -81,14 +81,8 @@
 
     <div class="catalog-header-row d-flex flex-wrap align-items-end justify-content-between gap-2 gap-lg-3">
     <div class="catalog-title-wrapper">
-      <h1 class="catalog-title fw-semibold mb-1 d-flex flex-wrap align-items-center gap-2">
+      <h1 class="catalog-title fw-semibold mb-1">
         <%= catalog_dynamic_title %>
-        <% if @products.respond_to?(:total_count) %>
-          <span class="catalog-title-count text-muted fw-normal" aria-label="<%= @products.total_count %> productos">
-            <%= number_with_delimiter(@products.total_count) %>
-            <small><%= @products.total_count == 1 ? 'producto' : 'productos' %></small>
-          </span>
-        <% end %>
       </h1>
       <p class="text-muted small mb-0"><%= catalog_subtitle %></p>
     </div>

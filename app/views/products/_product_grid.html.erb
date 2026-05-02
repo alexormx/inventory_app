@@ -1,13 +1,27 @@
 <%= turbo_frame_tag "products_grid", autoscroll: true, data: { autoscroll_block: "start", autoscroll_behavior: "smooth" } do %>
-  <%# Chips de filtros activos dentro del frame para actualizar en cada request %>
-
+  <%# Resumen dinámico — vive dentro del frame, se actualiza en cada cambio de filtro %>
   <% total_products = @products.total_count %>
+  <% has_filters = filter_state.has_filters || @q.present? %>
+  <div class="catalog-results-summary d-flex flex-wrap align-items-baseline gap-2 mb-3" aria-live="polite">
+    <span class="catalog-results-count">
+      <strong class="catalog-results-count-number"><%= number_with_delimiter(total_products) %></strong>
+      <span class="catalog-results-count-label"><%= total_products == 1 ? 'producto' : 'productos' %></span>
+    </span>
+    <% if has_filters %>
+      <span class="catalog-results-context text-muted small">
+        <i class="fas fa-filter me-1" aria-hidden="true"></i>
+        <% if @q.present? %>
+          coinciden con "<strong class="text-dark"><%= @q %></strong>"
+        <% else %>
+          coinciden con tus filtros
+        <% end %>
+      </span>
+    <% else %>
+      <span class="catalog-results-context text-muted small">en el catálogo</span>
+    <% end %>
+  </div>
 
-  <% if @q.present? %>
-    <div class="text-muted small mb-2">Resultados para "<strong><%= @q %></strong>"</div>
-  <% end %>
-
-  <%# Chips de filtros usando partial reutilizable %>
+  <%# Chips de filtros activos (sólo cuando hay filtros aplicados) %>
   <%= render 'filter_chips' %>
 
   <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 row-cols-xxl-5 g-4" id="product-grid-content" role="list">
