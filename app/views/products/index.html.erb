@@ -109,7 +109,7 @@
             <%= link_to catalog_path(request.query_parameters.except('q', 'page')),
                         class: "chip-clear",
                         "aria-label": "Limpiar búsqueda",
-                        data: { turbo_frame: "products_grid", turbo_action: "advance" } do %>&times;<% end %>
+                        data: { turbo_frame: "_top" } do %>&times;<% end %>
           </div>
         <% end %>
         <select name="sort" class="form-select form-select-sm sort-select" aria-label="Ordenar productos">
@@ -123,7 +123,7 @@
           <%= link_to catalog_path,
                       class: "btn btn-outline-secondary btn-icon",
                       title: "Limpiar filtros",
-                      data: { turbo_frame: "products_grid", turbo_action: "advance" } do %>
+                      data: { turbo_frame: "_top" } do %>
             <i class="fas fa-times"></i>
           <% end %>
         <% end %>
@@ -150,7 +150,7 @@
                    class: ["availability-chip", (chip[:active] ? 'active' : nil)].compact.join(' '),
                    title: chip[:tip],
                    "aria-pressed": chip[:active].to_s,
-                   data: { turbo_frame: "products_grid", turbo_action: "advance" } do %>
+                   data: { turbo_frame: "_top" } do %>
         <i class="fas <%= chip[:icon] %> me-1" aria-hidden="true"></i><%= chip[:label] %>
         <% if chip[:count].to_i > 0 %>
           <span class="availability-chip-count ms-1"><%= chip[:count] %></span>

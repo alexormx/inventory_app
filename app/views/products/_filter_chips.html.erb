@@ -12,7 +12,7 @@
                     class: "chip-remove",
                     "aria-label": "Remover #{cat}",
                     title: "Remover filtro",
-                    data: { turbo_frame: "products_grid", turbo_action: "advance" } do %>&times;<% end %>
+                    data: { turbo_frame: "_top" } do %>&times;<% end %>
       </span>
     <% end %>
 
@@ -24,7 +24,7 @@
                     class: "chip-remove",
                     "aria-label": "Remover #{brand}",
                     title: "Remover filtro",
-                    data: { turbo_frame: "products_grid", turbo_action: "advance" } do %>&times;<% end %>
+                    data: { turbo_frame: "_top" } do %>&times;<% end %>
       </span>
     <% end %>
 
@@ -35,7 +35,7 @@
                     class: "chip-remove",
                     "aria-label": "Remover #{series}",
                     title: "Remover filtro",
-                    data: { turbo_frame: "products_grid", turbo_action: "advance" } do %>&times;<% end %>
+                    data: { turbo_frame: "_top" } do %>&times;<% end %>
       </span>
     <% end %>
 
@@ -47,7 +47,7 @@
                     class: "chip-remove",
                     "aria-label": "Remover filtro de precio",
                     title: "Remover filtro",
-                    data: { turbo_frame: "products_grid", turbo_action: "advance" } do %>&times;<% end %>
+                    data: { turbo_frame: "_top" } do %>&times;<% end %>
       </span>
     <% end %>
 
@@ -59,7 +59,7 @@
                     class: "chip-remove",
                     "aria-label": "Remover filtro en stock",
                     title: "Remover filtro",
-                    data: { turbo_frame: "products_grid", turbo_action: "advance" } do %>&times;<% end %>
+                    data: { turbo_frame: "_top" } do %>&times;<% end %>
       </span>
     <% end %>
 
@@ -71,7 +71,7 @@
                     class: "chip-remove",
                     "aria-label": "Remover filtro en tránsito",
                     title: "Remover filtro",
-                    data: { turbo_frame: "products_grid", turbo_action: "advance" } do %>&times;<% end %>
+                    data: { turbo_frame: "_top" } do %>&times;<% end %>
       </span>
     <% end %>
 
@@ -83,7 +83,7 @@
                     class: "chip-remove",
                     "aria-label": "Remover filtro sobre pedido",
                     title: "Remover filtro",
-                    data: { turbo_frame: "products_grid", turbo_action: "advance" } do %>&times;<% end %>
+                    data: { turbo_frame: "_top" } do %>&times;<% end %>
       </span>
     <% end %>
 
@@ -95,7 +95,7 @@
                     class: "chip-remove",
                     "aria-label": "Remover filtro backorder",
                     title: "Remover filtro",
-                    data: { turbo_frame: "products_grid", turbo_action: "advance" } do %>&times;<% end %>
+                    data: { turbo_frame: "_top" } do %>&times;<% end %>
       </span>
     <% end %>
 
@@ -107,13 +107,13 @@
                     class: "chip-remove",
                     "aria-label": "Remover filtro preventa",
                     title: "Remover filtro",
-                    data: { turbo_frame: "products_grid", turbo_action: "advance" } do %>&times;<% end %>
+                    data: { turbo_frame: "_top" } do %>&times;<% end %>
       </span>
     <% end %>
 
     <%# Botón limpiar todos (opcional, se puede ocultar con local_assigns[:hide_clear_all]) %>
     <% unless local_assigns[:hide_clear_all] %>
-      <%= link_to clear_all_filters_url, class: "btn btn-outline-secondary btn-sm", data: { turbo_frame: "products_grid", turbo_action: "advance" } do %>
+      <%= link_to clear_all_filters_url, class: "btn btn-outline-secondary btn-sm", data: { turbo_frame: "_top" } do %>
         <i class="fas fa-times me-1"></i>Limpiar todos
       <% end %>
     <% end %>
