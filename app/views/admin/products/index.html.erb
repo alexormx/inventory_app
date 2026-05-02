@@ -6,6 +6,21 @@
   <span class="badge admin-page-badge">Gestiona borradores, productos activos y catálogo archivado</span>
 </div>
 
+<% missing_active_count = @shortcut_counts && @shortcut_counts[:active_missing].to_i %>
+<% if missing_active_count.to_i > 0 %>
+  <div class="alert alert-warning d-flex flex-wrap align-items-center gap-3 mb-4" role="alert">
+    <div class="flex-grow-1">
+      <strong><i class="fa-solid fa-triangle-exclamation me-2"></i>Atención:</strong>
+      Hay <strong><%= missing_active_count %></strong> producto<%= 's' if missing_active_count != 1 %> publicado<%= 's' if missing_active_count != 1 %> sin ubicación física.
+      Si te compran uno, no podrás localizarlo en bodega.
+    </div>
+    <%= link_to admin_products_path(status: "active", location: "missing"),
+                 class: "btn btn-sm btn-warning fw-semibold" do %>
+      <i class="fa-solid fa-arrow-right me-1"></i>Ver y ubicar
+    <% end %>
+  </div>
+<% end %>
+
 <%= render partial: "admin/shared/status_counters", locals: {
   wrapper_id: "products_counts_global",
   counts: @counts_global,
