@@ -16,7 +16,7 @@
     <h6 class="fw-semibold small text-uppercase text-muted mb-2">
       <a class="text-decoration-none text-muted d-flex align-items-center justify-content-between" data-bs-toggle="collapse" href="#filterAvailability<%= suffix %>" role="button" aria-expanded="true" aria-controls="filterAvailability<%= suffix %>">
         Disponibilidad
-        <% active_avail = [filter_state.in_stock_only, filter_state.backorder_only, filter_state.preorder_only].count(true) %>
+        <% active_avail = [filter_state.in_stock_only, filter_state.in_transit_only, filter_state.to_order_only].count(true) %>
         <span>
           <% if active_avail > 0 %>
             <span class="badge bg-danger rounded-pill me-1"><%= active_avail %></span>
@@ -29,27 +29,27 @@
       <div class="form-check">
         <input class="form-check-input" type="checkbox" name="in_stock" value="1" id="f-in-stock<%= suffix %>" <%= 'checked' if filter_state.in_stock_only %>>
         <label class="form-check-label" for="f-in-stock<%= suffix %>">
-          En stock
+          <i class="fas fa-check-circle me-1 text-success" aria-hidden="true"></i>En stock
           <% if defined?(@facet_counts) && @facet_counts[:in_stock] %>
             <span class="text-muted small">(<%= @facet_counts[:in_stock] %>)</span>
           <% end %>
         </label>
       </div>
       <div class="form-check">
-        <input class="form-check-input" type="checkbox" name="backorder" value="1" id="f-backorder<%= suffix %>" <%= 'checked' if filter_state.backorder_only %>>
-        <label class="form-check-label" for="f-backorder<%= suffix %>">
-          Permite backorder
-          <% if defined?(@facet_counts) && @facet_counts[:backorder] %>
-            <span class="text-muted small">(<%= @facet_counts[:backorder] %>)</span>
+        <input class="form-check-input" type="checkbox" name="in_transit" value="1" id="f-in-transit<%= suffix %>" <%= 'checked' if filter_state.in_transit_only %>>
+        <label class="form-check-label" for="f-in-transit<%= suffix %>">
+          <i class="fas fa-truck me-1 text-primary" aria-hidden="true"></i>En tránsito
+          <% if defined?(@facet_counts) && @facet_counts[:in_transit] %>
+            <span class="text-muted small">(<%= @facet_counts[:in_transit] %>)</span>
           <% end %>
         </label>
       </div>
       <div class="form-check">
-        <input class="form-check-input" type="checkbox" name="preorder" value="1" id="f-preorder<%= suffix %>" <%= 'checked' if filter_state.preorder_only %>>
-        <label class="form-check-label" for="f-preorder<%= suffix %>">
-          Disponible para preventa
-          <% if defined?(@facet_counts) && @facet_counts[:preorder] %>
-            <span class="text-muted small">(<%= @facet_counts[:preorder] %>)</span>
+        <input class="form-check-input" type="checkbox" name="to_order" value="1" id="f-to-order<%= suffix %>" <%= 'checked' if filter_state.to_order_only %>>
+        <label class="form-check-label" for="f-to-order<%= suffix %>">
+          <i class="fas fa-bookmark me-1 text-warning" aria-hidden="true"></i>Sobre pedido
+          <% if defined?(@facet_counts) && @facet_counts[:to_order] %>
+            <span class="text-muted small">(<%= @facet_counts[:to_order] %>)</span>
           <% end %>
         </label>
       </div>
