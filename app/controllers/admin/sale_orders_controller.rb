@@ -129,8 +129,9 @@ module Admin
       @sale_order.update!(status: 'Preparing') if @sale_order.status == 'Confirmed'
 
       # Cargar inventarios con ubicaciones para la vista de picking
+      # Pre-cargar imágenes del producto para evitar N+1 al renderizar thumbnails
       @inventories = @sale_order.inventories
-                                .includes(:product, :inventory_location)
+                                .includes(:inventory_location, product: { product_images_attachments: :blob })
                                 .where(status: %i[reserved sold pre_reserved pre_sold])
                                 .order(:inventory_location_id, :id)
 

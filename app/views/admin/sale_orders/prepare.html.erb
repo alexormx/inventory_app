@@ -74,6 +74,7 @@
               <thead class="table-light">
                 <tr>
                   <th style="width: 60px;" class="text-center">✓</th>
+                  <th style="width: 76px;">Imagen</th>
                   <th>Producto</th>
                   <th>SKU</th>
                   <th>Ubicación</th>
@@ -89,6 +90,18 @@
                       <input type="checkbox" class="form-check-input picking-check"
                              data-inventory-id="<%= inv.id %>"
                              style="width: 1.25em; height: 1.25em;">
+                    </td>
+                    <td>
+                      <% if inv.product&.product_images&.attached? %>
+                        <%= image_tag inv.product.primary_product_image.variant(resize_to_limit: [120, 120]),
+                                      class: "rounded border picking-thumb",
+                                      alt: inv.product.product_name,
+                                      loading: "lazy" %>
+                      <% else %>
+                        <div class="picking-thumb picking-thumb--empty rounded border d-flex align-items-center justify-content-center text-muted">
+                          <i class="fa-solid fa-image"></i>
+                        </div>
+                      <% end %>
                     </td>
                     <td>
                       <div class="fw-medium"><%= inv.product&.product_name || "—" %></div>
@@ -147,11 +160,13 @@
                    placeholder="Ej: Estafeta, FedEx, DHL, Correos de México">
           </div>
           <div class="col-md-4">
-            <label class="form-label">Número de Rastreo</label>
+            <label class="form-label">Número de Rastreo <span class="text-muted fw-normal">(opcional)</span></label>
             <input type="text" name="tracking_number" class="form-control"
                    value="<%= shipment.tracking_number.presence %>"
                    placeholder="Opcional — puedes agregarlo después">
-            <small class="text-muted">Déjalo en blanco si aún no lo tienes.</small>
+            <small class="text-muted">
+              <i class="fa-solid fa-circle-info me-1"></i>Si aún no tienes guía (ej. SEPOMEX), despacha sin rastreo y agrégalo después desde la orden.
+            </small>
           </div>
           <div class="col-md-4 d-grid">
             <button type="submit" class="btn btn-success btn-lg"
@@ -199,4 +214,7 @@
 <style>
   .picking-check:checked { accent-color: #198754; }
   tr:has(.picking-check:checked) { background-color: #d1e7dd !important; opacity: 0.7; }
+  .picking-thumb { width: 60px; height: 60px; object-fit: cover; background: #fff; }
+  .picking-thumb--empty { background: #f8f9fa; font-size: 1.1rem; }
+  tr:has(.picking-check:checked) .picking-thumb { opacity: 0.6; }
 </style>

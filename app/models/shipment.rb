@@ -3,7 +3,8 @@
 class Shipment < ApplicationRecord
   belongs_to :sale_order, primary_key: 'id'
 
-  validates :tracking_number, presence: true, unless: :pending?
+  # tracking_number es opcional: hay paqueterías (ej. SEPOMEX) que no entregan
+  # número de rastreo hasta el momento de drop-off. Se puede agregar después.
   validates :carrier, presence: true
   validates :estimated_delivery, presence: true
   validates :shipping_cost, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true
