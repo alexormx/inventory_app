@@ -12,7 +12,7 @@ module Admin
     before_action :load_counts, only: %i[index drafts active inactive]
 
     # Tamaño de página para listados en este controlador (cambiar aquí para afectar todas las vistas)
-    PER_PAGE = 9
+    PER_PAGE = 25
 
     def index
       @q = params[:q].to_s.strip
