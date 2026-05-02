@@ -82,6 +82,8 @@ class ProductsController < ApplicationController
     price_min           = params[:price_min].presence
     price_max           = params[:price_max].presence
     in_stock_only       = ActiveModel::Type::Boolean.new.cast(params[:in_stock])
+    in_transit_only     = ActiveModel::Type::Boolean.new.cast(params[:in_transit])
+    to_order_only       = ActiveModel::Type::Boolean.new.cast(params[:to_order])
     backorder_only      = ActiveModel::Type::Boolean.new.cast(params[:backorder])
     preorder_only       = ActiveModel::Type::Boolean.new.cast(params[:preorder])
 
@@ -90,7 +92,21 @@ class ProductsController < ApplicationController
     scope = scope.where(series: selected_series) if selected_series.present?
     scope = scope.where(selling_price: price_min.to_f..) if price_min.present?
     scope = scope.where(selling_price: ..price_max.to_f) if price_max.present?
-    scope = scope.joins(:inventories).where(inventories: { status: Inventory.statuses[:available] }).distinct if in_stock_only
+
+    # Grupo de disponibilidad — los 3 chips combinan con OR cuando hay 1+ activos.
+    avail_clauses = []
+    if in_stock_only
+      avail_clauses << "EXISTS (SELECT 1 FROM inventories i WHERE i.product_id = products.id AND i.status = #{Inventory.statuses[:available]})"
+    end
+    if in_transit_only
+      avail_clauses << "EXISTS (SELECT 1 FROM inventories i WHERE i.product_id = products.id AND i.status = #{Inventory.statuses[:in_transit]})"
+    end
+    if to_order_only
+      avail_clauses << "(products.backorder_allowed = TRUE OR products.preorder_available = TRUE)"
+    end
+    scope = scope.where(avail_clauses.join(' OR ')) if avail_clauses.any?
+
+    # Filtros legacy (mantienen comportamiento AND para URLs antiguas con backorder/preorder por separado)
     scope = scope.where(backorder_allowed: true) if backorder_only
     scope = scope.where(preorder_available: true) if preorder_only
 
@@ -156,6 +172,8 @@ class ProductsController < ApplicationController
       brands: scope.where.not(brand: [nil, '']).group(:brand).count,
       series: scope.where.not(series: [nil, '']).group(:series).count,
       in_stock: scope.joins(:inventories).where(inventories: { status: Inventory.statuses[:available] }).distinct.count,
+      in_transit: scope.where('EXISTS (SELECT 1 FROM inventories i WHERE i.product_id = products.id AND i.status = ?)', Inventory.statuses[:in_transit]).count,
+      to_order: scope.where('products.backorder_allowed = ? OR products.preorder_available = ?', true, true).count,
       backorder: scope.where(backorder_allowed: true).count,
       preorder: scope.where(preorder_available: true).count
     }

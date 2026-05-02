@@ -63,6 +63,30 @@
       </span>
     <% end %>
 
+    <%# Chip de En tránsito %>
+    <% if filter_state.in_transit_only %>
+      <span class="filter-chip">
+        <i class="fas fa-truck me-1"></i>En tránsito
+        <%= link_to clear_availability_url(:in_transit),
+                    class: "chip-remove",
+                    "aria-label": "Remover filtro en tránsito",
+                    title: "Remover filtro",
+                    data: { turbo_frame: "products_grid", turbo_action: "advance" } do %>&times;<% end %>
+      </span>
+    <% end %>
+
+    <%# Chip de Sobre pedido (combina backorder y preventa) %>
+    <% if filter_state.to_order_only %>
+      <span class="filter-chip">
+        <i class="fas fa-bookmark me-1"></i>Sobre pedido
+        <%= link_to clear_availability_url(:to_order),
+                    class: "chip-remove",
+                    "aria-label": "Remover filtro sobre pedido",
+                    title: "Remover filtro",
+                    data: { turbo_frame: "products_grid", turbo_action: "advance" } do %>&times;<% end %>
+      </span>
+    <% end %>
+
     <%# Chip de Backorder %>
     <% if filter_state.backorder_only %>
       <span class="filter-chip">

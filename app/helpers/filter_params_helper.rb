@@ -112,6 +112,8 @@ module FilterParamsHelper
       price_min: params[:price_min].presence,
       price_max: params[:price_max].presence,
       in_stock_only: boolean_param(:in_stock),
+      in_transit_only: boolean_param(:in_transit),
+      to_order_only: boolean_param(:to_order),
       backorder_only: boolean_param(:backorder),
       preorder_only: boolean_param(:preorder)
     ).tap do |state|
@@ -121,6 +123,8 @@ module FilterParamsHelper
                           state.price_min.present? ||
                           state.price_max.present? ||
                           state.in_stock_only ||
+                          state.in_transit_only ||
+                          state.to_order_only ||
                           state.backorder_only ||
                           state.preorder_only
     end

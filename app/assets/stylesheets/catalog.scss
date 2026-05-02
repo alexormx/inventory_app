@@ -1,3 +1,60 @@
+/* Chips primarios de disponibilidad — En stock / En tránsito / Sobre pedido */
+.catalog-availability-chips { padding: 0; }
+.availability-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  padding: .55rem 1rem;
+  border-radius: 999px;
+  background: #fff;
+  border: 1px solid rgba(17,24,39,.12);
+  color: #374151;
+  font-weight: 600;
+  font-size: .88rem;
+  line-height: 1.2;
+  text-decoration: none;
+  transition: background-color .18s ease, border-color .18s ease, color .18s ease, transform .15s ease, box-shadow .2s ease;
+  box-shadow: 0 1px 2px rgba(15,23,42,.04);
+  white-space: nowrap;
+}
+.availability-chip:hover {
+  border-color: rgba(201,42,58,.4);
+  color: #111827;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px -6px rgba(15,23,42,.18);
+}
+.availability-chip.active {
+  background: #c92a3a;
+  border-color: #c92a3a;
+  color: #fff;
+  box-shadow: 0 4px 14px -6px rgba(201,42,58,.45);
+}
+.availability-chip.active:hover {
+  background: #a61e2d;
+  border-color: #a61e2d;
+  color: #fff;
+}
+.availability-chip i { font-size: .85em; }
+.availability-chip-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.4rem;
+  height: 1.4rem;
+  padding: 0 .4rem;
+  border-radius: 999px;
+  background: rgba(17,24,39,.08);
+  color: inherit;
+  font-size: .72rem;
+  font-weight: 700;
+}
+.availability-chip.active .availability-chip-count {
+  background: rgba(255,255,255,.22);
+}
+@media (max-width: 575.98px) {
+  .availability-chip { padding: .45rem .8rem; font-size: .82rem; }
+}
+
 /* Catálogo: estilos de layout, chips, sidebar y spinner */
 /* El catálogo ocupa más ancho que las otras páginas customer (cap del .container es 1320 en xxl).
    Expandimos el main contenedor solo cuando contiene #catalog. Browsers que no soportan

@@ -103,6 +103,33 @@
     </div>
   </div>
 
+  <%# Chips primarios de disponibilidad (3 opciones principales). Toggle individual; varios = OR. %>
+  <% availability_chips = [
+    { key: :in_stock,   label: 'En stock',     icon: 'fa-check-circle', count: (@facet_counts && @facet_counts[:in_stock]),   active: filter_state.in_stock_only,   tip: 'Productos disponibles para envío inmediato' },
+    { key: :in_transit, label: 'En tránsito',  icon: 'fa-truck',        count: (@facet_counts && @facet_counts[:in_transit]), active: filter_state.in_transit_only, tip: 'Productos en camino al almacén — reservables' },
+    { key: :to_order,   label: 'Sobre pedido', icon: 'fa-bookmark',     count: (@facet_counts && @facet_counts[:to_order]),   active: filter_state.to_order_only,   tip: 'Preventa o sobre pedido al proveedor' }
+  ] %>
+  <div class="catalog-availability-chips d-flex flex-wrap gap-2 mb-3" role="group" aria-label="Filtrar por disponibilidad">
+    <% availability_chips.each do |chip| %>
+      <% chip_url = if chip[:active]
+                      clear_availability_url(chip[:key])
+                    else
+                      qp = request.query_parameters.merge(chip[:key] => '1', page: nil).compact_blank
+                      catalog_path(qp)
+                    end %>
+      <%= link_to chip_url,
+                   class: ["availability-chip", (chip[:active] ? 'active' : nil)].compact.join(' '),
+                   title: chip[:tip],
+                   "aria-pressed": chip[:active].to_s,
+                   data: { turbo_frame: "products_grid", turbo_action: "advance" } do %>
+        <i class="fas <%= chip[:icon] %> me-1" aria-hidden="true"></i><%= chip[:label] %>
+        <% if chip[:count].to_i > 0 %>
+          <span class="availability-chip-count ms-1"><%= chip[:count] %></span>
+        <% end %>
+      <% end %>
+    <% end %>
+  </div>
+
   <div class="row g-3">
     <!-- Sidebar filtros desktop -->
     <aside class="d-none d-md-block col-md-3 col-lg-3 col-xxl-2" id="desktopFilters">
