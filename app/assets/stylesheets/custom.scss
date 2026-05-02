@@ -2128,13 +2128,21 @@ body:not(.admin-shell) > footer a:hover {
   .btn-danger {
     background: var(--ui-accent);
     border-color: var(--ui-accent);
+    color: #fff;
     box-shadow: 0 4px 14px -6px rgba(201, 42, 58, 0.45);
   }
   .btn-primary:hover:not(:disabled),
   .btn-danger:hover:not(:disabled) {
     background: var(--ui-accent-dark);
     border-color: var(--ui-accent-dark);
+    color: #fff;
     transform: translateY(-1px);
+  }
+  .btn-success {
+    color: #fff;
+  }
+  .btn-success:hover:not(:disabled) {
+    color: #fff;
   }
   .btn-primary:active:not(:disabled),
   .btn-danger:active:not(:disabled) {
@@ -2298,11 +2306,11 @@ body:not(.admin-shell) > footer a:hover {
     color: var(--ui-ink);
   }
 
-  /* Links use brand red */
-  a {
+  /* Links use brand red — but never re-color buttons or icon-only anchors */
+  a:not(.btn):not(.nav-link):not(.dropdown-item):not(.page-link) {
     color: var(--ui-accent);
   }
-  a:hover {
+  a:not(.btn):not(.nav-link):not(.dropdown-item):not(.page-link):hover {
     color: var(--ui-accent-dark);
   }
   a.text-decoration-none.text-dark,
