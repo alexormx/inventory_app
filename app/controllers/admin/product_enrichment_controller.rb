@@ -4,6 +4,7 @@ module Admin
   class ProductEnrichmentController < ApplicationController
     before_action :authenticate_user!
     before_action :authorize_admin!
+    before_action :cleanup_stuck_drafts, only: [:index, :show, :queue]
     before_action :set_draft, only: [:show, :regenerate, :update_draft, :publish, :reject]
 
     # GET /admin/product_enrichment
@@ -148,6 +149,13 @@ module Admin
     end
 
     private
+
+    # Marca como :failed cualquier draft atascado en :generating cuando el job
+    # original murió (reinicio de dyno, crash). Idempotente, low-cost: una sola
+    # query con WHERE indexado y UPDATE solo si encuentra algo.
+    def cleanup_stuck_drafts
+      ProductDescriptionDraft.cleanup_stuck_generating!
+    end
 
     def set_draft
       @draft = ProductDescriptionDraft.find_by(id: params[:id])

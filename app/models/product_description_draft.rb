@@ -21,6 +21,33 @@ class ProductDescriptionDraft < ApplicationRecord
   scope :reviewable, -> { where(status: :draft_generated) }
   scope :recent, -> { order(created_at: :desc) }
 
+  # Drafts marcados como "generating" cuyo último update es viejo: el job que los
+  # producía probablemente murió en un reinicio de dyno o crash y el rescue del
+  # service nunca corrió. Útil para limpiar huérfanos.
+  STUCK_GENERATING_AFTER = 10.minutes
+
+  scope :stuck_generating, -> {
+    where(status: :generating).where('updated_at < ?', STUCK_GENERATING_AFTER.ago)
+  }
+
+  # Marca como :failed cualquier draft atascado en :generating. Idempotente y
+  # seguro de llamar en boot de la app o antes de listar drafts en el admin.
+  def self.cleanup_stuck_generating!
+    stuck = stuck_generating
+    return 0 if stuck.empty?
+
+    count = stuck.update_all(
+      status: 'failed',
+      error_message: 'Job interrupted (dyno restart or crash). Auto-cleaned by watchdog.',
+      updated_at: Time.current
+    )
+    Rails.logger.info("[Enrichment Watchdog] Cleaned #{count} stuck :generating draft(s)")
+    count
+  rescue StandardError => e
+    Rails.logger.error("[Enrichment Watchdog] cleanup_stuck_generating! failed: #{e.class} #{e.message}")
+    0
+  end
+
   before_create :snapshot_original_data
 
   def publishable?
