@@ -5,7 +5,7 @@ module Products
     # Builds the OpenAI prompt (system + user) from a product context hash.
     # Returns a Hash with :system and :user keys.
     class BuildPromptService
-      PROMPT_VERSION = "v4"
+      PROMPT_VERSION = "v5"
 
       SYSTEM_PROMPT = <<~SYSTEM.freeze
         Eres un experto en productos coleccionables y autos a escala (diecast). Tu tarea es generar descripciones de producto y atributos técnicos para una tienda en línea mexicana llamada "Pasatiempos a Escala".
@@ -26,6 +26,7 @@ module Products
         13. Incluye un confidence_score de 0.0 a 1.0 que indique tu nivel de certeza general.
         14. Incluye warnings como array de strings señalando cualquier dato del que no estés seguro.
         15. Responde EXCLUSIVAMENTE con JSON válido, sin texto adicional.
+        16. NUNCA menciones en `description_es` ninguno de estos temas: escala (1:64, 1:18, etc.), medidas o dimensiones (largo, ancho, alto, en cm/mm/pulgadas), fecha o año de lanzamiento, ni peso (g/kg). Estos datos viven SÓLO en `attributes`. La narrativa habla del modelo, marca, colección, diseño, propuesta de valor y emoción coleccionable.
       SYSTEM
 
       def initialize(context)
@@ -89,6 +90,7 @@ module Products
           - No uses encabezados visibles ni títulos literales.
           - No uses viñetas dentro de `description_es`.
           - No escribas la palabra "null" dentro de `description_es`.
+          - PROHIBIDO mencionar en `description_es`: escala (1:64, 1:18, etc.), medidas o dimensiones (cm, mm, pulgadas, largo/ancho/alto), fecha o año de lanzamiento, peso (g/kg). Estos datos viven sólo en `attributes`.
           - Si faltan datos técnicos, omítelos del relato y repórtalos en `warnings` o como null dentro de `attributes`.
         STRUCTURE
 
