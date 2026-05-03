@@ -76,6 +76,17 @@
               </div>
             </div>
             <% end %>
+            <% if @product.package_type.present? %>
+            <div class="col-sm-6">
+              <div class="d-flex align-items-center">
+                <i class="fas fa-box text-muted me-2"></i>
+                <div>
+                  <small class="text-muted d-block">Empaque</small>
+                  <strong><%= @product.package_type %></strong>
+                </div>
+              </div>
+            </div>
+            <% end %>
             <% if @product.barcode.present? %>
             <div class="col-sm-6">
               <div class="d-flex align-items-center">

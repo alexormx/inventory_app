@@ -477,6 +477,7 @@ module Admin
                   :width_cm,
                   :height_cm,
                   :launch_date,
+                  :package_type,
                   { custom_attributes: {}, # allow custom attributes as a hash
                     product_images: [] }] # allow multiple file uploads
       )

@@ -122,6 +122,23 @@
               class: "form-select" %>
         </div>
 
+        <div class="col-12 col-md-3">
+          <%= f.label :package_type do %>
+            <i class="fa-solid fa-box text-secondary me-1"></i>
+            Tipo de Empaque
+          <% end %>
+          <%= f.text_field :package_type, class: "form-control", list: "package-type-options", placeholder: "Ej: Caja, Blister" %>
+          <datalist id="package-type-options">
+            <option value="Caja"></option>
+            <option value="Blister"></option>
+            <option value="Burbuja"></option>
+            <option value="Bolsa"></option>
+            <option value="Sobre"></option>
+            <option value="A granel"></option>
+          </datalist>
+          <small class="text-muted">Cómo viene empacado el producto</small>
+        </div>
+
         <div class="col-12">
           <%= f.label :description do %>
             <i class="fa-solid fa-align-left text-info me-1"></i>
