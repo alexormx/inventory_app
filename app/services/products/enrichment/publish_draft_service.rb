@@ -22,12 +22,20 @@ module Products
 
           structured = @draft.structured_output || {}
 
-          product.update!(
+          # Promote first-class attributes out of the JSON blob.
+          # 'escala' was historically a custom_attribute; now it's a column.
+          custom_attrs = (@draft.draft_attributes.presence || product.custom_attributes || {}).dup
+          extracted_scale = custom_attrs.delete('escala').presence
+
+          product_updates = {
             description:       @draft.draft_content,
-            custom_attributes: @draft.draft_attributes.presence || product.custom_attributes,
+            custom_attributes: custom_attrs,
             highlights:        structured["highlights"].presence || product.highlights,
             seo_keywords:      structured["seo_keywords"].presence || product.seo_keywords
-          )
+          }
+          product_updates[:scale] = extracted_scale if extracted_scale.present?
+
+          product.update!(product_updates)
 
           @draft.update!(
             status:          :published,

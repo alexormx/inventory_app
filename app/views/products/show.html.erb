@@ -87,6 +87,17 @@
               </div>
             </div>
             <% end %>
+            <% if @product.scale.present? && @product.show_scale_publicly? %>
+            <div class="col-sm-6">
+              <div class="d-flex align-items-center">
+                <i class="fas fa-ruler text-muted me-2"></i>
+                <div>
+                  <small class="text-muted d-block">Escala</small>
+                  <strong><%= @product.scale %></strong>
+                </div>
+              </div>
+            </div>
+            <% end %>
             <% if @product.barcode.present? %>
             <div class="col-sm-6">
               <div class="d-flex align-items-center">

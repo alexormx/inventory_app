@@ -478,6 +478,8 @@ module Admin
                   :height_cm,
                   :launch_date,
                   :package_type,
+                  :scale,
+                  :show_scale_publicly,
                   { custom_attributes: {}, # allow custom attributes as a hash
                     product_images: [] }] # allow multiple file uploads
       )

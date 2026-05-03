@@ -139,6 +139,28 @@
           <small class="text-muted">Cómo viene empacado el producto</small>
         </div>
 
+        <div class="col-12 col-md-3">
+          <%= f.label :scale do %>
+            <i class="fa-solid fa-ruler text-info me-1"></i>
+            Escala
+          <% end %>
+          <%= f.text_field :scale, class: "form-control", list: "scale-options", placeholder: "Ej: 1:64" %>
+          <datalist id="scale-options">
+            <option value="1:18"></option>
+            <option value="1:24"></option>
+            <option value="1:43"></option>
+            <option value="1:50"></option>
+            <option value="1:64"></option>
+            <option value="1:87"></option>
+            <option value="HO"></option>
+            <option value="N/A"></option>
+          </datalist>
+          <div class="form-check mt-2">
+            <%= f.check_box :show_scale_publicly, class: "form-check-input" %>
+            <%= f.label :show_scale_publicly, "Mostrar escala al cliente", class: "form-check-label small text-muted" %>
+          </div>
+        </div>
+
         <div class="col-12">
           <%= f.label :description do %>
             <i class="fa-solid fa-align-left text-info me-1"></i>

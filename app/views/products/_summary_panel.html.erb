@@ -9,6 +9,12 @@
           <span>Serie: <strong><%= product.series %></strong></span>
         <% end %>
         <span>Categoría: <strong><%= product.category %></strong></span>
+        <% if product.scale.present? && product.show_scale_publicly? %>
+          <span>Escala: <strong><%= product.scale %></strong></span>
+        <% end %>
+        <% if product.package_type.present? %>
+          <span>Empaque: <strong><%= product.package_type %></strong></span>
+        <% end %>
       </div>
     </div>
 
