@@ -88,6 +88,37 @@ class Product < ApplicationRecord
     where(id: Inventory.where(status: :available).select(:product_id))
   }
 
+  # Grupos de "Condición" para filtrar el catálogo público. La data vive en
+  # Inventory.item_condition (8 valores enum); estos grupos los exponen al
+  # cliente como 4 categorías más legibles. NOTA: "Nuevo" aquí se refiere a
+  # la CONDICIÓN de la pieza (de línea, sellada, stock renovable), NO a que
+  # el producto se haya creado recientemente.
+  CONDITION_GROUPS = {
+    'nuevo'         => %w[brand_new],
+    'sellado'       => %w[misb moc mib],
+    'coleccionable' => %w[mint loose],
+    'variable'      => %w[good fair]
+  }.freeze
+
+  CONDITION_GROUP_LABELS = {
+    'nuevo'         => 'Nuevo (de línea)',
+    'sellado'       => 'Sellado (MISB / MOC / MIB)',
+    'coleccionable' => 'Coleccionable (Mint / Loose)',
+    'variable'      => 'Estado variable (Good / Fair)'
+  }.freeze
+
+  # Productos con al menos un inventario :available (sin venta asignada) cuya
+  # condición cae en alguno de los grupos pasados (array de strings).
+  scope :with_condition_groups, ->(groups) {
+    keys = Array(groups).map(&:to_s).select { |g| CONDITION_GROUPS.key?(g) }
+    next none if keys.empty?
+
+    item_conditions = keys.flat_map { |g| CONDITION_GROUPS[g] }.uniq
+    where(id: Inventory.where(status: :available, sale_order_id: nil)
+                       .where(item_condition: item_conditions)
+                       .select(:product_id))
+  }
+
   # --- Public helper for your current view (optional, can be removed later) ---
   def parsed_custom_attributes
     custom_attributes.is_a?(Hash) ? custom_attributes : {}

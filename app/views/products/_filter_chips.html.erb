@@ -39,6 +39,18 @@
       </span>
     <% end %>
 
+    <%# Chips de condición (Nuevo / Sellado / Coleccionable / Variable) %>
+    <% filter_state.selected_conditions.each do |cond| %>
+      <span class="filter-chip">
+        <i class="fas fa-shapes me-1"></i><%= Product::CONDITION_GROUP_LABELS[cond] || cond.titleize %>
+        <%= link_to clear_condition_url(cond),
+                    class: "chip-remove",
+                    "aria-label": "Remover condición #{cond}",
+                    title: "Remover filtro",
+                    data: { turbo_frame: "_top" } do %>&times;<% end %>
+      </span>
+    <% end %>
+
     <%# Chip de precio %>
     <% if filter_state.price_min || filter_state.price_max %>
       <span class="filter-chip">

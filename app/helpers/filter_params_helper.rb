@@ -46,6 +46,14 @@ module FilterParamsHelper
     catalog_path(qp)
   end
 
+  def clear_condition_url(condition)
+    qp = normalized_catalog_query_parameters
+    values = qp.delete('conditions')
+    new_values = Array(values).compact_blank.map(&:to_s) - [condition.to_s]
+    qp['conditions'] = new_values if new_values.present?
+    catalog_path(qp)
+  end
+
   # URL para limpiar el filtro de precio
   def clear_price_url
     qp = normalized_catalog_query_parameters
@@ -99,6 +107,9 @@ module FilterParamsHelper
 
     series = Array(qp.delete('series')) + Array(qp.delete('series[]'))
     series = series.compact_blank.uniq
+    conditions = Array(qp.delete('conditions')) + Array(qp.delete('conditions[]'))
+    conditions = conditions.compact_blank.uniq
+    qp['conditions'] = conditions if conditions.present?
     qp['series'] = series if series.present?
 
     qp
@@ -109,6 +120,7 @@ module FilterParamsHelper
       selected_categories: (Array(params[:categories]) + Array(params['categories[]'])).compact_blank.uniq,
       selected_brands: (Array(params[:brands]) + Array(params['brands[]'])).compact_blank.uniq,
       selected_series: (Array(params[:series]) + Array(params['series[]'])).compact_blank.uniq,
+      selected_conditions: (Array(params[:conditions]) + Array(params['conditions[]'])).map(&:to_s).select { |c| Product::CONDITION_GROUPS.key?(c) }.uniq,
       price_min: params[:price_min].presence,
       price_max: params[:price_max].presence,
       in_stock_only: boolean_param(:in_stock),
@@ -120,6 +132,7 @@ module FilterParamsHelper
       state.has_filters = state.selected_categories.any? ||
                           state.selected_brands.any? ||
                           state.selected_series.any? ||
+                          state.selected_conditions.any? ||
                           state.price_min.present? ||
                           state.price_max.present? ||
                           state.in_stock_only ||

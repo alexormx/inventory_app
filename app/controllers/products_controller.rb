@@ -86,12 +86,14 @@ class ProductsController < ApplicationController
     to_order_only       = ActiveModel::Type::Boolean.new.cast(params[:to_order])
     backorder_only      = ActiveModel::Type::Boolean.new.cast(params[:backorder])
     preorder_only       = ActiveModel::Type::Boolean.new.cast(params[:preorder])
+    selected_conditions = (Array(params[:conditions]) + Array(params['conditions[]'])).map(&:to_s).select { |c| Product::CONDITION_GROUPS.key?(c) }.uniq
 
     scope = scope.where(category: selected_categories) if selected_categories.present?
     scope = scope.where(brand: selected_brands) if selected_brands.present?
     scope = scope.where(series: selected_series) if selected_series.present?
     scope = scope.where(selling_price: price_min.to_f..) if price_min.present?
     scope = scope.where(selling_price: ..price_max.to_f) if price_max.present?
+    scope = scope.with_condition_groups(selected_conditions) if selected_conditions.any?
 
     # Grupo de disponibilidad — los 3 chips combinan con OR cuando hay 1+ activos.
     avail_clauses = []
@@ -167,6 +169,12 @@ class ProductsController < ApplicationController
   private
 
   def calculate_facet_counts(scope)
+    condition_counts = Product::CONDITION_GROUPS.transform_values do |item_conditions|
+      scope.where(id: Inventory.where(status: :available, sale_order_id: nil)
+                               .where(item_condition: item_conditions)
+                               .select(:product_id)).count
+    end
+
     {
       categories: scope.where.not(category: [nil, '']).group(:category).count,
       brands: scope.where.not(brand: [nil, '']).group(:brand).count,
@@ -175,7 +183,8 @@ class ProductsController < ApplicationController
       in_transit: scope.where('EXISTS (SELECT 1 FROM inventories i WHERE i.product_id = products.id AND i.status = ?)', Inventory.statuses[:in_transit]).count,
       to_order: scope.where('products.backorder_allowed = ? OR products.preorder_available = ?', true, true).count,
       backorder: scope.where(backorder_allowed: true).count,
-      preorder: scope.where(preorder_available: true).count
+      preorder: scope.where(preorder_available: true).count,
+      conditions: condition_counts
     }
   end
 

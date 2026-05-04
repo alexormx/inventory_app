@@ -11,6 +11,36 @@
   <input type="hidden" name="sort" value="<%= @sort %>">
   <% if @q.present? %><input type="hidden" name="q" value="<%= @q %>"><% end %>
 
+  <%# Condición física de la pieza — agrupada en 4 buckets %>
+  <div class="filter-block mb-3">
+    <h6 class="fw-semibold small text-uppercase text-muted mb-2">
+      <a class="text-decoration-none text-muted d-flex align-items-center justify-content-between" data-bs-toggle="collapse" href="#filterCondition<%= suffix %>" role="button" aria-expanded="true" aria-controls="filterCondition<%= suffix %>">
+        Condición
+        <% active_cond = filter_state.selected_conditions.count %>
+        <span>
+          <% if active_cond > 0 %>
+            <span class="badge bg-danger rounded-pill me-1"><%= active_cond %></span>
+          <% end %>
+          <i class="fas fa-chevron-down"></i>
+        </span>
+      </a>
+    </h6>
+    <div class="collapse show" id="filterCondition<%= suffix %>">
+      <% Product::CONDITION_GROUPS.each_key do |group_key| %>
+        <% group_count = (defined?(@facet_counts) && @facet_counts[:conditions]) ? @facet_counts[:conditions][group_key].to_i : nil %>
+        <div class="form-check">
+          <%= check_box_tag "conditions[]", group_key, filter_state.selected_conditions.include?(group_key), id: "f-cond-#{group_key}#{suffix}", class: "form-check-input" %>
+          <label class="form-check-label" for="f-cond-<%= group_key %><%= suffix %>">
+            <%= Product::CONDITION_GROUP_LABELS[group_key] %>
+            <% if group_count %>
+              <span class="text-muted small">(<%= group_count %>)</span>
+            <% end %>
+          </label>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
   <div class="filter-block mb-3">
     <h6 class="fw-semibold small text-uppercase text-muted mb-2">
       <a class="text-decoration-none text-muted d-flex align-items-center justify-content-between" data-bs-toggle="collapse" href="#filterAvailability<%= suffix %>" role="button" aria-expanded="true" aria-controls="filterAvailability<%= suffix %>">
