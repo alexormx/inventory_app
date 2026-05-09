@@ -45,6 +45,10 @@ module Collectibles
         # Generar SKU si no se proporciona
         @product.product_sku = generate_sku(@product) if @product.product_sku.blank?
 
+        # Defaults requeridos por Product que el form de quick_add no expone
+        @product.maximum_discount ||= 0
+        @product.minimum_price    ||= @product.selling_price
+
         @errors.concat(@product.errors.full_messages) unless @product.save
       end
     end
