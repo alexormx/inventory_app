@@ -79,7 +79,7 @@ export default class extends Controller {
             <strong>${p.product_name}</strong>
             <br><small class="text-muted">SKU: ${p.product_sku} | ${p.category || 'Sin categoría'} | ${p.brand || 'Sin marca'}</small>
           </div>
-          ${p.base_price ? `<span class="badge bg-secondary">$${parseFloat(p.base_price).toFixed(2)}</span>` : ''}
+          ${p.selling_price ? `<span class="badge bg-secondary">$${parseFloat(p.selling_price).toFixed(2)}</span>` : ''}
         </div>
       </button>
     `).join('')
