@@ -5,7 +5,7 @@ module Admin
   class SaleOrdersController < ApplicationController
     before_action :authenticate_user!
     before_action :authorize_admin!
-    before_action :set_sale_order, only: %i[show edit update destroy summary cancel prepare ship deliver]
+    before_action :set_sale_order, only: %i[show edit update destroy summary cancel prepare ship deliver personal_deliver]
     before_action :load_counts, only: [:index]
 
     PER_PAGE = 20
@@ -186,6 +186,45 @@ module Admin
       else
         redirect_to admin_sale_order_path(@sale_order),
                     alert: "Error al marcar como entregada: #{shipment.errors.full_messages.join(', ')}"
+      end
+    end
+
+    # POST /admin/sale_orders/:id/personal_deliver
+    # Entrega en mano: salta el paso de envío por paquetería.
+    # Transiciona Preparing → Delivered y marca el shipment como personal/delivered.
+    def personal_deliver
+      unless @sale_order.status == 'Preparing'
+        redirect_to admin_sale_order_path(@sale_order),
+                    alert: "Solo se puede entregar personalmente una orden en Preparación. Estado actual: #{@sale_order.status}" and return
+      end
+
+      credit_allowed = (@sale_order.user.respond_to?(:credit_enabled) && @sale_order.user.credit_enabled) || @sale_order.credit_override
+      unless @sale_order.total_order_value.to_f.zero? || @sale_order.payments.any? || credit_allowed
+        redirect_to admin_sale_order_path(@sale_order),
+                    alert: 'No se puede entregar: la orden no está pagada y el cliente no tiene crédito.' and return
+      end
+
+      shipment = @sale_order.shipment
+      redirect_to admin_sale_order_path(@sale_order), alert: 'No hay envío asignado.' and return unless shipment
+
+      today = Time.zone.today
+      attrs = {
+        delivery_type: :personal,
+        carrier: 'Entrega Personal',
+        tracking_number: nil,
+        actual_delivery: today,
+        status: :delivered
+      }
+      attrs[:estimated_delivery] = today if shipment.estimated_delivery && shipment.estimated_delivery > today
+
+      if shipment.update(attrs)
+        # El callback sync_sale_order_status_from_shipment se encarga de: Preparing → Delivered
+        @sale_order.reload
+        redirect_to admin_sale_order_path(@sale_order),
+                    notice: '🤝 Orden entregada personalmente.'
+      else
+        redirect_to admin_sale_order_path(@sale_order),
+                    alert: "Error al registrar entrega personal: #{shipment.errors.full_messages.join(', ')}"
       end
     end
 

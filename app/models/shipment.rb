@@ -18,6 +18,7 @@ class Shipment < ApplicationRecord
   after_save :update_sale_order_totals_if_shipping_changed
 
   enum :status, { pending: 0, shipped: 1, delivered: 2, canceled: 3, returned: 4 }, default: :pending
+  enum :delivery_type, { courier: 0, personal: 1 }, default: :courier, prefix: :delivery
 
   private
 

@@ -110,8 +110,14 @@
             <% end %>
           <% end %>
         <% elsif @sale_order.status == 'Preparing' %>
-          <%= link_to prepare_admin_sale_order_path(@sale_order), class: "btn btn-outline-primary me-2" do %>
+          <%= link_to prepare_admin_sale_order_path(@sale_order), class: "btn btn-outline-primary" do %>
             <i class="fa-solid fa-box-open me-1"></i> Ver Picking List
+          <% end %>
+          <%= button_to personal_deliver_admin_sale_order_path(@sale_order),
+                        method: :post,
+                        class: "btn btn-success",
+                        form: { data: { turbo_confirm: 'Se marcará esta orden como entregada en mano (sin paquetería). ¿Deseas continuar?', confirm_title: 'Entregar personalmente', confirm_confirm_label: 'Marcar como entregada' } } do %>
+            <i class="fa-solid fa-handshake me-1"></i> 🤝 Entregar Personalmente
           <% end %>
         <% elsif @sale_order.status == 'In Transit' %>
           <%= button_to deliver_admin_sale_order_path(@sale_order), method: :post, class: "btn btn-success", form: { data: { turbo_confirm: 'Se marcará esta orden como entregada al cliente. ¿Deseas continuar?', confirm_title: 'Marcar orden como entregada', confirm_confirm_label: 'Marcar como entregada' } } do %>
