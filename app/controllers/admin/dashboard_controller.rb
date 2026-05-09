@@ -194,10 +194,10 @@ module Admin
       @total_users = User.count
 
       @sales_ytd = SaleOrderItem.joins(:sale_order).merge(@so_ytd).sum(rev_sql_arel).to_d
-      @purchases_ytd = purchase_total_for(@po_ytd)
+      @purchases_ytd = purchase_total_for(@po_ytd) + manual_purchase_total_for(@range)
 
       @cash_in_ytd = completed_income_total_for(@now.beginning_of_year.to_date..@now.end_of_day)
-      @cash_out_ytd = purchase_total_for(@po_ytd)
+      @cash_out_ytd = @purchases_ytd
       @cashflow_ytd = @cash_in_ytd - @cash_out_ytd
 
       @cogs_ytd = SaleOrderItem.joins(:sale_order, :product).merge(@so_ytd).sum(cogs_sql_arel).to_d
@@ -209,10 +209,10 @@ module Admin
       @active_customers_ytd = @so_ytd.select(:user_id).distinct.count
       @inventory_total_value = Product.sum(:current_inventory_value).to_d
 
-      @po_items_qty_ytd = PurchaseOrderItem.joins(:purchase_order).merge(@po_ytd).sum(:quantity).to_i
+      @po_items_qty_ytd = PurchaseOrderItem.joins(:purchase_order).merge(@po_ytd).sum(:quantity).to_i + manual_purchase_qty_for(@range)
       @so_items_qty_ytd = SaleOrderItem.joins(:sale_order).merge(@so_ytd).sum(:quantity).to_i
 
-      @purchases_total_mxn = purchase_total_for(@po_scope)
+      @purchases_total_mxn = purchase_total_for(@po_scope) + manual_purchase_total_for
 
       @avg_ticket_ytd = @orders_count_ytd.positive? ? (@sales_ytd / @orders_count_ytd) : 0.to_d
       @visits_total = begin
@@ -255,11 +255,11 @@ module Admin
       year_range = @now.beginning_of_year.to_date..@now.end_of_day
 
       @collected_income_month_mxn = completed_income_total_for(month_range)
-      @purchases_month_mxn = purchase_total_for(@po_scope.where(order_date: month_range))
+      @purchases_month_mxn = purchase_total_for(@po_scope.where(order_date: month_range)) + manual_purchase_total_for(month_range)
       @net_balance_month_mxn = @collected_income_month_mxn - @purchases_month_mxn
 
       @collected_income_year_mxn = completed_income_total_for(year_range)
-      @purchases_year_mxn = purchase_total_for(@po_scope.where(order_date: year_range))
+      @purchases_year_mxn = purchase_total_for(@po_scope.where(order_date: year_range)) + manual_purchase_total_for(year_range)
       @net_balance_year_mxn = @collected_income_year_mxn - @purchases_year_mxn
     end
 
@@ -270,7 +270,7 @@ module Admin
       @historical_net_total_mxn = @collected_income_total_mxn - @purchases_total_mxn
       @so_total_all_time = @so_scope.count
       @po_total_all_time = @po_scope.count
-      @po_items_qty_all_time = PurchaseOrderItem.joins(:purchase_order).merge(@po_scope).sum(:quantity).to_i
+      @po_items_qty_all_time = PurchaseOrderItem.joins(:purchase_order).merge(@po_scope).sum(:quantity).to_i + manual_purchase_qty_for
       @so_items_qty_all_time = SaleOrderItem.joins(:sale_order).merge(@so_scope).sum(:quantity).to_i
     end
 
@@ -293,7 +293,7 @@ module Admin
       @active_customers_prev = so_prev_range.select(:user_id).distinct.count
 
       @cash_in_prev = completed_income_total_for(range_prev_start..range_prev_end)
-      @cash_out_prev = purchase_total_for(po_prev_range)
+      @cash_out_prev = purchase_total_for(po_prev_range) + manual_purchase_total_for(range_prev_start..range_prev_end)
       @cashflow_prev = @cash_in_prev - @cash_out_prev
 
       @kpi_deltas = {
@@ -362,6 +362,34 @@ module Admin
       total = scope.sum(:total_cost_mxn).to_d
       total = scope.sum(:total_order_cost).to_d if total.zero?
       total
+    end
+
+    # Inventarios agregados manualmente (sin PurchaseOrder), p.ej. coleccionables
+    # vía quick_add. Se incluyen en los totales de compras del dashboard.
+    def manual_purchase_scope
+      Inventory.where(purchase_order_item_id: nil).where('purchase_cost > 0')
+    end
+
+    def manual_purchase_total_for(date_range = nil)
+      scope = manual_purchase_scope
+      scope = scope.where(created_at: date_range) if date_range
+      scope.sum(:purchase_cost).to_d
+    end
+
+    def manual_purchase_qty_for(date_range = nil)
+      scope = manual_purchase_scope
+      scope = scope.where(created_at: date_range) if date_range
+      scope.count.to_i
+    end
+
+    def manual_purchase_grouped_by_month(date_range)
+      expr = month_group_expr('inventories', 'created_at')
+      manual_purchase_scope.where(created_at: date_range).group(Arel.sql(expr)).sum(:purchase_cost)
+    end
+
+    def manual_purchase_grouped_by_year(date_range)
+      expr = year_group_expr('inventories', 'created_at')
+      manual_purchase_scope.where(created_at: date_range).group(Arel.sql(expr)).sum(:purchase_cost)
     end
 
     # === Alerts & Recent Activity ===
@@ -527,15 +555,17 @@ module Admin
       sales_monthly = grouped_revenue_by(@so_ytd, so_month_key)
       cogs_monthly = grouped_cogs_by(@so_ytd, so_month_key)
       purchases_monthly = @po_ytd.group(Arel.sql(po_month_key)).sum(:total_cost_mxn)
+      manual_monthly = manual_purchase_grouped_by_month(@range)
 
       sales_m_map = sales_monthly.transform_keys { |k| extract_month_index(k) }
       cogs_m_map = cogs_monthly.transform_keys { |k| extract_month_index(k) }
       purchases_m_map = purchases_monthly.transform_keys { |k| extract_month_index(k) }
+      manual_m_map = manual_monthly.transform_keys { |k| extract_month_index(k) }
 
       @monthly_current_year = (1..12).map do |m|
         sales = (sales_m_map[m] || 0).to_d
         cogs = (cogs_m_map[m] || 0).to_d
-        buys = (purchases_m_map[m] || 0).to_d
+        buys = (purchases_m_map[m] || 0).to_d + (manual_m_map[m] || 0).to_d
         profit = sales - cogs
         margin = sales.positive? ? (profit / sales) : 0.to_d
         { month: Date::MONTHNAMES[m], sales: sales, purchases: buys, cogs: cogs, profit: profit, margin: margin }
@@ -544,23 +574,26 @@ module Admin
 
     def load_annual_stats
       years = ((@now.year - 4)..@now.year).to_a
-      so_5y = @so_scope.where(order_date: (@now.beginning_of_year - 4.years)..@now.end_of_year)
-      po_5y = @po_scope.where(order_date: (@now.beginning_of_year - 4.years)..@now.end_of_year)
+      year_range = (@now.beginning_of_year - 4.years)..@now.end_of_year
+      so_5y = @so_scope.where(order_date: year_range)
+      po_5y = @po_scope.where(order_date: year_range)
 
       so_year_key = year_group_expr('sale_orders', 'order_date')
       po_year_key = year_group_expr('purchase_orders', 'order_date')
       sales_yearly = grouped_revenue_by(so_5y, so_year_key)
       cogs_yearly = grouped_cogs_by(so_5y, so_year_key)
       purchases_yearly = po_5y.group(Arel.sql(po_year_key)).sum(:total_cost_mxn)
+      manual_yearly = manual_purchase_grouped_by_year(year_range)
 
       sales_y_map = sales_yearly.transform_keys { |k| extract_year_index(k) }
       cogs_y_map = cogs_yearly.transform_keys { |k| extract_year_index(k) }
       purchases_y_map = purchases_yearly.transform_keys { |k| extract_year_index(k) }
+      manual_y_map = manual_yearly.transform_keys { |k| extract_year_index(k) }
 
       @annual_stats = years.map do |y|
         sales = (sales_y_map[y] || 0).to_d
         cogs = (cogs_y_map[y] || 0).to_d
-        buys = (purchases_y_map[y] || 0).to_d
+        buys = (purchases_y_map[y] || 0).to_d + (manual_y_map[y] || 0).to_d
         profit = sales - cogs
         margin = sales.positive? ? (profit / sales) : 0.to_d
         { year: y, sales: sales, purchases: buys, cogs: cogs, profit: profit, margin: margin }
@@ -614,6 +647,8 @@ module Admin
 
       inflow_norm = inflow_map.transform_keys { |k| normalize_month_key(k) }
       outflow_norm = outflow_map.transform_keys { |k| normalize_month_key(k) }
+      manual_norm = manual_purchase_grouped_by_month(trend_range).transform_keys { |k| normalize_month_key(k) }
+      manual_norm.each { |k, v| outflow_norm[k] = (outflow_norm[k] || 0).to_d + v.to_d }
 
       @chart_cashflow = {
         months: months_keys,
@@ -649,6 +684,8 @@ module Admin
       outflow_current = outflow_current_scope.group(Arel.sql(month_key_expr_po)).sum(:total_cost_mxn)
       outflow_current = outflow_current_scope.group(Arel.sql(month_key_expr_po)).sum(:total_order_cost) if outflow_current.values.all? { |v| v.to_d.zero? }
       outflow_current = outflow_current.transform_keys { |k| normalize_month_key(k) }
+      manual_current = manual_purchase_grouped_by_month(current_year_start..current_year_end).transform_keys { |k| normalize_month_key(k) }
+      manual_current.each { |k, v| outflow_current[k] = (outflow_current[k] || 0).to_d + v.to_d }
 
       # Ingresos (ventas pagadas) por mes - año anterior
       prev_year_start = Date.new(prev_year, 1, 1)
@@ -665,6 +702,8 @@ module Admin
       outflow_prev = outflow_prev_scope.group(Arel.sql(month_key_expr_po)).sum(:total_cost_mxn)
       outflow_prev = outflow_prev_scope.group(Arel.sql(month_key_expr_po)).sum(:total_order_cost) if outflow_prev.values.all? { |v| v.to_d.zero? }
       outflow_prev = outflow_prev.transform_keys { |k| normalize_month_key(k) }
+      manual_prev = manual_purchase_grouped_by_month(prev_year_start..prev_year_end).transform_keys { |k| normalize_month_key(k) }
+      manual_prev.each { |k, v| outflow_prev[k] = (outflow_prev[k] || 0).to_d + v.to_d }
 
       # Generar keys por mes para cada año
       current_months = (1..12).map { |m| format('%04d-%02d', current_year, m) }
