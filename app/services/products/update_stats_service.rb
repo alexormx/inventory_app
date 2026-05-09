@@ -19,23 +19,41 @@ module Products
       items = @product.purchase_order_items.joins(:purchase_order)
                       .where.not(purchase_orders: { status: 'Canceled' })
 
-      # Quantities
-      total_qty = items.sum(:quantity)
-      @product.total_purchase_quantity = total_qty
-
+      po_qty = items.sum(:quantity).to_i
       # Value in MXN using composed unit cost (includes shipping/tax/other prorated)
       # Strictly use MXN-based fields; do NOT fall back to origin-currency unit_cost.
-      total_value_mxn =
-        items.sum('COALESCE(total_line_cost_in_mxn, quantity * unit_compose_cost_in_mxn, 0)')
+      po_value = items.sum('COALESCE(total_line_cost_in_mxn, quantity * unit_compose_cost_in_mxn, 0)').to_d
 
-      @product.total_purchase_value = total_value_mxn
-      @product.average_purchase_cost = total_qty.to_i.zero? ? 0 : (total_value_mxn / total_qty)
+      # Inventarios sin PO (coleccionables agregados manualmente vía quick_add, etc.)
+      # Se cuenta cada pieza como 1 unidad a su purchase_cost.
+      manual_invs  = @product.inventories.where(purchase_order_item_id: nil).where('purchase_cost > 0')
+      manual_qty   = manual_invs.count
+      manual_value = manual_invs.sum(:purchase_cost).to_d
 
-      # Last purchase info based on composed MXN unit cost when available
-      # Safe cross-DB ordering (SQLite/Postgres): prefer updated_at then id; take the last one
-      last_item = items.order(:updated_at, :id)&.last
-      @product.last_purchase_cost = (last_item&.unit_compose_cost_in_mxn || 0)
-      @product.last_purchase_date = last_item&.purchase_order&.order_date
+      total_qty   = po_qty + manual_qty
+      total_value = po_value + manual_value
+
+      @product.total_purchase_quantity = total_qty
+      @product.total_purchase_value    = total_value
+      @product.average_purchase_cost   = total_qty.zero? ? 0 : (total_value / total_qty)
+
+      # Última compra: comparar el más reciente de PO-items vs inventario manual
+      last_po_item = items.order(:updated_at, :id).last
+      last_manual  = manual_invs.order(:created_at, :id).last
+
+      po_time     = last_po_item&.updated_at
+      manual_time = last_manual&.created_at
+
+      if po_time && (manual_time.nil? || po_time >= manual_time)
+        @product.last_purchase_cost = (last_po_item&.unit_compose_cost_in_mxn || 0)
+        @product.last_purchase_date = last_po_item&.purchase_order&.order_date
+      elsif last_manual
+        @product.last_purchase_cost = last_manual.purchase_cost || 0
+        @product.last_purchase_date = last_manual.created_at.to_date
+      else
+        @product.last_purchase_cost = 0
+        @product.last_purchase_date = nil
+      end
 
       @product.total_purchase_order = items.distinct.count(:purchase_order_id)
     end
