@@ -28,6 +28,13 @@ Rails.application.routes.draw do
     post 'collectibles/quick_add', to: 'collectibles#create_quick_add'
     get 'collectibles/search_products', to: 'collectibles#search_products', as: :collectibles_search_products
 
+    # Collectibles index/edit (cada inventario coleccionable es una pieza única)
+    resources :collectibles, only: %i[index edit update] do
+      member do
+        delete 'images/:image_id', to: 'collectibles#purge_image', as: :purge_image
+      end
+    end
+
     # Sales Orders Audit
     get 'sale_orders_audit', to: 'sale_orders_audits#index', as: :sale_orders_audit
     post 'sale_orders_audit/fix', to: 'sale_orders_audits#fix_gaps', as: :sale_orders_audit_fix

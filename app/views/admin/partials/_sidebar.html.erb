@@ -54,7 +54,10 @@
         <%= admin_sidebar_link 'Revisión Catálogo', admin_catalog_review_path, icon: 'clipboard-check', section: true %>
       </li>
       <li class="nav-item px-2">
-        <%= admin_sidebar_link 'Agregar Coleccionable', admin_collectibles_quick_add_path, icon: 'gem' %>
+        <%= admin_sidebar_link 'Coleccionables', admin_collectibles_path, icon: 'gem' %>
+      </li>
+      <li class="nav-item px-2 ps-4">
+        <%= admin_sidebar_link 'Agregar Coleccionable', admin_collectibles_quick_add_path, icon: 'plus', section: true %>
       </li>
       <li class="nav-item px-2">
         <%= admin_sidebar_link 'Inventario', admin_inventory_path, icon: 'boxes-stacked', section: true %>

@@ -1,0 +1,123 @@
+<% content_for :title, "Editar Coleccionable" %>
+
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><%= link_to "Dashboard", admin_dashboard_path %></li>
+    <li class="breadcrumb-item"><%= link_to "Coleccionables", admin_collectibles_path %></li>
+    <li class="breadcrumb-item active">Editar</li>
+  </ol>
+</nav>
+
+<h1 class="mb-4">
+  <i class="fa-solid fa-gem text-warning"></i> Editar Coleccionable
+</h1>
+
+<% prod = @inventory.product %>
+<div class="card mb-3">
+  <div class="card-body py-2 d-flex flex-wrap align-items-center gap-3">
+    <% img = prod&.primary_product_image %>
+    <% if img&.attached? || img.is_a?(ActiveStorage::Attachment) %>
+      <%= image_tag img, class: 'rounded border', style: 'width:56px;height:56px;object-fit:cover;' %>
+    <% end %>
+    <div class="flex-grow-1">
+      <div class="fw-semibold"><%= prod&.product_name %></div>
+      <div class="small text-muted"><%= prod&.product_sku %></div>
+    </div>
+    <% if prod %>
+      <%= link_to 'Ver producto', admin_product_path(prod), class: 'btn btn-sm btn-outline-secondary' %>
+    <% end %>
+  </div>
+</div>
+
+<%= form_with model: @inventory, url: admin_collectible_path(@inventory), method: :patch, multipart: true, local: true do |f| %>
+
+  <div class="card mb-4">
+    <div class="card-header bg-success text-white">
+      <i class="fa-solid fa-tag"></i> Condición y Precio
+    </div>
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label">Condición *</label>
+          <%= select_tag 'inventory[item_condition]',
+              options_for_select(
+                Admin::CollectiblesController::COLLECTIBLE_CONDITIONS.map { |c|
+                  [Inventory::CONDITION_LABELS[c] || c.titleize, c]
+                },
+                @inventory.item_condition
+              ),
+              class: 'form-select', required: true %>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Costo de compra *</label>
+          <%= number_field_tag 'inventory[purchase_cost]', @inventory.purchase_cost, class: 'form-control', step: '0.01', min: '0' %>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Precio de venta</label>
+          <%= number_field_tag 'inventory[selling_price]', @inventory.selling_price, class: 'form-control', step: '0.01', min: '0', placeholder: 'Opcional' %>
+          <small class="text-muted">Vacío = usa precio del producto</small>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Fecha de compra</label>
+          <%= date_field_tag 'inventory[purchase_date]', (@inventory.purchase_date || @inventory.created_at&.to_date), class: 'form-control' %>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Estatus</label>
+          <%= select_tag 'inventory[status]',
+              options_for_select(
+                Inventory.statuses.keys.map { |s| [inventory_status_label(s), s] },
+                @inventory.status
+              ),
+              class: 'form-select' %>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Ubicación</label>
+          <%= select_tag 'inventory[inventory_location_id]',
+              options_for_select(
+                InventoryLocation.order(:path_cache).map { |loc| [loc.full_path, loc.id] },
+                @inventory.inventory_location_id
+              ),
+              include_blank: '-- Sin ubicación --',
+              class: 'form-select' %>
+        </div>
+        <div class="col-12">
+          <label class="form-label">Notas</label>
+          <%= text_area_tag 'inventory[notes]', @inventory.notes, class: 'form-control', rows: 2 %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-4">
+    <div class="card-header bg-warning">
+      <i class="fa-solid fa-camera"></i> Fotos de la pieza
+    </div>
+    <div class="card-body">
+      <% if @inventory.piece_images.attached? && @inventory.piece_images.any? %>
+        <div class="row g-2 mb-3">
+          <% @inventory.piece_images.each do |image| %>
+            <div class="col-6 col-md-3">
+              <div class="border rounded p-2 text-center">
+                <%= image_tag image, style: 'max-height:120px;object-fit:contain;' %>
+                <%= button_to admin_collectible_purge_image_path(@inventory, image_id: image.id),
+                              method: :delete,
+                              class: 'btn btn-sm btn-outline-danger w-100 mt-2',
+                              data: { confirm: '¿Eliminar foto?' } do %>
+                  <i class="fa-solid fa-trash"></i> Eliminar
+                <% end %>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
+
+      <label class="form-label">Subir más fotos</label>
+      <%= file_field_tag 'inventory[piece_images][]', multiple: true, accept: 'image/*', class: 'form-control' %>
+    </div>
+  </div>
+
+  <div class="d-flex gap-2">
+    <%= submit_tag 'Guardar cambios', class: 'btn btn-primary btn-lg' %>
+    <%= link_to 'Cancelar', admin_collectibles_path, class: 'btn btn-outline-secondary' %>
+  </div>
+<% end %>

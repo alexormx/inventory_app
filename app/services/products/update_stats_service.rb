@@ -41,15 +41,15 @@ module Products
       last_po_item = items.order(:updated_at, :id).last
       last_manual  = manual_invs.order(:created_at, :id).last
 
-      po_time     = last_po_item&.updated_at
-      manual_time = last_manual&.created_at
+      po_time         = last_po_item&.updated_at
+      manual_eff_date = last_manual && (last_manual.purchase_date || last_manual.created_at.to_date)
 
-      if po_time && (manual_time.nil? || po_time >= manual_time)
+      if po_time && (manual_eff_date.nil? || po_time.to_date >= manual_eff_date)
         @product.last_purchase_cost = (last_po_item&.unit_compose_cost_in_mxn || 0)
         @product.last_purchase_date = last_po_item&.purchase_order&.order_date
       elsif last_manual
         @product.last_purchase_cost = last_manual.purchase_cost || 0
-        @product.last_purchase_date = last_manual.created_at.to_date
+        @product.last_purchase_date = manual_eff_date
       else
         @product.last_purchase_cost = 0
         @product.last_purchase_date = nil

@@ -61,6 +61,7 @@ module Collectibles
         item_condition: inv_attrs[:item_condition] || :loose,
         purchase_cost: inv_attrs[:purchase_cost].presence || 0,
         selling_price: inv_attrs[:selling_price].presence,
+        purchase_date: inv_attrs[:purchase_date].presence || Date.current,
         notes: inv_attrs[:notes],
         inventory_location_id: inv_attrs[:inventory_location_id].presence,
         status: :available,

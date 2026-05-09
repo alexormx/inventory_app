@@ -116,6 +116,11 @@
           <%= number_field_tag 'inventory[selling_price]', @inventory&.selling_price, class: 'form-control', step: '0.01', min: '0', placeholder: 'Opcional' %>
           <small class="text-muted">Precio específico para esta pieza</small>
         </div>
+        <div class="col-md-4">
+          <label class="form-label">Fecha de compra</label>
+          <%= date_field_tag 'inventory[purchase_date]', (@inventory&.purchase_date || Date.current), class: 'form-control' %>
+          <small class="text-muted">Cuándo se adquirió la pieza</small>
+        </div>
         <div class="col-md-6">
           <label class="form-label">Ubicación</label>
           <%= select_tag 'inventory[inventory_location_id]',
