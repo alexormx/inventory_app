@@ -204,10 +204,18 @@ module Admin
                     alert: 'No se puede entregar: la orden no está pagada y el cliente no tiene crédito.' and return
       end
 
-      shipment = @sale_order.shipment
-      redirect_to admin_sale_order_path(@sale_order), alert: 'No hay envío asignado.' and return unless shipment
-
       today = Time.zone.today
+      shipment = @sale_order.shipment
+      if shipment.blank?
+        shipment = @sale_order.create_shipment!(
+          carrier: 'Entrega Personal',
+          estimated_delivery: today,
+          status: :pending,
+          delivery_type: :personal
+        )
+        @sale_order.reload
+      end
+
       attrs = {
         delivery_type: :personal,
         carrier: 'Entrega Personal',
