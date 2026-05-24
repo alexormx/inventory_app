@@ -152,6 +152,73 @@ module MetaTagsHelper
     }
   end
 
+  # LocalBusiness/Store schema for local Mexico SEO. Only emitted when at least
+  # the core address fields are configured via SiteSettings (so we never lie to
+  # Google with partial / placeholder data).
+  def json_ld_local_business
+    street   = SiteSetting.get('business_address_street').to_s.strip
+    locality = SiteSetting.get('business_address_locality').to_s.strip
+    region   = SiteSetting.get('business_address_region').to_s.strip
+    return nil if street.blank? || locality.blank? || region.blank?
+
+    data = {
+      '@context' => 'https://schema.org',
+      '@type' => 'Store',
+      'name' => site_name,
+      'url' => site_root_url,
+      'image' => asset_url('logo.png'),
+      'description' => seo_settings[:meta_description].presence || DEFAULT_META_DESCRIPTION,
+      'address' => {
+        '@type' => 'PostalAddress',
+        'streetAddress' => street,
+        'addressLocality' => locality,
+        'addressRegion' => region,
+        'addressCountry' => 'MX'
+      }
+    }
+
+    postal = SiteSetting.get('business_address_postal_code').to_s.strip
+    data['address']['postalCode'] = postal if postal.present?
+
+    phone = SiteSetting.get('business_phone').to_s.strip
+    data['telephone'] = phone if phone.present?
+
+    lat = SiteSetting.get('business_latitude').to_s.strip
+    lng = SiteSetting.get('business_longitude').to_s.strip
+    if lat.present? && lng.present?
+      data['geo'] = {
+        '@type' => 'GeoCoordinates',
+        'latitude' => lat.to_f,
+        'longitude' => lng.to_f
+      }
+    end
+
+    hours = SiteSetting.get('business_opening_hours')
+    if hours.is_a?(Array) && hours.any?
+      data['openingHoursSpecification'] = hours
+    end
+
+    area = SiteSetting.get('business_area_served', 'México').to_s.strip
+    data['areaServed'] = { '@type' => 'Country', 'name' => area } if area.present?
+
+    price_range = SiteSetting.get('business_price_range').to_s.strip
+    data['priceRange'] = price_range if price_range.present?
+
+    data
+  end
+
+  def google_site_verification_token
+    SiteSetting.get('google_site_verification').to_s.strip.presence
+  end
+
+  def hreflang_links
+    href = meta_canonical_url
+    safe_join([
+                tag.link(rel: 'alternate', hreflang: 'es-MX', href: href),
+                tag.link(rel: 'alternate', hreflang: 'x-default', href: href)
+              ])
+  end
+
   private
 
   def noindex_request?

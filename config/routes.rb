@@ -401,6 +401,9 @@ Rails.application.routes.draw do
   # Sitemap for search engines (dynamically generated)
   get 'sitemap.xml', to: 'sitemaps#show', as: :sitemap, defaults: { format: :xml }
 
+  # Robots.txt — dynamic so the Sitemap line uses the request's absolute URL
+  get 'robots.txt', to: 'robots#show', as: :robots, defaults: { format: :text }
+
   # Public-facing root (if any)
   root 'home#index'
 end

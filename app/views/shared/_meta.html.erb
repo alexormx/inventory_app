@@ -7,8 +7,12 @@
 <meta name="language" content="es">
 <meta name="geo.region" content="MX">
 <meta name="geo.placename" content="México">
+<% if (gsv = google_site_verification_token) %>
+  <meta name="google-site-verification" content="<%= gsv %>">
+<% end %>
 
 <link rel="canonical" href="<%= meta_canonical_url %>">
+<%= hreflang_links %>
 
 <meta property="og:site_name" content="<%= site_name %>">
 <meta property="og:title" content="<%= og_title %>">
@@ -25,3 +29,6 @@
 
 <script type="application/ld+json"><%= raw(json_ld_organization.to_json) %></script>
 <script type="application/ld+json"><%= raw(json_ld_website.to_json) %></script>
+<% if (lb = json_ld_local_business) %>
+  <script type="application/ld+json"><%= raw(lb.to_json) %></script>
+<% end %>
