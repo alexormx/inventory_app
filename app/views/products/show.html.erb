@@ -1,7 +1,7 @@
 <% content_for :title, product_meta_title(@product) %>
 <% content_for :meta_description, product_meta_description(@product) %>
 <% content_for :meta_keywords, product_meta_keywords(@product) %>
-<% content_for :og_image, @product.product_images.attached? ? url_for(@product.primary_product_image, only_path: false) : asset_url('logo.png') %>
+<% content_for :og_image, @product.product_images.attached? ? absolute_url(url_for(@product.primary_product_image)) : asset_url('logo.png') %>
 <% content_for :og_type, 'product' %>
 <% content_for :canonical_url, product_url(@product) %>
 
