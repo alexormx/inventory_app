@@ -60,15 +60,14 @@ module Admin
                       .group(:country)
                       .order('total_visits DESC')
       when 'by_referrer'
-        # Bucketing en Ruby porque el bucket es derivado del host (ej.
-        # google.com.mx, l.instagram.com, etc.). Cargamos solo las
-        # columnas necesarias para no inflar memoria.
-        rows = VisitorLog.select(:referrer, :visit_count, :ip_address)
+        # Bucketing en Ruby porque el bucket deriva del host (google.com.mx,
+        # l.instagram.com, etc.). Usamos pluck para evitar instanciar
+        # modelos y eludir la restricción del cursor de find_each.
         buckets = Hash.new { |h, k| h[k] = { visits: 0, ips: Set.new } }
-        rows.find_each do |row|
-          bucket = helpers.referrer_bucket(row.referrer)
-          buckets[bucket][:visits] += row.visit_count.to_i
-          buckets[bucket][:ips] << row.ip_address
+        VisitorLog.pluck(:referrer, :visit_count, :ip_address).each do |referrer, visits, ip|
+          bucket = helpers.referrer_bucket(referrer)
+          buckets[bucket][:visits] += visits.to_i
+          buckets[bucket][:ips] << ip
         end
         @by_referrer = buckets
                        .map { |bucket, data| [bucket, data[:visits], data[:ips].size] }
