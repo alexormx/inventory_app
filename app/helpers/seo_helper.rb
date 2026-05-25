@@ -26,7 +26,7 @@ module SeoHelper
                    end
 
     image_url = if product.product_images.attached?
-                  url_for(product.primary_product_image)
+                  url_for(product.primary_product_image, only_path: false)
                 else
                   asset_url('placeholder.png')
                 end
@@ -85,23 +85,17 @@ module SeoHelper
     tag.script(data.to_json.html_safe, type: 'application/ld+json')
   end
 
-  # Build a keyword-rich description for JSON-LD Product schema
+  # Build a clean description for JSON-LD Product schema. Prefers the human
+  # description when present (truncated at a sentence boundary so it never
+  # ends mid-word with "..."); otherwise builds a clean fallback sentence
+  # from product attributes.
   def product_json_ld_description(product)
-    attrs = product.parsed_custom_attributes
-    parts = []
-
     if product.description.present?
-      parts << product.description.to_s.gsub(/\r\n|\n/, ' ').squish.truncate(300, separator: ' ')
+      cleaned = product.description.to_s.gsub(/\r\n|\n/, ' ').squish
+      return clean_sentence_truncate(cleaned, 300)
     end
 
-    type_label = product_type_label(product)
-    parts << "#{product.product_name} de #{product.brand}" if product.brand.present?
-    parts << type_label if type_label.present?
-    parts << "Escala #{attrs['escala']}" if attrs['escala'].present?
-    parts << attrs['material'] if attrs['material'].present?
-    parts << "Disponible en #{seo_site_name}"
-
-    parts.compact.reject(&:blank?).join('. ')
+    seo_fallback_description(product, max: 300)
   end
 
   # Genera JSON-LD BreadcrumbList para SEO
@@ -114,7 +108,7 @@ module SeoHelper
         'position' => index + 1,
         'name' => crumb[:name]
       }
-      item['item'] = crumb[:url] if crumb[:url].present?
+      item['item'] = absolute_url(crumb[:url]) if crumb[:url].present?
       item
     end
 
@@ -180,7 +174,7 @@ module SeoHelper
 
     items = products.each_with_index.map do |product, index|
       image_url = if product.product_images.attached?
-                    url_for(product.primary_product_image)
+                    url_for(product.primary_product_image, only_path: false)
                   else
                     asset_url('placeholder.png')
                   end
@@ -285,25 +279,17 @@ module SeoHelper
   end
 
   def product_meta_description(product)
-    attrs = product.parsed_custom_attributes
-    scale = attrs['escala'].presence
-    material = attrs['material'].presence
-
-    # Build keyword-rich description for Google snippets
-    intro = "Compra #{product.product_name} de #{product.brand}"
-    intro += " escala #{scale}" if scale.present?
-    intro += ", #{material.downcase}" if material.present?
-    intro += '.'
-
-    # Add product description snippet if available
-    if product.description.present?
-      snippet = product.description.to_s.gsub(/\r\n|\n/, ' ').squish.truncate(100, separator: ' ')
-      intro += " #{snippet}"
-    end
-
-    # Ensure it ends with CTA and store branding
     suffix = " Envío seguro a todo México. 100% original. #{seo_site_name}."
-    (intro + suffix).truncate(320, separator: ' ')
+    target_max = 320
+
+    body = if product.description.present?
+             cleaned = product.description.to_s.gsub(/\r\n|\n/, ' ').squish
+             clean_sentence_truncate(cleaned, target_max - suffix.length)
+           else
+             seo_fallback_description(product, max: target_max - suffix.length)
+           end
+
+    "#{body}#{suffix}"
   end
 
   # Per-product keywords based on actual product data
@@ -348,6 +334,52 @@ module SeoHelper
     keywords.compact.map { |k| k.to_s.strip.downcase }.reject(&:blank?).uniq.first(15).join(', ')
   end
 
+  # Extra OG/product meta tags rendered in <head> on product show.
+  # Drives WhatsApp / Facebook share cards (price + stock visible inline).
+  def product_og_extensions(product)
+    return ''.html_safe unless product
+
+    on_hand = begin
+      product.current_on_hand
+    rescue StandardError
+      0
+    end
+    availability = if on_hand.positive?
+                     'instock'
+                   elsif product.backorder_allowed?
+                     'backorder'
+                   elsif product.preorder_available?
+                     'preorder'
+                   else
+                     'out of stock'
+                   end
+
+    tags = [
+      tag.meta(property: 'product:price:amount', content: product.selling_price.to_f.to_s),
+      tag.meta(property: 'product:price:currency', content: 'MXN'),
+      tag.meta(property: 'product:availability', content: availability),
+      tag.meta(property: 'product:condition', content: 'new'),
+      tag.meta(property: 'og:price:amount', content: product.selling_price.to_f.to_s),
+      tag.meta(property: 'og:price:currency', content: 'MXN'),
+      tag.meta(property: 'og:availability', content: availability)
+    ]
+
+    if product.brand.present?
+      tags << tag.meta(property: 'product:brand', content: product.brand)
+    end
+
+    safe_join(tags)
+  end
+
+  # Ensure a URL is absolute. Accepts paths like "/catalog" and returns
+  # "#{request.base_url}/catalog"; passes through already-absolute URLs.
+  def absolute_url(url)
+    return url if url.blank?
+    return url if url.start_with?('http://', 'https://')
+
+    "#{request.base_url}#{url}"
+  end
+
   # SEO-friendly image alt text
   def product_image_alt(product, index: 0)
     attrs = product.parsed_custom_attributes
@@ -361,6 +393,40 @@ module SeoHelper
   end
 
   private
+
+  # Truncate text at the last sentence boundary (.!?) before `max`. Falls back
+  # to word-boundary truncation if no sentence end is found in the window.
+  # Never appends a trailing "...".
+  def clean_sentence_truncate(text, max)
+    text = text.to_s
+    return text if text.length <= max
+
+    window = text[0, max]
+    if (last_end = window.rindex(/[.!?]\s/))
+      window[0..last_end].strip
+    elsif (last_space = window.rindex(' '))
+      "#{window[0...last_space].strip}."
+    else
+      "#{window.strip}."
+    end
+  end
+
+  # Clean, no-truncation-marks fallback when a product has no description.
+  def seo_fallback_description(product, max:)
+    attrs = product.parsed_custom_attributes
+    scale = attrs['escala'].presence
+    material = attrs['material'].presence
+
+    sentence = +"#{product.product_name}"
+    sentence << " de #{product.brand}" if product.brand.present?
+    type_label = product_type_label(product)
+    sentence << " — #{type_label}" if type_label.present?
+    sentence << ", escala #{scale}" if scale.present?
+    sentence << ", #{material.downcase}" if material.present?
+    sentence << '.'
+
+    clean_sentence_truncate(sentence, max)
+  end
 
   # Determine a human-friendly product type label for SEO
   def product_type_label(product)
@@ -403,12 +469,17 @@ module SeoHelper
     elsif @seo_landing == :series && @series_name.present?
       "#{@series_name} | #{seo_site_name}"
     else
-      parts = ['Catálogo']
-      parts << params[:categories].join(', ') if params[:categories].present?
-      parts << params[:brands].join(', ') if params[:brands].present?
-      parts << params[:series].join(', ') if params[:series].present?
-      parts << "| #{seo_site_name}"
-      parts.join(' ')
+      filters_active = params[:categories].present? || params[:brands].present? || params[:series].present?
+      if filters_active
+        parts = ['Catálogo']
+        parts << params[:categories].join(', ') if params[:categories].present?
+        parts << params[:brands].join(', ') if params[:brands].present?
+        parts << params[:series].join(', ') if params[:series].present?
+        parts << "| #{seo_site_name}"
+        parts.join(' ')
+      else
+        "Catálogo de Autos a Escala y Coleccionables | Hot Wheels, Tomica, Greenlight en México | #{seo_site_name}"
+      end
     end
   end
 

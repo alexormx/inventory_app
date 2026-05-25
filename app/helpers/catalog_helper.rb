@@ -19,7 +19,7 @@ module CatalogHelper
 
     parts << 'Preventa' if ActiveModel::Type::Boolean.new.cast(params[:preorder])
 
-    parts.any? ? parts.join(' - ') : 'Catálogo'
+    parts.any? ? parts.join(' - ') : 'Catálogo de Autos a Escala y Coleccionables en México'
   end
 
   # Subtítulo contextual
