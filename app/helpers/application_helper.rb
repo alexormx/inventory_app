@@ -50,23 +50,26 @@ module ApplicationHelper
     false
   end
 
-  # Preload simplificado para la imagen LCP de home (collection_shelf-960w.*)
-  # Genera hasta tres <link rel="preload"> si existen las variantes
+  # Preload de la imagen LCP del home (hero). El <picture> en home/index
+  # ofrece avif/webp/jpg. Pre-cargamos solo la variante más pequeña que
+  # el browser realmente vaya a usar para evitar descargar las tres en
+  # paralelo: AVIF si existe (modernos lo soportan), WebP si no, JPG como
+  # último recurso. El atributo `type` hace que browsers sin soporte
+  # ignoren el preload.
   def lcp_preload_home_image
-    base = 'collection_shelf-960w'
-    tags = []
-    {
-      'image/avif' => 'avif',
-      'image/webp' => 'webp',
-      'image/jpeg' => 'jpg'
-    }.each do |mime, ext|
+    base = 'collection_shelf'
+    [
+      ['image/avif', 'avif'],
+      ['image/webp', 'webp'],
+      ['image/jpeg', 'jpg']
+    ].each do |mime, ext|
       file = "#{base}.#{ext}"
       next unless asset_exists?(file)
 
-      tags << tag.link(rel: 'preload', as: 'image', href: asset_path(file), fetchpriority: 'high', imagesrcset: "#{asset_path(file)} 960w",
-                       imagesizes: '(max-width: 960px) 100vw, 960px', type: mime)
+      return tag.link(rel: 'preload', as: 'image', href: asset_path(file),
+                      fetchpriority: 'high', type: mime)
     end
-    safe_join(tags)
+    ''.html_safe
   end
 
   # Preload LCP para página de producto (usa ActiveStorage). Pre-carga variantes 600x600.

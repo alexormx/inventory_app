@@ -2,9 +2,45 @@
 <% content_for :meta_description, t('home.index.meta.description') %>
 <% content_for :canonical_url, root_url %>
 
+<style>
+  .hero-section { isolation: isolate; }
+  .hero-picture { position: absolute; inset: 0; z-index: 0; display: block; }
+  .hero-image {
+    width: 100%; height: 100%;
+    object-fit: cover; object-position: center;
+    display: block;
+  }
+  .hero-overlay {
+    position: absolute; inset: 0; z-index: 1; pointer-events: none;
+    background:
+      linear-gradient(135deg,
+        rgba(220,53,69,0.5) 0%,
+        rgba(185,28,28,0.5) 50%,
+        rgba(127,29,29,0.55) 100%),
+      rgba(0,0,0,0.1);
+  }
+  .hero-section > .container { position: relative; z-index: 2; }
+</style>
+
 <!-- ✨ HERO SECTION -->
-<section class="hero-section position-relative d-flex align-items-center text-white" style="min-height: 60vh; background: linear-gradient(135deg, rgba(220,53,69,0.5) 0%, rgba(185,28,28,0.5) 50%, rgba(127,29,29,0.55) 100%), url('<%= asset_path('collection_shelf.jpg') %>') center/cover no-repeat; overflow: hidden;">
-  <div class="hero-overlay position-absolute w-100 h-100" style="background: rgba(0,0,0,0.1); top: 0; left: 0;"></div>
+<section class="hero-section position-relative d-flex align-items-center text-white" style="min-height: 60vh; overflow: hidden;">
+  <picture class="hero-picture">
+    <% if asset_exists?('collection_shelf.avif') %>
+      <source type="image/avif" srcset="<%= asset_path('collection_shelf.avif') %>">
+    <% end %>
+    <% if asset_exists?('collection_shelf.webp') %>
+      <source type="image/webp" srcset="<%= asset_path('collection_shelf.webp') %>">
+    <% end %>
+    <%= image_tag 'collection_shelf.jpg',
+                  alt: '',
+                  class: 'hero-image',
+                  fetchpriority: 'high',
+                  loading: 'eager',
+                  decoding: 'async',
+                  width: 1920,
+                  height: 1080 %>
+  </picture>
+  <div class="hero-overlay" aria-hidden="true"></div>
   <div class="container position-relative text-center" style="z-index: 2;">
     <h1 class="display-3 fw-bold mb-3 animate__animated animate__fadeInDown" style="text-shadow: 2px 2px 8px rgba(0,0,0,0.5), 0 0 30px rgba(255,255,255,0.6), 0 0 60px rgba(255,255,255,0.3);"><%= t('home.index.heading_html').html_safe %></h1>
     <p class="fs-5 fw-semibold mb-4 animate__animated animate__fadeInUp" style="max-width: 800px; margin: 0 auto; text-shadow: 1px 1px 4px rgba(0,0,0,0.5), 0 0 25px rgba(255,255,255,0.5);"><%= t('home.index.subheading_html').html_safe %></p>

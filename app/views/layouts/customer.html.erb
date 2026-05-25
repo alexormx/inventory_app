@@ -22,8 +22,19 @@
   <%= lcp_preload_home_image if controller_path == 'home' && action_name == 'index' %>
   <%= lcp_preload_product_image(@product) if controller_path == 'products' && action_name == 'show' %>
 
-  <!-- Font Awesome: carga directa para garantizar iconos visibles en mobile/nav -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+  <!-- Font Awesome: carga no bloqueante (preload + onload). Mientras llega
+       el CSS los iconos quedan invisibles ~80-150ms, pero la primera
+       pintura no se bloquea, mejorando LCP. <noscript> garantiza que
+       usuarios sin JS sigan recibiendo iconos. -->
+  <link rel="preload" as="style"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+        crossorigin="anonymous" referrerpolicy="no-referrer"
+        onload="this.onload=null;this.rel='stylesheet'">
+  <noscript>
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+          crossorigin="anonymous" referrerpolicy="no-referrer">
+  </noscript>
 
   <%= stylesheet_link_tag "application", media: "all", "data-turbo-track": "reload" %>
   <%= javascript_include_tag "application", "data-turbo-track": "reload", defer: true %>
