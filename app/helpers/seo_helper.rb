@@ -476,7 +476,7 @@ module SeoHelper
     when :brand
       lead = "Descubre toda la colección de #{name} disponible en #{seo_site_name}."
       detail = if related.any?
-                 " Encuentra modelos originales de las series #{related.to_sentence}, ideales para coleccionistas."
+                 " Encuentra modelos originales de las series #{related.to_sentence(words_connector: ', ', two_words_connector: ' y ', last_word_connector: ' y ')}, ideales para coleccionistas."
                else
                  " Modelos originales seleccionados para coleccionistas y entusiastas."
                end
@@ -487,7 +487,7 @@ module SeoHelper
     when :category
       lead = "Explora nuestra selección de #{name} en #{seo_site_name}."
       detail = if related.any?
-                 " Trabajamos con marcas como #{related.to_sentence}, todas 100% originales."
+                 " Trabajamos con marcas como #{related.to_sentence(words_connector: ', ', two_words_connector: ' y ', last_word_connector: ' y ')}, todas 100% originales."
                else
                  " Productos originales seleccionados de las mejores marcas del mercado."
                end
@@ -498,7 +498,7 @@ module SeoHelper
     when :series
       lead = "Encuentra todos los productos de la serie #{name} en #{seo_site_name}."
       detail = if related.any?
-                 " Esta serie incluye piezas de #{related.to_sentence}, todas originales."
+                 " Esta serie incluye piezas de #{related.to_sentence(words_connector: ', ', two_words_connector: ' y ', last_word_connector: ' y ')}, todas originales."
                else
                  " Cada pieza de la serie es original y seleccionada cuidadosamente para coleccionistas."
                end
