@@ -60,6 +60,11 @@
       <i class="fa-solid fa-globe me-1"></i> Por País
     <% end %>
   </li>
+  <li class="nav-item">
+    <%= link_to admin_visitor_logs_path(tab: 'by_referrer'), class: "nav-link #{'active' if @tab == 'by_referrer'}" do %>
+      <i class="fa-solid fa-share-from-square me-1"></i> Por Fuente
+    <% end %>
+  </li>
 </ul>
 
 <%# Contenido según tab %>
@@ -219,6 +224,47 @@
                 </td>
                 <td>
                   <small><%= row.last_visit&.strftime("%d/%m/%Y %H:%M") %></small>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+
+    <% elsif @tab == 'by_referrer' %>
+      <%# Tab: Por Fuente (Referrer) %>
+      <div class="table-responsive">
+        <table class="table table-hover table-sm align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th class="ps-3"><i class="fa-solid fa-share-from-square text-muted me-1"></i> Fuente</th>
+              <th class="text-center"><i class="fa-solid fa-eye text-muted me-1"></i> Visitas</th>
+              <th class="text-center"><i class="fa-solid fa-users text-muted me-1"></i> Únicos</th>
+              <th>% del total</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% total_referrer_visits = @by_referrer.sum { |_, visits, _| visits } %>
+            <% @by_referrer.each do |bucket, visits, uniques| %>
+              <% pct = total_referrer_visits > 0 ? (visits.to_f / total_referrer_visits * 100).round(1) : 0 %>
+              <tr>
+                <td class="ps-3">
+                  <i class="<%= referrer_icon(bucket) %> me-2 text-muted"></i>
+                  <strong><%= bucket %></strong>
+                </td>
+                <td class="text-center">
+                  <span class="badge bg-primary fs-6"><%= number_with_delimiter(visits) %></span>
+                </td>
+                <td class="text-center">
+                  <span class="text-muted"><%= number_with_delimiter(uniques) %></span>
+                </td>
+                <td style="min-width: 150px;">
+                  <div class="d-flex align-items-center gap-2">
+                    <div class="progress flex-grow-1" style="height: 8px;">
+                      <div class="progress-bar bg-info" style="width: <%= pct %>%"></div>
+                    </div>
+                    <small class="text-muted" style="min-width: 45px;"><%= pct %>%</small>
+                  </div>
                 </td>
               </tr>
             <% end %>

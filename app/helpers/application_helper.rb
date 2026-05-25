@@ -50,6 +50,29 @@ module ApplicationHelper
     false
   end
 
+  # Google Analytics 4 snippet. Emits gtag.js async + config call when
+  # SiteSetting('google_analytics_id') is set (e.g., 'G-XXXXXXXXXX').
+  # Only included by the customer layout — admin pages are intentionally
+  # not tracked. ID is validated to avoid HTML injection from settings.
+  def google_analytics_snippet
+    id = SiteSetting.get('google_analytics_id').to_s.strip
+    return ''.html_safe if id.blank?
+    return ''.html_safe unless id.match?(/\A[A-Z]+-[A-Z0-9-]{4,}\z/i)
+
+    src = "https://www.googletagmanager.com/gtag/js?id=#{ERB::Util.html_escape(id)}"
+    config = <<~JS
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', '#{j(id)}', { anonymize_ip: true });
+    JS
+
+    safe_join([
+                tag.script(src: src, async: true),
+                tag.script(config.html_safe)
+              ])
+  end
+
   # Preload de la imagen LCP del home (hero). El <picture> en home/index
   # ofrece avif/webp/jpg. Pre-cargamos solo la variante más pequeña que
   # el browser realmente vaya a usar para evitar descargar las tres en

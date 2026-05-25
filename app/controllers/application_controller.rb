@@ -37,24 +37,30 @@ class ApplicationController < ActionController::Base
     redirect_to root_path
   end
 
+  BOT_USER_AGENT_REGEX = /bot|crawl|spider|slurp|bingpreview|facebookexternalhit|whatsapp|telegram|preview|pingdom|monitor|ahrefs|semrush|mj12/i
+  TRACKER_SKIP_PREFIXES = %w[/assets /cable /rails /admin].freeze
+  TRACKER_SKIP_PATHS = %w[/favicon.ico /robots.txt /sitemap.xml /up].freeze
+
   def track_visitor
-    return if request.path.starts_with?('/assets', '/cable')
     return if request.xhr?
     return unless request.format.html?
-    return if request.path.in?([
-                                 '/favicon.ico', '/robots.txt', '/sitemap.xml'
-                               ])
+    return if TRACKER_SKIP_PREFIXES.any? { |prefix| request.path.starts_with?(prefix) }
+    return if TRACKER_SKIP_PATHS.include?(request.path)
+
+    ua = request.user_agent.to_s
+    return if ua.match?(BOT_USER_AGENT_REGEX)
 
     ip = real_ip_from_cloudflare || request.remote_ip
 
-    VisitorLog.track(
+    VisitorLogs::TrackJob.perform_later(
       ip: ip,
-      agent: request.user_agent,
+      agent: ua,
       path: request.fullpath,
-      user: current_user
+      user_id: current_user&.id,
+      referrer: request.referrer.to_s.presence
     )
   rescue StandardError => e
-    Rails.logger.warn("IP tracking error: #{e.message}")
+    Rails.logger.warn("[track_visitor] enqueue error: #{e.message}")
   end
 
   def real_ip_from_cloudflare
