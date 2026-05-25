@@ -130,6 +130,12 @@
       <% end %>
     </div>
     </div><%# /catalog-header-row %>
+
+    <% if (intro = current_landing_intro).present? %>
+      <p class="landing-intro text-muted mb-0 mt-2" style="max-width: 900px; line-height: 1.55;">
+        <%= intro %>
+      </p>
+    <% end %>
   </div>
 
   <%# Chips primarios de disponibilidad (3 opciones principales). Toggle individual; varios = OR. %>

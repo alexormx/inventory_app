@@ -228,18 +228,19 @@ module SeoHelper
 
   # Genera JSON-LD CollectionPage para landing pages de marca/categoría
   def collection_page_json_ld(name:, type:, url:, products: [])
+    description = landing_intro(type, name, context: landing_context_for(type, name)).presence ||
+                  case type
+                  when :brand  then "Colección completa de productos #{name} disponibles en #{seo_site_name}."
+                  when :series then "Todos los productos de la serie #{name} disponibles en #{seo_site_name}."
+                  else              "Todos los productos de la categoría #{name} en #{seo_site_name}."
+                  end
+
     data = {
       '@context' => 'https://schema.org',
       '@type' => 'CollectionPage',
       'name' => name,
       'url' => url,
-      'description' => if type == :brand
-                          "Colección completa de productos #{name} disponibles en #{seo_site_name}."
-                        elsif type == :series
-                          "Todos los productos de la serie #{name} disponibles en #{seo_site_name}."
-                        else
-                          "Todos los productos de la categoría #{name} en #{seo_site_name}."
-                        end,
+      'description' => description,
       'isPartOf' => {
         '@type' => 'WebSite',
         'name' => seo_site_name,
@@ -334,6 +335,35 @@ module SeoHelper
     keywords.compact.map { |k| k.to_s.strip.downcase }.reject(&:blank?).uniq.first(15).join(', ')
   end
 
+  # Returns a unique intro paragraph (plain text) for a brand/category/series
+  # landing page. Looks up SiteSetting JSON overrides keyed by slug first; if
+  # no override is set, generates a slug-aware fallback that references the
+  # landing name, related context, and México — ensuring no two landing pages
+  # share identical copy.
+  #
+  #   type: one of :brand, :category, :series
+  #   name: the human name of the landing (e.g. "Takara Tomy")
+  #   context: optional hash with extras for richer fallbacks
+  #            { related: ['Tomica Premium', 'Tomica Basicos'], product_count: 99 }
+  def landing_intro(type, name, context: {})
+    return nil if name.blank?
+
+    slug = name.to_s.parameterize
+    overrides_key = case type
+                    when :brand    then 'seo_intro_brands'
+                    when :category then 'seo_intro_categories'
+                    when :series   then 'seo_intro_series'
+                    end
+    return nil unless overrides_key
+
+    overrides = SiteSetting.get(overrides_key) || {}
+    overrides = overrides.is_a?(Hash) ? overrides : {}
+    override = overrides[slug].to_s.strip
+    return override if override.present?
+
+    landing_intro_fallback(type, name, context)
+  end
+
   # Extra OG/product meta tags rendered in <head> on product show.
   # Drives WhatsApp / Facebook share cards (price + stock visible inline).
   def product_og_extensions(product)
@@ -393,6 +423,90 @@ module SeoHelper
   end
 
   private
+
+  # Builds the context hash (related names + product count) used by the
+  # fallback templates. Bounded by a single landing's active product set,
+  # so it's cheap even on the biggest brand.
+  def landing_context_for(type, name)
+    return {} if name.blank?
+
+    scope = Product.publicly_visible
+    case type
+    when :brand
+      product_count = scope.where(brand: name).count
+      related = scope.where(brand: name).where.not(series: [nil, ''])
+                     .group(:series).order(Arel.sql('COUNT(*) DESC')).limit(3).pluck(:series)
+      { related: related, product_count: product_count }
+    when :category
+      product_count = scope.where(category: name).count
+      related = scope.where(category: name).where.not(brand: [nil, ''])
+                     .group(:brand).order(Arel.sql('COUNT(*) DESC')).limit(3).pluck(:brand)
+      { related: related, product_count: product_count }
+    when :series
+      product_count = scope.where(series: name).count
+      related = scope.where(series: name).where.not(brand: [nil, ''])
+                     .group(:brand).order(Arel.sql('COUNT(*) DESC')).limit(3).pluck(:brand)
+      { related: related, product_count: product_count }
+    else
+      {}
+    end
+  end
+
+  # Returns the intro text for the current landing (or nil if not on one).
+  # View-friendly wrapper that resolves the right name from instance vars.
+  def current_landing_intro
+    name = case @seo_landing
+           when :brand    then @brand_name
+           when :category then @category_name
+           when :series   then @series_name
+           end
+    return nil if @seo_landing.blank? || name.blank?
+
+    landing_intro(@seo_landing, name, context: landing_context_for(@seo_landing, name))
+  end
+
+  # Generates a unique intro paragraph when no SiteSetting override exists.
+  # Different template per landing type so brand/category/series pages never
+  # share identical wording, even before the store provides custom copy.
+  def landing_intro_fallback(type, name, context)
+    related = Array(context[:related]).reject(&:blank?).first(3)
+    count = context[:product_count].to_i
+
+    case type
+    when :brand
+      lead = "Descubre toda la colección de #{name} disponible en #{seo_site_name}."
+      detail = if related.any?
+                 " Encuentra modelos originales de las series #{related.to_sentence}, ideales para coleccionistas."
+               else
+                 " Modelos originales seleccionados para coleccionistas y entusiastas."
+               end
+      counter = count.positive? ? " Más de #{count} piezas activas en catálogo." : ''
+      closer = " 100% productos originales con envío seguro a todo México. Agrega esa pieza única de #{name} a tu colección hoy."
+      "#{lead}#{detail}#{counter}#{closer}"
+
+    when :category
+      lead = "Explora nuestra selección de #{name} en #{seo_site_name}."
+      detail = if related.any?
+                 " Trabajamos con marcas como #{related.to_sentence}, todas 100% originales."
+               else
+                 " Productos originales seleccionados de las mejores marcas del mercado."
+               end
+      counter = count.positive? ? " Catálogo activo con #{count} productos en #{name}." : ''
+      closer = " Envío seguro a todo México y soporte personalizado por WhatsApp para coleccionistas."
+      "#{lead}#{detail}#{counter}#{closer}"
+
+    when :series
+      lead = "Encuentra todos los productos de la serie #{name} en #{seo_site_name}."
+      detail = if related.any?
+                 " Esta serie incluye piezas de #{related.to_sentence}, todas originales."
+               else
+                 " Cada pieza de la serie es original y seleccionada cuidadosamente para coleccionistas."
+               end
+      counter = count.positive? ? " #{count} productos activos de la serie #{name} en catálogo." : ''
+      closer = " Envío seguro a todo México. Completa tu colección de #{name} con piezas auténticas."
+      "#{lead}#{detail}#{counter}#{closer}"
+    end
+  end
 
   # Truncate text at the last sentence boundary (.!?) before `max`. Falls back
   # to word-boundary truncation if no sentence end is found in the window.
