@@ -27,56 +27,122 @@
   <%= tag.script(article_data.to_json.html_safe, type: 'application/ld+json') %>
 <% end %>
 
-<article class="container py-4" style="max-width: 760px;">
-  <nav aria-label="breadcrumb" class="mb-3">
-    <ol class="breadcrumb mb-0 small">
-      <li class="breadcrumb-item"><%= link_to 'Inicio', root_path, class: 'text-decoration-none' %></li>
-      <li class="breadcrumb-item"><%= link_to 'Blog', blog_path, class: 'text-decoration-none' %></li>
-      <li class="breadcrumb-item active" aria-current="page"><%= @post.title.truncate(40) %></li>
-    </ol>
-  </nav>
-
-  <header class="mb-4">
-    <h1 class="fw-bold display-6 mb-3"><%= @post.title %></h1>
-    <p class="text-muted small mb-0">
-      <i class="fas fa-user-edit me-1"></i><%= @post.author_name %>
-      <span class="mx-2">·</span>
-      <i class="fas fa-calendar-day me-1"></i><%= l @post.published_at.to_date, format: :long %>
-    </p>
-  </header>
-
-  <% if @post.cover_image.attached? %>
-    <%= image_tag @post.cover_image,
-                  alt: @post.title,
-                  class: 'img-fluid rounded shadow-sm mb-4 w-100',
-                  style: 'max-height: 460px; object-fit: cover;',
-                  fetchpriority: 'high' %>
-  <% end %>
-
-  <% if @post.excerpt.present? %>
-    <p class="lead text-muted mb-4"><%= @post.excerpt %></p>
-  <% end %>
-
-  <div class="post-body">
-    <%= @post.body %>
-  </div>
-
-  <% if @related.any? %>
-    <hr class="my-5">
-    <h2 class="h5 fw-semibold mb-3">Sigue leyendo</h2>
-    <div class="row g-3">
-      <% @related.each do |related| %>
-        <article class="col-12 col-md-4">
-          <%= link_to post_path(related), class: 'text-decoration-none' do %>
-            <div class="card h-100 border-0 shadow-sm">
-              <div class="card-body">
-                <h3 class="h6 fw-semibold text-dark mb-1"><%= related.title %></h3>
-                <p class="small text-muted mb-0"><%= l related.published_at.to_date, format: :long %></p>
-              </div>
-            </div>
-          <% end %>
-        </article>
-      <% end %>
+<div class="post-wrapper" data-controller="post-toc">
+  <%# Table of contents — hidden by default; the controller un-hides it when ≥2 H2s exist %>
+  <details class="post-toc" data-post-toc-target="container" open hidden>
+    <summary>
+      <span><i class="fas fa-list-ul me-2"></i>Contenido</span>
+      <i class="fas fa-chevron-down d-lg-none"></i>
+    </summary>
+    <div class="post-toc-inner">
+      <div class="post-toc-title d-none d-lg-block">En este artículo</div>
+      <ol class="post-toc-list" data-post-toc-target="list"></ol>
     </div>
-  <% end %>
-</article>
+  </details>
+
+  <article class="post-main">
+    <nav aria-label="breadcrumb" class="mb-3">
+      <ol class="breadcrumb mb-0 small">
+        <li class="breadcrumb-item"><%= link_to 'Inicio', root_path, class: 'text-decoration-none' %></li>
+        <li class="breadcrumb-item"><%= link_to 'Blog', blog_path, class: 'text-decoration-none' %></li>
+        <li class="breadcrumb-item active" aria-current="page"><%= @post.title.truncate(40) %></li>
+      </ol>
+    </nav>
+
+    <header>
+      <h1 class="post-title"><%= @post.title %></h1>
+      <div class="post-byline">
+        <span class="post-byline-author">
+          <span class="post-byline-author-avatar"><%= @post.author_name.first&.upcase %></span>
+          <%= @post.author_name %>
+        </span>
+        <span class="post-byline-meta">
+          <i class="fas fa-calendar-day"></i>
+          <%= l @post.published_at.to_date, format: :long %>
+        </span>
+        <span class="post-byline-meta">
+          <i class="far fa-clock"></i>
+          <%= @post.reading_time_minutes %> min de lectura
+        </span>
+      </div>
+    </header>
+
+    <% if @post.cover_image.attached? %>
+      <%= image_tag @post.cover_image,
+                    alt: @post.title,
+                    class: 'post-cover',
+                    fetchpriority: 'high' %>
+    <% end %>
+
+    <% if @post.excerpt.present? %>
+      <p class="post-lead"><%= @post.excerpt %></p>
+    <% end %>
+
+    <div class="post-body" data-post-toc-target="body">
+      <%= @post.body %>
+    </div>
+
+    <%# Share row %>
+    <% share_text = "#{@post.title} — #{seo_site_name}" %>
+    <% share_url = post_url(@post) %>
+    <div class="post-share">
+      <span class="post-share-label"><i class="fas fa-share-alt me-1"></i>Compartir:</span>
+      <a class="post-share-btn is-wa" target="_blank" rel="noopener noreferrer"
+         href="https://wa.me/?text=<%= URI.encode_www_form_component("#{share_text} #{share_url}") %>"
+         title="Compartir por WhatsApp">
+        <i class="fab fa-whatsapp"></i>
+      </a>
+      <a class="post-share-btn is-x" target="_blank" rel="noopener noreferrer"
+         href="https://twitter.com/intent/tweet?text=<%= URI.encode_www_form_component(share_text) %>&url=<%= URI.encode_www_form_component(share_url) %>"
+         title="Compartir en X">
+        <i class="fab fa-x-twitter"></i>
+      </a>
+      <a class="post-share-btn is-fb" target="_blank" rel="noopener noreferrer"
+         href="https://www.facebook.com/sharer/sharer.php?u=<%= URI.encode_www_form_component(share_url) %>"
+         title="Compartir en Facebook">
+        <i class="fab fa-facebook-f"></i>
+      </a>
+      <button type="button" class="post-share-btn is-copy"
+              data-share-url="<%= share_url %>"
+              onclick="navigator.clipboard.writeText(this.dataset.shareUrl); this.innerHTML='<i class=&quot;fas fa-check&quot;></i>'; setTimeout(()=>{ this.innerHTML='<i class=&quot;fas fa-link&quot;></i>' }, 1500)"
+              title="Copiar enlace">
+        <i class="fas fa-link"></i>
+      </button>
+    </div>
+
+    <%# End-of-post CTA card %>
+    <aside class="post-cta">
+      <div class="post-cta-eyebrow">Pasatiempos a Escala</div>
+      <h2 class="post-cta-title">Encuentra los modelos de este artículo</h2>
+      <p class="post-cta-text">Importación directa desde Japón, empaque original sellado, envío a todo México y asesoría personalizada por WhatsApp.</p>
+      <div class="post-cta-actions">
+        <%= link_to catalog_path, class: 'btn btn-danger' do %>
+          <i class="fas fa-store me-1"></i>Ver catálogo
+        <% end %>
+        <a href="https://wa.me/<%= Rails.configuration.whatsapp_number %>?text=<%= URI.encode_www_form_component('Hola, vengo del blog y tengo una duda.') %>"
+           class="btn btn-outline-success" target="_blank" rel="noopener noreferrer">
+          <i class="fab fa-whatsapp me-1"></i>Pregunta por WhatsApp
+        </a>
+      </div>
+    </aside>
+
+    <% if @related.any? %>
+      <hr class="my-5">
+      <h2 class="h5 fw-semibold mb-3">Sigue leyendo</h2>
+      <div class="row g-3">
+        <% @related.each do |related| %>
+          <article class="col-12 col-md-4">
+            <%= link_to post_path(related), class: 'text-decoration-none' do %>
+              <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                  <h3 class="h6 fw-semibold text-dark mb-1"><%= related.title %></h3>
+                  <p class="small text-muted mb-0"><%= l related.published_at.to_date, format: :long %></p>
+                </div>
+              </div>
+            <% end %>
+          </article>
+        <% end %>
+      </div>
+    <% end %>
+  </article>
+</div>

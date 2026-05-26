@@ -34,6 +34,15 @@ class Post < ApplicationRecord
     user&.name.presence || user&.email&.split('@')&.first || 'Pasatiempos a Escala'
   end
 
+  # Approximate reading time in minutes from the body's word count.
+  # Uses 220 wpm (Spanish reading average) and rounds up so a 1-word
+  # post still reports "1 min".
+  def reading_time_minutes
+    text = body.to_plain_text.to_s
+    words = text.split(/\s+/).reject(&:empty?).size
+    [(words / 220.0).ceil, 1].max
+  end
+
   private
 
   def apply_body_html_raw
