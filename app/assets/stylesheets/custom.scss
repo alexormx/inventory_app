@@ -1235,6 +1235,32 @@ input[type="number"] {
 }
 #flash-stack .flash-message .btn-close:hover { opacity: .9; }
 
+/* Cart "added to cart" rich toast — product thumb + name + Ver CTA */
+#flash-stack .flash-message--cart {
+  border-radius: .75rem;
+  background: #fff;
+  border: 1px solid rgba(40, 167, 69, .25);
+  padding: .5rem .65rem;
+  min-width: 280px;
+  max-width: 380px;
+}
+#flash-stack .flash-message--cart .cart-toast-thumb {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  border-radius: 6px;
+  background: #f8f9fa;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#flash-stack .flash-message--cart .min-width-0 { min-width: 0; }
+@media (max-width: 575.98px) {
+  #flash-stack .flash-message--cart { min-width: 0; }
+  #flash-stack .flash-message--cart .cart-toast-thumb { width: 36px; height: 36px; }
+}
+
 /* Evitar solapamiento con botón de WhatsApp: si coincide, desplazar stack */
 @media (max-width: 575.98px) {
   #flash-stack.flash-stack { right: .75rem; left: .75rem; width:auto; }

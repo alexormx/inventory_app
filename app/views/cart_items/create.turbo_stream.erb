@@ -1,5 +1,36 @@
-<!-- Flash success message (append stack) -->
+<%# Rich "added to cart" toast: product thumb + name + Ver carrito CTA.
+    Falls back to a plain alert when the message isn't a successful add
+    (e.g. stock or limit errors) — we detect by absence of @product. %>
+<% if flash[:notice].present? && @product %>
+  <%= turbo_stream.append 'flash-stack' do %>
+    <div class="alert alert-success alert-dismissible fade show flash-message flash-message--cart shadow" role="alert" data-timeout="4000">
+      <div class="d-flex align-items-center gap-2">
+        <% if @product.product_images.attached? %>
+          <%= image_tag url_for(@product.primary_product_image),
+                        alt: '',
+                        class: 'cart-toast-thumb',
+                        loading: 'lazy' %>
+        <% else %>
+          <div class="cart-toast-thumb cart-toast-thumb--empty"><i class="fas fa-image text-muted"></i></div>
+        <% end %>
+        <div class="flex-grow-1 min-width-0">
+          <div class="fw-semibold small text-success">
+            <i class="fas fa-check-circle me-1"></i>Agregado al carrito
+          </div>
+          <div class="small text-dark text-truncate"><%= @product.product_name %></div>
+        </div>
+        <%= link_to cart_path, class: 'btn btn-sm btn-success flex-shrink-0', data: { turbo_frame: '_top' } do %>
+          <i class="fas fa-shopping-cart me-1"></i>Ver
+        <% end %>
+        <button type="button" class="btn-close ms-1" aria-label="Cerrar"></button>
+      </div>
+    </div>
+  <% end %>
+<% end %>
+
+<%# Alert flashes (stock/limit errors) keep the plain text format. %>
 <% flash.each do |key, message| %>
+  <% next if key.to_s == 'notice' && @product %>
   <%= turbo_stream.append 'flash-stack' do %>
     <div class="alert <%= bootstrap_class_for(key) %> alert-dismissible fade show flash-message shadow" role="alert" data-timeout="3000" style="border-radius:.65rem; backdrop-filter: blur(6px); margin-top:.5rem;">
       <div class="d-flex align-items-start">

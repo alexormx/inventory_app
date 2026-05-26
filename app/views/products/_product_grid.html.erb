@@ -178,16 +178,39 @@
       <div class="empty-state-icon mb-4">
         <i class="fas fa-box-open fa-4x text-muted"></i>
       </div>
-      <h4 class="fw-semibold mb-2">No se encontraron productos</h4>
-      <% if @q.present? %>
-        <p class="text-muted mb-3">No encontramos productos que coincidan con "<strong><%= @q %></strong>".</p>
+
+      <%# Context-aware headline + sub %>
+      <% if @q.present? && filter_state.has_filters %>
+        <h4 class="fw-semibold mb-2">Sin resultados</h4>
+        <p class="text-muted mb-3">
+          No encontramos productos que coincidan con <strong>"<%= @q %>"</strong> y los filtros activos.
+        </p>
+      <% elsif @q.present? %>
+        <h4 class="fw-semibold mb-2">Sin resultados para tu búsqueda</h4>
+        <p class="text-muted mb-3">
+          Probamos con <strong>"<%= @q %>"</strong> y no apareció nada. Revisa la ortografía o usa términos más generales.
+        </p>
       <% else %>
-        <p class="text-muted mb-3">No hay productos disponibles con los filtros seleccionados.</p>
+        <h4 class="fw-semibold mb-2">Ningún producto con estos filtros</h4>
+        <p class="text-muted mb-3">
+          Ajusta los filtros para ampliar tu búsqueda. Algunos productos pueden estar en preventa o sobre pedido.
+        </p>
       <% end %>
 
+      <%# Primary recovery actions — clear filters takes priority when filters are active %>
       <div class="empty-state-actions d-flex flex-wrap justify-content-center gap-2 mb-4">
-        <%= link_to catalog_path, class: "btn btn-danger", data: { turbo_frame: "_top" } do %>
-          <i class="fas fa-redo me-1"></i>Ver todos los productos
+        <% if filter_state.has_filters || @q.present? %>
+          <%= link_to catalog_path, class: "btn btn-danger", data: { turbo_frame: "_top" } do %>
+            <i class="fas fa-times-circle me-1"></i>Limpiar filtros
+          <% end %>
+          <a href="https://wa.me/<%= Rails.configuration.whatsapp_number %>?text=<%= URI.encode_www_form_component("Hola, busco un producto específico que no aparece en el catálogo. ¿Pueden ayudarme?") %>"
+             class="btn btn-outline-success" target="_blank" rel="noopener noreferrer">
+            <i class="fab fa-whatsapp me-1"></i>Pregunta por WhatsApp
+          </a>
+        <% else %>
+          <%= link_to catalog_path, class: "btn btn-danger", data: { turbo_frame: "_top" } do %>
+            <i class="fas fa-redo me-1"></i>Ver todo el catálogo
+          <% end %>
         <% end %>
       </div>
 
@@ -195,7 +218,7 @@
       <% suggestion_categories = (defined?(@top_categories) && @top_categories.presence) || (@all_categories || []).first(4) %>
       <% if suggestion_categories.present? %>
         <div class="empty-state-suggestions mt-4 pt-4 border-top">
-          <p class="text-muted small mb-3">¿Buscas algo específico? Explora nuestras categorías:</p>
+          <p class="text-muted small mb-3">O explora por categoría:</p>
           <div class="d-flex flex-wrap justify-content-center gap-2">
             <% suggestion_categories.each do |cat| %>
               <%= link_to catalog_path(categories: [cat]), class: "btn btn-outline-secondary btn-sm", data: { turbo_frame: "_top" } do %>
