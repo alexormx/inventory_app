@@ -89,7 +89,14 @@
     panel.classList.remove('show');
     panel.setAttribute('aria-hidden', 'true');
     document.body.style.overflow = '';
-    if(backdrop){ backdrop.classList.remove('show'); }
+    // Bootstrap's CSS for .offcanvas-backdrop has no pointer-events: none
+    // when .show is absent — opacity goes to 0 but the element still
+    // intercepts every click. Remove the element outright on close
+    // (matches Bootstrap's own offcanvas behavior). Next open recreates it.
+    if(backdrop){
+      backdrop.remove();
+      backdrop = null;
+    }
     if(panel.__onEsc){ document.removeEventListener('keydown', panel.__onEsc); panel.__onEsc = null; }
   }
 
@@ -181,6 +188,19 @@
     if(e.key === 'Escape') closeAllDropdowns();
   });
 
+  // Clean up offcanvas state before each Turbo navigation so a backdrop
+  // can't leak into the next page and block clicks.
+  function cleanupOffcanvas(){
+    document.querySelectorAll('.offcanvas.show').forEach(p => {
+      p.classList.remove('show');
+      p.setAttribute('aria-hidden', 'true');
+    });
+    document.querySelectorAll('.offcanvas-backdrop, [data-offcanvas-backdrop]').forEach(el => el.remove());
+    document.body.style.overflow = '';
+    backdrop = null;
+  }
+
   document.addEventListener('turbo:load', ready);
+  document.addEventListener('turbo:before-render', cleanupOffcanvas);
   document.addEventListener('turbo:render', ()=>{ initCollapse(); initOffcanvas(); initTabs(); initDropdowns(); });
 })();
