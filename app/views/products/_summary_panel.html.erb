@@ -3,6 +3,17 @@
   <div class="card-body d-flex flex-column gap-3">
     <div>
       <h1 class="h3 fw-bold mb-1"><%= product.product_name %></h1>
+      <% if product.approved_reviews_count.positive? %>
+        <a href="#reseñas" class="text-decoration-none small d-inline-flex align-items-center gap-1 mb-1">
+          <span class="text-warning" aria-hidden="true">
+            <% 5.times do |i| %>
+              <i class="fa-solid fa-star <%= 'opacity-25' if i >= product.approved_reviews_average.to_f.round %>"></i>
+            <% end %>
+          </span>
+          <span class="fw-bold text-dark"><%= product.approved_reviews_average %></span>
+          <span class="text-muted">· <%= product.approved_reviews_count %> reseñas</span>
+        </a>
+      <% end %>
       <div class="text-muted small d-flex flex-wrap gap-3">
         <span>Marca: <strong><%= product.brand %></strong></span>
         <% if product.series.present? %>

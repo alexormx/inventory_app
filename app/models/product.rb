@@ -20,6 +20,18 @@ class Product < ApplicationRecord
   has_many :description_drafts, class_name: "ProductDescriptionDraft", dependent: :destroy
   has_one :supplier_catalog_item, dependent: :nullify
   has_one :product_catalog_review, dependent: :destroy
+  has_many :reviews, dependent: :destroy
+
+  # Aggregate helpers for approved reviews — used by both the product
+  # page summary and the AggregateRating JSON-LD schema. Cached in
+  # memo so multiple calls per request hit the DB once.
+  def approved_reviews_count
+    @approved_reviews_count ||= reviews.approved.count
+  end
+
+  def approved_reviews_average
+    @approved_reviews_average ||= reviews.approved.average(:rating)&.to_f&.round(1)
+  end
 
   # --- Financial & status defaults ---
   after_initialize :set_default_financial_fields, if: :new_record?

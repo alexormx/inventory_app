@@ -1,0 +1,112 @@
+<h2 class="mb-3 d-flex align-items-center gap-2">
+  <i class="fa-solid fa-comments text-primary"></i> Reseñas de Productos
+</h2>
+
+<%# Filter tabs %>
+<ul class="nav nav-tabs mb-3">
+  <% %w[pending approved rejected all].each do |status| %>
+    <li class="nav-item">
+      <%= link_to admin_reviews_path(status: status),
+                  class: "nav-link #{'active' if @status_filter == status}" do %>
+        <%= status.capitalize %>
+        <span class="badge bg-secondary ms-1"><%= @counts[status.to_sym] %></span>
+      <% end %>
+    </li>
+  <% end %>
+</ul>
+
+<% if @reviews.any? %>
+  <div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th class="ps-3">Producto</th>
+              <th>Rating</th>
+              <th>Usuario</th>
+              <th>Reseña</th>
+              <th>Estado</th>
+              <th class="text-end pe-3">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @reviews.each do |review| %>
+              <tr>
+                <td class="ps-3" style="max-width: 200px;">
+                  <%= link_to review.product.product_name, product_path(review.product),
+                              target: '_blank', class: 'text-decoration-none small fw-semibold text-truncate d-inline-block', style: 'max-width: 200px;' %>
+                  <br>
+                  <small class="text-muted"><%= review.product.brand %></small>
+                </td>
+                <td>
+                  <span class="text-warning">
+                    <% 5.times do |i| %>
+                      <i class="fa-solid fa-star <%= 'opacity-25' if i >= review.rating %>"></i>
+                    <% end %>
+                  </span>
+                  <br>
+                  <small class="text-muted"><%= review.rating %>/5</small>
+                </td>
+                <td style="max-width: 150px;">
+                  <small class="d-block fw-semibold text-truncate"><%= review.user.name.presence || review.user.email %></small>
+                  <% if review.verified_purchase %>
+                    <span class="badge bg-success-subtle text-success extra-small">
+                      <i class="fas fa-check-circle me-1"></i>Compra verificada
+                    </span>
+                  <% end %>
+                  <br>
+                  <small class="text-muted"><%= l review.created_at.to_date, format: :long %></small>
+                </td>
+                <td style="max-width: 320px;">
+                  <% if review.title.present? %>
+                    <strong class="d-block small"><%= review.title %></strong>
+                  <% end %>
+                  <small style="white-space: pre-line;"><%= review.body %></small>
+                </td>
+                <td>
+                  <% case review.status %>
+                  <% when 'pending' %>
+                    <span class="badge bg-warning text-dark">Pendiente</span>
+                  <% when 'approved' %>
+                    <span class="badge bg-success">Aprobada</span>
+                  <% when 'rejected' %>
+                    <span class="badge bg-secondary">Rechazada</span>
+                  <% end %>
+                </td>
+                <td class="text-end pe-3">
+                  <% unless review.approved? %>
+                    <%= button_to approve_admin_review_path(review), method: :patch,
+                                  class: 'btn btn-sm btn-success me-1', form: { style: 'display:inline-block' } do %>
+                      <i class="fas fa-check"></i>
+                    <% end %>
+                  <% end %>
+                  <% unless review.rejected? %>
+                    <%= button_to reject_admin_review_path(review), method: :patch,
+                                  class: 'btn btn-sm btn-warning me-1', form: { style: 'display:inline-block' } do %>
+                      <i class="fas fa-ban"></i>
+                    <% end %>
+                  <% end %>
+                  <%= button_to admin_review_path(review), method: :delete,
+                                class: 'btn btn-sm btn-outline-danger',
+                                data: { turbo_confirm: '¿Eliminar definitivamente esta reseña?' },
+                                form: { style: 'display:inline-block' } do %>
+                    <i class="fas fa-trash"></i>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="p-3 border-top">
+      <%= paginate @reviews %>
+    </div>
+  </div>
+<% else %>
+  <div class="alert alert-light border text-center py-5">
+    <i class="fas fa-inbox fa-2x text-muted mb-2"></i>
+    <p class="text-muted mb-0">No hay reseñas <%= @status_filter == 'all' ? 'aún' : "con estado «#{@status_filter}»" %>.</p>
+  </div>
+<% end %>

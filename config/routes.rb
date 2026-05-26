@@ -54,6 +54,12 @@ Rails.application.routes.draw do
     get  'preorders_audit', to: 'preorders_audits#index', as: :preorders_audit
     post 'preorders_audit/fix', to: 'preorders_audits#fix', as: :preorders_audits_fix
     resources :visitor_logs, only: [:index]
+    resources :reviews, only: %i[index destroy] do
+      member do
+        patch :approve
+        patch :reject
+      end
+    end
 
     # Inventory Management views
     get 'inventory', to: 'inventory#index', as: :inventory
@@ -320,7 +326,9 @@ Rails.application.routes.draw do
   get '/marca/:brand_slug', to: 'products#brand', as: :brand_landing
   get '/categoria/:category_slug', to: 'products#category', as: :category_landing
   get '/serie/:series_slug', to: 'products#series', as: :series_landing
-  resources :products, only: [:show]
+  resources :products, only: [:show] do
+    resources :reviews, only: [:create]
+  end
 
   # Shopping Cart routes
   resources :cart_items, only: %i[create update destroy]

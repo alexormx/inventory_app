@@ -1,0 +1,111 @@
+<%# Reviews section for a product. Renders:
+    1. Aggregate summary (avg rating + count of approved)
+    2. List of approved reviews
+    3. Inline submission form (for signed-in users who haven't reviewed yet)
+       or a CTA to sign in.
+%>
+<div class="card border-0 shadow-sm mt-4" id="reseñas">
+  <div class="card-body">
+    <div class="d-flex flex-wrap align-items-baseline gap-3 mb-3">
+      <h2 class="h5 fw-semibold mb-0">
+        <i class="fas fa-comments text-primary me-2"></i>Reseñas
+      </h2>
+      <% if product.approved_reviews_count.positive? %>
+        <div class="d-flex align-items-center gap-2">
+          <span class="text-warning" aria-hidden="true">
+            <% 5.times do |i| %>
+              <i class="fa-solid fa-star <%= 'opacity-25' if i >= product.approved_reviews_average.to_f.round %>"></i>
+            <% end %>
+          </span>
+          <span class="fw-bold"><%= product.approved_reviews_average %></span>
+          <span class="text-muted small">· <%= pluralize(product.approved_reviews_count, 'reseña', plural: 'reseñas') %></span>
+        </div>
+      <% else %>
+        <span class="text-muted small">Aún no hay reseñas. Sé el primero en compartir tu opinión.</span>
+      <% end %>
+    </div>
+
+    <%# List of approved reviews %>
+    <% approved_reviews = product.reviews.visible.includes(:user).limit(20) %>
+    <% if approved_reviews.any? %>
+      <div class="list-group list-group-flush mb-4">
+        <% approved_reviews.each do |review| %>
+          <article class="list-group-item px-0">
+            <header class="d-flex flex-wrap align-items-center gap-2 mb-1">
+              <span class="text-warning small" aria-label="<%= review.rating %> de 5 estrellas">
+                <% 5.times do |i| %>
+                  <i class="fa-solid fa-star <%= 'opacity-25' if i >= review.rating %>"></i>
+                <% end %>
+              </span>
+              <% if review.title.present? %>
+                <strong class="ms-1"><%= review.title %></strong>
+              <% end %>
+              <% if review.verified_purchase %>
+                <span class="badge bg-success-subtle text-success">
+                  <i class="fas fa-check-circle me-1"></i>Compra verificada
+                </span>
+              <% end %>
+            </header>
+            <p class="mb-1 small" style="white-space: pre-line;"><%= review.body %></p>
+            <footer class="text-muted extra-small">
+              <%= review.user.name.presence || review.user.email.split('@').first %>
+              · <%= l review.created_at.to_date, format: :long %>
+            </footer>
+          </article>
+        <% end %>
+      </div>
+    <% end %>
+
+    <%# Submission form / sign-in CTA %>
+    <% if user_signed_in? %>
+      <% existing_review = product.reviews.find_by(user_id: current_user.id) %>
+      <% if existing_review %>
+        <div class="alert alert-info mb-0 small">
+          <i class="fas fa-info-circle me-1"></i>
+          <% case existing_review.status %>
+          <% when 'pending' %>
+            Tu reseña está pendiente de moderación.
+          <% when 'approved' %>
+            Ya publicaste una reseña para este producto. ¡Gracias!
+          <% when 'rejected' %>
+            Tu reseña anterior no cumplió las políticas y no fue publicada.
+          <% end %>
+        </div>
+      <% else %>
+        <hr class="my-3">
+        <h3 class="h6 fw-semibold mb-3">Escribe tu reseña</h3>
+        <%= form_with model: Review.new, url: product_reviews_path(product), local: true, class: 'review-form' do |f| %>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold d-block mb-1">Calificación <span class="text-danger">*</span></label>
+            <div class="btn-group" role="group" aria-label="Calificación">
+              <% (1..5).each do |star| %>
+                <input type="radio" class="btn-check" name="review[rating]" id="rating_<%= star %>" value="<%= star %>" required>
+                <label class="btn btn-outline-warning" for="rating_<%= star %>" title="<%= star %> estrella<%= 's' if star > 1 %>">
+                  <i class="fa-solid fa-star"></i> <%= star %>
+                </label>
+              <% end %>
+            </div>
+          </div>
+          <div class="mb-3">
+            <%= f.label :title, 'Título (opcional)', class: 'form-label small fw-semibold' %>
+            <%= f.text_field :title, class: 'form-control form-control-sm', maxlength: 140, placeholder: 'Resume tu experiencia en una línea' %>
+          </div>
+          <div class="mb-3">
+            <%= f.label :body, 'Reseña', class: 'form-label small fw-semibold' %>
+            <span class="text-danger">*</span>
+            <%= f.text_area :body, class: 'form-control form-control-sm', rows: 4, required: true, minlength: 10, maxlength: 5000, placeholder: '¿Qué te pareció? ¿Calidad, detalles, empaque, envío…?' %>
+            <div class="form-text small">Mínimo 10 caracteres. Las reseñas se revisan antes de publicarse.</div>
+          </div>
+          <%= f.submit 'Enviar reseña', class: 'btn btn-danger btn-sm' %>
+        <% end %>
+      <% end %>
+    <% else %>
+      <hr class="my-3">
+      <p class="mb-0 small text-muted">
+        <%= link_to 'Inicia sesión', new_user_session_path, class: 'fw-semibold' %>
+        o <%= link_to 'crea una cuenta', new_user_registration_path, class: 'fw-semibold' %>
+        para escribir una reseña.
+      </p>
+    <% end %>
+  </div>
+</div>

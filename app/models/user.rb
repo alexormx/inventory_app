@@ -14,6 +14,7 @@ class User < ApplicationRecord
   has_many :purchase_orders, dependent: :restrict_with_error
   has_many :sale_orders, dependent: :restrict_with_error
   has_many :shipping_addresses, dependent: :destroy
+  has_many :reviews, dependent: :destroy
 
   validates :role, presence: true, inclusion: { in: %w[customer supplier admin] }
   validates :name, length: { maximum: 255 }

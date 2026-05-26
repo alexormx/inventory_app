@@ -82,6 +82,39 @@ module SeoHelper
       data['keywords'] = product.seo_keywords.join(', ')
     end
 
+    # AggregateRating + sample reviews (top 5 most recent approved).
+    # Only emit when at least one approved review exists — Google flags
+    # AggregateRating with ratingCount=0 as invalid structured data.
+    if product.approved_reviews_count.positive?
+      data['aggregateRating'] = {
+        '@type' => 'AggregateRating',
+        'ratingValue' => product.approved_reviews_average,
+        'reviewCount' => product.approved_reviews_count,
+        'bestRating' => 5,
+        'worstRating' => 1
+      }
+
+      data['review'] = product.reviews.visible.includes(:user).limit(5).map do |review|
+        {
+          '@type' => 'Review',
+          'reviewRating' => {
+            '@type' => 'Rating',
+            'ratingValue' => review.rating,
+            'bestRating' => 5,
+            'worstRating' => 1
+          },
+          'author' => {
+            '@type' => 'Person',
+            'name' => (review.user.name.presence || review.user.email.split('@').first)
+          },
+          'datePublished' => (review.approved_at || review.created_at).strftime('%Y-%m-%d'),
+          'reviewBody' => review.body
+        }.tap do |r|
+          r['name'] = review.title if review.title.present?
+        end
+      end
+    end
+
     tag.script(data.to_json.html_safe, type: 'application/ld+json')
   end
 
