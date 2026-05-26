@@ -121,6 +121,19 @@ class ProductsController < ApplicationController
               scope.left_joins(:sale_order_items)
                    .group('products.id')
                    .order(Arel.sql('COALESCE(SUM(sale_order_items.quantity), 0) DESC, products.created_at DESC'))
+            when 'reviews_desc'
+              # Mejor calificados: avg rating de reseñas aprobadas, luego volumen.
+              # Subquery (no LEFT JOIN) para evitar el problema de filtrar
+              # filas pendientes/rechazadas al agregar — productos sin
+              # reseñas aprobadas reciben COALESCE 0 y van al final.
+              approved = Review.statuses[:approved]
+              scope.order(Arel.sql(<<~SQL))
+                (SELECT COALESCE(AVG(rating), 0) FROM reviews
+                  WHERE product_id = products.id AND status = #{approved}) DESC,
+                (SELECT COUNT(*) FROM reviews
+                  WHERE product_id = products.id AND status = #{approved}) DESC,
+                products.created_at DESC
+              SQL
             else # newest (deterministic)
               scope.order(created_at: :desc, id: :desc)
             end
@@ -131,6 +144,12 @@ class ProductsController < ApplicationController
     product_ids = @products.map(&:id)
     @on_hand_counts = Inventory.where(product_id: product_ids, status: :available)
                                .group(:product_id).count
+    # Precalcular agregados de reseñas aprobadas para mostrar estrellas
+    # en cada card sin N+1.
+    approved_reviews = Review.approved.where(product_id: product_ids)
+    @review_counts = approved_reviews.group(:product_id).count
+    @review_averages = approved_reviews.group(:product_id).average(:rating)
+                                       .transform_values { |v| v.to_f.round(1) }
     # Para productos sin stock pero con piezas en tránsito, calcular la fecha
     # más próxima de llegada (de la PO con expected_delivery_date más temprana).
     products_without_stock = product_ids - @on_hand_counts.keys

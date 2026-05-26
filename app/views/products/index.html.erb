@@ -115,6 +115,7 @@
         <select name="sort" class="form-select form-select-sm sort-select" aria-label="Ordenar productos">
           <option value="newest" <%= 'selected' if @sort=='newest' %>>Más recientes</option>
           <option value="popular" <%= 'selected' if @sort=='popular' %>>Más vendidos</option>
+          <option value="reviews_desc" <%= 'selected' if @sort=='reviews_desc' %>>Mejor calificados</option>
           <option value="price_asc" <%= 'selected' if @sort=='price_asc' %>>Precio ↑</option>
           <option value="price_desc" <%= 'selected' if @sort=='price_desc' %>>Precio ↓</option>
           <option value="name_asc" <%= 'selected' if @sort=='name_asc' %>>Nombre A-Z</option>

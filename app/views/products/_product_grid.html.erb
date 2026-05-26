@@ -84,6 +84,19 @@
                    aria-label="Sujeto al tipo de cambio del día de la compra"></i>
               <% end %>
             </p>
+            <% review_count = @review_counts && @review_counts[product.id] %>
+            <% if review_count.to_i.positive? %>
+              <% review_avg = @review_averages[product.id] %>
+              <p class="catalog-card-rating small mb-1" aria-label="<%= review_avg %> de 5 estrellas, <%= review_count %> reseñas">
+                <span class="text-warning" aria-hidden="true">
+                  <% 5.times do |i| %>
+                    <i class="fa-solid fa-star <%= 'opacity-25' if i >= review_avg.round %>"></i>
+                  <% end %>
+                </span>
+                <strong class="text-dark ms-1"><%= review_avg %></strong>
+                <span class="text-muted">(<%= review_count %>)</span>
+              </p>
+            <% end %>
             <p class="catalog-card-meta text-muted">
               <% if product.brand.present? %>
                 <span class="catalog-brand"><%= product.brand %></span>
