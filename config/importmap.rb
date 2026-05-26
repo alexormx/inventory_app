@@ -12,3 +12,5 @@ pin_all_from 'app/javascript/components',  under: 'components'
 pin_all_from 'app/javascript/utilities',   under: 'utilities'
 pin_all_from 'app/javascript/dashboard',   under: 'dashboard'
 pin 'echarts', to: 'https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.esm.min.js'
+pin "trix"
+pin "@rails/actiontext", to: "actiontext.esm.js"

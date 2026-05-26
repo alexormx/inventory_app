@@ -56,6 +56,23 @@
     <priority>0.3</priority>
   </url>
 
+  <%# Blog index %>
+  <url>
+    <loc><%= blog_url %></loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <%# Blog posts (published, with published_at in the past) %>
+  <% Post.visible.find_each do |post| %>
+  <url>
+    <loc><%= post_url(post) %></loc>
+    <lastmod><%= post.updated_at.strftime('%Y-%m-%d') %></lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <% end %>
+
   <%# Productos activos %>
   <% Product.where(status: 'active').find_each do |product| %>
   <url>

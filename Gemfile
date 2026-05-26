@@ -49,7 +49,7 @@ gem 'faker'
 gem 'tzinfo-data', platforms: %i[mingw jruby]
 
 # ✅ Image Processing (Commented Out but Available)
-# gem "image_processing", "~> 1.2"  # ActiveStorage image transformations
+gem "image_processing", "~> 1.2"  # ActiveStorage image transformations
 
 # ✅ Internationalization for Devise
 gem 'devise-i18n', '~> 1.12' # Devise internationalization

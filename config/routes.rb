@@ -60,6 +60,12 @@ Rails.application.routes.draw do
         patch :reject
       end
     end
+    resources :posts do
+      member do
+        patch :publish
+        patch :unpublish
+      end
+    end
 
     # Inventory Management views
     get 'inventory', to: 'inventory#index', as: :inventory
@@ -371,6 +377,10 @@ Rails.application.routes.draw do
   # Static pages
   get '/aviso-de-privacidad', to: 'pages#privacy_notice', as: :privacy_notice
   get '/terminos-y-condiciones', to: 'pages#terms', as: :terms
+
+  # Public blog
+  get '/blog', to: 'posts#index', as: :blog
+  get '/blog/:id', to: 'posts#show', as: :post
 
   namespace :api do
     namespace :v1 do

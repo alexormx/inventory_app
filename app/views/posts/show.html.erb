@@ -1,0 +1,82 @@
+<% content_for :title, "#{@post.title} | Blog | #{seo_site_name}" %>
+<% content_for :meta_description, (@post.meta_description.presence || @post.excerpt.to_s.squish.truncate(280, separator: ' ').presence || "#{@post.title} — Blog de #{seo_site_name}") %>
+<% content_for :canonical_url, post_url(@post) %>
+<% if @post.cover_image.attached? %>
+  <% content_for :og_image, absolute_url(url_for(@post.cover_image)) %>
+<% end %>
+<% content_for :og_type, 'article' %>
+
+<%# Article JSON-LD %>
+<% content_for :head do %>
+  <% article_data = {
+       '@context' => 'https://schema.org',
+       '@type' => 'BlogPosting',
+       'headline' => @post.title,
+       'description' => (@post.meta_description.presence || @post.excerpt.to_s),
+       'datePublished' => @post.published_at&.iso8601,
+       'dateModified' => @post.updated_at.iso8601,
+       'author' => { '@type' => 'Person', 'name' => @post.author_name },
+       'publisher' => {
+         '@type' => 'Organization',
+         'name' => seo_site_name,
+         'logo' => { '@type' => 'ImageObject', 'url' => asset_url('logo.png') }
+       },
+       'mainEntityOfPage' => { '@type' => 'WebPage', '@id' => post_url(@post) }
+     } %>
+  <% article_data['image'] = absolute_url(url_for(@post.cover_image)) if @post.cover_image.attached? %>
+  <%= tag.script(article_data.to_json.html_safe, type: 'application/ld+json') %>
+<% end %>
+
+<article class="container py-4" style="max-width: 760px;">
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb mb-0 small">
+      <li class="breadcrumb-item"><%= link_to 'Inicio', root_path, class: 'text-decoration-none' %></li>
+      <li class="breadcrumb-item"><%= link_to 'Blog', blog_path, class: 'text-decoration-none' %></li>
+      <li class="breadcrumb-item active" aria-current="page"><%= @post.title.truncate(40) %></li>
+    </ol>
+  </nav>
+
+  <header class="mb-4">
+    <h1 class="fw-bold display-6 mb-3"><%= @post.title %></h1>
+    <p class="text-muted small mb-0">
+      <i class="fas fa-user-edit me-1"></i><%= @post.author_name %>
+      <span class="mx-2">·</span>
+      <i class="fas fa-calendar-day me-1"></i><%= l @post.published_at.to_date, format: :long %>
+    </p>
+  </header>
+
+  <% if @post.cover_image.attached? %>
+    <%= image_tag @post.cover_image,
+                  alt: @post.title,
+                  class: 'img-fluid rounded shadow-sm mb-4 w-100',
+                  style: 'max-height: 460px; object-fit: cover;',
+                  fetchpriority: 'high' %>
+  <% end %>
+
+  <% if @post.excerpt.present? %>
+    <p class="lead text-muted mb-4"><%= @post.excerpt %></p>
+  <% end %>
+
+  <div class="post-body">
+    <%= @post.body %>
+  </div>
+
+  <% if @related.any? %>
+    <hr class="my-5">
+    <h2 class="h5 fw-semibold mb-3">Sigue leyendo</h2>
+    <div class="row g-3">
+      <% @related.each do |related| %>
+        <article class="col-12 col-md-4">
+          <%= link_to post_path(related), class: 'text-decoration-none' do %>
+            <div class="card h-100 border-0 shadow-sm">
+              <div class="card-body">
+                <h3 class="h6 fw-semibold text-dark mb-1"><%= related.title %></h3>
+                <p class="small text-muted mb-0"><%= l related.published_at.to_date, format: :long %></p>
+              </div>
+            </div>
+          <% end %>
+        </article>
+      <% end %>
+    </div>
+  <% end %>
+</article>
