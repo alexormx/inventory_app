@@ -24,21 +24,48 @@
 
 <!-- ✨ HERO SECTION -->
 <section class="hero-section position-relative d-flex align-items-center text-white" style="min-height: 60vh; overflow: hidden;">
+  <%
+    hero_base = 'collection_shelf'
+    hero_widths = [480, 960, 1440]
+    hero_responsive_avif = hero_widths.all? { |w| asset_exists?("#{hero_base}-#{w}w.avif") }
+    hero_responsive_webp = hero_widths.all? { |w| asset_exists?("#{hero_base}-#{w}w.webp") }
+    hero_responsive_jpg  = hero_widths.all? { |w| asset_exists?("#{hero_base}-#{w}w.jpg") }
+    hero_sizes = '100vw'
+    hero_srcset = ->(ext) { hero_widths.map { |w| "#{asset_path("#{hero_base}-#{w}w.#{ext}")} #{w}w" }.join(', ') }
+  %>
   <picture class="hero-picture">
-    <% if asset_exists?('collection_shelf.avif') %>
-      <source type="image/avif" srcset="<%= asset_path('collection_shelf.avif') %>">
+    <%# Prefer responsive AVIF (smallest) when all widths exist on disk;
+        skip AVIF entirely if only the full-size 2.7MB version is present
+        so we don't trade responsive sizing for marginal format gains. %>
+    <% if hero_responsive_avif %>
+      <source type="image/avif" srcset="<%= hero_srcset.call('avif') %>" sizes="<%= hero_sizes %>">
     <% end %>
-    <% if asset_exists?('collection_shelf.webp') %>
-      <source type="image/webp" srcset="<%= asset_path('collection_shelf.webp') %>">
+    <% if hero_responsive_webp %>
+      <source type="image/webp" srcset="<%= hero_srcset.call('webp') %>" sizes="<%= hero_sizes %>">
+    <% elsif asset_exists?("#{hero_base}.webp") %>
+      <source type="image/webp" srcset="<%= asset_path("#{hero_base}.webp") %>">
     <% end %>
-    <%= image_tag 'collection_shelf.jpg',
-                  alt: '',
-                  class: 'hero-image',
-                  fetchpriority: 'high',
-                  loading: 'eager',
-                  decoding: 'async',
-                  width: 1920,
-                  height: 1080 %>
+    <% if hero_responsive_jpg %>
+      <%= image_tag "#{hero_base}-960w.jpg",
+                    alt: '',
+                    class: 'hero-image',
+                    srcset: hero_srcset.call('jpg'),
+                    sizes: hero_sizes,
+                    fetchpriority: 'high',
+                    loading: 'eager',
+                    decoding: 'async',
+                    width: 1440,
+                    height: 936 %>
+    <% else %>
+      <%= image_tag "#{hero_base}.jpg",
+                    alt: '',
+                    class: 'hero-image',
+                    fetchpriority: 'high',
+                    loading: 'eager',
+                    decoding: 'async',
+                    width: 1920,
+                    height: 1080 %>
+    <% end %>
   </picture>
   <div class="hero-overlay" aria-hidden="true"></div>
   <div class="container position-relative text-center" style="z-index: 2;">

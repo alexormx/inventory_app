@@ -73,25 +73,27 @@ module ApplicationHelper
               ])
   end
 
-  # Preload de la imagen LCP del home (hero). El <picture> en home/index
-  # ofrece avif/webp/jpg. Pre-cargamos solo la variante más pequeña que
-  # el browser realmente vaya a usar para evitar descargar las tres en
-  # paralelo: AVIF si existe (modernos lo soportan), WebP si no, JPG como
-  # último recurso. El atributo `type` hace que browsers sin soporte
-  # ignoren el preload.
+  # Preload de la imagen LCP del home (hero). Usa el patrón responsive
+  # preload (imagesrcset + imagesizes) para que el browser elija el ancho
+  # correcto según el viewport — móvil descarga ~50KB, escritorio ~325KB,
+  # en lugar de un único 2.5MB. Prefiere AVIF cuando existen variantes
+  # responsive, luego WebP, y skip si no hay nada.
   def lcp_preload_home_image
     base = 'collection_shelf'
-    [
-      ['image/avif', 'avif'],
-      ['image/webp', 'webp'],
-      ['image/jpeg', 'jpg']
-    ].each do |mime, ext|
-      file = "#{base}.#{ext}"
-      next unless asset_exists?(file)
+    widths = [480, 960, 1440]
 
-      return tag.link(rel: 'preload', as: 'image', href: asset_path(file),
-                      fetchpriority: 'high', type: mime)
+    %w[avif webp].each do |ext|
+      mime = ext == 'avif' ? 'image/avif' : 'image/webp'
+      next unless widths.all? { |w| asset_exists?("#{base}-#{w}w.#{ext}") }
+
+      srcset = widths.map { |w| "#{asset_path("#{base}-#{w}w.#{ext}")} #{w}w" }.join(', ')
+      return tag.link(rel: 'preload', as: 'image',
+                      imagesrcset: srcset,
+                      imagesizes: '100vw',
+                      type: mime,
+                      fetchpriority: 'high')
     end
+
     ''.html_safe
   end
 

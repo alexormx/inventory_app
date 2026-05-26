@@ -96,6 +96,42 @@ namespace :images do
     end
   end
 
+  # Imágenes a las que aplicaremos variantes responsive (-480w/-960w/-1440w).
+  # Útil para hero/LCP — el catálogo de productos usa ActiveStorage que ya
+  # genera variantes por demanda vía responsive_attachment_image.
+  RESPONSIVE_TARGETS = %w[collection_shelf.jpg].freeze
+  RESPONSIVE_WIDTHS  = [480, 960, 1440].freeze
+
+  desc 'Genera variantes responsive (-480w/-960w/-1440w) en JPG/WebP/AVIF'
+  task responsive_convert: :environment do
+    RESPONSIVE_TARGETS.each do |filename|
+      src = IMAGE_DIR.join(filename).to_s
+      unless File.exist?(src)
+        warn "[images:responsive_convert] missing source: #{src}"
+        next
+      end
+      base = src.sub(/\.(jpg|jpeg|png)$/i, '')
+      RESPONSIVE_WIDTHS.each do |w|
+        targets = [
+          [:jpg, "#{base}-#{w}w.jpg", { quality: 78, strip: true, interlace: true }],
+          [:webp, "#{base}-#{w}w.webp", { quality: 78, strip: true }]
+        ]
+        targets << [:avif, "#{base}-#{w}w.avif", { Q: 45, strip: true }] if avif_enabled?
+
+        targets.each do |fmt, dest, opts|
+          puts "→ #{File.basename(src)} @#{w}w -> #{File.basename(dest)}"
+          begin
+            pipeline = processor.source(src).resize_to_limit(w, nil).convert(fmt.to_s)
+            pipeline = pipeline.saver(opts)
+            pipeline.call(destination: dest)
+          rescue StandardError => e
+            warn "Error generando #{dest}: #{e.message}"
+          end
+        end
+      end
+    end
+  end
+
   desc 'Reporte de tamaños y ahorro estimado (si .webp/.avif existen)'
   task report: :environment do
     summary = []
@@ -132,4 +168,6 @@ end
 Rake::Task['assets:precompile'].enhance do
   puts '[images] Ejecutando conversión a WebP/AVIF durante assets:precompile'
   Rake::Task['images:convert'].invoke
+  puts '[images] Generando variantes responsive para imágenes LCP'
+  Rake::Task['images:responsive_convert'].invoke
 end
