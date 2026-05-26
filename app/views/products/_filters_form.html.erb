@@ -1,7 +1,13 @@
 <%# La lógica de filtros ahora está centralizada en FilterParamsHelper#filter_state %>
 <% is_mobile = suffix.to_s == 'Mobile' %>
-<% list_expanded = is_mobile ? '' : 'show' %>
-<% list_aria_expanded = is_mobile ? 'false' : 'true' %>
+<%# Compute per-section expand state. Sections start collapsed on mobile
+    always, and on desktop when they have many items AND no active filter
+    in that section — keeps the sidebar from being a tall wall of
+    checkboxes. User can expand manually any time. %>
+<% should_expand = ->(active:, item_count:) { active || (!is_mobile && item_count <= 12) } %>
+<% categories_open = should_expand.call(active: filter_state.selected_categories.any?, item_count: @all_categories.to_a.size) %>
+<% brands_open     = should_expand.call(active: filter_state.selected_brands.any?,     item_count: @all_brands.to_a.size) %>
+<% series_open     = should_expand.call(active: filter_state.selected_series.any?,     item_count: @all_series.to_a.size) %>
 
 <%= form_with url: catalog_path, method: :get, data: {
   turbo_frame: "_top",
@@ -122,7 +128,7 @@
   <% if @all_categories.present? %>
   <div class="filter-block mb-3" data-controller="filter-list">
     <h6 class="fw-semibold small text-uppercase text-muted mb-2">
-      <a class="text-decoration-none text-muted d-flex align-items-center justify-content-between" data-bs-toggle="collapse" href="#filterCategories<%= suffix %>" role="button" aria-expanded="<%= list_aria_expanded %>" aria-controls="filterCategories<%= suffix %>">
+      <a class="text-decoration-none text-muted d-flex align-items-center justify-content-between" data-bs-toggle="collapse" href="#filterCategories<%= suffix %>" role="button" aria-expanded="<%= categories_open %>" aria-controls="filterCategories<%= suffix %>">
         Categorías
         <span>
           <% if filter_state.selected_categories.any? %>
@@ -132,7 +138,7 @@
         </span>
       </a>
     </h6>
-    <div class="collapse <%= list_expanded %>" id="filterCategories<%= suffix %>">
+    <div class="collapse <%= 'show' if categories_open %>" id="filterCategories<%= suffix %>">
       <% if @all_categories.size > 8 %>
         <input type="search" class="form-control form-control-sm filter-search mb-2" placeholder="Buscar categoría..."
                data-filter-list-target="search" data-action="input->filter-list#filter" aria-label="Buscar categoría">
@@ -157,7 +163,7 @@
   <% if @all_brands.present? %>
   <div class="filter-block mb-3" data-controller="filter-list">
     <h6 class="fw-semibold small text-uppercase text-muted mb-2">
-      <a class="text-decoration-none text-muted d-flex align-items-center justify-content-between" data-bs-toggle="collapse" href="#filterBrands<%= suffix %>" role="button" aria-expanded="<%= list_aria_expanded %>" aria-controls="filterBrands<%= suffix %>">
+      <a class="text-decoration-none text-muted d-flex align-items-center justify-content-between" data-bs-toggle="collapse" href="#filterBrands<%= suffix %>" role="button" aria-expanded="<%= brands_open %>" aria-controls="filterBrands<%= suffix %>">
         Marcas
         <span>
           <% if filter_state.selected_brands.any? %>
@@ -167,7 +173,7 @@
         </span>
       </a>
     </h6>
-    <div class="collapse <%= list_expanded %>" id="filterBrands<%= suffix %>">
+    <div class="collapse <%= 'show' if brands_open %>" id="filterBrands<%= suffix %>">
       <% if @all_brands.size > 8 %>
         <input type="search" class="form-control form-control-sm filter-search mb-2" placeholder="Buscar marca..."
                data-filter-list-target="search" data-action="input->filter-list#filter" aria-label="Buscar marca">
@@ -192,7 +198,7 @@
   <% if @all_series.present? %>
   <div class="filter-block mb-3" data-controller="filter-list">
     <h6 class="fw-semibold small text-uppercase text-muted mb-2">
-      <a class="text-decoration-none text-muted d-flex align-items-center justify-content-between" data-bs-toggle="collapse" href="#filterSeries<%= suffix %>" role="button" aria-expanded="<%= list_aria_expanded %>" aria-controls="filterSeries<%= suffix %>">
+      <a class="text-decoration-none text-muted d-flex align-items-center justify-content-between" data-bs-toggle="collapse" href="#filterSeries<%= suffix %>" role="button" aria-expanded="<%= series_open %>" aria-controls="filterSeries<%= suffix %>">
         Series
         <span>
           <% if filter_state.selected_series.any? %>
@@ -202,7 +208,7 @@
         </span>
       </a>
     </h6>
-    <div class="collapse <%= list_expanded %>" id="filterSeries<%= suffix %>">
+    <div class="collapse <%= 'show' if series_open %>" id="filterSeries<%= suffix %>">
       <% if @all_series.size > 8 %>
         <input type="search" class="form-control form-control-sm filter-search mb-2" placeholder="Buscar serie..."
                data-filter-list-target="search" data-action="input->filter-list#filter" aria-label="Buscar serie">

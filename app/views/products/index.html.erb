@@ -88,7 +88,9 @@
     </div>
     <%# Toggle + sort en un mismo grupo a la derecha %>
     <div class="catalog-header-actions d-flex flex-wrap align-items-center gap-2">
-      <div class="btn-group view-toggle" role="group" aria-label="Cambiar vista">
+      <%# View toggle is hidden on mobile — grid vs list looks nearly
+          identical at 2-col width and just consumes header space. %>
+      <div class="btn-group view-toggle d-none d-md-flex" role="group" aria-label="Cambiar vista">
         <button type="button" class="btn btn-outline-secondary btn-sm active" data-action="click->catalog-view#setGrid" data-catalog-view-target="gridBtn" title="Vista cuadrícula">
           <i class="fas fa-th"></i>
         </button>
