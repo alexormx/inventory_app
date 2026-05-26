@@ -63,6 +63,19 @@
     </div>
   </div>
 
+  <%# Recently viewed strip — hydrated client-side from localStorage.
+      Hidden by default; the controller un-hides it when entries exist. %>
+  <section class="recently-viewed mb-3" data-controller="recently-viewed"
+           data-recently-viewed-mode-value="display"
+           aria-label="Vistos recientemente" hidden>
+    <div class="d-flex align-items-baseline justify-content-between mb-2">
+      <h2 class="h6 fw-semibold mb-0 text-muted">
+        <i class="fas fa-clock-rotate-left me-1" aria-hidden="true"></i>Vistos recientemente
+      </h2>
+    </div>
+    <div class="recently-viewed-track" data-recently-viewed-target="container"></div>
+  </section>
+
   <div class="catalog-header mb-3">
     <%# Breadcrumb integrado como eyebrow del header %>
     <nav aria-label="breadcrumb" class="catalog-header-breadcrumb">

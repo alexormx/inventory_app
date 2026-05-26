@@ -40,6 +40,7 @@ import CatalogItemSearchController from "./catalog_item_search_controller"
 import CatalogReviewController from "./catalog_review_controller"
 import FilterListController from "./filter_list_controller"
 import BackToTopController from "./back_to_top_controller"
+import RecentlyViewedController from "./recently_viewed_controller"
 
 application.register("audit-progress", AuditProgressController)
 application.register("cart-item", CartItemController)
@@ -79,6 +80,7 @@ application.register("catalog-item-search", CatalogItemSearchController)
 application.register("catalog-review", CatalogReviewController)
 application.register("filter-list", FilterListController)
 application.register("back-to-top", BackToTopController)
+application.register("recently-viewed", RecentlyViewedController)
 
 // Export opcional para debugging
 window.Stimulus = application

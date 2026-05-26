@@ -84,6 +84,17 @@
   overflow: hidden;
   position: relative;
 }
+/* Baseline min-height keeps cards from being jagged across rows.
+   Within a row Bootstrap's flex stretches cards to equal height; this
+   gives the GRID an even visual rhythm even when one card has rating
+   + ETA + new badge and another has none. h-100 still wins when a
+   card's natural content is taller. */
+@media (min-width: 576px) {
+  #catalog .catalog-item { min-height: 380px; }
+}
+@media (min-width: 1400px) {
+  #catalog .catalog-item { min-height: 410px; }
+}
 #catalog .catalog-item.hover-lift:hover {
   transform: translateY(-4px);
   box-shadow: 0 6px 18px rgba(15,23,42,0.08), 0 2px 6px rgba(15,23,42,0.05) !important;
@@ -341,6 +352,84 @@
   }
   .active-filters-chips::-webkit-scrollbar { height: 6px; }
   .active-filters-chips::-webkit-scrollbar-thumb { background: #ced4da; border-radius: 3px; }
+}
+
+/* Recently viewed strip (hydrated from localStorage on the catalog page).
+   Horizontal scroll, compact cards. Hidden by JS when no entries exist
+   so SSR markup never shows an empty box. */
+.recently-viewed[hidden] { display: none !important; }
+.recently-viewed-track {
+  display: flex;
+  gap: .65rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: .25rem .25rem .5rem;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scroll-snap-type: x proximity;
+}
+.recently-viewed-track::-webkit-scrollbar { height: 6px; }
+.recently-viewed-track::-webkit-scrollbar-thumb { background: #ced4da; border-radius: 3px; }
+
+.recently-viewed-card {
+  flex: 0 0 auto;
+  width: 132px;
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  gap: .35rem;
+  padding: .5rem;
+  background: #fff;
+  border: 1px solid #eef0f2;
+  border-radius: 10px;
+  text-decoration: none;
+  color: inherit;
+  transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+}
+.recently-viewed-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px -6px rgba(15,23,42,.18);
+  border-color: rgba(220,53,69,.3);
+  color: inherit;
+}
+.recently-viewed-thumb {
+  width: 100%;
+  height: 80px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.recently-viewed-thumb img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+.recently-viewed-meta {
+  display: flex;
+  flex-direction: column;
+  gap: .15rem;
+  min-width: 0;
+}
+.recently-viewed-name {
+  font-size: .78rem;
+  line-height: 1.25;
+  font-weight: 500;
+  color: #2c3e50;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.recently-viewed-price {
+  font-size: .78rem;
+  line-height: 1.2;
+}
+@media (max-width: 575.98px) {
+  .recently-viewed-card { width: 112px; }
+  .recently-viewed-thumb { height: 70px; }
 }
 
 /* Loading state for the products grid Turbo frame. Turbo sets [busy]

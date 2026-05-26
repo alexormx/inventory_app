@@ -12,6 +12,17 @@
   <%= breadcrumb_json_ld(product_breadcrumbs(@product)) %>
 <% end %>
 
+<%# Recently-viewed tracker: silently pushes this product into localStorage
+    so it appears in the strip on the next catalog visit. No DOM output. %>
+<div data-controller="recently-viewed"
+     data-recently-viewed-mode-value="track"
+     data-recently-viewed-slug-value="<%= @product.slug %>"
+     data-recently-viewed-name-value="<%= @product.product_name %>"
+     data-recently-viewed-image-value="<%= @product.product_images.attached? ? absolute_url(url_for(@product.primary_product_image)) : '' %>"
+     data-recently-viewed-price-value="<%= number_to_currency(@product.selling_price) %>"
+     data-recently-viewed-product-path-value="<%= product_path(@product) %>"
+     style="display:none"></div>
+
 <div class="container py-4 product-show" data-controller="productMeta">
   <!-- Breadcrumbs -->
   <nav aria-label="breadcrumb" class="mb-3">
