@@ -23,48 +23,56 @@
       <div class="form-text small">Máximo 500 caracteres. Vacío para usar el inicio del cuerpo.</div>
     </div>
 
+    <%# Editor con dos modos persistidos por post. El modo se guarda en
+        post.editor_mode; al reabrir, el toggle y el contenido visible
+        reflejan el modo con el que se guardó por última vez. %>
+    <% html_mode = post.editor_html? %>
     <div data-controller="editor-mode">
       <%= f.label :body, 'Contenido', class: 'form-label fw-semibold small' %>
 
-      <%# Mode switcher: pick ONE input. Trix WYSIWYG by default; toggle
-          to HTML directo when you have HTML ready (e.g. from AI). %>
       <div class="btn-group btn-group-sm mb-2 d-flex" role="group" aria-label="Modo de edición">
-        <input type="radio" class="btn-check" name="editor_mode_choice" id="editor_mode_wysiwyg" autocomplete="off" checked
+        <input type="radio" class="btn-check" name="editor_mode_choice" id="editor_mode_wysiwyg" autocomplete="off" <%= 'checked' unless html_mode %>
                data-editor-mode-target="wysiwygRadio" data-action="change->editor-mode#switch">
         <label class="btn btn-outline-primary" for="editor_mode_wysiwyg">
           <i class="fas fa-eye me-1"></i>Editor visual (WYSIWYG)
         </label>
 
-        <input type="radio" class="btn-check" name="editor_mode_choice" id="editor_mode_html" autocomplete="off"
+        <input type="radio" class="btn-check" name="editor_mode_choice" id="editor_mode_html" autocomplete="off" <%= 'checked' if html_mode %>
                data-editor-mode-target="htmlRadio" data-action="change->editor-mode#switch">
         <label class="btn btn-outline-primary" for="editor_mode_html">
           <i class="fas fa-code me-1"></i>HTML directo
         </label>
       </div>
 
+      <%# Hidden field that submits the chosen mode. Stimulus keeps it
+          in sync with the radio above. The backend ONLY honors
+          body_html_raw when this is 'html', preventing the WYSIWYG
+          mode from accidentally getting overwritten. %>
+      <%= f.hidden_field :editor_mode, value: (html_mode ? 'html' : 'wysiwyg'), data: { editor_mode_target: 'modeInput' } %>
+
       <%# WYSIWYG pane %>
-      <div data-editor-mode-target="wysiwygPane">
+      <div data-editor-mode-target="wysiwygPane" <%= 'hidden' if html_mode %>>
         <%= f.rich_text_area :body, class: 'trix-content' %>
         <div class="form-text small mt-1 text-muted">
           Edita con la barra de herramientas (negrita, listas, enlaces, imágenes…).
         </div>
       </div>
 
-      <%# HTML pane (hidden until selected) %>
-      <div data-editor-mode-target="htmlPane" hidden>
+      <%# HTML pane. Pre-rellena con el HTML guardado cuando el post está
+          en modo html, así puedes editarlo como código. %>
+      <div data-editor-mode-target="htmlPane" <%= 'hidden' unless html_mode %>>
         <%= f.text_area :body_html_raw,
-                        rows: 16,
+                        rows: 18,
+                        value: (html_mode ? post.body_inner_html : ''),
                         class: 'form-control font-monospace',
                         style: 'font-size: .82rem; line-height: 1.55;',
                         placeholder: %(<h2>Subtítulo</h2>\n<p>Texto con <strong>negrita</strong> y <a href="https://...">enlace</a>.</p>\n<table>\n  <thead><tr><th>Columna A</th><th>Columna B</th></tr></thead>\n  <tbody><tr><td>1</td><td>2</td></tr></tbody>\n</table>\n<ul><li>Lista</li></ul>) %>
         <div class="alert alert-info small mt-2 mb-0">
           <i class="fas fa-info-circle me-1"></i>
-          <strong>Lo que pegues aquí reemplaza al editor visual al guardar.</strong>
-          Pega HTML directamente — no se escapa.
-          Tags permitidos: <code>p</code>, <code>h1</code>–<code>h6</code>, <code>ul</code>/<code>ol</code>/<code>li</code>,
-          <code>strong</code>/<code>em</code>, <code>a</code>, <code>img</code>, <code>blockquote</code>,
-          <code>code</code>/<code>pre</code>, <code>table</code>/<code>thead</code>/<code>tbody</code>/<code>tr</code>/<code>th</code>/<code>td</code>.
-          Tags peligrosos (<code>script</code>, <code>style</code>, atributos <code>onclick</code>) se eliminan por seguridad.
+          Al guardar, este HTML se conserva tal cual (con sanitización de tags peligrosos).
+          La próxima vez que abras este post, seguirá en modo <strong>HTML directo</strong>
+          y este textarea mostrará el HTML guardado para que puedas editarlo como código.
+          Si cambias a <em>Editor visual</em>, Trix puede normalizar el formato.
         </div>
       </div>
     </div>

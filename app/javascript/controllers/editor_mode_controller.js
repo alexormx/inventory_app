@@ -1,18 +1,18 @@
 import { Controller } from "@hotwired/stimulus"
 
 // Toggles between the Trix WYSIWYG editor and the raw HTML textarea
-// in the admin post form. Both inputs remain in the DOM; the backend
-// uses body_html_raw whenever it's non-empty (overrides the Trix body),
-// so showing only one at a time prevents the author from accidentally
-// authoring in both at the same time.
+// in the admin post form, AND keeps the persisted `post[editor_mode]`
+// hidden field in sync so the choice survives reload.
+//
+// The backend only honors body_html_raw when editor_mode == 'html',
+// so flipping the radio is safe: changing to WYSIWYG won't overwrite
+// the body with any stale content sitting in the textarea, and
+// changing to HTML won't lose the Trix output (it's still there if
+// the author switches back).
 export default class extends Controller {
-  static targets = ["wysiwygRadio", "htmlRadio", "wysiwygPane", "htmlPane"]
+  static targets = ["wysiwygRadio", "htmlRadio", "wysiwygPane", "htmlPane", "modeInput"]
 
   connect() {
-    // On edit forms, if the post already has body content visible in
-    // Trix, default to WYSIWYG. body_html_raw is a virtual attribute,
-    // never persisted, so we can't auto-detect "HTML mode was last
-    // used" — author re-picks each session.
     this.switch()
   }
 
@@ -20,5 +20,8 @@ export default class extends Controller {
     const htmlMode = this.htmlRadioTarget.checked
     this.wysiwygPaneTarget.hidden = htmlMode
     this.htmlPaneTarget.hidden = !htmlMode
+    if (this.hasModeInputTarget) {
+      this.modeInputTarget.value = htmlMode ? "html" : "wysiwyg"
+    }
   }
 }

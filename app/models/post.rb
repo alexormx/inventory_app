@@ -17,12 +17,22 @@ class Post < ApplicationRecord
   before_save :apply_body_html_raw
 
   enum :status, { draft: 0, published: 1, archived: 2 }, default: :draft
+  enum :editor_mode, { wysiwyg: 0, html: 1 }, default: :wysiwyg, prefix: :editor
 
   validates :title, presence: true, length: { maximum: 200 }
   validates :excerpt, length: { maximum: 500 }
   validates :meta_description, length: { maximum: 320 }
 
   before_save :stamp_published_at
+
+  # Returns the post's body HTML with Action Text's outer
+  # <div class="trix-content"> wrapper stripped — useful for the
+  # admin form's HTML textarea so the author edits inner content
+  # only and doesn't accumulate nested wrappers on each save.
+  def body_inner_html
+    raw = body&.body&.to_s.to_s
+    raw.sub(%r{\A<div class="trix-content">\s*(.*?)\s*</div>\s*\z}m, '\1')
+  end
 
   scope :visible, -> { published.where('published_at <= ?', Time.current).order(published_at: :desc) }
 
@@ -45,7 +55,12 @@ class Post < ApplicationRecord
 
   private
 
+  # Only apply the raw HTML when the author explicitly chose HTML mode.
+  # In WYSIWYG mode the textarea might still carry pre-fill content from
+  # a previous HTML session — ignoring it prevents an accidental
+  # overwrite of the Trix output.
   def apply_body_html_raw
+    return unless editor_html?
     return if body_html_raw.blank?
 
     self.body = body_html_raw

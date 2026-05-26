@@ -65,7 +65,7 @@ module Admin
     end
 
     def post_params
-      params.require(:post).permit(:title, :excerpt, :meta_description, :status, :body, :body_html_raw, :cover_image)
+      params.require(:post).permit(:title, :excerpt, :meta_description, :status, :editor_mode, :body, :body_html_raw, :cover_image)
     end
   end
 end
