@@ -8,6 +8,14 @@ class Post < ApplicationRecord
   has_rich_text :body
   has_one_attached :cover_image
 
+  # Virtual attribute: cuando el admin pega HTML directo (modo "código"),
+  # se asigna al body via Action Text al guardar. Tiene precedencia sobre
+  # lo que produce el editor Trix. Action Text se encarga de sanitizar
+  # tags peligrosos (scripts, iframes, style attrs, etc.).
+  attr_accessor :body_html_raw
+
+  before_save :apply_body_html_raw
+
   enum :status, { draft: 0, published: 1, archived: 2 }, default: :draft
 
   validates :title, presence: true, length: { maximum: 200 }
@@ -27,6 +35,12 @@ class Post < ApplicationRecord
   end
 
   private
+
+  def apply_body_html_raw
+    return if body_html_raw.blank?
+
+    self.body = body_html_raw
+  end
 
   def stamp_published_at
     return unless status_changed?

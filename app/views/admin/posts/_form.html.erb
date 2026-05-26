@@ -28,6 +28,25 @@
       <%= f.rich_text_area :body, class: 'trix-content' %>
     </div>
 
+    <details class="border rounded p-2">
+      <summary class="small fw-semibold text-muted" style="cursor:pointer">
+        <i class="fas fa-code me-1"></i>¿Tienes HTML listo? Pégalo aquí
+      </summary>
+      <div class="pt-2">
+        <%= f.text_area :body_html_raw,
+                        rows: 12,
+                        class: 'form-control font-monospace',
+                        style: 'font-size: .82rem;',
+                        placeholder: %(<p>Pega aquí tu HTML — útil para contenido generado por IA o exportado de otro CMS.</p>\n<h2>Subtítulo</h2>\n<p>Texto con <strong>negrita</strong> y <a href="https://...">enlace</a>.</p>\n<ul><li>Lista</li></ul>) %>
+        <div class="form-text small mt-1">
+          Si pegas HTML aquí, <strong>reemplaza el contenido del editor</strong> al guardar.
+          Tags peligrosos (<code>&lt;script&gt;</code>, <code>&lt;style&gt;</code>, atributos
+          <code>onclick</code>, etc.) se eliminan automáticamente por seguridad.
+          Tags permitidos: párrafos, encabezados, listas, enlaces, imágenes, negrita/cursiva.
+        </div>
+      </div>
+    </details>
+
     <div>
       <%= f.label :cover_image, 'Imagen de portada', class: 'form-label fw-semibold small' %>
       <% if post.cover_image.attached? %>
