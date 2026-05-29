@@ -277,16 +277,9 @@
   }
 }
 
-@media (max-width: 575px) {
-  #catalog .catalog-header { margin-bottom: .75rem; }
-  #catalog .product-image {
-    max-height: 150px;
-    min-height: 150px;
-  }
-  #catalog .card-body {
-    padding: 0.75rem !important;
-  }
-}
+/* Note: mobile (<576px) card sizing is governed by the
+   "MOBILE COMPACT CATALOG GRID" block at the bottom of this file —
+   square aspect-ratio image, compact padding, 2-col grid. */
 
 /* Sidebar de filtros */
 #catalog #desktopFilters { background: #fff; border-right: 1px solid #e9ecef; position: relative; z-index: 30; }
@@ -1899,4 +1892,146 @@ turbo-frame[busy]::after {
   #catalog .catalog-results-count { padding: .35rem .75rem; }
   #catalog .catalog-results-count-number { font-size: .95rem; }
   #catalog .catalog-results-count-label { font-size: .78rem; }
+}
+
+/* ============================================================
+   MOBILE COMPACT CATALOG GRID (<=575.98px)
+   Goal: 2 columns by default so customers scan more products per
+   screen, with cards trimmed for thumb-sized hardware.
+   - Square image area via aspect-ratio (no fixed heights to fight)
+   - Tighter typography, padding, button sizes
+   - 12px gutter
+   - 1-column fallback under 340px (cramped on very small phones)
+   Scope: everything below is wrapped in
+   `@media (max-width: 575.98px)` so tablet/desktop stay untouched.
+   ============================================================ */
+@media (max-width: 575.98px) {
+  /* Grid gutter — 12px exactly per UX brief */
+  #catalog #product-grid-content {
+    --bs-gutter-x: .75rem;
+    --bs-gutter-y: .75rem;
+  }
+
+  /* Drop the desktop min-height baseline; cards size naturally on mobile */
+  #catalog .catalog-item { min-height: 0; border-radius: 12px; }
+
+  /* Image area: square, contained, no fixed height fighting aspect-ratio */
+  #catalog .catalog-card-media {
+    aspect-ratio: 1 / 1;
+    padding: .4rem;
+    border-bottom: 1px solid #f4f5f7;
+  }
+  #catalog .product-image {
+    max-height: 100%;
+    min-height: 0;
+    height: 100%;
+    width: 100%;
+    object-fit: contain;
+  }
+
+  /* Card body: compact spacing */
+  #catalog .card-body {
+    padding: .55rem .55rem .65rem !important;
+    gap: .25rem;
+  }
+
+  /* Stock + "recién llegado" badges: smaller, single line */
+  #catalog .catalog-badges {
+    gap: .25rem;
+    margin-bottom: .15rem;
+  }
+  #catalog .catalog-item .catalog-badges .badge {
+    font-size: .62rem;
+    padding: .18em .42em;
+    line-height: 1.1;
+  }
+
+  /* Title: 2-line clamp (already set), slightly smaller font */
+  #catalog .catalog-card-title,
+  #catalog .card-title {
+    font-size: .82rem;
+    line-height: 1.25;
+    min-height: 2.5em;
+    margin: 0;
+  }
+
+  /* Price: compact but clear */
+  #catalog .catalog-card-price {
+    font-size: .95rem;
+    margin: 0;
+  }
+
+  /* Star rating row: compact */
+  #catalog .catalog-card-rating { font-size: .7rem; margin: 0; }
+
+  /* Brand + WhatsApp code: smaller, single line, truncated */
+  #catalog .catalog-card-meta {
+    font-size: .65rem;
+    margin: 0;
+    gap: .3rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-height: 0;
+  }
+  #catalog .catalog-card-meta .catalog-wa-code {
+    padding: .05rem .3rem;
+    font-size: .6rem;
+  }
+
+  /* ETA line tucked under price (rarely shown) */
+  #catalog .catalog-card-eta { font-size: .62rem; }
+
+  /* Action row: full-width Agregar + tight WhatsApp icon button.
+     The two button_to forms above flex 1:auto by default — pin the
+     WhatsApp form to a fixed-width column so Agregar gets the rest. */
+  #catalog .catalog-card-actions {
+    gap: .25rem !important;
+    padding-top: .25rem;
+    margin-top: auto;
+  }
+  #catalog .catalog-card-actions .btn {
+    padding: .35rem .4rem;
+    font-size: .72rem;
+    min-width: 0;
+    min-height: 36px;
+    border-radius: 8px;
+  }
+  #catalog .catalog-card-actions form:last-child:not(:only-child) {
+    flex: 0 0 auto;
+  }
+  #catalog .catalog-card-actions form:last-child:not(:only-child) .btn {
+    padding: .35rem .5rem;
+  }
+
+  /* Header: trim breadcrumb + sort row vertically */
+  #catalog .catalog-header {
+    padding: .6rem .75rem;
+    margin-bottom: .5rem !important;
+    border-radius: 12px;
+  }
+  #catalog .catalog-title { font-size: 1.05rem; margin-bottom: .1rem; }
+  #catalog .catalog-header-breadcrumb { font-size: .72rem; margin-bottom: .25rem; }
+  #catalog .catalog-header .text-muted.small { font-size: .72rem; }
+  #catalog .landing-intro { font-size: .8rem; line-height: 1.45; margin-top: .35rem !important; }
+
+  /* Results summary — single compact line */
+  #catalog .catalog-results-summary {
+    margin-bottom: .5rem !important;
+    gap: .35rem !important;
+  }
+  #catalog .catalog-results-context { font-size: .72rem; }
+
+  /* Availability chips: tighter */
+  #catalog .catalog-availability-chips { margin-bottom: .55rem !important; gap: .35rem !important; }
+  .availability-chip { padding: .35rem .65rem; font-size: .75rem; }
+}
+
+/* Very small phones (<340px): fall back to 1 column — 2 cols gets
+   too cramped for the action row. */
+@media (max-width: 339.98px) {
+  #catalog #product-grid-content > .product-card-wrapper {
+    flex: 0 0 100% !important;
+    max-width: 100% !important;
+  }
 }
