@@ -1733,7 +1733,11 @@ turbo-frame[busy]::after {
 
 #catalog #product-grid-content > .product-card-wrapper {
   flex: 0 0 auto;
-  width: 100%;
+  /* Mobile-first: 2 cols. Higher specificity than Bootstrap's
+     .row-cols-2 > * (which would otherwise govern). 1-col fallback
+     for very small phones is in the <=339.98px media query at the
+     bottom of this file. */
+  width: 50%;
 }
 
 #catalog .catalog-card-media {
@@ -1773,17 +1777,7 @@ turbo-frame[busy]::after {
   min-height: 1.2rem;
 }
 
-@media (min-width: 576px) {
-  #catalog #product-grid-content > .product-card-wrapper {
-    width: 50%;
-  }
-}
-
-@media (min-width: 768px) {
-  #catalog #product-grid-content > .product-card-wrapper {
-    width: 50%;
-  }
-}
+/* sm/md inherit the 50% default — both kept 2 cols before, still do. */
 
 @media (min-width: 992px) {
   #catalog #product-grid-content > .product-card-wrapper {
