@@ -5,6 +5,8 @@ module CatalogHelper
   def catalog_dynamic_title
     parts = []
 
+    return 'Tomica México' if @seo_landing == :tomica_hub
+
     return "Resultados para \"#{params[:q]}\"" if params[:q].present?
 
     categories = Array(params[:categories]).compact_blank
@@ -49,6 +51,9 @@ module CatalogHelper
       return breadcrumbs
     elsif @seo_landing == :series && @series_name.present?
       breadcrumbs << { name: @series_name, url: nil }
+      return breadcrumbs
+    elsif @seo_landing == :tomica_hub
+      breadcrumbs << { name: 'Tomica', url: nil }
       return breadcrumbs
     end
 

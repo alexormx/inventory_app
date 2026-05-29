@@ -50,22 +50,38 @@ class ProductsController < ApplicationController
     render :index
   end
 
+  # Aggregated landing for the whole Tomica line (every series matching
+  # "Tomica%"). Targets the "Tomica México" query class that none of
+  # the individual series pages cover by themselves.
+  def tomica_hub
+    @hub_name = 'Tomica'
+    @seo_landing = :tomica_hub
+    @series_prefix = 'Tomica'
+    index
+    render :index
+  end
+
   def index
     @q      = params[:q].to_s.strip
     @sort   = params[:sort].presence || 'newest'
 
+    # Universe scope — narrowed when called from a hub landing that
+    # only deals with a series prefix (e.g. /tomica → "Tomica%").
+    universe = Product.publicly_visible
+    universe = universe.where('series ILIKE ?', "#{@series_prefix}%") if @series_prefix.present?
+
     # Facetas básicas para filtros (ordenar en Ruby para evitar DISTINCT + ORDER BY en PG)
-    @all_categories = Product.publicly_visible.distinct.pluck(:category).compact.compact_blank.sort_by { |c| c.to_s.downcase }
-    @all_brands     = Product.publicly_visible.distinct.pluck(:brand).compact.compact_blank.sort_by { |b| b.to_s.downcase }
-    @all_series     = Product.publicly_visible.distinct.pluck(:series).compact.compact_blank.sort_by { |s| s.to_s.downcase }
+    @all_categories = universe.distinct.pluck(:category).compact.compact_blank.sort_by { |c| c.to_s.downcase }
+    @all_brands     = universe.distinct.pluck(:brand).compact.compact_blank.sort_by { |b| b.to_s.downcase }
+    @all_series     = universe.distinct.pluck(:series).compact.compact_blank.sort_by { |s| s.to_s.downcase }
 
     # Calcular rango de precios para el slider
-    price_stats = Product.publicly_visible.pick(Arel.sql('MIN(selling_price) as min_price, MAX(selling_price) as max_price'))
+    price_stats = universe.pick(Arel.sql('MIN(selling_price) as min_price, MAX(selling_price) as max_price'))
     @price_range_min = (price_stats&.first || 0).to_f.floor
     @price_range_max = (price_stats&.last || 10_000).to_f.ceil
 
     # Base scope (aplicar búsqueda primero para contadores precisos)
-    base_scope = Product.publicly_visible
+    base_scope = universe
     if @q.present?
       pattern = "%#{@q.downcase}%"
       base_scope = base_scope.where('LOWER(product_name) LIKE ? OR LOWER(category) LIKE ? OR LOWER(brand) LIKE ?', pattern, pattern, pattern)

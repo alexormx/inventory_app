@@ -73,6 +73,8 @@ module MetaTagsHelper
       return category_landing_url(category_slug: @category_name.parameterize)
     elsif @seo_landing == :series && @series_name.present?
       return series_landing_url(series_slug: @series_name.parameterize)
+    elsif @seo_landing == :tomica_hub
+      return tomica_hub_url
     end
 
     return catalog_canonical_url if request.path == catalog_path

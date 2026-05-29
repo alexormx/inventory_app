@@ -42,6 +42,15 @@
   </url>
   <% end %>
 
+  <%# Hub Tomica — landing agregada de toda la línea Tomica %>
+  <% if Product.where(status: 'active').where('series ILIKE ?', 'Tomica%').exists? %>
+  <url>
+    <loc><%= tomica_hub_url %></loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <% end %>
+
   <%# Aviso de privacidad %>
   <url>
     <loc><%= privacy_notice_url %></loc>

@@ -332,6 +332,8 @@ Rails.application.routes.draw do
   get '/marca/:brand_slug', to: 'products#brand', as: :brand_landing
   get '/categoria/:category_slug', to: 'products#category', as: :category_landing
   get '/serie/:series_slug', to: 'products#series', as: :series_landing
+  # Hub agregado de toda la línea Tomica (todas las series Tomica %)
+  get '/tomica', to: 'products#tomica_hub', as: :tomica_hub
   resources :products, only: [:show] do
     resources :reviews, only: [:create]
   end

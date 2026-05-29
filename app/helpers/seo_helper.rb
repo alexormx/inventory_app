@@ -263,9 +263,10 @@ module SeoHelper
   def collection_page_json_ld(name:, type:, url:, products: [])
     description = landing_intro(type, name, context: landing_context_for(type, name)).presence ||
                   case type
-                  when :brand  then "Colección completa de productos #{name} disponibles en #{seo_site_name}."
-                  when :series then "Todos los productos de la serie #{name} disponibles en #{seo_site_name}."
-                  else              "Todos los productos de la categoría #{name} en #{seo_site_name}."
+                  when :brand      then "Colección completa de productos #{name} disponibles en #{seo_site_name}."
+                  when :series     then "Todos los productos de la serie #{name} disponibles en #{seo_site_name}."
+                  when :tomica_hub then "Toda la línea Tomica disponible en #{seo_site_name}."
+                  else                  "Todos los productos de la categoría #{name} en #{seo_site_name}."
                   end
 
     data = {
@@ -299,14 +300,22 @@ module SeoHelper
     tag.script(data.to_json.html_safe, type: 'application/ld+json')
   end
 
-  # Meta tags para producto
+  # Meta tags para producto. Para máximo emparejamiento de búsquedas
+  # del estilo "Toyota Hilux Tomica", incluimos la serie justo después
+  # del nombre (la serie suele ser la marca comercial que el cliente
+  # busca: "Tomica Basicos", "Tomica Premium", "Hobby Exclusive").
+  # Cuando el producto tiene serie, omitimos el type_label genérico
+  # ("Coleccionable") para no inflar el título.
   def product_meta_title(product)
     attrs = product.parsed_custom_attributes
     scale = attrs['escala'].presence
-    # Build keyword-rich title: "Product Name | Brand | Diecast Escala 1:64 | Store"
-    parts = [product.product_name, product.brand]
-    type_label = product_type_label(product)
-    parts << type_label if type_label.present?
+    parts = [product.product_name]
+    parts << product.series if product.series.present?
+    parts << product.brand if product.brand.present?
+    if product.series.blank?
+      type_label = product_type_label(product)
+      parts << type_label if type_label.present?
+    end
     parts << "Escala #{scale}" if scale.present?
     parts << seo_site_name
     parts.join(' | ')
@@ -383,15 +392,21 @@ module SeoHelper
 
     slug = name.to_s.parameterize
     overrides_key = case type
-                    when :brand    then 'seo_intro_brands'
-                    when :category then 'seo_intro_categories'
-                    when :series   then 'seo_intro_series'
+                    when :brand      then 'seo_intro_brands'
+                    when :category   then 'seo_intro_categories'
+                    when :series     then 'seo_intro_series'
+                    when :tomica_hub then 'seo_intro_tomica_hub'
                     end
     return nil unless overrides_key
 
     overrides = SiteSetting.get(overrides_key) || {}
     overrides = overrides.is_a?(Hash) ? overrides : {}
-    override = overrides[slug].to_s.strip
+    override = if type == :tomica_hub
+                 # The hub has a single landing, store the override at slug "default"
+                 overrides['default'].to_s.strip
+               else
+                 overrides[slug].to_s.strip
+               end
     return override if override.present?
 
     landing_intro_fallback(type, name, context)
@@ -480,6 +495,11 @@ module SeoHelper
       related = scope.where(series: name).where.not(brand: [nil, ''])
                      .group(:brand).order(Arel.sql('COUNT(*) DESC')).limit(3).pluck(:brand)
       { related: related, product_count: product_count }
+    when :tomica_hub
+      hub_scope = scope.where('series ILIKE ?', 'Tomica%')
+      product_count = hub_scope.count
+      related = hub_scope.group(:series).order(Arel.sql('COUNT(*) DESC')).limit(5).pluck(:series)
+      { related: related, product_count: product_count }
     else
       {}
     end
@@ -489,9 +509,10 @@ module SeoHelper
   # View-friendly wrapper that resolves the right name from instance vars.
   def current_landing_intro
     name = case @seo_landing
-           when :brand    then @brand_name
-           when :category then @category_name
-           when :series   then @series_name
+           when :brand      then @brand_name
+           when :category   then @category_name
+           when :series     then @series_name
+           when :tomica_hub then @hub_name
            end
     return nil if @seo_landing.blank? || name.blank?
 
@@ -538,6 +559,17 @@ module SeoHelper
       counter = count.positive? ? " #{count} productos activos de la serie #{name} en catálogo." : ''
       closer = " Envío seguro a todo México. Completa tu colección de #{name} con piezas auténticas."
       "#{lead}#{detail}#{counter}#{closer}"
+
+    when :tomica_hub
+      lead = "Toda la línea Tomica México disponible en #{seo_site_name}."
+      detail = if related.any?
+                 " Incluye #{related.to_sentence(words_connector: ', ', two_words_connector: ' y ', last_word_connector: ' y ')}, todas fabricadas por Takara Tomy en Japón."
+               else
+                 ' Modelos a escala fabricados por Takara Tomy en Japón.'
+               end
+      counter = count.positive? ? " Más de #{count} modelos Tomica activos en catálogo, con importación directa y empaque original sellado." : ''
+      closer = ' Envío seguro a todo México y asesoría personalizada por WhatsApp para coleccionistas.'
+      "#{lead}#{detail}#{counter}#{closer}"
     end
   end
 
@@ -559,15 +591,18 @@ module SeoHelper
   end
 
   # Clean, no-truncation-marks fallback when a product has no description.
+  # Series is included prominently so "Tomica Basicos" / "Tomica Premium"
+  # / etc. appear in Google's snippet body.
   def seo_fallback_description(product, max:)
     attrs = product.parsed_custom_attributes
     scale = attrs['escala'].presence
     material = attrs['material'].presence
 
     sentence = +"#{product.product_name}"
-    sentence << " de #{product.brand}" if product.brand.present?
+    sentence << " de la serie #{product.series}" if product.series.present?
+    sentence << " (#{product.brand})" if product.brand.present?
     type_label = product_type_label(product)
-    sentence << " — #{type_label}" if type_label.present?
+    sentence << " — #{type_label}" if type_label.present? && product.series.blank?
     sentence << ", escala #{scale}" if scale.present?
     sentence << ", #{material.downcase}" if material.present?
     sentence << '.'
@@ -612,9 +647,11 @@ module SeoHelper
     if @seo_landing == :brand && @brand_name.present?
       "#{@brand_name} | Comprar #{@brand_name} en México | #{seo_site_name}"
     elsif @seo_landing == :category && @category_name.present?
-      "#{@category_name} | #{seo_site_name}"
+      "#{@category_name} México | Comprar #{@category_name} Originales | #{seo_site_name}"
     elsif @seo_landing == :series && @series_name.present?
-      "#{@series_name} | #{seo_site_name}"
+      "#{@series_name} México | Comprar #{@series_name} Originales | #{seo_site_name}"
+    elsif @seo_landing == :tomica_hub
+      "Tomica México | Comprar Tomica Originales (Premium, Basicos, Especiales) | #{seo_site_name}"
     else
       filters_active = params[:categories].present? || params[:brands].present? || params[:series].present?
       if filters_active
@@ -639,8 +676,14 @@ module SeoHelper
       "Explora nuestra selección de #{@category_name} en #{seo_site_name}. " \
         'Productos originales con envío seguro a todo México. Modelos a escala, coleccionables y más.'
     elsif @seo_landing == :series && @series_name.present?
-      "Explora la serie #{@series_name} en #{seo_site_name}. " \
-        'Productos originales con envío seguro a todo México. Modelos a escala, coleccionables y más.'
+      "Compra #{@series_name} originales en #{seo_site_name}. " \
+        "Catálogo de #{@series_name} con importación directa y empaque sellado. " \
+        'Envío seguro a todo México y asesoría personalizada por WhatsApp.'
+    elsif @seo_landing == :tomica_hub
+      "Compra autos a escala Tomica originales en #{seo_site_name}. " \
+        'Líneas Tomica Basicos, Tomica Premium, Tomica Premium Unlimited y ediciones especiales ' \
+        '—todas fabricadas por Takara Tomy en Japón, importación directa con empaque sellado, ' \
+        'envío seguro a todo México.'
     else
       desc = 'Explora nuestra colección de modelos a escala, autos de colección y figuras.'
       desc += " Categorías: #{params[:categories].join(', ')}." if params[:categories].present?
@@ -659,6 +702,8 @@ module SeoHelper
       category_landing_url(category_slug: @category_name.parameterize)
     elsif @seo_landing == :series && @series_name.present?
       series_landing_url(series_slug: @series_name.parameterize)
+    elsif @seo_landing == :tomica_hub
+      tomica_hub_url
     elsif controller_name == 'products' && action_name == 'index'
       catalog_url(request.query_parameters.except('page'))
     else
