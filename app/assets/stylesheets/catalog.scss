@@ -2029,3 +2029,28 @@ turbo-frame[busy]::after {
     max-width: 100% !important;
   }
 }
+
+/* Pagination that fits narrow phones. Kaminari paginate emits a
+   <nav><ul.pagination> structure; on mobile the ul was forcing
+   horizontal scroll when window+gap+button sizes exceeded the
+   viewport. Allow wrap + shrink the chrome on small screens. */
+#catalog .catalog-pagination .pagination {
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: .15rem;
+  max-width: 100%;
+  margin: 0 auto;
+}
+@media (max-width: 575.98px) {
+  #catalog .catalog-pagination .page-link {
+    padding: .35rem .55rem;
+    font-size: .85rem;
+    min-width: 36px;
+    text-align: center;
+  }
+  #catalog .catalog-pagination .page-item.gap .page-link,
+  #catalog .catalog-pagination .page-item:not(.first):not(.last):not(.prev):not(.next):not(.active) {
+    /* allow non-essential page numbers to shrink a touch tighter */
+  }
+  #catalog .catalog-pagination-info { font-size: .78rem; }
+}

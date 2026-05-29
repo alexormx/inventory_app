@@ -244,7 +244,9 @@
         <span>Página <strong class="text-dark"><%= @products.current_page %></strong> de <strong class="text-dark"><%= @products.total_pages %></strong></span>
       </div>
       <div class="d-flex justify-content-center" data-turbo-action="advance">
-        <%= paginate @products %>
+        <%# Mobile-friendly window: shows current page ± 1 plus the
+            first/last page (≈5 buttons + gaps), fits ~320px wide. %>
+        <%= paginate @products, window: 1, outer_window: 1 %>
       </div>
     </nav>
   <% end %>
