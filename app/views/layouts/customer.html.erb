@@ -39,6 +39,10 @@
   </noscript>
 
   <%= stylesheet_link_tag "application", media: "all", "data-turbo-track": "reload" %>
+  <%# Blog/rich-text styles only on post pages — keeps them out of the global bundle %>
+  <% if %w[posts comments].include?(controller_name) %>
+    <%= stylesheet_link_tag "blog_pack", media: "all", "data-turbo-track": "reload" %>
+  <% end %>
   <%= javascript_include_tag "application", "data-turbo-track": "reload", defer: true %>
 
   <%# JSON-LD Structured Data from views %>

@@ -1,0 +1,4 @@
+// Blog bundle: public post layout + rich-text (.trix-content) display styles.
+// Loaded only on posts pages so these bytes stay out of the global bundle.
+@import "post";
+@import "actiontext";

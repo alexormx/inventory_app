@@ -1,0 +1,5 @@
+// Admin-only bundle: dashboard chrome + the rich-text editor styles used by
+// the post editor. Loaded by the admin layout so these bytes stay out of the
+// public application.css.
+@import "dashboard";
+@import "actiontext";
