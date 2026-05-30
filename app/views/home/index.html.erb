@@ -34,7 +34,7 @@
 <section class="hero-section position-relative d-flex align-items-center text-white" style="min-height: 60vh; overflow: hidden;">
   <%
     hero_base = 'collection_shelf'
-    hero_widths = [480, 960, 1440]
+    hero_widths = [480, 768, 960, 1440]
     hero_responsive_avif = hero_widths.all? { |w| asset_exists?("#{hero_base}-#{w}w.avif") }
     hero_responsive_webp = hero_widths.all? { |w| asset_exists?("#{hero_base}-#{w}w.webp") }
     hero_responsive_jpg  = hero_widths.all? { |w| asset_exists?("#{hero_base}-#{w}w.jpg") }

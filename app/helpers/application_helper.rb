@@ -80,7 +80,7 @@ module ApplicationHelper
   # responsive, luego WebP, y skip si no hay nada.
   def lcp_preload_home_image
     base = 'collection_shelf'
-    widths = [480, 960, 1440]
+    widths = [480, 768, 960, 1440]
 
     %w[avif webp].each do |ext|
       mime = ext == 'avif' ? 'image/avif' : 'image/webp'
