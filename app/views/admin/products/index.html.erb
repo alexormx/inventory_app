@@ -59,6 +59,8 @@
             ["Precio ↓", "price_desc"],
             ["Stock ↑", "stock_asc"],
             ["Stock ↓", "stock_desc"],
+            ["Con ubicación ↑", "located_asc"],
+            ["Con ubicación ↓", "located_desc"],
             ["Más vendidos", "sales_value"],
             ["Mayor ganancia", "profit"]
           ], current_sort), class: "form-select form-select-sm", onchange: "this.form.submit()" %>
@@ -166,5 +168,5 @@
 } %>
 
 <div id="products_section">
-  <%= render partial: 'products_section', locals: { products: @products, current_tab: (params[:status] || 'all'), inventory_counts: @inventory_counts } %>
+  <%= render partial: 'products_section', locals: { products: @products, current_tab: (params[:status] || 'all'), inventory_counts: @inventory_counts, location_piece_counts: @location_piece_counts } %>
 </div>

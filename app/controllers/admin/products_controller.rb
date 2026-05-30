@@ -6,7 +6,7 @@ module Admin
     before_action :authenticate_user!
     before_action :authorize_admin!
     before_action :set_product, only: %i[show edit update destroy purge_image activate deactivate assign_preorders
-                                         discontinue reverse_discontinue link_catalog set_primary_image]
+                                         discontinue reverse_discontinue link_catalog set_primary_image locations]
     before_action :set_active_tab, only: %i[new edit create update]
     before_action :fix_custom_attributes_param, only: %i[create update]
     before_action :load_counts, only: %i[index drafts active inactive]
@@ -37,10 +37,27 @@ module Admin
                                    .group(:product_id, :status)
                                    .count
 
+      @location_piece_counts = load_location_piece_counts(product_ids)
+
       compute_counts
     end
 
     def show; end
+
+    # Desglose de ubicaciones físicas de las piezas de un modelo (para el modal
+    # de la tarjeta de producto). Sólo cuenta piezas en estatus que requieren
+    # ubicación (en bodega). Se carga de forma lazy dentro de un turbo-frame.
+    def locations
+      scope = @product.inventories.where(status: Inventory::STATUSES_REQUIRING_LOCATION)
+      @unlocated_count = scope.where(inventory_location_id: nil).count
+      grouped = scope.where.not(inventory_location_id: nil).group(:inventory_location_id).count
+      locations_by_id = InventoryLocation.where(id: grouped.keys).index_by(&:id)
+      # Ordenado por mayor cantidad de piezas; cada entrada: [InventoryLocation, qty]
+      @location_rows = grouped.sort_by { |_id, qty| -qty }
+                              .filter_map { |id, qty| [locations_by_id[id], qty] if locations_by_id[id] }
+      @located_count = @location_rows.sum { |_loc, qty| qty }
+      render layout: false
+    end
 
     def new
       @product = Product.new
@@ -411,6 +428,35 @@ module Admin
            .order(Arel.sql("#{count_sql} #{dir}, products.id #{dir}"))
     end
 
+    # Ordena por cantidad de piezas en bodega que YA tienen ubicación física
+    # confirmada (status que requieren ubicación + inventory_location_id no nulo).
+    def order_by_located_stock(scope, direction)
+      dir = direction.to_s.downcase == 'asc' ? 'ASC' : 'DESC'
+      statuses = Inventory::STATUSES_REQUIRING_LOCATION.map { |s| Inventory.statuses[s] }.join(',')
+      count_sql = "(SELECT COUNT(*) FROM inventories WHERE inventories.product_id = products.id " \
+                  "AND inventories.status IN (#{statuses}) AND inventories.inventory_location_id IS NOT NULL)"
+      scope.select("products.*, #{count_sql} AS located_stock_count")
+           .order(Arel.sql("#{count_sql} #{dir}, products.id #{dir}"))
+    end
+
+    # Conteo de piezas con/sin ubicación por producto, en una sola consulta.
+    # Sólo considera estatus que requieren ubicación (piezas físicas en bodega).
+    # => { product_id => { located: Int, unlocated: Int } }
+    def load_location_piece_counts(product_ids)
+      return {} if product_ids.blank?
+
+      rows = Inventory.where(product_id: product_ids, status: Inventory::STATUSES_REQUIRING_LOCATION)
+                      .group(:product_id)
+                      .pluck(
+                        :product_id,
+                        Arel.sql('COUNT(*) FILTER (WHERE inventory_location_id IS NOT NULL)'),
+                        Arel.sql('COUNT(*) FILTER (WHERE inventory_location_id IS NULL)')
+                      )
+      rows.each_with_object({}) do |(pid, located, unlocated), acc|
+        acc[pid] = { located: located.to_i, unlocated: unlocated.to_i }
+      end
+    end
+
     def apply_status_filter(scope, current_status)
       case current_status
       when 'all', nil, ''
@@ -507,6 +553,8 @@ module Admin
       when 'price_desc'      then scope.order(selling_price: :desc)
       when 'stock_asc'       then order_by_available_stock(scope, :asc)
       when 'stock_desc'      then order_by_available_stock(scope, :desc)
+      when 'located_asc'     then order_by_located_stock(scope, :asc)
+      when 'located_desc'    then order_by_located_stock(scope, :desc)
       when 'purchase_qty'    then scope.order(total_purchase_quantity: :desc)
       when 'purchase_value'  then scope.order(total_purchase_value: :desc)
       when 'sales_value'     then scope.order(total_sales_value: :desc)

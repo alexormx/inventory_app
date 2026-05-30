@@ -50,6 +50,20 @@
       <% end %>
     </div>
 
+    <%# Conteo de piezas con/sin ubicación física (clickeable para ver detalle) %>
+    <% loc_counts = (local_assigns[:location_piece_counts] || {})[product.id] || {} %>
+    <% located = loc_counts[:located].to_i %>
+    <% unlocated = loc_counts[:unlocated].to_i %>
+    <% if located > 0 || unlocated > 0 %>
+      <div class="mb-2">
+        <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-1" data-bs-toggle="modal" data-bs-target="#locationsModal<%= product.id %>" title="Ver ubicaciones de las piezas de este modelo">
+          <span class="badge bg-info text-dark" title="Piezas con ubicación"><i class="fa-solid fa-location-dot"></i> <%= located %></span>
+          <span class="badge bg-danger" title="Piezas sin ubicación"><i class="fa-solid fa-location-pin-lock"></i> <%= unlocated %></span>
+          <i class="fa-solid fa-up-right-from-square ms-1 small text-muted"></i>
+        </button>
+      </div>
+    <% end %>
+
     <%= turbo_frame_tag "product_badge_#{product.id}" do %>
       <%= render partial: 'status_badge', locals: { product: product } %>
     <% end %>
@@ -81,3 +95,21 @@
     </div>
   </div>
 </div>
+
+<% if located > 0 || unlocated > 0 %>
+  <div class="modal fade" id="locationsModal<%= product.id %>" tabindex="-1" aria-labelledby="locationsModalLabel<%= product.id %>" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="locationsModalLabel<%= product.id %>"><i class="fa-solid fa-location-dot me-2 text-primary"></i>Ubicaciones — <%= product.product_name %></h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <%= turbo_frame_tag "product_locations_#{product.id}", src: locations_admin_product_path(product), loading: :lazy do %>
+            <div class="text-center text-muted py-4"><i class="fa-solid fa-spinner fa-spin me-1"></i> Cargando ubicaciones…</div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+<% end %>

@@ -1,0 +1,28 @@
+<%= turbo_frame_tag "product_locations_#{@product.id}" do %>
+  <div class="d-flex gap-2 mb-3">
+    <span class="badge bg-info text-dark"><i class="fa-solid fa-location-dot me-1"></i><%= @located_count %> con ubicación</span>
+    <span class="badge bg-danger"><i class="fa-solid fa-location-pin-lock me-1"></i><%= @unlocated_count %> sin ubicación</span>
+  </div>
+  <% if @location_rows.any? %>
+    <ul class="list-group mb-0">
+      <% @location_rows.each do |loc, qty| %>
+        <li class="list-group-item d-flex justify-content-between align-items-start gap-2">
+          <div>
+            <div class="fw-semibold"><i class="fa-solid fa-box-archive me-1 text-secondary"></i><%= loc.full_path %></div>
+            <% if loc.code.present? %><small class="text-muted">Código: <%= loc.code %></small><% end %>
+          </div>
+          <span class="badge bg-primary rounded-pill"><%= qty %> pza<%= 's' if qty != 1 %></span>
+        </li>
+      <% end %>
+    </ul>
+  <% else %>
+    <p class="text-muted mb-0"><i class="fa-solid fa-circle-info me-1"></i>Ninguna pieza tiene ubicación asignada todavía.</p>
+  <% end %>
+  <% if @unlocated_count > 0 %>
+    <div class="alert alert-warning mt-3 mb-0 small">
+      <i class="fa-solid fa-triangle-exclamation me-1"></i>
+      Hay <strong><%= @unlocated_count %></strong> pieza<%= 's' if @unlocated_count != 1 %> en bodega sin ubicación asignada.
+      <%= link_to "Asignar ubicación", admin_inventory_unlocated_path, class: "alert-link", data: { turbo_frame: "_top" } %>
+    </div>
+  <% end %>
+<% end %>

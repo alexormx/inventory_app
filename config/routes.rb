@@ -156,6 +156,7 @@ Rails.application.routes.draw do
         post  :discontinue
         post  :reverse_discontinue
         patch :set_primary_image
+        get   :locations
       end
       # Image removal for ActiveStorage
       delete 'images/:image_id', to: 'products#purge_image', as: :purge_image
