@@ -1047,6 +1047,23 @@ turbo-frame[busy]::after {
   padding: 0 .4rem;
   border-radius: 999px;
   font-weight: 600;
+  /* button reset (was a <span>, now a copy button) */
+  font-family: inherit;
+  font-size: inherit;
+  line-height: 1.4;
+  cursor: pointer;
+  transition: background-color .15s ease, color .15s ease, border-color .15s ease, transform .1s ease;
+}
+button.catalog-wa-code:hover { background: #d8f3e1; }
+button.catalog-wa-code:active { transform: scale(.96); }
+button.catalog-wa-code:focus-visible {
+  outline: 2px solid #19864b;
+  outline-offset: 1px;
+}
+button.catalog-wa-code.is-copied {
+  background: #19864b;
+  border-color: #19864b;
+  color: #fff;
 }
 
 /* Badges agrupados arriba para evitar traslape */
@@ -1777,21 +1794,31 @@ turbo-frame[busy]::after {
   min-height: 1.2rem;
 }
 
-/* sm/md inherit the 50% default — both kept 2 cols before, still do. */
-
-@media (min-width: 992px) {
+/* Progressive density 2 → 3 → 4 → 5 → 6 cols.
+   These explicit widths (higher specificity than Bootstrap .row-cols-*)
+   are the single source of truth for column count; keep the row-cols
+   classes in the markup and catalog_view_controller in sync for clarity. */
+@media (min-width: 768px) {
   #catalog #product-grid-content > .product-card-wrapper {
     width: 33.333333%;
   }
 }
 
-@media (min-width: 1400px) {
+@media (min-width: 992px) {
+  #catalog #product-grid-content > .product-card-wrapper {
+    width: 25%;
+  }
+}
+
+@media (min-width: 1200px) {
   #catalog #product-grid-content > .product-card-wrapper {
     width: 20%;
   }
+}
 
-  #catalog .catalog-card-media {
-    aspect-ratio: 1 / .95;
+@media (min-width: 1400px) {
+  #catalog #product-grid-content > .product-card-wrapper {
+    width: 16.6667%;
   }
 }
 
@@ -1806,7 +1833,7 @@ turbo-frame[busy]::after {
    ============================================= */
 #catalog #product-grid-content:not(.list-view) .catalog-card-media {
   align-items: center;
-  aspect-ratio: 1 / .82;
+  aspect-ratio: 1 / 1;
   display: flex !important;
   justify-content: center;
   padding: .7rem;
@@ -2053,4 +2080,103 @@ turbo-frame[busy]::after {
     /* allow non-essential page numbers to shrink a touch tighter */
   }
   #catalog .catalog-pagination-info { font-size: .78rem; }
+}
+
+/* ============================================================
+   QUICK-ADD ON HOVER (desktop / hover-capable pointers only)
+   Pulls the action row out of flow so grid cards are shorter and
+   denser; the buttons float up over the card bottom on hover or
+   keyboard focus. Touch devices fall through to the always-visible
+   in-flow buttons (this media query simply doesn't match).
+   No visibility:hidden — keeps the Add button in the tab order so
+   :focus-within can reveal it for keyboard users.
+   ============================================================ */
+@media (hover: hover) and (pointer: fine) {
+  #catalog #product-grid-content:not(.list-view) .catalog-item { position: relative; }
+
+  #catalog #product-grid-content:not(.list-view) .catalog-card-actions {
+    position: absolute;
+    left: .6rem;
+    right: .6rem;
+    bottom: .6rem;
+    margin: 0;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(8px);
+    transition: opacity .18s ease, transform .18s ease;
+    z-index: 15;
+  }
+
+  /* white fade so floating buttons stay legible over the meta row beneath */
+  #catalog #product-grid-content:not(.list-view) .catalog-card-actions::before {
+    content: "";
+    position: absolute;
+    left: -.6rem;
+    right: -.6rem;
+    bottom: -.6rem;
+    top: -1.6rem;
+    background: linear-gradient(to top, #fff 60%, rgba(255, 255, 255, 0));
+    z-index: -1;
+    pointer-events: none;
+    border-radius: 0 0 10px 10px;
+  }
+
+  #catalog #product-grid-content:not(.list-view) .catalog-item:hover .catalog-card-actions,
+  #catalog #product-grid-content:not(.list-view) .catalog-item:focus-within .catalog-card-actions {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+
+  /* reclaim the vertical space the in-flow action row used to hold */
+  #catalog #product-grid-content:not(.list-view) .card-body {
+    padding-bottom: .85rem !important;
+  }
+}
+
+/* ============================================================
+   LOADING SHIMMER for the products Turbo frame.
+   catalog_filters_controller sets/removes the [busy] attribute on
+   #products_grid during filter + pagination fetches; we dim the
+   current grid and sweep a shimmer so the swap doesn't feel frozen.
+   ============================================================ */
+#catalog #products_grid {
+  position: relative;
+}
+#catalog #products_grid[busy] #product-grid-content {
+  opacity: .45;
+  pointer-events: none;
+  transition: opacity .15s ease;
+}
+#catalog #products_grid[busy]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
+  background: linear-gradient(100deg,
+    rgba(255, 255, 255, 0) 30%,
+    rgba(220, 53, 69, .08) 50%,
+    rgba(255, 255, 255, 0) 70%);
+  background-size: 220% 100%;
+  animation: catalog-shimmer 1.1s ease-in-out infinite;
+}
+@keyframes catalog-shimmer {
+  0%   { background-position: 180% 0; }
+  100% { background-position: -80% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #catalog #products_grid[busy]::after { animation: none; }
+}
+
+/* ============================================================
+   POLISH: results count prominence + mobile tap targets
+   ============================================================ */
+#catalog .catalog-results-count-number { color: var(--catalog-ink, #dc3545); }
+
+@media (max-width: 575.98px) {
+  /* Bigger, thumb-friendly primary add/reserve button on phones */
+  #catalog .catalog-card-actions .btn { min-height: 42px; }
+  #catalog .catalog-card-actions .btn-danger,
+  #catalog .catalog-card-actions .btn-outline-danger { font-weight: 700; }
 }

@@ -24,11 +24,13 @@
   <%# Chips de filtros activos (sólo cuando hay filtros aplicados) %>
   <%= render 'filter_chips' %>
 
-  <%# Mobile-first: 2 cols always, escalando a 3 en lg y 5 en xxl.
-      Tablet (sm-md) hereda las 2 cols. El gutter mobile (12px) y la
-      escala compacta de cada card vienen de catalog.scss bajo
+  <%# Densidad progresiva: 2 (mobile) → 3 (md) → 4 (lg) → 5 (xl) → 6 (xxl).
+      OJO: el conteo real de columnas lo gobiernan los anchos explícitos
+      en catalog.scss ("Spacious Cards", .product-card-wrapper); estas
+      clases row-cols y catalog_view_controller#gridCols se mantienen en
+      sync sólo por claridad. El gutter/escala mobile vienen del bloque
       @media (max-width: 575.98px). %>
-  <div class="row row-cols-2 row-cols-lg-3 row-cols-xxl-5 g-2 g-md-4" id="product-grid-content" role="list">
+  <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 row-cols-xxl-6 g-2 g-md-3" id="product-grid-content" role="list">
     <% @products.each do |product| %>
       <% on_hand_cached = @on_hand_counts[product.id] || 0 %>
       <% in_transit_eta_cached = (defined?(@in_transit_etas) && @in_transit_etas[product.id]) || nil %>
@@ -106,10 +108,16 @@
                 <span class="catalog-brand"><%= product.brand %></span>
               <% end %>
               <% if product.whatsapp_code.present? %>
-                <span class="catalog-wa-code" title="Código para pedir por WhatsApp">
+                <button type="button" class="catalog-wa-code"
+                        title="Copiar código para pedir por WhatsApp"
+                        aria-label="Copiar código <%= product.whatsapp_code %>"
+                        data-controller="copy"
+                        data-copy-text-value="<%= product.whatsapp_code %>"
+                        data-copy-label-value="¡Copiado!"
+                        data-action="copy#copy">
                   <i class="fab fa-whatsapp" aria-hidden="true"></i>
                   <%= product.whatsapp_code %>
-                </span>
+                </button>
               <% end %>
             </p>
             <%# El badge ya muestra "Llega ~fecha" cuando hay inventario en tránsito,
