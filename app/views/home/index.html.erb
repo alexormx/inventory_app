@@ -12,12 +12,17 @@
   }
   .hero-overlay {
     position: absolute; inset: 0; z-index: 1; pointer-events: none;
+    /* Scrim oscuro centrado para garantizar contraste del título sobre
+       cualquier zona clara de la foto, con el tinte rojo de marca encima. */
     background:
+      radial-gradient(ellipse at center,
+        rgba(0,0,0,0.62) 0%,
+        rgba(0,0,0,0.32) 55%,
+        rgba(0,0,0,0.18) 100%),
       linear-gradient(135deg,
-        rgba(220,53,69,0.5) 0%,
-        rgba(185,28,28,0.5) 50%,
-        rgba(127,29,29,0.55) 100%),
-      rgba(0,0,0,0.1);
+        rgba(220,53,69,0.42) 0%,
+        rgba(185,28,28,0.42) 50%,
+        rgba(127,29,29,0.48) 100%);
   }
   .hero-section > .container { position: relative; z-index: 2; }
 </style>
@@ -69,9 +74,9 @@
   </picture>
   <div class="hero-overlay" aria-hidden="true"></div>
   <div class="container position-relative text-center" style="z-index: 2;">
-    <h1 class="display-3 fw-bold mb-3 animate__animated animate__fadeInDown" style="text-shadow: 2px 2px 8px rgba(0,0,0,0.5), 0 0 30px rgba(255,255,255,0.6), 0 0 60px rgba(255,255,255,0.3);"><%= t('home.index.heading_html').html_safe %></h1>
-    <p class="fs-5 fw-semibold mb-4 animate__animated animate__fadeInUp" style="max-width: 800px; margin: 0 auto; text-shadow: 1px 1px 4px rgba(0,0,0,0.5), 0 0 25px rgba(255,255,255,0.5);"><%= t('home.index.subheading_html').html_safe %></p>
-    <p class="lead mb-5 fs-5 animate__animated animate__fadeInUp animate__delay-1s" style="max-width: 700px; margin: 0 auto; text-shadow: 1px 1px 4px rgba(0,0,0,0.5), 0 0 25px rgba(255,255,255,0.5);"><%= t('home.index.lead') %></p>
+    <h1 class="display-3 fw-bold mb-3 animate__animated animate__fadeInDown" style="text-shadow: 0 2px 18px rgba(0,0,0,0.8), 0 1px 3px rgba(0,0,0,0.6);"><%= t('home.index.heading_html').html_safe %></h1>
+    <p class="fs-5 fw-semibold mb-4 animate__animated animate__fadeInUp" style="max-width: 800px; margin: 0 auto; text-shadow: 0 1px 8px rgba(0,0,0,0.6);"><%= t('home.index.subheading_html').html_safe %></p>
+    <p class="lead mb-5 fs-5 animate__animated animate__fadeInUp animate__delay-1s" style="max-width: 700px; margin: 0 auto; text-shadow: 0 1px 8px rgba(0,0,0,0.6);"><%= t('home.index.lead') %></p>
     <div class="d-flex flex-column flex-sm-row justify-content-center gap-3 animate__animated animate__fadeInUp animate__delay-1s">
       <% if user_signed_in? %>
         <%= link_to catalog_path, class: "btn btn-light btn-lg px-5 py-3 shadow-sm" do %>
@@ -95,22 +100,22 @@
     <div class="row text-center justify-content-center">
       <div class="col-4 col-md-3">
         <div class="stat-item">
-          <i class="fas fa-box-open text-danger mb-2" style="font-size: 1.5rem;"></i>
-          <div class="fs-2 fw-bold text-danger"><%= number_with_delimiter(@stats[:products]) %>+</div>
+          <i class="fas fa-box-open mb-2" style="font-size: 1.5rem; color: #ff6b6b;"></i>
+          <div class="fs-2 fw-bold" style="color: #ff6b6b;"><%= number_with_delimiter(@stats[:products]) %>+</div>
           <div class="small text-white-50 text-uppercase" style="letter-spacing: 1px;">Productos</div>
         </div>
       </div>
       <div class="col-4 col-md-3">
         <div class="stat-item">
-          <i class="fas fa-users text-danger mb-2" style="font-size: 1.5rem;"></i>
-          <div class="fs-2 fw-bold text-danger"><%= number_with_delimiter(@stats[:customers]) %>+</div>
+          <i class="fas fa-users mb-2" style="font-size: 1.5rem; color: #ff6b6b;"></i>
+          <div class="fs-2 fw-bold" style="color: #ff6b6b;"><%= number_with_delimiter(@stats[:customers]) %>+</div>
           <div class="small text-white-50 text-uppercase" style="letter-spacing: 1px;">Clientes Felices</div>
         </div>
       </div>
       <div class="col-4 col-md-3">
         <div class="stat-item">
-          <i class="fas fa-award text-danger mb-2" style="font-size: 1.5rem;"></i>
-          <div class="fs-2 fw-bold text-danger"><%= @stats[:years] %>+</div>
+          <i class="fas fa-award mb-2" style="font-size: 1.5rem; color: #ff6b6b;"></i>
+          <div class="fs-2 fw-bold" style="color: #ff6b6b;"><%= @stats[:years] %>+</div>
           <div class="small text-white-50 text-uppercase" style="letter-spacing: 1px;">Años de Experiencia</div>
         </div>
       </div>
@@ -119,6 +124,7 @@
 </section>
 
 <!-- 🏷️ CATEGORÍAS DESTACADAS -->
+<% if @featured_categories.present? %>
 <section class="categories-section py-5 bg-light">
   <div class="container">
     <div class="text-center mb-4">
@@ -127,24 +133,27 @@
     </div>
     <div class="row row-cols-2 row-cols-md-3 row-cols-lg-6 g-3">
       <%
-        categories = [
-          { name: 'Autos a Escala', icon: 'fa-car', color: 'danger', query: 'diecast' },
-          { name: 'Figuras', icon: 'fa-chess-knight', color: 'primary', query: 'figuras' },
-          { name: 'Coleccionables', icon: 'fa-gem', color: 'warning', query: 'coleccionables' },
-          { name: 'Juguetes', icon: 'fa-puzzle-piece', color: 'success', query: 'juguetes' },
-          { name: 'Cartas', icon: 'fa-clone', color: 'info', query: 'cartas' },
-          { name: 'Otros', icon: 'fa-ellipsis-h', color: 'secondary', query: '' }
-        ]
+        # Ícono por palabra clave (con respaldo) y paleta cíclica de colores.
+        category_icons = {
+          'auto' => 'fa-car', 'escala' => 'fa-car', 'diecast' => 'fa-car',
+          'tomica' => 'fa-car-side', 'hot wheels' => 'fa-car-side',
+          'figura' => 'fa-chess-knight', 'coleccion' => 'fa-gem',
+          'juguete' => 'fa-puzzle-piece', 'carta' => 'fa-clone',
+          'modelo' => 'fa-cubes', 'kit' => 'fa-screwdriver-wrench'
+        }
+        palette = %w[danger primary warning success info secondary]
       %>
-      <% categories.each do |cat| %>
+      <% @featured_categories.each_with_index do |cat, i| %>
+        <% key = cat.to_s.downcase %>
+        <% icon = (category_icons.find { |k, _| key.include?(k) }&.last) || 'fa-cubes' %>
         <div class="col">
-          <%= link_to catalog_path(q: cat[:query]), class: "text-decoration-none" do %>
+          <%= link_to category_landing_path(category_slug: cat.parameterize), class: "text-decoration-none" do %>
             <div class="card border-0 shadow-sm h-100 text-center hover-lift">
               <div class="card-body py-4">
                 <div class="mb-2">
-                  <i class="fas <%= cat[:icon] %> fa-2x text-<%= cat[:color] %>"></i>
+                  <i class="fas <%= icon %> fa-2x text-<%= palette[i % palette.size] %>"></i>
                 </div>
-                <h6 class="card-title mb-0 fw-semibold text-dark small"><%= cat[:name] %></h6>
+                <h6 class="card-title mb-0 fw-semibold text-dark small"><%= cat %></h6>
               </div>
             </div>
           <% end %>
@@ -153,6 +162,7 @@
     </div>
   </div>
 </section>
+<% end %>
 
 <!-- 🌟 PRODUCTOS DESTACADOS -->
 <% featured_products = @products.select { |p| p.current_on_hand > 0 }.first(8) %>
