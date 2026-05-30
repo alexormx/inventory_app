@@ -2083,58 +2083,6 @@ button.catalog-wa-code.is-copied {
 }
 
 /* ============================================================
-   QUICK-ADD ON HOVER (desktop / hover-capable pointers only)
-   Pulls the action row out of flow so grid cards are shorter and
-   denser; the buttons float up over the card bottom on hover or
-   keyboard focus. Touch devices fall through to the always-visible
-   in-flow buttons (this media query simply doesn't match).
-   No visibility:hidden — keeps the Add button in the tab order so
-   :focus-within can reveal it for keyboard users.
-   ============================================================ */
-@media (hover: hover) and (pointer: fine) {
-  #catalog #product-grid-content:not(.list-view) .catalog-item { position: relative; }
-
-  #catalog #product-grid-content:not(.list-view) .catalog-card-actions {
-    position: absolute;
-    left: .6rem;
-    right: .6rem;
-    bottom: .6rem;
-    margin: 0;
-    opacity: 0;
-    pointer-events: none;
-    transform: translateY(8px);
-    transition: opacity .18s ease, transform .18s ease;
-    z-index: 15;
-  }
-
-  /* white fade so floating buttons stay legible over the meta row beneath */
-  #catalog #product-grid-content:not(.list-view) .catalog-card-actions::before {
-    content: "";
-    position: absolute;
-    left: -.6rem;
-    right: -.6rem;
-    bottom: -.6rem;
-    top: -1.6rem;
-    background: linear-gradient(to top, #fff 60%, rgba(255, 255, 255, 0));
-    z-index: -1;
-    pointer-events: none;
-    border-radius: 0 0 10px 10px;
-  }
-
-  #catalog #product-grid-content:not(.list-view) .catalog-item:hover .catalog-card-actions,
-  #catalog #product-grid-content:not(.list-view) .catalog-item:focus-within .catalog-card-actions {
-    opacity: 1;
-    pointer-events: auto;
-    transform: translateY(0);
-  }
-
-  /* reclaim the vertical space the in-flow action row used to hold */
-  #catalog #product-grid-content:not(.list-view) .card-body {
-    padding-bottom: .85rem !important;
-  }
-}
-
-/* ============================================================
    LOADING SHIMMER for the products Turbo frame.
    catalog_filters_controller sets/removes the [busy] attribute on
    #products_grid during filter + pagination fetches; we dim the
