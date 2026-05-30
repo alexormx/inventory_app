@@ -1,3 +1,6 @@
+<% content_for :head do %>
+  <%= javascript_include_tag "richtext", "data-turbo-track": "reload", defer: true %>
+<% end %>
 <%= form_with model: [:admin, post], local: true, multipart: true, class: 'card border-0 shadow-sm' do |f| %>
   <div class="card-body d-flex flex-column gap-3">
     <% if post.errors.any? %>

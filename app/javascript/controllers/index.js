@@ -4,7 +4,6 @@ const application = Application.start()
 // IMPORTS (uno por archivo controlador)
 import AuditProgressController from "./audit_progress_controller"
 import CartItemController from "./cart_item_controller"
-import ChartController from "./chart_controller"
 import ClearSearchController from "./clear_search_controller"
 import ConfirmController from "./confirm_controller"
 import CookiesController from "./cookies_controller"
@@ -46,7 +45,6 @@ import CopyController from "./copy_controller"
 
 application.register("audit-progress", AuditProgressController)
 application.register("cart-item", CartItemController)
-application.register("chart", ChartController)
 application.register("clear-search", ClearSearchController)
 application.register("confirm", ConfirmController)
 application.register("cookies", CookiesController)

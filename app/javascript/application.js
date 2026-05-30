@@ -45,7 +45,3 @@ Turbo.config.forms.confirm = (message, element, submitter) => {
 }
 
 window.customConfirmDialog = confirmDialog
-
-
-import "trix"
-import "@rails/actiontext"

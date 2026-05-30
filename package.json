@@ -1,8 +1,8 @@
 {
   "scripts": {
-    "build": "esbuild app/javascript/application.js --bundle --sourcemap --outdir=app/assets/builds --public-path=/assets",
-    "build:watch": "esbuild app/javascript/application.js --bundle --sourcemap --outdir=app/assets/builds --public-path=/assets --watch",
-    "build:prod": "esbuild app/javascript/application.js --bundle --minify --outdir=app/assets/builds --public-path=/assets",
+    "build": "esbuild app/javascript/application.js app/javascript/charts.js app/javascript/richtext.js --bundle --sourcemap --outdir=app/assets/builds --public-path=/assets",
+    "build:watch": "esbuild app/javascript/application.js app/javascript/charts.js app/javascript/richtext.js --bundle --sourcemap --outdir=app/assets/builds --public-path=/assets --watch",
+    "build:prod": "esbuild app/javascript/application.js app/javascript/charts.js app/javascript/richtext.js --bundle --minify --outdir=app/assets/builds --public-path=/assets",
     "heroku-postbuild": "npm run build:prod"
   },
   "dependencies": {
