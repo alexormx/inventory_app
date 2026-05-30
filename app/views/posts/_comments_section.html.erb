@@ -1,0 +1,60 @@
+<%# Comments section for a blog post. Renders:
+    1. List of approved comments (oldest first)
+    2. Inline submission form for signed-in users, or a sign-in CTA.
+    Comments are moderated: new ones are pending until an admin approves.
+%>
+<section class="card border-0 shadow-sm mt-4" id="comentarios">
+  <div class="card-body">
+    <% approved_comments = post.comments.visible.includes(:user) %>
+    <h2 class="h5 fw-semibold mb-3">
+      <i class="fas fa-comments text-primary me-2"></i>Comentarios
+      <span class="text-muted small fw-normal">(<%= approved_comments.size %>)</span>
+    </h2>
+
+    <% if approved_comments.any? %>
+      <div class="list-group list-group-flush mb-4">
+        <% approved_comments.each do |comment| %>
+          <article class="list-group-item px-0">
+            <p class="mb-1 small" style="white-space: pre-line;"><%= comment.body %></p>
+            <footer class="text-muted extra-small">
+              <i class="fas fa-user-circle me-1"></i><%= comment.author_name %>
+              · <%= l comment.created_at.to_date, format: :long %>
+            </footer>
+          </article>
+        <% end %>
+      </div>
+    <% else %>
+      <p class="text-muted small">Aún no hay comentarios. Sé el primero en compartir tu opinión.</p>
+    <% end %>
+
+    <%# Submission form / sign-in CTA %>
+    <% if user_signed_in? %>
+      <% pending_count = post.comments.where(user_id: current_user.id, status: :pending).count %>
+      <% if pending_count.positive? %>
+        <div class="alert alert-info small mb-3">
+          <i class="fas fa-info-circle me-1"></i>
+          Tienes <%= pluralize(pending_count, 'comentario') %> pendiente<%= 's' if pending_count > 1 %> de moderación.
+        </div>
+      <% end %>
+      <hr class="my-3">
+      <h3 class="h6 fw-semibold mb-3">Deja tu comentario</h3>
+      <%= form_with model: Comment.new, url: post_comments_path(post), local: true, class: 'comment-form' do |f| %>
+        <div class="mb-3">
+          <%= f.label :body, 'Comentario', class: 'form-label small fw-semibold' %>
+          <span class="text-danger">*</span>
+          <%= f.text_area :body, class: 'form-control form-control-sm', rows: 4, required: true,
+                          minlength: 3, maxlength: 2000, placeholder: '¿Qué opinas de este artículo?' %>
+          <div class="form-text small">Los comentarios se revisan antes de publicarse.</div>
+        </div>
+        <%= f.submit 'Enviar comentario', class: 'btn btn-danger btn-sm' %>
+      <% end %>
+    <% else %>
+      <hr class="my-3">
+      <p class="mb-0 small text-muted">
+        <%= link_to 'Inicia sesión', new_user_session_path, class: 'fw-semibold' %>
+        o <%= link_to 'crea una cuenta', new_user_registration_path, class: 'fw-semibold' %>
+        para dejar un comentario.
+      </p>
+    <% end %>
+  </div>
+</section>

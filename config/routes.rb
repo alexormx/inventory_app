@@ -60,6 +60,12 @@ Rails.application.routes.draw do
         patch :reject
       end
     end
+    resources :comments, only: %i[index destroy] do
+      member do
+        patch :approve
+        patch :reject
+      end
+    end
     resources :posts do
       member do
         patch :publish
@@ -383,6 +389,9 @@ Rails.application.routes.draw do
   # Public blog
   get '/blog', to: 'posts#index', as: :blog
   get '/blog/:id', to: 'posts#show', as: :post
+  resources :posts, only: [] do
+    resources :comments, only: [:create]
+  end
 
   namespace :api do
     namespace :v1 do
