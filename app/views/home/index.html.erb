@@ -110,21 +110,21 @@
         <div class="stat-item">
           <i class="fas fa-box-open mb-2" style="font-size: 1.5rem; color: #ff6b6b;"></i>
           <div class="fs-2 fw-bold" style="color: #ff6b6b;"><%= number_with_delimiter(@stats[:products]) %>+</div>
-          <div class="small text-white-50 text-uppercase" style="letter-spacing: 1px;">Productos</div>
+          <div class="small text-uppercase" style="letter-spacing: 1px; color: rgba(255,255,255,0.85);">Productos</div>
         </div>
       </div>
       <div class="col-4 col-md-3">
         <div class="stat-item">
           <i class="fas fa-users mb-2" style="font-size: 1.5rem; color: #ff6b6b;"></i>
           <div class="fs-2 fw-bold" style="color: #ff6b6b;"><%= number_with_delimiter(@stats[:customers]) %>+</div>
-          <div class="small text-white-50 text-uppercase" style="letter-spacing: 1px;">Clientes Felices</div>
+          <div class="small text-uppercase" style="letter-spacing: 1px; color: rgba(255,255,255,0.85);">Clientes Felices</div>
         </div>
       </div>
       <div class="col-4 col-md-3">
         <div class="stat-item">
           <i class="fas fa-award mb-2" style="font-size: 1.5rem; color: #ff6b6b;"></i>
           <div class="fs-2 fw-bold" style="color: #ff6b6b;"><%= @stats[:years] %>+</div>
-          <div class="small text-white-50 text-uppercase" style="letter-spacing: 1px;">Años de Experiencia</div>
+          <div class="small text-uppercase" style="letter-spacing: 1px; color: rgba(255,255,255,0.85);">Años de Experiencia</div>
         </div>
       </div>
     </div>
@@ -161,7 +161,7 @@
                 <div class="mb-2">
                   <i class="fas <%= icon %> fa-2x text-<%= palette[i % palette.size] %>"></i>
                 </div>
-                <h6 class="card-title mb-0 fw-semibold text-dark small"><%= cat %></h6>
+                <h3 class="card-title mb-0 fw-semibold text-dark small"><%= cat %></h3>
               </div>
             </div>
           <% end %>
@@ -199,7 +199,7 @@
                 </div>
               <% end %>
               <div class="card-body text-center">
-                <h6 class="card-title text-dark mb-0 fw-semibold" style="font-size: 0.9rem;"><%= product.product_name %></h6>
+                <h3 class="card-title text-dark mb-0 fw-semibold" style="font-size: 0.9rem;"><%= product.product_name %></h3>
               </div>
             <% end %>
           </div>
@@ -222,28 +222,28 @@
       <div class="col">
         <div class="trust-badge">
           <i class="fas fa-truck fa-2x text-danger mb-3"></i>
-          <h6 class="fw-bold mb-1">Envío Seguro</h6>
+          <h3 class="fw-bold mb-1 fs-6">Envío Seguro</h3>
           <p class="small text-muted mb-0">Empaque profesional</p>
         </div>
       </div>
       <div class="col">
         <div class="trust-badge">
           <i class="fas fa-shield-alt fa-2x text-danger mb-3"></i>
-          <h6 class="fw-bold mb-1">Pago Protegido</h6>
+          <h3 class="fw-bold mb-1 fs-6">Pago Protegido</h3>
           <p class="small text-muted mb-0">Transacciones seguras</p>
         </div>
       </div>
       <div class="col">
         <div class="trust-badge">
           <i class="fas fa-certificate fa-2x text-danger mb-3"></i>
-          <h6 class="fw-bold mb-1">100% Original</h6>
+          <h3 class="fw-bold mb-1 fs-6">100% Original</h3>
           <p class="small text-muted mb-0">Garantía de autenticidad</p>
         </div>
       </div>
       <div class="col">
         <div class="trust-badge">
           <i class="fas fa-headset fa-2x text-danger mb-3"></i>
-          <h6 class="fw-bold mb-1">Soporte</h6>
+          <h3 class="fw-bold mb-1 fs-6">Soporte</h3>
           <p class="small text-muted mb-0">Atención personalizada</p>
         </div>
       </div>
@@ -265,7 +265,7 @@
           <div class="mb-3">
             <i class="fas fa-box-open text-danger fa-3x"></i>
           </div>
-          <h5 class="card-title fw-bold mb-3"><%= t('home.index.cards.collection.title') %></h5>
+          <h3 class="card-title fw-bold mb-3 fs-5"><%= t('home.index.cards.collection.title') %></h3>
           <p class="card-text text-muted"><%= t('home.index.cards.collection.text') %></p>
         </div>
       </div>
@@ -276,7 +276,7 @@
           <div class="mb-3">
             <i class="fas fa-users text-danger fa-3x"></i>
           </div>
-          <h5 class="card-title fw-bold mb-3"><%= t('home.index.cards.community.title') %></h5>
+          <h3 class="card-title fw-bold mb-3 fs-5"><%= t('home.index.cards.community.title') %></h3>
           <p class="card-text text-muted"><%= t('home.index.cards.community.text') %></p>
         </div>
       </div>
@@ -287,7 +287,7 @@
           <div class="mb-3">
             <i class="fas fa-heart text-danger fa-3x"></i>
           </div>
-          <h5 class="card-title fw-bold mb-3"><%= t('home.index.cards.legacy.title') %></h5>
+          <h3 class="card-title fw-bold mb-3 fs-5"><%= t('home.index.cards.legacy.title') %></h3>
           <p class="card-text text-muted"><%= t('home.index.cards.legacy.text') %></p>
         </div>
       </div>
@@ -298,7 +298,7 @@
           <div class="mb-3">
             <i class="fas fa-shield-alt text-danger fa-3x"></i>
           </div>
-          <h5 class="card-title fw-bold mb-3"><%= t('home.index.cards.practices.title') %></h5>
+          <h3 class="card-title fw-bold mb-3 fs-5"><%= t('home.index.cards.practices.title') %></h3>
           <p class="card-text text-muted"><%= t('home.index.cards.practices.text') %></p>
         </div>
       </div>
