@@ -28,6 +28,12 @@ Rails.application.configure do
   config.active_storage.service = :amazon
   # config.active_storage.service = :local
 
+  # Serve images through the app (proxy) instead of redirecting to short-lived
+  # signed S3 URLs. Proxied variant URLs are stable and carry
+  # `Cache-Control: public, max-age=1y, immutable`, so browsers and Cloudflare
+  # can cache them (fixes "efficient cache lifetimes" + removes the 302 hop).
+  config.active_storage.resolve_model_to_route = :rails_storage_proxy
+
   # Assume all access to the app is happening through a SSL-terminating reverse proxy.
   config.assume_ssl = true
 

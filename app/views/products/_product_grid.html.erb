@@ -38,7 +38,7 @@
       sync sólo por claridad. El gutter/escala mobile vienen del bloque
       @media (max-width: 575.98px). %>
   <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 row-cols-xxl-6 g-2 g-md-3" id="product-grid-content" role="list">
-    <% @products.each do |product| %>
+    <% @products.each_with_index do |product, card_index| %>
       <% on_hand_cached = @on_hand_counts[product.id] || 0 %>
       <% in_transit_eta_cached = (defined?(@in_transit_etas) && @in_transit_etas[product.id]) || nil %>
       <% has_image = product.product_images.attached? %>
@@ -51,7 +51,9 @@
                   alt: product.product_name,
                   widths: [160,240,320,420],
                   css_class: "product-image mx-auto d-block",
-                  square: true %>
+                  square: true,
+                  loading: (card_index == 0 ? 'eager' : 'lazy'),
+                  fetch_priority: (card_index == 0 ? 'high' : nil) %>
               <% else %>
                 <%= image_tag "placeholder.png", class: "product-image mx-auto d-block", alt: "Imagen no disponible para #{product.product_name}" %>
               <% end %>
@@ -63,7 +65,9 @@
                   alt: product.product_name,
                   widths: [160,240,320,420],
                   css_class: "product-image mx-auto d-block",
-                  square: true %>
+                  square: true,
+                  loading: (card_index == 0 ? 'eager' : 'lazy'),
+                  fetch_priority: (card_index == 0 ? 'high' : nil) %>
               <% else %>
                 <%= image_tag "placeholder.png", class: "product-image mx-auto d-block", alt: "Imagen no disponible" %>
               <% end %>

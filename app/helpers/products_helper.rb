@@ -168,7 +168,7 @@ module ProductsHelper
   end
 
   # Helper para ActiveStorage
-  def responsive_attachment_image(attachment, alt:, widths: [200, 400, 600], css_class: '', loading: 'lazy', square: true, fetch_priority: nil, id: nil)
+  def responsive_attachment_image(attachment, alt:, widths: [200, 400, 600], css_class: '', loading: 'lazy', square: true, fetch_priority: nil, id: nil, width: nil, height: nil)
     return image_tag('placeholder.png', alt: alt, class: css_class) if attachment.blank?
 
     widths = Array(widths).map(&:to_i).select(&:positive?).uniq.sort
@@ -206,6 +206,13 @@ module ProductsHelper
     img_opts = { alt: alt, class: css_class, loading: loading, decoding: 'async', sizes: sizes_attr }
     img_opts[:id] = id if id
     img_opts[:fetchpriority] = fetch_priority if fetch_priority
+    # Explicit intrinsic dimensions reserve layout space (reduces CLS). For
+    # square product images this is the variant box; CSS object-fit keeps the
+    # real aspect ratio without distortion.
+    dim_w = width || (square ? widths.max : nil)
+    dim_h = height || (square ? widths.max : nil)
+    img_opts[:width] = dim_w if dim_w
+    img_opts[:height] = dim_h if dim_h
     fallback_img = image_tag(fallback_url, **img_opts)
     content_tag(:picture, safe_join(sources) + fallback_img)
   end

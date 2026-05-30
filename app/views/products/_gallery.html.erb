@@ -11,6 +11,7 @@
                 widths: [320,480,600],
                 css_class: "w-100 rounded shadow-sm bg-white",
                 square: true,
+                loading: (idx == 0 ? 'eager' : 'lazy'),
                 fetch_priority: (idx == 0 ? 'high' : nil) %>
           <% rescue => e %>
             <%= image_tag 'placeholder.png', class: "w-100 rounded shadow-sm bg-white", alt: "Error al cargar imagen", style: "height: 400px; object-fit: contain;" %>
