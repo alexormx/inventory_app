@@ -299,7 +299,10 @@
 #catalog .catalog-sidebar-filters::-webkit-scrollbar { width: 6px; }
 #catalog .catalog-sidebar-filters::-webkit-scrollbar-thumb { background: #ced4da; border-radius: 3px; }
 #catalog .catalog-sidebar-filters .filter-block { margin-bottom: 1.1rem; }
-#catalog .catalog-sidebar-filters .filter-block .filter-scroll { max-height: 280px; overflow: auto; padding-right: 4px; }
+/* Single scroll context: the sidebar itself scrolls (sticky max-height
+   above); per-list inner scroll removed to avoid a nested scroll-trap.
+   Long lists rely on the in-section search input instead. */
+#catalog .catalog-sidebar-filters .filter-block .filter-scroll { max-height: none; overflow: visible; padding-right: 4px; }
 #catalog .catalog-sidebar-filters .form-check { margin-bottom: .35rem; min-height: 1.75rem; padding-left: 1.6rem; }
 #catalog .catalog-sidebar-filters .form-check-input { margin-top: .3rem; width: 1.05em; height: 1.05em; margin-left: -1.6rem; cursor: pointer; }
 #catalog .catalog-sidebar-filters .form-check-label { cursor: pointer; padding: .15rem 0; line-height: 1.35; width: 100%; }
@@ -2080,6 +2083,56 @@ button.catalog-wa-code.is-copied {
     /* allow non-essential page numbers to shrink a touch tighter */
   }
   #catalog .catalog-pagination-info { font-size: .78rem; }
+}
+
+/* ============================================================
+   FILTER SIDEBAR — header, editable price inputs, zero-count state
+   ============================================================ */
+#catalog .filter-sidebar-head {
+  border-bottom: 1px solid rgba(17, 24, 39, .08);
+  padding-bottom: .6rem;
+}
+#catalog .filter-sidebar-title {
+  font-weight: 750;
+  font-size: .95rem;
+  color: #374151;
+}
+#catalog .filter-clear-link {
+  font-size: .8rem;
+  font-weight: 600;
+  color: var(--catalog-accent, #dc3545);
+  text-decoration: none;
+}
+#catalog .filter-clear-link:hover { text-decoration: underline; }
+
+/* Editable price min/max inputs under the slider */
+#catalog .price-inputs .input-group-text {
+  background: #f3f4f6;
+  border-color: var(--catalog-border-strong, #d6dae1);
+  color: #6b7280;
+  padding: .15rem .45rem;
+  font-size: .85rem;
+}
+#catalog .price-inputs .form-control {
+  text-align: right;
+  padding: .25rem .45rem;
+  font-size: .85rem;
+}
+/* hide native number spinners — the slider is the primary control */
+#catalog .price-inputs input[type="number"]::-webkit-outer-spin-button,
+#catalog .price-inputs input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+#catalog .price-inputs input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
+
+/* Zero-count options: dim, not clickable, and suppress hover highlight */
+#catalog .catalog-sidebar-filters .form-check-input:disabled ~ .form-check-label {
+  opacity: .45;
+  cursor: not-allowed;
+}
+#catalog .catalog-sidebar-filters .form-check:has(.form-check-input:disabled):hover {
+  background: transparent;
 }
 
 /* ============================================================

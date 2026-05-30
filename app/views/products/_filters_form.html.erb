@@ -8,6 +8,9 @@
 <% categories_open = should_expand.call(active: filter_state.selected_categories.any?, item_count: @all_categories.to_a.size) %>
 <% brands_open     = should_expand.call(active: filter_state.selected_brands.any?,     item_count: @all_brands.to_a.size) %>
 <% series_open     = should_expand.call(active: filter_state.selected_series.any?,     item_count: @all_series.to_a.size) %>
+<%# Disable an option when it would return zero results under the current
+    filters (count == 0) and isn't already selected — avoids dead-end clicks. %>
+<% zero_disabled = ->(count, selected) { !count.nil? && count.to_i.zero? && !selected } %>
 
 <%= form_with url: catalog_path, method: :get, data: {
   turbo_frame: "_top",
@@ -17,112 +20,17 @@
   <input type="hidden" name="sort" value="<%= @sort %>">
   <% if @q.present? %><input type="hidden" name="q" value="<%= @q %>"><% end %>
 
-  <%# Condición física de la pieza — agrupada en 4 buckets %>
-  <div class="filter-block mb-3">
-    <h6 class="fw-semibold small text-uppercase text-muted mb-2">
-      <a class="text-decoration-none text-muted d-flex align-items-center justify-content-between" data-bs-toggle="collapse" href="#filterCondition<%= suffix %>" role="button" aria-expanded="true" aria-controls="filterCondition<%= suffix %>">
-        Condición
-        <% active_cond = filter_state.selected_conditions.count %>
-        <span>
-          <% if active_cond > 0 %>
-            <span class="badge bg-danger rounded-pill me-1"><%= active_cond %></span>
-          <% end %>
-          <i class="fas fa-chevron-down"></i>
-        </span>
-      </a>
-    </h6>
-    <div class="collapse show" id="filterCondition<%= suffix %>">
-      <% Product::CONDITION_GROUPS.each_key do |group_key| %>
-        <% group_count = (defined?(@facet_counts) && @facet_counts[:conditions]) ? @facet_counts[:conditions][group_key].to_i : nil %>
-        <div class="form-check">
-          <%= check_box_tag "conditions[]", group_key, filter_state.selected_conditions.include?(group_key), id: "f-cond-#{group_key}#{suffix}", class: "form-check-input" %>
-          <label class="form-check-label" for="f-cond-<%= group_key %><%= suffix %>">
-            <%= Product::CONDITION_GROUP_LABELS[group_key] %>
-            <% if group_count %>
-              <span class="text-muted small">(<%= group_count %>)</span>
-            <% end %>
-          </label>
-        </div>
+  <%# Cabecera: título + conteo de filtros activos + limpiar todo %>
+  <div class="filter-sidebar-head d-flex align-items-center justify-content-between mb-3">
+    <span class="filter-sidebar-title">
+      <i class="fas fa-sliders me-1" aria-hidden="true"></i>Filtros
+      <% if active_filters_count > 0 %>
+        <span class="badge bg-danger rounded-pill ms-1"><%= active_filters_count %></span>
       <% end %>
-    </div>
-  </div>
-
-  <div class="filter-block mb-3">
-    <h6 class="fw-semibold small text-uppercase text-muted mb-2">
-      <a class="text-decoration-none text-muted d-flex align-items-center justify-content-between" data-bs-toggle="collapse" href="#filterAvailability<%= suffix %>" role="button" aria-expanded="true" aria-controls="filterAvailability<%= suffix %>">
-        Disponibilidad
-        <% active_avail = [filter_state.in_stock_only, filter_state.in_transit_only, filter_state.to_order_only].count(true) %>
-        <span>
-          <% if active_avail > 0 %>
-            <span class="badge bg-danger rounded-pill me-1"><%= active_avail %></span>
-          <% end %>
-          <i class="fas fa-chevron-down"></i>
-        </span>
-      </a>
-    </h6>
-    <div class="collapse show" id="filterAvailability<%= suffix %>">
-      <div class="form-check">
-        <input class="form-check-input" type="checkbox" name="in_stock" value="1" id="f-in-stock<%= suffix %>" <%= 'checked' if filter_state.in_stock_only %>>
-        <label class="form-check-label" for="f-in-stock<%= suffix %>">
-          <i class="fas fa-check-circle me-1 text-success" aria-hidden="true"></i>En stock
-          <% if defined?(@facet_counts) && @facet_counts[:in_stock] %>
-            <span class="text-muted small">(<%= @facet_counts[:in_stock] %>)</span>
-          <% end %>
-        </label>
-      </div>
-      <div class="form-check">
-        <input class="form-check-input" type="checkbox" name="in_transit" value="1" id="f-in-transit<%= suffix %>" <%= 'checked' if filter_state.in_transit_only %>>
-        <label class="form-check-label" for="f-in-transit<%= suffix %>">
-          <i class="fas fa-truck me-1 text-primary" aria-hidden="true"></i>En tránsito
-          <% if defined?(@facet_counts) && @facet_counts[:in_transit] %>
-            <span class="text-muted small">(<%= @facet_counts[:in_transit] %>)</span>
-          <% end %>
-        </label>
-      </div>
-      <div class="form-check">
-        <input class="form-check-input" type="checkbox" name="to_order" value="1" id="f-to-order<%= suffix %>" <%= 'checked' if filter_state.to_order_only %>>
-        <label class="form-check-label" for="f-to-order<%= suffix %>">
-          <i class="fas fa-bookmark me-1 text-warning" aria-hidden="true"></i>Sobre pedido
-          <% if defined?(@facet_counts) && @facet_counts[:to_order] %>
-            <span class="text-muted small">(<%= @facet_counts[:to_order] %>)</span>
-          <% end %>
-        </label>
-      </div>
-    </div>
-  </div>
-
-  <div class="filter-block mb-3">
-    <h6 class="fw-semibold small text-uppercase text-muted mb-2">
-      <a class="text-decoration-none text-muted d-flex align-items-center justify-content-between" data-bs-toggle="collapse" href="#filterPrice<%= suffix %>" role="button" aria-expanded="true" aria-controls="filterPrice<%= suffix %>">
-        Precio
-        <span>
-          <% if filter_state.price_min || filter_state.price_max %>
-            <span class="badge bg-danger rounded-pill me-1">1</span>
-          <% end %>
-          <i class="fas fa-chevron-down"></i>
-        </span>
-      </a>
-    </h6>
-    <div class="collapse show" id="filterPrice<%= suffix %>">
-      <div data-controller="price-range"
-           data-price-range-min-value="<%= @price_range_min %>"
-           data-price-range-max-value="<%= @price_range_max %>"
-           data-price-range-current-min-value="<%= params[:price_min] || @price_range_min %>"
-           data-price-range-current-max-value="<%= params[:price_max] || @price_range_max %>">
-
-        <div class="mb-2 px-2 pt-2">
-          <div data-price-range-target="slider" class="price-slider"></div>
-        </div>
-
-        <input type="hidden" name="price_min" value="<%= params[:price_min] %>" data-price-range-target="minInput" data-debounce="true">
-        <input type="hidden" name="price_max" value="<%= params[:price_max] %>" data-price-range-target="maxInput" data-debounce="true">
-
-        <div class="d-flex justify-content-between align-items-center text-muted small px-2">
-          <span><span data-price-range-target="minDisplay">$<%= params[:price_min] || @price_range_min %></span></span>
-          <span><span data-price-range-target="maxDisplay">$<%= params[:price_max] || @price_range_max %></span></span>
-        </div>
-      </div>
-    </div>
+    </span>
+    <% if active_filters_count > 0 %>
+      <%= link_to 'Limpiar', catalog_path, class: 'filter-clear-link', data: { turbo_frame: '_top' } %>
+    <% end %>
   </div>
 
   <% if @all_categories.present? %>
@@ -145,13 +53,13 @@
       <% end %>
       <div class="filter-scroll" data-filter-list-target="list">
         <% @all_categories.each do |c| %>
+          <% c_count = (defined?(@facet_counts) && @facet_counts[:categories]) ? @facet_counts[:categories][c] : nil %>
+          <% c_selected = filter_state.selected_categories.include?(c) %>
           <div class="form-check" data-filter-list-target="item" data-label="<%= c.to_s.downcase %>">
-            <input class="form-check-input" type="checkbox" name="categories[]" value="<%= c %>" id="cat<%= suffix %>-<%= c.parameterize %>" <%= 'checked' if filter_state.selected_categories.include?(c) %>>
+            <%= check_box_tag "categories[]", c, c_selected, id: "cat#{suffix}-#{c.parameterize}", class: "form-check-input", disabled: zero_disabled.call(c_count, c_selected) %>
             <label class="form-check-label" for="cat<%= suffix %>-<%= c.parameterize %>">
               <%= c %>
-              <% if defined?(@facet_counts) && @facet_counts[:categories] && @facet_counts[:categories][c] %>
-                <span class="text-muted small">(<%= @facet_counts[:categories][c] %>)</span>
-              <% end %>
+              <% if c_count %><span class="text-muted small">(<%= c_count %>)</span><% end %>
             </label>
           </div>
         <% end %>
@@ -180,13 +88,13 @@
       <% end %>
       <div class="filter-scroll" data-filter-list-target="list">
         <% @all_brands.each do |b| %>
+          <% b_count = (defined?(@facet_counts) && @facet_counts[:brands]) ? @facet_counts[:brands][b] : nil %>
+          <% b_selected = filter_state.selected_brands.include?(b) %>
           <div class="form-check" data-filter-list-target="item" data-label="<%= b.to_s.downcase %>">
-            <input class="form-check-input" type="checkbox" name="brands[]" value="<%= b %>" id="brand<%= suffix %>-<%= b.parameterize %>" <%= 'checked' if filter_state.selected_brands.include?(b) %>>
+            <%= check_box_tag "brands[]", b, b_selected, id: "brand#{suffix}-#{b.parameterize}", class: "form-check-input", disabled: zero_disabled.call(b_count, b_selected) %>
             <label class="form-check-label" for="brand<%= suffix %>-<%= b.parameterize %>">
               <%= b %>
-              <% if defined?(@facet_counts) && @facet_counts[:brands] && @facet_counts[:brands][b] %>
-                <span class="text-muted small">(<%= @facet_counts[:brands][b] %>)</span>
-              <% end %>
+              <% if b_count %><span class="text-muted small">(<%= b_count %>)</span><% end %>
             </label>
           </div>
         <% end %>
@@ -215,13 +123,13 @@
       <% end %>
       <div class="filter-scroll" data-filter-list-target="list">
         <% @all_series.each do |series| %>
+          <% s_count = (defined?(@facet_counts) && @facet_counts[:series]) ? @facet_counts[:series][series] : nil %>
+          <% s_selected = filter_state.selected_series.include?(series) %>
           <div class="form-check" data-filter-list-target="item" data-label="<%= series.to_s.downcase %>">
-            <input class="form-check-input" type="checkbox" name="series[]" value="<%= series %>" id="series<%= suffix %>-<%= series.parameterize %>" <%= 'checked' if filter_state.selected_series.include?(series) %>>
+            <%= check_box_tag "series[]", series, s_selected, id: "series#{suffix}-#{series.parameterize}", class: "form-check-input", disabled: zero_disabled.call(s_count, s_selected) %>
             <label class="form-check-label" for="series<%= suffix %>-<%= series.parameterize %>">
               <%= series %>
-              <% if defined?(@facet_counts) && @facet_counts[:series] && @facet_counts[:series][series] %>
-                <span class="text-muted small">(<%= @facet_counts[:series][series] %>)</span>
-              <% end %>
+              <% if s_count %><span class="text-muted small">(<%= s_count %>)</span><% end %>
             </label>
           </div>
         <% end %>
@@ -230,11 +138,88 @@
   </div>
   <% end %>
 
-  <div class="d-grid gap-2">
-    <%# Ya hay autosubmit con Stimulus; no es necesario botón de 'Aplicar filtros' %>
-    <% if is_mobile %>
-      <button type="button" class="btn btn-danger btn-sm" data-bs-dismiss="offcanvas">Cerrar</button>
-    <% end %>
-    <a href="<%= catalog_path %>" class="btn btn-outline-secondary btn-sm">Limpiar todo</a>
+  <%# Precio — slider + inputs editables %>
+  <div class="filter-block mb-3">
+    <h6 class="fw-semibold small text-uppercase text-muted mb-2">
+      <a class="text-decoration-none text-muted d-flex align-items-center justify-content-between" data-bs-toggle="collapse" href="#filterPrice<%= suffix %>" role="button" aria-expanded="true" aria-controls="filterPrice<%= suffix %>">
+        Precio
+        <span>
+          <% if filter_state.price_min || filter_state.price_max %>
+            <span class="badge bg-danger rounded-pill me-1">1</span>
+          <% end %>
+          <i class="fas fa-chevron-down"></i>
+        </span>
+      </a>
+    </h6>
+    <div class="collapse show" id="filterPrice<%= suffix %>">
+      <div data-controller="price-range"
+           data-price-range-min-value="<%= @price_range_min %>"
+           data-price-range-max-value="<%= @price_range_max %>"
+           data-price-range-current-min-value="<%= params[:price_min] || @price_range_min %>"
+           data-price-range-current-max-value="<%= params[:price_max] || @price_range_max %>">
+
+        <div class="mb-2 px-2 pt-2">
+          <div data-price-range-target="slider" class="price-slider"></div>
+        </div>
+
+        <div class="price-inputs d-flex align-items-center gap-2 px-2">
+          <div class="input-group input-group-sm">
+            <span class="input-group-text">$</span>
+            <input type="number" inputmode="numeric" class="form-control" name="price_min"
+                   value="<%= params[:price_min] %>" data-price-range-target="minInput" data-debounce="true"
+                   min="<%= @price_range_min %>" max="<%= @price_range_max %>"
+                   placeholder="<%= @price_range_min %>" aria-label="Precio mínimo">
+          </div>
+          <span class="text-muted small" aria-hidden="true">–</span>
+          <div class="input-group input-group-sm">
+            <span class="input-group-text">$</span>
+            <input type="number" inputmode="numeric" class="form-control" name="price_max"
+                   value="<%= params[:price_max] %>" data-price-range-target="maxInput" data-debounce="true"
+                   min="<%= @price_range_min %>" max="<%= @price_range_max %>"
+                   placeholder="<%= @price_range_max %>" aria-label="Precio máximo">
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
+
+  <%# Condición física de la pieza — nicho, va al final %>
+  <div class="filter-block mb-3">
+    <h6 class="fw-semibold small text-uppercase text-muted mb-2">
+      <a class="text-decoration-none text-muted d-flex align-items-center justify-content-between" data-bs-toggle="collapse" href="#filterCondition<%= suffix %>" role="button" aria-expanded="<%= filter_state.selected_conditions.any? %>" aria-controls="filterCondition<%= suffix %>">
+        Condición
+        <% active_cond = filter_state.selected_conditions.count %>
+        <span>
+          <% if active_cond > 0 %>
+            <span class="badge bg-danger rounded-pill me-1"><%= active_cond %></span>
+          <% end %>
+          <i class="fas fa-chevron-down"></i>
+        </span>
+      </a>
+    </h6>
+    <div class="collapse <%= 'show' if filter_state.selected_conditions.any? %>" id="filterCondition<%= suffix %>">
+      <% Product::CONDITION_GROUPS.each_key do |group_key| %>
+        <% group_count = (defined?(@facet_counts) && @facet_counts[:conditions]) ? @facet_counts[:conditions][group_key] : nil %>
+        <% cond_selected = filter_state.selected_conditions.include?(group_key) %>
+        <div class="form-check">
+          <%= check_box_tag "conditions[]", group_key, cond_selected, id: "f-cond-#{group_key}#{suffix}", class: "form-check-input", disabled: zero_disabled.call(group_count, cond_selected) %>
+          <label class="form-check-label" for="f-cond-<%= group_key %><%= suffix %>">
+            <%= Product::CONDITION_GROUP_LABELS[group_key] %>
+            <% if group_count %>
+              <span class="text-muted small">(<%= group_count %>)</span>
+            <% end %>
+          </label>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <% if is_mobile %>
+    <div class="filter-actions d-grid gap-2 mt-2">
+      <button type="button" class="btn btn-danger" data-bs-dismiss="offcanvas">
+        Ver <%= number_with_delimiter(@products.total_count) %> <%= @products.total_count == 1 ? 'resultado' : 'resultados' %>
+      </button>
+      <a href="<%= catalog_path %>" class="btn btn-outline-secondary btn-sm" data-turbo-frame="_top">Limpiar todo</a>
+    </div>
+  <% end %>
 <% end %>

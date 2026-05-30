@@ -125,10 +125,11 @@ module CatalogHelper
     count += Array(params[:categories]).compact_blank.size
     count += Array(params[:brands]).compact_blank.size
     count += Array(params[:series]).compact_blank.size
+    count += Array(params[:conditions]).compact_blank.size
     count += 1 if params[:price_min].present? || params[:price_max].present?
-    count += 1 if ActiveModel::Type::Boolean.new.cast(params[:in_stock])
-    count += 1 if ActiveModel::Type::Boolean.new.cast(params[:backorder])
-    count += 1 if ActiveModel::Type::Boolean.new.cast(params[:preorder])
+    %i[in_stock in_transit to_order backorder preorder].each do |key|
+      count += 1 if ActiveModel::Type::Boolean.new.cast(params[key])
+    end
     count
   end
 end

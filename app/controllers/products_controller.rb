@@ -87,46 +87,29 @@ class ProductsController < ApplicationController
       base_scope = base_scope.where('LOWER(product_name) LIKE ? OR LOWER(category) LIKE ? OR LOWER(brand) LIKE ?', pattern, pattern, pattern)
     end
 
-    # Calcular contadores de facetas para el scope base
-    @facet_counts = calculate_facet_counts(base_scope)
+    # Parsear filtros seleccionados en un hash compartido
+    filters = {
+      categories: Array(params[:categories]).compact_blank,
+      brands:     Array(params[:brands]).compact_blank,
+      series:     Array(params[:series]).compact_blank,
+      price_min:  params[:price_min].presence,
+      price_max:  params[:price_max].presence,
+      in_stock:   ActiveModel::Type::Boolean.new.cast(params[:in_stock]),
+      in_transit: ActiveModel::Type::Boolean.new.cast(params[:in_transit]),
+      to_order:   ActiveModel::Type::Boolean.new.cast(params[:to_order]),
+      backorder:  ActiveModel::Type::Boolean.new.cast(params[:backorder]),
+      preorder:   ActiveModel::Type::Boolean.new.cast(params[:preorder]),
+      conditions: (Array(params[:conditions]) + Array(params['conditions[]'])).map(&:to_s).select { |c| Product::CONDITION_GROUPS.key?(c) }.uniq
+    }
+
+    # Contadores de facetas conscientes de filtros: cada dimensión cuenta con
+    # todos los demás filtros aplicados (excepto el suyo propio), para que las
+    # opciones reflejen lo que pasaría al seleccionarlas sin romper el
+    # multi-select dentro de la misma dimensión.
+    @facet_counts = calculate_facet_counts(base_scope, filters)
 
     # Aplicar filtros
-    scope = base_scope
-    selected_categories = Array(params[:categories]).compact_blank
-    selected_brands     = Array(params[:brands]).compact_blank
-    selected_series     = Array(params[:series]).compact_blank
-    price_min           = params[:price_min].presence
-    price_max           = params[:price_max].presence
-    in_stock_only       = ActiveModel::Type::Boolean.new.cast(params[:in_stock])
-    in_transit_only     = ActiveModel::Type::Boolean.new.cast(params[:in_transit])
-    to_order_only       = ActiveModel::Type::Boolean.new.cast(params[:to_order])
-    backorder_only      = ActiveModel::Type::Boolean.new.cast(params[:backorder])
-    preorder_only       = ActiveModel::Type::Boolean.new.cast(params[:preorder])
-    selected_conditions = (Array(params[:conditions]) + Array(params['conditions[]'])).map(&:to_s).select { |c| Product::CONDITION_GROUPS.key?(c) }.uniq
-
-    scope = scope.where(category: selected_categories) if selected_categories.present?
-    scope = scope.where(brand: selected_brands) if selected_brands.present?
-    scope = scope.where(series: selected_series) if selected_series.present?
-    scope = scope.where(selling_price: price_min.to_f..) if price_min.present?
-    scope = scope.where(selling_price: ..price_max.to_f) if price_max.present?
-    scope = scope.with_condition_groups(selected_conditions) if selected_conditions.any?
-
-    # Grupo de disponibilidad — los 3 chips combinan con OR cuando hay 1+ activos.
-    avail_clauses = []
-    if in_stock_only
-      avail_clauses << "EXISTS (SELECT 1 FROM inventories i WHERE i.product_id = products.id AND i.status = #{Inventory.statuses[:available]})"
-    end
-    if in_transit_only
-      avail_clauses << "EXISTS (SELECT 1 FROM inventories i WHERE i.product_id = products.id AND i.status = #{Inventory.statuses[:in_transit]})"
-    end
-    if to_order_only
-      avail_clauses << "(products.backorder_allowed = TRUE OR products.preorder_available = TRUE)"
-    end
-    scope = scope.where(avail_clauses.join(' OR ')) if avail_clauses.any?
-
-    # Filtros legacy (mantienen comportamiento AND para URLs antiguas con backorder/preorder por separado)
-    scope = scope.where(backorder_allowed: true) if backorder_only
-    scope = scope.where(preorder_available: true) if preorder_only
+    scope = apply_catalog_filters(base_scope, filters)
 
     scope = case @sort
             when 'price_asc'  then scope.order(selling_price: :asc)
@@ -203,22 +186,64 @@ class ProductsController < ApplicationController
 
   private
 
-  def calculate_facet_counts(scope)
+  # Aplica los filtros del catálogo a un scope. `except:` omite una dimensión
+  # (usado por los contadores de facetas para no auto-filtrarse).
+  def apply_catalog_filters(scope, f, except: nil)
+    scope = scope.where(category: f[:categories]) if except != :categories && f[:categories].present?
+    scope = scope.where(brand: f[:brands])        if except != :brands && f[:brands].present?
+    scope = scope.where(series: f[:series])       if except != :series && f[:series].present?
+
+    unless except == :price
+      scope = scope.where(selling_price: f[:price_min].to_f..) if f[:price_min].present?
+      scope = scope.where(selling_price: ..f[:price_max].to_f) if f[:price_max].present?
+    end
+
+    scope = scope.with_condition_groups(f[:conditions]) if except != :conditions && f[:conditions].any?
+
+    unless except == :availability
+      # Grupo de disponibilidad — los 3 chips combinan con OR cuando hay 1+ activos.
+      avail_clauses = []
+      if f[:in_stock]
+        avail_clauses << "EXISTS (SELECT 1 FROM inventories i WHERE i.product_id = products.id AND i.status = #{Inventory.statuses[:available]})"
+      end
+      if f[:in_transit]
+        avail_clauses << "EXISTS (SELECT 1 FROM inventories i WHERE i.product_id = products.id AND i.status = #{Inventory.statuses[:in_transit]})"
+      end
+      if f[:to_order]
+        avail_clauses << "(products.backorder_allowed = TRUE OR products.preorder_available = TRUE)"
+      end
+      scope = scope.where(avail_clauses.join(' OR ')) if avail_clauses.any?
+
+      # Filtros legacy (AND para URLs antiguas con backorder/preorder por separado)
+      scope = scope.where(backorder_allowed: true) if f[:backorder]
+      scope = scope.where(preorder_available: true) if f[:preorder]
+    end
+
+    scope
+  end
+
+  def calculate_facet_counts(base_scope, filters)
+    cat_scope    = apply_catalog_filters(base_scope, filters, except: :categories)
+    brand_scope  = apply_catalog_filters(base_scope, filters, except: :brands)
+    series_scope = apply_catalog_filters(base_scope, filters, except: :series)
+    cond_scope   = apply_catalog_filters(base_scope, filters, except: :conditions)
+    avail_scope  = apply_catalog_filters(base_scope, filters, except: :availability)
+
     condition_counts = Product::CONDITION_GROUPS.transform_values do |item_conditions|
-      scope.where(id: Inventory.where(status: :available, sale_order_id: nil)
-                               .where(item_condition: item_conditions)
-                               .select(:product_id)).count
+      cond_scope.where(id: Inventory.where(status: :available, sale_order_id: nil)
+                                    .where(item_condition: item_conditions)
+                                    .select(:product_id)).count
     end
 
     {
-      categories: scope.where.not(category: [nil, '']).group(:category).count,
-      brands: scope.where.not(brand: [nil, '']).group(:brand).count,
-      series: scope.where.not(series: [nil, '']).group(:series).count,
-      in_stock: scope.joins(:inventories).where(inventories: { status: Inventory.statuses[:available] }).distinct.count,
-      in_transit: scope.where('EXISTS (SELECT 1 FROM inventories i WHERE i.product_id = products.id AND i.status = ?)', Inventory.statuses[:in_transit]).count,
-      to_order: scope.where('products.backorder_allowed = ? OR products.preorder_available = ?', true, true).count,
-      backorder: scope.where(backorder_allowed: true).count,
-      preorder: scope.where(preorder_available: true).count,
+      categories: cat_scope.where.not(category: [nil, '']).group(:category).count,
+      brands: brand_scope.where.not(brand: [nil, '']).group(:brand).count,
+      series: series_scope.where.not(series: [nil, '']).group(:series).count,
+      in_stock: avail_scope.joins(:inventories).where(inventories: { status: Inventory.statuses[:available] }).distinct.count,
+      in_transit: avail_scope.where('EXISTS (SELECT 1 FROM inventories i WHERE i.product_id = products.id AND i.status = ?)', Inventory.statuses[:in_transit]).count,
+      to_order: avail_scope.where('products.backorder_allowed = ? OR products.preorder_available = ?', true, true).count,
+      backorder: avail_scope.where(backorder_allowed: true).count,
+      preorder: avail_scope.where(preorder_available: true).count,
       conditions: condition_counts
     }
   end
