@@ -21,7 +21,7 @@
 
 <%# La lógica de filtros ahora está centralizada en FilterParamsHelper#filter_state %>
 
-<div class="mt-4" id="catalog" data-controller="catalog-view">
+<div class="mt-4" id="catalog">
 
   <%# Banner de beneficios (envío, apartados, pago, WhatsApp) %>
   <div class="catalog-trust-banner mb-4" role="region" aria-label="Información de envío y pago">
@@ -88,18 +88,8 @@
       </h1>
       <p class="text-muted small mb-0"><%= catalog_subtitle %></p>
     </div>
-    <%# Toggle + sort en un mismo grupo a la derecha %>
+    <%# Sort a la derecha del header %>
     <div class="catalog-header-actions d-flex flex-wrap align-items-center gap-2">
-      <%# View toggle is hidden on mobile — grid vs list looks nearly
-          identical at 2-col width and just consumes header space. %>
-      <div class="btn-group view-toggle d-none d-md-flex" role="group" aria-label="Cambiar vista">
-        <button type="button" class="btn btn-outline-secondary btn-sm active" data-action="click->catalog-view#setGrid" data-catalog-view-target="gridBtn" title="Vista cuadrícula">
-          <i class="fas fa-th"></i>
-        </button>
-        <button type="button" class="btn btn-outline-secondary btn-sm" data-action="click->catalog-view#setList" data-catalog-view-target="listBtn" title="Vista lista">
-          <i class="fas fa-list"></i>
-        </button>
-      </div>
       <%= form_with url: catalog_path, method: :get, data: {
         turbo_frame: "products_grid",
         turbo_action: "advance",
@@ -124,14 +114,6 @@
           <option value="price_desc" <%= 'selected' if @sort=='price_desc' %>>Precio ↓</option>
           <option value="name_asc" <%= 'selected' if @sort=='name_asc' %>>Nombre A-Z</option>
         </select>
-        <% if @q.present? || params[:sort].present? %>
-          <%= link_to catalog_path,
-                      class: "btn btn-outline-secondary btn-icon",
-                      title: "Limpiar filtros",
-                      data: { turbo_frame: "_top" } do %>
-            <i class="fas fa-times"></i>
-          <% end %>
-        <% end %>
       <% end %>
     </div>
     </div><%# /catalog-header-row %>

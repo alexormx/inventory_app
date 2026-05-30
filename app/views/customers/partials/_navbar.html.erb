@@ -18,31 +18,27 @@
 
     <!-- COLLAPSIBLE CONTENT -->
     <div class="collapse navbar-collapse" id="navbar-scroll">
-      <!-- TOP SEARCH (mobile only) -->
-      <% if user_signed_in? %>
-        <div class="navbar-top-search d-lg-none w-100 my-2">
-          <form class="navbar-search" role="search" action="<%= catalog_path %>" method="get">
-            <i class="fas fa-search search-icon" aria-hidden="true"></i>
-            <input type="search" class="search-input" name="q" value="<%= params[:q] %>" placeholder="Buscar..." aria-label="Buscar productos" />
-            <% if params[:q].present? %>
-              <button type="button" class="btn-clear" aria-label="Limpiar búsqueda" onclick="this.closest('form').querySelector('.search-input').value=''; this.closest('form').submit();">&times;</button>
-            <% end %>
-          </form>
-        </div>
-      <% end %>
+      <!-- TOP SEARCH (mobile only) — visible para todos, no requiere sesión -->
+      <div class="navbar-top-search d-lg-none w-100 my-2">
+        <form class="navbar-search" role="search" action="<%= catalog_path %>" method="get">
+          <i class="fas fa-search search-icon" aria-hidden="true"></i>
+          <input type="search" class="search-input" name="q" value="<%= params[:q] %>" placeholder="Buscar..." aria-label="Buscar productos" />
+          <% if params[:q].present? %>
+            <button type="button" class="btn-clear" aria-label="Limpiar búsqueda" onclick="this.closest('form').querySelector('.search-input').value=''; this.closest('form').submit();">&times;</button>
+          <% end %>
+        </form>
+      </div>
 
-      <!-- PERSISTENT COMPACT SEARCH -->
-      <% if user_signed_in? %>
-        <div class="navbar-search-wrapper ms-lg-4 my-2 my-lg-0 flex-grow-1 d-none d-lg-flex align-items-center">
-          <form class="navbar-search" role="search" action="<%= catalog_path %>" method="get">
-            <i class="fas fa-search search-icon" aria-hidden="true"></i>
-            <input type="search" class="search-input" name="q" value="<%= params[:q] %>" placeholder="Buscar..." aria-label="Buscar productos" />
-            <% if params[:q].present? %>
-              <button type="button" class="btn-clear" aria-label="Limpiar búsqueda" onclick="this.closest('form').querySelector('.search-input').value=''; this.closest('form').submit();">&times;</button>
-            <% end %>
-          </form>
-        </div>
-      <% end %>
+      <!-- PERSISTENT COMPACT SEARCH — visible para todos, no requiere sesión -->
+      <div class="navbar-search-wrapper ms-lg-4 my-2 my-lg-0 flex-grow-1 d-none d-lg-flex align-items-center">
+        <form class="navbar-search" role="search" action="<%= catalog_path %>" method="get">
+          <i class="fas fa-search search-icon" aria-hidden="true"></i>
+          <input type="search" class="search-input" name="q" value="<%= params[:q] %>" placeholder="Buscar..." aria-label="Buscar productos" />
+          <% if params[:q].present? %>
+            <button type="button" class="btn-clear" aria-label="Limpiar búsqueda" onclick="this.closest('form').querySelector('.search-input').value=''; this.closest('form').submit();">&times;</button>
+          <% end %>
+        </form>
+      </div>
 
       <!-- NAV MENU -->
       <ul id="navbar-menu" class="navbar-nav ms-auto d-flex align-items-center gap-2">
@@ -73,10 +69,7 @@
         </li>
         <% end %>
 
-        <% if user_signed_in? %>
-
-
-        <!-- Catálogo (solo usuarios autenticados) -->
+        <!-- Catálogo (público — accesible sin sesión) -->
         <li class="nav-item">
           <%= link_to catalog_path,
             class: "nav-item-link d-flex align-items-center #{'active' if controller_path=='products' && action_name=='index'}",
@@ -87,13 +80,12 @@
           <% end %>
         </li>
 
-        <% if dark_mode_enabled? %>
+        <% if user_signed_in? && dark_mode_enabled? %>
         <li class="nav-item">
           <button type="button" class="nav-item-link d-flex align-items-center" id="theme-toggle" aria-label="Cambiar tema" data-theme-toggle>
             <i class="fas fa-moon" aria-hidden="true"></i> <span class="link-text">Tema</span>
           </button>
         </li>
-        <% end %>
         <% end %>
 
         <% if user_signed_in? %>

@@ -27,22 +27,34 @@
         <%= admin_sidebar_link 'Panel de control', admin_dashboard_path, icon: 'gauge-high' %>
       </li>
 
-      <li class="sidebar-section-title px-3 pt-3 pb-1">Operación</li>
+      <li class="sidebar-section-title px-3 pt-3 pb-1">Ventas</li>
+
+      <li class="nav-item px-2">
+        <%= admin_sidebar_link 'Órdenes de Venta', admin_sale_orders_path, icon: 'receipt' %>
+      </li>
+      <li class="nav-item px-2">
+        <%= admin_sidebar_link 'Preórdenes', admin_preorders_path, icon: 'calendar-check' %>
+      </li>
+      <li class="nav-item px-2">
+        <%= admin_sidebar_link 'Pedidos WhatsApp', admin_whatsapp_requests_path, icon: 'comment-dots' %>
+      </li>
+      <li class="nav-item px-2 mb-1">
+        <%= admin_sidebar_link 'Cuentas por Cobrar', admin_receivables_path, icon: 'hand-holding-dollar' %>
+      </li>
+
+      <li class="sidebar-section-title px-3 pt-3 pb-1">Compras</li>
 
       <li class="nav-item px-2">
         <%= admin_sidebar_link 'Órdenes de Compra', admin_purchase_orders_path, icon: 'truck-loading' %>
       </li>
       <li class="nav-item px-2">
-        <%= admin_sidebar_link 'Órdenes de Venta', admin_sale_orders_path, icon: 'receipt' %>
+        <%= admin_sidebar_link 'Descubrir Nuevos Productos', discovery_admin_supplier_catalog_items_path, icon: 'magnifying-glass' %>
       </li>
       <li class="nav-item px-2 mb-1">
-        <%= admin_sidebar_link 'Preórdenes', admin_preorders_path, icon: 'calendar-check' %>
-      </li>
-      <li class="nav-item px-2 mb-1">
-        <%= admin_sidebar_link 'Pedidos WhatsApp', admin_whatsapp_requests_path, icon: 'comment-dots' %>
+        <%= admin_sidebar_link 'Actualizar Catálogo Proveedor', admin_supplier_catalog_items_path, icon: 'arrows-rotate' %>
       </li>
 
-      <li class="sidebar-section-title px-3 pt-3 pb-1">Catálogo e inventario</li>
+      <li class="sidebar-section-title px-3 pt-3 pb-1">Catálogo</li>
 
       <li class="nav-item px-2">
         <%= admin_sidebar_link 'Productos', admin_products_path, icon: 'box-open' %>
@@ -59,6 +71,12 @@
       <li class="nav-item px-2 ps-4">
         <%= admin_sidebar_link 'Agregar Coleccionable', admin_collectibles_quick_add_path, icon: 'plus', section: true %>
       </li>
+      <li class="nav-item px-2 mb-1">
+        <%= admin_sidebar_link 'Enriquecimiento IA', admin_product_enrichment_index_path, icon: 'wand-magic-sparkles' %>
+      </li>
+
+      <li class="sidebar-section-title px-3 pt-3 pb-1">Inventario</li>
+
       <li class="nav-item px-2">
         <%= admin_sidebar_link 'Inventario', admin_inventory_path, icon: 'boxes-stacked', section: true %>
       </li>
@@ -77,47 +95,41 @@
       <li class="nav-item px-2 mb-1">
         <%= admin_sidebar_link 'Ubicaciones', admin_inventory_locations_path, icon: 'sitemap' %>
       </li>
+
+      <li class="sidebar-section-title px-3 pt-3 pb-1">Clientes</li>
+
       <li class="nav-item px-2 mb-1">
-        <%= admin_sidebar_link 'Enriquecimiento IA', admin_product_enrichment_index_path, icon: 'wand-magic-sparkles' %>
-      </li>
-      <li class="nav-item px-2 mb-1">
-        <%= admin_sidebar_link 'Descubrir Nuevos Productos', discovery_admin_supplier_catalog_items_path, icon: 'magnifying-glass' %>
-      </li>
-      <li class="nav-item px-2 mb-1">
-        <%= admin_sidebar_link 'Actualizar Catálogo Proveedor', admin_supplier_catalog_items_path, icon: 'arrows-rotate' %>
+        <%= admin_sidebar_link 'Usuarios', admin_users_path, icon: 'users' %>
       </li>
 
-      <li class="sidebar-section-title px-3 pt-3 pb-1">Finanzas y análisis</li>
+      <li class="sidebar-section-title px-3 pt-3 pb-1">Contenido</li>
 
       <li class="nav-item px-2">
-        <%= admin_sidebar_link 'Cuentas por Cobrar', admin_receivables_path, icon: 'hand-holding-dollar' %>
+        <%= admin_sidebar_link 'Blog', admin_posts_path, icon: 'newspaper' %>
+      </li>
+      <li class="nav-item px-2">
+        <%= admin_sidebar_link 'Reseñas', admin_reviews_path, icon: 'comments' %>
       </li>
       <li class="nav-item px-2 mb-1">
+        <%= admin_sidebar_link 'Comentarios', admin_comments_path, icon: 'comment-dots' %>
+      </li>
+
+      <li class="sidebar-section-title px-3 pt-3 pb-1">Análisis</li>
+
+      <li class="nav-item px-2">
         <%= admin_sidebar_link 'Reportes', admin_reports_path, icon: 'chart-pie' %>
+      </li>
+      <li class="nav-item px-2 mb-1">
+        <%= admin_sidebar_link 'Registro de Visitas', admin_visitor_logs_path, icon: 'chart-line' %>
       </li>
 
       <li class="sidebar-section-title px-3 pt-3 pb-1">Sistema</li>
 
       <li class="nav-item px-2">
-        <%= admin_sidebar_link 'Usuarios', admin_users_path, icon: 'users' %>
-      </li>
-      <li class="nav-item px-2">
         <%= admin_sidebar_link 'Configuración', admin_settings_path, icon: 'gears' %>
       </li>
       <li class="nav-item px-2">
         <%= admin_sidebar_link 'Variables del Sistema', admin_system_variables_path, icon: 'database' %>
-      </li>
-      <li class="nav-item px-2">
-        <%= admin_sidebar_link 'Registro de Visitas', admin_visitor_logs_path, icon: 'chart-line' %>
-      </li>
-      <li class="nav-item px-2">
-        <%= admin_sidebar_link 'Reseñas', admin_reviews_path, icon: 'comments' %>
-      </li>
-      <li class="nav-item px-2">
-        <%= admin_sidebar_link 'Comentarios', admin_comments_path, icon: 'comment-dots' %>
-      </li>
-      <li class="nav-item px-2">
-        <%= admin_sidebar_link 'Blog', admin_posts_path, icon: 'newspaper' %>
       </li>
     </ul>
   </nav>

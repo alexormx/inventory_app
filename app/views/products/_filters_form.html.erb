@@ -20,7 +20,9 @@
   <input type="hidden" name="sort" value="<%= @sort %>">
   <% if @q.present? %><input type="hidden" name="q" value="<%= @q %>"><% end %>
 
-  <%# Cabecera: título + conteo de filtros activos + limpiar todo %>
+  <%# Cabecera: título + conteo de filtros activos.
+      La acción "Limpiar todos" vive en el resumen de resultados (área
+      principal) para no duplicarla. %>
   <div class="filter-sidebar-head d-flex align-items-center justify-content-between mb-3">
     <span class="filter-sidebar-title">
       <i class="fas fa-sliders me-1" aria-hidden="true"></i>Filtros
@@ -28,9 +30,6 @@
         <span class="badge bg-danger rounded-pill ms-1"><%= active_filters_count %></span>
       <% end %>
     </span>
-    <% if active_filters_count > 0 %>
-      <%= link_to 'Limpiar', catalog_path, class: 'filter-clear-link', data: { turbo_frame: '_top' } %>
-    <% end %>
   </div>
 
   <% if @all_categories.present? %>

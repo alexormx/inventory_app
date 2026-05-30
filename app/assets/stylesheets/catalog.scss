@@ -759,20 +759,6 @@ turbo-frame[busy]::after {
   border: 0 !important;
 }
 
-/* View Toggle Buttons */
-#catalog .view-toggle .btn {
-  padding: 0.4rem 0.6rem;
-  border-color: #dee2e6;
-}
-#catalog .view-toggle .btn.active {
-  background: #dc3545;
-  border-color: #dc3545;
-  color: white;
-}
-#catalog .view-toggle .btn:not(.active):hover {
-  background: #f8f9fa;
-}
-
 /* Results counter pill */
 #catalog .results-count {
   font-size: 0.875rem;
@@ -1233,27 +1219,6 @@ button.catalog-wa-code.is-copied {
 
 #catalog .catalog-header-actions {
   padding-top: .35rem;
-}
-
-#catalog .view-toggle {
-  background: #eef1f6;
-  border: 1px solid var(--catalog-border);
-  border-radius: 999px;
-  padding: .2rem;
-}
-
-#catalog .view-toggle .btn {
-  border: 0;
-  border-radius: 999px !important;
-  color: #596171;
-  min-height: 36px;
-  min-width: 38px;
-}
-
-#catalog .view-toggle .btn.active {
-  background: #fff;
-  color: var(--catalog-ink);
-  box-shadow: 0 8px 20px -14px rgba(15,23,42,.55);
 }
 
 #catalog .catalog-filters .form-select,
