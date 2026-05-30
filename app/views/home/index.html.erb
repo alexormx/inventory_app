@@ -25,6 +25,9 @@
         rgba(127,29,29,0.48) 100%);
   }
   .hero-section > .container { position: relative; z-index: 2; }
+  /* La palabra resaltada del título (text-danger) en rojo de marca se
+     pierde sobre la foto oscura; la aclaramos solo dentro del hero. */
+  .hero-section .text-danger { color: #ff8a8a !important; }
 </style>
 
 <!-- ✨ HERO SECTION -->
@@ -294,7 +297,7 @@
 </div>
 
 <!-- 📧 NEWSLETTER -->
-<section class="newsletter-section py-5 bg-danger text-white">
+<section class="newsletter-section py-5 text-white" style="background: linear-gradient(135deg, #a01828 0%, #7f1d1d 100%);">
   <div class="container">
     <div class="row justify-content-center">
       <div class="col-lg-8 text-center">
