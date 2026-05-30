@@ -59,18 +59,35 @@ module ApplicationHelper
     return ''.html_safe if id.blank?
     return ''.html_safe unless id.match?(/\A[A-Z]+-[A-Z0-9-]{4,}\z/i)
 
-    src = "https://www.googletagmanager.com/gtag/js?id=#{ERB::Util.html_escape(id)}"
+    src = "https://www.googletagmanager.com/gtag/js?id=#{j(id)}"
+    # gtag() calls queue into dataLayer immediately; the gtag.js library is
+    # loaded lazily on first interaction, or after load+idle as a fallback so
+    # bounced sessions are still counted. This keeps the ~150KB third-party
+    # script off the critical path (lower TBT) without losing tracking.
     config = <<~JS
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
       gtag('config', '#{j(id)}', { anonymize_ip: true });
+      (function(){
+        if (window.__gaDeferredInit) return; window.__gaDeferredInit = true;
+        var loaded = false, opts = { passive: true, once: true };
+        var events = ['scroll','mousemove','touchstart','keydown','click'];
+        function loadGA(){
+          if (loaded) return; loaded = true;
+          events.forEach(function(ev){ window.removeEventListener(ev, loadGA, opts); });
+          var s = document.createElement('script');
+          s.src = '#{src}'; s.async = true;
+          document.head.appendChild(s);
+        }
+        events.forEach(function(ev){ window.addEventListener(ev, loadGA, opts); });
+        function armFallback(){ setTimeout(loadGA, 3000); }
+        if (document.readyState === 'complete') armFallback();
+        else window.addEventListener('load', armFallback, { once: true });
+      })();
     JS
 
-    safe_join([
-                tag.script(src: src, async: true),
-                tag.script(config.html_safe)
-              ])
+    tag.script(config.html_safe)
   end
 
   # Preload de la imagen LCP del home (hero). Usa el patrón responsive

@@ -168,12 +168,15 @@ module ProductsHelper
   end
 
   # Helper para ActiveStorage
-  def responsive_attachment_image(attachment, alt:, widths: [200, 400, 600], css_class: '', loading: 'lazy', square: true, fetch_priority: nil, id: nil, width: nil, height: nil)
+  def responsive_attachment_image(attachment, alt:, widths: [200, 400, 600], css_class: '', loading: 'lazy', square: true, fetch_priority: nil, id: nil, width: nil, height: nil, sizes: nil)
     return image_tag('placeholder.png', alt: alt, class: css_class) if attachment.blank?
 
     widths = Array(widths).map(&:to_i).select(&:positive?).uniq.sort
     widths = [200, 400, 600] if widths.empty?
-    sizes_attr = "(max-width: #{widths.max}px) 100vw, #{widths.max}px"
+    # Callers can pass a layout-accurate `sizes` so the browser picks the
+    # smallest sufficient variant; without it we fall back to the conservative
+    # full-width assumption (which over-fetches when the image renders small).
+    sizes_attr = sizes.presence || "(max-width: #{widths.max}px) 100vw, #{widths.max}px"
     original_variants = {}
     widths.each do |w|
       resize_opt = square ? [w, w] : [w, nil]
