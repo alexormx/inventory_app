@@ -1,0 +1,7 @@
+// Catalog bundle: the #catalog-scoped grid/filters/cards plus the noUiSlider
+// price-range widget. Loaded only by the products controller so these ~60KB
+// stay out of the global application.css. The handful of formerly-global
+// catalog rules (breadcrumb, pagination, .alert-warning, .badge-incoming,
+// skip link, turbo-frame busy) now live in custom.scss.
+@import "vendor/nouislider";
+@import "catalog";

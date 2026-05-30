@@ -9,11 +9,12 @@
  * Consider organizing styles into separate files for maintainability.
  */
  @import "custom";
- @import "vendor/nouislider";
- @import "catalog";
- // dashboard / actiontext / post moved to admin_pack.scss & blog_pack.scss
- // so the admin chrome, rich-text editor, and blog styles no longer ship in
- // the global bundle. They load per-layout/per-page instead.
+ // Page-specific bundles keep heavy CSS out of the global application.css:
+ //   catalog + nouislider -> catalog_pack.scss (products controller)
+ //   dashboard + actiontext -> admin_pack.scss (admin layout)
+ //   post + actiontext      -> blog_pack.scss (posts pages)
+ // Formerly-global catalog rules (breadcrumb, pagination, alerts, etc.) were
+ // migrated into custom.scss so they still apply everywhere.
 
  body {
   -webkit-text-size-adjust: 100%; /* Evita zoom automático en iOS y estandariza ajuste de tamaño */

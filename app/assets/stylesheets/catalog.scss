@@ -219,8 +219,7 @@
   background: #0ea5e9 !important;
 }
 
-/* Badge dedicado para "Llega ~fecha" */
-.badge.badge-incoming,
+/* Badge dedicado para "Llega ~fecha" (base global en custom.scss) */
 #catalog .badge.badge-incoming {
   background: #1e3a8a !important;
   color: #fff !important;
@@ -552,74 +551,7 @@ turbo-frame#products_grid[busy]::before {
 .search-chip .chip-clear { display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:50%; text-decoration:none; color:#666; background:transparent; border:1px solid #ccc; line-height:1; font-size:1rem; }
 .search-chip .chip-clear:hover { color:#a31221; border-color:#a31221; }
 
-/* Loading indicator for Turbo Frame with skeleton */
-turbo-frame[busy] {
-  opacity: .55;
-  filter: saturate(.7);
-  transition: opacity .15s ease;
-  pointer-events: none;
-  position: relative;
-}
-
-/* Skeleton loader (reemplaza el spinner tradicional) */
-@keyframes shimmer {
-  0% { background-position: -468px 0; }
-  100% { background-position: 468px 0; }
-}
-
-.skeleton {
-  animation: shimmer 1.2s ease-in-out infinite;
-  background: linear-gradient(to right, #f6f7f8 0%, #edeef1 20%, #f6f7f8 40%, #f6f7f8 100%);
-  background-size: 800px 104px;
-  display: inline-block;
-  position: relative;
-  overflow: hidden;
-}
-
-.skeleton-card {
-  border-radius: 8px;
-  height: 100%;
-  min-height: 320px;
-}
-
-.skeleton-image {
-  width: 100%;
-  height: 150px;
-  border-radius: 8px 8px 0 0;
-}
-
-.skeleton-text {
-  height: 12px;
-  margin-bottom: 8px;
-  border-radius: 4px;
-}
-
-.skeleton-button {
-  height: 32px;
-  width: 100%;
-  border-radius: 4px;
-}
-
-/* Fallback spinner si skeleton no disponible */
-turbo-frame[busy]::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 40px;
-  height: 40px;
-  border: 4px solid #f3f3f3;
-  border-top: 4px solid #dc3545;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-  z-index: 5;
-}
-
-@keyframes spin {
-  0% { transform: translate(-50%, -50%) rotate(0deg); }
-  100% { transform: translate(-50%, -50%) rotate(360deg); }
-}
+/* Turbo-Frame busy + skeleton loader moved to custom.scss (generic/global) */
 
 /* Reduce motion for accessibility */
 @media (prefers-reduced-motion: reduce) {
@@ -627,34 +559,7 @@ turbo-frame[busy]::after {
   #catalog .product-image { transition: none; }
 }
 
-/* Breadcrumbs mejorado */
-.breadcrumb {
-  background: transparent;
-  padding: 0;
-  margin: 0;
-  font-size: 0.875rem;
-}
-
-.breadcrumb-item + .breadcrumb-item::before {
-  content: "›";
-  color: #6c757d;
-  font-size: 1.1rem;
-  padding: 0 0.5rem;
-}
-
-.breadcrumb-item.active {
-  color: #dc3545;
-  font-weight: 500;
-}
-
-.breadcrumb-item a {
-  color: #6c757d;
-  transition: color 0.2s ease;
-}
-
-.breadcrumb-item a:hover {
-  color: #dc3545;
-}
+/* Breadcrumbs base moved to custom.scss (global); #catalog overrides remain. */
 
 /* Pagination wrapper centrado: info arriba, paginador abajo */
 #catalog .catalog-pagination {
@@ -667,45 +572,8 @@ turbo-frame[busy]::after {
   color: #adb5bd;
 }
 
-/* Pagination mejorada */
-.pagination {
-  margin: 0;
-}
-
-.pagination .page-link {
-  color: #dc3545;
-  border-color: #dee2e6;
-  padding: 0.5rem 0.75rem;
-  transition: all 0.2s ease;
-}
-
-.pagination .page-link:hover {
-  background-color: #dc3545;
-  border-color: #dc3545;
-  color: white;
-  transform: translateY(-1px);
-}
-
-.pagination .page-item.active .page-link {
-  background-color: #dc3545;
-  border-color: #dc3545;
-  font-weight: 600;
-}
-
-.pagination .page-item.disabled .page-link {
-  color: #6c757d;
-  background-color: #f8f9fa;
-}
-
-/* Empty state mejorado */
-.alert-warning {
-  border-left: 4px solid #ffc107;
-  background: #fff9e6;
-}
-
-.alert-warning .fa-search {
-  opacity: 0.5;
-}
+/* Pagination + warning-alert base moved to custom.scss (global);
+   #catalog .pagination overrides remain below. */
 
 /* Keyboard navigation focus styles */
 #catalog .catalog-item:focus-within {
@@ -729,35 +597,8 @@ turbo-frame[busy]::after {
   z-index: 2;
 }
 
-/* Skip to content link (accesibilidad) */
-.skip-to-content {
-  position: absolute;
-  top: -40px;
-  left: 0;
-  background: #dc3545;
-  color: white;
-  padding: 8px 16px;
-  text-decoration: none;
-  z-index: 9999;
-  border-radius: 0 0 4px 0;
-}
-
-.skip-to-content:focus {
-  top: 0;
-}
-
-/* Screen reader only content */
-.visually-hidden {
-  position: absolute !important;
-  width: 1px !important;
-  height: 1px !important;
-  padding: 0 !important;
-  margin: -1px !important;
-  overflow: hidden !important;
-  clip: rect(0,0,0,0) !important;
-  white-space: nowrap !important;
-  border: 0 !important;
-}
+/* Skip-to-content link moved to custom.scss (global);
+   .visually-hidden already lives in custom.scss. */
 
 /* Results counter pill */
 #catalog .results-count {

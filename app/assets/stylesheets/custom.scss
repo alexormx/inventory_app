@@ -2413,3 +2413,154 @@ body:not(.admin-shell) .devise-auth-shell {
   max-width: 460px;
   margin: 2rem auto;
 }
+
+/* ──────────────────────────────────────────────────────────────────────
+   Site-wide rules migrated out of catalog.scss so they keep applying on
+   every page after catalog.scss became products-controller-only. These are
+   the only catalog.scss rules that were ever unscoped/global: breadcrumbs,
+   pagination, warning alerts, the in-transit badge, the skip link, and the
+   generic Turbo-Frame busy/skeleton loading indicator (used by the cart
+   preview and pagination frames too).
+   ────────────────────────────────────────────────────────────────────── */
+
+/* In-transit badge ("Llega ~fecha") */
+.badge.badge-incoming {
+  background: #1e3a8a !important;
+  color: #fff !important;
+}
+
+/* Breadcrumbs */
+.breadcrumb {
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  font-size: 0.875rem;
+}
+.breadcrumb-item + .breadcrumb-item::before {
+  content: "›";
+  color: #6c757d;
+  font-size: 1.1rem;
+  padding: 0 0.5rem;
+}
+.breadcrumb-item.active {
+  color: #dc3545;
+  font-weight: 500;
+}
+.breadcrumb-item a {
+  color: #6c757d;
+  transition: color 0.2s ease;
+}
+.breadcrumb-item a:hover {
+  color: #dc3545;
+}
+
+/* Pagination */
+.pagination {
+  margin: 0;
+}
+.pagination .page-link {
+  color: #dc3545;
+  border-color: #dee2e6;
+  padding: 0.5rem 0.75rem;
+  transition: all 0.2s ease;
+}
+.pagination .page-link:hover {
+  background-color: #dc3545;
+  border-color: #dc3545;
+  color: white;
+  transform: translateY(-1px);
+}
+.pagination .page-item.active .page-link {
+  background-color: #dc3545;
+  border-color: #dc3545;
+  font-weight: 600;
+}
+.pagination .page-item.disabled .page-link {
+  color: #6c757d;
+  background-color: #f8f9fa;
+}
+
+/* Warning alert / empty state */
+.alert-warning {
+  border-left: 4px solid #ffc107;
+  background: #fff9e6;
+}
+.alert-warning .fa-search {
+  opacity: 0.5;
+}
+
+/* Skip-to-content link (accesibilidad) */
+.skip-to-content {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: #dc3545;
+  color: white;
+  padding: 8px 16px;
+  text-decoration: none;
+  z-index: 9999;
+  border-radius: 0 0 4px 0;
+}
+.skip-to-content:focus {
+  top: 0;
+}
+
+/* Turbo-Frame busy state + skeleton loader (generic; also used by the cart
+   preview and shared pagination frames) */
+turbo-frame[busy] {
+  opacity: .55;
+  filter: saturate(.7);
+  transition: opacity .15s ease;
+  pointer-events: none;
+  position: relative;
+}
+@keyframes shimmer {
+  0% { background-position: -468px 0; }
+  100% { background-position: 468px 0; }
+}
+.skeleton {
+  animation: shimmer 1.2s ease-in-out infinite;
+  background: linear-gradient(to right, #f6f7f8 0%, #edeef1 20%, #f6f7f8 40%, #f6f7f8 100%);
+  background-size: 800px 104px;
+  display: inline-block;
+  position: relative;
+  overflow: hidden;
+}
+.skeleton-card {
+  border-radius: 8px;
+  height: 100%;
+  min-height: 320px;
+}
+.skeleton-image {
+  width: 100%;
+  height: 150px;
+  border-radius: 8px 8px 0 0;
+}
+.skeleton-text {
+  height: 12px;
+  margin-bottom: 8px;
+  border-radius: 4px;
+}
+.skeleton-button {
+  height: 32px;
+  width: 100%;
+  border-radius: 4px;
+}
+turbo-frame[busy]::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #dc3545;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  z-index: 5;
+}
+@keyframes spin {
+  0% { transform: translate(-50%, -50%) rotate(0deg); }
+  100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
