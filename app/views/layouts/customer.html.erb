@@ -78,8 +78,9 @@
         if(!nav) return;
         requestAnimationFrame(()=>{
           const navH = nav.offsetHeight;
+          // Drives `body { padding-top: var(--nav-height) }` in CSS, which
+          // already reserves space pre-JS — so this only refines, no jump.
           document.documentElement.style.setProperty('--nav-height', navH + 'px');
-          document.body.style.paddingTop = navH + 'px';
         });
       }
       ['turbo:load','turbo:render'].forEach(ev=>document.addEventListener(ev,recalcLayout));

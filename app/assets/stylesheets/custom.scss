@@ -1200,9 +1200,13 @@ input[type="number"] {
   &:hover { transform: translateY(-3px) scale(1.05); box-shadow:0 10px 22px -4px rgba(0,0,0,0.4), 0 4px 8px rgba(0,0,0,0.25); }
   &:active { transform: translateY(-1px) scale(.97); box-shadow:0 4px 12px -2px rgba(0,0,0,0.4); }
   &:focus-visible { box-shadow:0 0 0 4px rgba(255,255,255,0.9), 0 0 0 6px #25d366, 0 6px 16px -2px rgba(0,0,0,0.35); }
+}
 
-  /* Animación pulse suave opcional */
-  animation: wa-pulse 4.5s ease-in-out infinite;
+/* Pulso opcional: solo cuando el usuario no pidió menos movimiento. El
+   box-shadow no se compone en GPU y repinta continuamente, así que lo
+   limitamos a quienes lo aceptan para no gravar el hilo principal. */
+@media (prefers-reduced-motion: no-preference) {
+  .whatsapp-float-button { animation: wa-pulse 4.5s ease-in-out infinite; }
 }
 
 @keyframes wa-pulse {
@@ -1312,6 +1316,12 @@ body { background: var(--color-bg); color: var(--color-text); }
 body [role="dialog"], .card, .modal, .dropdown-menu { background: var(--color-surface); }
 
 .visually-hidden { position:absolute !important; width:1px !important; height:1px !important; padding:0 !important; margin:-1px !important; overflow:hidden !important; clip:rect(0 0 0 0) !important; white-space:nowrap !important; border:0 !important; }
+
+/* Reserve space for the fixed navbar before JS runs. JS later refines
+   --nav-height to the measured value; the 76px fallback equals
+   --nav-height-base so there is no first-paint content jump (CLS). */
+body:not(.admin-shell) { padding-top: var(--nav-height, 76px); }
+
 .site-navbar {
   --nav-height-base: 76px;
   --nav-height-shrink: 52px;

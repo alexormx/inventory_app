@@ -139,10 +139,12 @@
                       qp = request.query_parameters.merge(chip[:key] => '1', page: nil).compact_blank
                       catalog_path(qp)
                     end %>
+      <%# aria-pressed no es válido en role=link; el estado se comunica en el
+          nombre accesible (activar / quitar filtro). %>
       <%= link_to chip_url,
                    class: ["availability-chip", (chip[:active] ? 'active' : nil)].compact.join(' '),
                    title: chip[:tip],
-                   "aria-pressed": chip[:active].to_s,
+                   "aria-label": (chip[:active] ? "#{chip[:label]}: filtro activo, quitar" : "Filtrar por #{chip[:label]}"),
                    data: { turbo_frame: "_top" } do %>
         <i class="fas <%= chip[:icon] %> me-1" aria-hidden="true"></i><%= chip[:label] %>
         <% if chip[:count].to_i > 0 %>
