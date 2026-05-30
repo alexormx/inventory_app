@@ -188,6 +188,72 @@
     if(e.key === 'Escape') closeAllDropdowns();
   });
 
+  // ---- Modal polyfill (Bootstrap JS isn't loaded) ----
+  let modalBackdrop;
+  function openModal(modal){
+    modal.style.display = 'block';
+    modal.removeAttribute('aria-hidden');
+    modal.setAttribute('aria-modal', 'true');
+    document.body.classList.add('modal-open');
+    document.body.style.overflow = 'hidden';
+    if(!modalBackdrop){
+      modalBackdrop = document.createElement('div');
+      modalBackdrop.className = 'modal-backdrop fade';
+      document.body.appendChild(modalBackdrop);
+      modalBackdrop.addEventListener('click', ()=> closeModal(modal));
+    }
+    requestAnimationFrame(()=>{ modal.classList.add('show'); modalBackdrop.classList.add('show'); });
+    // Nudge any lazy turbo-frame now that the modal is visible.
+    modal.querySelectorAll('turbo-frame[loading="lazy"]').forEach((frame)=>{
+      if(frame.getAttribute('complete') === null && typeof frame.reload === 'function'){
+        try { frame.reload(); } catch(e) { /* ignore */ }
+      }
+    });
+    const focusable = modal.querySelector('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+    if(focusable) setTimeout(()=> focusable.focus(), 0);
+    const onEsc = (e)=>{ if(e.key === 'Escape') closeModal(modal); };
+    modal.__onEsc = onEsc;
+    document.addEventListener('keydown', onEsc);
+  }
+
+  function closeModal(modal){
+    modal.classList.remove('show');
+    modal.style.display = 'none';
+    modal.setAttribute('aria-hidden', 'true');
+    modal.removeAttribute('aria-modal');
+    document.body.classList.remove('modal-open');
+    document.body.style.overflow = '';
+    if(modalBackdrop){ modalBackdrop.remove(); modalBackdrop = null; }
+    if(modal.__onEsc){ document.removeEventListener('keydown', modal.__onEsc); modal.__onEsc = null; }
+  }
+
+  document.addEventListener('click', (e)=>{
+    const toggle = e.target.closest('[data-bs-toggle="modal"]');
+    if(toggle){
+      e.preventDefault();
+      const sel = toggle.getAttribute('data-bs-target') || toggle.getAttribute('href');
+      const modal = sel && document.querySelector(sel);
+      if(modal) openModal(modal);
+      return;
+    }
+    const dismiss = e.target.closest('[data-bs-dismiss="modal"]');
+    if(dismiss){
+      const modal = dismiss.closest('.modal');
+      if(modal) closeModal(modal);
+    }
+  });
+
+  function cleanupModals(){
+    document.querySelectorAll('.modal.show').forEach(m => {
+      m.classList.remove('show');
+      m.style.display = 'none';
+      m.setAttribute('aria-hidden', 'true');
+    });
+    document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+    document.body.classList.remove('modal-open');
+    modalBackdrop = null;
+  }
+
   // Clean up offcanvas state before each Turbo navigation so a backdrop
   // can't leak into the next page and block clicks.
   function cleanupOffcanvas(){
@@ -201,6 +267,6 @@
   }
 
   document.addEventListener('turbo:load', ready);
-  document.addEventListener('turbo:before-render', cleanupOffcanvas);
+  document.addEventListener('turbo:before-render', ()=>{ cleanupOffcanvas(); cleanupModals(); });
   document.addEventListener('turbo:render', ()=>{ initCollapse(); initOffcanvas(); initTabs(); initDropdowns(); });
 })();
