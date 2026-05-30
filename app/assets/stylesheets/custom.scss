@@ -1821,9 +1821,14 @@ body:not(.admin-shell) .hero-section {
 }
 
 body:not(.admin-shell) .hero-section .hero-overlay {
+  /* Scrim oscuro centrado para garantizar contraste del título blanco
+     sobre la foto, con tinte rojo de marca encima. */
   background:
-    radial-gradient(circle at 50% 20%, rgba(255,255,255,.34), transparent 24rem),
-    linear-gradient(180deg, rgba(0,0,0,.06), rgba(0,0,0,.24)) !important;
+    radial-gradient(ellipse at 50% 45%,
+      rgba(0,0,0,.62) 0%,
+      rgba(0,0,0,.34) 55%,
+      rgba(0,0,0,.20) 100%),
+    linear-gradient(135deg, rgba(201,42,58,.40), rgba(127,29,29,.46)) !important;
 }
 
 body:not(.admin-shell) .hero-section::after {
@@ -1833,16 +1838,19 @@ body:not(.admin-shell) .hero-section::after {
   z-index: 1;
   pointer-events: none;
   background:
-    radial-gradient(circle at 50% 15%, rgba(255,255,255,.18), transparent 24rem),
-    linear-gradient(180deg, rgba(10,14,22,.05), rgba(10,14,22,.28));
+    linear-gradient(180deg, rgba(10,14,22,.10), rgba(10,14,22,.34));
 }
 
 body:not(.admin-shell) .hero-section h1 {
-  color: #fff;
+  color: #fff !important;
   font-size: clamp(2.75rem, calc(1.7rem + 4vw), 5.6rem);
   font-weight: 800 !important;
   letter-spacing: 0;
-  text-shadow: 0 18px 50px rgba(0,0,0,.42) !important;
+  text-shadow: 0 2px 18px rgba(0,0,0,.85), 0 1px 3px rgba(0,0,0,.7) !important;
+}
+
+body:not(.admin-shell) .hero-section .text-danger {
+  color: #ff8a8a !important;
 }
 
 body:not(.admin-shell) .hero-section .lead {
@@ -1921,6 +1929,13 @@ body:not(.admin-shell) .newsletter-section {
   margin: 1rem auto;
   max-width: 1320px;
   width: calc(100% - 2rem);
+}
+
+body:not(.admin-shell) .newsletter-section h2,
+body:not(.admin-shell) .newsletter-section h3,
+body:not(.admin-shell) .newsletter-section p,
+body:not(.admin-shell) .newsletter-section .lead {
+  color: #fff !important;
 }
 
 body:not(.admin-shell) .newsletter-section .form-control {
