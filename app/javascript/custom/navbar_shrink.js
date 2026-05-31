@@ -10,10 +10,13 @@
     const recalc = () => {
       const nav = getNav(); if(!nav) return;
       const banner = document.getElementById('construction-banner');
+      // Read all geometry first, then write. Interleaving reads between the
+      // style writes below forces a reflow on each subsequent read.
       const bannerH = banner ? banner.offsetHeight : 0;
+      const navH = nav.offsetHeight;
       document.documentElement.style.setProperty('--banner-height', bannerH + 'px');
-      document.documentElement.style.setProperty('--nav-height', nav.offsetHeight + 'px');
-      document.body.style.paddingTop = (bannerH + nav.offsetHeight) + 'px';
+      document.documentElement.style.setProperty('--nav-height', navH + 'px');
+      document.body.style.paddingTop = (bannerH + navH) + 'px';
     };
 
     let lastScrollY = window.scrollY;
