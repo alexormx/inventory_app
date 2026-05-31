@@ -49,7 +49,8 @@
               <% if has_image %>
                 <%= responsive_attachment_image product.primary_product_image,
                   alt: product.product_name,
-                  widths: [160,240,320,420],
+                  widths: [160,200,256,320],
+                  sizes: "(max-width: 767px) 50vw, (max-width: 991px) 33vw, (max-width: 1199px) 25vw, (max-width: 1399px) 20vw, 16vw",
                   css_class: "product-image mx-auto d-block",
                   square: true,
                   loading: (card_index == 0 ? 'eager' : 'lazy'),
@@ -63,7 +64,8 @@
               <% if has_image %>
                 <%= responsive_attachment_image product.primary_product_image,
                   alt: product.product_name,
-                  widths: [160,240,320,420],
+                  widths: [160,200,256,320],
+                  sizes: "(max-width: 767px) 50vw, (max-width: 991px) 33vw, (max-width: 1199px) 25vw, (max-width: 1399px) 20vw, 16vw",
                   css_class: "product-image mx-auto d-block",
                   square: true,
                   loading: (card_index == 0 ? 'eager' : 'lazy'),
