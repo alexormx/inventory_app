@@ -39,13 +39,17 @@
   </noscript>
 
   <%= stylesheet_link_tag "application", media: "all", "data-turbo-track": "reload" %>
+  <%# Page-specific packs must NOT use data-turbo-track="reload": they exist on
+      only some pages, so Turbo would see the tracked-asset set change between
+      pages and force a full reload (visible flash). Turbo still appends and
+      awaits these stylesheets on their pages, so no FOUC. %>
   <%# Catalog grid/filters/slider only on products pages %>
   <% if controller_name == 'products' %>
-    <%= stylesheet_link_tag "catalog_pack", media: "all", "data-turbo-track": "reload" %>
+    <%= stylesheet_link_tag "catalog_pack", media: "all" %>
   <% end %>
   <%# Blog/rich-text styles only on post pages — keeps them out of the global bundle %>
   <% if %w[posts comments].include?(controller_name) %>
-    <%= stylesheet_link_tag "blog_pack", media: "all", "data-turbo-track": "reload" %>
+    <%= stylesheet_link_tag "blog_pack", media: "all" %>
   <% end %>
   <%= javascript_include_tag "application", "data-turbo-track": "reload", defer: true %>
 
