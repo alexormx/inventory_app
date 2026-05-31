@@ -1,8 +1,8 @@
-// Customer bundle: only controllers/modules used on public-facing pages.
-// Admin-only code lives in admin.js (loaded by the admin layout) so it stays
-// off public pages — keeps this bundle small for LCP/TBT.
+// Admin bundle: full controller + module set. Mirrors the original
+// monolithic application.js so admin behavior is unchanged. The customer
+// application.js is a slimmed subset to keep admin-only code off public pages.
 import { Turbo } from "@hotwired/turbo-rails"
-import "./controllers/customer"   // slimmed Stimulus registry
+import "./controllers"   // index.js arranca Stimulus y registra todo
 import { confirmDialog } from "./lib/confirm_dialog"
 
 // Legacy helpers still in vanilla
@@ -11,10 +11,18 @@ import "./custom/cart_preview_dynamic"
 // Abre el <dialog> cuando se carga el frame del modal de pagos
 import "./custom/payment_modal"
 
+// Órdenes: cálculo de costos y totales (SO/PO)
+import "./components/order_items"
+import "./components/purchase_order_items"
+
 // Navbar: comportamiento de reducción de altura al hacer scroll
 import "./custom/navbar_shrink"
 // Navbar: hamburguesa/collapse sin Bootstrap JS
 import "./custom/navbar_toggle"
+// Admin navbar hamburger custom toggle
+import "./custom/admin_navbar_toggle"
+// Sidebar (admin): hamburguesa que colapsa/expande el sidebar
+import "./modules/sidebar_toggle"
 // Flash messages: auto‑dismiss + close button
 import "./modules/flash_messages"
 // Customer layout: polyfills para collapse/offcanvas sin Bootstrap JS
@@ -23,6 +31,8 @@ import "./custom/bootstrap_polyfills"
 import "./custom/theme_toggle"
 // Tooltips (si hay data-bs-toggle="tooltip")
 import "./custom/tooltip_init"
+// Admin: ajustes de inventario (form dinámico)
+import "./components/inventory_adjustment_lines"
 
 // Devise: validación y requisitos de contraseña
 import "./components/password_validation"
