@@ -96,15 +96,9 @@
         controller: "catalog-filters",
         action: "change->catalog-filters#submit"
       }, class: "catalog-filters d-flex flex-wrap gap-2 align-items-center mb-0", id: "header-sort-form" do %>
+        <%# `q` se conserva al ordenar; la búsqueda visible vive en .catalog-search-bar %>
         <% if @q.present? %>
           <input type="hidden" name="q" value="<%= @q %>">
-          <div class="search-chip d-inline-flex align-items-center">
-            <span class="chip-text" title="Criterio de búsqueda"><%= @q %></span>
-            <%= link_to catalog_path(request.query_parameters.except('q', 'page')),
-                        class: "chip-clear",
-                        "aria-label": "Limpiar búsqueda",
-                        data: { turbo_frame: "_top" } do %>&times;<% end %>
-          </div>
         <% end %>
         <select name="sort" class="form-select form-select-sm sort-select" aria-label="Ordenar productos">
           <option value="newest" <%= 'selected' if @sort=='newest' %>>Más recientes</option>
@@ -123,6 +117,34 @@
         <%= intro %>
       </p>
     <% end %>
+  </div>
+
+  <%# Barra de búsqueda del catálogo — sticky en mobile (antes quedaba
+      escondida en el menú hamburguesa). El form envía SOLO `q`, así que
+      buscar resetea filtros/sort/página; navegación completa para
+      re-renderizar también el sidebar. %>
+  <div class="catalog-search-bar mb-3">
+    <form class="catalog-search" role="search" action="<%= catalog_path %>" method="get">
+      <label for="catalogSearch" class="visually-hidden">Buscar productos</label>
+      <i class="fas fa-search catalog-search-icon" aria-hidden="true"></i>
+      <input type="search" id="catalogSearch" class="catalog-search-input" name="q"
+             value="<%= @q %>" placeholder="Buscar producto, marca o modelo…"
+             autocomplete="off" enterkeyhint="search">
+      <% if @q.present? %>
+        <%= link_to catalog_path(request.query_parameters.except('q', 'page')),
+                    class: "catalog-search-clear",
+                    "aria-label": "Limpiar búsqueda",
+                    data: { turbo_frame: "_top" } do %>&times;<% end %>
+      <% end %>
+    </form>
+    <%# En mobile el botón de filtros vive aquí (reemplaza al flotante). %>
+    <button class="btn btn-danger catalog-search-filters d-md-none" type="button"
+            data-bs-toggle="offcanvas" data-bs-target="#filtersOffcanvas" aria-controls="filtersOffcanvas">
+      <i class="fas fa-filter me-1" aria-hidden="true"></i>Filtros
+      <% if active_filters_count > 0 %>
+        <span class="badge bg-white text-danger ms-1"><%= active_filters_count %></span>
+      <% end %>
+    </button>
   </div>
 
   <%# Chips primarios de disponibilidad (3 opciones principales). Toggle individual; varios = OR. %>
@@ -165,14 +187,6 @@
       <%= render 'product_grid' %>
     </div>
   </div>
-
-  <!-- Botón flotante para abrir filtros en mobile (fuera del grid) -->
-  <button class="btn btn-danger d-md-none filter-toggle-btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#filtersOffcanvas" aria-controls="filtersOffcanvas">
-    <i class="fas fa-filter me-2"></i>Filtros
-    <% if active_filters_count > 0 %>
-      <span class="badge bg-white text-danger ms-2"><%= active_filters_count %></span>
-    <% end %>
-  </button>
 
   <!-- Botón flotante back-to-top -->
   <button type="button"

@@ -80,12 +80,10 @@ class ProductsController < ApplicationController
     @price_range_min = (price_stats&.first || 0).to_f.floor
     @price_range_max = (price_stats&.last || 10_000).to_f.ceil
 
-    # Base scope (aplicar búsqueda primero para contadores precisos)
+    # Base scope (aplicar búsqueda primero para contadores precisos).
+    # search_catalog combina substring + similitud de trigramas (tolera typos).
     base_scope = universe
-    if @q.present?
-      pattern = "%#{@q.downcase}%"
-      base_scope = base_scope.where('LOWER(product_name) LIKE ? OR LOWER(category) LIKE ? OR LOWER(brand) LIKE ?', pattern, pattern, pattern)
-    end
+    base_scope = base_scope.search_catalog(@q) if @q.present?
 
     # Parsear filtros seleccionados en un hash compartido
     filters = {
@@ -133,8 +131,12 @@ class ProductsController < ApplicationController
                   WHERE product_id = products.id AND status = #{approved}) DESC,
                 products.created_at DESC
               SQL
-            else # newest (deterministic)
-              scope.order(created_at: :desc, id: :desc)
+            else # newest (determinista) — o relevancia si hay búsqueda activa
+              if @q.present? && (relevance = Product.search_relevance_order(@q))
+                scope.order(relevance).order(created_at: :desc, id: :desc)
+              else
+                scope.order(created_at: :desc, id: :desc)
+              end
             end
 
     # Preload de imágenes para evitar N+1 de ActiveStorage en la grilla

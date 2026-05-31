@@ -10,9 +10,20 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_04_26_173600) do
+ActiveRecord::Schema[8.0].define(version: 2026_05_31_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+  enable_extension "pg_trgm"
+
+  create_table "action_text_rich_texts", force: :cascade do |t|
+    t.string "name", null: false
+    t.text "body"
+    t.string "record_type", null: false
+    t.bigint "record_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["record_type", "record_id", "name"], name: "index_action_text_rich_texts_uniqueness", unique: true
+  end
 
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
@@ -72,6 +83,20 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_26_173600) do
     t.index ["category"], name: "index_category_attribute_templates_on_category", unique: true
   end
 
+  create_table "comments", force: :cascade do |t|
+    t.bigint "post_id", null: false
+    t.bigint "user_id", null: false
+    t.text "body", null: false
+    t.integer "status", default: 0, null: false
+    t.datetime "approved_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["post_id", "status"], name: "index_comments_on_post_id_and_status"
+    t.index ["post_id"], name: "index_comments_on_post_id"
+    t.index ["status"], name: "index_comments_on_status"
+    t.index ["user_id"], name: "index_comments_on_user_id"
+  end
+
   create_table "inventories", force: :cascade do |t|
     t.integer "product_id", null: false
     t.string "purchase_order_id"
@@ -90,12 +115,14 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_26_173600) do
     t.bigint "inventory_location_id"
     t.integer "item_condition", default: 0, null: false
     t.decimal "selling_price", precision: 10, scale: 2
+    t.date "purchase_date"
     t.index ["adjustment_reference"], name: "index_inventories_on_adjustment_reference"
     t.index ["inventory_location_id", "status"], name: "index_inventories_on_inventory_location_id_and_status"
     t.index ["inventory_location_id"], name: "index_inventories_on_inventory_location_id"
     t.index ["item_condition"], name: "index_inventories_on_item_condition"
     t.index ["product_id", "status"], name: "index_inventories_on_product_id_and_status"
     t.index ["product_id"], name: "index_inventories_on_product_id"
+    t.index ["purchase_date"], name: "index_inventories_on_purchase_date"
     t.index ["purchase_order_id"], name: "index_inventories_on_purchase_order_id"
     t.index ["purchase_order_item_id"], name: "index_inventories_on_purchase_order_item_id"
     t.index ["sale_order_id"], name: "index_inventories_on_sale_order_id"
@@ -305,6 +332,24 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_26_173600) do
     t.index ["cp"], name: "index_postal_codes_on_cp"
   end
 
+  create_table "posts", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "title", null: false
+    t.string "slug", null: false
+    t.text "excerpt"
+    t.text "meta_description"
+    t.integer "status", default: 0, null: false
+    t.datetime "published_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.integer "editor_mode", default: 0, null: false
+    t.integer "views_count", default: 0, null: false
+    t.index ["published_at"], name: "index_posts_on_published_at"
+    t.index ["slug"], name: "index_posts_on_slug", unique: true
+    t.index ["status"], name: "index_posts_on_status"
+    t.index ["user_id"], name: "index_posts_on_user_id"
+  end
+
   create_table "preorder_reservations", force: :cascade do |t|
     t.integer "product_id", null: false
     t.integer "user_id", null: false
@@ -419,18 +464,28 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_26_173600) do
     t.text "seo_keywords", default: "[]"
     t.string "series"
     t.bigint "primary_product_image_attachment_id"
+    t.string "package_type"
+    t.string "scale"
+    t.boolean "show_scale_publicly", default: true, null: false
     t.index "lower((product_name)::text)", name: "index_products_on_lower_product_name"
     t.index ["brand"], name: "index_products_on_brand"
+    t.index ["brand"], name: "index_products_on_brand_trgm", opclass: :gin_trgm_ops, using: :gin
     t.index ["category"], name: "index_products_on_category"
+    t.index ["category"], name: "index_products_on_category_trgm", opclass: :gin_trgm_ops, using: :gin
     t.index ["discontinued"], name: "index_products_on_discontinued"
     t.index ["last_supplier_id"], name: "index_products_on_last_supplier_id"
     t.index ["launch_date"], name: "index_products_on_launch_date"
+    t.index ["package_type"], name: "index_products_on_package_type"
     t.index ["preferred_supplier_id"], name: "index_products_on_preferred_supplier_id"
     t.index ["primary_product_image_attachment_id"], name: "index_products_on_primary_product_image_attachment_id"
     t.index ["product_name"], name: "index_products_on_product_name"
+    t.index ["product_name"], name: "index_products_on_product_name_trgm", opclass: :gin_trgm_ops, using: :gin
     t.index ["product_sku"], name: "index_products_on_product_sku", unique: true
+    t.index ["scale"], name: "index_products_on_scale"
     t.index ["series"], name: "index_products_on_series"
+    t.index ["series"], name: "index_products_on_series_trgm", opclass: :gin_trgm_ops, using: :gin
     t.index ["slug"], name: "index_products_on_slug", unique: true
+    t.index ["whatsapp_code"], name: "index_products_on_whatsapp_code"
   end
 
   create_table "purchase_order_items", force: :cascade do |t|
@@ -476,6 +531,24 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_26_173600) do
     t.index ["costs_distributed_at"], name: "index_purchase_orders_on_costs_distributed_at"
     t.index ["kind"], name: "index_purchase_orders_on_kind"
     t.index ["user_id"], name: "index_purchase_orders_on_user_id"
+  end
+
+  create_table "reviews", force: :cascade do |t|
+    t.bigint "product_id", null: false
+    t.bigint "user_id", null: false
+    t.integer "rating", null: false
+    t.string "title"
+    t.text "body", null: false
+    t.integer "status", default: 0, null: false
+    t.boolean "verified_purchase", default: false, null: false
+    t.datetime "approved_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["product_id", "status"], name: "index_reviews_on_product_id_and_status"
+    t.index ["product_id", "user_id"], name: "index_reviews_on_product_id_and_user_id", unique: true
+    t.index ["product_id"], name: "index_reviews_on_product_id"
+    t.index ["status"], name: "index_reviews_on_status"
+    t.index ["user_id"], name: "index_reviews_on_user_id"
   end
 
   create_table "sale_order_items", force: :cascade do |t|
@@ -541,6 +614,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_26_173600) do
     t.string "sale_order_id", null: false
     t.integer "status"
     t.decimal "shipping_cost", precision: 10, scale: 2, default: "0.0", null: false
+    t.integer "delivery_type", default: 0, null: false
+    t.index ["delivery_type"], name: "index_shipments_on_delivery_type"
     t.index ["sale_order_id"], name: "index_shipments_on_sale_order_id"
   end
 
@@ -585,6 +660,127 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_26_173600) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["key"], name: "index_site_settings_on_key", unique: true
+  end
+
+  create_table "solid_queue_blocked_executions", force: :cascade do |t|
+    t.bigint "job_id", null: false
+    t.string "queue_name", null: false
+    t.integer "priority", default: 0, null: false
+    t.string "concurrency_key", null: false
+    t.datetime "expires_at", null: false
+    t.datetime "created_at", null: false
+    t.index ["concurrency_key", "priority", "job_id"], name: "index_solid_queue_blocked_executions_for_release"
+    t.index ["expires_at", "concurrency_key"], name: "index_solid_queue_blocked_executions_for_maintenance"
+    t.index ["job_id"], name: "index_solid_queue_blocked_executions_on_job_id", unique: true
+  end
+
+  create_table "solid_queue_claimed_executions", force: :cascade do |t|
+    t.bigint "job_id", null: false
+    t.bigint "process_id"
+    t.datetime "created_at", null: false
+    t.index ["job_id"], name: "index_solid_queue_claimed_executions_on_job_id", unique: true
+    t.index ["process_id", "job_id"], name: "index_solid_queue_claimed_executions_on_process_id_and_job_id"
+  end
+
+  create_table "solid_queue_failed_executions", force: :cascade do |t|
+    t.bigint "job_id", null: false
+    t.text "error"
+    t.datetime "created_at", null: false
+    t.index ["job_id"], name: "index_solid_queue_failed_executions_on_job_id", unique: true
+  end
+
+  create_table "solid_queue_jobs", force: :cascade do |t|
+    t.string "queue_name", null: false
+    t.string "class_name", null: false
+    t.text "arguments"
+    t.integer "priority", default: 0, null: false
+    t.string "active_job_id"
+    t.datetime "scheduled_at"
+    t.datetime "finished_at"
+    t.string "concurrency_key"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["active_job_id"], name: "index_solid_queue_jobs_on_active_job_id"
+    t.index ["class_name"], name: "index_solid_queue_jobs_on_class_name"
+    t.index ["finished_at"], name: "index_solid_queue_jobs_on_finished_at"
+    t.index ["queue_name", "finished_at"], name: "index_solid_queue_jobs_for_filtering"
+    t.index ["scheduled_at", "finished_at"], name: "index_solid_queue_jobs_for_alerting"
+  end
+
+  create_table "solid_queue_pauses", force: :cascade do |t|
+    t.string "queue_name", null: false
+    t.datetime "created_at", null: false
+    t.index ["queue_name"], name: "index_solid_queue_pauses_on_queue_name", unique: true
+  end
+
+  create_table "solid_queue_processes", force: :cascade do |t|
+    t.string "kind", null: false
+    t.datetime "last_heartbeat_at", null: false
+    t.bigint "supervisor_id"
+    t.integer "pid", null: false
+    t.string "hostname"
+    t.text "metadata"
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.index ["last_heartbeat_at"], name: "index_solid_queue_processes_on_last_heartbeat_at"
+    t.index ["name", "supervisor_id"], name: "index_solid_queue_processes_on_name_and_supervisor_id", unique: true
+    t.index ["supervisor_id"], name: "index_solid_queue_processes_on_supervisor_id"
+  end
+
+  create_table "solid_queue_ready_executions", force: :cascade do |t|
+    t.bigint "job_id", null: false
+    t.string "queue_name", null: false
+    t.integer "priority", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.index ["job_id"], name: "index_solid_queue_ready_executions_on_job_id", unique: true
+    t.index ["priority", "job_id"], name: "index_solid_queue_poll_all"
+    t.index ["queue_name", "priority", "job_id"], name: "index_solid_queue_poll_by_queue"
+  end
+
+  create_table "solid_queue_recurring_executions", force: :cascade do |t|
+    t.bigint "job_id", null: false
+    t.string "task_key", null: false
+    t.datetime "run_at", null: false
+    t.datetime "created_at", null: false
+    t.index ["job_id"], name: "index_solid_queue_recurring_executions_on_job_id", unique: true
+    t.index ["task_key", "run_at"], name: "index_solid_queue_recurring_executions_on_task_key_and_run_at", unique: true
+  end
+
+  create_table "solid_queue_recurring_tasks", force: :cascade do |t|
+    t.string "key", null: false
+    t.string "schedule", null: false
+    t.string "command", limit: 2048
+    t.string "class_name"
+    t.text "arguments"
+    t.string "queue_name"
+    t.integer "priority", default: 0
+    t.boolean "static", default: true, null: false
+    t.text "description"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["key"], name: "index_solid_queue_recurring_tasks_on_key", unique: true
+    t.index ["static"], name: "index_solid_queue_recurring_tasks_on_static"
+  end
+
+  create_table "solid_queue_scheduled_executions", force: :cascade do |t|
+    t.bigint "job_id", null: false
+    t.string "queue_name", null: false
+    t.integer "priority", default: 0, null: false
+    t.datetime "scheduled_at", null: false
+    t.datetime "created_at", null: false
+    t.index ["job_id"], name: "index_solid_queue_scheduled_executions_on_job_id", unique: true
+    t.index ["scheduled_at", "priority", "job_id"], name: "index_solid_queue_dispatch_all"
+  end
+
+  create_table "solid_queue_semaphores", force: :cascade do |t|
+    t.string "key", null: false
+    t.integer "value", default: 1, null: false
+    t.datetime "expires_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["expires_at"], name: "index_solid_queue_semaphores_on_expires_at"
+    t.index ["key", "value"], name: "index_solid_queue_semaphores_on_key_and_value"
+    t.index ["key"], name: "index_solid_queue_semaphores_on_key", unique: true
   end
 
   create_table "supplier_catalog_items", force: :cascade do |t|
@@ -741,7 +937,11 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_26_173600) do
     t.string "city"
     t.float "latitude"
     t.float "longitude"
+    t.string "referrer"
+    t.index ["country"], name: "index_visitor_logs_on_country"
     t.index ["ip_address", "path", "user_id"], name: "index_visitor_logs_on_ip_path_user_id", unique: true
+    t.index ["last_visited_at"], name: "index_visitor_logs_on_last_visited_at"
+    t.index ["path"], name: "index_visitor_logs_on_path"
     t.index ["user_id"], name: "index_visitor_logs_on_user_id"
   end
 
@@ -787,6 +987,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_26_173600) do
   add_foreign_key "canceled_order_items", "products"
   add_foreign_key "canceled_order_items", "sale_orders"
   add_foreign_key "cart_items", "products"
+  add_foreign_key "comments", "posts"
+  add_foreign_key "comments", "users"
   add_foreign_key "inventories", "inventory_locations"
   add_foreign_key "inventories", "products"
   add_foreign_key "inventories", "purchase_orders"
@@ -800,6 +1002,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_26_173600) do
   add_foreign_key "inventory_locations", "inventory_locations", column: "parent_id"
   add_foreign_key "order_shipping_addresses", "sale_orders"
   add_foreign_key "payments", "sale_orders"
+  add_foreign_key "posts", "users"
   add_foreign_key "product_catalog_reviews", "products"
   add_foreign_key "product_catalog_reviews", "users", column: "reviewed_by_id"
   add_foreign_key "product_description_drafts", "products"
@@ -809,11 +1012,19 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_26_173600) do
   add_foreign_key "purchase_order_items", "products"
   add_foreign_key "purchase_order_items", "purchase_orders"
   add_foreign_key "purchase_orders", "users"
+  add_foreign_key "reviews", "products"
+  add_foreign_key "reviews", "users"
   add_foreign_key "sale_order_items", "products"
   add_foreign_key "sale_order_items", "sale_orders"
   add_foreign_key "sale_orders", "users"
   add_foreign_key "shipments", "sale_orders"
   add_foreign_key "shipping_addresses", "users"
+  add_foreign_key "solid_queue_blocked_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
+  add_foreign_key "solid_queue_claimed_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
+  add_foreign_key "solid_queue_failed_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
+  add_foreign_key "solid_queue_ready_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
+  add_foreign_key "solid_queue_recurring_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
+  add_foreign_key "solid_queue_scheduled_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "supplier_catalog_items", "products"
   add_foreign_key "supplier_catalog_reviews", "supplier_catalog_items"
   add_foreign_key "supplier_catalog_reviews", "users", column: "reviewed_by_id"

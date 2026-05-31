@@ -477,49 +477,83 @@ turbo-frame#products_grid[busy]::before {
   turbo-frame#products_grid[busy]::before { animation: none; opacity: .7; }
 }
 
-/* Botón flotante para filtros (mobile). Anclado a la esquina inferior
-   IZQUIERDA para no superponerse con el botón flotante de WhatsApp que
-   vive en la esquina inferior derecha (y el back-to-top apilado encima).
-   Separación visual: izquierda = contexto de página, derecha = CTAs globales. */
-.filter-toggle-btn {
-  position: fixed;
-  bottom: 20px;
-  left: 20px;
-  right: auto;
-  z-index: 1000;
-  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4), 0 2px 6px rgba(0,0,0,0.15);
-  border-radius: 50px;
-  padding: .75rem 1.25rem;
+/* Barra de búsqueda del catálogo. En mobile es sticky bajo el navbar para
+   que quede siempre a la mano (antes vivía escondida en el menú hamburguesa)
+   y aloja el botón de filtros que abre el offcanvas. El form sólo envía `q`,
+   por lo que buscar resetea filtros/sort/página. */
+.catalog-search-bar {
+  display: flex;
+  align-items: stretch;
+  gap: .5rem;
+}
+.catalog-search {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  background: var(--color-bg-elevated, #fff);
+  border: 1px solid var(--color-border, #d5d7da);
+  border-radius: 12px;
+  padding: 0 .75rem 0 2.4rem;
+  min-height: 48px;
+  transition: box-shadow .2s ease, border-color .2s ease;
+}
+.catalog-search:focus-within {
+  border-color: #dc3545;
+  box-shadow: 0 0 0 3px rgba(220, 53, 69, .18);
+}
+.catalog-search-icon {
+  position: absolute;
+  left: .95rem;
+  color: #8a8f98;
+  font-size: .95rem;
+  pointer-events: none;
+}
+.catalog-search-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 1rem; /* >=16px evita el zoom automático en iOS */
+  padding: .4rem 0;
+}
+.catalog-search-input::placeholder { color: #9aa0a8; }
+/* Ocultamos la X nativa del type=search; usamos la nuestra (resetea filtros). */
+.catalog-search-input::-webkit-search-cancel-button { -webkit-appearance: none; }
+.catalog-search-clear {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  margin-left: .35rem;
+  border-radius: 50%;
+  color: #666;
+  text-decoration: none;
+  font-size: 1.25rem;
+  line-height: 1;
+}
+.catalog-search-clear:hover { color: #a31221; background: rgba(163, 18, 33, .08); }
+.catalog-search-filters {
+  flex: 0 0 auto;
+  min-height: 48px;
+  border-radius: 12px;
   font-weight: 600;
-  transition: all 0.3s cubic-bezier(.4,0,.2,1);
-  /* Safe area for mobile notches */
-  bottom: calc(max(20px, env(safe-area-inset-bottom, 0px) + 12px));
-  left: calc(max(20px, env(safe-area-inset-left, 0px) + 12px));
+  white-space: nowrap;
 }
 
-.filter-toggle-btn:hover, .filter-toggle-btn:active {
-  transform: scale(1.05) translateY(-2px);
-  box-shadow: 0 6px 18px rgba(220, 53, 69, 0.5), 0 3px 8px rgba(0,0,0,0.2);
-}
-
-.filter-toggle-btn .badge {
-  font-size: .75rem;
-  padding: .25rem .5rem;
-  font-weight: 700;
-  animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.1); }
-}
-
-/* Ajustes de touch para mobile */
 @media (max-width: 767.98px) {
-  .filter-toggle-btn {
-    min-width: 44px;
-    min-height: 44px;
-    -webkit-tap-highlight-color: transparent;
+  .catalog-search-bar {
+    position: sticky;
+    top: var(--nav-height, 76px);
+    z-index: 200;
+    margin-bottom: .85rem;
+    padding: .5rem 0;
+    background: var(--color-bg, #fff);
   }
 
   #catalog .catalog-item {
@@ -544,12 +578,6 @@ turbo-frame#products_grid[busy]::before {
 #filtersOffcanvas .offcanvas-body { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 16px); }
 #filtersOffcanvas .catalog-sidebar-filters .filter-block { margin-bottom: 1rem; }
 #filtersOffcanvas .catalog-sidebar-filters .form-check { margin-bottom: .35rem; }
-
-/* Chip de búsqueda */
-.search-chip { border:1px solid var(--color-border,#d5d7da); border-radius:18px; padding:.15rem .5rem .15rem .65rem; background:#fff; font-size:.9rem; gap:.4rem; }
-.search-chip .chip-text { max-width: 220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.search-chip .chip-clear { display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:50%; text-decoration:none; color:#666; background:transparent; border:1px solid #ccc; line-height:1; font-size:1rem; }
-.search-chip .chip-clear:hover { color:#a31221; border-color:#a31221; }
 
 /* Turbo-Frame busy + skeleton loader moved to custom.scss (generic/global) */
 
@@ -1063,8 +1091,7 @@ button.catalog-wa-code.is-copied {
 }
 
 #catalog .catalog-filters .form-select,
-#catalog .catalog-filters .btn-icon,
-#catalog .search-chip {
+#catalog .catalog-filters .btn-icon {
   border-color: var(--catalog-border-strong);
   border-radius: 999px;
   background-color: rgba(255,255,255,.88);
@@ -1075,10 +1102,6 @@ button.catalog-wa-code.is-copied {
   color: #374151;
   min-height: 38px;
   padding-left: .95rem;
-}
-
-#catalog .search-chip {
-  min-height: 38px;
 }
 
 #catalog #desktopFilters {
@@ -1166,15 +1189,13 @@ button.catalog-wa-code.is-copied {
   padding: .38rem .45rem .38rem .72rem;
 }
 
-#catalog .filter-chip .chip-remove,
-#catalog .search-chip .chip-clear {
+#catalog .filter-chip .chip-remove {
   background: #eef1f6;
   border-color: transparent;
   color: #515a69;
 }
 
-#catalog .filter-chip .chip-remove:hover,
-#catalog .search-chip .chip-clear:hover {
+#catalog .filter-chip .chip-remove:hover {
   background: #fee8eb;
   color: var(--catalog-accent-dark);
   transform: none;
@@ -1448,7 +1469,6 @@ button.catalog-wa-code.is-copied {
   width: 100%;
 }
 
-#catalog .filter-toggle-btn,
 #catalog .back-to-top {
   border-radius: 999px;
   box-shadow: 0 18px 36px -24px rgba(15,23,42,.5);

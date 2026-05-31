@@ -131,6 +131,62 @@ class Product < ApplicationRecord
                        .select(:product_id))
   }
 
+  # --- Búsqueda pública del catálogo ---
+  # Umbral de similitud de palabra (word_similarity) para tolerar typos. Lo
+  # aplicamos explícito en el WHERE/ORDER en vez de depender del GUC de sesión
+  # `pg_trgm.word_similarity_threshold` (que se filtraría entre conexiones del
+  # pool). word_similarity busca la query dentro de cualquier palabra del campo,
+  # así que funciona igual en marcas cortas ("Lamborghini") que en nombres
+  # largos ("Hot Wheels Lamborghini Aventador") — donde similarity() de string
+  # completo se diluye por debajo del umbral.
+  TRGM_WORD_THRESHOLD = 0.4
+
+  # Combina coincidencia por substring (ILIKE, exacta/parcial) con similitud de
+  # trigramas por palabra (word_similarity de pg_trgm) para tolerar errores de
+  # tecleo, p. ej. "Lamborjhini" → "Lamborghini". Campos: nombre, marca,
+  # categoría y serie; además coincidencia exacta del código de WhatsApp.
+  # Requiere la extensión pg_trgm y los índices GIN gin_trgm_ops (ver migración
+  # AddTrigramSearchToProducts; el ILIKE '%...%' los aprovecha).
+  scope :search_catalog, ->(query) {
+    q = query.to_s.strip
+    next all if q.blank?
+
+    like = "%#{sanitize_sql_like(q)}%"
+    where(
+      "product_name ILIKE :like OR brand ILIKE :like OR category ILIKE :like OR " \
+      "COALESCE(series, '') ILIKE :like OR whatsapp_code = :code OR " \
+      "word_similarity(:q, product_name) >= :thr OR word_similarity(:q, brand) >= :thr OR " \
+      "word_similarity(:q, category) >= :thr OR word_similarity(:q, COALESCE(series, '')) >= :thr",
+      like: like, code: q.upcase, q: q, thr: TRGM_WORD_THRESHOLD
+    )
+  }
+
+  # ORDER BY de relevancia para una búsqueda: primero las coincidencias por
+  # substring (nombre con más peso que marca/categoría/serie), y dentro de
+  # cada nivel por similitud de palabra descendente. Devuelve nil si la query
+  # está vacía (el controller cae entonces al orden por defecto).
+  def self.search_relevance_order(query)
+    q = query.to_s.strip
+    return if q.blank?
+
+    quoted = connection.quote(q)
+    like   = connection.quote("%#{sanitize_sql_like(q)}%")
+    Arel.sql(<<~SQL.squish)
+      (CASE
+         WHEN product_name ILIKE #{like} THEN 2
+         WHEN brand ILIKE #{like} OR category ILIKE #{like}
+              OR COALESCE(series, '') ILIKE #{like} THEN 1
+         ELSE 0
+       END) DESC,
+      GREATEST(
+        word_similarity(#{quoted}, product_name),
+        word_similarity(#{quoted}, brand),
+        word_similarity(#{quoted}, category),
+        word_similarity(#{quoted}, COALESCE(series, ''))
+      ) DESC
+    SQL
+  end
+
   # --- Public helper for your current view (optional, can be removed later) ---
   def parsed_custom_attributes
     custom_attributes.is_a?(Hash) ? custom_attributes : {}

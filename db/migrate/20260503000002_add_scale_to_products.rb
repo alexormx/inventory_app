@@ -16,7 +16,7 @@ class AddScaleToProducts < ActiveRecord::Migration[8.0]
     say_with_time 'Backfilling product.scale from custom_attributes' do
       Product.reset_column_information
       backfilled = 0
-      Product.where("custom_attributes ? 'escala'").find_each(batch_size: 200) do |product|
+      Product.where("custom_attributes::text LIKE ?", '%"escala"%').find_each(batch_size: 200) do |product|
         attrs = product.custom_attributes.is_a?(Hash) ? product.custom_attributes.dup : {}
         value = attrs.delete('escala').presence
         next if value.blank? && product.scale.present?
