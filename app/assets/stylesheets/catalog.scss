@@ -546,7 +546,10 @@ turbo-frame#products_grid[busy]::before {
   white-space: nowrap;
 }
 
-@media (max-width: 767.98px) {
+/* Sticky hasta lg: por debajo de 992px el buscador del navbar queda dentro
+   del hamburguesa, así que esta barra es el buscador principal del catálogo.
+   En >=lg se oculta (d-lg-none) y manda el buscador persistente del navbar. */
+@media (max-width: 991.98px) {
   .catalog-search-bar {
     position: sticky;
     top: var(--nav-height, 76px);
@@ -555,7 +558,9 @@ turbo-frame#products_grid[busy]::before {
     padding: .5rem 0;
     background: var(--color-bg, #fff);
   }
+}
 
+@media (max-width: 767.98px) {
   #catalog .catalog-item {
     -webkit-tap-highlight-color: transparent;
   }
