@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_05_31_000001) do
+ActiveRecord::Schema[8.0].define(version: 2026_05_31_000002) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -467,7 +467,10 @@ ActiveRecord::Schema[8.0].define(version: 2026_05_31_000001) do
     t.string "package_type"
     t.string "scale"
     t.boolean "show_scale_publicly", default: true, null: false
+    t.boolean "auto_paused", default: false, null: false
+    t.datetime "auto_paused_at"
     t.index "lower((product_name)::text)", name: "index_products_on_lower_product_name"
+    t.index ["auto_paused"], name: "index_products_on_auto_paused", where: "auto_paused"
     t.index ["brand"], name: "index_products_on_brand"
     t.index ["brand"], name: "index_products_on_brand_trgm", opclass: :gin_trgm_ops, using: :gin
     t.index ["category"], name: "index_products_on_category"

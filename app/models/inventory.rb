@@ -64,7 +64,18 @@ class Inventory < ApplicationRecord
   before_save :clear_location_if_status_not_requires_it
   before_update :track_status_change
   after_save :log_sale_order_cleared_event, if: :sale_order_cleared?
-  after_commit :update_product_stock_quantities, if: -> { saved_change_to_status? }
+  # La publicabilidad depende de status, ubicación física y si la pieza está
+  # libre (sale_order_id). Recalculamos ante cualquiera de esos cambios y
+  # también al destruir la pieza (hard-delete del último stock publicable).
+  # Un solo after_commit (registrar el mismo método dos veces hace que Rails
+  # deduplique y solo conserve el último).
+  after_commit :update_product_stock_quantities, on: %i[create update destroy],
+               if: lambda {
+                 destroyed? ||
+                   saved_change_to_status? ||
+                   saved_change_to_inventory_location_id? ||
+                   saved_change_to_sale_order_id?
+               }
   after_commit :allocate_preorders_if_now_available, if: -> { saved_change_to_status? || saved_change_to_sale_order_id? }
   after_commit :trigger_auto_assignment_if_available, if: -> { saved_change_to_status? && status == 'available' }
 
@@ -129,10 +140,17 @@ class Inventory < ApplicationRecord
   end
 
   def update_product_stock_quantities
-    Products::UpdateStatsService.new(product).call
-    product.auto_deactivate_if_unavailable!
+    # En on: :destroy la asociación puede no estar cargada; resolvemos por id.
+    target = product || Product.find_by(id: product_id)
+    return unless target
+
+    Products::UpdateStatsService.new(target).call
+    target.auto_pause_if_unpublishable!
   rescue StandardError => e
-    Rails.logger.error "[Inventory#update_product_stock_quantities] #{e.class}: #{e.message}"
+    # La visibilidad del catálogo depende de que esto corra; un fallo silencioso
+    # dejaría un producto agotado visible. Logueamos y reportamos para no perderlo.
+    Rails.logger.error "[Inventory#update_product_stock_quantities] product_id=#{product_id} #{e.class}: #{e.message}"
+    Rails.error.report(e, handled: true, context: { inventory_id: id, product_id: product_id })
   end
 
   def allocate_preorders_if_now_available

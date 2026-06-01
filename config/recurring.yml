@@ -38,6 +38,10 @@ production:
     class: VisitorLogs::RetentionJob
     schedule: "30 4 * * *"
 
+  products_reconcile_publication_daily:
+    class: Products::ReconcilePublicationJob
+    schedule: "0 3 * * *"
+
 development:
   # No recurring sitemap generation
 

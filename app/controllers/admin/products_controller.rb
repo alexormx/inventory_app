@@ -5,7 +5,7 @@ module Admin
     include CustomAttributesParam
     before_action :authenticate_user!
     before_action :authorize_admin!
-    before_action :set_product, only: %i[show edit update destroy purge_image activate deactivate assign_preorders
+    before_action :set_product, only: %i[show edit update destroy purge_image activate deactivate resume assign_preorders
                                          discontinue reverse_discontinue link_catalog set_primary_image locations]
     before_action :set_active_tab, only: %i[new edit create update]
     before_action :fix_custom_attributes_param, only: %i[create update]
@@ -13,6 +13,12 @@ module Admin
 
     # Tamaño de página para listados en este controlador (cambiar aquí para afectar todas las vistas)
     PER_PAGE = 9
+
+    # Mensaje único cuando se intenta publicar un producto sin stock publicable.
+    # Publicar deja al cliente comprando algo que no podemos surtir, así que el
+    # admin debe habilitar preventa/backorder o esperar a que entre stock.
+    PUBLISH_GUARD_MESSAGE = 'No tiene stock publicable (piezas libres con ubicación o en tránsito). ' \
+                            'Habilita preventa o backorder, o espera a que entre stock, antes de publicar.'
 
     def index
       @q = params[:q].to_s.strip
@@ -274,7 +280,13 @@ module Admin
     end
 
     def activate
-      @product.update(status: 'active')
+      unless publish_if_eligible(@product)
+        respond_to do |format|
+          format.turbo_stream { redirect_to admin_products_path(status: params[:source_tab]), alert: PUBLISH_GUARD_MESSAGE }
+          format.html { redirect_to admin_products_path(status: params[:source_tab]), alert: PUBLISH_GUARD_MESSAGE }
+        end
+        return
+      end
       @source_tab = params[:source_tab].presence || 'all'
       # Recompute counts AFTER status change
       load_counts
@@ -288,7 +300,9 @@ module Admin
     end
 
     def deactivate
-      @product.update(status: 'inactive')
+      # Desactivación manual: limpiamos auto_paused para que no aparezca en la
+      # cola de revisión (fue decisión del admin, no del sistema).
+      @product.update(status: 'inactive', auto_paused: false)
       @source_tab = params[:source_tab].presence || 'all'
       load_counts
       prepare_source_tab_collection(@source_tab)
@@ -296,6 +310,34 @@ module Admin
       respond_to do |format|
         format.turbo_stream
         format.html { redirect_to admin_products_path(status: params[:source_tab]), notice: 'Product deactivated' }
+      end
+    end
+
+    # Cola de revisión: productos que el sistema pausó automáticamente (sin stock
+    # publicable). El admin los revisa uno a uno y aprueba la despausada. Se
+    # muestra una señal de stock por producto para distinguir los que YA tienen
+    # stock (listos para despausar) de los que siguen sin stock.
+    def pause_queue
+      @q = params[:q].to_s.strip
+      scope = Product.auto_paused_queue.includes(:product_images_attachments)
+      if @q.present?
+        term = "%#{@q.downcase}%"
+        scope = scope.where('LOWER(product_name) LIKE ? OR LOWER(product_sku) LIKE ?', term, term)
+      end
+      @products = scope.order(auto_paused_at: :desc).page(params[:page]).per(PER_PAGE)
+
+      product_ids = @products.map(&:id)
+      @publishable_counts = load_publishable_piece_counts(product_ids)
+    end
+
+    # Aprueba la despausada de un producto de la cola. Guardado por la misma
+    # verificación que activate: si no tiene stock publicable, se bloquea y se
+    # le pide al admin habilitar preventa/backorder.
+    def resume
+      if publish_if_eligible(@product)
+        redirect_to pause_queue_admin_products_path, notice: "\"#{@product.product_name}\" republicado."
+      else
+        redirect_to pause_queue_admin_products_path, alert: PUBLISH_GUARD_MESSAGE
       end
     end
 
@@ -376,6 +418,33 @@ module Admin
     end
 
     private
+
+    # Publica el producto sólo si es elegible (tiene stock publicable o permite
+    # preventa/backorder). Devuelve true si lo publicó, false si lo bloqueó.
+    # Limpia auto_paused porque ya pasó la revisión del admin.
+    def publish_if_eligible(product)
+      return false unless product.eligible_for_publication?
+
+      product.update(status: 'active', auto_paused: false)
+      true
+    end
+
+    # Cuenta las piezas publicables (libres con ubicación o en tránsito) por
+    # producto, en una sola consulta, para mostrar la señal de stock en la cola.
+    # => { product_id => Int }
+    def load_publishable_piece_counts(product_ids)
+      return {} if product_ids.blank?
+
+      avail = Inventory.statuses[:available]
+      transit = Inventory.statuses[:in_transit]
+      Inventory.where(product_id: product_ids, sale_order_id: nil)
+               .where(
+                 '(status = :avail AND inventory_location_id IS NOT NULL) OR status = :transit',
+                 avail: avail, transit: transit
+               )
+               .group(:product_id)
+               .count
+    end
 
     def load_counts
       compute_counts

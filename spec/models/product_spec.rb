@@ -191,51 +191,73 @@ RSpec.describe Product, type: :model do
     end
   end
 
-  describe '#auto_deactivate_if_unavailable!' do
+  describe '#auto_pause_if_unpublishable!' do
     let(:product) do
       create(:product, skip_seed_inventory: true, status: :active,
                        preorder_available: false, backorder_allowed: false)
     end
+    let(:location) { create(:inventory_location, :warehouse) }
 
-    it 'inactiva el producto cuando no hay stock ni in_transit' do
-      product.auto_deactivate_if_unavailable!
+    it 'pausa (inactive + auto_paused) cuando no hay stock publicable' do
+      product.auto_pause_if_unpublishable!
+      product.reload
+      expect(product.status).to eq('inactive')
+      expect(product.auto_paused).to be(true)
+      expect(product.auto_paused_at).to be_present
+    end
+
+    it 'NO pausa si hay :available con ubicación confirmada' do
+      create(:inventory, product: product, status: :available,
+                         inventory_location: location, item_condition: :brand_new)
+      product.auto_pause_if_unpublishable!
+      expect(product.reload.status).to eq('active')
+    end
+
+    it 'SÍ pausa si la pieza :available no tiene ubicación' do
+      create(:inventory, product: product, status: :available,
+                         inventory_location: nil, item_condition: :brand_new)
+      product.auto_pause_if_unpublishable!
       expect(product.reload.status).to eq('inactive')
     end
 
-    it 'no inactiva si hay inventario disponible' do
-      create(:inventory, product: product, status: :available, item_condition: :brand_new)
-      product.auto_deactivate_if_unavailable!
-      expect(product.reload.status).to eq('active')
-    end
-
-    it 'no inactiva si hay inventario en tránsito' do
+    it 'NO pausa si hay inventario en tránsito (no requiere ubicación)' do
       create(:inventory, product: product, status: :in_transit, item_condition: :brand_new)
-      product.auto_deactivate_if_unavailable!
+      product.auto_pause_if_unpublishable!
       expect(product.reload.status).to eq('active')
     end
 
-    it 'no inactiva si el producto permite preorder' do
+    it 'NO pausa si el producto permite preorder' do
       product.update!(preorder_available: true)
-      product.auto_deactivate_if_unavailable!
+      product.auto_pause_if_unpublishable!
       expect(product.reload.status).to eq('active')
     end
 
-    it 'no inactiva si el producto permite backorder' do
+    it 'NO pausa si el producto permite backorder' do
       product.update!(backorder_allowed: true)
-      product.auto_deactivate_if_unavailable!
+      product.auto_pause_if_unpublishable!
       expect(product.reload.status).to eq('active')
     end
 
-    it 'no toca productos que ya estaban inactivos o en draft' do
+    it 'no toca productos en draft' do
       product.update!(status: :draft)
-      product.auto_deactivate_if_unavailable!
+      product.auto_pause_if_unpublishable!
       expect(product.reload.status).to eq('draft')
     end
 
-    it 'se dispara cuando un inventario cambia a sold y deja al producto sin stock' do
-      inv = create(:inventory, product: product, status: :available, item_condition: :brand_new)
+    it 'se dispara cuando una pieza con ubicación pasa a :sold y deja al producto sin stock' do
+      inv = create(:inventory, product: product, status: :available,
+                               inventory_location: location, item_condition: :brand_new)
       expect(product.reload.status).to eq('active')
       inv.update!(status: :sold)
+      expect(product.reload.status).to eq('inactive')
+      expect(product.reload.auto_paused).to be(true)
+    end
+
+    it 'se dispara al quitar la ubicación de la única pieza :available' do
+      inv = create(:inventory, product: product, status: :available,
+                               inventory_location: location, item_condition: :brand_new)
+      expect(product.reload.status).to eq('active')
+      inv.update!(inventory_location: nil)
       expect(product.reload.status).to eq('inactive')
     end
   end

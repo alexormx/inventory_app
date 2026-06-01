@@ -152,6 +152,7 @@ Rails.application.routes.draw do
       member do
         patch :activate
         patch :deactivate
+        patch :resume
         post  :assign_preorders
         post  :discontinue
         post  :reverse_discontinue
@@ -165,6 +166,7 @@ Rails.application.routes.draw do
       collection do
         get 'search'
         get 'catalog_status'
+        get 'pause_queue'
       end
 
       member do

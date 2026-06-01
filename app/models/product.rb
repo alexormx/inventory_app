@@ -100,6 +100,12 @@ class Product < ApplicationRecord
     where(id: Inventory.where(status: :available).select(:product_id))
   }
 
+  # Cola de revisión: productos que el sistema pausó automáticamente por
+  # quedarse sin stock publicable (status inactive + auto_paused). NO incluye
+  # los que el admin desactivó a propósito (auto_paused = false). El admin los
+  # revisa y aprueba la reactivación uno a uno (ver Admin::ProductsController).
+  scope :auto_paused_queue, -> { where(status: 'inactive', auto_paused: true) }
+
   # Grupos de "Condición" para filtrar el catálogo público. La data vive en
   # Inventory.item_condition (8 valores enum); estos grupos los exponen al
   # cliente como 4 categorías más legibles. NOTA: "Nuevo" aquí se refiere a
@@ -521,15 +527,40 @@ class Product < ApplicationRecord
     current_on_hand + in_transit_count
   end
 
-  # Inactiva el producto si no es preorderable, no es backorderable, y no tiene
-  # ni stock disponible ni inventario en tránsito. Solo aplica a productos en estado :active
-  # — no auto-reactiva: el admin debe reactivarlos manualmente cuando vuelva a haber stock.
-  def auto_deactivate_if_unavailable!
-    return unless active?
-    return if preorder_available || backorder_allowed
-    return if Inventory.where(product_id: id, status: %i[available in_transit]).exists?
+  # ¿Tiene stock que justifique estar publicado? Cuenta SOLO piezas libres
+  # (sin sale_order asignada) que sean:
+  #   - :available CON ubicación física confirmada (inventory_location_id), o
+  #   - :in_transit (que por diseño nunca tiene ubicación).
+  # Las :available sin ubicación NO cuentan (no están listas para vender/enviar).
+  def publishable_stock?
+    Inventory.where(product_id: id, sale_order_id: nil)
+             .where(
+               '(status = :avail AND inventory_location_id IS NOT NULL) OR status = :transit',
+               avail: Inventory.statuses[:available], transit: Inventory.statuses[:in_transit]
+             )
+             .exists?
+  end
 
-    update_columns(status: 'inactive', updated_at: Time.current)
+  # ¿Debería poder estar :active? Tiene stock publicable, o se vende por
+  # preventa/backorder (que no dependen de stock físico). Es la condición que
+  # gobierna tanto la auto-pausa como el guard de reactivación del admin.
+  def eligible_for_publication?
+    publishable_stock? || preorder_available || backorder_allowed
+  end
+
+  # Pausa automática: si el producto está :active y ya no es elegible para
+  # publicación, lo marca inactive + auto_paused (entra a la cola de revisión).
+  # NO auto-reactiva: el admin aprueba la reactivación uno a uno.
+  def auto_pause_if_unpublishable!
+    return unless active?
+    return if eligible_for_publication?
+
+    update_columns(
+      status: 'inactive',
+      auto_paused: true,
+      auto_paused_at: Time.current,
+      updated_at: Time.current
+    )
   end
 
   # ---- Dimensiones / Peso helpers ----
