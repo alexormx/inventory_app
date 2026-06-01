@@ -470,6 +470,8 @@ module Admin
         active: Product.where(status: 'active').count,
         inactive: Product.where(status: 'inactive').count
       }
+      # Pendientes en la cola de revisión (pausados por el sistema)
+      @auto_paused_count = Product.auto_paused_queue.count
       # Inferiores (dependen de q)
       @counts = {
         draft: filtered_base.where(status: 'draft').count,

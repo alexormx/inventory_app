@@ -3,7 +3,17 @@
     <p class="admin-page-eyebrow mb-1">Catálogo</p>
     <h2 class="mb-0 d-flex align-items-center gap-2"><i class="fa-solid fa-tags"></i> Productos</h2>
   </div>
-  <span class="badge admin-page-badge">Gestiona borradores, productos activos y catálogo archivado</span>
+  <div class="d-flex align-items-center gap-2">
+    <%= link_to pause_queue_admin_products_path,
+                class: ["btn", "btn-sm", (@auto_paused_count.to_i > 0 ? "btn-warning" : "btn-outline-secondary")].join(" "),
+                title: "Productos pausados automáticamente por falta de stock; revísalos y aprueba su republicación" do %>
+      <i class="fa-solid fa-pause me-1"></i>Cola de revisión
+      <% if @auto_paused_count.to_i > 0 %>
+        <span class="badge bg-light text-dark ms-1"><%= @auto_paused_count %></span>
+      <% end %>
+    <% end %>
+    <span class="badge admin-page-badge">Gestiona borradores, productos activos y catálogo archivado</span>
+  </div>
 </div>
 
 <% missing_active_count = @shortcut_counts && @shortcut_counts[:active_missing].to_i %>
