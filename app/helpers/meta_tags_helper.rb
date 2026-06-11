@@ -2,6 +2,7 @@
 
 module MetaTagsHelper
   DEFAULT_SITE_NAME = 'Pasatiempos a Escala'
+  DEFAULT_ALTERNATE_NAME = 'Pasatiempos'
   DEFAULT_SITE_TITLE = 'Tienda de Coleccionables y Autos a Escala'
   DEFAULT_META_DESCRIPTION = 'Tienda especializada en modelos a escala, autos de colección Hot Wheels, Greenlight, Majorette y más. Productos 100% originales con envío a todo México.'
   DEFAULT_KEYWORDS = 'autos a escala, hot wheels, greenlight, coleccionables, tienda de coleccionables, autos de colección, diecast, modelos a escala'
@@ -19,6 +20,12 @@ module MetaTagsHelper
 
   def site_name
     seo_settings[:site_name].presence || DEFAULT_SITE_NAME
+  end
+
+  # Short brand/alternate name surfaced to Google's "site name" feature via the
+  # WebSite/Organization JSON-LD alternateName property.
+  def brand_alternate_name
+    SiteSetting.get('seo_alternate_name', DEFAULT_ALTERNATE_NAME).to_s.presence || DEFAULT_ALTERNATE_NAME
   end
 
   def site_title
@@ -55,6 +62,12 @@ module MetaTagsHelper
 
   def site_root_url
     request.base_url.to_s.sub(%r{/\z}, '')
+  end
+
+  # Canonical home URL with a trailing slash (e.g. "https://pasatiempos.com.mx/"),
+  # used as the root entity URL in WebSite/Organization structured data.
+  def site_home_url
+    "#{site_root_url}/"
   end
 
   def catalog_root_url
@@ -122,7 +135,8 @@ module MetaTagsHelper
       '@context' => 'https://schema.org',
       '@type' => 'Organization',
       'name' => site_name,
-      'url' => site_root_url,
+      'alternateName' => brand_alternate_name,
+      'url' => site_home_url,
       'logo' => asset_url('logo.png'),
       'description' => seo_settings[:meta_description].presence || DEFAULT_META_DESCRIPTION,
       'address' => {
@@ -142,7 +156,8 @@ module MetaTagsHelper
       '@context' => 'https://schema.org',
       '@type' => 'WebSite',
       'name' => site_name,
-      'url' => site_root_url,
+      'alternateName' => brand_alternate_name,
+      'url' => site_home_url,
       'potentialAction' => {
         '@type' => 'SearchAction',
         'target' => {
