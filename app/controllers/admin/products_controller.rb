@@ -513,6 +513,22 @@ module Admin
            .order(Arel.sql("#{count_sql} #{dir}, products.id #{dir}"))
     end
 
+    # Ordena por VALOR del stock publicable: suma del purchase_cost de las piezas
+    # :available, libres (sin sale_order) y con ubicación física confirmada. Es el
+    # valor en inventario de lo que el producto puede vender de inmediato; alimenta
+    # el orden por defecto del atajo "Listos para publicar".
+    def order_by_publishable_value(scope, direction)
+      dir = direction.to_s.downcase == 'asc' ? 'ASC' : 'DESC'
+      available_status = Inventory.statuses[:available].to_i
+      value_sql = '(SELECT COALESCE(SUM(inventories.purchase_cost), 0) FROM inventories ' \
+                  'WHERE inventories.product_id = products.id ' \
+                  "AND inventories.status = #{available_status} " \
+                  'AND inventories.inventory_location_id IS NOT NULL ' \
+                  'AND inventories.sale_order_id IS NULL)'
+      scope.select("products.*, #{value_sql} AS publishable_value")
+           .order(Arel.sql("#{value_sql} #{dir}, products.id #{dir}"))
+    end
+
     # Conteo de piezas con/sin ubicación por producto, en una sola consulta.
     # Sólo considera estatus que requieren ubicación (piezas físicas en bodega).
     # => { product_id => { located: Int, unlocated: Int } }
@@ -633,6 +649,7 @@ module Admin
       when 'purchase_value'  then scope.order(total_purchase_value: :desc)
       when 'sales_value'     then scope.order(total_sales_value: :desc)
       when 'inventory_value' then scope.order(current_inventory_value: :desc)
+      when 'publishable_value' then order_by_publishable_value(scope, :desc)
       when 'profit'          then scope.order(current_profit: :desc)
       when 'recent'          then scope.order(created_at: :desc)
       when 'oldest'          then scope.order(created_at: :asc)
