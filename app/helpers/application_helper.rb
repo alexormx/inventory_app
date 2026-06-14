@@ -146,6 +146,19 @@ module ApplicationHelper
     safe_join(tags)
   end
 
+  # Returns a URL only when it uses a safe http(s) scheme, otherwise nil.
+  # Use for hrefs built from externally-sourced data (e.g. supplier-provided
+  # source_url) so a `javascript:`/`data:` value can never become a live link.
+  def safe_external_url(url)
+    str = url.to_s.strip
+    return if str.blank?
+
+    uri = URI.parse(str)
+    str if uri.is_a?(URI::HTTP) || uri.is_a?(URI::HTTPS)
+  rescue URI::InvalidURIError
+    nil
+  end
+
   # Helper para contar items del carrito desde la sesión
   # Maneja el nuevo formato {product_id => {condition => qty}}
   def cart_item_count

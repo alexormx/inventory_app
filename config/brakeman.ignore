@@ -19,8 +19,441 @@
     {
       "fingerprint": "715ee6d743a8af33c7b930d728708ce19c765fb40e2ad9d2b974db04d92dc7d1",
       "note": "Accepted risk: Ruby 3.2.3 EOL is 2026-03-31, will upgrade before then"
+    },
+    {
+      "warning_type": "Unscoped Find",
+      "warning_code": 82,
+      "fingerprint": "0d04e40e1588b77ed24d9a6583f10dd73e892283a5c4b27dcf0d6cf9f59121a0",
+      "check_name": "UnscopedFind",
+      "message": "Unscoped call to `SaleOrder#find_by`",
+      "file": "app/controllers/api/v1/sale_order_items_controller.rb",
+      "line": 39,
+      "link": "https://brakemanscanner.org/docs/warning_types/unscoped_find/",
+      "code": "SaleOrder.find_by(:id => params[:sale_order_id])",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "Api::V1::SaleOrderItemsController",
+        "method": "batch"
+      },
+      "user_input": "params[:sale_order_id]",
+      "confidence": "Weak",
+      "cwe_id": [
+        285
+      ],
+      "note": "False positive: endpoint is admin-only (admin/* controllers and api/v1 behind authenticate_with_token! requiring user.admin?). Admins are authorized to access every record, so the find is intentionally unscoped."
+    },
+    {
+      "warning_type": "Unscoped Find",
+      "warning_code": 82,
+      "fingerprint": "14215af5873d4d37fe381e12bb823432521ee1819c18bdabf98bdf9c78cbd904",
+      "check_name": "UnscopedFind",
+      "message": "Unscoped call to `Payment#find`",
+      "file": "app/controllers/admin/payments_controller.rb",
+      "line": 83,
+      "link": "https://brakemanscanner.org/docs/warning_types/unscoped_find/",
+      "code": "Payment.find(params[:id])",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "Admin::PaymentsController",
+        "method": "destroy"
+      },
+      "user_input": "params[:id]",
+      "confidence": "Weak",
+      "cwe_id": [
+        285
+      ],
+      "note": "False positive: endpoint is admin-only (admin/* controllers and api/v1 behind authenticate_with_token! requiring user.admin?). Admins are authorized to access every record, so the find is intentionally unscoped."
+    },
+    {
+      "warning_type": "Unscoped Find",
+      "warning_code": 82,
+      "fingerprint": "1d0dfdbac78029c8d93ddc7c8026981d7a88724df178845e85691e2e3f9aa548",
+      "check_name": "UnscopedFind",
+      "message": "Unscoped call to `SaleOrder#find`",
+      "file": "app/controllers/admin/sale_orders_controller.rb",
+      "line": 242,
+      "link": "https://brakemanscanner.org/docs/warning_types/unscoped_find/",
+      "code": "SaleOrder.find(params[:id])",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "Admin::SaleOrdersController",
+        "method": "set_sale_order"
+      },
+      "user_input": "params[:id]",
+      "confidence": "Weak",
+      "cwe_id": [
+        285
+      ],
+      "note": "False positive: endpoint is admin-only (admin/* controllers and api/v1 behind authenticate_with_token! requiring user.admin?). Admins are authorized to access every record, so the find is intentionally unscoped."
+    },
+    {
+      "warning_type": "Unscoped Find",
+      "warning_code": 82,
+      "fingerprint": "231f1709bb055d0cf2d35f220e6026d53e4f9a74e86dd9740757a132c8f767f2",
+      "check_name": "UnscopedFind",
+      "message": "Unscoped call to `SaleOrder#find`",
+      "file": "app/controllers/admin/payments_controller.rb",
+      "line": 7,
+      "link": "https://brakemanscanner.org/docs/warning_types/unscoped_find/",
+      "code": "SaleOrder.find(params[:sale_order_id])",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "Admin::PaymentsController",
+        "method": "new"
+      },
+      "user_input": "params[:sale_order_id]",
+      "confidence": "Weak",
+      "cwe_id": [
+        285
+      ],
+      "note": "False positive: endpoint is admin-only (admin/* controllers and api/v1 behind authenticate_with_token! requiring user.admin?). Admins are authorized to access every record, so the find is intentionally unscoped."
+    },
+    {
+      "warning_type": "Unscoped Find",
+      "warning_code": 82,
+      "fingerprint": "35ecb3449a96bd3d778a74cbb7488ca5e81fbea8ed2491865ceb47045004d023",
+      "check_name": "UnscopedFind",
+      "message": "Unscoped call to `SaleOrder#find`",
+      "file": "app/controllers/admin/sale_orders_status_controller.rb",
+      "line": 23,
+      "link": "https://brakemanscanner.org/docs/warning_types/unscoped_find/",
+      "code": "SaleOrder.find(params[:id])",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "Admin::SaleOrdersStatusController",
+        "method": "set_sale_order"
+      },
+      "user_input": "params[:id]",
+      "confidence": "Weak",
+      "cwe_id": [
+        285
+      ],
+      "note": "False positive: endpoint is admin-only (admin/* controllers and api/v1 behind authenticate_with_token! requiring user.admin?). Admins are authorized to access every record, so the find is intentionally unscoped."
+    },
+    {
+      "warning_type": "Unscoped Find",
+      "warning_code": 82,
+      "fingerprint": "6161fb6c72894c41f30f9ad8ea624c033f181779a8f4ad8834ed28e2afebed6c",
+      "check_name": "UnscopedFind",
+      "message": "Unscoped call to `SaleOrder#find_by`",
+      "file": "app/controllers/api/v1/sales_orders_controller.rb",
+      "line": 460,
+      "link": "https://brakemanscanner.org/docs/warning_types/unscoped_find/",
+      "code": "SaleOrder.find_by(:id => params[:id])",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "Api::V1::SalesOrdersController",
+        "method": "ensure_payment"
+      },
+      "user_input": "params[:id]",
+      "confidence": "Weak",
+      "cwe_id": [
+        285
+      ],
+      "note": "False positive: endpoint is admin-only (admin/* controllers and api/v1 behind authenticate_with_token! requiring user.admin?). Admins are authorized to access every record, so the find is intentionally unscoped."
+    },
+    {
+      "warning_type": "Unscoped Find",
+      "warning_code": 82,
+      "fingerprint": "8edd9bd4a92d0cbfa0aef64f15493d66b66dc2d9b8c25b07f9e262e2382c4a1c",
+      "check_name": "UnscopedFind",
+      "message": "Unscoped call to `SaleOrder#find`",
+      "file": "app/controllers/admin/payments_controller.rb",
+      "line": 41,
+      "link": "https://brakemanscanner.org/docs/warning_types/unscoped_find/",
+      "code": "SaleOrder.find(Payment.new(payment_params).sale_order_id)",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "Admin::PaymentsController",
+        "method": "create"
+      },
+      "user_input": "Payment.new(payment_params).sale_order_id",
+      "confidence": "Weak",
+      "cwe_id": [
+        285
+      ],
+      "note": "False positive: endpoint is admin-only (admin/* controllers and api/v1 behind authenticate_with_token! requiring user.admin?). Admins are authorized to access every record, so the find is intentionally unscoped."
+    },
+    {
+      "warning_type": "Unscoped Find",
+      "warning_code": 82,
+      "fingerprint": "9abda52d25e4dd69bce0d8c6ae86aeb6079a91feb1a66411579cb4727d7b33f6",
+      "check_name": "UnscopedFind",
+      "message": "Unscoped call to `PurchaseOrder#find_by`",
+      "file": "app/controllers/api/v1/purchase_order_items_controller.rb",
+      "line": 37,
+      "link": "https://brakemanscanner.org/docs/warning_types/unscoped_find/",
+      "code": "PurchaseOrder.find_by(:id => params[:purchase_order_id])",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "Api::V1::PurchaseOrderItemsController",
+        "method": "batch"
+      },
+      "user_input": "params[:purchase_order_id]",
+      "confidence": "Weak",
+      "cwe_id": [
+        285
+      ],
+      "note": "False positive: endpoint is admin-only (admin/* controllers and api/v1 behind authenticate_with_token! requiring user.admin?). Admins are authorized to access every record, so the find is intentionally unscoped."
+    },
+    {
+      "warning_type": "Unscoped Find",
+      "warning_code": 82,
+      "fingerprint": "aa5c568ab733dd1ff9f4b0f0c55e6d4b33d6b9b7beeda0926852e52dab7e886c",
+      "check_name": "UnscopedFind",
+      "message": "Unscoped call to `SaleOrder#find_by`",
+      "file": "app/controllers/api/v1/payments_controller.rb",
+      "line": 11,
+      "link": "https://brakemanscanner.org/docs/warning_types/unscoped_find/",
+      "code": "SaleOrder.find_by(:id => params[:sales_order_id])",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "Api::V1::PaymentsController",
+        "method": "create"
+      },
+      "user_input": "params[:sales_order_id]",
+      "confidence": "Weak",
+      "cwe_id": [
+        285
+      ],
+      "note": "False positive: endpoint is admin-only (admin/* controllers and api/v1 behind authenticate_with_token! requiring user.admin?). Admins are authorized to access every record, so the find is intentionally unscoped."
+    },
+    {
+      "warning_type": "Unscoped Find",
+      "warning_code": 82,
+      "fingerprint": "ad1d95d6d53f5a0cbcf6882166b5d09b6e5195282f078ebc561f424549795a26",
+      "check_name": "UnscopedFind",
+      "message": "Unscoped call to `SaleOrder#find_by`",
+      "file": "app/controllers/api/v1/sales_orders_controller.rb",
+      "line": 374,
+      "link": "https://brakemanscanner.org/docs/warning_types/unscoped_find/",
+      "code": "SaleOrder.find_by(:id => params[:id])",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "Api::V1::SalesOrdersController",
+        "method": "recalculate_and_pay"
+      },
+      "user_input": "params[:id]",
+      "confidence": "Weak",
+      "cwe_id": [
+        285
+      ],
+      "note": "False positive: endpoint is admin-only (admin/* controllers and api/v1 behind authenticate_with_token! requiring user.admin?). Admins are authorized to access every record, so the find is intentionally unscoped."
+    },
+    {
+      "warning_type": "Unscoped Find",
+      "warning_code": 82,
+      "fingerprint": "adc7191ed38a06ee08b94eaa60c1a060c1cc4e0723c3134cfbf73f2f6ae38430",
+      "check_name": "UnscopedFind",
+      "message": "Unscoped call to `PurchaseOrder#find`",
+      "file": "app/controllers/admin/purchase_orders_controller.rb",
+      "line": 178,
+      "link": "https://brakemanscanner.org/docs/warning_types/unscoped_find/",
+      "code": "PurchaseOrder.find(params[:id])",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "Admin::PurchaseOrdersController",
+        "method": "destroy"
+      },
+      "user_input": "params[:id]",
+      "confidence": "Weak",
+      "cwe_id": [
+        285
+      ],
+      "note": "False positive: endpoint is admin-only (admin/* controllers and api/v1 behind authenticate_with_token! requiring user.admin?). Admins are authorized to access every record, so the find is intentionally unscoped."
+    },
+    {
+      "warning_type": "Unscoped Find",
+      "warning_code": 82,
+      "fingerprint": "b42bda55cf77a772e3aadefdc77bd2476d27afe0f776d3806eed864c0afbb170",
+      "check_name": "UnscopedFind",
+      "message": "Unscoped call to `Payment#find`",
+      "file": "app/controllers/admin/payments_controller.rb",
+      "line": 12,
+      "link": "https://brakemanscanner.org/docs/warning_types/unscoped_find/",
+      "code": "Payment.find(params[:id])",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "Admin::PaymentsController",
+        "method": "edit"
+      },
+      "user_input": "params[:id]",
+      "confidence": "Weak",
+      "cwe_id": [
+        285
+      ],
+      "note": "False positive: endpoint is admin-only (admin/* controllers and api/v1 behind authenticate_with_token! requiring user.admin?). Admins are authorized to access every record, so the find is intentionally unscoped."
+    },
+    {
+      "warning_type": "Unscoped Find",
+      "warning_code": 82,
+      "fingerprint": "bc5a588544ac8442d15bf94e403785e39027d510e1d14a0ee1e91807d79938e2",
+      "check_name": "UnscopedFind",
+      "message": "Unscoped call to `Payment#find`",
+      "file": "app/controllers/admin/payments_controller.rb",
+      "line": 53,
+      "link": "https://brakemanscanner.org/docs/warning_types/unscoped_find/",
+      "code": "Payment.find(params[:id])",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "Admin::PaymentsController",
+        "method": "update"
+      },
+      "user_input": "params[:id]",
+      "confidence": "Weak",
+      "cwe_id": [
+        285
+      ],
+      "note": "False positive: endpoint is admin-only (admin/* controllers and api/v1 behind authenticate_with_token! requiring user.admin?). Admins are authorized to access every record, so the find is intentionally unscoped."
+    },
+    {
+      "warning_type": "Unscoped Find",
+      "warning_code": 82,
+      "fingerprint": "cb5dcebd0c700a96f2fcd2437cc397e72dfbddbb9d75f74ae056ae3a517ef784",
+      "check_name": "UnscopedFind",
+      "message": "Unscoped call to `SaleOrder#find`",
+      "file": "app/controllers/admin/shipments_controller.rb",
+      "line": 85,
+      "link": "https://brakemanscanner.org/docs/warning_types/unscoped_find/",
+      "code": "SaleOrder.find(params[:sale_order_id])",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "Admin::ShipmentsController",
+        "method": "set_sale_order"
+      },
+      "user_input": "params[:sale_order_id]",
+      "confidence": "Weak",
+      "cwe_id": [
+        285
+      ],
+      "note": "False positive: endpoint is admin-only (admin/* controllers and api/v1 behind authenticate_with_token! requiring user.admin?). Admins are authorized to access every record, so the find is intentionally unscoped."
+    },
+    {
+      "warning_type": "Unscoped Find",
+      "warning_code": 82,
+      "fingerprint": "d2ee5bb3800fc0055bfbaddb3604b0ea1c716876fc5ce6a5714674e0b29ba31d",
+      "check_name": "UnscopedFind",
+      "message": "Unscoped call to `SaleOrder#find_by`",
+      "file": "app/controllers/api/v1/sales_orders_controller.rb",
+      "line": 156,
+      "link": "https://brakemanscanner.org/docs/warning_types/unscoped_find/",
+      "code": "SaleOrder.find_by(:id => params[:id])",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "Api::V1::SalesOrdersController",
+        "method": "update"
+      },
+      "user_input": "params[:id]",
+      "confidence": "Weak",
+      "cwe_id": [
+        285
+      ],
+      "note": "False positive: endpoint is admin-only (admin/* controllers and api/v1 behind authenticate_with_token! requiring user.admin?). Admins are authorized to access every record, so the find is intentionally unscoped."
+    },
+    {
+      "warning_type": "Unscoped Find",
+      "warning_code": 82,
+      "fingerprint": "dd8aa9e37778108f002dcd737dccccf5c7c8d8363f2c0e696928623aac044301",
+      "check_name": "UnscopedFind",
+      "message": "Unscoped call to `Review#find`",
+      "file": "app/controllers/admin/reviews_controller.rb",
+      "line": 43,
+      "link": "https://brakemanscanner.org/docs/warning_types/unscoped_find/",
+      "code": "Review.find(params[:id])",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "Admin::ReviewsController",
+        "method": "set_review"
+      },
+      "user_input": "params[:id]",
+      "confidence": "Weak",
+      "cwe_id": [
+        285
+      ],
+      "note": "False positive: endpoint is admin-only (admin/* controllers and api/v1 behind authenticate_with_token! requiring user.admin?). Admins are authorized to access every record, so the find is intentionally unscoped."
+    },
+    {
+      "warning_type": "Unscoped Find",
+      "warning_code": 82,
+      "fingerprint": "e64c0ce159cf4a924771ac98976cac97dac00db0577c473d29f457bc4693d8c0",
+      "check_name": "UnscopedFind",
+      "message": "Unscoped call to `SaleOrder#find`",
+      "file": "app/controllers/admin/sale_orders_controller.rb",
+      "line": 55,
+      "link": "https://brakemanscanner.org/docs/warning_types/unscoped_find/",
+      "code": "SaleOrder.find(params[:id])",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "Admin::SaleOrdersController",
+        "method": "update"
+      },
+      "user_input": "params[:id]",
+      "confidence": "Weak",
+      "cwe_id": [
+        285
+      ],
+      "note": "False positive: endpoint is admin-only (admin/* controllers and api/v1 behind authenticate_with_token! requiring user.admin?). Admins are authorized to access every record, so the find is intentionally unscoped."
+    },
+    {
+      "warning_type": "Unmaintained Dependency",
+      "warning_code": 121,
+      "fingerprint": "edf687f759ec9765bd5db185dbc615c80af77d6e7e19386fc42934e7a80307af",
+      "check_name": "EOLRuby",
+      "message": "Support for Ruby 3.2.3 ended on 2026-03-31",
+      "file": ".ruby-version",
+      "line": 1,
+      "link": "https://brakemanscanner.org/docs/warning_types/unmaintained_dependency/",
+      "code": null,
+      "render_path": null,
+      "location": null,
+      "user_input": null,
+      "confidence": "High",
+      "cwe_id": [
+        1104
+      ],
+      "note": "Accepted risk: Ruby 3.2.3 reached EOL 2026-03-31. Upgrade to 3.3.x is planned/overdue; tracked separately."
+    },
+    {
+      "warning_type": "Unscoped Find",
+      "warning_code": 82,
+      "fingerprint": "efe854f78385e1b5986bde24dad34128a0e2eb63c27eef9c8777202dfaacb6d8",
+      "check_name": "UnscopedFind",
+      "message": "Unscoped call to `Comment#find`",
+      "file": "app/controllers/admin/comments_controller.rb",
+      "line": 43,
+      "link": "https://brakemanscanner.org/docs/warning_types/unscoped_find/",
+      "code": "Comment.find(params[:id])",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "Admin::CommentsController",
+        "method": "set_comment"
+      },
+      "user_input": "params[:id]",
+      "confidence": "Weak",
+      "cwe_id": [
+        285
+      ],
+      "note": "False positive: endpoint is admin-only (admin/* controllers and api/v1 behind authenticate_with_token! requiring user.admin?). Admins are authorized to access every record, so the find is intentionally unscoped."
     }
   ],
-  "updated": "2026-02-14",
+  "updated": "2026-06-13 22:37:39 -0500",
   "brakeman_version": "7.0.0"
 }

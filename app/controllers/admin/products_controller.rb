@@ -493,7 +493,7 @@ module Admin
 
     def order_by_available_stock(scope, direction)
       dir = direction.to_s.downcase == 'asc' ? 'ASC' : 'DESC'
-      available_status = Inventory.statuses[:available]
+      available_status = Inventory.statuses[:available].to_i
       count_sql = "(SELECT COUNT(*) FROM inventories WHERE inventories.product_id = products.id AND inventories.status = #{available_status})"
       scope.select("products.*, #{count_sql} AS available_stock_count")
            .order(Arel.sql("#{count_sql} #{dir}, products.id #{dir}"))
@@ -503,9 +503,12 @@ module Admin
     # confirmada (status que requieren ubicación + inventory_location_id no nulo).
     def order_by_located_stock(scope, direction)
       dir = direction.to_s.downcase == 'asc' ? 'ASC' : 'DESC'
-      statuses = Inventory::STATUSES_REQUIRING_LOCATION.map { |s| Inventory.statuses[s] }.join(',')
-      count_sql = "(SELECT COUNT(*) FROM inventories WHERE inventories.product_id = products.id " \
-                  "AND inventories.status IN (#{statuses}) AND inventories.inventory_location_id IS NOT NULL)"
+      status_ids = Inventory::STATUSES_REQUIRING_LOCATION.map { |s| Inventory.statuses[s].to_i }
+      count_sql = ActiveRecord::Base.sanitize_sql_array([
+                                                          '(SELECT COUNT(*) FROM inventories WHERE inventories.product_id = products.id ' \
+                                                          'AND inventories.status IN (?) AND inventories.inventory_location_id IS NOT NULL)',
+                                                          status_ids
+                                                        ])
       scope.select("products.*, #{count_sql} AS located_stock_count")
            .order(Arel.sql("#{count_sql} #{dir}, products.id #{dir}"))
     end

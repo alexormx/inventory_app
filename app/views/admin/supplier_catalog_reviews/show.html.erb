@@ -90,8 +90,8 @@
         <%= link_to admin_supplier_catalog_item_path(@supplier_catalog_item), class: "btn btn-sm btn-outline-secondary", target: "_blank" do %>
           <i class="fa-solid fa-up-right-from-square me-1"></i>Detalle
         <% end %>
-        <% if @supplier_catalog_item.source_url.present? %>
-          <%= link_to @supplier_catalog_item.source_url, class: "btn btn-sm btn-outline-primary", target: "_blank", rel: "noopener" do %>
+        <% if (safe_url = safe_external_url(@supplier_catalog_item.source_url)) %>
+          <%= link_to safe_url, class: "btn btn-sm btn-outline-primary", target: "_blank", rel: "noopener noreferrer" do %>
             <i class="fa-solid fa-globe me-1"></i>HLJ
           <% end %>
         <% end %>

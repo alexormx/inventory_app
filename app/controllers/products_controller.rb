@@ -123,7 +123,7 @@ class ProductsController < ApplicationController
               # Subquery (no LEFT JOIN) para evitar el problema de filtrar
               # filas pendientes/rechazadas al agregar — productos sin
               # reseñas aprobadas reciben COALESCE 0 y van al final.
-              approved = Review.statuses[:approved]
+              approved = Review.statuses[:approved].to_i
               scope.order(Arel.sql(<<~SQL))
                 (SELECT COALESCE(AVG(rating), 0) FROM reviews
                   WHERE product_id = products.id AND status = #{approved}) DESC,
@@ -206,10 +206,10 @@ class ProductsController < ApplicationController
       # Grupo de disponibilidad — los 3 chips combinan con OR cuando hay 1+ activos.
       avail_clauses = []
       if f[:in_stock]
-        avail_clauses << "EXISTS (SELECT 1 FROM inventories i WHERE i.product_id = products.id AND i.status = #{Inventory.statuses[:available]})"
+        avail_clauses << "EXISTS (SELECT 1 FROM inventories i WHERE i.product_id = products.id AND i.status = #{Inventory.statuses[:available].to_i})"
       end
       if f[:in_transit]
-        avail_clauses << "EXISTS (SELECT 1 FROM inventories i WHERE i.product_id = products.id AND i.status = #{Inventory.statuses[:in_transit]})"
+        avail_clauses << "EXISTS (SELECT 1 FROM inventories i WHERE i.product_id = products.id AND i.status = #{Inventory.statuses[:in_transit].to_i})"
       end
       if f[:to_order]
         avail_clauses << "(products.backorder_allowed = TRUE OR products.preorder_available = TRUE)"
