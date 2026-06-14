@@ -344,6 +344,31 @@
 
 <div class="card mb-4">
 	<div class="card-header d-flex align-items-center gap-2">
+		<i class="fa-solid fa-pause"></i>
+		<span>Reconciliar Publicación de Productos</span>
+	</div>
+	<div class="card-body">
+		<p class="mb-3 small">
+			Revisa todos los productos <strong>publicados (activos)</strong> y pausa los que ya no tienen stock publicable (piezas libres con ubicación o en tránsito) y no permiten preventa/backorder.
+			Los pausados aparecen en la <%= link_to "cola de revisión", pause_queue_admin_products_path %>.
+			<br>
+			<strong>Solo pausa, nunca reactiva.</strong> El resultado (escaneados/pausados) queda en el listado de ejecuciones de abajo.
+		</p>
+		<%= button_to "Ejecutar reconciliación ahora", reconcile_product_publication_admin_settings_path,
+			method: :post,
+			class: "btn btn-outline-warning",
+			data: {
+				controller: 'confirm',
+				action: 'click->confirm#ask',
+				confirm_title: 'Reconciliar publicación',
+				confirm_message: 'Se pausarán los productos activos sin stock publicable (sin preventa/backorder). ¿Deseas continuar?',
+				confirm_confirm_label: 'Ejecutar'
+			} %>
+	</div>
+</div>
+
+<div class="card mb-4">
+	<div class="card-header d-flex align-items-center gap-2">
 		<i class="fa-solid fa-cubes"></i>
 		<span>Recalcular Alpha / Compose Costs (PO)</span>
 	</div>

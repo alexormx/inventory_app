@@ -12,9 +12,19 @@ module Products
   class ReconcilePublicationJob < ApplicationJob
     queue_as :default
 
-    def perform
-      paused = 0
-      unpublishable_active_product_ids.each do |product_id|
+    JOB_NAME = 'products.reconcile_publication'
+
+    # Acepta un run_id opcional (cuando lo dispara un controlador) o crea su
+    # propia corrida (cuando lo dispara el schedule recurrente). En ambos casos
+    # el resultado queda en MaintenanceRun, visible en /admin/settings.
+    def perform(run_id = nil)
+      run = run_id ? MaintenanceRun.find_by(id: run_id) : MaintenanceRun.create!(job_name: JOB_NAME, status: :queued)
+      run&.update!(status: :running, started_at: Time.current)
+
+      candidate_ids = unpublishable_active_product_ids
+      paused_products = []
+
+      candidate_ids.each do |product_id|
         product = Product.find_by(id: product_id)
         next unless product
 
@@ -23,11 +33,17 @@ module Products
         # incluyera por una carrera entre el scan y el commit.
         before = product.status
         product.auto_pause_if_unpublishable!
-        paused += 1 if before != product.reload.status
+        paused_products << { id: product.id, name: product.product_name } if before != product.reload.status
       end
 
-      Rails.logger.info("[Products::ReconcilePublicationJob] paused=#{paused}")
-      paused
+      stats = { scanned: candidate_ids.size, paused: paused_products.size, products: paused_products }
+      run&.update!(status: :completed, finished_at: Time.current, stats: stats)
+      Rails.logger.info("[Products::ReconcilePublicationJob] scanned=#{candidate_ids.size} paused=#{paused_products.size}")
+      paused_products.size
+    rescue StandardError => e
+      run&.update!(status: :failed, finished_at: Time.current, error: "#{e.class}: #{e.message}")
+      Rails.logger.error("[Products::ReconcilePublicationJob] #{e.class}: #{e.message}")
+      raise
     end
 
     private

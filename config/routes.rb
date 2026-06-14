@@ -270,6 +270,7 @@ Rails.application.routes.draw do
         post :reset_product_dimensions
         post :recalc_all_po_alpha_costs
         post :mark_distributed_costs
+        post :reconcile_product_publication
       end
     end
 

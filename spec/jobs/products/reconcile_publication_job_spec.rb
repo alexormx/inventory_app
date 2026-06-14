@@ -77,4 +77,24 @@ RSpec.describe Products::ReconcilePublicationJob, type: :job do
 
     expect(described_class.new.perform).to eq(2)
   end
+
+  it 'registra la corrida en MaintenanceRun con stats' do
+    active_product
+
+    expect { described_class.new.perform }.to change(MaintenanceRun, :count).by(1)
+
+    run = MaintenanceRun.order(:created_at).last
+    expect(run.job_name).to eq('products.reconcile_publication')
+    expect(run.status).to eq('completed')
+    expect(run.stats['paused']).to eq(1)
+    expect(run.stats['scanned']).to eq(1)
+  end
+
+  it 'usa un MaintenanceRun existente cuando se pasa run_id' do
+    active_product
+    run = MaintenanceRun.create!(job_name: 'products.reconcile_publication', status: :queued)
+
+    expect { described_class.new.perform(run.id) }.not_to change(MaintenanceRun, :count)
+    expect(run.reload.status).to eq('completed')
+  end
 end

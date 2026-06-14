@@ -132,6 +132,13 @@ module Admin
       redirect_to admin_settings_path
     end
 
+    def reconcile_product_publication
+      run = MaintenanceRun.create!(job_name: Products::ReconcilePublicationJob::JOB_NAME, status: :queued)
+      Products::ReconcilePublicationJob.perform_later(run.id)
+      flash[:notice] = "Reconciliación de publicación encolada (##{run.id}). Revisa el listado de ejecuciones."
+      redirect_to admin_settings_path
+    end
+
     def recalc_all_po_alpha_costs
       run = MaintenanceRun.create!(job_name: 'purchase_orders.recalc_alpha_costs', status: :queued)
       PurchaseOrders::RecalculateAllAlphaCostsJob.perform_later(run.id)
