@@ -95,9 +95,18 @@ class Product < ApplicationRecord
                               inventory_location_id: nil)
                        .select(:product_id))
   }
-  # Productos con al menos una pieza en estatus :available (vendible inmediato).
-  scope :with_stock, -> {
-    where(id: Inventory.where(status: :available).select(:product_id))
+  # Productos con al menos una pieza PUBLICABLE: libre (sin sale_order) que sea
+  # :available con ubicación física confirmada, o :in_transit. Espejo exacto de
+  # Product#publishable_stock? (y de la consulta canónica del cron de pausa), para
+  # que la lista "Listos para publicar" no muestre productos que el guard de
+  # reactivación rechazaría (p. ej. piezas apartadas o sin ubicación).
+  scope :publishable, -> {
+    where(id: Inventory.where(sale_order_id: nil)
+                       .where(
+                         '(status = :avail AND inventory_location_id IS NOT NULL) OR status = :transit',
+                         avail: Inventory.statuses[:available], transit: Inventory.statuses[:in_transit]
+                       )
+                       .select(:product_id))
   }
 
   # Cola de revisión: productos que el sistema pausó automáticamente por
