@@ -42,3 +42,6 @@
 # Ignore Node Modules
 /node_modules
 dump.rdb
+
+# Claude Code local config & memory
+/.claude/
