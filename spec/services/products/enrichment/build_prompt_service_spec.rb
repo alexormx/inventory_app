@@ -36,15 +36,32 @@ RSpec.describe Products::Enrichment::BuildPromptService do
     expect(result).to include(:system, :user, :version)
   end
 
-  it "uses prompt version v3" do
-    expect(result[:version]).to eq("v4")
+  it "uses prompt version v6" do
+    expect(result[:version]).to eq("v6")
   end
 
   it "includes system prompt with Spanish instructions" do
     expect(result[:system]).to include("español de México")
     expect(result[:system]).to include("REGLAS ESTRICTAS")
-    expect(result[:system]).to include("2 o 3 párrafos")
+    expect(result[:system]).to include("1 o 2 párrafos")
     expect(result[:system]).to include("La palabra \"null\" JAMÁS debe aparecer")
+  end
+
+  it "instructs a simple, factual, non-exaggerated tone" do
+    system = result[:system]
+    expect(system).to include("simple, profesional y factual")
+    expect(system).to match(/PROHIBIDO usar frases exageradas/)
+    %w[impresionante joya magnífico].each do |word|
+      expect(system).to include(word)
+    end
+    expect(system).to include("no dejes pasar")
+    expect(system).to include("pieza de conversación")
+  end
+
+  it "allows scale, color and material in the description but not package dimensions" do
+    system = result[:system]
+    expect(system).to include("La escala, el color y el material SÍ pueden mencionarse")
+    expect(system).to match(/NO menciones en `description_es`.*peso/m)
   end
 
   it "includes product data in user prompt" do
@@ -81,10 +98,17 @@ RSpec.describe Products::Enrichment::BuildPromptService do
   it "includes natural description instructions" do
     user = result[:user]
     expect(user).to include("ESTILO OBLIGATORIO DE LA DESCRIPCIÓN")
-    expect(user).to include("2 o 3 párrafos")
+    expect(user).to include("1 o 2 párrafos")
     expect(user).to include("No uses encabezados visibles")
     expect(user).to include("No escribas la palabra \"null\"")
     expect(user).to include("No uses HTML")
+  end
+
+  it "forbids exaggerated phrases in the user prompt style block" do
+    user = result[:user]
+    expect(user).to include("PROHIBIDO usar frases exageradas")
+    expect(user).to include("impresionante")
+    expect(user).to include("no dejes pasar")
   end
 
   context "without template" do
