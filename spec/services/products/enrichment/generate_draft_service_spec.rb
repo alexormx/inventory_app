@@ -130,6 +130,39 @@ RSpec.describe Products::Enrichment::GenerateDraftService do
     end
   end
 
+  context "when OpenAI returns a valid single-paragraph description" do
+    let(:openai_response) do
+      {
+        "choices" => [
+          {
+            "message" => {
+              "content" => {
+                "product_name" => "067 Toyota Hilux",
+                "description_es" =>
+                  "Modelo Tomica del Toyota Hilux en color blanco, fabricado en escala 1:64 con " \
+                  "cuerpo die-cast y piezas plásticas. Es una opción adecuada para coleccionistas " \
+                  "de pickups y vehículos japoneses que buscan modelos compactos y bien detallados.",
+                "highlights" => ["Modelo numerado #067"],
+                "attributes" => { "color" => "Blanco" },
+                "seo_keywords" => ["tomica", "hilux"],
+                "warnings" => [],
+                "confidence_score" => 0.8
+              }.to_json
+            }
+          }
+        ],
+        "usage" => {}
+      }
+    end
+
+    it "accepts a concise single paragraph" do
+      service.call
+      draft.reload
+      expect(draft.status).to eq("draft_generated")
+      expect(draft.draft_content).to include("escala 1:64")
+    end
+  end
+
   describe "error handling" do
     context "when OpenAI returns empty content" do
       let(:openai_response) do

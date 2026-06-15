@@ -128,7 +128,7 @@ module Products
         parsed["description_es"] = sanitize_description(parsed["description_es"])
 
         unless natural_description?(parsed["description_es"])
-          raise GenerationError, "Invalid response structure: 'description_es' must be natural multi-paragraph copy without headings or null values"
+          raise GenerationError, "Invalid response structure: 'description_es' must be natural copy without headings or null values"
         end
 
         parsed
@@ -155,8 +155,10 @@ module Products
         paragraphs = normalized.split(/\n{2,}/).map(&:strip).reject(&:blank?)
         bullet_count = normalized.scan(/^\s*[-•*]\s+/).size
 
-        return false if normalized.length < 140
-        return false if paragraphs.size < 2
+        # El estilo objetivo es corto (1 o 2 párrafos), así que un solo párrafo
+        # factual es válido; sólo rechazamos textos triviales o vacíos.
+        return false if normalized.length < 100
+        return false if paragraphs.empty?
         return false if bullet_count >= 2
         return false if BANNED_SECTION_HEADINGS.any? { |section| normalized_downcase.include?(section.downcase) }
         return false if normalized_downcase.match?(/(^|[^a-záéíóúñ])null([^a-záéíóúñ]|$)/i)
