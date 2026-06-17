@@ -531,12 +531,17 @@ turbo-frame#products_grid[busy]::before {
   width: 30px;
   height: 30px;
   margin-left: .35rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
   border-radius: 50%;
   color: #666;
   text-decoration: none;
   font-size: 1.25rem;
   line-height: 1;
+  cursor: pointer;
 }
+.catalog-search-clear[hidden] { display: none; }
 .catalog-search-clear:hover { color: #a31221; background: rgba(163, 18, 33, .08); }
 .catalog-search-filters {
   flex: 0 0 auto;

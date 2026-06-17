@@ -18,25 +18,31 @@
 
     <!-- COLLAPSIBLE CONTENT -->
     <div class="collapse navbar-collapse" id="navbar-scroll">
-      <!-- TOP SEARCH (mobile only) — visible para todos, no requiere sesión -->
-      <div class="navbar-top-search d-lg-none w-100 my-2">
-        <form class="navbar-search" role="search" action="<%= catalog_path %>" method="get">
-          <i class="fas fa-search search-icon" aria-hidden="true"></i>
-          <input type="search" class="search-input" name="q" value="<%= params[:q] %>" placeholder="Buscar..." aria-label="Buscar productos" />
-          <% if params[:q].present? %>
-            <button type="button" class="btn-clear" aria-label="Limpiar búsqueda" onclick="this.closest('form').querySelector('.search-input').value=''; this.closest('form').submit();">&times;</button>
-          <% end %>
-        </form>
-      </div>
+      <!-- TOP SEARCH (mobile only) — visible para todos, no requiere sesión.
+           En el catálogo (products#index) se omite: ahí vive la barra sticky
+           propia del catálogo, así evitamos dos buscadores `q` duplicados. -->
+      <% unless controller_name == "products" && action_name == "index" %>
+        <div class="navbar-top-search d-lg-none w-100 my-2">
+          <form class="navbar-search" role="search" action="<%= catalog_path %>" method="get"
+                data-controller="clear-search" data-clear-search-committed-value="<%= params[:q].present? %>">
+            <i class="fas fa-search search-icon" aria-hidden="true"></i>
+            <input type="search" class="search-input" name="q" value="<%= params[:q] %>" placeholder="Buscar producto, marca o modelo…" aria-label="Buscar productos"
+                   data-clear-search-target="input" data-action="input->clear-search#toggle" />
+            <button type="button" class="btn-clear" aria-label="Limpiar búsqueda"
+                    data-clear-search-target="button" data-action="clear-search#clear" <%= "hidden" unless params[:q].present? %>>&times;</button>
+          </form>
+        </div>
+      <% end %>
 
       <!-- PERSISTENT COMPACT SEARCH — visible para todos, no requiere sesión -->
       <div class="navbar-search-wrapper ms-lg-4 my-2 my-lg-0 flex-grow-1 d-none d-lg-flex align-items-center">
-        <form class="navbar-search" role="search" action="<%= catalog_path %>" method="get">
+        <form class="navbar-search" role="search" action="<%= catalog_path %>" method="get"
+              data-controller="clear-search" data-clear-search-committed-value="<%= params[:q].present? %>">
           <i class="fas fa-search search-icon" aria-hidden="true"></i>
-          <input type="search" class="search-input" name="q" value="<%= params[:q] %>" placeholder="Buscar..." aria-label="Buscar productos" />
-          <% if params[:q].present? %>
-            <button type="button" class="btn-clear" aria-label="Limpiar búsqueda" onclick="this.closest('form').querySelector('.search-input').value=''; this.closest('form').submit();">&times;</button>
-          <% end %>
+          <input type="search" class="search-input" name="q" value="<%= params[:q] %>" placeholder="Buscar producto, marca o modelo…" aria-label="Buscar productos"
+                 data-clear-search-target="input" data-action="input->clear-search#toggle" />
+          <button type="button" class="btn-clear" aria-label="Limpiar búsqueda"
+                  data-clear-search-target="button" data-action="clear-search#clear" <%= "hidden" unless params[:q].present? %>>&times;</button>
         </form>
       </div>
 

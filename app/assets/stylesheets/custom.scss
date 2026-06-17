@@ -1416,6 +1416,7 @@ body:not(.admin-shell) { padding-top: var(--nav-height, 76px); }
 .navbar-search .search-icon { position:absolute; left:.85rem; color:#888; font-size:.9rem; }
 .navbar-search .search-input { flex:1; border:none; outline:none; background:transparent; padding:.2rem 0; min-width:0; }
 .navbar-search .search-input::placeholder { color:#aaa; }
+.navbar-search .search-input::-webkit-search-cancel-button { -webkit-appearance:none; }
 .navbar-search:focus-within { box-shadow:0 0 0 3px rgba(220,53,69,.25); border-color:#dc3545; }
 .navbar-search .btn-clear { background:none; border:none; color:#888; font-size:1.1rem; line-height:1; padding:0 .25rem; cursor:pointer; }
 .navbar-search .btn-clear:hover { color:#dc3545; }

@@ -124,18 +124,16 @@
       buscar resetea filtros/sort/página; navegación completa para
       re-renderizar también el sidebar. %>
   <div class="catalog-search-bar mb-3 d-lg-none">
-    <form class="catalog-search" role="search" action="<%= catalog_path %>" method="get">
+    <form class="catalog-search" role="search" action="<%= catalog_path %>" method="get"
+          data-controller="clear-search" data-clear-search-committed-value="<%= @q.present? %>">
       <label for="catalogSearch" class="visually-hidden">Buscar productos</label>
       <i class="fas fa-search catalog-search-icon" aria-hidden="true"></i>
       <input type="search" id="catalogSearch" class="catalog-search-input" name="q"
              value="<%= @q %>" placeholder="Buscar producto, marca o modelo…"
-             autocomplete="off" enterkeyhint="search">
-      <% if @q.present? %>
-        <%= link_to catalog_path(request.query_parameters.except('q', 'page')),
-                    class: "catalog-search-clear",
-                    "aria-label": "Limpiar búsqueda",
-                    data: { turbo_frame: "_top" } do %>&times;<% end %>
-      <% end %>
+             autocomplete="off" enterkeyhint="search"
+             data-clear-search-target="input" data-action="input->clear-search#toggle">
+      <button type="button" class="catalog-search-clear" aria-label="Limpiar búsqueda"
+              data-clear-search-target="button" data-action="clear-search#clear" <%= "hidden" unless @q.present? %>>&times;</button>
     </form>
     <%# En mobile el botón de filtros vive aquí (reemplaza al flotante). %>
     <button class="btn btn-danger catalog-search-filters d-md-none" type="button"
