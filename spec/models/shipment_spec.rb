@@ -3,10 +3,10 @@ require 'rails_helper'
 RSpec.describe Shipment, type: :model do
   describe 'Validations' do
     it { should validate_presence_of(:carrier) }
-    it 'requires tracking_number when shipped' do
+    it 'allows a shipped shipment without a tracking_number' do
+      # tracking_number es opcional: paqueterías como SEPOMEX no lo proveen.
       shipment = build(:shipment, status: :shipped, tracking_number: nil)
-      expect(shipment).not_to be_valid
-      expect(shipment.errors[:tracking_number]).to be_present
+      expect(shipment).to be_valid
     end
     it 'does not require tracking_number when pending' do
       shipment = build(:shipment, status: :pending, tracking_number: nil)

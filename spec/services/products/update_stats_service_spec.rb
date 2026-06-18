@@ -1,7 +1,9 @@
 require 'rails_helper'
 
 RSpec.describe Products::UpdateStatsService, type: :service do
-  let(:product) { create(:product) }
+  # skip_seed_inventory: el factory siembra 5 piezas manuales que el servicio
+  # cuenta como compras; las omitimos para aislar el purchase_order_item.
+  let(:product) { create(:product, skip_seed_inventory: true) }
   let(:purchase_order) { create(:purchase_order) }
   let!(:purchase_item) { create(:purchase_order_item, product: product, purchase_order: purchase_order, quantity: 5, unit_cost: 10.0, unit_additional_cost: 0) }
   let(:sale_order) { create(:sale_order) }

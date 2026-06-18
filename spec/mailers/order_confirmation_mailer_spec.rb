@@ -74,9 +74,9 @@ RSpec.describe OrderConfirmationMailer, type: :mailer do
         expect(mail.text_part.body.encoded).to include(product.product_name)
       end
 
-      it 'includes product SKU' do
-        expect(mail.html_part.body.encoded).to include(product.product_sku)
-        expect(mail.text_part.body.encoded).to include(product.product_sku)
+      it 'never exposes the product SKU (supplier identifier)' do
+        expect(mail.html_part.body.encoded).not_to include(product.product_sku)
+        expect(mail.text_part.body.encoded).not_to include(product.product_sku)
       end
 
       it 'includes quantity and prices' do

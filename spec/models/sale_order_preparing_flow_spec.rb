@@ -80,15 +80,15 @@ RSpec.describe 'Preparing status flow', type: :model do
       expect(shipment.tracking_number).to be_nil
     end
 
-    it 'requires tracking_number when shipped' do
+    it 'allows shipping without a tracking_number' do
+      # tracking_number es opcional: paqueterías como SEPOMEX no lo proveen.
       so = create_confirmed_order
       shipment = so.create_shipment!(carrier: 'Test', estimated_delivery: Date.today + 7, status: :pending)
       so.update!(status: 'Preparing')
 
       shipment.status = :shipped
       shipment.tracking_number = nil
-      expect(shipment.valid?).to be false
-      expect(shipment.errors[:tracking_number]).to be_present
+      expect(shipment.valid?).to be true
     end
   end
 

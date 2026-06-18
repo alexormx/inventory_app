@@ -25,10 +25,12 @@ RSpec.describe Products::Enrichment::PublishDraftService do
       expect(product.description).to eq("New enriched description.")
     end
 
-    it "updates product custom_attributes" do
+    it "updates product custom_attributes and promotes escala to the scale column" do
       service.call
       product.reload
-      expect(product.custom_attributes).to include("color" => "Azul", "escala" => "1:64")
+      expect(product.custom_attributes).to include("color" => "Azul")
+      expect(product.custom_attributes).not_to have_key("escala")
+      expect(product.scale).to eq("1:64")
     end
 
     it "publishes highlights to product" do
