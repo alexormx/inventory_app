@@ -450,16 +450,19 @@ class Product < ApplicationRecord
   # Retorna: [{ condition: 'brand_new', label: 'Nuevo', count: 5, price: 150.0 }, ...]
   def available_by_condition
     @available_by_condition ||= begin
-      # Agrupar inventario disponible por condición
-      counts = inventories.where(status: :available)
-                          .group(:item_condition)
-                          .count
+      # Sólo inventario VENDIBLE: libre (sin sale_order) que sea :available con
+      # ubicación física confirmada, o :in_transit. Espejo de #publishable_stock?
+      # y del tope de orden en CartItemsController, para no ofrecer ni mostrar
+      # piezas que el admin no puede localizar.
+      sellable = sellable_inventory
+
+      # Agrupar inventario vendible por condición
+      counts = sellable.group(:item_condition).count
 
       # Obtener precio representativo por condición (promedio de selling_price o product price)
-      prices = inventories.where(status: :available)
-                          .where.not(item_condition: :brand_new)
-                          .group(:item_condition)
-                          .average(:selling_price)
+      prices = sellable.where.not(item_condition: :brand_new)
+                       .group(:item_condition)
+                       .average(:selling_price)
 
       counts.map do |condition, count|
         condition_str = condition.to_s
@@ -542,12 +545,19 @@ class Product < ApplicationRecord
   #   - :in_transit (que por diseño nunca tiene ubicación).
   # Las :available sin ubicación NO cuentan (no están listas para vender/enviar).
   def publishable_stock?
-    Inventory.where(product_id: id, sale_order_id: nil)
-             .where(
-               '(status = :avail AND inventory_location_id IS NOT NULL) OR status = :transit',
-               avail: Inventory.statuses[:available], transit: Inventory.statuses[:in_transit]
-             )
-             .exists?
+    sellable_inventory.exists?
+  end
+
+  # Piezas realmente vendibles para el cliente: libres (sin sale_order) que sean
+  # :available CON ubicación física confirmada, o :in_transit. Fuente única de
+  # verdad compartida por publishable_stock?, available_by_condition y el tope de
+  # cantidad del carrito, para que mostrar, ordenar y publicar coincidan siempre.
+  def sellable_inventory
+    inventories.where(sale_order_id: nil)
+               .where(
+                 '(status = :avail AND inventory_location_id IS NOT NULL) OR status = :transit',
+                 avail: Inventory.statuses[:available], transit: Inventory.statuses[:in_transit]
+               )
   end
 
   # ¿Debería poder estar :active? Tiene stock publicable, o se vende por

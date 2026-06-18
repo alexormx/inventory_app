@@ -14,17 +14,13 @@
           <span class="text-muted">· <%= product.approved_reviews_count %> reseñas</span>
         </a>
       <% end %>
+      <%# Identidad del producto junto al título. El resto de specs
+          (categoría, escala, empaque, código de barras) vive en la card
+          "Información del Producto" más abajo para no duplicar. %>
       <div class="text-muted small d-flex flex-wrap gap-3">
         <span>Marca: <strong><%= product.brand %></strong></span>
         <% if product.series.present? %>
           <span>Serie: <strong><%= product.series %></strong></span>
-        <% end %>
-        <span>Categoría: <strong><%= product.category %></strong></span>
-        <% if product.scale.present? && product.show_scale_publicly? %>
-          <span>Escala: <strong><%= product.scale %></strong></span>
-        <% end %>
-        <% if product.package_type.present? %>
-          <span>Empaque: <strong><%= product.package_type %></strong></span>
         <% end %>
       </div>
     </div>
@@ -32,7 +28,6 @@
     <% if user_signed_in? %>
       <% conditions = product.available_by_condition %>
       <% has_collectibles = product.has_collectibles? %>
-      <% total_available = product.total_available %>
 
       <% if conditions.empty? %>
         <%# Sin stock disponible %>
@@ -52,8 +47,12 @@
         <% cond = conditions.first %>
         <div class="price-zone d-flex align-items-end gap-3 flex-wrap">
           <span class="display-price h3 text-danger fw-bold mb-0"><%= number_to_currency(cond[:price]) %></span>
-          <span class="badge bg-success-subtle text-success">Disponible</span>
+          <% shown = [cond[:count], 10].min %>
+          <span class="badge bg-success-subtle text-success"><%= shown %><%= "+" if cond[:count] > 10 %> <%= shown == 1 ? "pieza disponible" : "piezas disponibles" %></span>
         </div>
+        <% if cond[:count] <= 3 %>
+          <p class="text-danger small fw-semibold mb-0"><i class="fas fa-bolt me-1"></i>¡Últimas piezas! Solo quedan <%= cond[:count] %>.</p>
+        <% end %>
 
         <%= button_to cart_items_path,
               params: { product_id: product.id, condition: cond[:condition] },
@@ -83,7 +82,10 @@
                       <span class="badge <%= condition_badge_class(cond[:condition]) %>">
                         <%= cond[:short_label] %>
                       </span>
-                      <span class="small text-muted">Disponible</span>
+                      <% shown = [cond[:count], 10].min %>
+                      <span class="small <%= cond[:count] <= 3 ? 'text-danger fw-semibold' : 'text-muted' %>">
+                        <%= shown %><%= "+" if cond[:count] > 10 %> <%= shown == 1 ? "pieza disponible" : "piezas disponibles" %>
+                      </span>
                       <% if cond[:collectible] %>
                         <span class="badge bg-warning-subtle text-warning small" title="Pieza única descontinuada">
                           <i class="fas fa-gem"></i>

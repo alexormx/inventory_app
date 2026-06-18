@@ -195,10 +195,10 @@ class CartItemsController < ApplicationController
   end
 
   def available_for_condition(product, condition)
-    # Considera inventario disponible + en tránsito (ya comprado, en camino al almacén)
-    product.inventories
-           .where(status: %i[available in_transit], item_condition: condition, sale_order_id: nil)
-           .count
+    # Sólo piezas vendibles: :available CON ubicación física o :in_transit
+    # (ya comprado, en camino). Espejo de Product#publishable_stock? para no
+    # permitir ordenar piezas que el admin no puede localizar.
+    product.sellable_inventory.where(item_condition: condition).count
   end
 
   def price_for_condition(product, condition)

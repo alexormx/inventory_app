@@ -19,8 +19,9 @@ RSpec.describe CartItemsController, type: :controller do
     end
 
     it "adds a product with specific condition" do
-      # Crear inventario disponible con condición misb
-      create(:inventory, product: product, status: :available, item_condition: :misb)
+      # Crear inventario disponible con condición misb (localizable = vendible)
+      create(:inventory, product: product, status: :available, item_condition: :misb,
+                         inventory_location: create(:inventory_location, :warehouse))
       post :create, params: { product_id: product.id, condition: 'misb' }
       expect(session[:cart][product.id.to_s]['misb']).to eq(1)
     end

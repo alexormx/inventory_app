@@ -78,11 +78,14 @@ FactoryBot.define do
       end
       unless evaluator.skip_seed_inventory
         # Ensure sufficient available inventory units so cart specs (which update quantities) pass.
+        # Seed WITH a physical location so the stock is sellable: el storefront sólo
+        # ofrece/permite ordenar piezas :available localizables (o :in_transit).
         needed = evaluator.seed_inventory_count
         current = product.inventories.available.count
         if current < needed
+          location = FactoryBot.create(:inventory_location, :warehouse)
           (needed - current).times do
-            Inventory.create!(product: product, purchase_cost: product.minimum_price, status: :available)
+            Inventory.create!(product: product, purchase_cost: product.minimum_price, status: :available, inventory_location: location)
           end
         end
       end

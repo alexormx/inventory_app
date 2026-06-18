@@ -98,6 +98,7 @@ RSpec.describe Product, type: :model do
 
   describe '#available_by_condition' do
     let(:product) { create(:product, skip_seed_inventory: true, selling_price: 100) }
+    let(:location) { create(:inventory_location, :warehouse) }
 
     context 'when product has no inventory' do
       it 'returns an empty array' do
@@ -107,7 +108,7 @@ RSpec.describe Product, type: :model do
 
     context 'when product has only brand_new inventory' do
       before do
-        create_list(:inventory, 3, product: product, status: :available, item_condition: :brand_new)
+        create_list(:inventory, 3, product: product, status: :available, item_condition: :brand_new, inventory_location: location)
       end
 
       it 'returns array with one entry for brand_new' do
@@ -122,9 +123,9 @@ RSpec.describe Product, type: :model do
 
     context 'when product has mixed conditions' do
       before do
-        create_list(:inventory, 2, product: product, status: :available, item_condition: :brand_new)
-        create_list(:inventory, 1, product: product, status: :available, item_condition: :misb, selling_price: 150)
-        create(:inventory, product: product, status: :available, item_condition: :loose, selling_price: 75)
+        create_list(:inventory, 2, product: product, status: :available, item_condition: :brand_new, inventory_location: location)
+        create_list(:inventory, 1, product: product, status: :available, item_condition: :misb, selling_price: 150, inventory_location: location)
+        create(:inventory, product: product, status: :available, item_condition: :loose, selling_price: 75, inventory_location: location)
       end
 
       it 'returns array sorted by condition' do
@@ -142,6 +143,40 @@ RSpec.describe Product, type: :model do
       end
     end
 
+    context 'when available pieces have no physical location' do
+      before do
+        create_list(:inventory, 2, product: product, status: :available, item_condition: :brand_new, inventory_location: nil)
+      end
+
+      it 'excludes them (not sellable until located)' do
+        expect(product.available_by_condition).to eq([])
+      end
+    end
+
+    context 'when product has in_transit inventory' do
+      before do
+        create_list(:inventory, 2, product: product, status: :in_transit, item_condition: :brand_new, inventory_location: nil)
+      end
+
+      it 'counts in_transit as sellable brand_new' do
+        result = product.available_by_condition
+        expect(result.size).to eq(1)
+        expect(result.first[:condition]).to eq('brand_new')
+        expect(result.first[:count]).to eq(2)
+      end
+    end
+
+    context 'when available pieces are already reserved (sale_order assigned)' do
+      before do
+        create(:inventory, product: product, status: :available, item_condition: :brand_new,
+                           inventory_location: location, sale_order_id: create(:sale_order).id)
+      end
+
+      it 'excludes reserved pieces' do
+        expect(product.available_by_condition).to eq([])
+      end
+    end
+
     context 'when product has only sold inventory' do
       before do
         create(:inventory, product: product, status: :sold, item_condition: :brand_new)
@@ -155,39 +190,46 @@ RSpec.describe Product, type: :model do
 
   describe '#has_collectibles?' do
     let(:product) { create(:product, skip_seed_inventory: true, selling_price: 100) }
+    let(:location) { create(:inventory_location, :warehouse) }
 
     it 'returns false when no inventory' do
       expect(product.has_collectibles?).to be false
     end
 
     it 'returns false when only brand_new inventory' do
-      create(:inventory, product: product, status: :available, item_condition: :brand_new)
+      create(:inventory, product: product, status: :available, item_condition: :brand_new, inventory_location: location)
       expect(product.has_collectibles?).to be false
     end
 
     it 'returns true when has misb inventory' do
-      create(:inventory, product: product, status: :available, item_condition: :misb, selling_price: 150)
+      create(:inventory, product: product, status: :available, item_condition: :misb, selling_price: 150, inventory_location: location)
       expect(product.has_collectibles?).to be true
     end
 
     it 'returns true when has loose inventory' do
-      create(:inventory, product: product, status: :available, item_condition: :loose, selling_price: 80)
+      create(:inventory, product: product, status: :available, item_condition: :loose, selling_price: 80, inventory_location: location)
       expect(product.has_collectibles?).to be true
     end
   end
 
   describe '#total_available' do
     let(:product) { create(:product, skip_seed_inventory: true, selling_price: 100) }
+    let(:location) { create(:inventory_location, :warehouse) }
 
     it 'returns 0 when no inventory' do
       expect(product.total_available).to eq(0)
     end
 
-    it 'sums all available conditions' do
-      create_list(:inventory, 2, product: product, status: :available, item_condition: :brand_new)
-      create(:inventory, product: product, status: :available, item_condition: :misb, selling_price: 150)
+    it 'sums all sellable conditions (located available + in_transit)' do
+      create_list(:inventory, 2, product: product, status: :available, item_condition: :brand_new, inventory_location: location)
+      create(:inventory, product: product, status: :available, item_condition: :misb, selling_price: 150, inventory_location: location)
       create(:inventory, product: product, status: :sold, item_condition: :brand_new)
       expect(product.total_available).to eq(3)
+    end
+
+    it 'excludes available pieces without a physical location' do
+      create(:inventory, product: product, status: :available, item_condition: :brand_new, inventory_location: nil)
+      expect(product.total_available).to eq(0)
     end
   end
 
