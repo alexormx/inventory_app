@@ -16,7 +16,7 @@
         </div>
         <div class="card-body">
           <% if addresses.any? %>
-            <div class="row g-3">
+            <div class="row g-3" data-controller="selectable-cards" data-action="change->selectable-cards#select" data-selectable-cards-active-class-value="border-primary border-2">
               <% addresses.each do |a| %>
                 <% checked = if params[:selected_address_id].present?
                                params[:selected_address_id].to_s == a.id.to_s
@@ -71,15 +71,21 @@
           <% selected_method = params[:shipping_method].presence || previous_info[:method].presence || shipping_methods.first&.code %>
 
           <% if shipping_methods.any? %>
-            <div class="d-flex flex-column gap-2">
+            <% methods_map = shipping_methods.each_with_object({}) { |sm, h| h[sm.code] = { name: sm.name, cost: checkout_shipping_cost(sm.code, cart: @cart) } } %>
+            <div class="d-flex flex-column gap-2"
+                 data-controller="checkout-shipping"
+                 data-action="change->checkout-shipping#select"
+                 data-checkout-shipping-methods-value="<%= methods_map.to_json %>"
+                 data-checkout-shipping-subtotal-value="<%= @cart.total %>">
               <% shipping_methods.each do |sm| %>
                 <label class="list-group-item list-group-item-action d-flex align-items-center rounded border <%= 'border-primary border-2 bg-primary bg-opacity-10' if selected_method == sm.code %>" style="cursor: pointer;">
                   <input type="radio" name="shipping_method" value="<%= sm.code %>" class="form-check-input me-3" <%= 'checked' if selected_method == sm.code %>>
                   <div class="flex-grow-1">
                     <div class="d-flex justify-content-between align-items-center">
                       <strong><%= sm.name %></strong>
-                      <% if sm.base_cost&.positive? %>
-                        <span class="badge bg-secondary"><%= number_to_currency(sm.base_cost) %></span>
+                      <% sm_cost = checkout_shipping_cost(sm.code, cart: @cart) %>
+                      <% if sm_cost.positive? %>
+                        <span class="badge bg-secondary"><%= number_to_currency(sm_cost) %></span>
                       <% else %>
                         <span class="badge bg-success">Gratis</span>
                       <% end %>
@@ -116,69 +122,7 @@
     <%= render 'checkouts/cart_summary',
         cart: @cart,
         show_shipping: true,
-        shipping_cost: selected_shipping&.base_cost || 0,
+        shipping_cost: checkout_shipping_cost(selected_method, cart: @cart),
         shipping_method_name: selected_shipping&.name %>
   </div>
 </div>
-
-<script>
-  // Actualizar visual cuando se selecciona una dirección
-  document.querySelectorAll('input[name="selected_address_id"]').forEach(radio => {
-    radio.addEventListener('change', function() {
-      document.querySelectorAll('input[name="selected_address_id"]').forEach(r => {
-        r.closest('.card').classList.remove('border-primary', 'border-2');
-      });
-      this.closest('.card').classList.add('border-primary', 'border-2');
-    });
-  });
-
-  // Datos de métodos de envío para actualizar el resumen
-  const shippingMethods = {
-    <% ShippingMethod.active.ordered.each do |sm| %>
-    '<%= sm.code %>': { name: '<%= sm.name %>', cost: <%= sm.base_cost || 0 %> },
-    <% end %>
-  };
-  const cartSubtotal = <%= @cart.total %>;
-
-  function formatCurrency(amount) {
-    return '$' + amount.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  }
-
-  function updateOrderSummary(methodCode) {
-    const method = shippingMethods[methodCode];
-    if (!method) return;
-
-    const shippingCostEl = document.getElementById('checkout-shipping-cost');
-    const shippingNameEl = document.getElementById('checkout-shipping-method-name');
-    const grandTotalEl = document.getElementById('checkout-grand-total');
-
-    if (shippingCostEl) {
-      if (method.cost === 0) {
-        shippingCostEl.innerHTML = '<span class="text-success">Gratis</span>';
-      } else {
-        shippingCostEl.textContent = formatCurrency(method.cost);
-      }
-    }
-
-    if (shippingNameEl) {
-      shippingNameEl.innerHTML = `<small>(${method.name})</small>`;
-    }
-
-    if (grandTotalEl) {
-      grandTotalEl.textContent = formatCurrency(cartSubtotal + method.cost);
-    }
-  }
-
-  // Actualizar visual cuando se selecciona método de envío
-  document.querySelectorAll('input[name="shipping_method"]').forEach(radio => {
-    radio.addEventListener('change', function() {
-      document.querySelectorAll('input[name="shipping_method"]').forEach(r => {
-        r.closest('label').classList.remove('border-primary', 'border-2', 'bg-primary', 'bg-opacity-10');
-      });
-      this.closest('label').classList.add('border-primary', 'border-2', 'bg-primary', 'bg-opacity-10');
-
-      // Actualizar resumen del pedido
-      updateOrderSummary(this.value);
-    });
-  });
-</script>

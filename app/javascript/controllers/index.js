@@ -42,6 +42,8 @@ import RecentlyViewedController from "./recently_viewed_controller"
 import PostTocController from "./post_toc_controller"
 import EditorModeController from "./editor_mode_controller"
 import CopyController from "./copy_controller"
+import SelectableCardsController from "./selectable_cards_controller"
+import CheckoutShippingController from "./checkout_shipping_controller"
 
 application.register("audit-progress", AuditProgressController)
 application.register("cart-item", CartItemController)
@@ -83,6 +85,8 @@ application.register("recently-viewed", RecentlyViewedController)
 application.register("post-toc", PostTocController)
 application.register("editor-mode", EditorModeController)
 application.register("copy", CopyController)
+application.register("selectable-cards", SelectableCardsController)
+application.register("checkout-shipping", CheckoutShippingController)
 
 // Export opcional para debugging
 window.Stimulus = application

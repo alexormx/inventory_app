@@ -3,7 +3,7 @@
 <% shipping_info = @shipping_info || {} %>
 <% address = @selected_address %>
 <% shipping_method_record = ShippingMethod.find_by(code: shipping_info[:method]) %>
-<% shipping_cost = shipping_method_record&.base_cost || 0 %>
+<% shipping_cost = checkout_shipping_cost(shipping_info[:method], address: address, cart: @cart) %>
 
 <div class="row">
   <div class="col-lg-8">
@@ -47,9 +47,8 @@
     </div>
 
     <!-- Método de pago -->
-    <% session[:checkout_token] ||= SecureRandom.urlsafe_base64(32) %>
     <%= form_with url: checkout_complete_path, method: :post, local: true, html: { id: 'checkout-complete-form' } do %>
-      <%= hidden_field_tag :checkout_token, session[:checkout_token] %>
+      <%= hidden_field_tag :checkout_token, checkout_token %>
 
       <div class="card mb-4">
         <div class="card-header bg-light">
@@ -59,9 +58,12 @@
           <% payment_methods = PaymentMethod.active.ordered %>
 
           <% if payment_methods.any? %>
-            <div class="d-flex flex-column gap-2">
+            <div class="d-flex flex-column gap-2"
+                 data-controller="selectable-cards"
+                 data-action="change->selectable-cards#select"
+                 data-selectable-cards-active-class-value="border-primary border-2 bg-primary bg-opacity-10">
               <% payment_methods.each_with_index do |pm, idx| %>
-                <label class="list-group-item list-group-item-action rounded border p-3" style="cursor: pointer;">
+                <label class="list-group-item list-group-item-action rounded border p-3 <%= 'border-primary border-2 bg-primary bg-opacity-10' if idx == 0 %>" style="cursor: pointer;">
                   <div class="d-flex align-items-start">
                     <input type="radio" name="payment_method" value="<%= pm.code %>" class="form-check-input me-3 mt-1" required <%= 'checked' if idx == 0 %>>
                     <div class="flex-grow-1">
@@ -77,7 +79,10 @@
                             <div class="d-flex align-items-center gap-2">
                               <span class="text-muted"><%= pm.clabe_or_card_label %>:</span>
                               <code class="bg-white px-2 py-1 rounded border user-select-all"><%= pm.account_number %></code>
-                              <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-1" onclick="navigator.clipboard.writeText('<%= pm.account_number %>')" title="Copiar">
+                              <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-1" title="Copiar"
+                                      data-controller="copy"
+                                      data-copy-text-value="<%= pm.account_number %>"
+                                      data-action="copy#copy">
                                 <i class="fa fa-copy"></i>
                               </button>
                             </div>
@@ -222,20 +227,6 @@
       if(btn){
         btn.disabled = true;
         btn.innerHTML = '<i class="fa fa-spinner fa-spin me-2"></i>Procesando...';
-      }
-    });
-
-    // Highlight selected payment method
-    document.querySelectorAll('input[name="payment_method"]').forEach(radio => {
-      radio.addEventListener('change', function() {
-        document.querySelectorAll('input[name="payment_method"]').forEach(r => {
-          r.closest('label').classList.remove('border-primary', 'border-2', 'bg-primary', 'bg-opacity-10');
-        });
-        this.closest('label').classList.add('border-primary', 'border-2', 'bg-primary', 'bg-opacity-10');
-      });
-      // Trigger on load for pre-selected
-      if(radio.checked) {
-        radio.closest('label').classList.add('border-primary', 'border-2', 'bg-primary', 'bg-opacity-10');
       }
     });
   })();

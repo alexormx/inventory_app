@@ -118,7 +118,10 @@ class Cart
   end
 
   def tax_enabled?
-    [true, 'true'].include?(SiteSetting.get('tax_enabled', 'true'))
+    # Por defecto NO se cobra IVA: el checkout (Checkout::CreateOrder) crea las
+    # órdenes con total_tax 0, así que el carrito no debe mostrar un impuesto que
+    # luego no se cobra. El admin puede reactivarlo desde Configuración.
+    [true, 'true'].include?(SiteSetting.get('tax_enabled', 'false'))
   end
 
   def tax_rate_percent

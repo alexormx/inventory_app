@@ -2476,6 +2476,42 @@ body:not(.admin-shell) .checkout-progress-wrapper .rounded-circle {
 body:not(.admin-shell) .checkout-progress-wrapper .rounded-circle:hover {
   transform: translateY(-2px);
 }
+body:not(.admin-shell) .checkout-progress-wrapper .progress-line,
+body:not(.admin-shell) .checkout-progress-wrapper .progress-line-active {
+  top: 20px;
+  height: 4px;
+}
+body:not(.admin-shell) .checkout-progress-wrapper .progress-line {
+  left: 10%;
+  right: 10%;
+  background: #e9ecef;
+  z-index: 0;
+}
+body:not(.admin-shell) .checkout-progress-wrapper .progress-line-active {
+  left: 10%;
+  z-index: 1;
+  transition: width .3s ease;
+}
+body:not(.admin-shell) .checkout-progress-wrapper .progress-step {
+  flex: 1;
+  z-index: 2;
+}
+body:not(.admin-shell) .checkout-progress-wrapper .progress-circle {
+  width: 44px;
+  height: 44px;
+  font-size: 1.2rem;
+}
+body:not(.admin-shell) .checkout-progress-wrapper a:focus-visible .progress-circle {
+  outline: 3px solid var(--ui-accent);
+  outline-offset: 2px;
+}
+
+/* Tarjetas seleccionables del checkout: foco accesible */
+body:not(.admin-shell) [data-controller~="selectable-cards"] label:focus-within,
+body:not(.admin-shell) [data-controller~="checkout-shipping"] label:focus-within {
+  outline: 2px solid var(--ui-accent);
+  outline-offset: 2px;
+}
 
 /* Devise auth pages: card-style centered form */
 body:not(.admin-shell) .devise-auth-shell {

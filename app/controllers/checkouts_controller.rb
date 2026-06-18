@@ -26,7 +26,6 @@ class CheckoutsController < ApplicationController
   # this action will save the shipping info in the session
   # and redirect to step 3
   def step2_submit
-    Rails.logger.info "[Checkout] step2_submit params: #{params.to_unsafe_h.inspect}"
     raw_addr_id = params[:selected_address_id].presence
     raw_method  = params[:shipping_method].presence
 
@@ -52,7 +51,6 @@ class CheckoutsController < ApplicationController
     end
 
     set_checkout_shipping_info(address_id: addr.id, method: method)
-    Rails.logger.info "[Checkout] Stored shipping_info in session: #{checkout_shipping_info.inspect}"
     redirect_to checkout_step3_path
   end
 
@@ -62,18 +60,13 @@ class CheckoutsController < ApplicationController
     # Mostrar confirmación + seleccionar método de pago
     @shipping_info = checkout_shipping_info
     @selected_address = (current_user.shipping_addresses.find_by(id: @shipping_info[:address_id]) if @shipping_info[:address_id])
-    Rails.logger.info "[Checkout] step3 session shipping_info: #{@shipping_info.inspect}; selected_address: #{@selected_address&.id}"
 
     # Generar token de idempotencia si no existe
-    if checkout_token.blank?
-      generate_checkout_token!
-      Rails.logger.info "[Checkout] Generated checkout token: #{checkout_token}"
-    end
+    generate_checkout_token! if checkout_token.blank?
 
     return unless @shipping_info.blank? || @selected_address.nil? || @shipping_info[:method].blank?
 
-    flash.now[:alert] = 'Faltan datos de envío (debug).'
-    # No redirigimos inmediatamente para poder ver la vista y depurar.
+    redirect_to checkout_step2_path, alert: 'Faltan datos de envío. Selecciona una dirección y un método de envío.'
   end
 
   def complete
