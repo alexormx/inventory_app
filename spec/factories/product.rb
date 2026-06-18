@@ -83,7 +83,7 @@ FactoryBot.define do
         needed = evaluator.seed_inventory_count
         current = product.inventories.available.count
         if current < needed
-          location = FactoryBot.create(:inventory_location, :warehouse)
+          location = FactoryBot.create(:inventory_location)
           (needed - current).times do
             Inventory.create!(product: product, purchase_cost: product.minimum_price, status: :available, inventory_location: location)
           end

@@ -166,10 +166,13 @@ RSpec.describe Product, type: :model do
       end
     end
 
-    context 'when available pieces are already reserved (sale_order assigned)' do
+    context 'when pieces are reserved (not in a free status)' do
       before do
-        create(:inventory, product: product, status: :available, item_condition: :brand_new,
-                           inventory_location: location, sale_order_id: create(:sale_order).id)
+        # :available/:in_transit son estatus "libres": el modelo limpia el
+        # sale_order_id al guardar, así que una pieza reservada de verdad vive
+        # en :reserved, que no es vendible hasta liberarse.
+        create(:inventory, product: product, status: :reserved, item_condition: :brand_new,
+                           inventory_location: location)
       end
 
       it 'excludes reserved pieces' do
