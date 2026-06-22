@@ -10,15 +10,27 @@
 </div>
 
 <div class="card mb-4">
-  <div class="card-body py-2">
-    <%= form_with url: pause_queue_admin_products_path, method: :get, local: true, class: "row g-2 align-items-center" do %>
-      <div class="col-12 col-md-5">
+  <div class="card-body py-2 d-flex flex-wrap align-items-center gap-3">
+    <%= form_with url: pause_queue_admin_products_path, method: :get, local: true, class: "row g-2 align-items-center flex-grow-1" do %>
+      <%= hidden_field_tag :filter, @filter if @filter.present? %>
+      <div class="col-12 col-md-6">
         <div class="input-group input-group-sm">
           <%= text_field_tag :q, params[:q], class: "form-control", placeholder: "Buscar por nombre o SKU…", aria: { label: "Buscar productos pausados" } %>
           <%= submit_tag "Buscar", name: nil, class: "btn btn-primary" %>
         </div>
       </div>
     <% end %>
+
+    <div class="btn-group btn-group-sm ms-auto" role="group" aria-label="Filtrar cola de revisión">
+      <%= link_to pause_queue_admin_products_path(q: @q.presence),
+            class: "btn #{@filter == 'eligible' ? 'btn-outline-secondary' : 'btn-secondary'}" do %>
+        Todos
+      <% end %>
+      <%= link_to pause_queue_admin_products_path(q: @q.presence, filter: 'eligible'),
+            class: "btn #{@filter == 'eligible' ? 'btn-success' : 'btn-outline-success'}" do %>
+        <i class="fa-solid fa-check me-1"></i>Aprobables<%= " (#{@eligible_count})" if @eligible_count %>
+      <% end %>
+    </div>
   </div>
 </div>
 
@@ -73,7 +85,7 @@
 
             <div class="mt-auto d-flex gap-2">
               <% if product.eligible_for_publication? %>
-                <%= button_to resume_admin_product_path(product), method: :patch,
+                <%= button_to resume_admin_product_path(product, page: params[:page], q: @q.presence, filter: @filter), method: :patch,
                       class: "btn btn-sm btn-success flex-grow-1" do %>
                   <i class="fa-solid fa-check me-1"></i>Aprobar y republicar
                 <% end %>

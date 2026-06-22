@@ -115,6 +115,20 @@ class Product < ApplicationRecord
   # revisa y aprueba la reactivación uno a uno (ver Admin::ProductsController).
   scope :auto_paused_queue, -> { where(status: 'inactive', auto_paused: true) }
 
+  # Productos con al menos una pieza vendible (fuente única: sellable_inventory).
+  scope :with_sellable_inventory, lambda {
+    where(id: Inventory.where(sale_order_id: nil)
+                       .where('(status = :avail AND inventory_location_id IS NOT NULL) OR status = :transit',
+                              avail: Inventory.statuses[:available], transit: Inventory.statuses[:in_transit])
+                       .select(:product_id))
+  }
+
+  # Versión SQL de eligible_for_publication?: stock publicable o venta por
+  # preventa/backorder. Permite filtrar la cola de revisión por aprobables.
+  scope :eligible_for_publication, lambda {
+    where(preorder_available: true).or(where(backorder_allowed: true)).or(with_sellable_inventory)
+  }
+
   # Grupos de "Condición" para filtrar el catálogo público. La data vive en
   # Inventory.item_condition (8 valores enum); estos grupos los exponen al
   # cliente como 4 categorías más legibles. NOTA: "Nuevo" aquí se refiere a

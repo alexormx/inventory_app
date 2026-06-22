@@ -319,12 +319,22 @@ module Admin
     # stock (listos para despausar) de los que siguen sin stock.
     def pause_queue
       @q = params[:q].to_s.strip
+      @filter = params[:filter].presence
       scope = Product.auto_paused_queue.includes(:product_images_attachments)
       if @q.present?
         term = "%#{@q.downcase}%"
         scope = scope.where('LOWER(product_name) LIKE ? OR LOWER(product_sku) LIKE ?', term, term)
       end
+      scope = scope.eligible_for_publication if @filter == 'eligible'
+      @eligible_count = Product.auto_paused_queue.eligible_for_publication.count
       @products = scope.order(auto_paused_at: :desc).page(params[:page]).per(PER_PAGE)
+
+      # Si la página actual quedó fuera de rango (p.ej. al republicar el último
+      # item de la página), redirige a la última válida en vez de mostrar vacío.
+      if @products.out_of_range? && @products.total_pages.positive?
+        redirect_to pause_queue_admin_products_path(page: @products.total_pages, q: @q.presence, filter: @filter)
+        return
+      end
 
       product_ids = @products.map(&:id)
       @publishable_counts = load_publishable_piece_counts(product_ids)
@@ -334,10 +344,11 @@ module Admin
     # verificación que activate: si no tiene stock publicable, se bloquea y se
     # le pide al admin habilitar preventa/backorder.
     def resume
+      return_params = params.permit(:page, :q, :filter).to_h.compact_blank
       if publish_if_eligible(@product)
-        redirect_to pause_queue_admin_products_path, notice: "\"#{@product.product_name}\" republicado."
+        redirect_to pause_queue_admin_products_path(return_params), notice: "\"#{@product.product_name}\" republicado."
       else
-        redirect_to pause_queue_admin_products_path, alert: PUBLISH_GUARD_MESSAGE
+        redirect_to pause_queue_admin_products_path(return_params), alert: PUBLISH_GUARD_MESSAGE
       end
     end
 
