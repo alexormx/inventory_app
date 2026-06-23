@@ -47,11 +47,11 @@
         <% cond = conditions.first %>
         <div class="price-zone d-flex align-items-end gap-3 flex-wrap">
           <span class="display-price h3 text-danger fw-bold mb-0"><%= number_to_currency(cond[:price]) %></span>
-          <% shown = [cond[:count], 10].min %>
-          <span class="badge bg-success-subtle text-success"><%= shown %><%= "+" if cond[:count] > 10 %> <%= shown == 1 ? "pieza disponible" : "piezas disponibles" %></span>
+          <% low_stock = cond[:count] <= 3 %>
+          <span class="badge <%= low_stock ? 'bg-danger-subtle text-danger' : 'bg-success-subtle text-success' %>"><%= stock_pieces_label(cond[:count]) %></span>
         </div>
         <% if cond[:count] <= 3 %>
-          <p class="text-danger small fw-semibold mb-0"><i class="fas fa-bolt me-1"></i>¡Últimas piezas! Solo quedan <%= cond[:count] %>.</p>
+          <p class="text-danger small fw-semibold mb-0"><i class="fas fa-bolt me-1"></i>¡Apresúrate, quedan muy pocas!</p>
         <% end %>
 
         <%= button_to cart_items_path,
@@ -82,9 +82,8 @@
                       <span class="badge <%= condition_badge_class(cond[:condition]) %>">
                         <%= cond[:short_label] %>
                       </span>
-                      <% shown = [cond[:count], 10].min %>
                       <span class="small <%= cond[:count] <= 3 ? 'text-danger fw-semibold' : 'text-muted' %>">
-                        <%= shown %><%= "+" if cond[:count] > 10 %> <%= shown == 1 ? "pieza disponible" : "piezas disponibles" %>
+                        <%= stock_pieces_label(cond[:count]) %>
                       </span>
                       <% if cond[:collectible] %>
                         <span class="badge bg-warning-subtle text-warning small" title="Pieza única descontinuada">

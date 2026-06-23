@@ -11,6 +11,21 @@ module ProductsHelper
     count > MAX_DISPLAY_STOCK ? '>10' : count.to_s
   end
 
+  # Etiqueta de disponibilidad por piezas para el frontend público.
+  # Crea urgencia en stock bajo sin revelar el inventario exacto: a partir de
+  # 5 unidades solo se muestra ">5 piezas".
+  def stock_pieces_label(count)
+    count = count.to_i
+    case count
+    when ..0 then nil
+    when 1 then 'Última pieza'
+    when 2 then 'Últimas 2 piezas'
+    when 3 then 'Últimas 3 piezas'
+    when 4 then '4 piezas'
+    else '>5 piezas'
+    end
+  end
+
   # Genera un badge unificado de disponibilidad (En stock / Preorden / Sobre pedido / Fuera de stock)
   def stock_badge(product, quantity: nil, suppress_pending_note: false, on_hand_override: nil, in_transit_eta_override: :unset)
     on_hand = on_hand_override.nil? ? product.current_on_hand : on_hand_override

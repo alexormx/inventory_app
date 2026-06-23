@@ -74,6 +74,13 @@ module FilterParamsHelper
     catalog_path(sort: @sort, q: @q)
   end
 
+  # URL para limpiar la búsqueda de texto (mantiene filtros y orden)
+  def clear_search_url
+    qp = normalized_catalog_query_parameters
+    qp.delete('q')
+    catalog_path(qp)
+  end
+
   # Texto formateado para el chip de precio
   def price_filter_text
     min = filter_state.price_min

@@ -21,10 +21,19 @@
         <span class="catalog-results-context text-muted small">en el catálogo</span>
       <% end %>
     </div>
-    <% if filter_state.has_filters %>
-      <%= link_to clear_all_filters_url, class: "catalog-results-clear btn btn-sm btn-outline-secondary", data: { turbo_frame: "_top" } do %>
-        <i class="fas fa-times me-1" aria-hidden="true"></i>Limpiar todos
-      <% end %>
+    <% if @q.present? || filter_state.has_filters %>
+      <div class="d-flex flex-wrap gap-2">
+        <% if @q.present? %>
+          <%= link_to clear_search_url, class: "catalog-results-clear btn btn-sm btn-outline-danger", data: { turbo_frame: "_top" } do %>
+            <i class="fas fa-times me-1" aria-hidden="true"></i>Limpiar búsqueda
+          <% end %>
+        <% end %>
+        <% if filter_state.has_filters %>
+          <%= link_to clear_all_filters_url, class: "catalog-results-clear btn btn-sm btn-outline-secondary", data: { turbo_frame: "_top" } do %>
+            <i class="fas fa-times me-1" aria-hidden="true"></i>Limpiar filtros
+          <% end %>
+        <% end %>
+      </div>
     <% end %>
   </div>
 
