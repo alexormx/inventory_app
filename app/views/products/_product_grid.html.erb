@@ -24,7 +24,8 @@
     <% if @q.present? || filter_state.has_filters %>
       <div class="d-flex flex-wrap gap-2">
         <% if @q.present? %>
-          <%= link_to clear_search_url, class: "catalog-results-clear btn btn-sm btn-outline-danger", data: { turbo_frame: "_top" } do %>
+          <%= link_to clear_search_url, class: "catalog-results-clear btn btn-sm btn-outline-danger",
+                data: { turbo_frame: "_top", controller: "clear-search", action: "clear-search#clearAll" } do %>
             <i class="fas fa-times me-1" aria-hidden="true"></i>Limpiar búsqueda
           <% end %>
         <% end %>
@@ -276,7 +277,7 @@
       <div class="d-flex justify-content-center" data-turbo-action="advance">
         <%# Mobile-friendly window: shows current page ± 1 plus the
             first/last page (≈5 buttons + gaps), fits ~320px wide. %>
-        <%= paginate @products, window: 1, outer_window: 1 %>
+        <%= paginate @products, theme: 'storefront', window: 1, outer_window: 1 %>
       </div>
     </nav>
   <% end %>

@@ -17,9 +17,8 @@ export default class extends Controller {
   }
 
   clear() {
-    this.inputTarget.value = ""
-    this.toggle()
-    this.inputTarget.focus()
+    this.clearAllInputs()
+    if (this.hasInputTarget) this.inputTarget.focus()
 
     if (this.committedValue && this.element.tagName === "FORM") {
       if (this.element.requestSubmit) {
@@ -28,5 +27,22 @@ export default class extends Controller {
         this.element.submit()
       }
     }
+  }
+
+  // Usado por enlaces de "Limpiar búsqueda" fuera de un form (ej. el resumen
+  // de resultados). El header del sitio es data-turbo-permanent, así que sus
+  // inputs no se re-renderizan al navegar y conservarían el texto; los vaciamos
+  // explícitamente antes de que Turbo siga el enlace.
+  clearAll() {
+    this.clearAllInputs()
+  }
+
+  // Vacía todos los campos de búsqueda de la página y notifica a sus
+  // controladores para que oculten su botón "X".
+  clearAllInputs() {
+    document.querySelectorAll('input[name="q"]').forEach((input) => {
+      input.value = ""
+      input.dispatchEvent(new Event("input", { bubbles: true }))
+    })
   }
 }
