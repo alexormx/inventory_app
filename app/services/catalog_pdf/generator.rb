@@ -1,10 +1,12 @@
-require 'grover'
 require 'base64'
 
 module CatalogPdf
   # Renderiza la plantilla del catálogo a HTML y la convierte a PDF con Grover
   # (Puppeteer/Chromium). Pensado para correr SOLO en local: la gema 'grover'
   # vive en el grupo :development, así que no existe en producción/Heroku.
+  # Por eso 'grover' se requiere de forma perezosa dentro de #to_pdf: el
+  # eager_load de producción carga esta clase al arrancar, pero nunca llama
+  # #to_pdf, así que jamás intenta cargar la gema ausente.
   class Generator
     LAUNCH_ARGS = ['--no-sandbox', '--disable-dev-shm-usage'].freeze
     LOGO_PATH = Rails.root.join('app/assets/images/logo.png')
@@ -16,6 +18,7 @@ module CatalogPdf
     end
 
     def to_pdf
+      require 'grover'
       Grover.new(html, **grover_options).to_pdf
     end
 
