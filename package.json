@@ -17,6 +17,7 @@
   },
   "license": "MIT",
   "devDependencies": {
-    "lighthouse": "^12.8.2"
+    "lighthouse": "^12.8.2",
+    "puppeteer": "^24.43.1"
   }
 }

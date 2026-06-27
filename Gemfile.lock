@@ -178,6 +178,8 @@ GEM
       csv (>= 3.0.0)
     globalid (1.2.1)
       activesupport (>= 6.1)
+    grover (1.2.10)
+      nokogiri (~> 1)
     i18n (1.14.7)
       concurrent-ruby (~> 1.0)
     image_processing (1.14.0)
@@ -519,6 +521,7 @@ DEPENDENCIES
   foreman
   friendly_id (~> 5.5)
   geocoder
+  grover
   image_processing (~> 1.2)
   importmap-rails
   jbuilder

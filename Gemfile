@@ -94,6 +94,7 @@ end
 # 🔹 **Development Group**
 group :development do
   gem 'foreman', require: false # Procfile runner for bin/dev
+  gem 'grover', require: false # HTML→PDF vía Puppeteer (generador de catálogo, solo local)
   gem 'letter_opener' # Preview email in the browser instead of sending
   gem 'overcommit' # Git hooks for code quality
   gem 'web-console' # Rails console in browser for debugging
