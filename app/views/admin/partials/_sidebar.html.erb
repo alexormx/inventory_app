@@ -74,6 +74,11 @@
       <li class="nav-item px-2 mb-1">
         <%= admin_sidebar_link 'Enriquecimiento IA', admin_product_enrichment_index_path, icon: 'wand-magic-sparkles' %>
       </li>
+      <% if Rails.env.development? %>
+        <li class="nav-item px-2 mb-1">
+          <%= admin_sidebar_link 'Generar Catálogo PDF', admin_catalog_pdf_path, icon: 'file-pdf' %>
+        </li>
+      <% end %>
 
       <li class="sidebar-section-title px-3 pt-3 pb-1">Inventario</li>
 

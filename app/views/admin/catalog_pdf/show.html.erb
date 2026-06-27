@@ -1,0 +1,96 @@
+<div class="admin-page-header d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+  <div>
+    <p class="admin-page-eyebrow mb-1">Catálogo · solo local</p>
+    <h2 class="mb-0 d-flex align-items-center gap-2"><i class="fa-solid fa-file-pdf"></i> Generar Catálogo PDF</h2>
+  </div>
+  <span class="badge admin-page-badge">Corre Grover en tu PC (no disponible en producción)</span>
+</div>
+
+<%= form_with url: admin_catalog_pdf_generate_path, method: :post, html: { data: { controller: 'catalog-pdf', action: 'submit->catalog-pdf#submit', 'catalog-pdf-categories-url-value': admin_catalog_pdf_categories_path, 'catalog-pdf-progress-url-value': admin_catalog_pdf_progress_path, 'catalog-pdf-download-url-value': admin_catalog_pdf_download_path } } do |f| %>
+  <div class="row g-3">
+    <div class="col-lg-5">
+      <div class="card mb-3">
+        <div class="card-header">Fuente de datos</div>
+        <div class="card-body">
+          <div class="form-check">
+            <%= radio_button_tag :source, 'api', true, class: 'form-check-input', id: 'source_api', data: { action: 'catalog-pdf#sourceChanged', 'catalog-pdf-target': 'source' } %>
+            <label class="form-check-label" for="source_api">Producción (vía API)</label>
+          </div>
+          <div class="form-check">
+            <%= radio_button_tag :source, 'local', false, class: 'form-check-input', id: 'source_local', data: { action: 'catalog-pdf#sourceChanged', 'catalog-pdf-target': 'source' } %>
+            <label class="form-check-label" for="source_local">Base de datos local</label>
+          </div>
+
+          <div class="mt-3" data-catalog-pdf-target="apiFields">
+            <label class="form-label small text-muted mb-1">URL del API (opcional, default producción)</label>
+            <%= text_field_tag :api_url, ENV['CATALOG_API_URL'], class: 'form-control form-control-sm mb-2', placeholder: 'https://pasatiempos.com.mx', data: { 'catalog-pdf-target': 'apiUrl' } %>
+            <label class="form-label small text-muted mb-1">Token de admin (opcional, default ENV)</label>
+            <%= password_field_tag :api_token, ENV['CATALOG_API_TOKEN'], class: 'form-control form-control-sm', placeholder: 'CATALOG_API_TOKEN', data: { 'catalog-pdf-target': 'apiToken' } %>
+          </div>
+        </div>
+      </div>
+
+      <div class="card mb-3">
+        <div class="card-header">Opciones</div>
+        <div class="card-body">
+          <div class="mb-3">
+            <label class="form-label" for="title">Título</label>
+            <%= text_field_tag :title, nil, class: 'form-control', placeholder: "CATÁLOGO #{I18n.l(Date.today, format: '%B %Y').upcase}" %>
+          </div>
+          <div class="row g-2">
+            <div class="col-7">
+              <label class="form-label" for="sort">Ordenar por</label>
+              <%= select_tag :sort, options_for_select([['Nombre', 'name'], ['Precio', 'price'], ['Código', 'code']], 'name'), class: 'form-select' %>
+            </div>
+            <div class="col-5">
+              <label class="form-label" for="direction">Dirección</label>
+              <%= select_tag :direction, options_for_select([['Ascendente', 'asc'], ['Descendente', 'desc']], 'asc'), class: 'form-select' %>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-7">
+      <div class="card mb-3">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span>Categorías <span class="text-muted small">(arrastra para reordenar; desmarca para excluir)</span></span>
+          <button type="button" class="btn btn-outline-secondary btn-sm" data-action="catalog-pdf#reload">
+            <i class="fa-solid fa-arrows-rotate"></i> Recargar
+          </button>
+        </div>
+        <div class="card-body">
+          <div class="text-muted small mb-2" data-catalog-pdf-target="status">Cargando categorías…</div>
+          <ul class="list-group" data-catalog-pdf-target="list"></ul>
+        </div>
+      </div>
+
+      <div class="card mb-3 d-none" data-catalog-pdf-target="progressCard">
+        <div class="card-body">
+          <div class="d-flex justify-content-between small mb-1">
+            <span class="text-truncate me-2" data-catalog-pdf-target="progressLabel">Preparando…</span>
+            <span class="text-muted" data-catalog-pdf-target="progressPercent">0%</span>
+          </div>
+          <div class="progress" role="progressbar" aria-label="Progreso de generación">
+            <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 0%" data-catalog-pdf-target="progressBar"></div>
+          </div>
+          <div class="text-danger small mt-2 d-none" data-catalog-pdf-target="progressError"></div>
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-end">
+        <%= button_tag type: 'submit', class: 'btn btn-danger btn-lg', data: { 'catalog-pdf-target': 'submitBtn' } do %>
+          <i class="fa-solid fa-file-pdf"></i> Generar PDF
+        <% end %>
+      </div>
+    </div>
+  </div>
+<% end %>
+
+<template data-catalog-pdf-target="rowTemplate">
+  <li class="list-group-item d-flex align-items-center gap-2" draggable="true">
+    <i class="fa-solid fa-grip-vertical text-muted" style="cursor: grab;"></i>
+    <input class="form-check-input mt-0" type="checkbox" name="categories[]" checked>
+    <span class="flex-grow-1"></span>
+  </li>
+</template>

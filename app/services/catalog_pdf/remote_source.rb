@@ -15,9 +15,21 @@ module CatalogPdf
 
     MAX_REDIRECTS = 5
 
+    # Ítems listos para el Generator (imagen embebida en base64).
     def items(base_url:, token:)
+      metadata(base_url: base_url, token: token).map { |item| embed_item(item) }
+    end
+
+    # Metadata sin descargar imágenes (solo la URL). Barato: una sola petición.
+    # Útil para listar categorías o filtrar antes de bajar imágenes.
+    def metadata(base_url:, token:)
       payload = fetch_json(URI.join(base_url, '/api/v1/catalog'), token)
       payload.fetch('items').map { |item| normalize(item) }
+    end
+
+    # Descarga la imagen del ítem y la deja embebida en :image.
+    def embed_item(item)
+      item.except(:image_url).merge(image: embed_image(item[:image_url]))
     end
 
     def fetch_json(uri, token)
@@ -41,7 +53,7 @@ module CatalogPdf
         category: item['category'],
         price: item['price'],
         badges: Array(item['badges']),
-        image: embed_image(item['image_url'])
+        image_url: item['image_url']
       }
     end
 

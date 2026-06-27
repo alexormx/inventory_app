@@ -13,12 +13,17 @@ module CatalogPdf
       ordered(scope).map { |product| base_fields(product).merge(image: image_data_uri(product)) }
     end
 
-    # Payload ligero para el API: misma metadata, pero la imagen como URL en vez
-    # de base64. Generar la URL es barato (Active Storage no procesa la variante
-    # hasta que alguien la descarga), así evitamos timeouts en Heroku.
-    # `url_builder` es el controlador (responde a `rails_storage_proxy_url`).
-    def payload(url_builder:, scope: Product.with_confirmed_location)
-      ordered(scope).map { |product| base_fields(product).merge(image_url: image_url(product, url_builder)) }
+    # Recorre el payload del API producto por producto, en lotes, sin
+    # materializar todos los registros ni todo el arreglo en memoria. El
+    # controlador hace stream del JSON conforme se generan los ítems, así el
+    # pico de RSS por petición queda acotado (clave en el dyno Basic de 512 MB).
+    # Generar la URL de imagen es barato (Active Storage no procesa la variante
+    # hasta que alguien la descarga). `url_builder` responde a
+    # `rails_storage_proxy_url`.
+    def each_payload(url_builder:, scope: Product.with_confirmed_location, batch_size: 250)
+      scope.with_attached_product_images.find_each(batch_size: batch_size) do |product|
+        yield base_fields(product).merge(image_url: image_url(product, url_builder))
+      end
     end
 
     def ordered(scope)

@@ -142,6 +142,13 @@ Rails.application.routes.draw do
       post :unmark_reviewed
     end
 
+    # Catalog PDF generator (SOLO local: depende de Grover/Puppeteer)
+    get  'catalog_pdf', to: 'catalog_pdf#show', as: :catalog_pdf
+    get  'catalog_pdf/categories', to: 'catalog_pdf#categories', as: :catalog_pdf_categories
+    post 'catalog_pdf/generate', to: 'catalog_pdf#generate', as: :catalog_pdf_generate
+    get  'catalog_pdf/progress', to: 'catalog_pdf#progress', as: :catalog_pdf_progress
+    get  'catalog_pdf/download', to: 'catalog_pdf#download', as: :catalog_pdf_download
+
     # Product Management
     get 'products/drafts', to: 'products#drafts', as: :products_drafts
     get 'products/active', to: 'products#active', as: :products_active

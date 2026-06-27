@@ -44,6 +44,7 @@ import EditorModeController from "./editor_mode_controller"
 import CopyController from "./copy_controller"
 import SelectableCardsController from "./selectable_cards_controller"
 import CheckoutShippingController from "./checkout_shipping_controller"
+import CatalogPdfController from "./catalog_pdf_controller"
 
 application.register("audit-progress", AuditProgressController)
 application.register("cart-item", CartItemController)
@@ -87,6 +88,7 @@ application.register("editor-mode", EditorModeController)
 application.register("copy", CopyController)
 application.register("selectable-cards", SelectableCardsController)
 application.register("checkout-shipping", CheckoutShippingController)
+application.register("catalog-pdf", CatalogPdfController)
 
 // Export opcional para debugging
 window.Stimulus = application
