@@ -21,7 +21,7 @@ module CatalogPdf
     end
 
     # Metadata sin descargar imágenes (solo la URL). Barato: una sola petición.
-    # Útil para listar categorías o filtrar antes de bajar imágenes.
+    # Útil para listar series o filtrar antes de bajar imágenes.
     def metadata(base_url:, token:)
       payload = fetch_json(URI.join(base_url, '/api/v1/catalog'), token)
       payload.fetch('items').map { |item| normalize(item) }
@@ -50,7 +50,7 @@ module CatalogPdf
         code: item['code'],
         name: item['name'],
         brand: item['brand'],
-        category: item['category'],
+        series: item['series'].presence || 'Sin serie',
         price: item['price'],
         badges: Array(item['badges']),
         image_url: item['image_url']

@@ -6,7 +6,7 @@
   <span class="badge admin-page-badge">Corre Grover en tu PC (no disponible en producción)</span>
 </div>
 
-<%= form_with url: admin_catalog_pdf_generate_path, method: :post, html: { data: { controller: 'catalog-pdf', action: 'submit->catalog-pdf#submit', 'catalog-pdf-categories-url-value': admin_catalog_pdf_categories_path, 'catalog-pdf-progress-url-value': admin_catalog_pdf_progress_path, 'catalog-pdf-download-url-value': admin_catalog_pdf_download_path } } do |f| %>
+<%= form_with url: admin_catalog_pdf_generate_path, method: :post, html: { data: { controller: 'catalog-pdf', action: 'submit->catalog-pdf#submit', 'catalog-pdf-series-url-value': admin_catalog_pdf_series_path, 'catalog-pdf-progress-url-value': admin_catalog_pdf_progress_path, 'catalog-pdf-download-url-value': admin_catalog_pdf_download_path } } do |f| %>
   <div class="row g-3">
     <div class="col-lg-5">
       <div class="card mb-3">
@@ -54,13 +54,13 @@
     <div class="col-lg-7">
       <div class="card mb-3">
         <div class="card-header d-flex justify-content-between align-items-center">
-          <span>Categorías <span class="text-muted small">(arrastra para reordenar; desmarca para excluir)</span></span>
+          <span>Series <span class="text-muted small">(arrastra para reordenar; desmarca para excluir)</span></span>
           <button type="button" class="btn btn-outline-secondary btn-sm" data-action="catalog-pdf#reload">
             <i class="fa-solid fa-arrows-rotate"></i> Recargar
           </button>
         </div>
         <div class="card-body">
-          <div class="text-muted small mb-2" data-catalog-pdf-target="status">Cargando categorías…</div>
+          <div class="text-muted small mb-2" data-catalog-pdf-target="status">Cargando series…</div>
           <ul class="list-group" data-catalog-pdf-target="list"></ul>
         </div>
       </div>
@@ -89,7 +89,7 @@
   <template data-catalog-pdf-target="rowTemplate">
     <li class="list-group-item d-flex align-items-center gap-2" draggable="true">
       <i class="fa-solid fa-grip-vertical text-muted" style="cursor: grab;"></i>
-      <input class="form-check-input mt-0" type="checkbox" name="categories[]" checked>
+      <input class="form-check-input mt-0" type="checkbox" name="series[]" checked>
       <span class="flex-grow-1"></span>
     </li>
   </template>

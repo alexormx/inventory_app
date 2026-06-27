@@ -22,7 +22,7 @@ module CatalogPdf
     ].freeze
 
     def items
-      SAMPLES.map { |s| s.merge(category: 'Demo', image: placeholder) }
+      SAMPLES.map { |s| s.merge(series: 'Demo', image: placeholder) }
     end
 
     def placeholder

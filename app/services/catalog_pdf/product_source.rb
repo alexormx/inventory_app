@@ -2,8 +2,8 @@ require 'base64'
 
 module CatalogPdf
   # Construye la lista de ítems del catálogo a partir de productos reales.
-  # Ordena por categoría y luego nombre (igual que el esquema del Excel) y
-  # solo incluye productos con ubicación física confirmada.
+  # Ordena por serie y luego nombre y solo incluye productos con ubicación
+  # física confirmada.
   module ProductSource
     module_function
 
@@ -27,7 +27,7 @@ module CatalogPdf
     end
 
     def ordered(scope)
-      scope.order(:category, :product_name).with_attached_product_images
+      scope.order(:series, :product_name).with_attached_product_images
     end
 
     def base_fields(product)
@@ -35,7 +35,7 @@ module CatalogPdf
         code: product.whatsapp_code,
         name: product.product_name,
         brand: product.brand,
-        category: product.category,
+        series: product.series.presence || 'Sin serie',
         price: product.selling_price,
         badges: badges_for(product)
       }

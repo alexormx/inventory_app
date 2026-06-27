@@ -12,10 +12,10 @@ module Admin
 
     def show; end
 
-    # Lista de categorías de la fuente elegida (para poblar la UI sin generar
+    # Lista de series de la fuente elegida (para poblar la UI sin generar
     # todavía el PDF).
-    def categories
-      render json: { categories: builder.available_categories }
+    def series
+      render json: { series: builder.available_series }
     rescue StandardError => e
       render json: { error: e.message }, status: :unprocessable_entity
     end
@@ -66,7 +66,7 @@ module Admin
       end
 
       if items.empty?
-        CatalogPdf::Progress.update(job_id, status: 'error', error: 'No hay productos para las categorías seleccionadas.')
+        CatalogPdf::Progress.update(job_id, status: 'error', error: 'No hay productos para las series seleccionadas.')
         return
       end
 
@@ -87,7 +87,7 @@ module Admin
     def builder
       CatalogPdf::Builder.new(
         source: params[:source],
-        categories: params[:categories],
+        series: params[:series],
         sort: params[:sort],
         direction: params[:direction],
         api_url: api_url,

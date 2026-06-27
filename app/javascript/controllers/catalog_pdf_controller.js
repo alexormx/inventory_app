@@ -2,14 +2,14 @@ import { Controller } from "@hotwired/stimulus"
 
 // Maneja la página de generación de catálogo (admin, solo local):
 // - cambia la fuente de datos (API / BD local) y muestra/oculta los campos del API
-// - carga las categorías de la fuente elegida
-// - permite reordenar las categorías con drag & drop
+// - carga las series de la fuente elegida
+// - permite reordenar las series con drag & drop
 // El orden del DOM define el orden en el PDF; los checkboxes marcados definen
-// qué categorías se incluyen.
+// qué series se incluyen.
 export default class extends Controller {
   static targets = ["source", "apiFields", "apiUrl", "apiToken", "status", "list", "rowTemplate",
                     "submitBtn", "progressCard", "progressBar", "progressLabel", "progressPercent", "progressError"]
-  static values = { categoriesUrl: String, progressUrl: String, downloadUrl: String }
+  static values = { seriesUrl: String, progressUrl: String, downloadUrl: String }
 
   connect() {
     this.dragged = null
@@ -120,38 +120,38 @@ export default class extends Controller {
   }
 
   reload() {
-    const url = new URL(this.categoriesUrlValue, window.location.origin)
+    const url = new URL(this.seriesUrlValue, window.location.origin)
     url.searchParams.set("source", this.source)
     if (this.source === "api") {
       if (this.hasApiUrlTarget && this.apiUrlTarget.value) url.searchParams.set("api_url", this.apiUrlTarget.value)
       if (this.hasApiTokenTarget && this.apiTokenTarget.value) url.searchParams.set("api_token", this.apiTokenTarget.value)
     }
 
-    this.statusTarget.textContent = "Cargando categorías…"
+    this.statusTarget.textContent = "Cargando series…"
     this.listTarget.innerHTML = ""
 
     fetch(url, { headers: { Accept: "application/json" } })
       .then((res) => res.json().then((body) => ({ ok: res.ok, body })))
       .then(({ ok, body }) => {
-        if (!ok) throw new Error(body.error || "Error al cargar categorías")
-        this.render(body.categories || [])
+        if (!ok) throw new Error(body.error || "Error al cargar series")
+        this.render(body.series || [])
       })
       .catch((err) => {
         this.statusTarget.textContent = err.message
       })
   }
 
-  render(categories) {
-    if (categories.length === 0) {
-      this.statusTarget.textContent = "No hay categorías en esta fuente."
+  render(series) {
+    if (series.length === 0) {
+      this.statusTarget.textContent = "No hay series en esta fuente."
       return
     }
-    this.statusTarget.textContent = `${categories.length} categoría(s)`
+    this.statusTarget.textContent = `${series.length} serie(s)`
 
-    categories.forEach((category) => {
+    series.forEach((serie) => {
       const row = this.rowTemplateTarget.content.firstElementChild.cloneNode(true)
-      row.querySelector("input[type=checkbox]").value = category
-      row.querySelector("span").textContent = category
+      row.querySelector("input[type=checkbox]").value = serie
+      row.querySelector("span").textContent = serie
       this.attachDrag(row)
       this.listTarget.appendChild(row)
     })

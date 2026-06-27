@@ -1,25 +1,25 @@
 module CatalogPdf
   # Orquesta la construcción de los ítems del catálogo para la página de
   # generación (admin, solo local). Elige la fuente de datos (API de producción
-  # o BD local), lista las categorías disponibles, filtra por las categorías
-  # seleccionadas y ordena por: 1) el orden de categorías elegido por el usuario
+  # o BD local), lista las series disponibles, filtra por las series
+  # seleccionadas y ordena por: 1) el orden de series elegido por el usuario
   # y 2) un campo secundario (nombre, precio o código), asc o desc.
   class Builder
     SECONDARY_FIELDS = %w[name price code].freeze
 
-    def initialize(source:, categories: [], sort: 'name', direction: 'asc',
+    def initialize(source:, series: [], sort: 'name', direction: 'asc',
                    api_url: nil, api_token: nil)
       @source = source == 'local' ? 'local' : 'api'
-      @selected = Array(categories).reject(&:blank?)
+      @selected = Array(series).reject(&:blank?)
       @sort = SECONDARY_FIELDS.include?(sort) ? sort : 'name'
       @direction = direction == 'desc' ? 'desc' : 'asc'
       @api_url = api_url
       @api_token = api_token
     end
 
-    # Lista de categorías presentes en la fuente (sin descargar imágenes).
-    def available_categories
-      metadata.map { |item| item[:category] }.compact.uniq.sort
+    # Lista de series presentes en la fuente (sin descargar imágenes).
+    def available_series
+      metadata.map { |item| item[:series] }.compact.uniq.sort
     end
 
     # Ítems finales, filtrados + ordenados, con la imagen ya embebida.
@@ -40,17 +40,17 @@ module CatalogPdf
     # Ítems elegidos + ordenados, todavía sin imagen embebida.
     def selection
       @selection ||= begin
-        order = (@selected.presence || available_categories)
+        order = (@selected.presence || available_series)
         index = order.each_with_index.to_h
 
-        chosen = metadata.select { |item| index.key?(item[:category]) }
+        chosen = metadata.select { |item| index.key?(item[:series]) }
         chosen.sort! { |a, b| compare(a, b, index) }
         chosen
       end
     end
 
     # Metadata (sin imagen embebida) cacheada para no pegarle dos veces a la
-    # fuente entre listar categorías y construir los ítems.
+    # fuente entre listar series y construir los ítems.
     def metadata
       @metadata ||= @source == 'local' ? local_metadata : remote_metadata
     end
@@ -73,8 +73,8 @@ module CatalogPdf
     end
 
     def compare(a, b, index)
-      by_category = index[a[:category]] <=> index[b[:category]]
-      return by_category unless by_category.zero?
+      by_series = index[a[:series]] <=> index[b[:series]]
+      return by_series unless by_series.zero?
 
       secondary = secondary_key(a) <=> secondary_key(b)
       @direction == 'desc' ? -secondary : secondary
