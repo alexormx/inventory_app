@@ -15,7 +15,7 @@ module Admin
     # Lista de series de la fuente elegida (para poblar la UI sin generar
     # todavía el PDF).
     def series
-      render json: { series: builder.available_series }
+      render json: { series: builder.series_summary }
     rescue StandardError => e
       render json: { error: e.message }, status: :unprocessable_entity
     end

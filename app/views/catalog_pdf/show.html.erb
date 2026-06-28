@@ -55,6 +55,7 @@
     }
     .card .name { font-size: 11px; color: #333; min-height: 28px; line-height: 1.2; }
     .card .price { font-size: 18px; font-weight: bold; color: #111; margin-top: 4px; }
+    .card .series { font-size: 9px; color: #c0392b; font-weight: bold; text-transform: uppercase; letter-spacing: 0.4px; }
     .card .brand { font-size: 9px; color: #999; text-transform: uppercase; letter-spacing: 0.5px; }
   </style>
 </head>
@@ -96,6 +97,7 @@
           <div class="photo-missing">Sin imagen</div>
         <% end %>
         <div class="name"><%= truncate(item[:name].to_s, length: 60) %></div>
+        <% if item[:series].present? %><div class="series"><%= item[:series] %></div><% end %>
         <% if item[:brand].present? %><div class="brand"><%= item[:brand] %></div><% end %>
         <div class="price"><%= number_to_currency(item[:price], unit: "$", precision: 0) %></div>
       </div>

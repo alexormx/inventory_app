@@ -150,8 +150,8 @@ export default class extends Controller {
 
     series.forEach((serie) => {
       const row = this.rowTemplateTarget.content.firstElementChild.cloneNode(true)
-      row.querySelector("input[type=checkbox]").value = serie
-      row.querySelector("span").textContent = serie
+      row.querySelector("input[type=checkbox]").value = serie.name
+      row.querySelector("span").textContent = `${serie.name} (${serie.count})`
       this.attachDrag(row)
       this.listTarget.appendChild(row)
     })

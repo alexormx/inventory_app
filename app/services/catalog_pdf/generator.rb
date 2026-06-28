@@ -37,6 +37,12 @@ module CatalogPdf
         format: 'A4',
         print_background: true,
         launch_args: LAUNCH_ARGS,
+        # El catálogo puede traer cientos de productos con imágenes embebidas en
+        # base64: el HTML es enorme y a Chromium le toma más de los 30s default
+        # parsear/maquetar (causaba "Navigation timeout of 30000 ms exceeded").
+        # 'load' evita esperar a networkidle (no hay red: las imágenes son data URIs).
+        wait_until: 'load',
+        timeout: 180_000,
         display_header_footer: true,
         header_template: header_template,
         footer_template: footer_template,

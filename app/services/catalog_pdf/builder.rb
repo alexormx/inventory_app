@@ -22,6 +22,13 @@ module CatalogPdf
       metadata.map { |item| item[:series] }.compact.uniq.sort
     end
 
+    # Series con la cantidad de productos de cada una, para mostrarla en la UI.
+    def series_summary
+      counts = Hash.new(0)
+      metadata.each { |item| counts[item[:series]] += 1 if item[:series].present? }
+      counts.sort_by { |name, _| name }.map { |name, count| { name: name, count: count } }
+    end
+
     # Ítems finales, filtrados + ordenados, con la imagen ya embebida.
     # Si se pasa un bloque, se invoca con (current, total, name) justo antes
     # de embeber la imagen de cada producto (el paso lento), para reportar
