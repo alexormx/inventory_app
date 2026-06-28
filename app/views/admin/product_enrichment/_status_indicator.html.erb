@@ -1,32 +1,24 @@
-<%= turbo_frame_tag "enrichment_status",
-                    data: {
-                      controller: "polling-frame",
-                      "polling-frame-src-value": status_admin_product_enrichment_path(draft),
-                      "polling-frame-interval-value": 3000,
-                      "polling-frame-active-value": (draft.queued? || draft.generating?)
-                    } do %>
-  <div class="d-flex align-items-center gap-3">
-    <%= render_enrichment_status_badge(draft.status) %>
-    <% if draft.confidence_score %>
-      <span class="badge <%= draft.confidence_score >= 0.8 ? 'bg-success' : draft.confidence_score >= 0.6 ? 'bg-warning text-dark' : 'bg-danger' %>">
-        Confianza: <%= (draft.confidence_score * 100).round %>%
-      </span>
-    <% end %>
-    <% if draft.ai_model %>
-      <small class="text-muted"><i class="fa-solid fa-robot me-1"></i><%= draft.ai_model %></small>
-    <% end %>
-    <% if draft.total_tokens > 0 %>
-      <small class="text-muted"><i class="fa-solid fa-coins me-1"></i><%= number_with_delimiter(draft.total_tokens) %> tokens</small>
-    <% end %>
-    <% if draft.estimated_cost_cents %>
-      <small class="text-muted">~$<%= '%.4f' % draft.estimated_cost_usd %> USD</small>
-    <% end %>
-  </div>
-
-  <%# Cuando el polling detecta un estado terminal, recarga la página completa
-      una sola vez para mostrar el formulario editable. El guard params[:_poll]
-      evita el bucle: tras la recarga la URL ya no trae _poll. %>
-  <% if params[:_poll].present? && !(draft.queued? || draft.generating?) %>
-    <div data-controller="reload-page"></div>
+<%# Indicador de estado del draft. Mientras está en cola/generando, el
+    controller auto-reload sondea el endpoint de status y recarga la página
+    completa al terminar, para mostrar el formulario de revisión sin F5. %>
+<div class="d-flex align-items-center gap-3"
+     data-controller="auto-reload"
+     data-auto-reload-url-value="<%= status_admin_product_enrichment_path(draft) %>"
+     data-auto-reload-interval-value="3000"
+     data-auto-reload-active-value="<%= draft.queued? || draft.generating? %>">
+  <%= render_enrichment_status_badge(draft.status) %>
+  <% if draft.confidence_score %>
+    <span class="badge <%= draft.confidence_score >= 0.8 ? 'bg-success' : draft.confidence_score >= 0.6 ? 'bg-warning text-dark' : 'bg-danger' %>">
+      Confianza: <%= (draft.confidence_score * 100).round %>%
+    </span>
   <% end %>
-<% end %>
+  <% if draft.ai_model %>
+    <small class="text-muted"><i class="fa-solid fa-robot me-1"></i><%= draft.ai_model %></small>
+  <% end %>
+  <% if draft.total_tokens > 0 %>
+    <small class="text-muted"><i class="fa-solid fa-coins me-1"></i><%= number_with_delimiter(draft.total_tokens) %> tokens</small>
+  <% end %>
+  <% if draft.estimated_cost_cents %>
+    <small class="text-muted">~$<%= '%.4f' % draft.estimated_cost_usd %> USD</small>
+  <% end %>
+</div>

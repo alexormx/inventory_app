@@ -93,12 +93,14 @@ module Admin
     end
 
     # GET /admin/product_enrichment/:id/status
-    # Turbo-frame liviano para el polling: re-renderiza solo el indicador de
-    # estado. Mientras el draft sigue en cola/generando, el frame se sigue
-    # auto-recargando; al llegar a un estado terminal dispara una recarga de
-    # la página completa para mostrar el formulario editable.
+    # Endpoint liviano para el polling de la UI. `done` es true cuando el draft
+    # llegó a un estado terminal (ya no está en cola/generando); el front-end
+    # recarga la página completa para mostrar el formulario de revisión.
     def status
-      render partial: "status_indicator", locals: { draft: @draft }
+      render json: {
+        status: @draft.status,
+        done: !(@draft.queued? || @draft.generating?)
+      }
     end
 
     # POST /admin/product_enrichment/:id/generate
