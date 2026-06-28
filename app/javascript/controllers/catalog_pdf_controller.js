@@ -8,14 +8,24 @@ import { Controller } from "@hotwired/stimulus"
 // qué series se incluyen.
 export default class extends Controller {
   static targets = ["source", "apiFields", "apiUrl", "apiToken", "status", "list", "rowTemplate",
-                    "submitBtn", "progressCard", "progressBar", "progressLabel", "progressPercent", "progressError"]
+                    "submitBtn", "progressCard", "progressBar", "progressLabel", "progressPercent", "progressError",
+                    "usdEnabled", "usdRate"]
   static values = { seriesUrl: String, progressUrl: String, downloadUrl: String }
 
   connect() {
     this.dragged = null
     this.polling = null
     this.toggleApiFields()
+    this.toggleUsd()
     this.reload()
+  }
+
+  // Habilita el campo de tipo de cambio solo cuando se pide el precio en USD.
+  // Un input deshabilitado no se envía en el FormData, así que el rate solo
+  // viaja cuando la opción está activa.
+  toggleUsd() {
+    const on = this.hasUsdEnabledTarget && this.usdEnabledTarget.checked
+    if (this.hasUsdRateTarget) this.usdRateTarget.disabled = !on
   }
 
   disconnect() {

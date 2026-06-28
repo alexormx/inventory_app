@@ -11,10 +11,11 @@ module CatalogPdf
     LAUNCH_ARGS = ['--no-sandbox', '--disable-dev-shm-usage'].freeze
     LOGO_PATH = Rails.root.join('app/assets/images/logo.png')
 
-    def initialize(title:, whatsapp_number:, items:)
+    def initialize(title:, whatsapp_number:, items:, usd_rate: nil)
       @title = title
       @whatsapp_number = whatsapp_number
       @items = items
+      @usd_rate = usd_rate
     end
 
     def to_pdf
@@ -26,7 +27,7 @@ module CatalogPdf
       ApplicationController.render(
         template: 'catalog_pdf/show',
         layout: false,
-        locals: { title: @title, whatsapp_number: formatted_whatsapp, items: @items, logo: logo_data_uri }
+        locals: { title: @title, whatsapp_number: formatted_whatsapp, items: @items, logo: logo_data_uri, usd_rate: @usd_rate }
       )
     end
 

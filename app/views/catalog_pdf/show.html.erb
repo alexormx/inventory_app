@@ -56,6 +56,11 @@
     }
     .feature .note { font-size: 10px; color: #777; line-height: 1.35; margin-top: 8px; font-style: italic; }
 
+    .currency-note {
+      margin-top: 18px; padding: 10px 14px; border: 1px solid #1f3a9333; border-radius: 10px;
+      background: #eef2ff; text-align: center; font-size: 11.5px; color: #1f3a93; line-height: 1.4;
+    }
+
     /* Empuja el fineprint al pie de la portada, repartiendo el espacio sobrante. */
     .fineprint { margin-top: auto; padding-top: 22px; text-align: center; font-size: 10px; color: #999; line-height: 1.4; }
 
@@ -104,7 +109,9 @@
     .card .name { font-size: 11px; color: #333; line-height: 1.25; min-height: 28px; }
     .card .series { font-size: 9px; color: #c0392b; font-weight: bold; text-transform: uppercase; letter-spacing: 0.4px; margin-top: 2px; }
     .card .brand { font-size: 9px; color: #999; text-transform: uppercase; letter-spacing: 0.5px; }
+    .card .meta-label { color: #555; font-weight: bold; }
     .card .price { font-size: 19px; font-weight: bold; color: #111; margin-top: auto; padding-top: 6px; }
+    .card .price-usd { font-size: 12px; font-weight: 600; color: #1f3a93; margin-top: 1px; }
 
     /* Escala: insignia en la esquina inferior derecha, en azul */
     .card .scale {
@@ -163,6 +170,14 @@
       </div>
     </div>
 
+    <% if usd_rate.to_f > 0 %>
+      <p class="currency-note">
+        Todos los precios están en <strong>pesos mexicanos (MXN)</strong>. El equivalente en
+        <strong>USD</strong> es solo de referencia (1 USD ≈ $<%= number_with_precision(usd_rate, precision: 2) %> MXN)
+        y puede variar según el tipo de cambio del día.
+      </p>
+    <% end %>
+
     <p class="fineprint">
       Disponibilidad sujeta a cambio sin previo aviso · Precios sujetos a confirmación · pasatiempos.com.mx
     </p>
@@ -191,9 +206,14 @@
         </div>
 
         <div class="name"><%= truncate(item[:name].to_s, length: 60) %></div>
-        <% if item[:series].present? %><div class="series"><%= item[:series] %></div><% end %>
-        <% if item[:brand].present? %><div class="brand"><%= item[:brand] %></div><% end %>
-        <div class="price"><%= number_to_currency(item[:price], unit: "$", precision: 0) %></div>
+        <% if item[:series].present? %><div class="series"><span class="meta-label">Serie:</span> <%= item[:series] %></div><% end %>
+        <% if item[:brand].present? %><div class="brand"><span class="meta-label">Marca:</span> <%= item[:brand] %></div><% end %>
+        <div class="price">
+          <%= number_to_currency(item[:price], unit: "$", precision: 0) %> MXN
+          <% if usd_rate.to_f > 0 && item[:price].to_f > 0 %>
+            <div class="price-usd"><%= number_to_currency(item[:price].to_f / usd_rate.to_f, unit: "$", precision: 2) %> USD</div>
+          <% end %>
+        </div>
 
         <% if item[:scale].present? %>
           <span class="scale">Escala <%= item[:scale] %></span>

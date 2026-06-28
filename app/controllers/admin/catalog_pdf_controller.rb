@@ -27,11 +27,12 @@ module Admin
       title = catalog_title
       number = Rails.application.config.whatsapp_number
       filename = pdf_filename
+      rate = usd_rate
       job_id = CatalogPdf::Progress.start
 
       Thread.new do
         Rails.application.executor.wrap do
-          run_generation(job_id, builder_for_job, title, number, filename)
+          run_generation(job_id, builder_for_job, title, number, filename, rate)
         end
       end
 
@@ -59,7 +60,7 @@ module Admin
 
     private
 
-    def run_generation(job_id, builder, title, number, filename)
+    def run_generation(job_id, builder, title, number, filename, rate = nil)
       CatalogPdf::Progress.update(job_id, status: 'building', name: 'Conectando con la fuente de datos…')
       items = builder.items do |current, total, name|
         CatalogPdf::Progress.update(job_id, status: 'building', current: current, total: total, name: name)
@@ -71,7 +72,7 @@ module Admin
       end
 
       CatalogPdf::Progress.update(job_id, status: 'rendering', name: 'Generando PDF…')
-      pdf = CatalogPdf::Generator.new(title: title, whatsapp_number: number, items: items).to_pdf
+      pdf = CatalogPdf::Generator.new(title: title, whatsapp_number: number, items: items, usd_rate: rate).to_pdf
 
       path = Rails.root.join('tmp', "catalog_#{job_id}.pdf")
       File.binwrite(path, pdf)
@@ -101,6 +102,15 @@ module Admin
 
     def api_token
       params[:api_token].presence || ENV['CATALOG_API_TOKEN']
+    end
+
+    # Tipo de cambio (MXN por USD) para mostrar el precio en USD. nil si el
+    # admin no marcó la opción o el valor no es positivo.
+    def usd_rate
+      return nil unless ActiveModel::Type::Boolean.new.cast(params[:include_usd])
+
+      rate = params[:usd_rate].to_f
+      rate.positive? ? rate : nil
     end
 
     def catalog_title
