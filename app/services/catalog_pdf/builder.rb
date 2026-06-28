@@ -63,7 +63,7 @@ module CatalogPdf
     end
 
     def local_metadata
-      ProductSource.ordered(Product.with_confirmed_location)
+      ProductSource.ordered(Product.catalog_offerable)
                    .map { |product| ProductSource.base_fields(product).merge(product: product) }
     end
 

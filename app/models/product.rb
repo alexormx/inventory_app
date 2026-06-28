@@ -89,6 +89,18 @@ class Product < ApplicationRecord
                        .where.not(inventory_location_id: nil)
                        .select(:product_id))
   }
+  # Productos ofertables en el catálogo (PDF y API): producto visible al público
+  # (status active) con al menos una pieza realmente disponible para vender, es
+  # decir disponible (:available), libre (sin sale_order_id, no apartada) y con
+  # ubicación física confirmada. Excluye apartadas (reserved/pre_reserved) y
+  # piezas :available ya asignadas a una orden.
+  scope :catalog_offerable, -> {
+    publicly_visible.where(
+      id: Inventory.where(status: :available, sale_order_id: nil)
+                   .where.not(inventory_location_id: nil)
+                   .select(:product_id)
+    )
+  }
   # Productos con al menos un inventario en bodega que aún no tiene ubicación asignada.
   scope :missing_location, -> {
     where(id: Inventory.where(status: Inventory::STATUSES_REQUIRING_LOCATION,

@@ -191,6 +191,40 @@ RSpec.describe Product, type: :model do
     end
   end
 
+  describe '.catalog_offerable' do
+    let(:location) { create(:inventory_location, :warehouse) }
+
+    it 'includes an active product with a free, available, located piece' do
+      product = create(:product, status: 'active', skip_seed_inventory: true)
+      create(:inventory, product: product, status: :available, inventory_location: location)
+      expect(Product.catalog_offerable).to include(product)
+    end
+
+    it 'excludes a product whose only located piece is reserved (apartada)' do
+      product = create(:product, status: 'active', skip_seed_inventory: true)
+      create(:inventory, product: product, status: :reserved, inventory_location: location)
+      expect(Product.catalog_offerable).not_to include(product)
+    end
+
+    it 'excludes a product whose only located piece is pre_reserved (apartada)' do
+      product = create(:product, status: 'active', skip_seed_inventory: true)
+      create(:inventory, product: product, status: :pre_reserved, inventory_location: location)
+      expect(Product.catalog_offerable).not_to include(product)
+    end
+
+    it 'excludes a product whose available pieces have no confirmed location' do
+      product = create(:product, status: 'active', skip_seed_inventory: true)
+      create(:inventory, product: product, status: :available, inventory_location: nil)
+      expect(Product.catalog_offerable).not_to include(product)
+    end
+
+    it 'excludes a product that is not publicly visible (inactive)' do
+      product = create(:product, status: 'inactive', skip_seed_inventory: true)
+      create(:inventory, product: product, status: :available, inventory_location: location)
+      expect(Product.catalog_offerable).not_to include(product)
+    end
+  end
+
   describe '#has_collectibles?' do
     let(:product) { create(:product, skip_seed_inventory: true, selling_price: 100) }
     let(:location) { create(:inventory_location, :warehouse) }

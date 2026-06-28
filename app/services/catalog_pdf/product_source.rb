@@ -9,7 +9,7 @@ module CatalogPdf
 
     # Ítems con la imagen embebida como data URI (para generar el PDF en local
     # contra la BD local). El generador remoto usa `payload` + RemoteSource.
-    def items(scope: Product.with_confirmed_location)
+    def items(scope: Product.catalog_offerable)
       ordered(scope).map { |product| base_fields(product).merge(image: image_data_uri(product)) }
     end
 
@@ -20,7 +20,7 @@ module CatalogPdf
     # Generar la URL de imagen es barato (Active Storage no procesa la variante
     # hasta que alguien la descarga). `url_builder` responde a
     # `rails_storage_proxy_url`.
-    def each_payload(url_builder:, scope: Product.with_confirmed_location, batch_size: 250)
+    def each_payload(url_builder:, scope: Product.catalog_offerable, batch_size: 250)
       scope.with_attached_product_images.find_each(batch_size: batch_size) do |product|
         yield base_fields(product).merge(image_url: image_url(product, url_builder))
       end
