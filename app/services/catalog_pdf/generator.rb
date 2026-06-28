@@ -43,6 +43,13 @@ module CatalogPdf
         # 'load' evita esperar a networkidle (no hay red: las imágenes son data URIs).
         wait_until: 'load',
         timeout: 180_000,
+        # El HTML se sirve por interceptación de requests; la "URL" base solo se
+        # usa para resolver recursos relativos. Por defecto Grover navega a
+        # http://example.com, que en algunos entornos (ad-blockers, /etc/hosts,
+        # DNS de WSL) se bloquea -> "net::ERR_BLOCKED_BY_CLIENT". Apuntar a
+        # localhost evita ese bloqueo sin pegarle a la red (no hay recursos
+        # remotos: imágenes y logo van embebidos en base64).
+        display_url: 'http://localhost/catalogo',
         display_header_footer: true,
         header_template: header_template,
         footer_template: footer_template,

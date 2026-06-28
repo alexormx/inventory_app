@@ -7,83 +7,151 @@
     * { box-sizing: border-box; }
     body { font-family: "Helvetica Neue", Arial, sans-serif; margin: 0; color: #222; }
 
-    /* Página de instrucciones (portada) */
-    .cover { padding: 10px 6px; page-break-after: always; }
-    .cover h1 { color: #c0392b; font-size: 26px; margin: 0 0 4px; }
-    .cover .sub { color: #555; font-size: 13px; margin-bottom: 22px; }
+    /* ---------- Portada / instrucciones ---------- */
+    /* Ocupa el alto útil de la página (A4 menos márgenes) y reparte las
+       secciones verticalmente para evitar el hueco inferior. */
+    .cover {
+      padding: 6px 12px; page-break-after: always;
+      min-height: 24.5cm; display: flex; flex-direction: column;
+    }
+    .cover-head { text-align: center; }
+    .cover h1 { color: #c0392b; font-size: 32px; margin: 8px 0 2px; }
+    .cover .sub { color: #555; font-size: 13px; margin: 0 0 18px; }
+    .cover .lead { text-align: center; font-size: 13.5px; color: #333; margin: 0 0 18px; }
+    .cover h2 { font-size: 17px; color: #333; margin: 0 0 12px; }
+
     .steps { list-style: none; padding: 0; margin: 0; counter-reset: step; }
     .steps li {
-      position: relative; padding: 12px 14px 12px 52px; margin-bottom: 12px;
-      background: #fafafa; border: 1px solid #eee; border-radius: 10px; font-size: 14px;
+      position: relative; padding: 12px 14px 12px 52px; margin-bottom: 11px;
+      background: #fafafa; border: 1px solid #eee; border-radius: 10px; font-size: 13.5px;
     }
     .steps li::before {
       counter-increment: step; content: counter(step);
       position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
       width: 28px; height: 28px; border-radius: 50%; background: #c0392b; color: #fff;
-      font-weight: bold; text-align: center; line-height: 28px;
+      font-weight: bold; text-align: center; line-height: 28px; font-size: 14px;
     }
+
     .wa-box {
-      margin-top: 22px; padding: 14px 16px; border: 2px dashed #25D366; border-radius: 12px;
+      margin-top: 22px; padding: 18px 16px; border: 2px dashed #25D366; border-radius: 12px;
       background: #f3fff7; text-align: center;
     }
-    .wa-box .num { font-size: 22px; font-weight: bold; color: #128C7E; letter-spacing: 1px; }
+    .wa-box .label { font-size: 13px; color: #128C7E; }
+    .wa-box .num { font-size: 25px; font-weight: bold; color: #128C7E; letter-spacing: 1px; margin: 3px 0; }
+    .wa-box .web { font-size: 14px; font-weight: bold; color: #c0392b; }
 
-    /* Parrilla de productos: 2 columnas */
-    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 4px 2px; }
+    .features { display: flex; gap: 10px; margin-top: 22px; }
+    .feature {
+      flex: 1; border: 1px solid #eee; border-radius: 10px; padding: 16px 10px;
+      text-align: center; background: #fafafa;
+    }
+    .feature .t { font-weight: bold; color: #c0392b; font-size: 13px; margin-bottom: 4px; }
+    .feature .d { font-size: 11px; color: #666; line-height: 1.35; }
+
+    /* Empuja el fineprint al pie de la portada, repartiendo el espacio sobrante. */
+    .fineprint { margin-top: auto; padding-top: 22px; text-align: center; font-size: 10px; color: #999; line-height: 1.4; }
+
+    /* ---------- Parrilla de productos: 2 columnas x 3 filas ---------- */
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.45cm; padding: 2px; }
     .card {
-      border: 1px solid #d9d9d9; border-radius: 10px; padding: 8px; position: relative;
+      border: 1px solid #d9d9d9; border-radius: 10px; padding: 10px 9px 9px; position: relative;
       break-inside: avoid; text-align: center; background: #fff;
+      height: 8.4cm; display: flex; flex-direction: column;
     }
+
+    /* Código de pedido (dato principal para WhatsApp) */
     .card .code {
-      position: absolute; top: 6px; left: 6px; font-weight: bold; color: #c0392b;
-      font-size: 20px; background: #fff; padding: 1px 5px; border-radius: 4px;
+      position: absolute; top: 7px; left: 7px; z-index: 2;
+      background: #fff; color: #c0392b; border: 1px solid #c0392b40;
+      border-radius: 7px; padding: 3px 8px; line-height: 1.1;
+      box-shadow: 0 1px 2px #0000000f; white-space: nowrap;
     }
-    .card .badges { position: absolute; top: 6px; right: 6px; text-align: right; }
+    .card .code .label {
+      font-size: 8.5px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.5px; opacity: 0.85; margin-right: 2px;
+    }
+    .card .code .value { font-size: 15px; font-weight: bold; }
+
+    /* Badge de disponibilidad */
+    .card .badges { position: absolute; top: 7px; right: 7px; z-index: 2; text-align: right; }
     .card .badge {
-      display: inline-block; font-size: 12px; font-weight: bold; padding: 4px 9px;
-      border-radius: 12px; margin-bottom: 4px; border: 1px solid #00000022;
+      display: inline-block; font-size: 9px; font-weight: bold; padding: 3px 8px;
+      border-radius: 10px; margin-bottom: 3px; border: 1px solid #00000018; line-height: 1.3;
     }
     .badge-new { background: #fff3cd; color: #856404; }
     .badge-unique { background: #f8d7da; color: #842029; }
-    .card .photo {
-      width: 100%; height: 180px; object-fit: contain; margin: 18px 0 6px;
+
+    /* Área de imagen fija y centrada (evita que fotos horizontales/verticales desbalanceen) */
+    .card .photo-area {
+      flex: 0 0 auto; height: 5.0cm; margin: 11px 0 6px;
+      display: flex; align-items: center; justify-content: center;
     }
+    .card .photo { max-width: 100%; max-height: 5.0cm; object-fit: contain; }
     .card .photo-missing {
-      width: 100%; height: 180px; margin: 18px 0 6px; display: flex;
-      align-items: center; justify-content: center; color: #bbb; font-size: 12px;
-      background: #f5f5f5; border-radius: 6px;
+      width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
+      color: #bbb; font-size: 12px; background: #f5f5f5; border-radius: 6px;
     }
-    .card .name { font-size: 11px; color: #333; min-height: 28px; line-height: 1.2; }
-    .card .price { font-size: 18px; font-weight: bold; color: #111; margin-top: 4px; }
-    .card .series { font-size: 9px; color: #c0392b; font-weight: bold; text-transform: uppercase; letter-spacing: 0.4px; }
+
+    /* Bloque de texto: nombre/serie/marca arriba, precio anclado abajo (alineación consistente) */
+    .card .name { font-size: 11px; color: #333; line-height: 1.25; min-height: 28px; }
+    .card .series { font-size: 9px; color: #c0392b; font-weight: bold; text-transform: uppercase; letter-spacing: 0.4px; margin-top: 2px; }
     .card .brand { font-size: 9px; color: #999; text-transform: uppercase; letter-spacing: 0.5px; }
+    .card .price { font-size: 19px; font-weight: bold; color: #111; margin-top: auto; padding-top: 6px; }
   </style>
 </head>
 <body>
   <section class="cover">
-    <% if logo.present? %>
-      <img src="<%= logo %>" alt="Pasatiempos" style="height:90px; margin-bottom:10px;">
-    <% end %>
-    <h1><%= title %></h1>
-    <p class="sub">Pasatiempos — Coleccionables</p>
-    <h2 style="font-size:16px;color:#333;">¿Cómo ordenar?</h2>
+    <div class="cover-head">
+      <% if logo.present? %>
+        <img src="<%= logo %>" alt="Pasatiempos" style="height:90px; margin-bottom:6px;">
+      <% end %>
+      <h1><%= title %></h1>
+      <p class="sub">Pasatiempos — Coleccionables</p>
+    </div>
+
+    <p class="lead">Para ordenar, envíanos el <strong>código del producto</strong> por WhatsApp.</p>
+
+    <h2>¿Cómo ordenar?</h2>
     <ol class="steps">
       <li>Anota los <strong>códigos</strong> de las piezas que te interesen.</li>
-      <li>Mándalos por WhatsApp al número de abajo.</li>
-      <li>Pide el <strong>total incluyendo el envío</strong>.</li>
-      <li>Deposita y envía los datos de a dónde se enviará el paquete.</li>
-      <li>¡Recibe el paquete y disfruta tus piezas!</li>
+      <li>Envíalos por WhatsApp al número de abajo.</li>
+      <li>Solicita el <strong>total con envío incluido</strong>.</li>
+      <li>Realiza tu pago y envíanos tus datos de envío.</li>
+      <li>¡Recibe tu paquete y disfruta tus piezas!</li>
     </ol>
+
     <div class="wa-box">
-      <div>Pide por WhatsApp</div>
+      <div class="label">Pide por WhatsApp</div>
       <div class="num"><%= whatsapp_number %></div>
+      <div class="web">pasatiempos.com.mx</div>
     </div>
+
+    <div class="features">
+      <div class="feature">
+        <div class="t">Envíos a todo México</div>
+        <div class="d">Te lo enviamos a donde estés.</div>
+      </div>
+      <div class="feature">
+        <div class="t">Apartados disponibles</div>
+        <div class="d">Aparta hoy y asegura tu pieza.</div>
+      </div>
+      <div class="feature">
+        <div class="t">Atención personalizada</div>
+        <div class="d">Resolvemos tus dudas por WhatsApp.</div>
+      </div>
+    </div>
+
+    <p class="fineprint">
+      Disponibilidad sujeta a cambio sin previo aviso · Precios sujetos a confirmación · pasatiempos.com.mx
+    </p>
   </section>
 
   <section class="grid">
     <% items.each do |item| %>
       <div class="card">
-        <span class="code"><%= item[:code] %></span>
+        <span class="code">
+          <span class="label">Código:</span><span class="value"><%= item[:code] %></span>
+        </span>
         <% if item[:badges].present? %>
           <span class="badges">
             <% item[:badges].each do |b| %>
@@ -91,11 +159,15 @@
             <% end %>
           </span>
         <% end %>
-        <% if item[:image].present? %>
-          <img class="photo" src="<%= item[:image] %>" alt="">
-        <% else %>
-          <div class="photo-missing">Sin imagen</div>
-        <% end %>
+
+        <div class="photo-area">
+          <% if item[:image].present? %>
+            <img class="photo" src="<%= item[:image] %>" alt="">
+          <% else %>
+            <div class="photo-missing">Sin imagen</div>
+          <% end %>
+        </div>
+
         <div class="name"><%= truncate(item[:name].to_s, length: 60) %></div>
         <% if item[:series].present? %><div class="series"><%= item[:series] %></div><% end %>
         <% if item[:brand].present? %><div class="brand"><%= item[:brand] %></div><% end %>
