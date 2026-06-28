@@ -46,6 +46,7 @@ import SelectableCardsController from "./selectable_cards_controller"
 import CheckoutShippingController from "./checkout_shipping_controller"
 import CatalogPdfController from "./catalog_pdf_controller"
 import AutoReloadController from "./auto_reload_controller"
+import TemplateSchemaEditorController from "./template_schema_editor_controller"
 
 application.register("audit-progress", AuditProgressController)
 application.register("cart-item", CartItemController)
@@ -91,6 +92,7 @@ application.register("selectable-cards", SelectableCardsController)
 application.register("checkout-shipping", CheckoutShippingController)
 application.register("catalog-pdf", CatalogPdfController)
 application.register("auto-reload", AutoReloadController)
+application.register("template-schema-editor", TemplateSchemaEditorController)
 
 // Export opcional para debugging
 window.Stimulus = application
