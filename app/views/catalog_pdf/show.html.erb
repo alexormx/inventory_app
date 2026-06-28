@@ -40,13 +40,21 @@
     .wa-box .num { font-size: 25px; font-weight: bold; color: #128C7E; letter-spacing: 1px; margin: 3px 0; }
     .wa-box .web { font-size: 14px; font-weight: bold; color: #c0392b; }
 
-    .features { display: flex; gap: 10px; margin-top: 22px; }
+    .features { display: flex; gap: 10px; margin-top: 22px; align-items: stretch; }
     .feature {
-      flex: 1; border: 1px solid #eee; border-radius: 10px; padding: 16px 10px;
-      text-align: center; background: #fafafa;
+      flex: 1; border: 1px solid #eee; border-radius: 10px; padding: 14px 14px;
+      text-align: left; background: #fafafa;
     }
-    .feature .t { font-weight: bold; color: #c0392b; font-size: 13px; margin-bottom: 4px; }
-    .feature .d { font-size: 11px; color: #666; line-height: 1.35; }
+    .feature .t { font-weight: bold; color: #c0392b; font-size: 13.5px; margin-bottom: 6px; text-align: center; }
+    .feature .info-list { list-style: none; margin: 0; padding: 0; }
+    .feature .info-list li {
+      font-size: 12px; color: #444; line-height: 1.5; padding-left: 14px; position: relative;
+    }
+    .feature .info-list li::before {
+      content: ""; position: absolute; left: 2px; top: 8px;
+      width: 5px; height: 5px; border-radius: 50%; background: #c0392b;
+    }
+    .feature .note { font-size: 10px; color: #777; line-height: 1.35; margin-top: 8px; font-style: italic; }
 
     /* Empuja el fineprint al pie de la portada, repartiendo el espacio sobrante. */
     .fineprint { margin-top: auto; padding-top: 22px; text-align: center; font-size: 10px; color: #999; line-height: 1.4; }
@@ -56,7 +64,7 @@
     .card {
       border: 1px solid #d9d9d9; border-radius: 10px; padding: 10px 9px 9px; position: relative;
       break-inside: avoid; text-align: center; background: #fff;
-      height: 8.4cm; display: flex; flex-direction: column;
+      height: 7.7cm; display: flex; flex-direction: column;
     }
 
     /* Código de pedido (dato principal para WhatsApp) */
@@ -83,10 +91,10 @@
 
     /* Área de imagen fija y centrada (evita que fotos horizontales/verticales desbalanceen) */
     .card .photo-area {
-      flex: 0 0 auto; height: 5.0cm; margin: 11px 0 6px;
+      flex: 0 0 auto; height: 4.4cm; margin: 9px 0 5px;
       display: flex; align-items: center; justify-content: center;
     }
-    .card .photo { max-width: 100%; max-height: 5.0cm; object-fit: contain; }
+    .card .photo { max-width: 100%; max-height: 4.4cm; object-fit: contain; }
     .card .photo-missing {
       width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
       color: #bbb; font-size: 12px; background: #f5f5f5; border-radius: 6px;
@@ -128,16 +136,21 @@
 
     <div class="features">
       <div class="feature">
+        <div class="t">Formas de pago</div>
+        <ul class="info-list">
+          <li>Tarjeta de crédito o débito vía <strong>MercadoPago</strong></li>
+          <li>Transferencia electrónica</li>
+          <li><strong>SPIN</strong> — depósito en <strong>OXXO</strong></li>
+        </ul>
+      </div>
+      <div class="feature">
         <div class="t">Envíos a todo México</div>
-        <div class="d">Te lo enviamos a donde estés.</div>
-      </div>
-      <div class="feature">
-        <div class="t">Apartados disponibles</div>
-        <div class="d">Aparta hoy y asegura tu pieza.</div>
-      </div>
-      <div class="feature">
-        <div class="t">Atención personalizada</div>
-        <div class="d">Resolvemos tus dudas por WhatsApp.</div>
+        <ul class="info-list">
+          <li>Correos de México — <strong>$70</strong></li>
+          <li>FedEx — <strong>$150</strong></li>
+          <li>DHL — <strong>$180</strong></li>
+        </ul>
+        <div class="note">FedEx y DHL en zonas extendidas: $200 a $300 adicionales.</div>
       </div>
     </div>
 
@@ -170,7 +183,8 @@
 
         <div class="name"><%= truncate(item[:name].to_s, length: 60) %></div>
         <% if item[:series].present? %><div class="series"><%= item[:series] %></div><% end %>
-        <% if item[:brand].present? %><div class="brand"><%= item[:brand] %></div><% end %>
+        <% meta = [item[:brand].presence, (item[:scale].present? ? "Esc. #{item[:scale]}" : nil)].compact %>
+        <% if meta.any? %><div class="brand"><%= meta.join(" · ") %></div><% end %>
         <div class="price"><%= number_to_currency(item[:price], unit: "$", precision: 0) %></div>
       </div>
     <% end %>

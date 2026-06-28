@@ -26,15 +26,28 @@ module CatalogPdf
       ApplicationController.render(
         template: 'catalog_pdf/show',
         layout: false,
-        locals: { title: @title, whatsapp_number: @whatsapp_number, items: @items, logo: logo_data_uri }
+        locals: { title: @title, whatsapp_number: formatted_whatsapp, items: @items, logo: logo_data_uri }
       )
     end
 
     private
 
+    # Formatea un número MX (52 + 10 dígitos) como "+52 33 8526 2707" para
+    # mostrarlo en portada y pie de página. Si no calza el patrón, devuelve el
+    # valor original sin tocar.
+    def formatted_whatsapp
+      digits = @whatsapp_number.to_s.gsub(/\D/, '')
+      if digits.start_with?('52') && digits.length == 12
+        rest = digits[2..]
+        "+52 #{rest[0, 2]} #{rest[2, 4]} #{rest[6, 4]}"
+      else
+        @whatsapp_number
+      end
+    end
+
     def grover_options
       {
-        format: 'A4',
+        format: 'Letter',
         print_background: true,
         launch_args: LAUNCH_ARGS,
         # El catálogo puede traer cientos de productos con imágenes embebidas en
@@ -60,16 +73,16 @@ module CatalogPdf
     def header_template
       brand =
         if logo_data_uri
-          %(<img src="#{logo_data_uri}" style="height:22px;" />)
+          %(<img src="#{logo_data_uri}" style="height:34px;" />)
         else
-          '<span style="font-weight:bold; color:#c0392b;">PASATIEMPOS</span>'
+          '<span style="font-weight:bold; color:#c0392b; font-size:16px;">PASATIEMPOS</span>'
         end
       <<~HTML
         <div style="font-size:10px; width:100%; padding:4px 14px; box-sizing:border-box;
                     display:flex; justify-content:space-between; align-items:center;
                     border-bottom:2px solid #c0392b;">
           #{brand}
-          <span class="title" style="font-weight:bold; color:#333;"></span>
+          <span class="title" style="font-weight:bold; color:#333; font-size:15px;"></span>
           <span style="color:#999;">Coleccionables</span>
         </div>
       HTML
@@ -84,8 +97,10 @@ module CatalogPdf
     def footer_template
       <<~HTML
         <div style="font-size:9px; width:100%; padding:2px 14px; box-sizing:border-box;
-                    text-align:center; color:#777;">
-          Página <span class="pageNumber"></span> de <span class="totalPages"></span> — Pasatiempos
+                    display:flex; justify-content:space-between; align-items:center; color:#777;">
+          <span>Página <span class="pageNumber"></span> de <span class="totalPages"></span></span>
+          <span style="font-weight:bold; color:#128C7E;">WhatsApp #{formatted_whatsapp}</span>
+          <span>Pasatiempos</span>
         </div>
       HTML
     end

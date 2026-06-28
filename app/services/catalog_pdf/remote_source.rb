@@ -51,6 +51,7 @@ module CatalogPdf
         name: item['name'],
         brand: item['brand'],
         series: item['series'].presence || 'Sin serie',
+        scale: item['scale'].presence,
         price: item['price'],
         badges: Array(item['badges']),
         image_url: item['image_url']

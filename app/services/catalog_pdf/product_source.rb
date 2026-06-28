@@ -36,6 +36,7 @@ module CatalogPdf
         name: product.product_name,
         brand: product.brand,
         series: product.series.presence || 'Sin serie',
+        scale: (product.show_scale_publicly? ? product.scale.presence : nil),
         price: product.selling_price,
         badges: badges_for(product)
       }
