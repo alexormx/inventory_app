@@ -4,8 +4,8 @@ module Admin
   class ProductEnrichmentController < ApplicationController
     before_action :authenticate_user!
     before_action :authorize_admin!
-    before_action :cleanup_stuck_drafts, only: [:index, :show, :queue]
-    before_action :set_draft, only: [:show, :regenerate, :update_draft, :publish, :reject]
+    before_action :cleanup_stuck_drafts, only: [:index, :show, :queue, :status]
+    before_action :set_draft, only: [:show, :status, :regenerate, :update_draft, :publish, :reject]
 
     # GET /admin/product_enrichment
     # Dashboard: overview of enrichment status
@@ -90,6 +90,15 @@ module Admin
       @product = @draft.product
       @template = @product.attribute_template
       @history = @product.description_drafts.order(created_at: :desc)
+    end
+
+    # GET /admin/product_enrichment/:id/status
+    # Turbo-frame liviano para el polling: re-renderiza solo el indicador de
+    # estado. Mientras el draft sigue en cola/generando, el frame se sigue
+    # auto-recargando; al llegar a un estado terminal dispara una recarga de
+    # la página completa para mostrar el formulario editable.
+    def status
+      render partial: "status_indicator", locals: { draft: @draft }
     end
 
     # POST /admin/product_enrichment/:id/generate

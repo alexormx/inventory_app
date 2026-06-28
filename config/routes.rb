@@ -184,6 +184,7 @@ Rails.application.routes.draw do
     # Product Enrichment (AI descriptions + attributes)
     resources :product_enrichment, only: [:index, :show] do
       member do
+        get :status
         post :generate
         post :regenerate
         patch :update_draft
