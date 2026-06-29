@@ -14,6 +14,12 @@ module CatalogPdf
     module_function
 
     MAX_REDIRECTS = 5
+    # Las tarjetas del catálogo son pequeñas, así que no hace falta más de ~400px.
+    # Reducir y re-encodar a JPEG antes de embeber recorta drásticamente la
+    # memoria que Chromium usa para decodificar ~600 imágenes a la vez; con el
+    # tamaño original (600px) el render se caía: "Navigating frame was detached".
+    MAX_IMAGE_PX = 400
+    JPEG_QUALITY = 72
 
     # Ítems listos para el Generator (imagen embebida en base64).
     def items(base_url:, token:)
@@ -66,10 +72,27 @@ module CatalogPdf
       res = get_following_redirects(URI(url))
       return url unless res.is_a?(Net::HTTPSuccess)
 
+      downscaled = downscale(res.body)
+      return downscaled if downscaled
+
       content_type = res['Content-Type'].to_s.split(';').first.presence || 'image/jpeg'
       "data:#{content_type};base64,#{Base64.strict_encode64(res.body)}"
     rescue StandardError
       url
+    end
+
+    # Reduce la imagen a MAX_IMAGE_PX de lado mayor y la re-encoda a JPEG.
+    # vips se carga de forma perezosa (este archivo se eager-loadea en
+    # producción, pero el generador solo corre en local). Si algo falla,
+    # devuelve nil para que el llamador embeba la imagen original sin reducir.
+    def downscale(bytes)
+      require 'vips'
+      image = Vips::Image.thumbnail_buffer(bytes, MAX_IMAGE_PX)
+      image = image.flatten(background: [255, 255, 255]) if image.has_alpha?
+      data = image.jpegsave_buffer(Q: JPEG_QUALITY, strip: true, optimize_coding: true)
+      "data:image/jpeg;base64,#{Base64.strict_encode64(data)}"
+    rescue StandardError
+      nil
     end
 
     def get_following_redirects(uri, limit: MAX_REDIRECTS)

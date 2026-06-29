@@ -8,8 +8,15 @@ module CatalogPdf
   # eager_load de producción carga esta clase al arrancar, pero nunca llama
   # #to_pdf, así que jamás intenta cargar la gema ausente.
   class Generator
-    LAUNCH_ARGS = ['--no-sandbox', '--disable-dev-shm-usage'].freeze
+    LAUNCH_ARGS = ['--no-sandbox', '--disable-dev-shm-usage', '--disable-gpu',
+                   '--disable-software-rasterizer'].freeze
     LOGO_PATH = Rails.root.join('app/assets/images/logo.png')
+    # Chromium puede tirar el frame de render a media generación con catálogos
+    # grandes (HTML enorme por las imágenes embebidas en base64):
+    # "Navigating frame was detached". Suele ser transitorio, así que se
+    # reintenta con una instancia nueva de Grover antes de rendirse.
+    MAX_RENDER_ATTEMPTS = 3
+    TRANSIENT_RENDER_ERROR = /frame was detached|Target closed|Session closed|Navigation failed/i
 
     def initialize(title:, whatsapp_number:, items:, usd_rate: nil)
       @title = title
@@ -20,7 +27,17 @@ module CatalogPdf
 
     def to_pdf
       require 'grover'
-      Grover.new(html, **grover_options).to_pdf
+      rendered_html = html
+      attempt = 0
+      begin
+        attempt += 1
+        Grover.new(rendered_html, **grover_options).to_pdf
+      rescue StandardError => e
+        raise unless attempt < MAX_RENDER_ATTEMPTS && e.message.to_s.match?(TRANSIENT_RENDER_ERROR)
+
+        sleep(attempt) # pequeño respiro para que Chromium libere recursos
+        retry
+      end
     end
 
     def html
