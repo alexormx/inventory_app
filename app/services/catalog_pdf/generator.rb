@@ -100,7 +100,7 @@ module CatalogPdf
                     display:flex; justify-content:space-between; align-items:center;
                     border-bottom:2px solid #c0392b;">
           #{brand}
-          <span class="title" style="font-weight:bold; color:#333; font-size:15px;"></span>
+          <span class="title" style="font-weight:bold; color:#333; font-size:19px;"></span>
           <span style="color:#999;">Coleccionables</span>
         </div>
       HTML
@@ -114,10 +114,10 @@ module CatalogPdf
 
     def footer_template
       <<~HTML
-        <div style="font-size:9px; width:100%; padding:2px 14px; box-sizing:border-box;
+        <div style="font-size:10px; width:100%; padding:2px 14px; box-sizing:border-box;
                     display:flex; justify-content:space-between; align-items:center; color:#777;">
           <span>Página <span class="pageNumber"></span> de <span class="totalPages"></span></span>
-          <span style="font-weight:bold; color:#128C7E;">WhatsApp #{formatted_whatsapp}</span>
+          <span style="font-weight:bold; color:#128C7E; font-size:14px;">WhatsApp #{formatted_whatsapp}</span>
           <span>Pasatiempos</span>
         </div>
       HTML
