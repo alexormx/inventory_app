@@ -50,6 +50,8 @@ export default class extends Controller {
   submit(event) {
     event.preventDefault()
     if (this.polling) clearInterval(this.polling)
+    this.finished = false
+    this.inFlight = false
 
     this.saveOrder()
     this.saveOptions()
@@ -77,10 +79,16 @@ export default class extends Controller {
     url.searchParams.set("job_id", jobId)
 
     this.polling = setInterval(() => {
+      // Evita solapar peticiones: si la anterior sigue en vuelo, espera al
+      // próximo tick. Así no se acumulan respuestas "done" que abrirían el PDF
+      // varias veces.
+      if (this.inFlight) return
+      this.inFlight = true
       fetch(url, { headers: { Accept: "application/json" } })
         .then((res) => res.json())
         .then((state) => this.applyState(jobId, state))
         .catch((err) => this.fail(err.message))
+        .finally(() => { this.inFlight = false })
     }, 700)
   }
 
@@ -96,7 +104,10 @@ export default class extends Controller {
     }
 
     if (state.status === "done") {
+      if (this.finished) return
+      this.finished = true
       clearInterval(this.polling)
+      this.polling = null
       this.setBar(100, "Listo")
       this.submitBtnTarget.disabled = false
       const url = new URL(this.downloadUrlValue, window.location.origin)
