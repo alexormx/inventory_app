@@ -9,12 +9,13 @@ import { Controller } from "@hotwired/stimulus"
 export default class extends Controller {
   static targets = ["source", "apiFields", "apiUrl", "apiToken", "status", "list", "rowTemplate",
                     "submitBtn", "progressCard", "progressBar", "progressLabel", "progressPercent", "progressError",
-                    "usdEnabled", "usdRate"]
+                    "usdEnabled", "usdRate", "title", "sort", "direction"]
   static values = { seriesUrl: String, progressUrl: String, downloadUrl: String }
 
   connect() {
     this.dragged = null
     this.polling = null
+    this.restoreOptions()
     this.toggleApiFields()
     this.toggleUsd()
     this.reload()
@@ -51,6 +52,7 @@ export default class extends Controller {
     if (this.polling) clearInterval(this.polling)
 
     this.saveOrder()
+    this.saveOptions()
     this.progressErrorTarget.classList.add("d-none")
     this.progressErrorTarget.textContent = ""
     this.progressCardTarget.classList.remove("d-none")
@@ -207,6 +209,47 @@ export default class extends Controller {
       const rb = rank.has(b.name) ? rank.get(b.name) : Infinity
       return ra - rb
     })
+  }
+
+  // --- Persistencia de las opciones del catálogo (localStorage) ------------
+  // Mismo enfoque que el orden de series: el generador corre solo en local y lo
+  // usa una persona, así que las opciones (título, orden, dirección, USD y tipo
+  // de cambio) se recuerdan en el navegador para el próximo catálogo.
+  get optionsKey() {
+    return "catalogPdfOptions"
+  }
+
+  loadOptions() {
+    try {
+      const raw = window.localStorage.getItem(this.optionsKey)
+      return raw ? JSON.parse(raw) : {}
+    } catch (e) {
+      return {}
+    }
+  }
+
+  saveOptions() {
+    const opts = {
+      title: this.hasTitleTarget ? this.titleTarget.value : "",
+      sort: this.hasSortTarget ? this.sortTarget.value : "",
+      direction: this.hasDirectionTarget ? this.directionTarget.value : "",
+      includeUsd: this.hasUsdEnabledTarget ? this.usdEnabledTarget.checked : false,
+      usdRate: this.hasUsdRateTarget ? this.usdRateTarget.value : ""
+    }
+    try {
+      window.localStorage.setItem(this.optionsKey, JSON.stringify(opts))
+    } catch (e) {
+      // localStorage no disponible: seguir sin persistir
+    }
+  }
+
+  restoreOptions() {
+    const opts = this.loadOptions()
+    if (this.hasTitleTarget && opts.title != null) this.titleTarget.value = opts.title
+    if (this.hasSortTarget && opts.sort) this.sortTarget.value = opts.sort
+    if (this.hasDirectionTarget && opts.direction) this.directionTarget.value = opts.direction
+    if (this.hasUsdEnabledTarget && opts.includeUsd != null) this.usdEnabledTarget.checked = !!opts.includeUsd
+    if (this.hasUsdRateTarget && opts.usdRate != null) this.usdRateTarget.value = opts.usdRate
   }
 
   attachDrag(row) {
