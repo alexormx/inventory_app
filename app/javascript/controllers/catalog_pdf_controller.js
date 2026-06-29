@@ -50,6 +50,7 @@ export default class extends Controller {
     event.preventDefault()
     if (this.polling) clearInterval(this.polling)
 
+    this.saveOrder()
     this.progressErrorTarget.classList.add("d-none")
     this.progressErrorTarget.textContent = ""
     this.progressCardTarget.classList.remove("d-none")
@@ -158,12 +159,53 @@ export default class extends Controller {
     }
     this.statusTarget.textContent = `${series.length} serie(s)`
 
-    series.forEach((serie) => {
+    this.applySavedOrder(series).forEach((serie) => {
       const row = this.rowTemplateTarget.content.firstElementChild.cloneNode(true)
       row.querySelector("input[type=checkbox]").value = serie.name
       row.querySelector("span").textContent = `${serie.name} (${serie.count})`
       this.attachDrag(row)
       this.listTarget.appendChild(row)
+    })
+  }
+
+  // --- Persistencia del orden de series (localStorage) ---------------------
+  // El generador corre solo en local y lo usa una sola persona, así que el
+  // orden preferido se guarda en el navegador. Las series guardadas salen
+  // primero (en su orden); las nuevas (no guardadas aún) van al final
+  // conservando el orden alfabético que manda el servidor.
+  get storageKey() {
+    return "catalogPdfSeriesOrder"
+  }
+
+  loadOrder() {
+    try {
+      const raw = window.localStorage.getItem(this.storageKey)
+      return raw ? JSON.parse(raw) : []
+    } catch (e) {
+      return []
+    }
+  }
+
+  saveOrder() {
+    const names = Array.from(this.listTarget.querySelectorAll("input[type=checkbox]")).map((cb) => cb.value)
+    if (names.length === 0) return
+    try {
+      window.localStorage.setItem(this.storageKey, JSON.stringify(names))
+    } catch (e) {
+      // localStorage no disponible (modo privado, etc.): seguir sin persistir
+    }
+  }
+
+  applySavedOrder(series) {
+    const saved = this.loadOrder()
+    if (saved.length === 0) return series
+    const rank = new Map(saved.map((name, i) => [name, i]))
+    // Array.sort es estable: los empates (ambos sin guardar) conservan el
+    // orden de entrada.
+    return [...series].sort((a, b) => {
+      const ra = rank.has(a.name) ? rank.get(a.name) : Infinity
+      const rb = rank.has(b.name) ? rank.get(b.name) : Infinity
+      return ra - rb
     })
   }
 
@@ -175,6 +217,7 @@ export default class extends Controller {
     row.addEventListener("dragend", () => {
       this.dragged = null
       row.classList.remove("opacity-50")
+      this.saveOrder()
     })
     row.addEventListener("dragover", (event) => {
       event.preventDefault()
