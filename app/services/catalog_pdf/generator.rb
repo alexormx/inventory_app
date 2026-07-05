@@ -10,7 +10,6 @@ module CatalogPdf
   class Generator
     LAUNCH_ARGS = ['--no-sandbox', '--disable-dev-shm-usage', '--disable-gpu',
                    '--disable-software-rasterizer'].freeze
-    LOGO_PATH = Rails.root.join('app/assets/images/logo.png')
     # Chromium puede tirar el frame de render a media generación con catálogos
     # grandes (HTML enorme por las imágenes embebidas en base64):
     # "Navigating frame was detached". Suele ser transitorio, así que se
@@ -18,11 +17,12 @@ module CatalogPdf
     MAX_RENDER_ATTEMPTS = 3
     TRANSIENT_RENDER_ERROR = /frame was detached|Target closed|Session closed|Navigation failed/i
 
-    def initialize(title:, whatsapp_number:, items:, usd_rate: nil)
+    def initialize(title:, whatsapp_number:, items:, usd_rate: nil, orientation: :portrait)
       @title = title
       @whatsapp_number = whatsapp_number
       @items = items
       @usd_rate = usd_rate
+      @orientation = orientation == :landscape ? :landscape : :portrait
     end
 
     def to_pdf
@@ -44,28 +44,21 @@ module CatalogPdf
       ApplicationController.render(
         template: 'catalog_pdf/show',
         layout: false,
-        locals: { title: @title, whatsapp_number: formatted_whatsapp, items: @items, logo: logo_data_uri, usd_rate: @usd_rate }
+        locals: { title: @title, whatsapp_number: formatted_whatsapp, items: @items, logo: logo_data_uri, usd_rate: @usd_rate, orientation: @orientation }
       )
     end
 
     private
 
-    # Formatea un número MX (52 + 10 dígitos) como "+52 33 8526 2707" para
-    # mostrarlo en portada y pie de página. Si no calza el patrón, devuelve el
-    # valor original sin tocar.
+    # Formatea el número de WhatsApp para portada y pie de página.
     def formatted_whatsapp
-      digits = @whatsapp_number.to_s.gsub(/\D/, '')
-      if digits.start_with?('52') && digits.length == 12
-        rest = digits[2..]
-        "+52 #{rest[0, 2]} #{rest[2, 4]} #{rest[6, 4]}"
-      else
-        @whatsapp_number
-      end
+      Branding.format_whatsapp(@whatsapp_number)
     end
 
     def grover_options
       {
         format: 'Letter',
+        landscape: @orientation == :landscape,
         print_background: true,
         launch_args: LAUNCH_ARGS,
         # El catálogo puede traer cientos de productos con imágenes embebidas en
@@ -107,9 +100,7 @@ module CatalogPdf
     end
 
     def logo_data_uri
-      @logo_data_uri ||= "data:image/png;base64,#{Base64.strict_encode64(File.binread(LOGO_PATH))}"
-    rescue StandardError
-      nil
+      Branding.logo_data_uri
     end
 
     def footer_template

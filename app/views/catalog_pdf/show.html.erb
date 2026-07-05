@@ -72,6 +72,15 @@
       height: 7.7cm; display: flex; flex-direction: column;
     }
 
+    /* ---------- Horizontal (Letter apaisado): 3 columnas x 2 filas ---------- */
+    body.landscape .cover { min-height: 17cm; }
+    body.landscape .cover-body { display: flex; gap: 20px; align-items: flex-start; }
+    body.landscape .cover-col { flex: 1; }
+    body.landscape .cover-col .wa-box { margin-top: 0; }
+    body.landscape .cover-col .features { margin-top: 16px; }
+    body.landscape .grid { grid-template-columns: 1fr 1fr 1fr; }
+    body.landscape .card { height: 8.7cm; }
+
     /* Código de pedido (dato principal para WhatsApp) */
     .card .code {
       position: absolute; top: 7px; left: 7px; z-index: 2;
@@ -123,7 +132,7 @@
     }
   </style>
 </head>
-<body>
+<body class="<%= orientation %>">
   <section class="cover">
     <div class="cover-head">
       <% if logo.present? %>
@@ -135,6 +144,8 @@
 
     <p class="lead">Para ordenar, envíanos el <strong>código del producto</strong> por WhatsApp.</p>
 
+    <div class="cover-body">
+    <div class="cover-col">
     <h2>¿Cómo ordenar?</h2>
     <ol class="steps">
       <li>Anota los <strong>códigos</strong> de las piezas que te interesen.</li>
@@ -143,7 +154,9 @@
       <li>Realiza tu pago y envíanos tus datos de envío.</li>
       <li>¡Recibe tu paquete y disfruta tus piezas!</li>
     </ol>
+    </div>
 
+    <div class="cover-col">
     <div class="wa-box">
       <div class="label">Pide por WhatsApp</div>
       <div class="num"><%= whatsapp_number %></div>
@@ -168,6 +181,8 @@
         </ul>
         <div class="note">FedEx y DHL en zonas extendidas: $200 a $300 adicionales.</div>
       </div>
+    </div>
+    </div>
     </div>
 
     <% if usd_rate.to_f > 0 %>

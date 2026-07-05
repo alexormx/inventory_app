@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title><%= title %></title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { width: 1080px; height: 1350px; overflow: hidden; }
+    body {
+      font-family: "Helvetica Neue", Arial, sans-serif; color: #222; background: #fff;
+      padding: 22px 28px 18px; display: flex; flex-direction: column;
+    }
+
+    .sheet-head {
+      display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 3px solid #c0392b; padding-bottom: 10px; margin-bottom: 16px;
+    }
+    .sheet-head img { height: 46px; }
+    .sheet-head .title { font-weight: bold; color: #333; font-size: 30px; text-align: center; flex: 1; }
+    .sheet-head .tag { color: #999; font-size: 16px; white-space: nowrap; }
+
+    .grid {
+      flex: 1 1 0; min-height: 0; display: grid;
+      grid-template-columns: 1fr 1fr; grid-template-rows: repeat(3, minmax(0, 1fr)); gap: 22px;
+    }
+    .card {
+      border: 1px solid #d9d9d9; border-radius: 14px; padding: 16px 14px 14px; position: relative;
+      text-align: center; background: #fff; display: flex; flex-direction: column;
+      overflow: hidden; min-height: 0;
+    }
+
+    .card .code {
+      position: absolute; top: 11px; left: 11px; z-index: 2;
+      background: #fff; color: #c0392b; border: 1px solid #c0392b40;
+      border-radius: 9px; padding: 4px 10px; line-height: 1.1; white-space: nowrap;
+    }
+    .card .code .label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.85; margin-right: 3px; }
+    .card .code .value { font-size: 22px; font-weight: bold; }
+
+    .card .badges { position: absolute; top: 11px; right: 11px; z-index: 2; text-align: right; }
+    .card .badge {
+      display: inline-block; font-size: 14px; font-weight: bold; padding: 4px 10px;
+      border-radius: 12px; margin-bottom: 4px; border: 1px solid #00000018; line-height: 1.3;
+    }
+    .badge-new { background: #fff3cd; color: #856404; }
+    .badge-unique { background: #f8d7da; color: #842029; }
+
+    .card .photo-area {
+      flex: 1; margin: 14px 0 8px; display: flex; align-items: center; justify-content: center; min-height: 0;
+    }
+    .card .photo { max-width: 100%; max-height: 100%; object-fit: contain; }
+    .card .photo-missing {
+      width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
+      color: #bbb; font-size: 18px; background: #f5f5f5; border-radius: 8px;
+    }
+
+    .card .name { font-size: 19px; color: #333; line-height: 1.25; min-height: 46px; }
+    .card .series { font-size: 15px; color: #c0392b; font-weight: bold; text-transform: uppercase; letter-spacing: 0.4px; margin-top: 3px; }
+    .card .brand { font-size: 14px; color: #999; text-transform: uppercase; letter-spacing: 0.5px; }
+    .card .meta-label { color: #555; font-weight: bold; }
+    .card .price { font-size: 30px; font-weight: bold; color: #111; margin-top: 8px; padding-top: 6px; }
+    .card .price-usd { font-size: 16px; font-weight: 600; color: #1f3a93; margin-top: 2px; }
+    .card .scale {
+      position: absolute; bottom: 11px; right: 11px; z-index: 2;
+      background: #eef2ff; color: #1f3a93; border: 1px solid #1f3a9340;
+      border-radius: 9px; padding: 3px 9px; line-height: 1.1;
+      font-size: 16px; font-weight: 600; white-space: nowrap;
+    }
+
+    .sheet-foot {
+      display: flex; align-items: center; justify-content: space-between;
+      border-top: 2px solid #eee; padding-top: 12px; margin-top: 16px; color: #777; font-size: 16px;
+    }
+    .sheet-foot .wa { font-weight: bold; color: #128C7E; font-size: 22px; }
+    .sheet-foot .web { font-weight: bold; color: #c0392b; }
+  </style>
+</head>
+<body>
+  <header class="sheet-head">
+    <% if logo.present? %><img src="<%= logo %>" alt="Pasatiempos"><% else %><span></span><% end %>
+    <span class="title"><%= title %></span>
+    <span class="tag">Página <%= page %>/<%= total_pages %></span>
+  </header>
+
+  <section class="grid">
+    <% items.each do |item| %>
+      <div class="card">
+        <span class="code">
+          <span class="label">Código:</span><span class="value"><%= item[:code] %></span>
+        </span>
+        <% if item[:badges].present? %>
+          <span class="badges">
+            <% item[:badges].each do |b| %>
+              <span class="badge <%= b == 'Nuevo' ? 'badge-new' : 'badge-unique' %>"><%= b %></span><br>
+            <% end %>
+          </span>
+        <% end %>
+
+        <div class="photo-area">
+          <% if item[:image].present? %>
+            <img class="photo" src="<%= item[:image] %>" alt="">
+          <% else %>
+            <div class="photo-missing">Sin imagen</div>
+          <% end %>
+        </div>
+
+        <div class="name"><%= truncate(item[:name].to_s, length: 60) %></div>
+        <% if item[:series].present? %><div class="series"><span class="meta-label">Serie:</span> <%= item[:series] %></div><% end %>
+        <% if item[:brand].present? %><div class="brand"><span class="meta-label">Marca:</span> <%= item[:brand] %></div><% end %>
+        <div class="price">
+          <%= number_to_currency(item[:price], unit: "$", precision: 0) %> MXN
+          <% if usd_rate.to_f > 0 && item[:price].to_f > 0 %>
+            <div class="price-usd"><%= number_to_currency(item[:price].to_f / usd_rate.to_f, unit: "$", precision: 2) %> USD</div>
+          <% end %>
+        </div>
+
+        <% if item[:scale].present? %>
+          <span class="scale">Escala <%= item[:scale] %></span>
+        <% end %>
+      </div>
+    <% end %>
+  </section>
+
+  <footer class="sheet-foot">
+    <span class="web">pasatiempos.com.mx</span>
+    <span class="wa">WhatsApp <%= whatsapp_number %></span>
+    <span>Pasatiempos</span>
+  </footer>
+</body>
+</html>

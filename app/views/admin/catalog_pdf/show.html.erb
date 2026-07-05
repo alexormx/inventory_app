@@ -60,6 +60,25 @@
           </div>
         </div>
       </div>
+
+      <div class="card mb-3">
+        <div class="card-header">Formato de salida</div>
+        <div class="card-body">
+          <div class="form-check">
+            <%= check_box_tag 'formats[]', 'pdf_portrait', true, class: 'form-check-input', id: 'fmt_pdf_portrait', data: { 'catalog-pdf-target': 'fmtPortrait', action: 'catalog-pdf#saveOptions' } %>
+            <label class="form-check-label" for="fmt_pdf_portrait">PDF vertical</label>
+          </div>
+          <div class="form-check">
+            <%= check_box_tag 'formats[]', 'pdf_landscape', false, class: 'form-check-input', id: 'fmt_pdf_landscape', data: { 'catalog-pdf-target': 'fmtLandscape', action: 'catalog-pdf#saveOptions' } %>
+            <label class="form-check-label" for="fmt_pdf_landscape">PDF horizontal</label>
+          </div>
+          <div class="form-check">
+            <%= check_box_tag 'formats[]', 'images', false, class: 'form-check-input', id: 'fmt_images', data: { 'catalog-pdf-target': 'fmtImages', action: 'catalog-pdf#saveOptions' } %>
+            <label class="form-check-label" for="fmt_images">Imágenes para Facebook (ZIP)</label>
+          </div>
+          <div class="form-text">Puedes elegir varios; se generan juntos y, si es más de uno, se descargan en un ZIP.</div>
+        </div>
+      </div>
     </div>
 
     <div class="col-lg-7">

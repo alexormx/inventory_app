@@ -9,7 +9,8 @@ import { Controller } from "@hotwired/stimulus"
 export default class extends Controller {
   static targets = ["source", "apiFields", "apiUrl", "apiToken", "status", "list", "rowTemplate",
                     "submitBtn", "progressCard", "progressBar", "progressLabel", "progressPercent", "progressError",
-                    "usdEnabled", "usdRate", "title", "sort", "direction"]
+                    "usdEnabled", "usdRate", "title", "sort", "direction",
+                    "fmtPortrait", "fmtLandscape", "fmtImages"]
   static values = { seriesUrl: String, progressUrl: String, downloadUrl: String }
 
   connect() {
@@ -49,6 +50,12 @@ export default class extends Controller {
 
   submit(event) {
     event.preventDefault()
+
+    if (!this.anyFormatSelected()) {
+      this.fail("Selecciona al menos un formato (PDF vertical, horizontal o imágenes).")
+      return
+    }
+
     if (this.polling) clearInterval(this.polling)
     this.finished = false
     this.inFlight = false
@@ -134,8 +141,15 @@ export default class extends Controller {
   fail(message) {
     if (this.polling) clearInterval(this.polling)
     this.submitBtnTarget.disabled = false
+    this.progressCardTarget.classList.remove("d-none")
     this.progressErrorTarget.textContent = message
     this.progressErrorTarget.classList.remove("d-none")
+  }
+
+  anyFormatSelected() {
+    return (this.hasFmtPortraitTarget && this.fmtPortraitTarget.checked) ||
+           (this.hasFmtLandscapeTarget && this.fmtLandscapeTarget.checked) ||
+           (this.hasFmtImagesTarget && this.fmtImagesTarget.checked)
   }
 
   csrfToken() {
@@ -245,7 +259,10 @@ export default class extends Controller {
       sort: this.hasSortTarget ? this.sortTarget.value : "",
       direction: this.hasDirectionTarget ? this.directionTarget.value : "",
       includeUsd: this.hasUsdEnabledTarget ? this.usdEnabledTarget.checked : false,
-      usdRate: this.hasUsdRateTarget ? this.usdRateTarget.value : ""
+      usdRate: this.hasUsdRateTarget ? this.usdRateTarget.value : "",
+      fmtPortrait: this.hasFmtPortraitTarget ? this.fmtPortraitTarget.checked : true,
+      fmtLandscape: this.hasFmtLandscapeTarget ? this.fmtLandscapeTarget.checked : false,
+      fmtImages: this.hasFmtImagesTarget ? this.fmtImagesTarget.checked : false
     }
     try {
       window.localStorage.setItem(this.optionsKey, JSON.stringify(opts))
@@ -261,6 +278,9 @@ export default class extends Controller {
     if (this.hasDirectionTarget && opts.direction) this.directionTarget.value = opts.direction
     if (this.hasUsdEnabledTarget && opts.includeUsd != null) this.usdEnabledTarget.checked = !!opts.includeUsd
     if (this.hasUsdRateTarget && opts.usdRate != null) this.usdRateTarget.value = opts.usdRate
+    if (this.hasFmtPortraitTarget && opts.fmtPortrait != null) this.fmtPortraitTarget.checked = !!opts.fmtPortrait
+    if (this.hasFmtLandscapeTarget && opts.fmtLandscape != null) this.fmtLandscapeTarget.checked = !!opts.fmtLandscape
+    if (this.hasFmtImagesTarget && opts.fmtImages != null) this.fmtImagesTarget.checked = !!opts.fmtImages
   }
 
   attachDrag(row) {
