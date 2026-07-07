@@ -56,7 +56,8 @@ export default class extends Controller {
         }
       }
 
-      btn.innerHTML = `<div class='d-flex align-items-center'>${p.thumbnail_url ? `<img src='${p.thumbnail_url}' class='me-2 rounded' width='40' height='40'/>` : ''}<div class="flex-grow-1"><strong>${p.product_name}</strong>${stockInfo}<br><small class='text-muted'>SKU: ${p.product_sku}</small></div></div>`
+      const waInfo = p.whatsapp_code ? ` · WhatsApp: ${p.whatsapp_code}` : ''
+      btn.innerHTML = `<div class='d-flex align-items-center'>${p.thumbnail_url ? `<img src='${p.thumbnail_url}' class='me-2 rounded' width='40' height='40'/>` : ''}<div class="flex-grow-1"><strong>${p.product_name}</strong>${stockInfo}<br><small class='text-muted'>SKU: ${p.product_sku}${waInfo}</small></div></div>`
       btn.addEventListener('click', ()=>{
         this.dispatch('selected', { detail: p })
         this.resultsTarget.innerHTML = ''

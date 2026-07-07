@@ -51,7 +51,8 @@ document.addEventListener("turbo:load", () => {
     row.querySelector(".item-product-id").value = product.id;
     row.querySelector(".item-product-name").textContent = product.product_name;
     row.querySelector(".item-qty").value = 1;
-    row.querySelector(".item-unit-cost").value = 0;
+    // Precio de venta actual del catálogo (Product#selling_price) como precio unitario.
+    row.querySelector(".item-unit-cost").value = product.selling_price ?? 0;
 
     // Fill stock info (for sale orders)
     const stockCell = row.querySelector(".item-stock-cell");
@@ -150,10 +151,10 @@ function buildBlankPurchaseOrderItemRow(index) {
     type: "number", step: 0.01
   }));
   if (context === "sale-order") {
-    // --- Unit Discount ---
+    // --- Unit Discount --- (por defecto 0)
     tr.appendChild(buildInputTd("unit_discount", index, context, {
       classes: ["form-control", "form-control-sm", "item-unit-discount"],
-      type: "number", step: 0.01
+      type: "number", step: 0.01, value: 0
     }));
 
     // --- Unit final Price ---

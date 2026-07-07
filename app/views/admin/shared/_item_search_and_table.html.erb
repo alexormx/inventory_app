@@ -4,7 +4,7 @@
     <div class="card">
       <div class="card-body">
         <label for="product-search" class="form-label">Search Product</label>
-  <input type="text" id="product-search" class="form-control form-control-sm product-search" placeholder="Type product name or SKU..." data-product-search-target="input" data-action="input->product-search#input keyup->product-search#input">
+  <input type="text" id="product-search" class="form-control form-control-sm product-search" placeholder="Nombre, SKU o código de WhatsApp..." data-product-search-target="input" data-action="input->product-search#input keyup->product-search#input">
   <div id="product-search-results" class="list-group mt-1 product-search-results" data-product-search-target="results"></div>
       </div>
     </div>
@@ -23,7 +23,7 @@
                   <th class="text-center" data-bs-toggle="tooltip" title="Disponible / En Tránsito / Reservado">Stock</th>
                 <% end %>
                 <th>Qty</th>
-                <th>Unit Cost</th>
+                <th><%= context == "sale" ? "Precio Unitario" : "Unit Cost" %></th>
                 <% if context == "sale" %>
                   <th>Unit Discount</th>
                   <th>Unit Total Price</th>

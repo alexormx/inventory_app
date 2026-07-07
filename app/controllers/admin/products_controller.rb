@@ -228,8 +228,8 @@ module Admin
       products = Product
                  .includes(product_images_attachments: :blob) # avoids N+1 when calling variant
                  .where(
-                   'LOWER(product_name) LIKE LOWER(?) OR LOWER(product_sku) LIKE LOWER(?)',
-                   pattern, pattern
+                   'LOWER(product_name) LIKE LOWER(?) OR LOWER(product_sku) LIKE LOWER(?) OR LOWER(whatsapp_code) LIKE LOWER(?)',
+                   pattern, pattern, pattern
                  )
                  .order(:product_name)
                  .limit(20)
@@ -262,6 +262,8 @@ module Admin
           id: product.id,
           product_name: product.product_name,
           product_sku: product.product_sku,
+          whatsapp_code: product.whatsapp_code,
+          selling_price: product.selling_price.to_f,
           weight_gr: product.weight_gr,
           length_cm: product.length_cm,
           width_cm: product.width_cm,
