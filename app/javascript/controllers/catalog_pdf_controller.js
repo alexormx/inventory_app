@@ -117,9 +117,7 @@ export default class extends Controller {
       this.polling = null
       this.setBar(100, "Listo")
       this.submitBtnTarget.disabled = false
-      const url = new URL(this.downloadUrlValue, window.location.origin)
-      url.searchParams.set("job_id", jobId)
-      window.open(url.toString(), "_blank")
+      this.downloadResult(jobId, state)
       return
     }
 
@@ -130,6 +128,28 @@ export default class extends Controller {
       ? `Agregando ${current}/${total}: ${state.name}`
       : (state.name || "Cargando productos…")
     this.setBar(pct, label)
+  }
+
+  // Dispara la descarga sin window.open: como el "done" llega desde el polling
+  // (no un gesto del usuario), abrir una pestaña para un archivo con
+  // Content-Disposition: attachment (el ZIP de imágenes) hace que el navegador
+  // cancele la descarga. Un <a> temporal descarga en la misma página; el PDF
+  // (inline) sí se abre en pestaña nueva para verlo.
+  downloadResult(jobId, state) {
+    const url = new URL(this.downloadUrlValue, window.location.origin)
+    url.searchParams.set("job_id", jobId)
+
+    const link = document.createElement("a")
+    link.href = url.toString()
+    if (state.content_type === "application/pdf") {
+      link.target = "_blank"
+      link.rel = "noopener"
+    } else {
+      link.download = state.filename || "catalogo.zip"
+    }
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
   }
 
   setBar(pct, label) {

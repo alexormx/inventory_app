@@ -1,16 +1,19 @@
 module CatalogPdf
   # Renderiza el catálogo como imágenes descargables (una PNG por página) para
   # publicar en Facebook. Reutiliza el diseño de tarjetas del PDF pero en un
-  # lienzo fijo de 1080x1350 px (relación 4:5, ideal para el feed). Igual que el
-  # Generator, corre SOLO en local (depende de Grover/Chromium) y carga la gema
-  # de forma perezosa.
+  # lienzo horizontal fijo de 1350x1080 px (relación 5:4, ideal para el feed de
+  # Facebook). Igual que el Generator, corre SOLO en local (depende de
+  # Grover/Chromium) y carga la gema de forma perezosa.
+  #
+  # WIDTH/HEIGHT deben coincidir con el tamaño del <body> en la vista
+  # catalog_pdf/image_sheet.html.erb.
   class ImageGenerator
     LAUNCH_ARGS = Generator::LAUNCH_ARGS
     TRANSIENT_RENDER_ERROR = Generator::TRANSIENT_RENDER_ERROR
     MAX_RENDER_ATTEMPTS = 3
     PER_SHEET = 6
-    WIDTH = 1080
-    HEIGHT = 1350
+    WIDTH = 1350
+    HEIGHT = 1080
 
     def initialize(title:, whatsapp_number:, items:, usd_rate: nil)
       @title = title
