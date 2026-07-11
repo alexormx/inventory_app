@@ -1,0 +1,121 @@
+<div class="admin-page-header d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+	<div>
+		<p class="admin-page-eyebrow mb-1">Oportunidad de venta</p>
+		<h2 class="mb-0 d-flex align-items-center gap-2"><i class="fa-solid fa-box-open"></i> Reservas con ubicación</h2>
+	</div>
+	<span class="badge admin-page-badge">Piezas reservadas hace tiempo que siguen en bodega</span>
+</div>
+
+<p class="text-muted">
+	Órdenes con piezas <strong>reservadas</strong> o <span class="badge bg-warning text-dark">pre-reservadas</span> que aún tienen ubicación física asignada.
+	Revisa orden por orden y cancela la reserva de cada pieza que quieras liberar para ofrecerla a otros clientes.
+</p>
+
+<%= form_with url: stale_reservations_admin_reports_path, method: :get, class: "row g-2 align-items-end mb-4" do |f| %>
+	<div class="col-auto">
+		<label class="form-label small text-muted mb-1">Antigüedad mínima (días)</label>
+		<%= f.number_field :min_days, value: @min_days, min: 0, step: 1, class: "form-control form-control-sm", style: "width: 120px;" %>
+	</div>
+	<div class="col-auto">
+		<%= f.submit "Filtrar", class: "btn btn-primary btn-sm" %>
+	</div>
+<% end %>
+
+<div class="row g-3 mb-4">
+	<div class="col-md-4">
+		<div class="card border-start border-primary">
+			<div class="card-body">
+				<div class="text-muted small">Órdenes</div>
+				<div class="h4 mb-0"><%= @total_orders %></div>
+			</div>
+		</div>
+	</div>
+	<div class="col-md-4">
+		<div class="card border-start border-info">
+			<div class="card-body">
+				<div class="text-muted small">Piezas reservadas</div>
+				<div class="h4 mb-0"><%= @total_pieces %></div>
+			</div>
+		</div>
+	</div>
+	<div class="col-md-4">
+		<div class="card border-start border-success">
+			<div class="card-body">
+				<div class="text-muted small">Valor de oportunidad</div>
+				<div class="h4 mb-0 text-success"><%= number_to_currency(@total_value, unit: "$", precision: 0) %></div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<% if @groups.empty? %>
+	<div class="alert alert-info">No hay órdenes con reservas mayores a <%= @min_days %> días con ubicación asignada.</div>
+<% else %>
+	<% @groups.each do |sale_order_id, pieces| %>
+		<% order = pieces.first.sale_order %>
+		<% oldest_days = ((Time.current - pieces.map(&:status_changed_at).min) / 1.day).floor %>
+		<div class="card mb-3">
+			<div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+				<div class="d-flex align-items-center gap-3">
+					<span class="fw-bold"><%= sale_order_id %></span>
+					<% if order %>
+						<span class="badge <%= status_badge_class(order.status) %>"><%= order.status %></span>
+						<span class="text-muted small"><i class="fa-solid fa-user me-1"></i><%= order.user&.name || "—" %></span>
+					<% end %>
+				</div>
+				<div class="d-flex align-items-center gap-3">
+					<span class="small <%= 'text-danger fw-bold' if oldest_days >= 120 %>">
+						<i class="fa-regular fa-clock me-1"></i>Reservada hace <%= oldest_days %> días
+					</span>
+					<span class="badge bg-secondary"><%= pieces.size %> pieza(s)</span>
+					<% if order %>
+						<%= link_to "Ver orden", admin_sale_order_path(order), class: "btn btn-outline-secondary btn-sm" %>
+					<% end %>
+				</div>
+			</div>
+			<div class="table-responsive">
+				<table class="table table-sm table-hover align-middle mb-0">
+					<thead>
+						<tr>
+							<th>Pieza</th>
+							<th>Producto</th>
+							<th>Condición</th>
+							<th>Ubicación</th>
+							<th>Tipo</th>
+							<th class="text-end">Antigüedad</th>
+							<th class="text-end">Valor</th>
+							<th class="text-end">Acción</th>
+						</tr>
+					</thead>
+					<tbody>
+						<% pieces.each do |inv| %>
+							<% days = ((Time.current - inv.status_changed_at) / 1.day).floor %>
+							<tr>
+								<td class="fw-medium">#<%= inv.id %></td>
+								<td class="text-truncate" style="max-width: 220px;"><%= inv.product&.product_name || "—" %></td>
+								<td><span class="small text-muted"><%= inv.condition_label %></span></td>
+								<td><span class="small"><%= inv.inventory_location&.full_path || inv.inventory_location&.code || "—" %></span></td>
+								<td>
+									<% if inv.pre_reserved? %>
+										<span class="badge bg-warning text-dark" title="Reservada para una preventa">Pre-reserva</span>
+									<% else %>
+										<span class="badge bg-info text-dark">Reservada</span>
+									<% end %>
+								</td>
+								<td class="text-end"><%= days %> días</td>
+								<td class="text-end"><%= number_to_currency(inv.selling_price || inv.product&.selling_price, unit: "$", precision: 0) %></td>
+								<td class="text-end">
+									<%= button_to "Cancelar reserva",
+											cancel_reservation_admin_reports_path(inventory_id: inv.id, min_days: @min_days),
+											method: :post,
+											class: "btn btn-outline-danger btn-sm",
+											data: { turbo_confirm: "¿Cancelar la reserva de la pieza ##{inv.id}#{' (PRE-RESERVA de preventa)' if inv.pre_reserved?}? Quedará disponible para venta." } %>
+								</td>
+							</tr>
+						<% end %>
+					</tbody>
+				</table>
+			</div>
+		</div>
+	<% end %>
+<% end %>

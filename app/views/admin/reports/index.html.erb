@@ -31,3 +31,11 @@
 	</div>
 	<div class="card-footer text-muted small">Respeta los filtros actuales si navegas desde inventario (estado y búsqueda).</div>
 </div>
+
+<div class="card mb-3">
+	<div class="card-header">Oportunidad de venta</div>
+	<div class="card-body d-flex gap-2 flex-wrap">
+		<%= link_to "Reservas con ubicación (por orden)", stale_reservations_admin_reports_path, class: "btn btn-outline-primary btn-sm" %>
+	</div>
+	<div class="card-footer text-muted small">Órdenes con piezas reservadas hace tiempo que aún tienen ubicación física. Revisa orden por orden y cancela la reserva pieza por pieza para ofrecerlas a otros clientes.</div>
+</div>

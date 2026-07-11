@@ -248,6 +248,8 @@ Rails.application.routes.draw do
         get :inventory_items
         get :inventory_items_with_locations
         get :cancellations
+        get :stale_reservations
+        post :cancel_reservation
       end
     end
     # Accounts Receivable simple report
