@@ -88,6 +88,16 @@ class Inventory < ApplicationRecord
   # Scopes para ubicación
   scope :requiring_location, -> { where(status: STATUSES_REQUIRING_LOCATION) }
   scope :not_requiring_location, -> { where(status: STATUSES_WITHOUT_LOCATION) }
+  scope :with_location, -> { where.not(inventory_location_id: nil) }
+  scope :without_location, -> { where(inventory_location_id: nil) }
+  # Ordena priorizando piezas con ubicación física (las que la tienen primero).
+  # NULLs de inventory_location_id quedan al final para asignarse solo como fallback.
+  scope :location_first, -> { order(Arel.sql('inventory_location_id IS NULL'), created_at: :asc) }
+
+  # ¿La pieza tiene ubicación física asignada?
+  def located?
+    inventory_location_id.present?
+  end
 
   # Método de instancia para verificar si requiere ubicación
   def requires_location?

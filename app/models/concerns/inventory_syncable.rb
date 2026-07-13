@@ -70,12 +70,16 @@ module InventorySyncable
     needed = desired_quantity - current_count
 
     if needed.positive?
+      # Prioriza piezas con ubicación física; las sin ubicación se asignan solo
+      # como fallback (quedan al final del orden).
       available_items = Inventory.assignable
                                  .where(product_id: product.id)
-                                 .order(created_at: :desc)
+                                 .location_first
                                  .limit(needed)
+                                 .to_a
 
       reserve_inventory_items(available_items)
+      sync_location_warning(available_items)
 
       if available_items.count < needed
         append_pending_note(needed - available_items.count)
@@ -113,6 +117,18 @@ module InventorySyncable
     return unless respond_to?(:sale_order) && sale_order.persisted?
 
     sale_order.remove_pending_note_for(self)
+  end
+
+  # Alerta si alguna pieza asignada no tiene ubicación física (difícil de localizar).
+  def sync_location_warning(items)
+    return unless respond_to?(:sale_order) && sale_order.persisted?
+
+    without_location = items.count { |item| !item.located? }
+    if without_location.positive?
+      sale_order.upsert_location_warning_note(self, without_location)
+    else
+      sale_order.remove_location_warning_note_for(self)
+    end
   end
 
   def inventory_status_from_order

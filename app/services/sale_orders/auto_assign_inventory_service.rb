@@ -105,11 +105,16 @@ module SaleOrders
       # Si el SOI tiene condición específica, filtrar por ella
       available_scope = available_scope.where(item_condition: soi.item_condition) if soi.respond_to?(:item_condition) && soi.item_condition.present?
 
-      available_inventory = available_scope.order(created_at: :asc).limit(to_assign)
+      # Prioriza piezas con ubicación física; las que no tienen ubicación se
+      # asignan solo como fallback (quedan al final del orden).
+      available_inventory = available_scope.location_first.limit(to_assign)
+
+      assigned_without_location = 0
 
       available_inventory.each do |inv|
         # Contar la asignación (para dry_run) pero solo actualizar si no es dry_run
         assigned_count += 1
+        assigned_without_location += 1 unless inv.located?
 
         @assignments << {
           sale_order: sale_order,
@@ -142,6 +147,7 @@ module SaleOrders
       # Limpiar o actualizar notas de reserva pendiente en la orden
       unless @dry_run
         cleanup_reservation_notes(soi, sale_order, pending)
+        sync_location_warning(soi, sale_order, assigned_without_location)
       end
 
       { assigned: assigned_count, pending: pending }
@@ -155,6 +161,16 @@ module SaleOrders
       end
     rescue StandardError => e
       Rails.logger.error "[AutoAssignInventoryService#cleanup_reservation_notes] #{e.class}: #{e.message}"
+    end
+
+    def sync_location_warning(soi, sale_order, assigned_without_location)
+      if assigned_without_location.positive?
+        sale_order.upsert_location_warning_note(soi, assigned_without_location)
+      else
+        sale_order.remove_location_warning_note_for(soi)
+      end
+    rescue StandardError => e
+      Rails.logger.error "[AutoAssignInventoryService#sync_location_warning] #{e.class}: #{e.message}"
     end
   end
 end

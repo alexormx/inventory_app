@@ -170,6 +170,26 @@ class SaleOrder < ApplicationRecord
     update!(notes: updated.join("\n"))
   end
 
+  # Agrega/actualiza una alerta cuando se asignan piezas sin ubicación física,
+  # que podrían ser difíciles de localizar al momento de surtir la orden.
+  def upsert_location_warning_note(sale_order_item, count_without_location)
+    prefix = location_warning_note_prefix(sale_order_item)
+    new_line = "#{prefix} #{count_without_location} pieza(s) asignada(s) sin ubicación física; podría ser difícil localizarla(s)."
+
+    existing_lines = notes.to_s.split("\n")
+    filtered = existing_lines.reject { |line| line.start_with?(prefix) }
+    filtered << new_line
+    update!(notes: filtered.join("\n"))
+  end
+
+  # Elimina la alerta de ubicación cuando todas las piezas asignadas ya tienen ubicación.
+  def remove_location_warning_note_for(sale_order_item)
+    prefix = location_warning_note_prefix(sale_order_item)
+
+    updated = notes.to_s.split("\n").reject { |line| line.start_with?(prefix) }
+    update!(notes: updated.join("\n"))
+  end
+
   # Recalcula subtotal a partir de las líneas y vuelve a calcular impuestos y total.
   # Úsalo cuando cambien items, tax_rate, discount o shipping_cost.
   # public porque es llamado desde Shipment y SaleOrderItem callbacks.
@@ -191,6 +211,12 @@ class SaleOrder < ApplicationRecord
   def reservation_note_prefix(product, sale_order_item)
     line_id = sale_order_item.id || sale_order_item.object_id
     "🛑 Producto #{product.product_name} (#{product.product_sku}), línea #{line_id}:"
+  end
+
+  def location_warning_note_prefix(sale_order_item)
+    product = sale_order_item.product
+    line_id = sale_order_item.id || sale_order_item.object_id
+    "⚠️ Ubicación #{product.product_name}, línea #{line_id}:"
   end
 
   # ¿Esta orden está autorizada para usar crédito?

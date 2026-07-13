@@ -164,9 +164,10 @@ RSpec.describe SaleOrders::AutoAssignInventoryService do
         sale_order.upsert_pending_note(sale_order_item, 2)
         expect(sale_order.reload.notes).to include("🛑 Producto")
 
-        # Now make inventory available
-        create(:inventory, product: product, status: :available, sale_order: nil)
-        create(:inventory, product: product, status: :available, sale_order: nil)
+        # Now make inventory available (con ubicación física, sin alertas)
+        location = create(:inventory_location)
+        create(:inventory, product: product, status: :available, sale_order: nil, inventory_location: location)
+        create(:inventory, product: product, status: :available, sale_order: nil, inventory_location: location)
 
         result = described_class.new(triggered_by: 'admin_action').call
         expect(result.success?).to be true
@@ -197,6 +198,43 @@ RSpec.describe SaleOrders::AutoAssignInventoryService do
         described_class.new(triggered_by: 'admin_action', dry_run: true).call
 
         expect(sale_order.reload.notes).to eq(original_notes)
+      end
+    end
+
+    # -----------------------------------------------------------------------
+    # Prioridad de ubicación física en la asignación
+    # -----------------------------------------------------------------------
+    context 'priorización por ubicación física' do
+      let!(:sale_order) { create(:sale_order, user: customer, status: :pending) }
+      let!(:sale_order_item) { create(:sale_order_item, sale_order: sale_order, product: product, quantity: 1) }
+      let(:location) { create(:inventory_location) }
+
+      it 'asigna primero la pieza con ubicación aunque sea más nueva' do
+        without_loc = create(:inventory, product: product, status: :available, sale_order: nil, inventory_location: nil)
+        with_loc = create(:inventory, product: product, status: :available, sale_order: nil, inventory_location: location)
+
+        described_class.new(triggered_by: 'admin_action').call
+
+        expect(with_loc.reload.sale_order_id).to eq(sale_order.id)
+        expect(without_loc.reload.sale_order_id).to be_nil
+      end
+
+      it 'asigna una pieza sin ubicación como fallback y agrega alerta en la orden' do
+        create(:inventory, product: product, status: :available, sale_order: nil, inventory_location: nil)
+
+        result = described_class.new(triggered_by: 'admin_action').call
+
+        expect(result.assigned_count).to eq(1)
+        expect(sale_order.reload.notes.to_s).to include('⚠️ Ubicación')
+        expect(sale_order.notes.to_s).to include('sin ubicación física')
+      end
+
+      it 'no agrega alerta cuando todas las piezas asignadas tienen ubicación' do
+        create(:inventory, product: product, status: :available, sale_order: nil, inventory_location: location)
+
+        described_class.new(triggered_by: 'admin_action').call
+
+        expect(sale_order.reload.notes.to_s).not_to include('⚠️ Ubicación')
       end
     end
   end
