@@ -3,6 +3,9 @@
 # app/controllers/admin/payments_controller.rb
 module Admin
   class PaymentsController < ApplicationController
+    before_action :authenticate_user!
+    before_action :authorize_admin!
+
     def new
       @sale_order = SaleOrder.find(params[:sale_order_id])
       @payment = @sale_order.payments.build

@@ -8,8 +8,12 @@ RSpec.describe Admin::PaymentsController, type: :controller do
   let(:sale_order) { create(:sale_order) }
 
   before do
+    # Necesario para Devise en controller specs
     @request.env["devise.mapping"] = Devise.mappings[:user]
-    sign_in admin
+    # Evitar dependencias de Warden en controller specs (patrón del repo)
+    allow(controller).to receive(:authenticate_user!).and_return(true)
+    allow(controller).to receive(:authorize_admin!).and_return(true)
+    allow(controller).to receive(:current_user).and_return(admin)
   end
 
   describe 'POST create' do

@@ -40,12 +40,27 @@ class ApplicationController < ActionController::Base
   BOT_USER_AGENT_REGEX = /bot|crawl|spider|slurp|bingpreview|facebookexternalhit|whatsapp|telegram|preview|pingdom|monitor|ahrefs|semrush|mj12/i
   TRACKER_SKIP_PREFIXES = %w[/assets /cable /rails /admin].freeze
   TRACKER_SKIP_PATHS = %w[/favicon.ico /robots.txt /sitemap.xml /up].freeze
+  # Sondeos automatizados (dotfiles, secretos, archivos de config, rutas de otros
+  # stacks) que no son visitas reales. Se comparan contra la URL completa porque
+  # suelen llegar como query string (p. ej. "/?_=x&v=.env"), no como path.
+  # Se descartan antes de encolar para no inflar visitor_logs ni disparar el
+  # geocoding por cada variante del sondeo.
+  TRACKER_PROBE_REGEX = %r{
+    (?:\A|[/=.])\.env\b |
+    /?\.git(?:/|\b) |
+    /wp-(?:login|admin|content|includes) |
+    \.php\b |
+    /config/ |
+    /vendor/ |
+    \.(?:sql|bak|ya?ml|ini|sh|env)\b
+  }xi
 
   def track_visitor
     return if request.xhr?
     return unless request.format.html?
     return if TRACKER_SKIP_PREFIXES.any? { |prefix| request.path.starts_with?(prefix) }
     return if TRACKER_SKIP_PATHS.include?(request.path)
+    return if request.fullpath.match?(TRACKER_PROBE_REGEX)
 
     ua = request.user_agent.to_s
     return if ua.match?(BOT_USER_AGENT_REGEX)

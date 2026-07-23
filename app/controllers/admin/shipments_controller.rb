@@ -2,6 +2,8 @@
 
 module Admin
   class ShipmentsController < ApplicationController
+    before_action :authenticate_user!
+    before_action :authorize_admin!
     before_action :set_sale_order
     before_action :set_shipment, only: %i[edit update destroy]
 
