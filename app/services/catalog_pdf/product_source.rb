@@ -30,7 +30,13 @@ module CatalogPdf
       scope.order(:series, :product_name).with_attached_product_images
     end
 
+    # Etiqueta corta de cada evento comercial para las tarjetas del catálogo
+    # (más compactas que las del catálogo web). Comparten prioridad y ventanas
+    # con Product#catalog_event.
+    EVENT_LABELS = { new: 'Nuevo', reappeared: 'De vuelta', restocked: 'Resurtido' }.freeze
+
     def base_fields(product)
+      event = product.catalog_event
       {
         code: product.whatsapp_code,
         name: product.product_name,
@@ -38,15 +44,10 @@ module CatalogPdf
         series: product.series.presence || 'Sin serie',
         scale: (product.show_scale_publicly? ? product.scale.presence : nil),
         price: product.selling_price,
-        badges: badges_for(product)
+        event: event&.to_s,
+        event_label: event && EVENT_LABELS[event],
+        unique_piece: on_hand(product) == 1
       }
-    end
-
-    def badges_for(product)
-      badges = []
-      badges << 'Nuevo' if product.created_at && product.created_at >= 1.month.ago
-      badges << 'Única Pieza' if on_hand(product) == 1
-      badges
     end
 
     def on_hand(product)

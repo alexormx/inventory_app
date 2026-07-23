@@ -9,7 +9,7 @@ import { Controller } from "@hotwired/stimulus"
 export default class extends Controller {
   static targets = ["source", "apiFields", "apiUrl", "apiToken", "status", "list", "rowTemplate",
                     "submitBtn", "progressCard", "progressBar", "progressLabel", "progressPercent", "progressError",
-                    "usdEnabled", "usdRate", "title", "sort", "direction",
+                    "usdEnabled", "usdRate", "title", "sort", "direction", "prioritizeNew",
                     "fmtPortrait", "fmtLandscape", "fmtImages"]
   static values = { seriesUrl: String, progressUrl: String, downloadUrl: String }
 
@@ -278,6 +278,7 @@ export default class extends Controller {
       title: this.hasTitleTarget ? this.titleTarget.value : "",
       sort: this.hasSortTarget ? this.sortTarget.value : "",
       direction: this.hasDirectionTarget ? this.directionTarget.value : "",
+      prioritizeNew: this.hasPrioritizeNewTarget ? this.prioritizeNewTarget.checked : false,
       includeUsd: this.hasUsdEnabledTarget ? this.usdEnabledTarget.checked : false,
       usdRate: this.hasUsdRateTarget ? this.usdRateTarget.value : "",
       fmtPortrait: this.hasFmtPortraitTarget ? this.fmtPortraitTarget.checked : true,
@@ -296,6 +297,7 @@ export default class extends Controller {
     if (this.hasTitleTarget && opts.title != null) this.titleTarget.value = opts.title
     if (this.hasSortTarget && opts.sort) this.sortTarget.value = opts.sort
     if (this.hasDirectionTarget && opts.direction) this.directionTarget.value = opts.direction
+    if (this.hasPrioritizeNewTarget && opts.prioritizeNew != null) this.prioritizeNewTarget.checked = !!opts.prioritizeNew
     if (this.hasUsdEnabledTarget && opts.includeUsd != null) this.usdEnabledTarget.checked = !!opts.includeUsd
     if (this.hasUsdRateTarget && opts.usdRate != null) this.usdRateTarget.value = opts.usdRate
     if (this.hasFmtPortraitTarget && opts.fmtPortrait != null) this.fmtPortraitTarget.checked = !!opts.fmtPortrait

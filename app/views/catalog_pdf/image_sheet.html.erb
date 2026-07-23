@@ -43,6 +43,8 @@
       border-radius: 12px; margin-bottom: 4px; border: 1px solid #00000018; line-height: 1.3;
     }
     .badge-new { background: #fff3cd; color: #856404; }
+    .badge-reappeared { background: #d1e7dd; color: #0f5132; }
+    .badge-restocked { background: #cfe2ff; color: #084298; }
     .badge-unique { background: #f8d7da; color: #842029; }
 
     .card .photo-area {
@@ -88,10 +90,13 @@
         <span class="code">
           <span class="label">Código:</span><span class="value"><%= item[:code] %></span>
         </span>
-        <% if item[:badges].present? %>
+        <% if item[:event].present? || item[:unique_piece] %>
           <span class="badges">
-            <% item[:badges].each do |b| %>
-              <span class="badge <%= b == 'Nuevo' ? 'badge-new' : 'badge-unique' %>"><%= b %></span><br>
+            <% if item[:event].present? %>
+              <span class="badge badge-<%= item[:event] %>"><%= item[:event_label] %></span><br>
+            <% end %>
+            <% if item[:unique_piece] %>
+              <span class="badge badge-unique">Única Pieza</span><br>
             <% end %>
           </span>
         <% end %>

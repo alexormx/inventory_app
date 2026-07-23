@@ -48,6 +48,12 @@
             </div>
           </div>
 
+          <div class="form-check mt-3">
+            <%= check_box_tag :prioritize_new, '1', false, class: 'form-check-input', id: 'prioritize_new', data: { 'catalog-pdf-target': 'prioritizeNew', action: 'catalog-pdf#saveOptions' } %>
+            <label class="form-check-label" for="prioritize_new">Priorizar novedades (mostrarlas primero)</label>
+            <div class="form-text">Nuevos, de vuelta y resurtidos van al inicio, ordenados por prioridad; el resto sigue con el orden elegido.</div>
+          </div>
+
           <div class="mt-3 border-top pt-3">
             <div class="form-check">
               <%= check_box_tag :include_usd, '1', false, class: 'form-check-input', id: 'include_usd', data: { action: 'catalog-pdf#toggleUsd catalog-pdf#saveOptions', 'catalog-pdf-target': 'usdEnabled' } %>

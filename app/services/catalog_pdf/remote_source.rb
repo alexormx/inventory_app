@@ -59,7 +59,9 @@ module CatalogPdf
         series: item['series'].presence || 'Sin serie',
         scale: item['scale'].presence,
         price: item['price'],
-        badges: Array(item['badges']),
+        event: item['event'].presence,
+        event_label: item['event_label'].presence,
+        unique_piece: item['unique_piece'] ? true : false,
         image_url: item['image_url']
       }
     end

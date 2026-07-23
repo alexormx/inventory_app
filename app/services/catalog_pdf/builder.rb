@@ -6,13 +6,16 @@ module CatalogPdf
   # y 2) un campo secundario (nombre, precio o código), asc o desc.
   class Builder
     SECONDARY_FIELDS = %w[name price code].freeze
+    # Prioridad de las novedades cuando se pide mostrarlas primero.
+    EVENT_RANK = { 'new' => 0, 'reappeared' => 1, 'restocked' => 2 }.freeze
 
     def initialize(source:, series: [], sort: 'name', direction: 'asc',
-                   api_url: nil, api_token: nil)
+                   prioritize_new: false, api_url: nil, api_token: nil)
       @source = source == 'local' ? 'local' : 'api'
       @selected = Array(series).reject(&:blank?)
       @sort = SECONDARY_FIELDS.include?(sort) ? sort : 'name'
       @direction = direction == 'desc' ? 'desc' : 'asc'
+      @prioritize_new = ActiveModel::Type::Boolean.new.cast(prioritize_new) || false
       @api_url = api_url
       @api_token = api_token
     end
@@ -80,11 +83,32 @@ module CatalogPdf
     end
 
     def compare(a, b, index)
+      if @prioritize_new
+        # Todas las novedades (cualquier evento vigente) van primero, de forma
+        # global (sin importar la serie) y ordenadas por prioridad de evento.
+        by_group = novelty_group(a) <=> novelty_group(b)
+        return by_group unless by_group.zero?
+
+        if novelty_group(a).zero?
+          by_rank = event_rank(a) <=> event_rank(b)
+          return by_rank unless by_rank.zero?
+        end
+      end
+
       by_series = index[a[:series]] <=> index[b[:series]]
       return by_series unless by_series.zero?
 
       secondary = secondary_key(a) <=> secondary_key(b)
       @direction == 'desc' ? -secondary : secondary
+    end
+
+    # 0 = novedad (tiene evento vigente), 1 = resto. Menor va primero.
+    def novelty_group(item)
+      item[:event].present? ? 0 : 1
+    end
+
+    def event_rank(item)
+      EVENT_RANK.fetch(item[:event].to_s, 99)
     end
 
     def secondary_key(item)

@@ -143,6 +143,15 @@ class Product < ApplicationRecord
   # Resurtidos de 0 a positivo tras la carga inicial (badge "Recién resurtido").
   scope :recently_restocked, ->(since) { where('restocked_at >= ?', since) }
 
+  # Distintivos comerciales del catálogo (web, PDF e imagen comparten esta fuente).
+  # Cada evento tiene su ventana (días) configurable en Admin → Configuración y una
+  # prioridad implícita por el orden de este Hash: Nuevo > De vuelta > Resurtido.
+  CATALOG_EVENTS = {
+    new:        { setting: 'badge_new_days',         default: 30, timestamp: :first_published_at },
+    reappeared: { setting: 'badge_republished_days', default: 15, timestamp: :republished_at },
+    restocked:  { setting: 'badge_restocked_days',   default: 15, timestamp: :restocked_at }
+  }.freeze
+
   # Cola de revisión: productos que el sistema pausó automáticamente por
   # quedarse sin stock publicable (status inactive + auto_paused). NO incluye
   # los que el admin desactivó a propósito (auto_paused = false). El admin los
@@ -662,6 +671,21 @@ class Product < ApplicationRecord
     else
       update_columns(restocked_at: now, updated_at: now)
     end
+  end
+
+  # Distintivo comercial de mayor prioridad vigente para el producto, o nil.
+  # Devuelve el símbolo del evento (:new, :reappeared, :restocked) según las
+  # ventanas configurables. Fuente única para el badge del catálogo web, PDF e
+  # imagen y para el orden "priorizar novedades".
+  def catalog_event(now: Time.current)
+    CATALOG_EVENTS.each do |type, cfg|
+      days = SiteSetting.get(cfg[:setting], cfg[:default]).to_i
+      next unless days.positive?
+
+      ts = public_send(cfg[:timestamp])
+      return type if ts.present? && ts >= (now - days.days)
+    end
+    nil
   end
 
   # ---- Dimensiones / Peso helpers ----

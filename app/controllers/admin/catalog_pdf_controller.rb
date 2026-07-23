@@ -146,6 +146,7 @@ module Admin
         series: params[:series],
         sort: params[:sort],
         direction: params[:direction],
+        prioritize_new: params[:prioritize_new],
         api_url: api_url,
         api_token: api_token
       )

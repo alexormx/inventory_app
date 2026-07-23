@@ -83,4 +83,32 @@ RSpec.describe Product, type: :model do
       expect(product.reload.restocked_at).to be_nil
     end
   end
+
+  describe '#catalog_event' do
+    it 'returns nil without event timestamps' do
+      expect(Product.new.catalog_event).to be_nil
+    end
+
+    it 'returns :new for a recent first publication' do
+      expect(Product.new(first_published_at: 2.days.ago).catalog_event).to eq(:new)
+    end
+
+    it 'returns :reappeared for a recent republication' do
+      expect(Product.new(republished_at: 2.days.ago).catalog_event).to eq(:reappeared)
+    end
+
+    it 'returns :restocked for a recent restock' do
+      expect(Product.new(restocked_at: 2.days.ago).catalog_event).to eq(:restocked)
+    end
+
+    it 'prioritizes :new over :reappeared and :restocked' do
+      product = Product.new(first_published_at: 2.days.ago, republished_at: 1.day.ago, restocked_at: 1.day.ago)
+      expect(product.catalog_event).to eq(:new)
+    end
+
+    it 'returns nil once the timestamp falls outside the configurable window' do
+      SiteSetting.set('badge_new_days', 3, 'integer')
+      expect(Product.new(first_published_at: 5.days.ago).catalog_event).to be_nil
+    end
+  end
 end

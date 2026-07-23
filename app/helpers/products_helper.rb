@@ -26,31 +26,26 @@ module ProductsHelper
     end
   end
 
-  # Ventanas (días) por defecto de cada distintivo comercial. Cada una es
-  # configurable en Admin → Configuración; describen CUÁNDO ocurrió el evento de
-  # catálogo, no la disponibilidad/logística.
-  BADGE_NEW_DAYS_DEFAULT = 30
-  BADGE_REPUBLISHED_DAYS_DEFAULT = 15
-  BADGE_RESTOCKED_DAYS_DEFAULT = 15
+  # Presentación de cada distintivo comercial para el catálogo web. La lógica de
+  # cuál evento aplica vive en Product#catalog_event (fuente única, compartida con
+  # el catálogo PDF/imagen); aquí solo mapeamos el símbolo a etiqueta/estilo.
+  CATALOG_EVENT_PRESENTATION = {
+    new:        { label: 'Nuevo en catálogo', icon: 'fa-wand-magic-sparkles', css: 'badge-new',
+                  title: 'Nuevo en catálogo · publicado recientemente por primera vez' },
+    reappeared: { label: 'De vuelta en catálogo', icon: 'fa-rotate-left', css: 'badge-reappeared',
+                  title: 'De vuelta en catálogo · vuelve a estar disponible tras una pausa' },
+    restocked:  { label: 'Recién resurtido', icon: 'fa-boxes-stacked', css: 'badge-restocked',
+                  title: 'Recién resurtido · volvió a haber piezas disponibles' }
+  }.freeze
 
   # Resuelve el distintivo comercial de mayor prioridad para un producto.
   # Prioridad: Nuevo en catálogo > De vuelta en catálogo > Recién resurtido.
   # Devuelve un Hash con :type, :label, :icon, :css, :title o nil si no aplica.
   def catalog_event_for(product, now: Time.current)
-    new_days       = SiteSetting.get('badge_new_days', BADGE_NEW_DAYS_DEFAULT).to_i
-    republish_days = SiteSetting.get('badge_republished_days', BADGE_REPUBLISHED_DAYS_DEFAULT).to_i
-    restock_days   = SiteSetting.get('badge_restocked_days', BADGE_RESTOCKED_DAYS_DEFAULT).to_i
+    type = product.catalog_event(now: now)
+    return unless type
 
-    if within_window?(product.first_published_at, new_days, now)
-      { type: :new, label: 'Nuevo en catálogo', icon: 'fa-wand-magic-sparkles', css: 'badge-new',
-        title: 'Nuevo en catálogo · publicado recientemente por primera vez' }
-    elsif within_window?(product.republished_at, republish_days, now)
-      { type: :reappeared, label: 'De vuelta en catálogo', icon: 'fa-rotate-left', css: 'badge-reappeared',
-        title: 'De vuelta en catálogo · vuelve a estar disponible tras una pausa' }
-    elsif within_window?(product.restocked_at, restock_days, now)
-      { type: :restocked, label: 'Recién resurtido', icon: 'fa-boxes-stacked', css: 'badge-restocked',
-        title: 'Recién resurtido · volvió a haber piezas disponibles' }
-    end
+    CATALOG_EVENT_PRESENTATION[type].merge(type: type)
   end
 
   # Badge comercial (independiente de disponibilidad). Fuente única del texto y
@@ -217,13 +212,6 @@ module ProductsHelper
   end
 
   private
-
-  # ¿El timestamp existe y cae dentro de los últimos `days`?
-  def within_window?(timestamp, days, now)
-    return false if timestamp.blank? || days <= 0
-
-    timestamp >= (now - days.days)
-  end
 
   def asset_exists?(logical_path)
     Rails.application.assets&.find_asset(logical_path) || (Rails.application.config.assets.compile == false && Rails.application.assets_manifest.assets[logical_path])
