@@ -86,17 +86,16 @@
             </div>
           <% end %>
           <div class="card-body text-center d-flex flex-column w-100">
-            <div class="catalog-badges catalog-badges--inline d-flex justify-content-center align-items-center" role="status" aria-live="polite">
+            <div class="catalog-badges catalog-badges--inline d-flex flex-wrap justify-content-center align-items-center gap-1" role="status" aria-live="polite">
+              <%# Disponibilidad (inventario/logística) y evento de catálogo %>
+              <%# (Nuevo / De vuelta / Resurtido) son conceptos separados: %>
+              <%# máximo un badge de disponibilidad y uno de evento. %>
               <% if product.active? %>
-                <span><%= stock_badge(product, on_hand_override: on_hand_cached, in_transit_eta_override: in_transit_eta_cached) %></span>
+                <span><%= stock_badge(product, on_hand_override: on_hand_cached, in_transit_eta_override: in_transit_eta_cached, compact_eta: true) %></span>
               <% else %>
                 <span class="badge bg-secondary">No disp.</span>
               <% end %>
-              <% if product.created_at > 14.days.ago %>
-                <span class="badge badge-new" title="Agregado al catálogo en los últimos 14 días">
-                  <i class="fas fa-sparkles me-1" aria-hidden="true"></i>Recién llegado
-                </span>
-              <% end %>
+              <%= catalog_event_badge(product) %>
             </div>
             <h2 class="card-title catalog-card-title h6" title="<%= product.product_name %>">
               <% if product.active? %>

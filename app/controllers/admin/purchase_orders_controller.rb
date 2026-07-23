@@ -193,6 +193,11 @@ module Admin
                                .pluck(:product_id)
                                .uniq
 
+        # Conteo de piezas disponibles ANTES de recibir, para detectar resurtidos
+        # reales (transición 0 -> positivo) vs. resurtidos parciales.
+        prev_available = Inventory.where(product_id: product_ids, status: :available)
+                                  .group(:product_id).count
+
         # Marcar inventario como disponible
         Inventory.where(purchase_order_id: @purchase_order.id).in_transit.update_all(
           status: :available,
@@ -200,6 +205,8 @@ module Admin
           status_changed_at: Time.current
         )
         @purchase_order.update!(status: 'Delivered')
+
+        Products::RestockDetector.call(product_ids, prev_available_counts: prev_available) if product_ids.present?
 
         # Asignar inventario recibido a preorders pendientes
         if product_ids.present?

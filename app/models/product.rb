@@ -46,6 +46,14 @@ class Product < ApplicationRecord
   after_commit :recalculate_stats_if_needed, on: [:create]
   after_commit :recalculate_purchase_orders_if_dimensions_changed, on: [:update]
 
+  # Sella los eventos de publicación del catálogo. Solo corre cuando el status
+  # cambia y el nuevo valor es 'active', de modo que:
+  #   - la primera publicación fija first_published_at (badge "Nuevo")
+  #   - cada republicación posterior fija republished_at (badge "De vuelta")
+  # El auto-pausado usa update_columns (salta callbacks), así que pausar/reactivar
+  # por falta de stock nunca genera un sello falso.
+  before_save :stamp_publication_event, if: :will_save_change_to_status?
+
   # --- Custom attributes: always a JSON Hash ---
   attribute :custom_attributes, :json, default: -> { {} }
   attribute :highlights, :json, default: -> { [] }
@@ -127,6 +135,13 @@ class Product < ApplicationRecord
   scope :with_in_transit_stock, -> {
     where(id: Inventory.where(status: :in_transit).select(:product_id))
   }
+
+  # Publicados por primera vez dentro de la ventana (badge "Nuevo en catálogo").
+  scope :new_in_catalog, ->(since) { where('first_published_at >= ?', since) }
+  # Reactivados tras haber estado inactivos (badge "De vuelta en catálogo").
+  scope :recently_republished, ->(since) { where('republished_at >= ?', since) }
+  # Resurtidos de 0 a positivo tras la carga inicial (badge "Recién resurtido").
+  scope :recently_restocked, ->(since) { where('restocked_at >= ?', since) }
 
   # Cola de revisión: productos que el sistema pausó automáticamente por
   # quedarse sin stock publicable (status inactive + auto_paused). NO incluye
@@ -313,6 +328,16 @@ class Product < ApplicationRecord
   end
 
   private
+
+  def stamp_publication_event
+    return unless status == 'active'
+
+    if first_published_at.blank?
+      self.first_published_at = Time.current
+    else
+      self.republished_at = Time.current
+    end
+  end
 
   def self.generate_next_whatsapp_code!
     current_code = maximum_valid_whatsapp_code
@@ -619,6 +644,24 @@ class Product < ApplicationRecord
       auto_paused_at: Time.current,
       updated_at: Time.current
     )
+  end
+
+  # Sella un evento de resurtido cuando el inventario pasa de 0 a positivo.
+  # `was_zero` indica si el producto NO tenía piezas disponibles antes de recibir.
+  # La primera vez que se surte (first_stocked_at nil) se considera carga inicial:
+  # solo fija first_stocked_at y NO genera badge. Resurtidos posteriores (0->positivo)
+  # fijan restocked_at (badge "Recién resurtido"). Los resurtidos parciales
+  # (había stock > 0) se ignoran: los filtra el caller vía `was_zero`.
+  # Usa update_columns para no disparar callbacks ni tocar los sellos de publicación.
+  def mark_restock_from_receipt!(was_zero:)
+    return unless was_zero
+
+    now = Time.current
+    if first_stocked_at.blank?
+      update_columns(first_stocked_at: now, updated_at: now)
+    else
+      update_columns(restocked_at: now, updated_at: now)
+    end
   end
 
   # ---- Dimensiones / Peso helpers ----

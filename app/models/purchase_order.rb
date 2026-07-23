@@ -152,12 +152,20 @@ class PurchaseOrder < ApplicationRecord
     scope = Inventory.where(purchase_order_id: id)
     case status
     when 'Delivered'
+      product_ids = scope.distinct.pluck(:product_id)
+      # Conteo de disponibles ANTES de recibir para detectar resurtidos reales
+      # (0 -> positivo). Cuando la recepción pasa por confirm_receipt las piezas
+      # ya están available aquí, así que was_zero será falso y la detección real
+      # la hace ese controller; esta rama cubre el cambio directo a 'Delivered'.
+      prev_available = Inventory.where(product_id: product_ids, status: :available)
+                                .group(:product_id).count
       # Solo mover a available aquellos que están en tránsito o available
       scope.where(status: %i[in_transit available]).update_all(
         status: Inventory.statuses[:available],
         status_changed_at: Time.current,
         updated_at: Time.current
       )
+      Products::RestockDetector.call(product_ids, prev_available_counts: prev_available) if product_ids.present?
     when 'Pending', 'In Transit'
       scope.where(status: %i[available in_transit]).update_all(
         status: Inventory.statuses[:in_transit],

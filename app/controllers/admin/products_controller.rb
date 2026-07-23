@@ -502,7 +502,7 @@ module Admin
       @shortcut_counts = {
         active_missing: apply_status_filter(base_for_shortcuts, 'active').missing_location.count,
         draft_or_inactive_present: apply_status_filter(base_for_shortcuts, 'draft_or_inactive').with_confirmed_location.count,
-        draft_or_inactive_present_stock: apply_status_filter(base_for_shortcuts, 'draft_or_inactive').with_confirmed_location.publishable.count,
+        draft_or_inactive_present_stock: apply_status_filter(base_for_shortcuts, 'draft_or_inactive').publishable.count,
         in_transit: base_for_shortcuts.with_in_transit_stock.count
       }
     end

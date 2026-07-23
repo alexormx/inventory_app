@@ -39,6 +39,19 @@ module Admin
         flash[:notice] = 'Configuración SEO guardada exitosamente.'
         redirect_to admin_settings_path and return
       end
+      if request.post? && params[:save_badges]
+        new_days = params[:badge_new_days].to_i
+        republished_days = params[:badge_republished_days].to_i
+        restocked_days = params[:badge_restocked_days].to_i
+        new_days = 30 if new_days <= 0
+        republished_days = 15 if republished_days <= 0
+        restocked_days = 15 if restocked_days <= 0
+        SiteSetting.set('badge_new_days', new_days, 'integer')
+        SiteSetting.set('badge_republished_days', republished_days, 'integer')
+        SiteSetting.set('badge_restocked_days', restocked_days, 'integer')
+        flash[:notice] = 'Duraciones de distintivos guardadas.'
+        redirect_to admin_settings_path and return
+      end
       if request.post? && params[:save_eta]
         preorder_days = params[:preorder_eta_days].to_i
         backorder_days = params[:backorder_eta_days].to_i

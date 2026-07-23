@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_05_31_000002) do
+ActiveRecord::Schema[8.0].define(version: 2026_07_23_155646) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -469,6 +469,10 @@ ActiveRecord::Schema[8.0].define(version: 2026_05_31_000002) do
     t.boolean "show_scale_publicly", default: true, null: false
     t.boolean "auto_paused", default: false, null: false
     t.datetime "auto_paused_at"
+    t.datetime "first_published_at"
+    t.datetime "republished_at"
+    t.datetime "first_stocked_at"
+    t.datetime "restocked_at"
     t.index "lower((product_name)::text)", name: "index_products_on_lower_product_name"
     t.index ["auto_paused"], name: "index_products_on_auto_paused", where: "auto_paused"
     t.index ["brand"], name: "index_products_on_brand"
@@ -476,6 +480,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_05_31_000002) do
     t.index ["category"], name: "index_products_on_category"
     t.index ["category"], name: "index_products_on_category_trgm", opclass: :gin_trgm_ops, using: :gin
     t.index ["discontinued"], name: "index_products_on_discontinued"
+    t.index ["first_published_at"], name: "index_products_on_first_published_at"
     t.index ["last_supplier_id"], name: "index_products_on_last_supplier_id"
     t.index ["launch_date"], name: "index_products_on_launch_date"
     t.index ["package_type"], name: "index_products_on_package_type"
@@ -484,6 +489,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_05_31_000002) do
     t.index ["product_name"], name: "index_products_on_product_name"
     t.index ["product_name"], name: "index_products_on_product_name_trgm", opclass: :gin_trgm_ops, using: :gin
     t.index ["product_sku"], name: "index_products_on_product_sku", unique: true
+    t.index ["republished_at"], name: "index_products_on_republished_at"
+    t.index ["restocked_at"], name: "index_products_on_restocked_at"
     t.index ["scale"], name: "index_products_on_scale"
     t.index ["series"], name: "index_products_on_series"
     t.index ["series"], name: "index_products_on_series_trgm", opclass: :gin_trgm_ops, using: :gin

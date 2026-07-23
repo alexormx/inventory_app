@@ -289,6 +289,36 @@
 
 <div class="card mb-4">
 	<div class="card-header d-flex align-items-center gap-2">
+		<i class="fa-solid fa-award"></i>
+		<span>Distintivos comerciales del catálogo</span>
+	</div>
+	<div class="card-body">
+		<% badge_new_days = SiteSetting.get('badge_new_days', 30).to_i %>
+		<% badge_republished_days = SiteSetting.get('badge_republished_days', 15).to_i %>
+		<% badge_restocked_days = SiteSetting.get('badge_restocked_days', 15).to_i %>
+		<p class="small text-muted mb-3">Días que cada distintivo permanece visible tras su evento. Prioridad cuando coinciden: <strong>Nuevo en catálogo</strong> &gt; <strong>De vuelta en catálogo</strong> &gt; <strong>Recién resurtido</strong> (se muestra solo el de mayor prioridad).</p>
+		<%= form_with url: admin_settings_path, method: :post, data: { turbo: false }, class: 'row gy-2 gx-3 align-items-end' do %>
+			<div class="col-md-4">
+				<label class="form-label"><i class="fas fa-wand-magic-sparkles me-1 text-primary"></i>Nuevo en catálogo (días)</label>
+				<input type="number" min="1" name="badge_new_days" class="form-control form-control-sm" value="<%= badge_new_days %>">
+			</div>
+			<div class="col-md-4">
+				<label class="form-label"><i class="fas fa-rotate-left me-1 text-success"></i>De vuelta en catálogo (días)</label>
+				<input type="number" min="1" name="badge_republished_days" class="form-control form-control-sm" value="<%= badge_republished_days %>">
+			</div>
+			<div class="col-md-4">
+				<label class="form-label"><i class="fas fa-boxes-stacked me-1 text-info"></i>Recién resurtido (días)</label>
+				<input type="number" min="1" name="badge_restocked_days" class="form-control form-control-sm" value="<%= badge_restocked_days %>">
+			</div>
+			<div class="col-12">
+				<button class="btn btn-primary btn-sm" name="save_badges" value="1">Guardar</button>
+			</div>
+		<% end %>
+	</div>
+</div>
+
+<div class="card mb-4">
+	<div class="card-header d-flex align-items-center gap-2">
 		<i class="fab fa-whatsapp text-success"></i>
 		<span>Pedidos por WhatsApp</span>
 	</div>

@@ -26,8 +26,49 @@ module ProductsHelper
     end
   end
 
+  # Ventanas (días) por defecto de cada distintivo comercial. Cada una es
+  # configurable en Admin → Configuración; describen CUÁNDO ocurrió el evento de
+  # catálogo, no la disponibilidad/logística.
+  BADGE_NEW_DAYS_DEFAULT = 30
+  BADGE_REPUBLISHED_DAYS_DEFAULT = 15
+  BADGE_RESTOCKED_DAYS_DEFAULT = 15
+
+  # Resuelve el distintivo comercial de mayor prioridad para un producto.
+  # Prioridad: Nuevo en catálogo > De vuelta en catálogo > Recién resurtido.
+  # Devuelve un Hash con :type, :label, :icon, :css, :title o nil si no aplica.
+  def catalog_event_for(product, now: Time.current)
+    new_days       = SiteSetting.get('badge_new_days', BADGE_NEW_DAYS_DEFAULT).to_i
+    republish_days = SiteSetting.get('badge_republished_days', BADGE_REPUBLISHED_DAYS_DEFAULT).to_i
+    restock_days   = SiteSetting.get('badge_restocked_days', BADGE_RESTOCKED_DAYS_DEFAULT).to_i
+
+    if within_window?(product.first_published_at, new_days, now)
+      { type: :new, label: 'Nuevo en catálogo', icon: 'fa-wand-magic-sparkles', css: 'badge-new',
+        title: 'Nuevo en catálogo · publicado recientemente por primera vez' }
+    elsif within_window?(product.republished_at, republish_days, now)
+      { type: :reappeared, label: 'De vuelta en catálogo', icon: 'fa-rotate-left', css: 'badge-reappeared',
+        title: 'De vuelta en catálogo · vuelve a estar disponible tras una pausa' }
+    elsif within_window?(product.restocked_at, restock_days, now)
+      { type: :restocked, label: 'Recién resurtido', icon: 'fa-boxes-stacked', css: 'badge-restocked',
+        title: 'Recién resurtido · volvió a haber piezas disponibles' }
+    end
+  end
+
+  # Badge comercial (independiente de disponibilidad). Fuente única del texto y
+  # estilo; devuelve nil si ningún evento está dentro de su ventana.
+  def catalog_event_badge(product)
+    event = catalog_event_for(product)
+    return unless event
+
+    icon = content_tag(:i, '', class: "fas #{event[:icon]} me-1", 'aria-hidden': 'true')
+    content_tag :span, safe_join([icon, event[:label]]),
+                class: "badge #{event[:css]}",
+                title: event[:title]
+  end
+
   # Genera un badge unificado de disponibilidad (En stock / Preorden / Sobre pedido / Fuera de stock)
-  def stock_badge(product, quantity: nil, suppress_pending_note: false, on_hand_override: nil, in_transit_eta_override: :unset)
+  # compact_eta: en la tarjeta del catálogo muestra la fecha corta sin año
+  # ("Llega aprox. 6 ago."); el tooltip conserva la fecha completa.
+  def stock_badge(product, quantity: nil, suppress_pending_note: false, on_hand_override: nil, in_transit_eta_override: :unset, compact_eta: false)
     on_hand = on_hand_override.nil? ? product.current_on_hand : on_hand_override
     pending_split = quantity ? product.split_immediate_and_pending(quantity) : nil
     base_classes = 'badge rounded-pill fw-normal'
@@ -38,8 +79,9 @@ module ProductsHelper
     label, classes, tooltip = if on_hand.positive?
                                 ['En stock', 'bg-success', 'Disponible para envío inmediato']
                               elsif in_transit_eta.present?
-                                eta_fmt = spanish_short_date(in_transit_eta)
-                                ["Llega ~#{eta_fmt}", 'badge-incoming', "En tránsito desde proveedor · Llegada estimada #{eta_fmt}"]
+                                full_fmt = spanish_short_date(in_transit_eta)
+                                label_txt = compact_eta ? "Llega aprox. #{spanish_compact_date(in_transit_eta)}" : "Llega ~#{full_fmt}"
+                                [label_txt, 'badge-incoming', "En tránsito desde proveedor · Llegada estimada #{full_fmt}"]
                               elsif product.preorder_available
                                 if product.respond_to?(:launch_date) && product.launch_date.present?
                                   estimated_date = begin
@@ -176,6 +218,13 @@ module ProductsHelper
 
   private
 
+  # ¿El timestamp existe y cae dentro de los últimos `days`?
+  def within_window?(timestamp, days, now)
+    return false if timestamp.blank? || days <= 0
+
+    timestamp >= (now - days.days)
+  end
+
   def asset_exists?(logical_path)
     Rails.application.assets&.find_asset(logical_path) || (Rails.application.config.assets.compile == false && Rails.application.assets_manifest.assets[logical_path])
   rescue StandardError
@@ -240,6 +289,16 @@ module ProductsHelper
 
     months = %w[Ene Feb Mar Abr May Jun Jul Ago Sep Oct Nov Dic]
     format('%02d-%s-%d', date.day, months[date.month - 1], date.year)
+  end
+
+  # Fecha compacta para tarjetas (móvil): día sin cero + mes abreviado en
+  # minúscula, sin año. Ej.: "6 ago." La fecha completa se conserva en la
+  # vista de detalle vía spanish_short_date.
+  def spanish_compact_date(date)
+    return '' unless date
+
+    months = %w[ene feb mar abr may jun jul ago sep oct nov dic]
+    "#{date.day} #{months[date.month - 1]}."
   end
 
   def strip_locale_from_active_storage(url)
