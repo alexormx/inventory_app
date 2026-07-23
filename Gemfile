@@ -57,7 +57,6 @@ gem 'devise-i18n', '~> 1.12' # Devise internationalization
 # ✅ Bootstrap framework for styling
 gem 'bootstrap', '~> 5.3.3'
 gem 'friendly_id', '~> 5.5'
-gem 'image_processing', '~> 1.2'
 gem 'mini_magick'
 gem 'redis', '~> 4.8' # Redis for caching and background jobs
 gem 'sassc-rails'
