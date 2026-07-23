@@ -258,7 +258,13 @@ class Product < ApplicationRecord
   end
 
   def ordered_product_images
-    attachments = product_images.attachments.includes(:blob).to_a
+    attachments = product_images.attachments
+    # Reutiliza la precarga (with_attached_product_images) cuando ya trae los
+    # blobs; sólo consulta blobs si no vienen precargados, para evitar N+1.
+    unless attachments.loaded? && attachments.all? { |a| a.association(:blob).loaded? }
+      attachments = attachments.includes(:blob)
+    end
+    attachments = attachments.to_a
     return attachments if attachments.size <= 1
 
     primary_attachment = attachments.find { |attachment| attachment.id == primary_product_image_attachment_id }

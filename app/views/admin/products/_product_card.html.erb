@@ -4,9 +4,12 @@
       <div class="position-relative me-2">
         <% if product.product_images.attached? %>
           <%= image_tag product.primary_product_image.variant(resize_to_fill: [64, 64]), class: "img-thumbnail" %>
-          <% if product.product_images.count > 1 %>
+          <%# Cantidad desde la asociación precargada (with_attached_product_images); %>
+          <%# .length evita un COUNT por producto que Bullet marca como counter cache. %>
+          <% extra_images = product.product_images_attachments.length - 1 %>
+          <% if extra_images.positive? %>
             <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-secondary" style="font-size: 0.65rem;">
-              +<%= product.product_images.count - 1 %>
+              +<%= extra_images %>
             </span>
           <% end %>
         <% else %>
