@@ -103,6 +103,9 @@
         <% if ActiveModel::Type::Boolean.new.cast(params[:with_stock]) %>
           <%= hidden_field_tag :with_stock, "1" %>
         <% end %>
+        <% if ActiveModel::Type::Boolean.new.cast(params[:in_transit]) %>
+          <%= hidden_field_tag :in_transit, "1" %>
+        <% end %>
         <%= link_to "Limpiar", admin_products_path, class: "btn btn-sm btn-outline-secondary ms-2", title: "Quitar búsqueda y status" %>
       </div>
 
@@ -112,6 +115,7 @@
       <% shortcut_active_missing = (current_status == "active" && current_location == "missing") %>
       <% shortcut_draftinactive_present = (current_status == "draft_or_inactive" && current_location == "present" && !with_stock_active) %>
       <% shortcut_draftinactive_present_stock = (current_status == "draft_or_inactive" && current_location == "present" && with_stock_active) %>
+      <% shortcut_in_transit = ActiveModel::Type::Boolean.new.cast(params[:in_transit]) %>
       <div class="col-12 d-flex flex-wrap align-items-center gap-2 mt-2">
         <span class="small text-muted me-1"><i class="fa-solid fa-location-dot me-1"></i>Ubicación:</span>
         <div class="btn-group btn-group-sm" role="group" aria-label="Filtro por ubicación física">
@@ -157,6 +161,14 @@
           <i class="fa-solid fa-circle-check me-1"></i>Listos para publicar
           <% if @shortcut_counts && @shortcut_counts[:draft_or_inactive_present_stock].to_i > 0 %>
             <span class="badge bg-light text-dark ms-1"><%= @shortcut_counts[:draft_or_inactive_present_stock] %></span>
+          <% end %>
+        <% end %>
+        <%= link_to admin_products_path(q: @q, sort: @sort, in_transit: 1),
+                     class: ["btn", "btn-sm", (shortcut_in_transit ? "btn-primary" : "btn-outline-primary")].join(" "),
+                     title: "Productos con stock en tránsito (por llegar) — candidatos a preventa" do %>
+          <i class="fa-solid fa-truck me-1"></i>En tránsito (preventa)
+          <% if @shortcut_counts && @shortcut_counts[:in_transit].to_i > 0 %>
+            <span class="badge bg-light text-dark ms-1"><%= @shortcut_counts[:in_transit] %></span>
           <% end %>
         <% end %>
       </div>

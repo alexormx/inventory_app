@@ -25,10 +25,12 @@ module Admin
       current_status = params[:status].presence || 'all'
       current_location = params[:location].presence || 'all'
       with_stock_only = ActiveModel::Type::Boolean.new.cast(params[:with_stock])
+      in_transit_only = ActiveModel::Type::Boolean.new.cast(params[:in_transit])
       scope = Product.all
       scope = apply_status_filter(scope, current_status)
       scope = apply_location_filter(scope, current_location)
       scope = scope.publishable if with_stock_only
+      scope = scope.with_in_transit_stock if in_transit_only
       if @q.present?
         term = "%#{@q.downcase}%"
         scope = scope.where('LOWER(product_name) LIKE ? OR LOWER(product_sku) LIKE ?', term, term)
@@ -500,7 +502,8 @@ module Admin
       @shortcut_counts = {
         active_missing: apply_status_filter(base_for_shortcuts, 'active').missing_location.count,
         draft_or_inactive_present: apply_status_filter(base_for_shortcuts, 'draft_or_inactive').with_confirmed_location.count,
-        draft_or_inactive_present_stock: apply_status_filter(base_for_shortcuts, 'draft_or_inactive').with_confirmed_location.publishable.count
+        draft_or_inactive_present_stock: apply_status_filter(base_for_shortcuts, 'draft_or_inactive').with_confirmed_location.publishable.count,
+        in_transit: base_for_shortcuts.with_in_transit_stock.count
       }
     end
 

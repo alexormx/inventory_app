@@ -121,6 +121,13 @@ class Product < ApplicationRecord
                        .select(:product_id))
   }
 
+  # Productos con al menos una pieza en tránsito (stock por llegar). Candidatos
+  # a preventa: se pueden ofrecer/ordenar antes de que la mercancía llegue.
+  # Incluye piezas ya asignadas a órdenes (ya ordenadas) y libres.
+  scope :with_in_transit_stock, -> {
+    where(id: Inventory.where(status: :in_transit).select(:product_id))
+  }
+
   # Cola de revisión: productos que el sistema pausó automáticamente por
   # quedarse sin stock publicable (status inactive + auto_paused). NO incluye
   # los que el admin desactivó a propósito (auto_paused = false). El admin los
