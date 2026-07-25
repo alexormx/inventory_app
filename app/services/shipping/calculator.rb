@@ -22,6 +22,7 @@ module Shipping
       def quote(method_code:, user:, address:, cart:)
         shipping_method = ShippingMethod.active.find_by(code: method_code.to_s)
         raise UnknownMethodError, 'Método de envío no disponible.' unless shipping_method
+        raise UnknownMethodError, 'Método de envío sin tarifa configurada.' if shipping_method.base_cost.nil?
 
         return 0.to_d if cart.respond_to?(:empty?) && cart.empty?
 

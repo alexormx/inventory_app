@@ -48,5 +48,15 @@ RSpec.describe Shipping::Calculator do
         )
       end.to raise_error(Shipping::Calculator::UnknownMethodError)
     end
+
+    it 'fails closed when an active method has no configured base cost' do
+      create(:shipping_method, code: 'envio_sin_tarifa', base_cost: nil, active: true)
+
+      expect do
+        described_class.quote(
+          method_code: 'envio_sin_tarifa', user: user, address: address, cart: cart
+        )
+      end.to raise_error(Shipping::Calculator::UnknownMethodError, 'Método de envío sin tarifa configurada.')
+    end
   end
 end
