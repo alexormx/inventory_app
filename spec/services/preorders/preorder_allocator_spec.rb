@@ -49,4 +49,42 @@ RSpec.describe Preorders::PreorderAllocator do
     expect { described_class.batch_allocate([product.id]) }
       .to raise_error(StandardError, 'allocation failed')
   end
+
+  it 'does not allocate the same stale reservation twice under concurrent callbacks' do
+    reservation = create(
+      :preorder_reservation,
+      product: product,
+      user: order.user,
+      sale_order: order,
+      sale_order_item: line,
+      quantity: 2
+    )
+    create_list(:inventory, 2, product: product, status: :in_transit)
+    arrived = Queue.new
+    release = Queue.new
+    outcomes = Queue.new
+
+    allow_any_instance_of(described_class).to receive(:allocate_to_originating_line).and_wrap_original do |original, *args|
+      arrived << true
+      release.pop
+      original.call(*args)
+    end
+
+    threads = 2.times.map do
+      Thread.new do
+        ActiveRecord::Base.connection_pool.with_connection do
+          outcomes << described_class.new(product.reload, newly_available_units: 1).call
+        end
+      end
+    end
+    2.times { arrived.pop }
+    2.times { release << true }
+    threads.each(&:join)
+
+    expect(2.times.sum { outcomes.pop }).to eq(1)
+    expect(reservation.reload).to be_assigned
+    expect(PreorderReservation.pending.where(sale_order_item: line).sum(:quantity)).to eq(1)
+    expect(line.reload.preorder_quantity).to eq(1)
+    expect(line.inventory_units.count).to eq(1)
+  end
 end

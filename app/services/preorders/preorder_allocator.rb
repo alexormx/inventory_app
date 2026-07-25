@@ -67,6 +67,8 @@ module Preorders
       assigned = 0
       ActiveRecord::Base.transaction do
         locked_reservation = PreorderReservation.lock.find(reservation.id)
+        next unless locked_reservation.pending?
+
         locked_line = SaleOrderItem.lock.find(line.id)
         target = [locked_reservation.quantity.to_i, limit.to_i, locked_line.preorder_quantity.to_i].min
         next if target <= 0

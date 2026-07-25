@@ -56,6 +56,43 @@ RSpec.describe Admin::PurchaseOrdersController, type: :controller do
       end
     end
 
+    context 'with customer-allocated incoming inventory' do
+      let(:sale_order) { create(:sale_order) }
+      let(:sale_order_item) do
+        create(:sale_order_item, sale_order: sale_order, product: product, quantity: 1)
+      end
+
+      it 'promotes pre_reserved inventory to reserved when the purchase order is received' do
+        inventory = create(
+          :inventory,
+          product: product,
+          purchase_order: purchase_order,
+          sale_order: sale_order,
+          sale_order_item: sale_order_item,
+          status: :pre_reserved
+        )
+
+        patch :confirm_receipt, params: { id: purchase_order.id }
+
+        expect(inventory.reload.status).to eq('reserved')
+      end
+
+      it 'promotes pre_sold inventory to sold when the purchase order is received' do
+        inventory = create(
+          :inventory,
+          product: product,
+          purchase_order: purchase_order,
+          sale_order: sale_order,
+          sale_order_item: sale_order_item,
+          status: :pre_sold
+        )
+
+        patch :confirm_receipt, params: { id: purchase_order.id }
+
+        expect(inventory.reload.status).to eq('sold')
+      end
+    end
+
     context 'automatic preorder allocation after receipt' do
       let(:preorder_user) { create(:user, email: 'preorder@test.com') }
       let(:location) { create(:inventory_location) }
