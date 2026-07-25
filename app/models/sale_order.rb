@@ -58,8 +58,6 @@ class SaleOrder < ApplicationRecord
   after_update :sync_inventory_status_for_payment_change, if: :saved_change_to_status?
   before_destroy :ensure_inventories_safe_or_release
 
-  # Garantizar que todos los inventarios ligados tengan sale_order_item_id tras guardar
-  after_commit :backfill_inventory_so_item_links, on: :create
   # Actualizar UI (status badge) por Turbo cuando cambie el estado
   after_commit :broadcast_status_change, if: -> { previous_changes.key?('status') }
 
@@ -294,14 +292,15 @@ class SaleOrder < ApplicationRecord
       throw :abort
     end
 
-    # Libera las reservadas
-    inventories.where(status: %w[reserved pre_reserved pre_sold]).update_all(release_inventory_attributes)
+    inventories.where(status: :reserved).update_all(release_inventory_attributes)
+    inventories.where(status: %w[pre_reserved pre_sold]).update_all(release_incoming_inventory_attributes)
   end
 
   def release_reserved_if_canceled
     return unless status == 'Canceled'
 
-    inventories.where(status: %w[reserved pre_reserved pre_sold]).update_all(release_inventory_attributes)
+    inventories.where(status: :reserved).update_all(release_inventory_attributes)
+    inventories.where(status: %w[pre_reserved pre_sold]).update_all(release_incoming_inventory_attributes)
   end
 
   def release_inventory_attributes
@@ -313,6 +312,10 @@ class SaleOrder < ApplicationRecord
     }
     attrs[:sale_order_item_id] = nil if Inventory.column_names.include?('sale_order_item_id')
     attrs
+  end
+
+  def release_incoming_inventory_attributes
+    release_inventory_attributes.merge(status: Inventory.statuses[:in_transit])
   end
 
   def ensure_shipment_status_matches
@@ -398,16 +401,6 @@ class SaleOrder < ApplicationRecord
     rescue StandardError => e
       Rails.logger.error "[SaleOrder#sync_inventory_status_for_payment_change] Broadcast error: #{e.message}"
     end
-  end
-
-  def backfill_inventory_so_item_links
-    # Evitar en entorno de test: el servicio de checkout hace backfill suave
-    return if Rails.env.test?
-
-    # Limitar al scope de esta orden para evitar operaciones globales
-    Inventories::BackfillSaleOrderItemId.new(scope: inventories).call
-  rescue StandardError => e
-    Rails.logger.error "[SaleOrder#backfill_inventory_so_item_links] #{e.class}: #{e.message}"
   end
 
   def broadcast_status_change

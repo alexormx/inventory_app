@@ -36,11 +36,11 @@ RSpec.describe SaleOrders::CancelOrderService, type: :service do
       end
 
       it 'removes sale_order_item association from inventories' do
-        # Crear sale_order_item con quantity=2 para que coincida con los 2 inventories reservados
+        # Link explicit line ownership; cancellation must clear both references.
         sale_order_item = create(:sale_order_item, sale_order: sale_order, product: product, quantity: 2)
+        inventory1.update_columns(sale_order_item_id: sale_order_item.id)
+        inventory2.update_columns(sale_order_item_id: sale_order_item.id)
 
-        # El callback backfill_inventory_links debería haber asignado sale_order_item_id automáticamente
-        # Verificamos que se haya asignado
         expect(inventory1.reload.sale_order_item_id).to eq(sale_order_item.id)
         expect(inventory2.reload.sale_order_item_id).to eq(sale_order_item.id)
 
@@ -77,29 +77,29 @@ RSpec.describe SaleOrders::CancelOrderService, type: :service do
     context 'when sale order has pre_reserved inventories' do
       let!(:inventory) { create(:inventory, product: product, status: :pre_reserved, sale_order: sale_order) }
 
-      it 'releases pre_reserved inventories to available' do
+      it 'restores pre_reserved inventories to in_transit' do
         service = described_class.new(sale_order)
         service.call
 
-        expect(inventory.reload.status).to eq('available')
+        expect(inventory.reload.status).to eq('in_transit')
       end
     end
 
     context 'when sale order has pre_sold inventories' do
       let!(:inventory) { create(:inventory, product: product, status: :pre_sold, sale_order: sale_order) }
 
-      it 'releases pre_sold inventories to available' do
+      it 'restores pre_sold inventories to in_transit' do
         service = described_class.new(sale_order)
         service.call
 
-        expect(inventory.reload.status).to eq('available')
+        expect(inventory.reload.status).to eq('in_transit')
       end
     end
 
     context 'when sale order has in_transit inventories' do
       let!(:inventory) { create(:inventory, product: product, status: :in_transit) }
 
-      it 'releases in_transit inventories to available' do
+      it 'keeps linked incoming inventories in_transit' do
         # Vincular explícitamente al SO a través de una línea para simular asignación en tránsito
         sale_order_item = create(:sale_order_item, sale_order: sale_order, product: product, quantity: 1)
         inventory.update_columns(sale_order_item_id: sale_order_item.id)
@@ -107,7 +107,7 @@ RSpec.describe SaleOrders::CancelOrderService, type: :service do
         service = described_class.new(sale_order)
         service.call
 
-        expect(inventory.reload.status).to eq('available')
+        expect(inventory.reload.status).to eq('in_transit')
       end
     end
 
@@ -133,6 +133,31 @@ RSpec.describe SaleOrders::CancelOrderService, type: :service do
         service.call
 
         expect(sale_order.reload.status).to eq('Canceled')
+      end
+    end
+
+    context 'when the order has a linked preorder reservation' do
+      let!(:sale_order_item) do
+        create(:sale_order_item, sale_order: sale_order, product: product, quantity: 1, preorder_quantity: 1)
+      end
+      let!(:reservation) do
+        create(
+          :preorder_reservation,
+          sale_order: sale_order,
+          sale_order_item: sale_order_item,
+          product: product,
+          user: user,
+          quantity: 1,
+          status: :pending
+        )
+      end
+
+      it 'finds and cancels the reservation through the original order line' do
+        described_class.new(sale_order).call
+
+        expect(reservation.reload).to be_cancelled
+        expect(reservation.cancelled_at).to be_present
+        expect(reservation.sale_order_item).to eq(sale_order_item)
       end
     end
 
@@ -184,12 +209,31 @@ RSpec.describe SaleOrders::CancelOrderService, type: :service do
 
     context 'automatic preorder allocation after cancellation' do
       let!(:preorder_user) { create(:user, email: 'preorder@test.com') }
-      let!(:preorder1) { create(:preorder_reservation, product: product, user: preorder_user, quantity: 1, reserved_at: 2.days.ago) }
-      let!(:preorder2) { create(:preorder_reservation, product: product, user: preorder_user, quantity: 1, reserved_at: 1.day.ago) }
+      let(:location) { create(:inventory_location) }
+      let!(:preorder_order1) { create(:sale_order, user: preorder_user) }
+      let!(:preorder_order2) { create(:sale_order, user: preorder_user) }
+      let!(:preorder_line1) do
+        create(:sale_order_item, sale_order: preorder_order1, product: product, quantity: 1, preorder_quantity: 1)
+      end
+      let!(:preorder_line2) do
+        create(:sale_order_item, sale_order: preorder_order2, product: product, quantity: 1, preorder_quantity: 1)
+      end
+      let!(:preorder1) do
+        create(:preorder_reservation, product: product, user: preorder_user, sale_order: preorder_order1,
+                                      sale_order_item: preorder_line1, quantity: 1, reserved_at: 2.days.ago)
+      end
+      let!(:preorder2) do
+        create(:preorder_reservation, product: product, user: preorder_user, sale_order: preorder_order2,
+                                      sale_order_item: preorder_line2, quantity: 1, reserved_at: 1.day.ago)
+      end
 
       context 'when releasing inventory from canceled order' do
-        let!(:inventory1) { create(:inventory, product: product, status: :reserved, sale_order: sale_order) }
-        let!(:inventory2) { create(:inventory, product: product, status: :reserved, sale_order: sale_order) }
+        let!(:inventory1) do
+          create(:inventory, product: product, status: :reserved, sale_order: sale_order, inventory_location: location)
+        end
+        let!(:inventory2) do
+          create(:inventory, product: product, status: :reserved, sale_order: sale_order, inventory_location: location)
+        end
 
         it 'automatically assigns released inventory to pending preorders in FIFO order' do
           service = described_class.new(sale_order)
@@ -200,14 +244,14 @@ RSpec.describe SaleOrders::CancelOrderService, type: :service do
           expect(preorder2.reload.status).to eq('assigned')
         end
 
-        it 'creates sale order items for assigned preorders' do
+        it 'uses the original sale order item for assigned preorders' do
           service = described_class.new(sale_order)
           service.call
 
-          # Verificar que se crearon sale_order_items
           preorder_so = preorder1.reload.sale_order
-          expect(preorder_so).to be_present
-          expect(preorder_so.sale_order_items.where(product: product).sum(:quantity)).to be >= 1
+          expect(preorder_so).to eq(preorder_order1)
+          expect(preorder1.sale_order_item).to eq(preorder_line1)
+          expect(preorder_line1.reload.quantity).to eq(1)
         end
 
         it 'marks inventory as reserved for the preorder sale order' do
@@ -222,7 +266,12 @@ RSpec.describe SaleOrders::CancelOrderService, type: :service do
 
         it 'respects FIFO order when assigning inventory' do
           # Crear preorder más reciente con más cantidad
-          preorder3 = create(:preorder_reservation, product: product, user: preorder_user, quantity: 10, reserved_at: Time.current)
+          preorder_order3 = create(:sale_order, user: preorder_user)
+          preorder_line3 = create(:sale_order_item, sale_order: preorder_order3, product: product,
+                                                      quantity: 10, preorder_quantity: 10)
+          preorder3 = create(:preorder_reservation, product: product, user: preorder_user,
+                                                    sale_order: preorder_order3, sale_order_item: preorder_line3,
+                                                    quantity: 10, reserved_at: Time.current)
 
           service = described_class.new(sale_order)
           service.call

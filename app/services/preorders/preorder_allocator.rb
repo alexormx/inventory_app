@@ -19,80 +19,95 @@ module Preorders
         product = Product.find_by(id: product_id)
         next unless product
 
-        begin
-          allocator = new(product)
-          allocator.call
-          results[product_id] = true
-        rescue StandardError => e
-          Rails.logger.error "[Preorders::PreorderAllocator] batch_allocate error for product #{product_id}: #{e.class} #{e.message}"
-          results[product_id] = false
-        end
+        allocator = new(product)
+        allocator.call
+        results[product_id] = true
       end
       results
     end
 
     def call
-      return unless @product
+      return 0 unless @product
 
       remaining = if @units
                     @units.to_i
                   else
-                    Inventory.where(product_id: @product.id, status: %i[available in_transit], sale_order_id: nil).count
+                    Inventory.customer_sellable.where(product_id: @product.id).count
                   end
-      return if remaining <= 0
+      return 0 if remaining <= 0
 
       pending_scope = PreorderReservation.fifo_pending.where(product_id: @product.id)
-      return if pending_scope.none?
+      return 0 if pending_scope.none?
 
-      pending_scope.find_each do |reservation|
+      assigned_total = 0
+      pending_scope.each do |reservation|
         break if remaining <= 0
 
-        qty = [reservation.quantity.to_i, remaining].min
-
-        # Asegurar SO y línea
-        so = reservation.sale_order || SaleOrder.create!(
-          user: reservation.user,
-          order_date: Time.zone.today,
-          tax_rate: 0,
-          subtotal: 0,
-          total_tax: 0,
-          total_order_value: 0,
-          status: 'Pending'
-        )
-        soi = so.sale_order_items.find_or_initialize_by(product_id: @product.id)
-        soi.quantity = soi.quantity.to_i + qty
-        soi.unit_cost ||= @product.average_purchase_cost.to_f
-        soi.unit_final_price ||= @product.price.to_f if @product.respond_to?(:price)
-        soi.preorder_quantity = soi.preorder_quantity.to_i + qty
-        soi.save!
-
-        # El callback sync_inventory_for_sale en SaleOrderItem ya asignará inventory automáticamente
-        # Verificar cuánto inventario fue efectivamente asignado
-        assigned_inventories = Inventory.where(product_id: @product.id, sale_order_id: so.id)
-        assigned_count = assigned_inventories.count
-
-        # Marcar asignación total o parcial y actualizar sale_order en reservation
-        if assigned_count >= qty
-          # Se asignó todo
-          reservation.update!(status: :assigned, assigned_at: Time.current, quantity: qty, sale_order: so)
-          remaining -= qty
-        elsif assigned_count.positive?
-          # Asignación parcial: dividir reservation
-          reservation.update!(status: :assigned, assigned_at: Time.current, quantity: assigned_count, sale_order: so)
-          PreorderReservation.create!(
-            product: @product,
-            user: reservation.user,
-            sale_order: nil,
-            quantity: (qty - assigned_count),
-            status: :pending,
-            reserved_at: Time.current
-          )
-          remaining -= assigned_count
-        end
-        # Si assigned_count == 0, no se asignó nada (no hay inventory disponible)
+        assigned = allocate_to_originating_line(reservation, remaining)
+        assigned_total += assigned
+        remaining -= assigned
       end
+      assigned_total
     rescue StandardError => e
       Rails.logger.error "[Preorders::PreorderAllocator] #{e.class}: #{e.message}"
+      raise
+    end
+
+    private
+
+    def allocate_to_originating_line(reservation, limit)
+      line = reservation.sale_order_item
+      unless valid_origin?(reservation, line)
+        Rails.logger.warn(
+          "[Preorders::PreorderAllocator] Skipping unverified legacy reservation id=#{reservation.id}"
+        )
+        return 0
+      end
+
+      assigned = 0
+      ActiveRecord::Base.transaction do
+        locked_reservation = PreorderReservation.lock.find(reservation.id)
+        locked_line = SaleOrderItem.lock.find(line.id)
+        target = [locked_reservation.quantity.to_i, limit.to_i, locked_line.preorder_quantity.to_i].min
+        next if target <= 0
+
+        assigned_before = locked_line.inventory_units.count
+        locked_line.update!(preorder_quantity: locked_line.preorder_quantity.to_i - target)
+        result = InventoryServices::ReserveSaleOrderItem.call(locked_line, strict: false)
+        assigned = [[result.total_assigned - assigned_before, 0].max, target].min
+
+        unassigned = target - assigned
+        locked_line.update!(preorder_quantity: locked_line.preorder_quantity.to_i + unassigned) if unassigned.positive?
+        record_assignment!(locked_reservation, assigned) if assigned.positive?
+      end
+      assigned
+    end
+
+    def valid_origin?(reservation, line)
+      line.present? &&
+        reservation.sale_order_id.present? &&
+        line.sale_order_id == reservation.sale_order_id &&
+        line.product_id == reservation.product_id
+    end
+
+    def record_assignment!(reservation, assigned)
+      original_quantity = reservation.quantity.to_i
+      reservation.update!(
+        quantity: assigned,
+        status: :assigned,
+        assigned_at: Time.current
+      )
+      return unless assigned < original_quantity
+
+      PreorderReservation.create!(
+        product: reservation.product,
+        user: reservation.user,
+        sale_order: reservation.sale_order,
+        sale_order_item: reservation.sale_order_item,
+        quantity: original_quantity - assigned,
+        status: :pending,
+        reserved_at: reservation.reserved_at
+      )
     end
   end
 end

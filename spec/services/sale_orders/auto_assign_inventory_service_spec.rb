@@ -5,6 +5,7 @@ require 'rails_helper'
 RSpec.describe SaleOrders::AutoAssignInventoryService do
   let(:product) { create(:product, skip_seed_inventory: true) }
   let(:customer) { create(:user) } # role: customer by default
+  let(:location) { create(:inventory_location) }
 
   describe '#call' do
     context 'cuando no hay SOIs pendientes' do
@@ -30,11 +31,24 @@ RSpec.describe SaleOrders::AutoAssignInventoryService do
       end
     end
 
+    context 'cuando la reserva falla inesperadamente' do
+      let!(:sale_order) { create(:sale_order, user: customer) }
+      let!(:sale_order_item) { create(:sale_order_item, sale_order: sale_order, product: product, quantity: 1) }
+
+      it 'propaga el error para que el job pueda reintentarlo' do
+        allow(InventoryServices::ReserveSaleOrderItem).to receive(:call)
+          .and_raise(StandardError, 'reservation failed')
+
+        expect { described_class.new(triggered_by: 'job_scheduled').call }
+          .to raise_error(StandardError, 'reservation failed')
+      end
+    end
+
     context 'cuando hay inventario disponible para asignar' do
       let!(:sale_order) { create(:sale_order, user: customer, status: :pending) }
       let!(:sale_order_item) { create(:sale_order_item, sale_order: sale_order, product: product, quantity: 2) }
-      let!(:inventory1) { create(:inventory, product: product, status: :available, sale_order: nil) }
-      let!(:inventory2) { create(:inventory, product: product, status: :available, sale_order: nil) }
+      let!(:inventory1) { create(:inventory, product: product, status: :available, sale_order: nil, inventory_location: location) }
+      let!(:inventory2) { create(:inventory, product: product, status: :available, sale_order: nil, inventory_location: location) }
 
       it 'asigna el inventario a los SOIs' do
         result = described_class.new(triggered_by: 'admin_action').call
@@ -69,7 +83,7 @@ RSpec.describe SaleOrders::AutoAssignInventoryService do
     context 'con dry_run: true' do
       let!(:sale_order) { create(:sale_order, user: customer, status: :pending) }
       let!(:sale_order_item) { create(:sale_order_item, sale_order: sale_order, product: product, quantity: 1) }
-      let!(:inventory) { create(:inventory, product: product, status: :available, sale_order: nil) }
+      let!(:inventory) { create(:inventory, product: product, status: :available, sale_order: nil, inventory_location: location) }
 
       it 'no modifica el inventario' do
         result = described_class.new(triggered_by: 'admin_action', dry_run: true).call
@@ -92,7 +106,7 @@ RSpec.describe SaleOrders::AutoAssignInventoryService do
     context 'con inventario parcial' do
       let!(:sale_order) { create(:sale_order, user: customer, status: :pending) }
       let!(:sale_order_item) { create(:sale_order_item, sale_order: sale_order, product: product, quantity: 3) }
-      let!(:inventory) { create(:inventory, product: product, status: :available, sale_order: nil) }
+      let!(:inventory) { create(:inventory, product: product, status: :available, sale_order: nil, inventory_location: location) }
 
       it 'asigna lo disponible y reporta pendientes' do
         result = described_class.new(triggered_by: 'admin_action').call
@@ -108,8 +122,8 @@ RSpec.describe SaleOrders::AutoAssignInventoryService do
       let!(:sale_order2) { create(:sale_order, user: customer, status: :pending) }
       let!(:soi1) { create(:sale_order_item, sale_order: sale_order1, product: product, quantity: 1) }
       let!(:soi2) { create(:sale_order_item, sale_order: sale_order2, product: product, quantity: 1) }
-      let!(:inventory1) { create(:inventory, product: product, status: :available, sale_order: nil) }
-      let!(:inventory2) { create(:inventory, product: product, status: :available, sale_order: nil) }
+      let!(:inventory1) { create(:inventory, product: product, status: :available, sale_order: nil, inventory_location: location) }
+      let!(:inventory2) { create(:inventory, product: product, status: :available, sale_order: nil, inventory_location: location) }
 
       it 'solo asigna a los SOs especificados' do
         result = described_class.new(
@@ -136,8 +150,8 @@ RSpec.describe SaleOrders::AutoAssignInventoryService do
                quantity: 1,
                item_condition: 'mint')
       end
-      let!(:inventory_new) { create(:inventory, product: product, status: :available, sale_order: nil, item_condition: :brand_new) }
-      let!(:inventory_mint) { create(:inventory, product: product, status: :available, sale_order: nil, item_condition: :mint) }
+      let!(:inventory_new) { create(:inventory, product: product, status: :available, sale_order: nil, item_condition: :brand_new, inventory_location: location) }
+      let!(:inventory_mint) { create(:inventory, product: product, status: :available, sale_order: nil, item_condition: :mint, inventory_location: location) }
 
       it 'asigna inventario con la condición correcta' do
         result = described_class.new(triggered_by: 'admin_action').call
@@ -179,7 +193,7 @@ RSpec.describe SaleOrders::AutoAssignInventoryService do
       it 'updates note when inventory is partially assigned' do
         sale_order.upsert_pending_note(sale_order_item, 2)
 
-        create(:inventory, product: product, status: :available, sale_order: nil)
+        create(:inventory, product: product, status: :available, sale_order: nil, inventory_location: location)
 
         result = described_class.new(triggered_by: 'admin_action').call
         expect(result.success?).to be true
@@ -192,8 +206,8 @@ RSpec.describe SaleOrders::AutoAssignInventoryService do
         sale_order.upsert_pending_note(sale_order_item, 2)
         original_notes = sale_order.reload.notes
 
-        create(:inventory, product: product, status: :available, sale_order: nil)
-        create(:inventory, product: product, status: :available, sale_order: nil)
+        create(:inventory, product: product, status: :available, sale_order: nil, inventory_location: location)
+        create(:inventory, product: product, status: :available, sale_order: nil, inventory_location: location)
 
         described_class.new(triggered_by: 'admin_action', dry_run: true).call
 
@@ -207,8 +221,6 @@ RSpec.describe SaleOrders::AutoAssignInventoryService do
     context 'priorización por ubicación física' do
       let!(:sale_order) { create(:sale_order, user: customer, status: :pending) }
       let!(:sale_order_item) { create(:sale_order_item, sale_order: sale_order, product: product, quantity: 1) }
-      let(:location) { create(:inventory_location) }
-
       it 'asigna primero la pieza con ubicación aunque sea más nueva' do
         without_loc = create(:inventory, product: product, status: :available, sale_order: nil, inventory_location: nil)
         with_loc = create(:inventory, product: product, status: :available, sale_order: nil, inventory_location: location)
@@ -219,14 +231,14 @@ RSpec.describe SaleOrders::AutoAssignInventoryService do
         expect(without_loc.reload.sale_order_id).to be_nil
       end
 
-      it 'asigna una pieza sin ubicación como fallback y agrega alerta en la orden' do
+      it 'no asigna una pieza sin ubicación física' do
         create(:inventory, product: product, status: :available, sale_order: nil, inventory_location: nil)
 
         result = described_class.new(triggered_by: 'admin_action').call
 
-        expect(result.assigned_count).to eq(1)
-        expect(sale_order.reload.notes.to_s).to include('⚠️ Ubicación')
-        expect(sale_order.notes.to_s).to include('sin ubicación física')
+        expect(result.assigned_count).to eq(0)
+        expect(result.pending_count).to eq(1)
+        expect(sale_order.reload.notes.to_s).not_to include('⚠️ Ubicación')
       end
 
       it 'no agrega alerta cuando todas las piezas asignadas tienen ubicación' do

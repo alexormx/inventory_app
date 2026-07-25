@@ -20,10 +20,14 @@ RSpec.describe 'Api::V1 Order Items', type: :request do
     post '/api/v1/purchase_order_items/batch', params: { purchase_order_id: po.id, items: [ { product_sku: product.product_sku, quantity: 2, unit_cost: 6 } ] }
     expect(response.status).to be_between(201, 422)
 
-    # Now create one sale order item for 4 units, should reserve from inventory
+    # Now create one sale order item for 4 units from incoming inventory.
     post '/api/v1/sale_order_items', params: { sale_order_item: { sale_order_id: so.id, product_sku: product.product_sku, quantity: 4, unit_cost: 10, unit_final_price: 10 } }
     expect(response).to have_http_status(:created)
 
-    expect(Inventory.where(product_id: product.id, sale_order_id: so.id, status: :reserved).count).to eq(4)
+    line = so.sale_order_items.find_by!(product: product)
+    assigned = Inventory.where(product_id: product.id, sale_order_id: so.id, status: :pre_reserved)
+
+    expect(assigned.count).to eq(4)
+    expect(assigned.where(sale_order_item_id: line.id).count).to eq(4)
   end
 end

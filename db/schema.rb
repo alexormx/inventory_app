@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_07_23_155646) do
+ActiveRecord::Schema[8.0].define(version: 2026_07_24_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -363,9 +363,11 @@ ActiveRecord::Schema[8.0].define(version: 2026_07_23_155646) do
     t.text "notes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "sale_order_item_id"
     t.index ["product_id", "status", "reserved_at"], name: "idx_preorders_fifo"
     t.index ["product_id"], name: "index_preorder_reservations_on_product_id"
     t.index ["sale_order_id"], name: "index_preorder_reservations_on_sale_order_id"
+    t.index ["sale_order_item_id"], name: "index_preorder_reservations_on_sale_order_item_id"
     t.index ["user_id"], name: "index_preorder_reservations_on_user_id"
   end
 
@@ -1013,6 +1015,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_07_23_155646) do
   add_foreign_key "order_shipping_addresses", "sale_orders"
   add_foreign_key "payments", "sale_orders"
   add_foreign_key "posts", "users"
+  add_foreign_key "preorder_reservations", "sale_order_items"
   add_foreign_key "product_catalog_reviews", "products"
   add_foreign_key "product_catalog_reviews", "users", column: "reviewed_by_id"
   add_foreign_key "product_description_drafts", "products"

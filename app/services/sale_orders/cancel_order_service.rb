@@ -20,6 +20,7 @@ module SaleOrders
       ActiveRecord::Base.transaction do
         # 1. Liberar inventarios y remover asociación PRIMERO
         release_inventories!
+        cancel_linked_preorders!
 
         # 2. Actualizar estado de la orden usando update! para respetar transacciones
         #    (el callback release_reserved_if_canceled no hará nada relevante luego de liberar arriba)
@@ -39,6 +40,20 @@ module SaleOrders
     end
 
     private
+
+    def cancel_linked_preorders!
+      sale_order_item_ids = sale_order.sale_order_items.ids
+      return if sale_order_item_ids.empty?
+
+      PreorderReservation.where(
+        sale_order_item_id: sale_order_item_ids,
+        status: %i[pending assigned]
+      ).update_all(
+        status: PreorderReservation.statuses[:cancelled],
+        cancelled_at: Time.current,
+        updated_at: Time.current
+      )
+    end
 
     def release_inventories!
       # Encontrar todos los inventarios asociados a esta sale_order
@@ -64,7 +79,10 @@ module SaleOrders
       # Guardar product_ids antes de hacer update_all
       @product_ids = inventories_to_release.pluck(:product_id).uniq
 
-      @released_count = inventories_to_release.update_all(
+      on_hand = inventories_to_release.where(status: %w[reserved sold])
+      incoming = inventories_to_release.where(status: %w[pre_reserved pre_sold in_transit])
+
+      on_hand_count = on_hand.update_all(
         status: Inventory.statuses[:available],
         sale_order_id: nil,
         sale_order_item_id: nil,
@@ -72,6 +90,15 @@ module SaleOrders
         status_changed_at: Time.current,
         updated_at: Time.current
       )
+      incoming_count = incoming.update_all(
+        status: Inventory.statuses[:in_transit],
+        sale_order_id: nil,
+        sale_order_item_id: nil,
+        sold_price: nil,
+        status_changed_at: Time.current,
+        updated_at: Time.current
+      )
+      @released_count = on_hand_count + incoming_count
 
       # Asegurar que cualquier inventory vinculado por sale_order_item_id también quede limpio,
       # incluso si su status ya era 'available' y no entró en el primer update_all

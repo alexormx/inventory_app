@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class Inventory < ApplicationRecord
+  attr_writer :stock_update_product
+
   belongs_to :purchase_order, optional: true
   belongs_to :purchase_order_item, optional: true
   belongs_to :sale_order, optional: true
@@ -70,17 +72,25 @@ class Inventory < ApplicationRecord
   # Un solo after_commit (registrar el mismo método dos veces hace que Rails
   # deduplique y solo conserve el último).
   after_commit :update_product_stock_quantities, on: %i[create update destroy],
-               if: lambda {
-                 destroyed? ||
-                   saved_change_to_status? ||
-                   saved_change_to_inventory_location_id? ||
-                   saved_change_to_sale_order_id?
-               }
+                                                 if: :product_stock_update_required?
   after_commit :allocate_preorders_if_now_available, if: -> { saved_change_to_status? || saved_change_to_sale_order_id? }
   after_commit :trigger_auto_assignment_if_available, if: -> { saved_change_to_status? && status == 'available' }
 
   # inventory.rb
-  scope :assignable, -> { where(status: %i[available in_transit], sale_order_id: nil) }
+  scope :customer_on_hand, lambda {
+    where(status: :available, sale_order_id: nil).where.not(inventory_location_id: nil)
+  }
+  scope :customer_in_transit, -> { where(status: :in_transit, sale_order_id: nil) }
+  scope :customer_sellable, lambda {
+    where(sale_order_id: nil)
+      .where(
+        '(status = :available AND inventory_location_id IS NOT NULL) OR status = :in_transit',
+        available: statuses[:available],
+        in_transit: statuses[:in_transit]
+      )
+  }
+  scope :for_condition, ->(condition) { where(item_condition: condition) }
+  scope :assignable, -> { customer_sellable }
   scope :free,     -> { where(sale_order_id: nil, status: %w[available in_transit]) }
   scope :reserved, -> { where(status: :reserved) }
   scope :sold,     -> { where(status: :sold) }
@@ -128,6 +138,13 @@ class Inventory < ApplicationRecord
 
   private
 
+  def product_stock_update_required?
+    destroyed? ||
+      saved_change_to_status? ||
+      saved_change_to_inventory_location_id? ||
+      saved_change_to_sale_order_id?
+  end
+
   def set_source_from_purchase_order
     return if source.present? || purchase_order_id.blank?
 
@@ -151,7 +168,7 @@ class Inventory < ApplicationRecord
 
   def update_product_stock_quantities
     # En on: :destroy la asociación puede no estar cargada; resolvemos por id.
-    target = product || Product.find_by(id: product_id)
+    target = @stock_update_product || product || Product.find_by(id: product_id)
     return unless target
 
     Products::UpdateStatsService.new(target).call
