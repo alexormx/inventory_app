@@ -153,6 +153,8 @@ class CheckoutsController < ApplicationController
       result = Checkout::CreateOrder.new(**order_params).call
 
       if result.success?
+        enqueue_order_confirmation(result.sale_order)
+
         # Limpiar sesión exitosa
         clear_checkout_session!
 
@@ -200,5 +202,13 @@ class CheckoutsController < ApplicationController
 
   def ensure_cart_not_empty
     redirect_to cart_path, alert: 'Tu carrito está vacío.' if @cart.empty?
+  end
+
+  def enqueue_order_confirmation(sale_order)
+    OrderConfirmationMailer.order_confirmation(sale_order).deliver_later
+  rescue StandardError => e
+    Rails.logger.error(
+      "[CheckoutsController] Could not enqueue confirmation for order #{sale_order.id} (#{e.class})"
+    )
   end
 end

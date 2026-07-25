@@ -3,7 +3,7 @@
 
 Hola <%= @user.email %>,
 
-Tu pedido ha sido recibido y está siendo procesado.
+Tu pedido ha sido recibido y registrado.
 
 PEDIDO #<%= @sale_order.id %>
 -------------------------------------
@@ -12,11 +12,12 @@ Estado: <%= @sale_order.status %>
 
 ARTÍCULOS:
 <% @items.each do |item| %>
-- <%= item.product.product_name %>
-  <% if item.product.whatsapp_code.present? %>
+- <%= item.product&.product_name || 'Producto' %>
+  <% if item.product&.whatsapp_code.present? %>
   Código: <%= item.product.whatsapp_code %>
   <% end %>
-  Cantidad: <%= item.quantity %> x <%= number_to_currency(item.unit_cost, unit: "$") %> = <%= number_to_currency(item.total_line_cost, unit: "$") %>
+  <% unit_price = item.unit_final_price || item.unit_selling_price %>
+  Cantidad: <%= item.quantity %><% if unit_price.present? %> x <%= number_to_currency(unit_price, unit: "$") %><% end %><% if item.total_line_cost.present? %> = <%= number_to_currency(item.total_line_cost, unit: "$") %><% end %>
   <% if item.preorder_quantity > 0 %>
   (Incluye <%= item.preorder_quantity %> en preventa)
   <% end %>
@@ -28,13 +29,13 @@ ARTÍCULOS:
 RESUMEN:
 -------------------------------------
 Subtotal: <%= number_to_currency(@sale_order.subtotal, unit: "$") %>
-<% if @sale_order.shipping_cost > 0 %>
+<% if @sale_order.shipping_cost.to_d.positive? %>
 Envío: <%= number_to_currency(@sale_order.shipping_cost, unit: "$") %>
 <% end %>
-<% if @sale_order.total_tax > 0 %>
+<% if @sale_order.total_tax.to_d.positive? %>
 Impuestos: <%= number_to_currency(@sale_order.total_tax, unit: "$") %>
 <% end %>
-<% if @sale_order.discount && @sale_order.discount > 0 %>
+<% if @sale_order.discount.to_d.positive? %>
 Descuento: -<%= number_to_currency(@sale_order.discount, unit: "$") %>
 <% end %>
 -------------------------------------
@@ -49,6 +50,31 @@ DIRECCIÓN DE ENVÍO:
 <%= @shipping_address.line2 %>
 <% end %>
 <%= @shipping_address.city %>, <%= @shipping_address.state %> <%= @shipping_address.postal_code %>
+<% if @shipping_address.shipping_method.present? %>
+Método: <%= @shipping_address.shipping_method.humanize %>
+<% end %>
+<% end %>
+
+<% if @payment %>
+PAGO:
+-------------------------------------
+Método: <%= @payment.payment_method.humanize %>
+Monto registrado: <%= number_to_currency(@payment.amount, unit: "$") %>
+<% case @payment.status %>
+<% when 'Completed' %>
+Tu pago está registrado como completado. Prepararemos el pedido para su envío.
+<% when 'Pending' %>
+<% if @payment.payment_method == 'transferencia_bancaria' %>
+Tu transferencia está pendiente. Usa únicamente los datos de pago que confirmaste al finalizar la compra e incluye el número de pedido <%= @sale_order.id %> como referencia.
+<% else %>
+Tu pago está pendiente. Sigue las instrucciones confirmadas al finalizar la compra o contáctanos indicando el número de pedido <%= @sale_order.id %>.
+<% end %>
+Continuaremos con la preparación cuando el pago quede confirmado.
+<% when 'Failed' %>
+El pago no fue confirmado. Revisa tu pedido o contáctanos indicando el número <%= @sale_order.id %>.
+<% when 'Refunded' %>
+El pago figura como reembolsado. Consulta el estado del pedido en tu cuenta.
+<% end %>
 <% end %>
 
 <% if @sale_order.notes.present? %>
@@ -57,7 +83,7 @@ NOTAS:
 <%= @sale_order.notes %>
 <% end %>
 
-Te notificaremos cuando tu pedido sea enviado.
+Te notificaremos cuando el estado de tu pedido cambie y cuando sea enviado.
 Si tienes alguna pregunta, no dudes en contactarnos.
 
 =====================================

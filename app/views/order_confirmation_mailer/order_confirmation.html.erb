@@ -23,7 +23,7 @@
 
       <div class="content">
         <p>Hola <%= @user.email %>,</p>
-        <p>Tu pedido ha sido recibido y está siendo procesado.</p>
+        <p>Tu pedido ha sido recibido y registrado.</p>
 
         <div class="order-summary">
           <h2>Pedido #<%= @sale_order.id %></h2>
@@ -32,12 +32,19 @@
 
           <h3>Artículos:</h3>
           <% @items.each do |item| %>
+            <% unit_price = item.unit_final_price || item.unit_selling_price %>
             <div class="item">
-              <strong><%= item.product.product_name %></strong><br>
-              <% if item.product.whatsapp_code.present? %>
+              <strong><%= item.product&.product_name || 'Producto' %></strong><br>
+              <% if item.product&.whatsapp_code.present? %>
                 Código: <%= item.product.whatsapp_code %><br>
               <% end %>
-              Cantidad: <%= item.quantity %> x <%= number_to_currency(item.unit_cost, unit: "$") %> = <%= number_to_currency(item.total_line_cost, unit: "$") %>
+              Cantidad: <%= item.quantity %>
+              <% if unit_price.present? %>
+                x <%= number_to_currency(unit_price, unit: "$") %>
+              <% end %>
+              <% if item.total_line_cost.present? %>
+                = <%= number_to_currency(item.total_line_cost, unit: "$") %>
+              <% end %>
               <% if item.preorder_quantity > 0 %>
                 <br><em>(Incluye <%= item.preorder_quantity %> en preventa)</em>
               <% end %>
@@ -49,13 +56,13 @@
 
           <div style="margin-top: 20px;">
             <p><strong>Subtotal:</strong> <%= number_to_currency(@sale_order.subtotal, unit: "$") %></p>
-            <% if @sale_order.shipping_cost > 0 %>
+            <% if @sale_order.shipping_cost.to_d.positive? %>
               <p><strong>Envío:</strong> <%= number_to_currency(@sale_order.shipping_cost, unit: "$") %></p>
             <% end %>
-            <% if @sale_order.total_tax > 0 %>
+            <% if @sale_order.total_tax.to_d.positive? %>
               <p><strong>Impuestos:</strong> <%= number_to_currency(@sale_order.total_tax, unit: "$") %></p>
             <% end %>
-            <% if @sale_order.discount && @sale_order.discount > 0 %>
+            <% if @sale_order.discount.to_d.positive? %>
               <p><strong>Descuento:</strong> -<%= number_to_currency(@sale_order.discount, unit: "$") %></p>
             <% end %>
             <div class="total">
@@ -75,6 +82,32 @@
               <% end %>
               <%= @shipping_address.city %>, <%= @shipping_address.state %> <%= @shipping_address.postal_code %><br>
             </p>
+            <% if @shipping_address.shipping_method.present? %>
+              <p><strong>Método:</strong> <%= @shipping_address.shipping_method.humanize %></p>
+            <% end %>
+          </div>
+        <% end %>
+
+        <% if @payment %>
+          <div class="order-summary">
+            <h3>Pago</h3>
+            <p><strong>Método:</strong> <%= @payment.payment_method.humanize %></p>
+            <p><strong>Monto registrado:</strong> <%= number_to_currency(@payment.amount, unit: "$") %></p>
+            <% case @payment.status %>
+            <% when 'Completed' %>
+              <p>Tu pago está registrado como completado. Prepararemos el pedido para su envío.</p>
+            <% when 'Pending' %>
+              <% if @payment.payment_method == 'transferencia_bancaria' %>
+                <p>Tu transferencia está pendiente. Usa únicamente los datos de pago que confirmaste al finalizar la compra e incluye el número de pedido <strong><%= @sale_order.id %></strong> como referencia.</p>
+              <% else %>
+                <p>Tu pago está pendiente. Sigue las instrucciones confirmadas al finalizar la compra o contáctanos indicando el número de pedido <strong><%= @sale_order.id %></strong>.</p>
+              <% end %>
+              <p>Continuaremos con la preparación cuando el pago quede confirmado.</p>
+            <% when 'Failed' %>
+              <p>El pago no fue confirmado. Revisa tu pedido o contáctanos indicando el número <strong><%= @sale_order.id %></strong>.</p>
+            <% when 'Refunded' %>
+              <p>El pago figura como reembolsado. Consulta el estado del pedido en tu cuenta.</p>
+            <% end %>
           </div>
         <% end %>
 
@@ -85,7 +118,7 @@
           </div>
         <% end %>
 
-        <p>Te notificaremos cuando tu pedido sea enviado.</p>
+        <p>Te notificaremos cuando el estado de tu pedido cambie y cuando sea enviado.</p>
         <p>Si tienes alguna pregunta, no dudes en contactarnos.</p>
       </div>
 
