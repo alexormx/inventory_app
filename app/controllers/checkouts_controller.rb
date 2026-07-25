@@ -61,12 +61,18 @@ class CheckoutsController < ApplicationController
     @shipping_info = checkout_shipping_info
     @selected_address = (current_user.shipping_addresses.find_by(id: @shipping_info[:address_id]) if @shipping_info[:address_id])
 
+    if @shipping_info.blank? || @selected_address.nil? || @shipping_info[:method].blank?
+      redirect_to checkout_step2_path, alert: 'Faltan datos de envío. Selecciona una dirección y un método de envío.'
+      return
+    end
+
+    unless ShippingMethod.active.exists?(code: @shipping_info[:method])
+      redirect_to checkout_step2_path, alert: 'El método de envío seleccionado ya no está disponible.'
+      return
+    end
+
     # Generar token de idempotencia si no existe
     generate_checkout_token! if checkout_token.blank?
-
-    return unless @shipping_info.blank? || @selected_address.nil? || @shipping_info[:method].blank?
-
-    redirect_to checkout_step2_path, alert: 'Faltan datos de envío. Selecciona una dirección y un método de envío.'
   end
 
   def complete
@@ -102,6 +108,11 @@ class CheckoutsController < ApplicationController
       redirect_to(checkout_step2_path) and return
     end
 
+    unless ShippingMethod.active.exists?(code: shipping_info[:method])
+      flash[:alert] = 'El método de envío seleccionado ya no está disponible.'
+      redirect_to(checkout_step2_path) and return
+    end
+
     # Validar carrito no vacío
     unless @cart.present? && @cart.items.any?
       flash[:alert] = 'Tu carrito está vacío.'
@@ -110,7 +121,7 @@ class CheckoutsController < ApplicationController
 
     # Validar método de pago usando PaymentMethod de la base de datos
     payment_method = params[:payment_method]
-    payment_method_record = PaymentMethod.active.find_by(code: payment_method)
+    payment_method_record = PaymentMethod.active.checkout_compatible.find_by(code: payment_method)
     unless payment_method_record
       flash[:alert] = 'Método de pago inválido.'
       redirect_to(checkout_step3_path) and return

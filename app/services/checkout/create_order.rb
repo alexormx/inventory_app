@@ -14,7 +14,6 @@ module Checkout
       @payment_method = payment_method
       @notes = notes.to_s.strip.first(1000)
       @idempotency_key = idempotency_key
-      Shipping::Calculator.boot_defaults if Shipping::Calculator.respond_to?(:boot_defaults)
     end
 
     def call
@@ -27,8 +26,12 @@ module Checkout
       source_address = @user.shipping_addresses.find_by(id: @shipping_address_id)
       return fail_with(['Dirección no encontrada']) unless source_address
 
-      calc_cls = Shipping::Calculator.resolve(@shipping_method)
-      shipping_cost = calc_cls.new.calculate(user: @user, address: source_address, cart: @cart)
+      totals = Checkout::Totals.new(
+        cart: @cart,
+        shipping_method: @shipping_method,
+        user: @user,
+        address: source_address
+      ).call
 
       # Recalcular disponibilidad actual (nuevo formato: items es array de hashes)
       @cart.items.each do |item|
@@ -36,16 +39,15 @@ module Checkout
         qty = item[:quantity]
         condition = item[:condition]
 
-        # Para coleccionables, validar disponibilidad específica por condición
-        if condition == 'brand_new'
-          split = InventoryServices::AvailabilitySplitter.new(product, qty).call
-          availability_map["#{product.id}_#{condition}"] = split
-          if split.pending.positive? && split.pending_type.nil?
+        split = InventoryServices::AvailabilitySplitter.new(product, qty, condition: condition).call
+        availability_map["#{product.id}_#{condition}"] = split
+        if split.pending.positive? && split.pending_type.nil?
+          if condition == 'brand_new'
             errors << "Producto #{product.product_name} no tiene suficiente stock y no permite preventa/backorder"
+          else
+            available = split.immediate + split.in_transit_qty
+            errors << "#{product.product_name} (#{item[:label]}) no tiene suficiente stock (disponible: #{available})"
           end
-        else
-          available = product.inventories.where(status: :available, item_condition: condition).count
-          errors << "#{product.product_name} (#{item[:label]}) no tiene suficiente stock (disponible: #{available})" if qty > available
         end
       end
       return fail_with(errors) if errors.any?
@@ -56,12 +58,6 @@ module Checkout
       sale_order = nil
       revalidation_errors = []
 
-      # Evitar que Bullet interrumpa transacciones críticas del checkout
-      previous_bullet_state = nil
-      if defined?(Bullet)
-        previous_bullet_state = Bullet.enabled?
-        Bullet.enable = false
-      end
       ActiveRecord::Base.transaction do
         # @cart.items ahora es array de hashes con :product, :condition, :quantity, :price, etc.
         product_ids = @cart.items.map { |item| item[:product].id }.uniq
@@ -84,18 +80,19 @@ module Checkout
             next
           end
 
-          if condition == 'brand_new'
-            split = InventoryServices::AvailabilitySplitter.new(locked_product, qty).call
-            revalidated[key] = split
+          split = InventoryServices::AvailabilitySplitter.new(
+            locked_product,
+            qty,
+            condition: condition
+          ).call
+          revalidated[key] = split
 
-            if split.pending.positive? && split.pending_type.nil?
+          if split.pending.positive? && split.pending_type.nil?
+            if condition == 'brand_new'
               revalidation_errors << "Producto #{locked_product.product_name} quedó sin stock suficiente durante el checkout (disponible: #{split.immediate}, solicitado: #{qty})"
+            else
+              revalidation_errors << "#{locked_product.product_name} (#{item[:label]}) ya no está disponible"
             end
-          else
-            # Para coleccionables, validar disponibilidad específica
-            available = locked_product.inventories.where(status: :available, item_condition: condition).count
-            revalidation_errors << "#{locked_product.product_name} (#{item[:label]}) ya no está disponible" if qty > available
-            revalidated[key] = { collectible: true, available: available }
           end
         end
 
@@ -104,11 +101,11 @@ module Checkout
 
         sale_order = @user.sale_orders.create!(
           order_date: Time.zone.today,
-          subtotal: 0,
-          tax_rate: 0,
-          total_tax: 0,
-          shipping_cost: shipping_cost,
-          total_order_value: 0,
+          subtotal: totals.subtotal,
+          tax_rate: totals.tax_rate,
+          total_tax: totals.tax_amount,
+          shipping_cost: totals.shipping_amount,
+          total_order_value: totals.total,
           notes: @notes,
           status: 'Pending',
           idempotency_key: @idempotency_key
@@ -134,13 +131,15 @@ module Checkout
           soi = sale_order.sale_order_items.create!(
             product: product,
             quantity: qty,
-            unit_cost: item_price,
-            unit_selling_price: item_price,
-            total_line_cost: item_price * qty,
+            unit_cost: product.average_purchase_cost.to_d,
+            unit_selling_price: item_price.to_d,
+            unit_final_price: item_price.to_d,
+            total_line_cost: item_price.to_d * qty,
             item_condition: condition,
             preorder_quantity: preorder_qty,
             backordered_quantity: backorder_qty
           )
+          InventoryServices::ReserveSaleOrderItem.call(soi)
 
           # Crear reservación de preorder si aplica
           next unless preorder_qty.positive?
@@ -151,8 +150,9 @@ module Checkout
             quantity: preorder_qty,
             status: :pending,
             reserved_at: Time.current,
-            sale_order: nil,
-            notes: "Generada desde checkout servicio SO=#{sale_order.id} SOI=#{soi.id}"
+            sale_order: sale_order,
+            sale_order_item: soi,
+            notes: 'Generada desde checkout'
           )
         end
 
@@ -172,37 +172,22 @@ module Checkout
         )
         # Recalcular totales ahora que ya tenemos líneas y snapshot
         sale_order.recalculate_totals!(persist: true)
-      end
-      # Restaurar estado de Bullet
-      Bullet.enable = previous_bullet_state if defined?(Bullet) && !previous_bullet_state.nil?
 
-      # Si hubo errores de revalidación después del rollback, retornarlos
-      return fail_with(revalidation_errors) if revalidation_errors.any?
-
-      # Crear pago fuera de la transacción para evitar abortos por callbacks
-      begin
-        if sale_order && sale_order.total_order_value.to_f.positive?
+        if sale_order.total_order_value.to_d.positive?
           sale_order.payments.create!(
             amount: sale_order.total_order_value,
             payment_method: @payment_method,
             status: 'Pending'
           )
         end
-      rescue StandardError => e
-        Rails.logger.error "[Checkout::CreateOrder] Payment create error: #{e.class}: #{e.message}"
       end
 
-      # Backfill suave: asegurar sale_order_item_id en inventarios reservados de esta orden
-      begin
-        sale_order&.sale_order_items&.find_each do |soi|
-          Inventory.where(sale_order_id: sale_order.id, product_id: soi.product_id, sale_order_item_id: nil)
-                   .update_all(sale_order_item_id: soi.id, updated_at: Time.current)
-        end
-      rescue StandardError => e
-        Rails.logger.error "[Checkout::CreateOrder] Soft backfill error: #{e.class}: #{e.message}"
-      end
+      # Si hubo errores de revalidación después del rollback, retornarlos
+      return fail_with(revalidation_errors) if revalidation_errors.any?
 
       Result.new(sale_order: sale_order, errors: [], warnings: warnings, availability: availability_map)
+    rescue InventoryServices::ReserveSaleOrderItem::InsufficientInventory => e
+      fail_with([e.message])
     rescue StandardError => e
       Rails.logger.error "[Checkout::CreateOrder] ERROR #{e.class}: #{e.message}"
       Array(e.backtrace).first(20).each { |ln| Rails.logger.error "[Checkout::CreateOrder] \t#{ln}" }

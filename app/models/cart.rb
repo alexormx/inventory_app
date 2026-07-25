@@ -54,7 +54,7 @@ class Cart
 
   # Invalida el cache de items para forzar recarga
   def invalidate_cache!
-    @items = nil
+    @load_items = nil
   end
 
   # Obtener cantidad para producto + condición
@@ -79,7 +79,7 @@ class Cart
 
   # Fuerza recarga de items (útil después de modificaciones)
   def reload_items!
-    @items = nil
+    invalidate_cache!
     load_items
   end
 
@@ -101,7 +101,7 @@ class Cart
     return 0 unless tax_enabled?
     return 0 if subtotal.zero?
 
-    (subtotal * tax_rate).round(2)
+    (subtotal.to_d * tax_rate).round(2, BigDecimal::ROUND_HALF_UP)
   end
 
   # Shipping cost - solo se calcula si hay items en el carrito
@@ -125,11 +125,11 @@ class Cart
   end
 
   def tax_rate_percent
-    SiteSetting.get('tax_rate_percent', 16).to_i
+    SiteSetting.get('tax_rate_percent', 16).to_d
   end
 
   def tax_rate
-    tax_rate_percent.to_f / 100.0
+    tax_rate_percent / 100.to_d
   end
 
   def empty?
@@ -199,14 +199,7 @@ class Cart
   end
 
   def price_for_condition(product, condition)
-    if condition.to_s == 'brand_new'
-      product.selling_price
-    else
-      # Obtener precio promedio de inventario disponible con esa condición
-      avg_price = product.inventories.where(status: :available, item_condition: condition)
-                         .average(:selling_price)
-      avg_price&.to_f || product.selling_price
-    end
+    product.customer_price_for_condition(condition)
   end
 
   def condition_label(condition)

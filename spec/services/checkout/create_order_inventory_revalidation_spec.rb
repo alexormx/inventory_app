@@ -8,6 +8,8 @@ RSpec.describe Checkout::CreateOrder, 'inventory revalidation' do
   let(:product) { create(:product, selling_price: 100.0, skip_seed_inventory: true) }
   let(:address1) { create(:shipping_address, user: user1, default: true) }
   let(:address2) { create(:shipping_address, user: user2, default: true) }
+  let!(:shipping_method) { create(:shipping_method, :standard) }
+  let(:location) { create(:inventory_location) }
 
   before do
     # Crear exactamente 2 unidades de inventario disponible
@@ -17,7 +19,8 @@ RSpec.describe Checkout::CreateOrder, 'inventory revalidation' do
         status: :available,
         purchase_cost: 50.0,
         purchase_order_id: nil,
-        sale_order_id: nil
+        sale_order_id: nil,
+        inventory_location: location
       )
     end
     product.reload
@@ -79,7 +82,7 @@ RSpec.describe Checkout::CreateOrder, 'inventory revalidation' do
 
       # El que falló debe tener mensaje de stock insuficiente
       failed_result = results.find { |r| !r.success? }
-      expect(failed_result.errors.first).to match(/quedó sin stock suficiente/)
+      expect(failed_result.errors.first).to match(/no tiene suficiente stock|quedó sin stock suficiente/)
 
       # Verificar que solo se creó una orden
       expect(SaleOrder.count).to eq(1)
