@@ -16,9 +16,9 @@
             <tr>
               <th scope="col">Producto</th>
               <th scope="col" class="text-center">Cantidad</th>
-              <th scope="col" class="text-end">Precio</th>
-              <th scope="col" class="text-end">Total</th>
-              <th scope="col" class="text-end"></th>
+              <th scope="col" class="cart-unit-price d-none d-sm-table-cell text-end">Precio</th>
+              <th scope="col" class="cart-line-total d-none d-sm-table-cell text-end">Total</th>
+              <th scope="col" class="cart-remove d-none d-sm-table-cell text-end"></th>
             </tr>
           </thead>
           <tbody id="cart-items">
@@ -26,7 +26,7 @@
               <%= render 'carts/cart_item', item: item, cart: @cart %>
             <% end %>
           </tbody>
-          <tfoot>
+          <tfoot class="d-none d-sm-table-row-group">
             <tr>
               <td colspan="3" class="text-end"><strong>Total:</strong></td>
               <td id="cart-total" class="text-end" aria-live="polite"><%= number_to_currency(@cart.total) %></td>

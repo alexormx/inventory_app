@@ -32,18 +32,20 @@
                 <h6 class="mb-0"><i class="fa fa-truck me-2"></i>Envío</h6>
               </div>
               <div class="card-body">
-                <% if @order.shipping_address %>
-                  <strong><%= @order.shipping_address.full_name %></strong><br>
+                <% shipping_snapshot = @order.order_shipping_address %>
+                <% if shipping_snapshot %>
+                  <strong><%= shipping_snapshot.full_name %></strong><br>
                   <span class="text-muted">
-                    <%= @order.shipping_address.line1 %><br>
-                    <%= @order.shipping_address.city %>, <%= @order.shipping_address.state %> <%= @order.shipping_address.postal_code %>
+                    <%= shipping_snapshot.line1 %><br>
+                    <%= shipping_snapshot.city %>, <%= shipping_snapshot.state %> <%= shipping_snapshot.postal_code %>
                   </span>
                 <% end %>
                 <hr class="my-2">
                 <small class="text-muted">Método:</small>
                 <strong>
-                  <% shipping_method = ShippingMethod.find_by(code: @order.shipping_method) %>
-                  <%= shipping_method&.name || @order.shipping_method&.titleize || 'Estándar' %>
+                  <% shipping_method_code = shipping_snapshot&.shipping_method %>
+                  <% shipping_method = ShippingMethod.find_by(code: shipping_method_code) %>
+                  <%= shipping_method&.name || shipping_method_code&.titleize || 'Estándar' %>
                 </strong>
               </div>
             </div>
@@ -58,13 +60,14 @@
               <div class="card-body">
                 <% payment = @order.payments.last %>
                 <% if payment %>
+                  <% payment_completed = payment.status == 'Completed' %>
                   <strong><%= payment.payment_method.titleize.gsub('_', ' ') %></strong>
                   <br>
-                  <span class="badge bg-<%= payment.status == 'completed' ? 'success' : 'warning' %>">
-                    <%= payment.status == 'completed' ? 'Pagado' : 'Pendiente' %>
+                  <span class="badge bg-<%= payment_completed ? 'success' : 'warning' %>">
+                    <%= payment_completed ? 'Pagado' : 'Pendiente' %>
                   </span>
 
-                  <% if payment.status != 'completed' %>
+                  <% unless payment_completed %>
                     <% pm = PaymentMethod.find_by(code: payment.payment_method) %>
                     <% if pm&.account_number.present? %>
                       <hr class="my-2">
@@ -91,7 +94,9 @@
           </div>
           <div class="card-body p-0">
             <ul class="list-group list-group-flush">
-              <% @order.sale_order_items.includes(:product).each do |item| %>
+              <% @order.sale_order_items.each do |item| %>
+                <% unit_price = item.unit_final_price || item.unit_selling_price || item.unit_cost %>
+                <% in_transit_quantity = item.inventory_units.count(&:pre_reserved?) %>
                 <li class="list-group-item">
                   <div class="d-flex justify-content-between align-items-center">
                     <div class="d-flex align-items-center gap-3">
@@ -104,10 +109,15 @@
                       <% end %>
                       <div>
                         <strong><%= item.product&.product_name || 'Producto' %></strong>
-                        <div class="text-muted small"><%= item.quantity %> × <%= number_to_currency(item.unit_final_price) %></div>
+                        <div class="text-muted small"><%= item.quantity %> × <%= number_to_currency(unit_price) %></div>
+                        <% if in_transit_quantity.positive? %>
+                          <span class="badge bg-info text-dark mt-1">
+                            En tránsito: <%= in_transit_quantity %> · Pendiente de llegada
+                          </span>
+                        <% end %>
                       </div>
                     </div>
-                    <strong><%= number_to_currency(item.quantity * item.unit_final_price) %></strong>
+                    <strong><%= number_to_currency(item.quantity * unit_price) %></strong>
                   </div>
                 </li>
               <% end %>
@@ -116,7 +126,7 @@
           <div class="card-footer bg-white">
             <div class="d-flex justify-content-between mb-1">
               <span>Subtotal</span>
-              <span><%= number_to_currency(@order.subtotal_products) %></span>
+              <span><%= number_to_currency(@order.subtotal) %></span>
             </div>
             <% if @order.shipping_cost&.positive? %>
               <div class="d-flex justify-content-between mb-1">
@@ -146,7 +156,7 @@
           <div class="card-body">
             <ol class="mb-0">
               <% payment = @order.payments.last %>
-              <% if payment&.status != 'completed' %>
+              <% if payment && payment.status != 'Completed' %>
                 <li class="mb-2">
                   <strong>Realiza tu pago</strong> usando los datos proporcionados arriba.
                 </li>
@@ -167,7 +177,7 @@
 
       <!-- Acciones -->
       <div class="d-flex justify-content-center gap-3 mt-5">
-        <%= link_to products_path, class: "btn btn-primary btn-lg" do %>
+        <%= link_to catalog_path, class: "btn btn-primary btn-lg" do %>
           <i class="fa fa-shopping-bag me-2"></i>Seguir comprando
         <% end %>
         <% if @order %>

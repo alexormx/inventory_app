@@ -29,8 +29,9 @@
         <% else %>
           <span class="badge bg-primary-subtle text-primary small mt-1"><%= label %></span>
         <% end %>
-        <% on_hand = product.inventories.where(status: :available, item_condition: condition).count %>
-        <% reservation_split = collectible ? nil : product.split_immediate_and_pending(quantity) %>
+        <span class="cart-mobile-unit-price d-sm-none small text-muted mt-1"><%= number_to_currency(item_price) %> c/u</span>
+        <% on_hand = product.current_on_hand(condition: condition) %>
+        <% reservation_split = collectible ? nil : product.split_immediate_and_pending(quantity, condition: condition) %>
         <% reserved_qty = reservation_split ? (reservation_split[:in_transit_qty].to_i + reservation_split[:pending].to_i) : 0 %>
         <% if reserved_qty.positive? %>
           <% reservation_kind_label = if reservation_split[:in_transit_qty].positive? && reservation_split[:pending].zero?
@@ -45,6 +46,12 @@
           <span class="badge bg-warning-subtle text-warning small mt-1" title="<%= reserved_qty %> de <%= quantity %> son reserva (<%= reservation_kind_label.downcase %>)">
             <i class="fas fa-bookmark me-1"></i>Reserva · <%= reservation_kind_label %>
           </span>
+        <% end %>
+        <div class="cart-mobile-line-total d-sm-none small text-muted mt-1">
+          Total: <span data-cart-item-target="mobileLineTotal"><%= number_to_currency(line_total) %></span>
+        </div>
+        <%= button_to cart_item_path(product), method: :delete, params: { product_id: product.id, condition: condition }, class: 'btn btn-sm btn-link text-danger p-0', title: 'Eliminar', aria: { label: 'Eliminar producto' }, form: { data: { controller: 'confirm', action: 'submit->confirm#ask', confirm_message_value: 'Este producto se eliminará del carrito actual. ¿Deseas continuar?', confirm_title: 'Eliminar producto del carrito', confirm_confirm_label: 'Eliminar producto' }, class: 'd-sm-none mt-1' } do %>
+          <i class="fas fa-trash me-1"></i>Eliminar
         <% end %>
         <div class="small mt-1"><%= stock_badge(product, quantity: quantity, suppress_pending_note: true, on_hand_override: on_hand) %></div>
         <% if !collectible && (eta = stock_eta(product)) %>
@@ -67,8 +74,8 @@
       </div>
     <% end %>
   </td>
-  <td class="text-end"><%= number_to_currency(item_price) %></td>
-  <td class="text-end" data-cart-item-target="lineTotal" aria-live="polite">
+  <td class="cart-unit-price d-none d-sm-table-cell text-end"><%= number_to_currency(item_price) %></td>
+  <td class="cart-line-total d-none d-sm-table-cell text-end" data-cart-item-target="lineTotal" aria-live="polite">
     <%= number_to_currency(line_total) %>
     <% unless collectible %>
       <% split = reservation_split || product.split_immediate_and_pending(quantity) %>
@@ -83,7 +90,7 @@
       <% end %>
     <% end %>
   </td>
-  <td class="text-end">
+  <td class="cart-remove d-none d-sm-table-cell text-end">
     <%= button_to cart_item_path(product), method: :delete, params: { product_id: product.id, condition: condition }, class: 'btn btn-sm btn-link text-danger p-0', title: 'Eliminar', aria: { label: 'Eliminar producto' }, form: { data: { controller: 'confirm', action: 'submit->confirm#ask', confirm_message_value: 'Este producto se eliminará del carrito actual. ¿Deseas continuar?', confirm_title: 'Eliminar producto del carrito', confirm_confirm_label: 'Eliminar producto' }, class: 'd-inline' } do %>
       <i class="fas fa-trash"></i><span class="visually-hidden">Eliminar</span>
     <% end %>

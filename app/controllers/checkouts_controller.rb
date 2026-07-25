@@ -6,7 +6,7 @@ class CheckoutsController < ApplicationController
   layout 'customer'
   before_action :authenticate_user!
   before_action :set_cart, except: [:thank_you]
-  before_action :ensure_cart_not_empty, except: [:thank_you]
+  before_action :ensure_cart_not_empty, except: %i[thank_you complete]
 
   def step1
     @cart_items = @cart.items
@@ -84,12 +84,22 @@ class CheckoutsController < ApplicationController
       redirect_to(checkout_step3_path) and return
     end
 
+    token_matches_session = stored_token.present? &&
+                            ActiveSupport::SecurityUtils.secure_compare(checkout_token_param, stored_token)
+    existing_order = current_user.sale_orders.find_by(idempotency_key: checkout_token_param)
+    if existing_order && (stored_token.blank? || token_matches_session)
+      clear_checkout_session! if token_matches_session
+      flash[:notice] = 'Esta orden ya fue procesada anteriormente.'
+      redirect_to checkout_thank_you_path(order_id: existing_order.id)
+      return
+    end
+
     if stored_token.blank?
       flash[:alert] = 'Token de checkout expirado o faltante. Intenta nuevamente.'
       redirect_to(checkout_step3_path) and return
     end
 
-    unless ActiveSupport::SecurityUtils.secure_compare(checkout_token_param, stored_token)
+    unless token_matches_session
       flash[:alert] = 'Token de checkout inválido. Intenta nuevamente.'
       redirect_to(checkout_step3_path) and return
     end
@@ -138,16 +148,6 @@ class CheckoutsController < ApplicationController
       idempotency_key: stored_token
     }
 
-    # Verificar si ya existe una orden con este token (idempotencia)
-    existing_order = current_user.sale_orders.find_by(idempotency_key: stored_token) if stored_token.present?
-    if existing_order
-      Rails.logger.info "[Checkout] Order already exists with token #{stored_token}"
-      clear_checkout_session!
-      flash[:notice] = 'Esta orden ya fue procesada anteriormente.'
-      redirect_to checkout_thank_you_path(order_id: existing_order.id)
-      return
-    end
-
     # Intentar crear orden
     begin
       result = Checkout::CreateOrder.new(**order_params).call
@@ -164,24 +164,29 @@ class CheckoutsController < ApplicationController
         redirect_to checkout_step3_path
       end
     rescue ActiveRecord::RecordNotUnique => e
-      # Clave duplicada: orden ya fue creada con este token (race condition)
-      raise e unless e.message.include?('sale_orders.index_sale_orders_on_user_and_idempotency')
-
-      flash[:notice] = 'Esta orden ya fue procesada anteriormente.'
-      # Intentar encontrar la orden existente
+      # The database constraint is authoritative. Recover only when the same
+      # user/token order exists; adapter-specific exception text is not stable.
       existing_order = current_user.sale_orders.find_by(idempotency_key: stored_token)
-      if existing_order
-        clear_checkout_session!
-        redirect_to checkout_thank_you_path(order_id: existing_order.id)
-      else
-        redirect_to checkout_step1_path
-      end
+      raise e unless existing_order
+
+      clear_checkout_session!
+      flash[:notice] = 'Esta orden ya fue procesada anteriormente.'
+      redirect_to checkout_thank_you_path(order_id: existing_order.id)
     end
   end
 
   # Página de agradecimiento con resumen del pedido
   def thank_you
-    @order = current_user.sale_orders.find_by(id: params[:order_id])
+    @order = current_user.sale_orders
+                         .includes(
+                           :order_shipping_address,
+                           :payments,
+                           sale_order_items: [
+                             :inventory_units,
+                             { product: { product_images_attachments: :blob } }
+                           ]
+                         )
+                         .find_by(id: params[:order_id])
     return if @order
 
     redirect_to root_path, alert: 'Pedido no encontrado.' and return
