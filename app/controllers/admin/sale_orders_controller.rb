@@ -87,10 +87,14 @@ module Admin
     def cancel
       SaleOrders::CancelOrderService.new(@sale_order).call
       redirect_to admin_sale_order_path(@sale_order),
-                  notice: 'Orden cancelada exitosamente. Inventarios liberados y disponibles.'
-    rescue ActiveRecord::RecordInvalid => e
+                  notice: 'Orden cancelada. Se liberó únicamente el inventario reservado; no se modificaron pagos.'
+    rescue SaleOrders::CancelOrderService::CancellationBlocked => e
       redirect_to admin_sale_order_path(@sale_order),
-                  alert: "No se pudo cancelar la orden: #{e.message}"
+                  alert: e.message
+    rescue StandardError => e
+      Rails.logger.error("[Admin::SaleOrdersController#cancel] order_id=#{@sale_order&.id} #{e.class}")
+      redirect_to admin_sale_order_path(@sale_order),
+                  alert: 'No se pudo cancelar la orden. No se modificó el inventario; solicita una revisión administrativa.'
     end
 
     def summary

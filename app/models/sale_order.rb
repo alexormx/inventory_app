@@ -300,7 +300,7 @@ class SaleOrder < ApplicationRecord
     return unless status == 'Canceled'
 
     inventories.where(status: :reserved).update_all(release_inventory_attributes)
-    inventories.where(status: %w[pre_reserved pre_sold]).update_all(release_incoming_inventory_attributes)
+    inventories.where(status: :pre_reserved).update_all(release_incoming_inventory_attributes)
   end
 
   def release_inventory_attributes

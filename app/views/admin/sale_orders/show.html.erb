@@ -45,7 +45,8 @@
       <%= link_to edit_admin_sale_order_path(@sale_order), class: "btn btn-primary btn-sm" do %>
         <i class="fa-solid fa-pen-to-square"></i> Editar
       <% end %>
-      <% unless @sale_order.status == "Canceled" %>
+      <% simple_cancellation_available = @sale_order.status == "Pending" && @sale_order.total_paid.zero? %>
+      <% if simple_cancellation_available %>
         <%= button_to cancel_admin_sale_order_path(@sale_order),
                       method: :post,
                       class: 'btn btn-outline-danger btn-sm',
@@ -53,11 +54,15 @@
                         controller: 'confirm',
                         action: 'click->confirm#ask',
                         confirm_title: 'Cancelar orden de venta',
-                        confirm_message: 'Se liberarán los inventarios reservados o vendidos asociados y la orden quedará marcada como cancelada. ¿Deseas continuar?',
+                        confirm_message: 'Solo se liberará inventario reservado. La operación se bloqueará si existen pagos recibidos o inventario vendido/pre-vendido. No se emitirá ningún reembolso. ¿Deseas continuar?',
                         confirm_confirm_label: 'Cancelar orden'
                       } do %>
           <i class="fa-solid fa-xmark"></i> Cancelar
         <% end %>
+      <% elsif @sale_order.status != "Canceled" %>
+        <span class="btn btn-outline-secondary btn-sm disabled" aria-disabled="true">
+          Cancelación requiere revisión de pago/devolución
+        </span>
       <% end %>
     </div>
   </div>
