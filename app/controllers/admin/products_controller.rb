@@ -37,7 +37,7 @@ module Admin
       end
       @sort = params[:sort].presence || 'recent'
       scope = apply_sort(scope, @sort)
-      @products = scope.with_attached_product_images.page(params[:page]).per(PER_PAGE)
+      @products = scope.includes(product_images_attachments: :blob).page(params[:page]).per(PER_PAGE)
 
       # Pre-cargar conteos de inventario para evitar N+1 queries
       product_ids = @products.map(&:id)

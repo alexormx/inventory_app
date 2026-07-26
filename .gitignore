@@ -35,7 +35,8 @@
 
 /app/assets/builds/*
 !/app/assets/builds/.keep
-.env
+
+
 # Ignore SQLite database files (main and WAL/SHM companions)
 /db/*.sqlite3*
 
@@ -45,3 +46,9 @@ dump.rdb
 
 # Claude Code local config & memory
 /.claude/
+/.codex
+/.vscode/
+
+/config/credentials/*.key
+
+/docs
