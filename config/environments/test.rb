@@ -20,6 +20,12 @@ Rails.application.configure do
   # Configure public file server for tests with cache-control for performance.
   config.public_file_server.headers = { 'cache-control' => 'public, max-age=3600' }
 
+  # Keep system specs isolated from stale production precompiles in
+  # public/assets. The test prefix compiles the current app/assets/builds
+  # entrypoints so browser assertions exercise this checkout's JavaScript.
+  config.assets.prefix = '/test-assets'
+  config.assets.compile = true
+
   # Show full error reports.
   config.consider_all_requests_local = true
   config.cache_store = :null_store
