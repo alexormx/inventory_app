@@ -78,7 +78,7 @@
   <td class="cart-line-total d-none d-sm-table-cell text-end" data-cart-item-target="lineTotal" aria-live="polite">
     <%= number_to_currency(line_total) %>
     <% unless collectible %>
-      <% split = reservation_split || product.split_immediate_and_pending(quantity) %>
+      <% split = reservation_split %>
       <% if split[:in_transit_qty].to_i.positive? || split[:pending].to_i.positive? %>
         <% parts = [] %>
         <% parts << "#{split[:immediate]} inmediata(s)" if split[:immediate].to_i.positive? %>

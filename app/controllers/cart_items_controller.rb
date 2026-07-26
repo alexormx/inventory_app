@@ -58,13 +58,7 @@ class CartItemsController < ApplicationController
     flash.now[:notice] = "#{@product.product_name} #{label} fue agregado exitosamente" if request.format.turbo_stream?
 
     respond_to do |format|
-      format.turbo_stream do
-        if request.referer&.include?('/cart')
-          render :create_row
-        else
-          render :create
-        end
-      end
+      format.turbo_stream { render :create }
       format.html { redirect_to cart_path, notice: "#{@product.product_name} agregado al carrito." }
       format.json do
         render json: {
@@ -119,19 +113,14 @@ class CartItemsController < ApplicationController
     @cart.update(@product.id, desired, condition: @condition)
 
     respond_to do |format|
-      format.turbo_stream do
-        if request.referer&.include?('/cart')
-          render :update_row
-        else
-          render :update
-        end
-      end
+      format.turbo_stream { render :update }
       format.html { redirect_to cart_path }
       format.json do
         qty = @cart.quantity_for(@product.id, condition: @condition)
         item_price = price_for_condition(@product, @condition)
         line_total_plain = helpers.number_to_currency(item_price * qty)
-        pending_totals = aggregate_pending
+        pending_totals = @cart.pending_summary
+        item_split = @product.split_immediate_and_pending(qty, condition: @condition)
 
         render json: {
           product_id: @product.id,
@@ -144,6 +133,12 @@ class CartItemsController < ApplicationController
           subtotal_with_tax: helpers.number_to_currency(@cart.subtotal + @cart.tax_amount),
           tax_enabled: @cart.tax_enabled?,
           total_items: @cart.item_count,
+          item_immediate: item_split[:immediate].to_i,
+          item_in_transit: item_split[:in_transit_qty].to_i,
+          item_pending: item_split[:pending].to_i,
+          item_pending_type: item_split[:pending_type]&.to_s,
+          max_allowed: max_allowed,
+          can_increase: qty < max_allowed && (qty < available_count || @product.oversell_allowed?),
           summary_pending_total: pending_totals[:pending_total],
           summary_in_transit_total: pending_totals[:in_transit_total],
           summary_preorder_total: pending_totals[:preorder_total],
@@ -170,7 +165,7 @@ class CartItemsController < ApplicationController
       end
       format.html { redirect_to cart_path }
       format.json do
-        pending_totals = aggregate_pending
+        pending_totals = @cart.pending_summary
         render json: {
           cart_total: helpers.number_to_currency(@cart.total),
           subtotal: helpers.number_to_currency(@cart.subtotal),
@@ -217,27 +212,5 @@ class CartItemsController < ApplicationController
     when 'fair' then 'Fair'
     else condition.to_s.titleize
     end
-  end
-
-  def aggregate_pending
-    pending_total = 0
-    in_transit_total = 0
-    preorder_total = 0
-    backorder_total = 0
-    @cart.items.each do |item|
-      product = item[:product]
-      qty = item[:quantity]
-      s = product.split_immediate_and_pending(qty, condition: item[:condition])
-      in_transit_total += s[:in_transit_qty].to_i
-      pending_total += s[:pending]
-      preorder_total += (s[:pending_type] == :preorder ? s[:pending] : 0)
-      backorder_total += (s[:pending_type] == :backorder ? s[:pending] : 0)
-    end
-    {
-      pending_total: pending_total,
-      in_transit_total: in_transit_total,
-      preorder_total: preorder_total,
-      backorder_total: backorder_total
-    }
   end
 end

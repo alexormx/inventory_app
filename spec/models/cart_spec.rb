@@ -93,6 +93,26 @@ RSpec.describe Cart, type: :model do
 
       expect(cart.items.sole[:price]).to eq(200.to_d)
     end
+
+    it 'summarizes transit, preorder, and backorder with one canonical contract' do
+      location = create(:inventory_location)
+      preorder = create(:product, skip_seed_inventory: true, preorder_available: true)
+      collectible = create(:product, skip_seed_inventory: true)
+      create(:inventory, product: preorder, status: :available, item_condition: :brand_new,
+                         inventory_location: location)
+      create(:inventory, product: preorder, status: :in_transit, item_condition: :brand_new)
+      create(:inventory, product: collectible, status: :in_transit, item_condition: :mint)
+
+      cart.add_product(preorder.id, 3, condition: 'brand_new')
+      cart.add_product(collectible.id, 1, condition: 'mint')
+
+      expect(cart.pending_summary).to eq(
+        in_transit_total: 1,
+        preorder_total: 1,
+        backorder_total: 0,
+        pending_total: 2
+      )
+    end
   end
 
   describe 'legacy migration' do

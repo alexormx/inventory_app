@@ -162,15 +162,6 @@ module ApplicationHelper
   # Helper para contar items del carrito desde la sesión
   # Maneja el nuevo formato {product_id => {condition => qty}}
   def cart_item_count
-    cart_data = session[:cart]
-    return 0 if cart_data.blank?
-
-    cart_data.values.sum do |conditions|
-      if conditions.is_a?(Hash)
-        conditions.values.sum.to_i
-      else
-        conditions.to_i # Formato legacy: {product_id => qty}
-      end
-    end
+    Cart.new(session).item_count
   end
 end

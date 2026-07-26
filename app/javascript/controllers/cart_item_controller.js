@@ -6,6 +6,7 @@ export default class extends Controller {
 
   connect() {
     this.csrfToken = document.querySelector('meta[name="csrf-token"]').content
+    this.requestInFlight = false
     // Default condition to brand_new if not set
     if (!this.conditionValue) this.conditionValue = 'brand_new'
   }
@@ -27,116 +28,123 @@ export default class extends Controller {
     this.updateQuantity(qty)
   }
 
-  updateQuantity(qty) {
-    this.element.querySelector('.cart-qty-group')?.classList.add('loading')
-    fetch(`/cart_items/${this.productIdValue}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRF-Token': this.csrfToken,
-        'Accept': 'application/json'
-      },
-      body: JSON.stringify({
-        product_id: this.productIdValue,
-        quantity: qty,
-        condition: this.conditionValue
+  async updateQuantity(qty) {
+    if (this.requestInFlight) return
+
+    this.requestInFlight = true
+    const group = this.element.querySelector('.cart-qty-group')
+    const controls = Array.from(group?.querySelectorAll('button, input') || [])
+    const disabledBefore = new Map(controls.map(control => [control, control.disabled]))
+    controls.forEach(control => { control.disabled = true })
+    group?.classList.add('loading')
+    let responseData = null
+
+    try {
+      const response = await fetch(`/cart_items/${this.productIdValue}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': this.csrfToken,
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+          product_id: this.productIdValue,
+          quantity: qty,
+          condition: this.conditionValue
+        })
       })
-    })
-      .then(res => res.json())
-      .then(data => {
-        if (this.hasQuantityTarget) {
-          this.quantityTarget.value = data.quantity
-        }
-        if (this.hasLineTotalTarget) {
-          let html = `<span class=\"line-total-amount\">${data.line_total}</span>`
-          if (data.item_pending > 0) {
-            const pendingLabel = data.item_pending_type === 'preorder' ? 'preventa' : 'sobre pedido'
-            html += `<div class=\"small text-muted mt-1 line-split-detail\"><span class=\"immediate-count\">${data.item_immediate}</span> inmediata(s) · <span class=\"pending-count\">${data.item_pending}</span> ${pendingLabel}</div>`
-          }
-          this.lineTotalTarget.innerHTML = html
-        }
-        if (this.hasMobileLineTotalTarget) {
-          this.mobileLineTotalTarget.textContent = data.line_total
-        }
-        // Actualizar badge de pendientes del ítem
-        if (typeof data.product_id !== 'undefined') {
-          const badge = document.getElementById(`pending-badge-${data.product_id}`)
-          if (data.item_pending > 0) {
-            const label = data.item_pending_type === 'preorder' ? 'Preventa' : 'Sobre pedido'
-            if (badge) {
-              // Actualizar número
-              const countSpan = badge.querySelector('.pending-count')
-              if (countSpan) countSpan.textContent = data.item_pending
-              if (data.item_pending_type === 'preorder') {
-                let posSpan = badge.querySelector('.preorder-position')
-                if (data.item_preorder_position) {
-                  if (!posSpan) {
-                    badge.innerHTML += ` · Posición <span class=\"preorder-position\">${data.item_preorder_position}</span>`
-                  } else {
-                    posSpan.textContent = data.item_preorder_position
-                  }
-                }
-              }
-              badge.firstChild.textContent = `${label}: `
-            }
-          } else if (badge) {
-            badge.remove()
-          }
-        }
-        const cartTotalEl = document.getElementById('cart-total')
-        if (cartTotalEl) cartTotalEl.textContent = data.cart_total
-        const summarySubtotal = document.getElementById('summary-subtotal')
-        if (summarySubtotal && data.subtotal) summarySubtotal.textContent = data.subtotal
-        const summaryTax = document.getElementById('summary-tax')
-        const summaryTaxRow = document.getElementById('summary-tax-row')
-        if (summaryTax && data.tax_amount) summaryTax.textContent = data.tax_amount
-        if (summaryTaxRow && typeof data.tax_enabled !== 'undefined') {
-          if (data.tax_enabled) summaryTaxRow.classList.remove('d-none')
-          else summaryTaxRow.classList.add('d-none')
-        }
-        // El envío se calcula en checkout, no actualizamos aquí
-        const summaryGrand = document.getElementById('summary-grand-total')
-        // Usamos subtotal_with_tax que viene del API (o subtotal + tax_amount si no viene)
-        if (summaryGrand && data.subtotal_with_tax) {
-          summaryGrand.textContent = data.subtotal_with_tax
-        } else if (summaryGrand && data.subtotal) {
-          // Fallback: usar subtotal como gran total (sin envío)
-          summaryGrand.textContent = data.subtotal
-        }
-        const badge = document.getElementById('cart-count')
-        if (badge) badge.textContent = data.total_items
-        const itemCount = document.getElementById('cart-item-count')
-        if (itemCount) itemCount.textContent = data.total_items
-        // Actualizar resumen de pendientes
-        const pendingLi = document.getElementById('cart-pending-summary')
-        if (pendingLi && typeof data.summary_pending_total !== 'undefined') {
-          if (data.summary_pending_total > 0) {
-            let parts = []
-            if (data.summary_preorder_total > 0) parts.push(`Preventa: ${data.summary_preorder_total}`)
-            if (data.summary_backorder_total > 0) parts.push(`Sobre pedido: ${data.summary_backorder_total}`)
-            pendingLi.classList.remove('d-none')
-            pendingLi.innerHTML = `<span>Pendientes (${data.summary_pending_total})</span><span class="small">${parts.join(' · ')}</span>`
-            pendingLi.classList.add('d-flex','justify-content-between','text-warning')
-          } else {
-            pendingLi.classList.add('d-none')
-          }
-        }
-        // Si vienen totales extendidos (destroy path), refrescarlos
-        if (data.subtotal) {
-          const summarySubtotal = document.getElementById('summary-subtotal'); if (summarySubtotal) summarySubtotal.textContent = data.subtotal
-        }
-        if (data.tax_amount) {
-          const summaryTax = document.getElementById('summary-tax'); if (summaryTax) summaryTax.textContent = data.tax_amount
-          const summaryTaxRow = document.getElementById('summary-tax-row'); if (summaryTaxRow && typeof data.tax_enabled !== 'undefined') { data.tax_enabled ? summaryTaxRow.classList.remove('d-none') : summaryTaxRow.classList.add('d-none') }
-        }
-        // Envío: no actualizamos, se calcula en checkout
-        // Grand total: mostramos subtotal + tax (sin envío)
-        if (data.subtotal_with_tax) {
-          const summaryGrand = document.getElementById('summary-grand-total'); if (summaryGrand) summaryGrand.textContent = data.subtotal_with_tax
-        }
-      })
-      .finally(()=>{
-        this.element.querySelector('.cart-qty-group')?.classList.remove('loading')
-      })
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(data.error || 'No fue posible actualizar la cantidad.')
+
+      responseData = data
+      this.applySuccessfulUpdate(data)
+    } catch (error) {
+      this.showError(error.message || 'No fue posible actualizar la cantidad.')
+    } finally {
+      disabledBefore.forEach((disabled, control) => { control.disabled = disabled })
+      if (responseData) this.refreshQuantityControls(responseData)
+      group?.classList.remove('loading')
+      this.requestInFlight = false
+    }
+  }
+
+  applySuccessfulUpdate(data) {
+    if (this.hasQuantityTarget) this.quantityTarget.value = data.quantity
+
+    if (this.hasLineTotalTarget) {
+      const parts = []
+      if (data.item_immediate > 0) parts.push(`${data.item_immediate} inmediata(s)`)
+      if (data.item_in_transit > 0) parts.push(`${data.item_in_transit} en tránsito`)
+      if (data.item_pending > 0) {
+        const pendingLabel = data.item_pending_type === 'preorder' ? 'preventa' : 'sobre pedido'
+        parts.push(`${data.item_pending} ${pendingLabel}`)
+      }
+      this.lineTotalTarget.innerHTML = `<span class="line-total-amount">${data.line_total}</span>${parts.length ? `<div class="small text-muted mt-1 line-split-detail">${parts.join(' · ')}</div>` : ''}`
+    }
+    if (this.hasMobileLineTotalTarget) this.mobileLineTotalTarget.textContent = data.line_total
+
+    this.updateText('cart-total', data.cart_total)
+    this.updateText('summary-subtotal', data.subtotal)
+    this.updateText('summary-tax', data.tax_amount)
+    this.updateText('summary-grand-total', data.subtotal_with_tax || data.subtotal)
+    this.updateText('cart-count', data.total_items)
+    this.updateText('cart-item-count', data.total_items)
+
+    const summaryTaxRow = document.getElementById('summary-tax-row')
+    if (summaryTaxRow && typeof data.tax_enabled !== 'undefined') {
+      summaryTaxRow.classList.toggle('d-none', !data.tax_enabled)
+    }
+    this.updatePendingSummary(data)
+  }
+
+  updatePendingSummary(data) {
+    const pendingLi = document.getElementById('cart-pending-summary')
+    if (!pendingLi || typeof data.summary_pending_total === 'undefined') return
+
+    if (data.summary_pending_total <= 0) {
+      pendingLi.className = 'd-none'
+      pendingLi.replaceChildren()
+      return
+    }
+
+    const parts = []
+    if (data.summary_in_transit_total > 0) parts.push(`En tránsito: ${data.summary_in_transit_total}`)
+    if (data.summary_preorder_total > 0) parts.push(`Preventa: ${data.summary_preorder_total}`)
+    if (data.summary_backorder_total > 0) parts.push(`Sobre pedido: ${data.summary_backorder_total}`)
+    pendingLi.className = 'd-flex justify-content-between text-warning'
+
+    const label = document.createElement('span')
+    label.textContent = `Pendientes (${data.summary_pending_total})`
+    const detail = document.createElement('span')
+    detail.className = 'small'
+    detail.textContent = parts.join(' · ')
+    pendingLi.replaceChildren(label, detail)
+  }
+
+  refreshQuantityControls(data) {
+    if (!this.hasQuantityTarget) return
+
+    const qty = Number(data.quantity)
+    const decrease = this.element.querySelector('[data-action~="click->cart-item#decrease"]')
+    const increase = this.element.querySelector('[data-action~="click->cart-item#increase"]')
+    if (decrease) decrease.disabled = qty <= 1
+    if (increase) increase.disabled = data.can_increase === false
+  }
+
+  updateText(id, value) {
+    const element = document.getElementById(id)
+    if (element && value !== null && typeof value !== 'undefined') element.textContent = value
+  }
+
+  showError(message) {
+    const stack = document.getElementById('flash-stack')
+    if (!stack) return
+
+    const alert = document.createElement('div')
+    alert.className = 'alert alert-danger alert-dismissible fade show flash-message shadow'
+    alert.setAttribute('role', 'alert')
+    alert.dataset.timeout = '5000'
+    alert.textContent = message
+    stack.appendChild(alert)
   }
 }

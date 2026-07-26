@@ -6,6 +6,12 @@ export default class extends Controller {
   static values = { message: String }
 
   async ask(event) {
+    const form = this.element.tagName === 'FORM' ? this.element : this.element.closest('form')
+    if (form?.dataset.confirmSubmitted === 'true') {
+      delete form.dataset.confirmSubmitted
+      return
+    }
+
     const msg = this.messageValue || this.element.dataset.confirmMessage || this.element.dataset.turboConfirm || this.element.getAttribute('data-confirm')
     if (!msg) return
     event.preventDefault(); event.stopPropagation()
@@ -22,12 +28,11 @@ export default class extends Controller {
         if (token) {
           const tk = document.createElement('input'); tk.type='hidden'; tk.name='authenticity_token'; tk.value=token; f.appendChild(tk)
         }
-        document.body.appendChild(f); f.submit()
+        document.body.appendChild(f); f.requestSubmit()
       } else { Turbo.visit(this.element.href) }
-    } else if (this.element.tagName === 'FORM') {
-      this.element.submit()
-    } else if (this.element.closest('form')) {
-      this.element.closest('form').submit()
+    } else if (form) {
+      form.dataset.confirmSubmitted = 'true'
+      form.requestSubmit(event.submitter || undefined)
     }
   }
 }

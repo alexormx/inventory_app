@@ -92,6 +92,32 @@ class Cart
     load_items.sum { |item| item[:quantity] }
   end
 
+  # One canonical definition for units that cannot ship immediately. This is
+  # shared by the initial cart render and every mutation response so transit,
+  # preorder, backorder, and collectible rules cannot drift between layers.
+  def pending_summary
+    totals = {
+      in_transit_total: 0,
+      preorder_total: 0,
+      backorder_total: 0
+    }
+
+    load_items.each do |item|
+      next if item[:collectible]
+
+      split = item[:product].split_immediate_and_pending(
+        item[:quantity],
+        condition: item[:condition]
+      )
+      totals[:in_transit_total] += split[:in_transit_qty].to_i
+      totals[:preorder_total] += split[:pending].to_i if split[:pending_type] == :preorder
+      totals[:backorder_total] += split[:pending].to_i if split[:pending_type] == :backorder
+    end
+
+    totals[:pending_total] = totals.values.sum
+    totals
+  end
+
   # Subtotal alias for clarity in views
   def subtotal
     total
