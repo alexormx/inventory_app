@@ -13,11 +13,9 @@
     </tr>
   </thead>
   <tbody>
-    <% total = 0 %>
     <% @order.sale_order_items.includes(product: [product_images_attachments: :blob]).each do |item| %>
       <% prod = item.product %>
       <% line_total = item.total_line_cost %>
-      <% total += line_total %>
       <tr>
         <td class="text-center"><%= item.quantity %></td>
         <td>
@@ -42,10 +40,28 @@
       <td class="text-center"></td>
       <td class="text-end">Sub-Total</td>
       <td class="text-end"></td>
-      <td class="text-end"><%= number_to_currency(total) %></td>
+      <td class="text-end"><%= number_to_currency(@order.subtotal) %></td>
     </tr>
     <% shipping = (@order.shipping_cost || 0).to_d %>
-    <% grand_total = (total + shipping).round(2) %>
+    <% discount = (@order.discount || 0).to_d %>
+    <% tax = (@order.total_tax || 0).to_d %>
+    <% grand_total = @order.total_order_value.to_d %>
+    <% if discount.positive? %>
+      <tr class="table-primary fw-semibold">
+        <td></td>
+        <td class="text-end">Descuento</td>
+        <td></td>
+        <td class="text-end">−<%= number_to_currency(discount) %></td>
+      </tr>
+    <% end %>
+    <% if tax.positive? %>
+      <tr class="table-primary fw-semibold">
+        <td></td>
+        <td class="text-end">Impuestos</td>
+        <td></td>
+        <td class="text-end"><%= number_to_currency(tax) %></td>
+      </tr>
+    <% end %>
     <% if shipping.positive? %>
       <tr class="table-primary fw-semibold">
         <td></td>
@@ -63,13 +79,16 @@
   </tbody>
 </table>
 <%# Mensaje envío y pagos dentro del contenedor para mantener ancho consistente %>
+  <% shipping_snapshot = @order.order_shipping_address %>
   <% if @order.shipment.present? %>
     <div class="alert alert-warning py-1 px-2 small mb-2">
-      <i class="fa fa-truck me-1"></i>Envío por <strong><%= @order.shipment.carrier %></strong>
+      <i class="fa fa-truck me-1"></i>Método: <strong><%= shipping_snapshot&.shipping_method_name || @order.shipment.carrier %></strong>
+      · Envío por <strong><%= @order.shipment.carrier %></strong>
     </div>
   <% else %>
     <div class="alert alert-warning py-1 px-2 small mb-2">
-      <i class="fa fa-truck me-1"></i>Aún no se ha seleccionado un método de entrega.
+      <i class="fa fa-truck me-1"></i>Método: <strong><%= shipping_snapshot&.shipping_method_name || 'No registrado' %></strong>
+      · Aún no enviado.
     </div>
   <% end %>
 

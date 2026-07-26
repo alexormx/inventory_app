@@ -33,6 +33,8 @@ import BackToTopController from "./back_to_top_controller"
 import RecentlyViewedController from "./recently_viewed_controller"
 import PostTocController from "./post_toc_controller"
 import CopyController from "./copy_controller"
+import CheckoutShippingController from "./checkout_shipping_controller"
+import SelectableCardsController from "./selectable_cards_controller"
 
 application.register("cart-item", CartItemController)
 application.register("clear-search", ClearSearchController)
@@ -60,5 +62,7 @@ application.register("back-to-top", BackToTopController)
 application.register("recently-viewed", RecentlyViewedController)
 application.register("post-toc", PostTocController)
 application.register("copy", CopyController)
+application.register("checkout-shipping", CheckoutShippingController)
+application.register("selectable-cards", SelectableCardsController)
 
 window.Stimulus = application

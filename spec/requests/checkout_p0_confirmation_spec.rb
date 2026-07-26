@@ -25,9 +25,14 @@ RSpec.describe 'Checkout confirmation', type: :request do
       unit_final_price: 116.00,
       total_line_cost: 116.00
     )
-    create(:order_shipping_address, sale_order: order, shipping_method: 'envio_estandar')
+    create(
+      :order_shipping_address,
+      sale_order: order,
+      shipping_method: 'envio_estandar',
+      raw_address_json: { 'shipping_method_name' => 'Envío estándar' }
+    )
     create(:payment, sale_order: order, amount: 215.00, status: 'Pending')
-    create(:shipping_method, code: 'envio_estandar', name: 'Envío estándar', base_cost: 99.00)
+    create(:shipping_method, code: 'envio_estandar', name: 'Entrega renombrada', base_cost: 99.00)
     sign_in user
   end
 
@@ -38,11 +43,27 @@ RSpec.describe 'Checkout confirmation', type: :request do
     expect(response.body).to include(order.id)
     expect(response.body).to include('John Doe')
     expect(response.body).to include('Envío estándar')
+    expect(response.body).not_to include('Entrega renombrada')
     expect(response.body).to include(product.product_name)
     expect(response.body).to include('$116.00')
     expect(response.body).to include('$215.00')
     expect(response.body).to include(catalog_path)
     expect(response.body).to include(orders_path)
+    expect(Nokogiri::HTML(response.body).at_css('#site-header')['data-turbo-permanent']).to be_nil
+  end
+
+  it 'does not render mutable bank configuration as historical order data' do
+    create(
+      :payment_method,
+      code: 'efectivo',
+      account_number: 'CUENTA-MUTABLE-123',
+      bank_name: 'Banco mutable'
+    )
+
+    get checkout_thank_you_path(order_id: order.id)
+
+    expect(response).to have_http_status(:ok)
+    expect(response.body).not_to include('CUENTA-MUTABLE-123', 'Banco mutable')
   end
 
   it 'shows a completed persisted payment as paid' do
