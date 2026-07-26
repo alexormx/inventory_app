@@ -8,6 +8,8 @@ RSpec.describe Checkout::CreateOrder, type: :service do
   let(:product) { create(:product, selling_price: 50.0, skip_seed_inventory: true) }
   let(:address1) { create(:shipping_address, user: user1, default: true) }
   let(:address2) { create(:shipping_address, user: user2, default: true) }
+  let!(:shipping_method) { create(:shipping_method, :standard) }
+  let(:location) { create(:inventory_location) }
 
   # Helper to build cart items in new format
   def build_cart_items(product, qty, condition: 'brand_new')
@@ -27,7 +29,8 @@ RSpec.describe Checkout::CreateOrder, type: :service do
     Inventory.create!(
       product: product,
       status: :available,
-      purchase_cost: 25.0
+      purchase_cost: 25.0,
+      inventory_location: location
     )
     product.reload
   end

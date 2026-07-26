@@ -76,7 +76,7 @@
                  data-controller="checkout-shipping"
                  data-action="change->checkout-shipping#select"
                  data-checkout-shipping-methods-value="<%= methods_map.to_json %>"
-                 data-checkout-shipping-subtotal-value="<%= @cart.total %>">
+                 data-checkout-shipping-subtotal-value="<%= @cart.total.to_d + @cart.tax_amount.to_d %>">
               <% shipping_methods.each do |sm| %>
                 <label class="list-group-item list-group-item-action d-flex align-items-center rounded border <%= 'border-primary border-2 bg-primary bg-opacity-10' if selected_method == sm.code %>" style="cursor: pointer;">
                   <input type="radio" name="shipping_method" value="<%= sm.code %>" class="form-check-input me-3" <%= 'checked' if selected_method == sm.code %>>

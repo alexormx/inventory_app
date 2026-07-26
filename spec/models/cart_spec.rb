@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'rails_helper'
 
 RSpec.describe Cart, type: :model do
@@ -22,6 +24,17 @@ RSpec.describe Cart, type: :model do
       cart.add_product(product.id)
       cart.update(product.id, 5, condition: 'brand_new')
       expect(cart.items.first[:quantity]).to eq(5)
+    end
+
+    it 'invalidates loaded items after a quantity change or removal' do
+      cart.add_product(product.id)
+      expect(cart.items.first[:quantity]).to eq(1)
+
+      cart.update(product.id, 2, condition: 'brand_new')
+      expect(cart.items.first[:quantity]).to eq(2)
+
+      cart.remove(product.id, condition: 'brand_new')
+      expect(cart.items).to be_empty
     end
 
     it 'removes product by condition' do
@@ -66,6 +79,19 @@ RSpec.describe Cart, type: :model do
       cart.add_product(product.id, 2, condition: 'brand_new')
       cart.add_product(product.id, 1, condition: 'misb')
       expect(cart.item_count).to eq(3)
+    end
+
+    it 'prices collectibles from customer-sellable inventory only' do
+      product = create(:product, skip_seed_inventory: true, selling_price: 100)
+      location = create(:inventory_location)
+      create(:inventory, product: product, status: :available, item_condition: :mint,
+                         inventory_location: location, selling_price: 200)
+      create(:inventory, product: product, status: :available, item_condition: :mint,
+                         inventory_location: nil, selling_price: 1_000)
+
+      cart.add_product(product.id, 1, condition: 'mint')
+
+      expect(cart.items.sole[:price]).to eq(200.to_d)
     end
   end
 

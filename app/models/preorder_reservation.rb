@@ -4,6 +4,7 @@ class PreorderReservation < ApplicationRecord
   belongs_to :product
   belongs_to :user
   belongs_to :sale_order, optional: true
+  belongs_to :sale_order_item, optional: true
 
   # Rails 8 usa la nueva forma: enum :campo, { mapping }, default: :valor
   enum :status, { pending: 0, assigned: 1, completed: 2, cancelled: 3 }, default: :pending

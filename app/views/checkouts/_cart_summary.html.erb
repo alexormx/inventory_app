@@ -2,6 +2,7 @@
 <%# Uso: render 'checkouts/cart_summary', cart: @cart, shipping_cost: 0 %>
 <% cart ||= @cart %>
 <% shipping_cost ||= 0 %>
+<% tax_amount = local_assigns.fetch(:tax_amount, cart.tax_amount).to_d %>
 <% show_shipping = local_assigns.fetch(:show_shipping, false) %>
 <% shipping_method_name = local_assigns.fetch(:shipping_method_name, nil) %>
 
@@ -53,6 +54,12 @@
       <span class="text-muted">Subtotal</span>
       <span><%= number_to_currency(cart.total) %></span>
     </div>
+    <% if tax_amount.positive? %>
+      <div class="d-flex justify-content-between mb-2">
+        <span class="text-muted">IVA (<%= cart.tax_rate_percent.to_s('F') %>%)</span>
+        <span><%= number_to_currency(tax_amount) %></span>
+      </div>
+    <% end %>
     <% if show_shipping %>
       <div class="d-flex justify-content-between mb-2" id="checkout-shipping-row">
         <span class="text-muted">
@@ -69,7 +76,7 @@
     <hr class="my-2">
     <div class="d-flex justify-content-between">
       <strong>Total</strong>
-      <strong class="text-primary fs-5" id="checkout-grand-total"><%= number_to_currency(cart.total + shipping_cost) %></strong>
+      <strong class="text-primary fs-5" id="checkout-grand-total"><%= number_to_currency(cart.total.to_d + tax_amount + shipping_cost.to_d) %></strong>
     </div>
   </div>
 </div>

@@ -25,8 +25,20 @@ RSpec.describe OrderConfirmationMailer, type: :mailer do
         sale_order: sale_order,
         product: product,
         quantity: 2,
-        unit_cost: 50.0,
+        unit_cost: 20.0,
+        unit_selling_price: 50.0,
+        unit_final_price: 50.0,
         total_line_cost: 100.0
+      )
+    end
+
+    let(:payment) do
+      create(
+        :payment,
+        sale_order: sale_order,
+        amount: 110.0,
+        payment_method: "transferencia_bancaria",
+        status: "Pending"
       )
     end
 
@@ -46,6 +58,7 @@ RSpec.describe OrderConfirmationMailer, type: :mailer do
     let(:mail) do
       sale_order_item # Ensure item exists
       order_shipping_address # Ensure address exists
+      payment # Ensure persisted Payment exists
       OrderConfirmationMailer.order_confirmation(sale_order)
     end
 
@@ -88,6 +101,25 @@ RSpec.describe OrderConfirmationMailer, type: :mailer do
       it 'includes order totals' do
         expect(mail.html_part.body.encoded).to include('$110.00')
         expect(mail.text_part.body.encoded).to include('$110.00')
+      end
+
+      it 'uses persisted customer prices and Payment data without current payment settings' do
+        create(
+          :payment_method,
+          code: "transferencia_bancaria",
+          account_number: "PLACEHOLDER-ACCOUNT-NUMBER",
+          instructions: "PLACEHOLDER-INSTRUCTIONS"
+        )
+        product.update!(selling_price: 999.0)
+
+        html = mail.html_part.body.decoded
+        text = mail.text_part.body.decoded
+
+        expect(html).to include('$50.00', '$100.00', '$110.00')
+        expect(text).to include('$50.00', '$100.00', '$110.00')
+        expect(html).to include('Transferencia bancaria', 'pendiente')
+        expect(html).not_to include('$20.00', '$999.00', 'PLACEHOLDER')
+        expect(text).not_to include('$20.00', '$999.00', 'PLACEHOLDER')
       end
 
       it 'includes shipping address' do
@@ -163,6 +195,32 @@ RSpec.describe OrderConfirmationMailer, type: :mailer do
       it 'sends to the correct recipient' do
         mail.deliver_now
         expect(ActionMailer::Base.deliveries.last.to).to include(user.email)
+      end
+    end
+
+    context 'when optional address, payment, notes, and line prices are missing' do
+      let(:minimal_order) { create(:sale_order, user: user, shipping_cost: 0, notes: nil) }
+
+      before do
+        item = create(
+          :sale_order_item,
+          sale_order: minimal_order,
+          product: product,
+          unit_cost: 20.0,
+          unit_selling_price: 50.0,
+          unit_final_price: 50.0,
+          total_line_cost: 50.0
+        )
+        item.update_columns(unit_selling_price: nil, unit_final_price: nil, total_line_cost: nil)
+      end
+
+      it 'renders both parts without exposing placeholder payment details' do
+        minimal_mail = OrderConfirmationMailer.order_confirmation(minimal_order)
+
+        expect { minimal_mail.html_part.body.decoded }.not_to raise_error
+        expect { minimal_mail.text_part.body.decoded }.not_to raise_error
+        expect(minimal_mail.html_part.body.decoded).not_to include('PLACEHOLDER')
+        expect(minimal_mail.text_part.body.decoded).not_to include('PLACEHOLDER')
       end
     end
   end

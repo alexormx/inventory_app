@@ -18,23 +18,33 @@
       <th>Producto</th>
       <th>Cantidad</th>
       <th>Pendiente</th>
-      <th class="text-end">Precio unitario</th>
+      <th class="order-unit-price d-none d-sm-table-cell text-end">Precio unitario</th>
       <th class="text-end">Total</th>
     </tr>
   </thead>
   <tbody>
     <% @order.sale_order_items.each do |item| %>
+      <% in_transit_quantity = item.inventory_units.count(&:pre_reserved?) %>
+      <% awaiting_inventory = item.pending? || in_transit_quantity.positive? %>
       <tr>
-        <td><%= item.product&.product_name || '—' %></td>
+        <td>
+          <%= item.product&.product_name || '—' %>
+          <span class="order-mobile-unit-price d-sm-none small text-muted d-block">
+            <%= number_to_currency(item.unit_final_price, unit: "$") %> c/u
+          </span>
+        </td>
         <td>
           <%= item.quantity %>
-          <% if item.pending? %>
+          <% if awaiting_inventory %>
             <span class="badge text-bg-warning ms-1">Pendiente</span>
           <% end %>
         </td>
         <td>
-          <% if item.pending? %>
+          <% if awaiting_inventory %>
             <% parts = [] %>
+            <% if in_transit_quantity.positive? %>
+              <% parts << "En tránsito: #{in_transit_quantity} (pendiente de llegada)" %>
+            <% end %>
             <% if item.preorder_quantity.to_i > 0 %>
               <% parts << "Preventa: #{item.preorder_quantity}" %>
             <% end %>
@@ -46,7 +56,7 @@
             <span class="text-muted">—</span>
           <% end %>
         </td>
-        <td class="text-end"><%= number_to_currency(item.unit_final_price, unit: "$") %></td>
+        <td class="order-unit-price d-none d-sm-table-cell text-end"><%= number_to_currency(item.unit_final_price, unit: "$") %></td>
         <td class="text-end"><%= number_to_currency(item.total_line_cost, unit: "$") %></td>
       </tr>
     <% end %>

@@ -10,7 +10,9 @@ class OrdersController < ApplicationController
   end
 
   def show
-    @order = find_order
+    @order = current_user.sale_orders
+                         .includes(sale_order_items: %i[inventory_units product])
+                         .find(params[:id])
   end
 
   def summary

@@ -3,7 +3,12 @@ require 'rails_helper'
 RSpec.describe SaleOrderItem, type: :model do
   describe 'inventory release on destroy' do
     let(:product) { create(:product, skip_seed_inventory: true) }
-    let!(:available_units) { 3.times.map { create(:inventory, product: product, status: :available, purchase_cost: 5) } }
+    let(:location) { create(:inventory_location) }
+    let!(:available_units) do
+      3.times.map do
+        create(:inventory, product: product, status: :available, purchase_cost: 5, inventory_location: location)
+      end
+    end
     let(:sale_order) { create(:sale_order) }
 
     it 'releases reserved inventory back to available when line is destroyed' do

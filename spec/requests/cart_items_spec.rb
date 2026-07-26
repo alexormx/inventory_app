@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'rails_helper'
 
 RSpec.describe "CartItems", type: :request do
@@ -36,6 +38,19 @@ RSpec.describe "CartItems", type: :request do
       expect(json["quantity"]).to eq(2)
       expect(json["cart_total"]).to be_present
       expect(json["total_items"]).to eq(2)
+    end
+
+    it 'summarizes incoming inventory for the cart line condition' do
+      collectible = create(:product, skip_seed_inventory: true, status: :active)
+      create(:inventory, product: collectible, status: :in_transit, item_condition: :mint, selling_price: 20)
+      post cart_items_path, params: { product_id: collectible.id, condition: 'mint' }
+
+      put cart_item_path(collectible),
+          params: { product_id: collectible.id, quantity: 1, condition: 'mint' },
+          headers: { 'ACCEPT' => 'application/json' }
+
+      json = JSON.parse(response.body)
+      expect(json['summary_in_transit_total']).to eq(1)
     end
   end
 

@@ -202,12 +202,7 @@ class CartItemsController < ApplicationController
   end
 
   def price_for_condition(product, condition)
-    if condition.to_s == 'brand_new'
-      product.selling_price
-    else
-      avg = product.inventories.where(status: :available, item_condition: condition).average(:selling_price)
-      avg&.to_f || product.selling_price
-    end
+    product.customer_price_for_condition(condition)
   end
 
   def condition_label(condition)
@@ -232,7 +227,7 @@ class CartItemsController < ApplicationController
     @cart.items.each do |item|
       product = item[:product]
       qty = item[:quantity]
-      s = product.split_immediate_and_pending(qty)
+      s = product.split_immediate_and_pending(qty, condition: item[:condition])
       in_transit_total += s[:in_transit_qty].to_i
       pending_total += s[:pending]
       preorder_total += (s[:pending_type] == :preorder ? s[:pending] : 0)

@@ -21,7 +21,8 @@ module Admin
       end
       if request.post? && params[:save_tax]
         SiteSetting.set('tax_enabled', params[:tax_enabled] == 'true', 'boolean')
-        SiteSetting.set('tax_rate_percent', params[:tax_rate_percent].to_f.round(2), 'integer')
+        tax_rate = params[:tax_rate_percent].to_d.round(2, BigDecimal::ROUND_HALF_UP)
+        SiteSetting.set('tax_rate_percent', tax_rate.to_s('F'), 'string')
         flash[:notice] = 'Configuración de impuestos guardada.'
         redirect_to admin_settings_path and return
       end

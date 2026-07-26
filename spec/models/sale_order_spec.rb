@@ -27,7 +27,7 @@ RSpec.describe SaleOrder, type: :model do
 
     expect(so.destroy).to be_falsey
     expect(SaleOrder.exists?(so.id)).to be(true)
-    expect { so.destroy! }.to raise_error(ActiveRecord::RecordNotDestroyed, /Failed to destroy SaleOrderItem/)
+    expect { so.destroy! }.to raise_error(ActiveRecord::RecordNotDestroyed, /Failed to destroy SaleOrder/)
   end
 
   # ---------------------------------------------------------------------------

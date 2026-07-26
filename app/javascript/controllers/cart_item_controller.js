@@ -2,7 +2,7 @@ import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
   static values = { productId: Number, condition: String }
-  static targets = ["quantity", "lineTotal"]
+  static targets = ["quantity", "lineTotal", "mobileLineTotal"]
 
   connect() {
     this.csrfToken = document.querySelector('meta[name="csrf-token"]').content
@@ -54,6 +54,9 @@ export default class extends Controller {
             html += `<div class=\"small text-muted mt-1 line-split-detail\"><span class=\"immediate-count\">${data.item_immediate}</span> inmediata(s) · <span class=\"pending-count\">${data.item_pending}</span> ${pendingLabel}</div>`
           }
           this.lineTotalTarget.innerHTML = html
+        }
+        if (this.hasMobileLineTotalTarget) {
+          this.mobileLineTotalTarget.textContent = data.line_total
         }
         // Actualizar badge de pendientes del ítem
         if (typeof data.product_id !== 'undefined') {

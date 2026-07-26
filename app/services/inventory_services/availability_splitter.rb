@@ -11,16 +11,17 @@ module InventoryServices
       keyword_init: true
     )
 
-    def initialize(product, requested_qty)
+    def initialize(product, requested_qty, condition: 'brand_new')
       @product = product
       @requested = requested_qty.to_i
+      @condition = condition.to_s
     end
 
     def call
       return empty if @requested <= 0 || @product.nil?
 
-      on_hand = @product.respond_to?(:current_on_hand) ? @product.current_on_hand.to_i : 0
-      in_transit = @product.respond_to?(:in_transit_count) ? @product.in_transit_count.to_i : 0
+      on_hand = @product.respond_to?(:current_on_hand) ? @product.current_on_hand(condition: @condition).to_i : 0
+      in_transit = @product.respond_to?(:in_transit_count) ? @product.in_transit_count(condition: @condition).to_i : 0
 
       immediate = [@requested, on_hand].min
       remaining = @requested - immediate
@@ -30,7 +31,7 @@ module InventoryServices
 
       pending = remaining
       pending_type = nil
-      if pending.positive?
+      if pending.positive? && @condition == 'brand_new'
         if @product.respond_to?(:preorder_available) && @product.preorder_available
           pending_type = :preorder
         elsif @product.respond_to?(:backorder_allowed) && @product.backorder_allowed

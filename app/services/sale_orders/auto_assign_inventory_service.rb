@@ -64,7 +64,7 @@ module SaleOrders
       )
     rescue StandardError => e
       Rails.logger.error "[AutoAssignInventoryService] Error: #{e.class}: #{e.message}"
-      Result.new(success: false, assigned_count: 0, pending_count: 0, errors: [e.message], assignments: [])
+      raise
     end
 
     private
@@ -80,42 +80,22 @@ module SaleOrders
 
       # Filtrar solo los que tienen piezas pendientes de asignar
       scope.select do |soi|
-        assigned = Inventory.where(sale_order_id: soi.sale_order_id, product_id: soi.product_id).count
+        assigned = soi.inventory_units.count
         needed = soi.quantity.to_i - soi.preorder_quantity.to_i - soi.backordered_quantity.to_i
         assigned < needed
       end
     end
 
     def assign_inventory_to_item(soi)
-      assigned_count = 0
       product = soi.product
       sale_order = soi.sale_order
+      result = InventoryServices::ReserveSaleOrderItem.call(
+        soi,
+        strict: false,
+        dry_run: @dry_run
+      )
 
-      # Calcular cuántas piezas necesita (descontando preorder/backorder)
-      immediate_needed = soi.quantity.to_i - soi.preorder_quantity.to_i - soi.backordered_quantity.to_i
-      currently_assigned = Inventory.where(sale_order_id: sale_order.id, product_id: product.id).count
-      to_assign = immediate_needed - currently_assigned
-
-      return { assigned: 0, pending: 0 } if to_assign <= 0
-
-      # Buscar inventario disponible
-      # Filtra por condición si el SOI especifica una
-      available_scope = Inventory.where(product_id: product.id, status: :available, sale_order_id: nil)
-
-      # Si el SOI tiene condición específica, filtrar por ella
-      available_scope = available_scope.where(item_condition: soi.item_condition) if soi.respond_to?(:item_condition) && soi.item_condition.present?
-
-      # Prioriza piezas con ubicación física; las que no tienen ubicación se
-      # asignan solo como fallback (quedan al final del orden).
-      available_inventory = available_scope.location_first.limit(to_assign)
-
-      assigned_without_location = 0
-
-      available_inventory.each do |inv|
-        # Contar la asignación (para dry_run) pero solo actualizar si no es dry_run
-        assigned_count += 1
-        assigned_without_location += 1 unless inv.located?
-
+      result.assigned_inventories.each do |inv|
         @assignments << {
           sale_order: sale_order,
           sale_order_item: soi,
@@ -123,40 +103,24 @@ module SaleOrders
           inventory: inv,
           type: :auto_assignment,
           quantity_assigned: 1,
-          quantity_pending: [to_assign - assigned_count, 0].max,
+          quantity_pending: result.missing,
           notes: "Auto-assigned inv ##{inv.id} to SO #{sale_order.id}"
         }
-
-        next if @dry_run
-
-        begin
-          inv.update!(
-            status: :reserved,
-            sale_order_id: sale_order.id,
-            sale_order_item_id: soi.id,
-            status_changed_at: Time.current
-          )
-        rescue StandardError => e
-          @errors << "Failed to assign inv ##{inv.id}: #{e.message}"
-          assigned_count -= 1 # Revertir el conteo si falló
-        end
       end
-
-      pending = to_assign - assigned_count
 
       # Limpiar o actualizar notas de reserva pendiente en la orden
       unless @dry_run
-        cleanup_reservation_notes(soi, sale_order, pending)
-        sync_location_warning(soi, sale_order, assigned_without_location)
+        cleanup_reservation_notes(soi, sale_order, result.missing)
+        sync_location_warning(soi, sale_order, 0)
       end
 
-      { assigned: assigned_count, pending: pending }
+      { assigned: result.assigned, pending: result.missing }
     end
 
     def cleanup_reservation_notes(soi, sale_order, pending_after_assign)
       if pending_after_assign <= 0
         sale_order.remove_pending_note_for(soi)
-      elsif pending_after_assign > 0
+      elsif pending_after_assign.positive?
         sale_order.upsert_pending_note(soi, pending_after_assign)
       end
     rescue StandardError => e

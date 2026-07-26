@@ -3,11 +3,12 @@ require 'rails_helper'
 RSpec.describe 'Liberación de inventario al eliminar SaleOrderItem', type: :model do
   let(:product) { create(:product, skip_seed_inventory: true) }
   let(:sale_order) { create(:sale_order) }
+  let(:location) { create(:inventory_location) }
 
   it 'al destruir la línea libera inventario reservado limpiando sale_order_id, sale_order_item_id y sold_price' do
     # Creamos inventario disponible
-    inv1 = Inventory.create!(product: product, purchase_cost: 12.5, status: :available)
-    inv2 = Inventory.create!(product: product, purchase_cost: 12.5, status: :available)
+    inv1 = Inventory.create!(product: product, purchase_cost: 12.5, status: :available, inventory_location: location)
+    inv2 = Inventory.create!(product: product, purchase_cost: 12.5, status: :available, inventory_location: location)
 
     # Creamos la línea (quantity 2) que reservará 2 unidades
     soi = create(:sale_order_item, sale_order: sale_order, product: product, quantity: 2, unit_cost: 10)

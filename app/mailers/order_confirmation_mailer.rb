@@ -6,6 +6,7 @@ class OrderConfirmationMailer < ApplicationMailer
     @user = sale_order.user
     @items = sale_order.sale_order_items.includes(:product)
     @shipping_address = sale_order.order_shipping_address
+    @payment = sale_order.payments.order(:created_at, :id).last
 
     mail(
       to: @user.email,

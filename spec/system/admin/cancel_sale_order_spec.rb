@@ -6,42 +6,42 @@ RSpec.describe 'Admin cancels sale order', type: :system do
   let(:admin) { create(:user, role: 'admin') }
   let(:customer) { create(:user) }
   let(:product) { create(:product, skip_seed_inventory: true) }
-  let!(:inventory1) { create(:inventory, product: product, status: :reserved, sale_order: sale_order) }
-  let!(:inventory2) { create(:inventory, product: product, status: :sold, sale_order: sale_order) }
-  let(:sale_order) { create(:sale_order, user: customer, status: 'Confirmed') }
+  let(:sale_order) { create(:sale_order, user: customer, status: 'Pending') }
+  let!(:inventory) { create(:inventory, product: product, status: :reserved, sale_order: sale_order) }
 
-  before do
-    sign_in admin
+  before { sign_in admin }
+
+  def cancel_from_page
+    visit admin_sale_order_path(sale_order)
+    find("form[action='#{cancel_admin_sale_order_path(sale_order)}'] button").click
+    find('#global-confirm-modal.show [data-confirm="ok"]').click
   end
 
-  it 'shows cancel button for non-canceled orders' do
+  it 'shows the simple cancel button for a pending unpaid order' do
     visit admin_sale_order_path(sale_order)
 
-    expect(page).to have_button('Cancel Order')
+    expect(page).to have_css("form[action='#{cancel_admin_sale_order_path(sale_order)}']")
   end
 
-  it 'does not show cancel button for already canceled orders' do
+  it 'does not show the cancel button for an already canceled order' do
     sale_order.update!(status: 'Canceled')
     visit admin_sale_order_path(sale_order)
 
-    expect(page).not_to have_button('Cancel Order')
+    expect(page).not_to have_css("form[action='#{cancel_admin_sale_order_path(sale_order)}']")
   end
 
-  it 'cancels the order and releases inventories', js: true do
-    visit admin_sale_order_path(sale_order)
+  it 'shows refund/return review instead of simple cancellation for a paid order' do
+    create(:payment, sale_order: sale_order, amount: sale_order.total_order_value, status: 'Completed')
+    visit admin_sale_order_path(sale_order.reload)
 
-    # Aceptar el diálogo de confirmación
-    accept_confirm do
-      click_button 'Cancel Order'
-    end
+    expect(page).to have_content('Cancelación requiere revisión de pago/devolución')
+  end
 
-    expect(page).to have_content('Orden cancelada exitosamente')
-    expect(page).to have_content('Canceled') # Status badge
-
-    # Verificar que los inventories fueron liberados
-    expect(inventory1.reload.status).to eq('available')
-    expect(inventory1.sale_order_id).to be_nil
-    expect(inventory2.reload.status).to eq('available')
-    expect(inventory2.sale_order_id).to be_nil
+  it 'cancels a pending unpaid order and releases reserved inventory', :aggregate_failures, :js do
+    cancel_from_page
+    expect(page).to have_content('Orden cancelada')
+    expect(page).to have_content('Orden Cancelada')
+    expect(inventory.reload.status).to eq('available')
+    expect(inventory.sale_order_id).to be_nil
   end
 end

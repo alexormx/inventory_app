@@ -508,15 +508,18 @@ class Product < ApplicationRecord
   public
 
   # ---- Stock helpers para carrito / preorders ----
-  def current_on_hand
-    # Consulta simple; en vistas de lista se puede precomputar vía preload y pasar override
-    @current_on_hand ||= Inventory.where(product_id: id, status: [:available]).count
+  def current_on_hand(condition: nil)
+    scope = Inventory.customer_on_hand.where(product_id: id)
+    scope = scope.for_condition(condition) if condition.present?
+    scope.count
   end
 
   # Inventario en tránsito (ya comprado, viene en camino al almacén).
   # Se considera vendible aunque no esté físicamente disponible aún.
-  def in_transit_count
-    @in_transit_count ||= Inventory.where(product_id: id, status: :in_transit, sale_order_id: nil).count
+  def in_transit_count(condition: nil)
+    scope = Inventory.customer_in_transit.where(product_id: id)
+    scope = scope.for_condition(condition) if condition.present?
+    scope.count
   end
 
   # Inventario disponible agrupado por condición con precio
@@ -549,6 +552,12 @@ class Product < ApplicationRecord
         }
       end.sort_by { |c| Inventory::ITEM_CONDITIONS[c[:condition].to_sym] || 99 }
     end
+  end
+
+  def customer_price_for_condition(condition)
+    return selling_price.to_d if condition.to_s == 'brand_new'
+
+    sellable_inventory.for_condition(condition).average(:selling_price)&.to_d || selling_price.to_d
   end
 
   # ¿Tiene piezas coleccionables (no nuevas)?
@@ -593,8 +602,8 @@ class Product < ApplicationRecord
   # Desglose de cantidades inmediata vs pendiente según flags.
   # immediate consume on_hand (available); in_transit_qty consume inventario en tránsito;
   # pending cae a preorder/backorder según flags del producto.
-  def split_immediate_and_pending(requested_qty)
-    splitter = InventoryServices::AvailabilitySplitter.new(self, requested_qty)
+  def split_immediate_and_pending(requested_qty, condition: 'brand_new')
+    splitter = InventoryServices::AvailabilitySplitter.new(self, requested_qty, condition: condition)
     r = splitter.call
     {
       requested: r.requested,
@@ -626,11 +635,7 @@ class Product < ApplicationRecord
   # verdad compartida por publishable_stock?, available_by_condition y el tope de
   # cantidad del carrito, para que mostrar, ordenar y publicar coincidan siempre.
   def sellable_inventory
-    inventories.where(sale_order_id: nil)
-               .where(
-                 '(status = :avail AND inventory_location_id IS NOT NULL) OR status = :transit',
-                 avail: Inventory.statuses[:available], transit: Inventory.statuses[:in_transit]
-               )
+    inventories.customer_sellable
   end
 
   # ¿Debería poder estar :active? Tiene stock publicable, o se vende por

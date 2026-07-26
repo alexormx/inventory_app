@@ -6,11 +6,12 @@ class PaymentMethod < ApplicationRecord
 
   scope :active, -> { where(active: true) }
   scope :ordered, -> { order(position: :asc, name: :asc) }
+  scope :checkout_compatible, -> { where(code: legacy_enum_mapping.keys) }
 
   before_validation :normalize_code
 
   def self.for_select
-    active.ordered.pluck(:name, :code)
+    active.checkout_compatible.ordered.pluck(:name, :code)
   end
 
   # Para compatibilidad con el enum existente en Payment

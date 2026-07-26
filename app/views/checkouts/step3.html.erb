@@ -55,7 +55,7 @@
           <h6 class="mb-0"><i class="fa fa-credit-card me-2"></i>Método de pago</h6>
         </div>
         <div class="card-body">
-          <% payment_methods = PaymentMethod.active.ordered %>
+          <% payment_methods = PaymentMethod.active.checkout_compatible.ordered %>
 
           <% if payment_methods.any? %>
             <div class="d-flex flex-column gap-2"
@@ -120,8 +120,8 @@
               <% condition = item[:condition] %>
               <% item_price = item[:price] %>
               <% collectible = item[:collectible] %>
-              <% split = collectible ? nil : product.split_immediate_and_pending(qty) %>
-              <% pending_present ||= (split && split[:pending].positive?) %>
+              <% split = collectible ? nil : product.split_immediate_and_pending(qty, condition: condition) %>
+              <% pending_present ||= (split && (split[:in_transit_qty].positive? || split[:pending].positive?)) %>
               <li class="list-group-item">
                 <div class="d-flex justify-content-between align-items-center">
                   <div class="d-flex align-items-center gap-3">
@@ -139,7 +139,14 @@
                         <% if collectible %>
                           <span class="badge bg-success">1 pieza única</span>
                         <% else %>
-                          <span class="badge bg-success"><%= split[:immediate] %> disponible(s)</span>
+                          <% if split[:immediate].positive? %>
+                            <span class="badge bg-success"><%= split[:immediate] %> disponible(s)</span>
+                          <% end %>
+                          <% if split[:in_transit_qty].positive? %>
+                            <span class="badge bg-info text-dark">
+                              <%= split[:in_transit_qty] %> en tránsito · pendiente de llegada
+                            </span>
+                          <% end %>
                           <% if split[:pending].positive? %>
                             <span class="badge bg-warning text-dark">
                               <%= split[:pending] %> <%= split[:pending_type] == :preorder ? 'preventa' : 'sobre pedido' %>
@@ -172,6 +179,7 @@
             <div>
               <strong>Algunos productos tienen tiempos de espera</strong>
               <p class="mb-2 small">
+                Las unidades <strong>en tránsito</strong> ya fueron compradas al proveedor y se enviarán después de su llegada.
                 Las unidades en <strong>preventa</strong> se enviarán cuando el producto se lance.
                 Las unidades <strong>sobre pedido</strong> se enviarán cuando llegue nuevo inventario.
               </p>

@@ -20,9 +20,7 @@ module InventorySyncable
     end
   rescue StandardError => e
     Rails.logger.error "[❌ InventorySync Error] #{e.class}: #{e.message}\n#{e.backtrace&.first(5)&.join("\n")}"
-    # En producción degradar a log para no romper el checkout del cliente;
-    # en desarrollo y test, propagar para detectar bugs tempranamente.
-    raise unless Rails.env.production?
+    raise
   end
 
   private
@@ -63,48 +61,15 @@ module InventorySyncable
     end
   end
 
-  def sync_inventory_for_sale(desired_quantity)
-    # Only assign inventory if it's not already assigned
-    assigned = Inventory.where(product_id: product.id, sale_order_id: sale_order_id)
-    current_count = assigned.count
-    needed = desired_quantity - current_count
+  def sync_inventory_for_sale(_desired_quantity)
+    result = InventoryServices::ReserveSaleOrderItem.call(self, strict: false)
 
-    if needed.positive?
-      # Prioriza piezas con ubicación física; las sin ubicación se asignan solo
-      # como fallback (quedan al final del orden).
-      available_items = Inventory.assignable
-                                 .where(product_id: product.id)
-                                 .location_first
-                                 .limit(needed)
-                                 .to_a
-
-      reserve_inventory_items(available_items)
-      sync_location_warning(available_items)
-
-      if available_items.count < needed
-        append_pending_note(needed - available_items.count)
-      else
-        remove_pending_note
-      end
-    elsif needed.negative?
-      # Too many assigned, release extras
-      extra_items = assigned.where(status: :reserved)
-                            .order(status_changed_at: :desc)
-                            .limit(needed.abs)
-      release_inventory_items(extra_items)
+    if result.missing.positive?
+      append_pending_note(result.missing)
+    else
       remove_pending_note
     end
-  end
-
-  def reserve_inventory_items(items)
-    items.each do |item|
-      item.update!(
-        status: :reserved,
-        sale_order_id: sale_order_id,
-        status_changed_at: Time.current,
-        sold_price: respond_to?(:unit_final_price) ? unit_final_price.to_f : item.sold_price
-      )
-    end
+    sync_location_warning(result.inventories)
   end
 
   def append_pending_note(remaining)

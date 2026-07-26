@@ -84,6 +84,52 @@ RSpec.describe 'Checkout Idempotency Protection', type: :request do
       end
     end
 
+    context 'when the browser repeats a successful submission after session cleanup' do
+      before { setup_checkout_session }
+
+      it 'recovers the existing order without requiring the cleared cart or token' do
+        request_params = {
+          payment_method: 'transferencia_bancaria',
+          checkout_token: @checkout_token,
+          accept_pending: '1'
+        }
+
+        post checkout_complete_path, params: request_params
+        existing_order = SaleOrder.find_by!(user: user, idempotency_key: @checkout_token)
+
+        expect do
+          post checkout_complete_path, params: request_params
+        end.not_to change(SaleOrder, :count)
+
+        expect(response).to redirect_to(checkout_thank_you_path(order_id: existing_order.id))
+        expect(flash[:notice]).to match(/ya fue procesad/i)
+      end
+    end
+
+    context 'when PostgreSQL reports a concurrent duplicate after the pre-check' do
+      before { setup_checkout_session }
+
+      it 'recovers the scoped order without parsing adapter-specific message text' do
+        allow_any_instance_of(Checkout::CreateOrder).to receive(:call) do
+          create(:sale_order, user: user, idempotency_key: @checkout_token)
+          raise ActiveRecord::RecordNotUnique,
+                'PG::UniqueViolation: duplicate key violates unique constraint "index_sale_orders_on_user_and_idempotency"'
+        end
+
+        expect do
+          post checkout_complete_path, params: {
+            payment_method: 'transferencia_bancaria',
+            checkout_token: @checkout_token,
+            accept_pending: '1'
+          }
+        end.not_to raise_error
+
+        existing_order = SaleOrder.find_by!(user: user, idempotency_key: @checkout_token)
+        expect(response).to redirect_to(checkout_thank_you_path(order_id: existing_order.id))
+        expect(flash[:notice]).to match(/ya fue procesad/i)
+      end
+    end
+
     context 'when token does not match session token' do
       before { setup_checkout_session }
 

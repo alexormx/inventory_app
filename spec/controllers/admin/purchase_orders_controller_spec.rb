@@ -56,12 +56,83 @@ RSpec.describe Admin::PurchaseOrdersController, type: :controller do
       end
     end
 
+    context 'with customer-allocated incoming inventory' do
+      let(:sale_order) { create(:sale_order) }
+      let(:sale_order_item) do
+        create(:sale_order_item, sale_order: sale_order, product: product, quantity: 1)
+      end
+
+      it 'promotes pre_reserved inventory to reserved when the purchase order is received' do
+        inventory = create(
+          :inventory,
+          product: product,
+          purchase_order: purchase_order,
+          sale_order: sale_order,
+          sale_order_item: sale_order_item,
+          status: :pre_reserved
+        )
+
+        patch :confirm_receipt, params: { id: purchase_order.id }
+
+        expect(inventory.reload.status).to eq('reserved')
+      end
+
+      it 'promotes pre_sold inventory to sold when the purchase order is received' do
+        inventory = create(
+          :inventory,
+          product: product,
+          purchase_order: purchase_order,
+          sale_order: sale_order,
+          sale_order_item: sale_order_item,
+          status: :pre_sold
+        )
+
+        patch :confirm_receipt, params: { id: purchase_order.id }
+
+        expect(inventory.reload.status).to eq('sold')
+      end
+    end
+
     context 'automatic preorder allocation after receipt' do
       let(:preorder_user) { create(:user, email: 'preorder@test.com') }
-      let!(:preorder1) { create(:preorder_reservation, product: product, user: preorder_user, quantity: 1, reserved_at: 2.days.ago) }
-      let!(:preorder2) { create(:preorder_reservation, product: product, user: preorder_user, quantity: 1, reserved_at: 1.day.ago) }
+      let(:location) { create(:inventory_location) }
+      let!(:preorder_order1) { create(:sale_order, user: preorder_user) }
+      let!(:preorder_order2) { create(:sale_order, user: preorder_user) }
+      let!(:preorder_line1) do
+        create(:sale_order_item, sale_order: preorder_order1, product: product, quantity: 1, preorder_quantity: 1)
+      end
+      let!(:preorder_line2) do
+        create(:sale_order_item, sale_order: preorder_order2, product: product, quantity: 1, preorder_quantity: 1)
+      end
+      let!(:preorder1) do
+        create(
+          :preorder_reservation,
+          product: product,
+          user: preorder_user,
+          sale_order: preorder_order1,
+          sale_order_item: preorder_line1,
+          quantity: 1,
+          reserved_at: 2.days.ago
+        )
+      end
+      let!(:preorder2) do
+        create(
+          :preorder_reservation,
+          product: product,
+          user: preorder_user,
+          sale_order: preorder_order2,
+          sale_order_item: preorder_line2,
+          quantity: 1,
+          reserved_at: 1.day.ago
+        )
+      end
       let!(:inventory1) { create(:inventory, product: product, purchase_order: purchase_order, status: :in_transit) }
       let!(:inventory2) { create(:inventory, product: product, purchase_order: purchase_order, status: :in_transit) }
+
+      before do
+        inventory1.update_columns(inventory_location_id: location.id)
+        inventory2.update_columns(inventory_location_id: location.id)
+      end
 
       it 'automatically assigns received inventory to pending preorders' do
         patch :confirm_receipt, params: { id: purchase_order.id }
@@ -72,7 +143,23 @@ RSpec.describe Admin::PurchaseOrdersController, type: :controller do
 
       it 'assigns inventory in FIFO order (oldest preorder first)' do
         # Crear tercera preorder más reciente
-        preorder3 = create(:preorder_reservation, product: product, user: preorder_user, quantity: 10, reserved_at: Time.current)
+        preorder_order3 = create(:sale_order, user: preorder_user)
+        preorder_line3 = create(
+          :sale_order_item,
+          sale_order: preorder_order3,
+          product: product,
+          quantity: 10,
+          preorder_quantity: 10
+        )
+        preorder3 = create(
+          :preorder_reservation,
+          product: product,
+          user: preorder_user,
+          sale_order: preorder_order3,
+          sale_order_item: preorder_line3,
+          quantity: 10,
+          reserved_at: Time.current
+        )
 
         patch :confirm_receipt, params: { id: purchase_order.id }
 
@@ -82,12 +169,12 @@ RSpec.describe Admin::PurchaseOrdersController, type: :controller do
         expect(preorder3.reload.status).to eq('pending')
       end
 
-      it 'creates sale order items for assigned preorders' do
+      it 'assigns inventory to the originating sale order items' do
         patch :confirm_receipt, params: { id: purchase_order.id }
 
-        preorder_so = preorder1.reload.sale_order
-        expect(preorder_so).to be_present
-        expect(preorder_so.sale_order_items.where(product: product).exists?).to be true
+        expect(preorder1.reload.sale_order).to eq(preorder_order1)
+        expect(preorder1.sale_order_item).to eq(preorder_line1)
+        expect(preorder_line1.reload.inventory_units).to contain_exactly(inventory1)
       end
 
       it 'marks inventory as reserved for preorder sale orders' do
@@ -155,10 +242,41 @@ RSpec.describe Admin::PurchaseOrdersController, type: :controller do
     context 'with multiple products' do
       let(:product2) { create(:product, skip_seed_inventory: true) }
       let(:preorder_user) { create(:user, email: 'preorder@test.com') }
-      let!(:preorder_p1) { create(:preorder_reservation, product: product, user: preorder_user, quantity: 1) }
-      let!(:preorder_p2) { create(:preorder_reservation, product: product2, user: preorder_user, quantity: 1) }
+      let(:location) { create(:inventory_location) }
+      let!(:preorder_order) { create(:sale_order, user: preorder_user) }
+      let!(:preorder_line1) do
+        create(:sale_order_item, sale_order: preorder_order, product: product, quantity: 1, preorder_quantity: 1)
+      end
+      let!(:preorder_line2) do
+        create(:sale_order_item, sale_order: preorder_order, product: product2, quantity: 1, preorder_quantity: 1)
+      end
+      let!(:preorder_p1) do
+        create(
+          :preorder_reservation,
+          product: product,
+          user: preorder_user,
+          sale_order: preorder_order,
+          sale_order_item: preorder_line1,
+          quantity: 1
+        )
+      end
+      let!(:preorder_p2) do
+        create(
+          :preorder_reservation,
+          product: product2,
+          user: preorder_user,
+          sale_order: preorder_order,
+          sale_order_item: preorder_line2,
+          quantity: 1
+        )
+      end
       let!(:inv1) { create(:inventory, product: product, purchase_order: purchase_order, status: :in_transit) }
       let!(:inv2) { create(:inventory, product: product2, purchase_order: purchase_order, status: :in_transit) }
+
+      before do
+        inv1.update_columns(inventory_location_id: location.id)
+        inv2.update_columns(inventory_location_id: location.id)
+      end
 
       it 'allocates each product to its respective preorders' do
         patch :confirm_receipt, params: { id: purchase_order.id }

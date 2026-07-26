@@ -165,6 +165,16 @@ class PurchaseOrder < ApplicationRecord
         status_changed_at: Time.current,
         updated_at: Time.current
       )
+      scope.where(status: :pre_reserved).update_all(
+        status: Inventory.statuses[:reserved],
+        status_changed_at: Time.current,
+        updated_at: Time.current
+      )
+      scope.where(status: :pre_sold).update_all(
+        status: Inventory.statuses[:sold],
+        status_changed_at: Time.current,
+        updated_at: Time.current
+      )
       Products::RestockDetector.call(product_ids, prev_available_counts: prev_available) if product_ids.present?
     when 'Pending', 'In Transit'
       scope.where(status: %i[available in_transit]).update_all(

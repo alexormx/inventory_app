@@ -3,6 +3,7 @@ require 'rails_helper'
 RSpec.describe Checkout::CreateOrder, type: :service do
   let(:user) { create(:user) }
   let!(:address) { create(:shipping_address, user: user) }
+  let!(:shipping_method) { create(:shipping_method, :standard) }
   let(:product) { create(:product, selling_price: 100, preorder_available: false, backorder_allowed: false, status: :active) }
 
   # Carrito simulado con nuevo formato: items es array de hashes

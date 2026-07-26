@@ -6,6 +6,9 @@ class SaleOrderItem < ApplicationRecord
   belongs_to :sale_order
   belongs_to :product
   has_many :inventory_assignment_logs, dependent: :nullify
+  has_many :inventory_units,
+           class_name: 'Inventory',
+           inverse_of: :sale_order_item
 
   # Usar el mismo enum que Inventory para consistencia
   ITEM_CONDITIONS = Inventory::ITEM_CONDITIONS
@@ -21,11 +24,10 @@ class SaleOrderItem < ApplicationRecord
   # Guards de seguridad
   before_update :ensure_free_to_reduce, if: :will_reduce_quantity?
   before_destroy :ensure_no_sold_and_release_reserved
-  after_destroy :cleanup_preorders_and_preassignments
+  before_destroy :cleanup_preorders_and_preassignments
   after_save :sync_inventory_records, if: :saved_change_to_quantity?
   after_commit :update_product_stats
   after_commit :recalculate_parent_order_totals
-  after_commit :backfill_inventory_links, on: :create
   after_destroy_commit :recalculate_parent_order_totals
 
   # ------ Métricas de volumen y peso ------
@@ -53,10 +55,6 @@ class SaleOrderItem < ApplicationRecord
   end
 
   # ------ Inventario asignado a esta línea (helpers) ------
-  def inventory_units
-    @inventory_units ||= Inventory.where(sale_order_id: sale_order_id, product_id: product_id)
-  end
-
   def reserved_inventory_count
     inventory_units.count
   end
@@ -85,15 +83,15 @@ class SaleOrderItem < ApplicationRecord
     old_qty.to_i - new_qty.to_i
   end
 
-  # Scope de inventario ligado a esta SO y producto (sirve aunque no guardes sale_order_item_id)
+  # Scope de inventario perteneciente exclusivamente a esta línea.
   def so_inventory
-    Inventory.where(sale_order_id: sale_order_id, product_id: product_id)
+    Inventory.where(sale_order_item_id: id)
   end
 
   def ensure_free_to_reduce
     to_remove = desired_reduction
-    sold_count = so_inventory.where(status: Inventory.statuses[:sold]).count
-    reserved_count = so_inventory.where(status: Inventory.statuses[:reserved]).count
+    sold_count = so_inventory.where(status: %i[sold pre_sold]).count
+    reserved_count = so_inventory.where(status: %i[reserved pre_reserved]).count
     pending_pool   = preorder_quantity.to_i + backordered_quantity.to_i
 
     # No puedo “quitar” vendidos; solo puedo liberar reservados.
@@ -137,12 +135,12 @@ class SaleOrderItem < ApplicationRecord
     # Si todavía hay exceso (>0) aquí, lo cubrirá ensure_free_to_reduce liberando reservados.
   end
 
-  # Cancela o reduce PreorderReservation pendientes para esta SO y producto
+  # Cancela o reduce reservaciones pendientes de esta línea.
   def cancel_preorders!(amount)
     return if amount.to_i <= 0
 
     remaining = amount.to_i
-    PreorderReservation.pending.where(sale_order_id: sale_order_id, product_id: product_id)
+    PreorderReservation.pending.where(sale_order_item_id: id)
                        .order(reserved_at: :desc)
                        .find_each do |res|
       break if remaining <= 0
@@ -158,10 +156,11 @@ class SaleOrderItem < ApplicationRecord
     end
   rescue StandardError => e
     Rails.logger.error "[SOI#cancel_preorders!] #{e.class}: #{e.message}"
+    raise
   end
 
   def ensure_no_sold_and_release_reserved
-    sold = so_inventory.where(status: Inventory.statuses[:sold])
+    sold = so_inventory.where(status: %i[sold pre_sold])
     if sold.exists?
       errors.add(:base,
                  "No se puede eliminar la línea: tiene #{sold.count} unidad(es) vendida(s). Para poder eliminarla primero regresa la orden a 'Pending' (puede requerir pasar por 'Confirmed') para revertir vendido→reservado y luego intenta de nuevo.")
@@ -169,26 +168,32 @@ class SaleOrderItem < ApplicationRecord
     end
 
     # Libera las reservadas de esta línea y limpia referencias + sold_price
-    so_inventory.where(status: Inventory.statuses[:reserved]).update_all(release_reserved_attributes)
+    so_inventory.where(status: :reserved).update_all(release_reserved_attributes)
+    so_inventory.where(status: :pre_reserved)
+                .update_all(release_preassigned_attributes(Inventory.statuses[:in_transit]))
   end
 
   # Al eliminar una línea, cancelar preventas ligadas y revertir pre_* en inventario
   def cleanup_preorders_and_preassignments
-    # 1) Cancelar PreorderReservation vinculadas a esta SO y producto
+    # Limpiar el vínculo nullable antes del DELETE mantiene vigente la FK.
     cancelled = PreorderReservation.statuses[:cancelled]
-    PreorderReservation.where(sale_order_id: sale_order_id, product_id: product_id)
-                       .update_all(status: cancelled, cancelled_at: Time.current, updated_at: Time.current)
+    PreorderReservation.where(sale_order_item_id: id)
+                       .update_all(
+                         status: cancelled,
+                         cancelled_at: Time.current,
+                         sale_order_item_id: nil,
+                         updated_at: Time.current
+                       )
 
     # 2) Revertir inventario pre_* a in_transit (y limpiar vínculos a SO)
     pre_reserved = Inventory.statuses[:pre_reserved]
     pre_sold     = Inventory.statuses[:pre_sold]
     in_transit   = Inventory.statuses[:in_transit]
-    Inventory.where(sale_order_id: sale_order_id, product_id: product_id, status: [pre_reserved, pre_sold])
-         .update_all(release_preassigned_attributes(in_transit))
-    # Intentar asignar preventas si hubiera pendientes y ahora hay inventario libre/in_transit
-    Preorders::PreorderAllocator.new(product).call
+    Inventory.where(sale_order_item_id: id, status: [pre_reserved, pre_sold])
+             .update_all(release_preassigned_attributes(in_transit))
   rescue StandardError => e
     Rails.logger.error "[SOI#cleanup_preorders_and_preassignments] #{e.class}: #{e.message}"
+    raise
   end
 
   # Luego de confirmar la eliminación, intenta asignar preventas pendientes con el inventario liberado
@@ -198,21 +203,6 @@ class SaleOrderItem < ApplicationRecord
     Preorders::PreorderAllocator.new(product).call
   rescue StandardError => e
     Rails.logger.error "[SOI#allocate_preorders_after_release] #{e.class}: #{e.message}"
-  end
-
-  # Asegura que toda pieza ligada a (SO, producto) tenga el sale_order_item_id correcto
-  def backfill_inventory_links
-    return unless sale_order_id.present? && product_id.present?
-    return unless sale_order_item_link_supported?
-
-    scope = Inventory.where(sale_order_id: sale_order_id, product_id: product_id, sale_order_item_id: nil)
-    return unless scope.exists?
-
-    begin
-      scope.update_all(sale_order_item_id: id, updated_at: Time.current)
-    rescue StandardError => e
-      Rails.logger.error "[SOI#backfill_inventory_links] #{e.class}: #{e.message}"
-    end
   end
 
   def update_product_stats
@@ -252,6 +242,7 @@ class SaleOrderItem < ApplicationRecord
     attrs = {
       status: in_transit,
       sale_order_id: nil,
+      sold_price: nil,
       status_changed_at: Time.current,
       updated_at: Time.current
     }

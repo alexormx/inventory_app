@@ -209,15 +209,29 @@ RSpec.describe PurchaseOrder, type: :model do
     expect(Inventory.where(purchase_order_id: po.id)).to be_empty
   end
 
-  it "blocks destroy when reserved/sold exists" do
+  it "allocates delivered inventory only after location assignment and then blocks PO destroy" do
+    product = create(:product, skip_seed_inventory: true)
     po  = create(:purchase_order, user: supplier, order_date: Date.today, expected_delivery_date: Date.today, status: "Pending")
     create(:purchase_order_item, purchase_order: po, product: product, quantity: 1, unit_cost: 100)
     po.update!(status: "Delivered") # ensures inventories flip to :available via after_update
 
-    # Reserve that item via a Sale Order Item (no manual Inventory.create!)
+    inventory = Inventory.find_by!(purchase_order_id: po.id, product_id: product.id)
     customer = create(:user)
     so = create(:sale_order, user: customer)
-    create(:sale_order_item, sale_order: so, product: product, quantity: 1, unit_final_price: 150)
+    line = create(:sale_order_item, sale_order: so, product: product, quantity: 1, unit_final_price: 150)
+
+    expect(inventory.reload).to be_available
+    expect(inventory.inventory_location_id).to be_nil
+    expect(inventory.sale_order_id).to be_nil
+    expect(Inventory.customer_sellable.where(id: inventory.id)).to be_empty
+
+    inventory.update!(inventory_location: create(:inventory_location))
+    expect(Inventory.customer_sellable.where(id: inventory.id)).to exist
+
+    InventoryServices::ReserveSaleOrderItem.call(line)
+    expect(inventory.reload).to be_reserved
+    expect(inventory.sale_order).to eq(so)
+    expect(inventory.sale_order_item).to eq(line)
 
     # Sanity: confirm a locked row for this PO exists
     locked = Inventory.where(purchase_order_id: po.id)
