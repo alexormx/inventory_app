@@ -1,8 +1,14 @@
-<%= turbo_frame_tag "products_grid", autoscroll: true, data: { autoscroll_block: "start", autoscroll_behavior: "smooth" } do %>
-  <%# Resumen dinámico — vive dentro del frame, se actualiza en cada cambio de filtro %>
+<%= turbo_frame_tag "products_grid", autoscroll: true, data: { autoscroll_block: "start", autoscroll_behavior: "smooth", turbo_action: "advance" } do %>
+  <%# El resumen visual vive dentro del frame; su mensaje se copia a la
+      región aria-live estable que está fuera del frame. %>
   <% total_products = @products.total_count %>
   <% has_filters = filter_state.has_filters || @q.present? %>
-  <div class="catalog-results-summary d-flex flex-wrap align-items-baseline justify-content-between gap-2 mb-3" aria-live="polite">
+  <% results_announcement = if total_products.zero?
+                              'Actualización finalizada: no hay resultados.'
+                            else
+                              "Actualización finalizada: #{number_with_delimiter(total_products)} #{total_products == 1 ? 'producto' : 'productos'}."
+                            end %>
+  <div class="catalog-results-summary d-flex flex-wrap align-items-baseline justify-content-between gap-2 mb-3" data-results-announcement="<%= results_announcement %>">
     <div class="d-flex flex-wrap align-items-baseline gap-2">
       <span class="catalog-results-count">
         <strong class="catalog-results-count-number"><%= number_with_delimiter(total_products) %></strong>
@@ -44,8 +50,8 @@
   <%# Densidad progresiva: 2 (mobile) → 3 (md) → 4 (lg) → 5 (xl) → 6 (xxl).
       OJO: el conteo real de columnas lo gobiernan los anchos explícitos
       en catalog.scss ("Spacious Cards", .product-card-wrapper); estas
-      clases row-cols y catalog_view_controller#gridCols se mantienen en
-      sync sólo por claridad. El gutter/escala mobile vienen del bloque
+      clases row-cols se mantienen sincronizadas con esos anchos explícitos.
+      El gutter/escala mobile vienen del bloque
       @media (max-width: 575.98px). %>
   <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 row-cols-xxl-6 g-2 g-md-3" id="product-grid-content" role="list">
     <% @products.each_with_index do |product, card_index| %>
@@ -86,7 +92,7 @@
             </div>
           <% end %>
           <div class="card-body text-center d-flex flex-column w-100">
-            <div class="catalog-badges catalog-badges--inline d-flex flex-wrap justify-content-center align-items-center gap-1" role="status" aria-live="polite">
+            <div class="catalog-badges catalog-badges--inline d-flex flex-wrap justify-content-center align-items-center gap-1">
               <%# Disponibilidad (inventario/logística) y evento de catálogo %>
               <%# (Nuevo / De vuelta / Resurtido) son conceptos separados: %>
               <%# máximo un badge de disponibilidad y uno de evento. %>
@@ -104,7 +110,7 @@
                 <span class="text-muted" aria-disabled="true"><%= product.product_name %></span>
               <% end %>
             </h2>
-            <p class="catalog-card-price text-danger" role="text">
+            <p class="catalog-card-price text-danger">
               <span class="visually-hidden">Precio: </span><%= number_to_currency(product.selling_price) %>
               <% unless user_signed_in? %>
                 <i class="fas fa-circle-info catalog-fx-icon ms-1"
@@ -215,17 +221,17 @@
 
       <%# Context-aware headline + sub %>
       <% if @q.present? && filter_state.has_filters %>
-        <h4 class="fw-semibold mb-2">Sin resultados</h4>
+        <h2 class="h4 fw-semibold mb-2">Sin resultados</h2>
         <p class="text-muted mb-3">
           No encontramos productos que coincidan con <strong>"<%= @q %>"</strong> y los filtros activos.
         </p>
       <% elsif @q.present? %>
-        <h4 class="fw-semibold mb-2">Sin resultados para tu búsqueda</h4>
+        <h2 class="h4 fw-semibold mb-2">Sin resultados para tu búsqueda</h2>
         <p class="text-muted mb-3">
           Probamos con <strong>"<%= @q %>"</strong> y no apareció nada. Revisa la ortografía o usa términos más generales.
         </p>
       <% else %>
-        <h4 class="fw-semibold mb-2">Ningún producto con estos filtros</h4>
+        <h2 class="h4 fw-semibold mb-2">Ningún producto con estos filtros</h2>
         <p class="text-muted mb-3">
           Ajusta los filtros para ampliar tu búsqueda. Algunos productos pueden estar en preventa o sobre pedido.
         </p>
@@ -273,7 +279,7 @@
         <span class="catalog-pagination-sep mx-2" aria-hidden="true">·</span>
         <span>Página <strong class="text-dark"><%= @products.current_page %></strong> de <strong class="text-dark"><%= @products.total_pages %></strong></span>
       </div>
-      <div class="d-flex justify-content-center" data-turbo-action="advance">
+      <div class="d-flex justify-content-center">
         <%# Mobile-friendly window: shows current page ± 1 plus the
             first/last page (≈5 buttons + gaps), fits ~320px wide. %>
         <%= paginate @products, theme: 'storefront', window: 1, outer_window: 1 %>

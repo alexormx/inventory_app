@@ -21,4 +21,8 @@ class OrderShippingAddress < ApplicationRecord
   def as_json_snapshot
     attributes.slice('full_name', 'line1', 'line2', 'city', 'state', 'postal_code', 'country', 'shipping_method')
   end
+
+  def shipping_method_name
+    raw_address_json.to_h['shipping_method_name'].presence || shipping_method.to_s.humanize
+  end
 end

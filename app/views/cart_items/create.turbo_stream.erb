@@ -35,18 +35,14 @@
     <div class="alert <%= bootstrap_class_for(key) %> alert-dismissible fade show flash-message shadow" role="alert" data-timeout="3000" style="border-radius:.65rem; backdrop-filter: blur(6px); margin-top:.5rem;">
       <div class="d-flex align-items-start">
         <div class="flex-grow-1 pe-2"><%= message %></div>
-        <button type="button" class="btn-close mt-1" aria-label="Close"></button>
+        <button type="button" class="btn-close mt-1" aria-label="Cerrar"></button>
       </div>
     </div>
   <% end %>
 <% end %>
 
 <!-- Update the cart counting with turbo -->
-<%= turbo_stream.replace "cart-count" do %>
-  <span id="cart-count" class="badge bg-danger rounded-pill position-absolute top-0 start-100 translate-middle">
-    <%= cart_item_count %>
-  </span>
-<% end %>
+<%= turbo_stream.update "cart-count", cart_item_count %>
 
 <!-- Reemplazar mini preview del carrito -->
 <%= turbo_stream.replace "cart-preview-body" do %>

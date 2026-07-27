@@ -104,9 +104,11 @@ class SaleOrder < ApplicationRecord
     select("sale_orders.*, #{BALANCE_SQL} AS balance")
   }
 
-  # Filtra órdenes con balance > 0 (cuentas por cobrar abiertas)
+  # Filtra órdenes con balance > 0 (cuentas por cobrar abiertas).
+  # Las canceladas quedan fuera: su saldo ya no es cobrable aunque
+  # total_order_value siga registrado y no haya pagos que lo compensen.
   scope :open_receivables, lambda {
-    where(Arel.sql("#{BALANCE_SQL} > 0"))
+    where.not(status: 'Canceled').where(Arel.sql("#{BALANCE_SQL} > 0"))
   }
 
   # Ordena por due_date con NULLS LAST y luego por created_at DESC, portable entre motores

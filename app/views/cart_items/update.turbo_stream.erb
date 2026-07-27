@@ -1,19 +1,17 @@
-<!-- Actualización de cantidad en carrito -->
-<%= turbo_stream.replace "cart-count" do %>
-  <span id="cart-count" class="badge bg-danger rounded-pill position-absolute top-0 start-100 translate-middle">
-    <%= cart_item_count %>
-  </span>
-<% end %>
+<% unless flash.now[:alert].present? %>
+  <%= turbo_stream.update "cart-count", cart_item_count %>
 
-<%= turbo_stream.replace "cart-preview-body" do %>
-  <div id="cart-preview-body">
-    <%= render 'customers/partials/cart_preview_body', cart_obj: (@cart || Cart.new(session)) %>
-  </div>
+  <%= turbo_stream.replace "cart-preview-body" do %>
+    <div id="cart-preview-body">
+      <%= render 'customers/partials/cart_preview_body', cart_obj: (@cart || Cart.new(session)) %>
+    </div>
+  <% end %>
 <% end %>
 
 <!-- Mensaje accesible opcional (live region dentro del preview) -->
 <%= turbo_stream.append "flash-stack" do %>
-  <% if flash.now[:notice].present? %>
-    <div class="alert alert-success flash-message" role="alert" data-timeout="2000"><%= flash.now[:notice] %></div>
+  <% if flash.now[:alert].present? || flash.now[:notice].present? %>
+    <% kind = flash.now[:alert].present? ? :alert : :notice %>
+    <div class="alert <%= bootstrap_class_for(kind) %> flash-message" role="alert" data-timeout="4000"><%= flash.now[kind] %></div>
   <% end %>
 <% end %>

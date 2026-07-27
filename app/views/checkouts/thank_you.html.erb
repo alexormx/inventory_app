@@ -42,11 +42,7 @@
                 <% end %>
                 <hr class="my-2">
                 <small class="text-muted">Método:</small>
-                <strong>
-                  <% shipping_method_code = shipping_snapshot&.shipping_method %>
-                  <% shipping_method = ShippingMethod.find_by(code: shipping_method_code) %>
-                  <%= shipping_method&.name || shipping_method_code&.titleize || 'Estándar' %>
-                </strong>
+                <strong><%= shipping_snapshot&.shipping_method_name || 'No registrado' %></strong>
               </div>
             </div>
           </div>
@@ -67,20 +63,8 @@
                     <%= payment_completed ? 'Pagado' : 'Pendiente' %>
                   </span>
 
-                  <% unless payment_completed %>
-                    <% pm = PaymentMethod.find_by(code: payment.payment_method) %>
-                    <% if pm&.account_number.present? %>
-                      <hr class="my-2">
-                      <small class="text-muted d-block mb-1">Datos para pago:</small>
-                      <% if pm.bank_name.present? %>
-                        <small><strong><%= pm.bank_name %></strong></small><br>
-                      <% end %>
-                      <code class="user-select-all"><%= pm.account_number %></code>
-                      <% if pm.account_holder.present? %>
-                        <br><small class="text-muted"><%= pm.account_holder %></small>
-                      <% end %>
-                    <% end %>
-                  <% end %>
+                  <%# Las instrucciones bancarias son configuración mutable y no
+                      forman parte del snapshot histórico del pedido. %>
                 <% end %>
               </div>
             </div>

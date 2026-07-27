@@ -23,6 +23,8 @@ import "./custom/bootstrap_polyfills"
 import "./custom/theme_toggle"
 // Tooltips (si hay data-bs-toggle="tooltip")
 import "./custom/tooltip_init"
+// Consentimiento de cookies: muestra el banner y persiste la elección.
+import "./custom/cookies"
 
 // Devise: validación y requisitos de contraseña
 import "./components/password_validation"

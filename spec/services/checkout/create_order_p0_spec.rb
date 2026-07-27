@@ -28,7 +28,13 @@ RSpec.describe Checkout::CreateOrder, 'P0 invariants', type: :service do
     SiteSetting.delete_all
     SiteSetting.set('tax_enabled', true, 'boolean')
     SiteSetting.set('tax_rate_percent', '16.00', 'string')
-    create(:shipping_method, code: 'envio_estandar', base_cost: 99.00, active: true)
+    create(
+      :shipping_method,
+      code: 'envio_estandar',
+      name: 'Envío estándar confirmado',
+      base_cost: 99.00,
+      active: true
+    )
   end
 
   def call_service(**overrides)
@@ -61,6 +67,7 @@ RSpec.describe Checkout::CreateOrder, 'P0 invariants', type: :service do
     expect(line.unit_final_price).to eq(100.to_d)
     expect(line.total_line_cost).to eq(100.to_d)
     expect(inventory.reload.sold_price).to eq(100.to_d)
+    expect(order.order_shipping_address.shipping_method_name).to eq('Envío estándar confirmado')
   end
 
   it 'does not change a persisted order when the current IVA setting changes' do

@@ -25,6 +25,7 @@ import SimpleAccordionController from "./simple_accordion_controller"
 import SimpleTabsController from "./simple_tabs_controller"
 import SubtabsController from "./subtabs_controller"
 import CatalogFiltersController from "./catalog_filters_controller"
+import CatalogResultsController from "./catalog_results_controller"
 import PriceRangeController from "./price_range_controller"
 import CollectibleQuickAddController from "./collectible_quick_add_controller"
 import CatalogLinkController from "./catalog_link_controller"
@@ -33,6 +34,8 @@ import BackToTopController from "./back_to_top_controller"
 import RecentlyViewedController from "./recently_viewed_controller"
 import PostTocController from "./post_toc_controller"
 import CopyController from "./copy_controller"
+import CheckoutShippingController from "./checkout_shipping_controller"
+import SelectableCardsController from "./selectable_cards_controller"
 
 application.register("cart-item", CartItemController)
 application.register("clear-search", ClearSearchController)
@@ -52,6 +55,7 @@ application.register("simple-accordion", SimpleAccordionController)
 application.register("simple-tabs", SimpleTabsController)
 application.register("subtabs", SubtabsController)
 application.register("catalog-filters", CatalogFiltersController)
+application.register("catalog-results", CatalogResultsController)
 application.register("price-range", PriceRangeController)
 application.register("collectible-quick-add", CollectibleQuickAddController)
 application.register("catalog-link", CatalogLinkController)
@@ -60,5 +64,7 @@ application.register("back-to-top", BackToTopController)
 application.register("recently-viewed", RecentlyViewedController)
 application.register("post-toc", PostTocController)
 application.register("copy", CopyController)
+application.register("checkout-shipping", CheckoutShippingController)
+application.register("selectable-cards", SelectableCardsController)
 
 window.Stimulus = application

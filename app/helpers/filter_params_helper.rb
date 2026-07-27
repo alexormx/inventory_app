@@ -13,11 +13,15 @@ module FilterParamsHelper
   #   - price_min: Precio mínimo (String o nil)
   #   - price_max: Precio máximo (String o nil)
   #   - in_stock_only: Boolean - filtrar solo productos en stock
-  #   - backorder_only: Boolean - filtrar solo productos con backorder
-  #   - preorder_only: Boolean - filtrar solo productos en preventa
+  #   - in_transit_only: Boolean - filtrar productos con inventario en tránsito
+  #   - to_order_only: Boolean - filtrar preventa o sobre pedido
   #   - has_filters: Boolean - si hay al menos un filtro activo
   def filter_state
-    @filter_state ||= build_filter_state
+    @filter_state ||= catalog_query.filter_state
+  end
+
+  def catalog_query
+    @catalog_query ||= CatalogQuery.new(params)
   end
 
   # URL para limpiar un filtro específico de categoría
@@ -69,9 +73,15 @@ module FilterParamsHelper
     catalog_path(qp)
   end
 
+  def enable_availability_url(filter_key)
+    qp = normalized_catalog_query_parameters
+    qp[filter_key.to_s] = '1'
+    catalog_path(qp)
+  end
+
   # URL para limpiar todos los filtros (mantiene sort y q)
   def clear_all_filters_url
-    catalog_path(sort: @sort, q: @q)
+    catalog_path(catalog_query.query_parameters.slice('q', 'sort'))
   end
 
   # URL para limpiar la búsqueda de texto (mantiene filtros y orden)
@@ -97,60 +107,9 @@ module FilterParamsHelper
 
   private
 
-  # Normaliza request.query_parameters para evitar llaves duplicadas del tipo
-  # categories vs categories[] y brands vs brands[].
-  # También quita paginación para que al limpiar filtros se regrese a la primera página.
+  # Serializa únicamente el contrato público y quita paginación para que una
+  # modificación de filtros siempre regrese a la primera página.
   def normalized_catalog_query_parameters
-    qp = request.query_parameters.deep_dup
-    qp.delete('page')
-
-    cats = Array(qp.delete('categories')) + Array(qp.delete('categories[]'))
-    cats = cats.compact_blank.uniq
-    qp['categories'] = cats if cats.present?
-
-    brands = Array(qp.delete('brands')) + Array(qp.delete('brands[]'))
-    brands = brands.compact_blank.uniq
-    qp['brands'] = brands if brands.present?
-
-    series = Array(qp.delete('series')) + Array(qp.delete('series[]'))
-    series = series.compact_blank.uniq
-    conditions = Array(qp.delete('conditions')) + Array(qp.delete('conditions[]'))
-    conditions = conditions.compact_blank.uniq
-    qp['conditions'] = conditions if conditions.present?
-    qp['series'] = series if series.present?
-
-    qp
-  end
-
-  def build_filter_state
-    OpenStruct.new(
-      selected_categories: (Array(params[:categories]) + Array(params['categories[]'])).compact_blank.uniq,
-      selected_brands: (Array(params[:brands]) + Array(params['brands[]'])).compact_blank.uniq,
-      selected_series: (Array(params[:series]) + Array(params['series[]'])).compact_blank.uniq,
-      selected_conditions: (Array(params[:conditions]) + Array(params['conditions[]'])).map(&:to_s).select { |c| Product::CONDITION_GROUPS.key?(c) }.uniq,
-      price_min: params[:price_min].presence,
-      price_max: params[:price_max].presence,
-      in_stock_only: boolean_param(:in_stock),
-      in_transit_only: boolean_param(:in_transit),
-      to_order_only: boolean_param(:to_order),
-      backorder_only: boolean_param(:backorder),
-      preorder_only: boolean_param(:preorder)
-    ).tap do |state|
-      state.has_filters = state.selected_categories.any? ||
-                          state.selected_brands.any? ||
-                          state.selected_series.any? ||
-                          state.selected_conditions.any? ||
-                          state.price_min.present? ||
-                          state.price_max.present? ||
-                          state.in_stock_only ||
-                          state.in_transit_only ||
-                          state.to_order_only ||
-                          state.backorder_only ||
-                          state.preorder_only
-    end
-  end
-
-  def boolean_param(key)
-    ActiveModel::Type::Boolean.new.cast(params[key])
+    catalog_query.query_parameters(except: 'page')
   end
 end

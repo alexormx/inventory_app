@@ -32,6 +32,7 @@ module Checkout
         user: @user,
         address: source_address
       ).call
+      shipping_method_name = ShippingMethod.find_by(code: @shipping_method)&.name || @shipping_method.to_s.humanize
 
       # Recalcular disponibilidad actual (nuevo formato: items es array de hashes)
       @cart.items.each do |item|
@@ -168,7 +169,9 @@ module Checkout
           postal_code: source_address.postal_code,
           country: source_address.country,
           shipping_method: @shipping_method,
-          raw_address_json: source_address.attributes.slice('id', 'full_name', 'line1', 'line2', 'city', 'state', 'postal_code', 'country', 'label', 'default')
+          raw_address_json: source_address.attributes
+                                          .slice('id', 'full_name', 'line1', 'line2', 'city', 'state', 'postal_code', 'country', 'label', 'default')
+                                          .merge('shipping_method_name' => shipping_method_name)
         )
         # Recalcular totales ahora que ya tenemos líneas y snapshot
         sale_order.recalculate_totals!(persist: true)

@@ -7,26 +7,26 @@ module CatalogHelper
 
     return 'Tomica México' if @seo_landing == :tomica_hub
 
-    return "Resultados para \"#{params[:q]}\"" if params[:q].present?
+    return "Resultados para \"#{catalog_query.q}\"" if catalog_query.q.present?
 
-    categories = Array(params[:categories]).compact_blank
-    brands = Array(params[:brands]).compact_blank
-    series = Array(params[:series]).compact_blank
+    categories = filter_state.selected_categories
+    brands = filter_state.selected_brands
+    series = filter_state.selected_series
 
     parts << categories.to_sentence if categories.any?
     parts << brands.to_sentence if brands.any?
     parts << series.to_sentence if series.any?
 
-    parts << 'En Stock' if ActiveModel::Type::Boolean.new.cast(params[:in_stock])
-
-    parts << 'Preventa' if ActiveModel::Type::Boolean.new.cast(params[:preorder])
+    parts << 'En Stock' if filter_state.in_stock_only
+    parts << 'En tránsito' if filter_state.in_transit_only
+    parts << 'Sobre pedido' if filter_state.to_order_only
 
     parts.any? ? parts.join(' - ') : 'Catálogo de Autos a Escala y Coleccionables en México'
   end
 
   # Subtítulo contextual
   def catalog_subtitle
-    if params[:q].present?
+    if catalog_query.q.present?
       'Búsqueda en el catálogo'
     elsif active_filters_count.positive?
       "#{active_filters_count} filtro#{'s' if active_filters_count > 1} activo#{'s' if active_filters_count > 1}"
@@ -58,16 +58,16 @@ module CatalogHelper
     end
 
     # Agregar filtros activos a breadcrumbs
-    breadcrumbs << { name: "Búsqueda: #{params[:q]}", url: nil } if params[:q].present?
+    breadcrumbs << { name: "Búsqueda: #{catalog_query.q}", url: nil } if catalog_query.q.present?
 
-    if params[:categories].present?
-      Array(params[:categories]).compact_blank.each do |cat|
+    if filter_state.selected_categories.present?
+      filter_state.selected_categories.each do |cat|
         breadcrumbs << { name: cat, url: nil }
       end
     end
 
-    if params[:series].present?
-      Array(params[:series]).compact_blank.each do |series|
+    if filter_state.selected_series.present?
+      filter_state.selected_series.each do |series|
         breadcrumbs << { name: series, url: nil }
       end
     end
@@ -121,15 +121,11 @@ module CatalogHelper
 
   # Badge para indicar número de filtros activos
   def active_filters_count
-    count = 0
-    count += Array(params[:categories]).compact_blank.size
-    count += Array(params[:brands]).compact_blank.size
-    count += Array(params[:series]).compact_blank.size
-    count += Array(params[:conditions]).compact_blank.size
-    count += 1 if params[:price_min].present? || params[:price_max].present?
-    %i[in_stock in_transit to_order backorder preorder].each do |key|
-      count += 1 if ActiveModel::Type::Boolean.new.cast(params[key])
-    end
-    count
+    filter_state.selected_categories.size +
+      filter_state.selected_brands.size +
+      filter_state.selected_series.size +
+      filter_state.selected_conditions.size +
+      (filter_state.price_min.present? || filter_state.price_max.present? ? 1 : 0) +
+      [filter_state.in_stock_only, filter_state.in_transit_only, filter_state.to_order_only].count(true)
   end
 end

@@ -317,4 +317,44 @@ RSpec.describe SaleOrder, type: :model do
       end
     end
   end
+
+  describe '.open_receivables' do
+    def order_with(status:, total: 100, paid: 0)
+      so = create(:sale_order, user: customer, status: status,
+                               subtotal: total, tax_rate: 0, total_tax: 0, total_order_value: total)
+      create(:payment, sale_order: so, amount: paid, status: 'Completed') if paid.positive?
+      so
+    end
+
+    it 'excludes Canceled orders even when they have an outstanding balance' do
+      canceled = order_with(status: 'Canceled')
+
+      expect(canceled.balance).to eq(100)
+      expect(SaleOrder.open_receivables).not_to include(canceled)
+    end
+
+    it 'still includes collectible orders with a balance' do
+      pending_order = order_with(status: 'Pending')
+      partial       = order_with(status: 'Delivered', paid: 40)
+
+      expect(SaleOrder.open_receivables).to include(pending_order, partial)
+    end
+
+    it 'excludes fully paid orders' do
+      paid = order_with(status: 'Delivered', paid: 100)
+
+      expect(SaleOrder.open_receivables).not_to include(paid)
+    end
+
+    # Replica el scope anterior (solo balance > 0, sin filtro de status) para
+    # comprobar que la orden cancelada sí califica por saldo: sin esto, la
+    # prueba de exclusión pasaría igual aunque el balance fuera 0 por otra razón.
+    it 'is the status filter, not the balance math, that drops Canceled orders' do
+      canceled = order_with(status: 'Canceled')
+      balance_only = SaleOrder.where(Arel.sql("#{SaleOrder::BALANCE_SQL} > 0"))
+
+      expect(balance_only).to include(canceled)
+      expect(SaleOrder.open_receivables).not_to include(canceled)
+    end
+  end
 end

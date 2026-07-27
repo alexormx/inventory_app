@@ -43,7 +43,7 @@ document.addEventListener('click', (e)=>{
 });
 
 // Run for full page loads
-['turbo:load','turbo:render','turbo:after-stream-render','turbo:frame-load','turbolinks:load'].forEach(ev=>{
+['turbo:load','turbo:render','turbo:after-stream-render','turbo:frame-load'].forEach(ev=>{
   document.addEventListener(ev, ()=> setTimeout(handleFlashMessages, 0));
 });
 
