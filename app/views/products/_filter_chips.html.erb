@@ -87,37 +87,13 @@
       </span>
     <% end %>
 
-    <%# Chip de Sobre pedido (combina backorder y preventa) %>
+    <%# Chip de Sobre pedido (combina productos de preventa y backorder) %>
     <% if filter_state.to_order_only %>
       <span class="filter-chip">
         <i class="fas fa-bookmark me-1"></i>Sobre pedido
         <%= link_to clear_availability_url(:to_order),
                     class: "chip-remove",
                     "aria-label": "Remover filtro sobre pedido",
-                    title: "Remover filtro",
-                    data: { turbo_frame: "_top" } do %>&times;<% end %>
-      </span>
-    <% end %>
-
-    <%# Chip de Backorder %>
-    <% if filter_state.backorder_only %>
-      <span class="filter-chip">
-        <i class="fas fa-clock me-1"></i>Backorder
-        <%= link_to clear_availability_url(:backorder),
-                    class: "chip-remove",
-                    "aria-label": "Remover filtro backorder",
-                    title: "Remover filtro",
-                    data: { turbo_frame: "_top" } do %>&times;<% end %>
-      </span>
-    <% end %>
-
-    <%# Chip de Preventa %>
-    <% if filter_state.preorder_only %>
-      <span class="filter-chip">
-        <i class="fas fa-calendar-alt me-1"></i>Preventa
-        <%= link_to clear_availability_url(:preorder),
-                    class: "chip-remove",
-                    "aria-label": "Remover filtro preventa",
                     title: "Remover filtro",
                     data: { turbo_frame: "_top" } do %>&times;<% end %>
       </span>

@@ -2612,7 +2612,7 @@ body:not(.admin-shell) .devise-auth-shell {
 
 /* Turbo-Frame busy state + skeleton loader (generic; also used by the cart
    preview and shared pagination frames) */
-turbo-frame[busy] {
+turbo-frame[busy]:not(#products_grid) {
   opacity: .55;
   filter: saturate(.7);
   transition: opacity .15s ease;
@@ -2651,7 +2651,7 @@ turbo-frame[busy] {
   width: 100%;
   border-radius: 4px;
 }
-turbo-frame[busy]::after {
+turbo-frame[busy]:not(#products_grid)::after {
   content: '';
   position: absolute;
   top: 50%;

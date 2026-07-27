@@ -19,6 +19,11 @@
 }, class: "catalog-sidebar-filters", id: form_id do %>
   <input type="hidden" name="sort" value="<%= @sort %>">
   <% if @q.present? %><input type="hidden" name="q" value="<%= @q %>"><% end %>
+  <% %i[in_stock in_transit to_order].each do |availability_key| %>
+    <% if filter_state.public_send("#{availability_key}_only") %>
+      <input type="hidden" name="<%= availability_key %>" value="1">
+    <% end %>
+  <% end %>
 
   <%# Cabecera: título + conteo de filtros activos.
       La acción "Limpiar todos" vive en el resumen de resultados (área
@@ -154,8 +159,8 @@
       <div data-controller="price-range"
            data-price-range-min-value="<%= @price_range_min %>"
            data-price-range-max-value="<%= @price_range_max %>"
-           data-price-range-current-min-value="<%= params[:price_min] || @price_range_min %>"
-           data-price-range-current-max-value="<%= params[:price_max] || @price_range_max %>">
+           data-price-range-current-min-value="<%= filter_state.price_min || @price_range_min %>"
+           data-price-range-current-max-value="<%= filter_state.price_max || @price_range_max %>">
 
         <div class="mb-2 px-2 pt-2">
           <div data-price-range-target="slider" class="price-slider"></div>
@@ -165,7 +170,7 @@
           <div class="input-group input-group-sm">
             <span class="input-group-text">$</span>
             <input type="number" inputmode="numeric" class="form-control" name="price_min"
-                   value="<%= params[:price_min] %>" data-price-range-target="minInput" data-debounce="true"
+                   value="<%= filter_state.price_min %>" data-price-range-target="minInput" data-debounce="true"
                    min="<%= @price_range_min %>" max="<%= @price_range_max %>"
                    placeholder="<%= @price_range_min %>" aria-label="Precio mínimo">
           </div>
@@ -173,7 +178,7 @@
           <div class="input-group input-group-sm">
             <span class="input-group-text">$</span>
             <input type="number" inputmode="numeric" class="form-control" name="price_max"
-                   value="<%= params[:price_max] %>" data-price-range-target="maxInput" data-debounce="true"
+                   value="<%= filter_state.price_max %>" data-price-range-target="maxInput" data-debounce="true"
                    min="<%= @price_range_min %>" max="<%= @price_range_max %>"
                    placeholder="<%= @price_range_max %>" aria-label="Precio máximo">
           </div>

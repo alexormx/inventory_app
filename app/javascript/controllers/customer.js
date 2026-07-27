@@ -25,6 +25,7 @@ import SimpleAccordionController from "./simple_accordion_controller"
 import SimpleTabsController from "./simple_tabs_controller"
 import SubtabsController from "./subtabs_controller"
 import CatalogFiltersController from "./catalog_filters_controller"
+import CatalogResultsController from "./catalog_results_controller"
 import PriceRangeController from "./price_range_controller"
 import CollectibleQuickAddController from "./collectible_quick_add_controller"
 import CatalogLinkController from "./catalog_link_controller"
@@ -54,6 +55,7 @@ application.register("simple-accordion", SimpleAccordionController)
 application.register("simple-tabs", SimpleTabsController)
 application.register("subtabs", SubtabsController)
 application.register("catalog-filters", CatalogFiltersController)
+application.register("catalog-results", CatalogResultsController)
 application.register("price-range", PriceRangeController)
 application.register("collectible-quick-add", CollectibleQuickAddController)
 application.register("catalog-link", CatalogLinkController)

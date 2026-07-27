@@ -1,9 +1,5 @@
 <% content_for :title, catalog_meta_title %>
 <% content_for :meta_description, catalog_meta_description %>
-<% if @seo_landing.present? %>
-  <% content_for :canonical_url, canonical_url %>
-<% end %>
-
 <%# JSON-LD Structured Data %>
 <% content_for :head do %>
   <%= breadcrumb_json_ld(catalog_breadcrumbs) %>
@@ -96,9 +92,13 @@
         controller: "catalog-filters",
         action: "change->catalog-filters#submit"
       }, class: "catalog-filters d-flex flex-wrap gap-2 align-items-center mb-0", id: "header-sort-form" do %>
-        <%# `q` se conserva al ordenar; la búsqueda visible vive en .catalog-search-bar %>
-        <% if @q.present? %>
-          <input type="hidden" name="q" value="<%= @q %>">
+        <%# Estado completo y normalizado para que el submit nativo del frame
+            preserve filtros incluso desde landings SEO cuyo filtro vive en la ruta. %>
+        <% catalog_query.query_parameters(except: %w[sort page]).each do |name, value| %>
+          <% input_name = CatalogQuery::ARRAY_KEYS.include?(name) ? "#{name}[]" : name %>
+          <% Array(value).each do |entry| %>
+            <%= hidden_field_tag input_name, entry %>
+          <% end %>
         <% end %>
         <select name="sort" class="form-select form-select-sm sort-select" aria-label="Ordenar productos">
           <option value="newest" <%= 'selected' if @sort=='newest' %>>Más recientes</option>
@@ -156,8 +156,7 @@
       <% chip_url = if chip[:active]
                       clear_availability_url(chip[:key])
                     else
-                      qp = request.query_parameters.merge(chip[:key] => '1', page: nil).compact_blank
-                      catalog_path(qp)
+                      enable_availability_url(chip[:key])
                     end %>
       <%# aria-pressed no es válido en role=link; el estado se comunica en el
           nombre accesible (activar / quitar filtro). %>
@@ -182,6 +181,7 @@
 
     <!-- Products Grid with Turbo Frame -->
     <div class="col-12 col-md-9 col-lg-9 col-xxl-10 catalog-main">
+      <div id="catalog-results-announcer" class="visually-hidden" aria-live="polite" aria-atomic="true" data-controller="catalog-results"></div>
       <%= render 'product_grid' %>
     </div>
   </div>

@@ -62,8 +62,9 @@ class ProductsController < ApplicationController
   end
 
   def index
-    @q      = params[:q].to_s.strip
-    @sort   = params[:sort].presence || 'newest'
+    catalog_query = CatalogQuery.new(params)
+    @q = catalog_query.q
+    @sort = catalog_query.sort
 
     # Universe scope — narrowed when called from a hub landing that
     # only deals with a series prefix (e.g. /tomica → "Tomica%").
@@ -85,20 +86,7 @@ class ProductsController < ApplicationController
     base_scope = universe
     base_scope = base_scope.search_catalog(@q) if @q.present?
 
-    # Parsear filtros seleccionados en un hash compartido
-    filters = {
-      categories: Array(params[:categories]).compact_blank,
-      brands:     Array(params[:brands]).compact_blank,
-      series:     Array(params[:series]).compact_blank,
-      price_min:  params[:price_min].presence,
-      price_max:  params[:price_max].presence,
-      in_stock:   ActiveModel::Type::Boolean.new.cast(params[:in_stock]),
-      in_transit: ActiveModel::Type::Boolean.new.cast(params[:in_transit]),
-      to_order:   ActiveModel::Type::Boolean.new.cast(params[:to_order]),
-      backorder:  ActiveModel::Type::Boolean.new.cast(params[:backorder]),
-      preorder:   ActiveModel::Type::Boolean.new.cast(params[:preorder]),
-      conditions: (Array(params[:conditions]) + Array(params['conditions[]'])).map(&:to_s).select { |c| Product::CONDITION_GROUPS.key?(c) }.uniq
-    }
+    filters = catalog_query.filters
 
     # Contadores de facetas conscientes de filtros: cada dimensión cuenta con
     # todos los demás filtros aplicados (excepto el suyo propio), para que las
@@ -140,7 +128,7 @@ class ProductsController < ApplicationController
             end
 
     # Preload de imágenes para evitar N+1 de ActiveStorage en la grilla
-    @products = scope.with_attached_product_images.page(params[:page]).per(PUBLIC_PER_PAGE)
+    @products = scope.with_attached_product_images.page(catalog_query.page).per(PUBLIC_PER_PAGE)
     # Precalcular on_hand counts en batch para evitar N+1 (simple hash)
     product_ids = @products.map(&:id)
     @on_hand_counts = Inventory.where(product_id: product_ids, status: :available)
@@ -216,9 +204,6 @@ class ProductsController < ApplicationController
       end
       scope = scope.where(avail_clauses.join(' OR ')) if avail_clauses.any?
 
-      # Filtros legacy (AND para URLs antiguas con backorder/preorder por separado)
-      scope = scope.where(backorder_allowed: true) if f[:backorder]
-      scope = scope.where(preorder_available: true) if f[:preorder]
     end
 
     scope
@@ -244,8 +229,6 @@ class ProductsController < ApplicationController
       in_stock: avail_scope.joins(:inventories).where(inventories: { status: Inventory.statuses[:available] }).distinct.count,
       in_transit: avail_scope.where('EXISTS (SELECT 1 FROM inventories i WHERE i.product_id = products.id AND i.status = ?)', Inventory.statuses[:in_transit]).count,
       to_order: avail_scope.where('products.backorder_allowed = ? OR products.preorder_available = ?', true, true).count,
-      backorder: avail_scope.where(backorder_allowed: true).count,
-      preorder: avail_scope.where(preorder_available: true).count,
       conditions: condition_counts
     }
   end
