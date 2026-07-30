@@ -10,9 +10,10 @@ RSpec.describe 'Admin sidebar active state (inventory adjustments)', type: :syst
     sign_in admin
   end
 
-  it 'marks Inventory Adjustments link active' do
+  it 'marks Ajustes as the current page', :aggregate_failures do
     visit admin_inventory_adjustments_path
-    expect(page).to have_css('a.nav-link.active span.sidebar-label', text: 'Inventory Adjustments')
+    expect(page).to have_css('a.nav-link.active[aria-current="page"] span.sidebar-label', text: 'Ajustes')
+    expect(page).to have_css('#sidebar a[aria-current="page"]', count: 1)
   end
 
   it 'does not mark Inventory link active on adjustments page' do

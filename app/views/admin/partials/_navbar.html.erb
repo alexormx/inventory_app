@@ -13,6 +13,7 @@
     'customers' => 'Clientes',
     'categories' => 'Categorías',
     'system_variables' => 'Variables del sistema',
+    'settings' => 'Configuración',
     'site_settings' => 'Configuración',
     'inventory_audits' => 'Auditoría de inventario',
     'sale_orders_audits' => 'Auditoría de ventas',
@@ -35,16 +36,22 @@
 
     <div class="d-flex align-items-center gap-2">
       <!-- Toggle sidebar (mobile only) -->
-      <button id="sidebarToggle" class="sidebar-toggle-btn d-inline d-lg-none js-sidebar-toggle" aria-label="Toggle sidebar" data-sidebar-toggle>
-        <i class="fa-solid fa-bars"></i>
+      <button id="sidebar-drawer-toggle"
+              class="sidebar-drawer-toggle d-inline-flex d-lg-none"
+              type="button"
+              aria-label="Abrir navegación"
+              aria-controls="sidebar"
+              aria-expanded="false"
+              data-sidebar-drawer-toggle>
+        <i class="fa-solid fa-bars" aria-hidden="true"></i>
       </button>
 
       <!-- Breadcrumb -->
       <nav aria-label="breadcrumb" class="admin-breadcrumb d-none d-md-block">
         <ol class="breadcrumb mb-0">
           <li class="breadcrumb-item">
-            <%= link_to admin_dashboard_path do %>
-              <i class="fa-solid fa-house-chimney"></i>
+            <%= link_to admin_dashboard_path, aria: { label: 'Panel de control' } do %>
+              <i class="fa-solid fa-house-chimney" aria-hidden="true"></i>
             <% end %>
           </li>
           <% if controller.controller_name != 'dashboard' %>
@@ -75,8 +82,8 @@
     </div>
 
     <!-- Navbar toggler for actions menu (mobile) -->
-    <button class="navbar-toggler ms-auto d-lg-none" id="admin-hamburger" type="button" aria-controls="admin-navbar" aria-expanded="false" aria-label="Toggle navigation">
-      <i class="fa-solid fa-ellipsis-vertical"></i>
+    <button class="navbar-toggler ms-auto d-lg-none" id="admin-hamburger" type="button" aria-controls="admin-navbar" aria-expanded="false" aria-label="Abrir menú de acciones">
+      <i class="fa-solid fa-ellipsis-vertical" aria-hidden="true"></i>
     </button>
 
     <!-- Acciones -->

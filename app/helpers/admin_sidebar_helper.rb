@@ -10,22 +10,19 @@ module AdminSidebarHelper
   #   label  - Texto visible.
   #   path   - Ruta de destino.
   #   icon:  - Clase FontAwesome (puede incluir el prefijo fa- o solo el nombre).
-  #   section: - true => activo cuando la ruta es raíz o un sub‑path (prefijo con '/');
-  #             false => coincidencia exacta.
+  #   section: - true => conserva el contexto visual en subrutas, sin afirmar
+  #             que el enlace padre sea la página actual.
   def admin_sidebar_link(label, path, icon:, section: false)
-    current = request.path.chomp('/')
-    target  = path.chomp('/')
-
-    # Lógica de coincidencia: prioriza exact, luego sección; caso por defecto ya cubre exact.
-    active = if section
-               current == target || current.start_with?("#{target}/")
-             else
-               current == target
-             end
+    current = normalize_sidebar_path(request.path)
+    target = normalize_sidebar_path(path)
+    current_page = current == target
+    section_active = section && !current_page && current.start_with?("#{target}/")
 
     classes = %w[nav-link text-white d-flex align-items-center]
-    classes << 'active' if active
-    aria = active ? { current: 'page' } : {}
+    classes << 'active' if current_page
+    classes << 'section-active' if section_active
+    aria = { label: label }
+    aria[:current] = 'page' if current_page
 
     icon_html = content_tag(:i, '', class: "fa-solid #{normalize_sidebar_icon(icon)} me-2 sidebar-link-icon", aria: { hidden: true })
 
@@ -36,13 +33,18 @@ module AdminSidebarHelper
 
   private
 
+  def normalize_sidebar_path(path)
+    normalized = path.to_s.split('?', 2).first.to_s.chomp('/')
+    normalized.presence || '/'
+  end
+
   def normalize_sidebar_icon(icon)
-    tokens = icon.to_s.strip.split.reject(&:blank?)
+    tokens = icon.to_s.strip.split.compact_blank
     icon_token = tokens.find do |token|
-      token.start_with?('fa-') && !SIDEBAR_ICON_STYLE_PREFIXES.include?(token)
+      token.start_with?('fa-') && SIDEBAR_ICON_STYLE_PREFIXES.exclude?(token)
     end
 
-    icon_token ||= tokens.find { |token| !SIDEBAR_ICON_STYLE_PREFIXES.include?(token) }
+    icon_token ||= tokens.find { |token| SIDEBAR_ICON_STYLE_PREFIXES.exclude?(token) }
     icon_token = 'circle' if icon_token.blank?
 
     icon_token.start_with?('fa-') ? icon_token : "fa-#{icon_token}"
