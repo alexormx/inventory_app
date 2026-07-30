@@ -1,126 +1,170 @@
-// Admin navbar hamburger toggle (sin Bootstrap JS)
-// Contrato:
-//  - Botón: #admin-hamburger
-//  - Contenedor colapsable: #admin-navbar (inicia oculto en mobile via CSS inline logic / clase helper)
-//  - Añade/remueve clase 'is-open' y atributo hidden para accesibilidad.
-//  - Sincroniza aria-expanded.
-//  - Cierra al hacer click fuera, al navegar (turbo:before-render) y con Escape.
-//  - Resistente a recargas Turbo múltiples.
+// Controls only the compact actions menu in the admin navbar. The sidebar
+// drawer and desktop collapse are owned by modules/sidebar_toggle.js.
+const MOBILE_MEDIA_QUERY = "(max-width: 991.98px)"
+const mobileMedia = window.matchMedia(MOBILE_MEDIA_QUERY)
+const OPEN_CLASS = "is-open"
+const SHOW_CLASS = "show"
 
-(function(){
-  const BTN_ID = 'admin-hamburger';
-  const PANEL_ID = 'admin-navbar';
-  const OPEN_CLASS = 'is-open';
-  const SHOW_CLASS = 'show';
-  const BTN_COLLAPSED = 'collapsed';
-  let backdropEl = null;
+let backdropElement = null
+let backdropFrameId = null
+let focusTimerId = null
+let menuOpener = null
 
-  function select(id){ return document.getElementById(id); }
+function button() {
+  return document.getElementById("admin-hamburger")
+}
 
-  function applyInitialState(btn, panel){
-    // En pantallas grandes dejar visible; en pequeñas ocultar inicialmente.
-    if(window.matchMedia('(max-width: 991.98px)').matches){
-      if(!panel.classList.contains(OPEN_CLASS)){
-        panel.setAttribute('hidden','');
-        btn.setAttribute('aria-expanded','false');
-        panel.classList.remove(SHOW_CLASS);
-        btn.classList.add(BTN_COLLAPSED);
-      }
-    } else {
-      panel.removeAttribute('hidden');
-      btn.setAttribute('aria-expanded','true');
-      panel.classList.add(SHOW_CLASS);
-      btn.classList.remove(BTN_COLLAPSED);
-    }
+function panel() {
+  return document.getElementById("admin-navbar")
+}
+
+function isOpen() {
+  return panel()?.classList.contains(OPEN_CLASS) || false
+}
+
+function ensureBackdrop() {
+  if (backdropElement?.isConnected) return backdropElement
+
+  backdropElement = document.createElement("div")
+  backdropElement.className = "nav-backdrop"
+  backdropElement.dataset.adminNavbarBackdrop = "true"
+  backdropElement.hidden = true
+  document.body.appendChild(backdropElement)
+  return backdropElement
+}
+
+function syncButton(open) {
+  const toggle = button()
+  if (!toggle) return
+
+  toggle.classList.toggle("collapsed", !open)
+  toggle.setAttribute("aria-expanded", String(open))
+  toggle.setAttribute("aria-label", open ? "Cerrar menú de acciones" : "Abrir menú de acciones")
+}
+
+function cancelDeferredWork() {
+  if (backdropFrameId !== null) {
+    window.cancelAnimationFrame(backdropFrameId)
+    backdropFrameId = null
   }
 
-  function close(btn, panel){
-  panel.classList.remove(OPEN_CLASS);
-  panel.classList.remove(SHOW_CLASS);
-    panel.setAttribute('hidden','');
-    btn.setAttribute('aria-expanded','false');
-  btn.classList.add(BTN_COLLAPSED);
-  btn.setAttribute('aria-label','Abrir menú');
-  if(backdropEl){ backdropEl.classList.remove('show'); backdropEl.setAttribute('hidden',''); backdropEl.onclick=null; }
-  const items = panel.querySelectorAll('li'); items.forEach(el => { el.style.transitionDelay=''; });
+  if (focusTimerId !== null) {
+    window.clearTimeout(focusTimerId)
+    focusTimerId = null
+  }
+}
+
+function removeBackdrops() {
+  document.querySelectorAll("[data-admin-navbar-backdrop]").forEach((backdrop) => backdrop.remove())
+  backdropElement = null
+}
+
+function closeMenu({ restoreFocus = false } = {}) {
+  const menu = panel()
+  const opener = menuOpener
+
+  cancelDeferredWork()
+
+  if (menu) {
+    menu.classList.remove(OPEN_CLASS, SHOW_CLASS)
+    if (mobileMedia.matches) menu.hidden = true
+    menu.querySelectorAll("li").forEach((item) => { item.style.transitionDelay = "" })
   }
 
-  function open(btn, panel){
-  panel.classList.add(OPEN_CLASS);
-  panel.classList.add(SHOW_CLASS);
-    panel.removeAttribute('hidden');
-    btn.setAttribute('aria-expanded','true');
-  btn.classList.remove(BTN_COLLAPSED);
-    btn.setAttribute('aria-label','Cerrar menú');
-    if(window.matchMedia('(max-width: 991.98px)').matches){
-      if(!backdropEl){ backdropEl = document.createElement('div'); backdropEl.className='nav-backdrop'; backdropEl.setAttribute('hidden',''); document.body.appendChild(backdropEl); }
-      const nav = document.querySelector('.admin-navbar');
-      const navH = nav ? nav.offsetHeight : 52;
-      backdropEl.style.top = navH + 'px';
-      backdropEl.removeAttribute('hidden');
-      backdropEl.classList.add('show');
-      backdropEl.onclick = () => close(btn, panel);
-    }
-    const items = panel.querySelectorAll('li'); items.forEach((el,i)=>{ el.style.transitionDelay=(35*i)+'ms'; });
-  const focusable = panel.querySelector('a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])');
-  focusable && setTimeout(()=> focusable.focus(), 0);
+  removeBackdrops()
+
+  syncButton(false)
+  menuOpener = null
+  if (restoreFocus && opener?.isConnected) {
+    focusTimerId = window.setTimeout(() => {
+      focusTimerId = null
+      if (opener.isConnected) opener.focus()
+    }, 0)
+  }
+}
+
+function cleanupNavbarState() {
+  closeMenu()
+}
+
+function openMenu(opener) {
+  const menu = panel()
+  if (!menu || !mobileMedia.matches || isOpen()) return
+
+  document.dispatchEvent(new CustomEvent("admin-sidebar:close"))
+  menuOpener = opener || button()
+  menu.hidden = false
+  menu.classList.add(OPEN_CLASS, SHOW_CLASS)
+  syncButton(true)
+
+  const overlay = ensureBackdrop()
+  const navbar = document.querySelector(".admin-navbar")
+  overlay.style.top = `${navbar?.offsetHeight || 52}px`
+  overlay.hidden = false
+  backdropFrameId = window.requestAnimationFrame(() => {
+    backdropFrameId = null
+    if (overlay.isConnected && backdropElement === overlay && isOpen()) overlay.classList.add("show")
+  })
+
+  menu.querySelectorAll("li").forEach((item, index) => {
+    item.style.transitionDelay = `${35 * index}ms`
+  })
+  focusTimerId = window.setTimeout(() => {
+    focusTimerId = null
+    if (menu.isConnected && isOpen()) menu.querySelector("a[href], button:not([disabled])")?.focus()
+  }, 0)
+}
+
+function initializeMenu() {
+  const menu = panel()
+
+  cleanupNavbarState()
+  if (!menu) return
+
+  if (!mobileMedia.matches) {
+    menu.hidden = false
+    menu.classList.add(SHOW_CLASS)
+    syncButton(true)
+  }
+}
+
+function handleDocumentClick(event) {
+  const target = event.target instanceof Element ? event.target : null
+  if (!target) return
+
+  const toggle = target.closest("#admin-hamburger")
+  if (toggle) {
+    event.preventDefault()
+    event.stopPropagation()
+    isOpen() ? closeMenu({ restoreFocus: true }) : openMenu(toggle)
+    return
   }
 
-  function toggle(btn, panel){
-    if(panel.classList.contains(OPEN_CLASS)){
-      close(btn, panel);
-    } else {
-      open(btn, panel);
-    }
+  if (target.closest("[data-admin-navbar-backdrop]")) {
+    closeMenu({ restoreFocus: true })
+    return
   }
 
-  function enhance(){
-    const btn = select(BTN_ID);
-    const panel = select(PANEL_ID);
-    if(!btn || !panel) return;
+  const menu = panel()
+  if (isOpen() && menu && !menu.contains(target)) closeMenu()
+}
 
-    // Evitar múltiples bindings (Turbo re-visits)
-    if(btn.dataset.enhanced === 'true') return;
-    btn.dataset.enhanced = 'true';
-
-    // Inicial
-    applyInitialState(btn, panel);
-
-  const onToggle = (e)=>{ e.preventDefault(); toggle(btn, panel); e.stopPropagation(); };
-  btn.addEventListener('click', onToggle);
-  btn.addEventListener('keydown', (e)=>{ if(e.key==='Enter' || e.key===' ') onToggle(e); });
-
-    // Click fuera cierra
-    document.addEventListener('click', (e)=>{
-      if(!panel.contains(e.target) && !btn.contains(e.target)){
-        if(panel.classList.contains(OPEN_CLASS)) close(btn, panel);
-      }
-    });
-
-    // Escape cierra
-    document.addEventListener('keydown', (e)=>{
-      if(e.key === 'Escape' && panel.classList.contains(OPEN_CLASS)){
-        close(btn, panel);
-        btn.focus();
-      }
-    });
-
-    // Al cambiar breakpoint (resize) re-evaluar
-    const mql = window.matchMedia('(max-width: 991.98px)');
-    mql.addEventListener('change', ()=> applyInitialState(btn, panel));
-
-    // Cerrar antes de navegación Turbo para evitar estados fantasma
-    document.addEventListener('turbo:before-render', ()=>{
-      if(panel.classList.contains(OPEN_CLASS)) close(btn, panel);
-      if(backdropEl){ backdropEl.remove(); backdropEl=null; }
-    });
+function handleDocumentKeydown(event) {
+  if (event.key === "Escape" && isOpen()) {
+    event.preventDefault()
+    closeMenu({ restoreFocus: true })
   }
+}
 
-  // Inicialización en eventos Turbo y cuando idle (fallback)
-  document.addEventListener('turbo:load', enhance);
-  if('requestIdleCallback' in window){
-    requestIdleCallback(()=>enhance(), { timeout:1500 });
-  } else {
-    window.setTimeout(enhance, 800);
-  }
-})();
+function handlePageShow() {
+  initializeMenu()
+}
+
+document.addEventListener("click", handleDocumentClick)
+document.addEventListener("keydown", handleDocumentKeydown)
+document.addEventListener("admin-navbar:close", cleanupNavbarState)
+document.addEventListener("turbo:load", initializeMenu)
+document.addEventListener("turbo:before-cache", cleanupNavbarState)
+window.addEventListener("pagehide", cleanupNavbarState)
+window.addEventListener("pageshow", handlePageShow)
+mobileMedia.addEventListener("change", initializeMenu)

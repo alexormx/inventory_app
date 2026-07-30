@@ -1,8 +1,8 @@
-<div class="sidebar-inner vh-100 d-flex flex-column">
+<div class="sidebar-inner d-flex flex-column">
   <%# Header minimalista %>
   <div class="sidebar-header px-2 py-2 border-bottom border-secondary-subtle">
     <div class="d-flex justify-content-between align-items-center">
-      <a href="<%= admin_dashboard_path %>" class="text-decoration-none d-flex align-items-center gap-2 sidebar-brand-link">
+      <a href="<%= admin_dashboard_path %>" class="text-decoration-none d-flex align-items-center gap-2 sidebar-brand-link" aria-label="Ir al panel de control">
         <span class="sidebar-brand-mark">
           <i class="fa-solid fa-store" aria-hidden="true"></i>
         </span>
@@ -11,32 +11,45 @@
           <span class="sidebar-brand-subtitle">Panel administrativo</span>
         </span>
       </a>
-      <button class="sidebar-toggle-btn btn btn-sm btn-outline-light d-md-inline d-none js-sidebar-toggle" aria-label="Colapsar navegación" data-sidebar-toggle>
+      <button type="button"
+              class="sidebar-toggle-btn btn btn-sm btn-outline-light d-none d-lg-inline-flex"
+              aria-label="Colapsar navegación"
+              aria-controls="sidebar"
+              aria-expanded="true"
+              data-sidebar-desktop-toggle>
         <i class="fa-solid fa-bars" aria-hidden="true"></i>
+      </button>
+      <button type="button"
+              class="sidebar-toggle-btn sidebar-drawer-close-btn btn btn-sm btn-outline-light d-inline-flex d-lg-none"
+              aria-label="Cerrar navegación"
+              aria-controls="sidebar"
+              aria-expanded="false"
+              data-sidebar-drawer-close>
+        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
       </button>
     </div>
   </div>
 
   <%# Navegación principal %>
-  <nav class="sidebar-nav flex-grow-1 py-1">
+  <nav class="sidebar-nav flex-grow-1 py-1" aria-label="Navegación administrativa">
     <ul class="nav flex-column">
 
       <li class="sidebar-section-title px-3 pt-2 pb-1">Resumen</li>
 
       <li class="nav-item px-2 mb-1">
-        <%= admin_sidebar_link 'Panel de control', admin_dashboard_path, icon: 'gauge-high' %>
+        <%= admin_sidebar_link 'Panel de control', admin_dashboard_path, icon: 'gauge-high', section: true %>
       </li>
 
       <li class="sidebar-section-title px-3 pt-3 pb-1">Ventas</li>
 
       <li class="nav-item px-2">
-        <%= admin_sidebar_link 'Órdenes de Venta', admin_sale_orders_path, icon: 'receipt' %>
+        <%= admin_sidebar_link 'Órdenes de Venta', admin_sale_orders_path, icon: 'receipt', section: true %>
       </li>
       <li class="nav-item px-2">
-        <%= admin_sidebar_link 'Preórdenes', admin_preorders_path, icon: 'calendar-check' %>
+        <%= admin_sidebar_link 'Preórdenes', admin_preorders_path, icon: 'calendar-check', section: true %>
       </li>
       <li class="nav-item px-2">
-        <%= admin_sidebar_link 'Pedidos WhatsApp', admin_whatsapp_requests_path, icon: 'comment-dots' %>
+        <%= admin_sidebar_link 'Pedidos WhatsApp', admin_whatsapp_requests_path, icon: 'comment-dots', section: true %>
       </li>
       <li class="nav-item px-2 mb-1">
         <%= admin_sidebar_link 'Cuentas por Cobrar', admin_receivables_path, icon: 'hand-holding-dollar' %>
@@ -45,19 +58,19 @@
       <li class="sidebar-section-title px-3 pt-3 pb-1">Compras</li>
 
       <li class="nav-item px-2">
-        <%= admin_sidebar_link 'Órdenes de Compra', admin_purchase_orders_path, icon: 'truck-loading' %>
+        <%= admin_sidebar_link 'Órdenes de Compra', admin_purchase_orders_path, icon: 'truck-loading', section: true %>
       </li>
       <li class="nav-item px-2">
         <%= admin_sidebar_link 'Descubrir Nuevos Productos', discovery_admin_supplier_catalog_items_path, icon: 'magnifying-glass' %>
       </li>
       <li class="nav-item px-2 mb-1">
-        <%= admin_sidebar_link 'Actualizar Catálogo Proveedor', admin_supplier_catalog_items_path, icon: 'arrows-rotate' %>
+        <%= admin_sidebar_link 'Actualizar Catálogo Proveedor', admin_supplier_catalog_items_path, icon: 'arrows-rotate', section: true %>
       </li>
 
       <li class="sidebar-section-title px-3 pt-3 pb-1">Catálogo</li>
 
       <li class="nav-item px-2">
-        <%= admin_sidebar_link 'Productos', admin_products_path, icon: 'box-open' %>
+        <%= admin_sidebar_link 'Productos', admin_products_path, icon: 'box-open', section: true %>
       </li>
       <li class="nav-item px-2 ps-4">
         <%= admin_sidebar_link 'Vinculación Catálogo', catalog_status_admin_products_path, icon: 'link', section: true %>
@@ -66,13 +79,13 @@
         <%= admin_sidebar_link 'Revisión Catálogo', admin_catalog_review_path, icon: 'clipboard-check', section: true %>
       </li>
       <li class="nav-item px-2">
-        <%= admin_sidebar_link 'Coleccionables', admin_collectibles_path, icon: 'gem' %>
+        <%= admin_sidebar_link 'Coleccionables', admin_collectibles_path, icon: 'gem', section: true %>
       </li>
       <li class="nav-item px-2 ps-4">
         <%= admin_sidebar_link 'Agregar Coleccionable', admin_collectibles_quick_add_path, icon: 'plus', section: true %>
       </li>
       <li class="nav-item px-2 mb-1">
-        <%= admin_sidebar_link 'Enriquecimiento IA', admin_product_enrichment_index_path, icon: 'wand-magic-sparkles' %>
+        <%= admin_sidebar_link 'Enriquecimiento IA', admin_product_enrichment_index_path, icon: 'wand-magic-sparkles', section: true %>
       </li>
       <% if Rails.env.development? %>
         <li class="nav-item px-2 mb-1">
@@ -95,22 +108,22 @@
         <%= admin_sidebar_link 'Transferir', admin_inventory_transfer_path, icon: 'right-left', section: true %>
       </li>
       <li class="nav-item px-2">
-        <%= admin_sidebar_link 'Ajustes', admin_inventory_adjustments_path, icon: 'scale-balanced' %>
+        <%= admin_sidebar_link 'Ajustes', admin_inventory_adjustments_path, icon: 'scale-balanced', section: true %>
       </li>
       <li class="nav-item px-2 mb-1">
-        <%= admin_sidebar_link 'Ubicaciones', admin_inventory_locations_path, icon: 'sitemap' %>
+        <%= admin_sidebar_link 'Ubicaciones', admin_inventory_locations_path, icon: 'sitemap', section: true %>
       </li>
 
       <li class="sidebar-section-title px-3 pt-3 pb-1">Clientes</li>
 
       <li class="nav-item px-2 mb-1">
-        <%= admin_sidebar_link 'Usuarios', admin_users_path, icon: 'users' %>
+        <%= admin_sidebar_link 'Usuarios', admin_users_path, icon: 'users', section: true %>
       </li>
 
       <li class="sidebar-section-title px-3 pt-3 pb-1">Contenido</li>
 
       <li class="nav-item px-2">
-        <%= admin_sidebar_link 'Blog', admin_posts_path, icon: 'newspaper' %>
+        <%= admin_sidebar_link 'Blog', admin_posts_path, icon: 'newspaper', section: true %>
       </li>
       <li class="nav-item px-2">
         <%= admin_sidebar_link 'Reseñas', admin_reviews_path, icon: 'comments' %>
@@ -122,7 +135,7 @@
       <li class="sidebar-section-title px-3 pt-3 pb-1">Análisis</li>
 
       <li class="nav-item px-2">
-        <%= admin_sidebar_link 'Reportes', admin_reports_path, icon: 'chart-pie' %>
+        <%= admin_sidebar_link 'Reportes', admin_reports_path, icon: 'chart-pie', section: true %>
       </li>
       <li class="nav-item px-2 mb-1">
         <%= admin_sidebar_link 'Registro de Visitas', admin_visitor_logs_path, icon: 'chart-line' %>
@@ -131,7 +144,7 @@
       <li class="sidebar-section-title px-3 pt-3 pb-1">Sistema</li>
 
       <li class="nav-item px-2">
-        <%= admin_sidebar_link 'Configuración', admin_settings_path, icon: 'gears' %>
+        <%= admin_sidebar_link 'Configuración', admin_settings_path, icon: 'gears', section: true %>
       </li>
       <li class="nav-item px-2">
         <%= admin_sidebar_link 'Variables del Sistema', admin_system_variables_path, icon: 'database' %>
@@ -142,12 +155,15 @@
   <%# Footer con usuario %>
   <div class="sidebar-footer border-top border-secondary-subtle px-2 py-2 mt-auto">
     <% if current_user %>
-      <%= link_to edit_admin_user_path(current_user), class: "text-decoration-none d-flex align-items-center gap-2 sidebar-user-link" do %>
+      <% sidebar_user_label = current_user.name.presence || current_user.email.split('@').first %>
+      <%= link_to edit_admin_user_path(current_user),
+                  class: "text-decoration-none d-flex align-items-center gap-2 sidebar-user-link",
+                  aria: { label: "Editar perfil de #{sidebar_user_label}" } do %>
         <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 mx-auto sidebar-user-avatar">
           <i class="fa-solid fa-circle-user text-white small" aria-hidden="true"></i>
         </div>
         <div class="sidebar-label overflow-hidden">
-          <div class="text-white small fw-medium text-truncate"><%= current_user.name || current_user.email.split('@').first %></div>
+          <div class="text-white small fw-medium text-truncate"><%= sidebar_user_label %></div>
           <div class="text-secondary small text-truncate"><%= current_user.role&.capitalize %></div>
         </div>
       <% end %>

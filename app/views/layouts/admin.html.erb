@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="admin-page">
 <head>
   <title>Admin Dashboard</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
@@ -34,16 +34,16 @@
   <%= turbo_stream_from "flash" %>
   <%= turbo_stream_from "audit_progress_channel" %>
 
-  <div class="container-fluid">
-    <div class="row">
-
+  <div class="admin-layout">
     <!-- Sidebar -->
-  <aside id="sidebar" class="col-auto col-md-3 col-lg-2 text-white p-0 border-end">
-        <%= render "admin/partials/sidebar" %>
-      </aside>
+    <aside id="sidebar" class="text-white border-end" aria-label="Panel de navegación administrativa">
+      <%= render "admin/partials/sidebar" %>
+    </aside>
 
-      <!-- Main Content -->
-      <div class="col p-0 d-flex flex-column">
+    <div id="sidebar-backdrop" class="sidebar-backdrop" aria-hidden="true" hidden></div>
+
+    <!-- Main Content -->
+    <div id="admin-content" class="admin-content d-flex flex-column">
 
         <!-- Navbar with toggle -->
         <%= render "admin/partials/navbar" %>
@@ -56,7 +56,6 @@
         </main>
 
         <%= render "admin/partials/footer" %>
-      </div>
     </div>
   </div>
   <%= render "layouts/confirm_modal" %>
