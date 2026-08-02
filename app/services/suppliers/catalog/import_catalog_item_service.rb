@@ -5,13 +5,22 @@ require "digest"
 module Suppliers
   module Catalog
     class ImportCatalogItemService
-      Result = Struct.new(:catalog_item, :catalog_source, :created, :status_changed, keyword_init: true)
+      Result = Struct.new(:catalog_item, :catalog_source, :created, :changed, :status_changed, :price_changed,
+                          keyword_init: true)
+
+      # Marcas de tiempo y banderas de control: cambian en cada pasada, así que
+      # no sirven para decidir si el contenido del producto realmente cambió.
+      BOOKKEEPING_ATTRIBUTES = %w[
+        last_seen_at source_last_synced_at last_full_sync_at last_status_change_at
+        last_hlj_recent_added_at last_hlj_recent_arrival_at needs_review
+        created_at updated_at
+      ].freeze
 
       def initialize(source:, external_sku:, name:, source_url:, raw_status:, normalized_payload: {}, raw_payload: {},
                      barcode: nil, supplier_product_code: nil, canonical_brand: nil, canonical_category: nil,
                      canonical_series: nil, canonical_item_type: nil, canonical_release_date: nil,
                      canonical_price: nil, currency: "MXN", description_raw: nil, image_urls: [],
-                     main_image_url: nil, sync_linked_product: false, review_feed: nil)
+                     main_image_url: nil, sync_linked_product: false, review_feed: nil, full_sync: true)
         @source = source.to_s
         @external_sku = external_sku.to_s.strip
         @name = name.to_s.strip
@@ -33,6 +42,7 @@ module Suppliers
         @main_image_url = main_image_url.presence || @image_urls.first
         @sync_linked_product = sync_linked_product
         @review_feed = review_feed.presence
+        @full_sync = full_sync
       end
 
       def call
@@ -45,7 +55,9 @@ module Suppliers
         catalog_item = nil
         catalog_source = nil
         created = false
+        changed = false
         status_changed = false
+        price_changed = false
 
         ActiveRecord::Base.transaction do
           catalog_item = find_or_initialize_catalog_item
@@ -57,9 +69,14 @@ module Suppliers
           catalog_item.assign_attributes(
             source_key: @source,
             external_sku: @external_sku,
+            canonical_name: @name,
+            source_url: @source_url,
+            content_checksum: checksum
+          )
+          assign_preserving_existing!(
+            catalog_item,
             barcode: @barcode,
             supplier_product_code: @supplier_product_code,
-            canonical_name: @name,
             canonical_brand: @canonical_brand,
             canonical_category: @canonical_category,
             canonical_series: @canonical_series,
@@ -68,23 +85,26 @@ module Suppliers
             canonical_price: @canonical_price,
             currency: @currency,
             canonical_status: normalized_status,
-            source_url: @source_url,
             main_image_url: @main_image_url,
             image_urls: @image_urls,
             description_raw: @description_raw,
             details_payload: @normalized_payload,
-            raw_payload: @raw_payload,
-            content_checksum: checksum,
-            last_seen_at: now,
-            source_last_synced_at: now,
-            last_full_sync_at: now
+            raw_payload: @raw_payload
           )
 
-          apply_review_tracking!(catalog_item, now)
+          # Se mide antes de tocar las marcas de tiempo: éstas cambian en cada
+          # pasada y harían que todo producto pareciera modificado.
+          changed = created || (catalog_item.changed - BOOKKEEPING_ATTRIBUTES).any?
+          price_changed = catalog_item.canonical_price_changed? || catalog_item.currency_changed?
+          status_changed = previous_status.present? && previous_status != catalog_item.canonical_status
 
-          status_changed = previous_status.present? && previous_status != normalized_status
+          catalog_item.last_seen_at = now
+          catalog_item.source_last_synced_at = now
+          catalog_item.last_full_sync_at = now if @full_sync
           catalog_item.last_status_change_at = now if created || status_changed
-          catalog_item.save!
+          apply_review_tracking!(catalog_item, now, changed: changed || status_changed, created: created)
+
+          catalog_item.save! if catalog_item.changed?
 
           auto_link_product!(catalog_item) if catalog_item.product_id.blank?
 
@@ -114,10 +134,22 @@ module Suppliers
           end
         end
 
-        Result.new(catalog_item: catalog_item, catalog_source: catalog_source, created: created, status_changed: status_changed)
+        Result.new(catalog_item: catalog_item, catalog_source: catalog_source, created: created,
+                   changed: changed, status_changed: status_changed, price_changed: price_changed)
       end
 
       private
+
+      # Un campo ausente en la respuesta de HLJ significa "no vino en esta
+      # pasada", no "el proveedor lo borró". Sobrescribir con nil perdería
+      # imágenes y descripciones ya capturadas por una sincronización previa.
+      def assign_preserving_existing!(catalog_item, attributes)
+        attributes.each do |name, value|
+          next if value.blank? && catalog_item.public_send(name).present?
+
+          catalog_item.public_send(:"#{name}=", value)
+        end
+      end
 
       def find_or_initialize_catalog_item
         SupplierCatalogItem.find_by(source_key: @source, external_sku: @external_sku) ||
@@ -142,15 +174,17 @@ module Suppliers
         catalog_item.update!(product_id: product.id)
       end
 
-      def apply_review_tracking!(catalog_item, now)
+      # La marca de tiempo del feed se refresca siempre, pero needs_review solo
+      # se enciende ante un alta o un cambio real: marcarlo en cada pasada
+      # llenaba la bandeja de revisión con miles de productos idénticos.
+      def apply_review_tracking!(catalog_item, now, changed:, created:)
         case @review_feed
-        when "recent_additions"
-          catalog_item.last_hlj_recent_added_at = now
-          catalog_item.needs_review = true
-        when "recent_arrivals"
-          catalog_item.last_hlj_recent_arrival_at = now
-          catalog_item.needs_review = true
+        when "recent_additions" then catalog_item.last_hlj_recent_added_at = now
+        when "recent_arrivals" then catalog_item.last_hlj_recent_arrival_at = now
+        else return
         end
+
+        catalog_item.needs_review = true if created || changed
       end
     end
   end
