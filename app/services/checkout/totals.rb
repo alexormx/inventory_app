@@ -14,6 +14,14 @@ module Checkout
       keyword_init: true
     )
 
+    # Expuesto porque la conversión de pedidos de WhatsApp arma la orden sin
+    # carrito y debe gravar con la misma tasa que el checkout.
+    def self.current_tax_rate
+      return 0.to_d unless ActiveModel::Type::Boolean.new.cast(SiteSetting.get('tax_enabled', false))
+
+      SiteSetting.get('tax_rate_percent', 16).to_d.round(CURRENCY_SCALE, ROUNDING_MODE)
+    end
+
     def initialize(cart:, shipping_method:, user:, address:)
       @cart = cart
       @shipping_method = shipping_method
@@ -46,9 +54,7 @@ module Checkout
     private
 
     def current_tax_rate
-      return 0.to_d unless ActiveModel::Type::Boolean.new.cast(SiteSetting.get('tax_enabled', false))
-
-      SiteSetting.get('tax_rate_percent', 16).to_d.round(CURRENCY_SCALE, ROUNDING_MODE)
+      self.class.current_tax_rate
     end
 
     def money(value)

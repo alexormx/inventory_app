@@ -1,0 +1,68 @@
+<%# locals: aging: %>
+<% total = aging[:total] %>
+<% bar_colors = { 'current' => 'bg-success', 'days_1_30' => 'bg-info', 'days_31_60' => 'bg-warning', 'days_61_90' => 'bg-orange', 'days_90_plus' => 'bg-danger' } %>
+<div class="card h-100">
+  <div class="card-header py-2 d-flex justify-content-between align-items-center">
+    <span class="fw-semibold"><i class="fa-solid fa-file-invoice-dollar text-primary"></i> Antigüedad de cartera</span>
+    <span class="small text-muted" data-bs-toggle="tooltip"
+          title="Saldo abierto expresado en días de venta del periodo. Compáralo contra los plazos de crédito que otorgas.">
+      DSO <strong><%= aging[:dso].nil? ? '—' : "#{number_with_precision(aging[:dso], precision: 1, delimiter: ',')} d" %></strong>
+    </span>
+  </div>
+  <div class="card-body py-3">
+    <div class="d-flex justify-content-between align-items-end mb-2">
+      <div>
+        <div class="small text-muted">Total por cobrar</div>
+        <div class="fs-5 fw-bold"><%= fmt_currency(total) %></div>
+      </div>
+      <div class="text-end">
+        <div class="small text-muted">Vencido</div>
+        <div class="fs-6 fw-bold <%= aging[:overdue].positive? ? 'text-danger' : 'text-success' %>">
+          <%= fmt_currency(aging[:overdue]) %>
+          <span class="small fw-normal">(<%= fmt_percentage_ratio(aging[:overdue_ratio], precision: 1) %>)</span>
+        </div>
+      </div>
+    </div>
+
+    <% if total.positive? %>
+      <div class="progress admin-aging-bar mb-3" role="img"
+           aria-label="Distribución del saldo por cobrar según antigüedad">
+        <% aging[:buckets].each do |key, bucket| %>
+          <% next unless bucket[:amount].positive? %>
+          <div class="progress-bar <%= bar_colors[key] %>"
+               style="width: <%= ((bucket[:amount] / total) * 100).to_f.round(2) %>%"
+               data-bs-toggle="tooltip"
+               title="<%= bucket[:label] %>: <%= fmt_currency(bucket[:amount]) %>"></div>
+        <% end %>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0 small">
+          <thead>
+            <tr class="text-muted">
+              <th scope="col">Antigüedad</th>
+              <th scope="col" class="text-end">Órdenes</th>
+              <th scope="col" class="text-end">Saldo</th>
+              <th scope="col" class="text-end">%</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% aging[:buckets].each do |key, bucket| %>
+              <tr>
+                <td>
+                  <span class="admin-aging-dot <%= bar_colors[key] %>"></span>
+                  <%= bucket[:label] %>
+                </td>
+                <td class="text-end"><%= fmt_number(bucket[:count]) %></td>
+                <td class="text-end"><%= fmt_currency(bucket[:amount]) %></td>
+                <td class="text-end text-muted"><%= number_to_percentage((bucket[:amount] / total) * 100, precision: 1) %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% else %>
+      <p class="text-muted small mb-0"><i class="fa-solid fa-circle-check text-success"></i> No hay saldos abiertos por cobrar.</p>
+    <% end %>
+  </div>
+</div>

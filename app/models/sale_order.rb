@@ -133,10 +133,7 @@ class SaleOrder < ApplicationRecord
   def compute_dynamic_totals
     return { subtotal: 0.to_d, tax: 0.to_d, total: 0.to_d } unless sale_order_items.exists?
 
-    sub = sale_order_items.sum(<<~SQL.squish).to_d
-      COALESCE(total_line_cost,
-               quantity * COALESCE(unit_final_price, (unit_cost - COALESCE(unit_discount, 0))))
-    SQL
+    sub = sale_order_items.sum(Arel.sql(SaleOrderItem::LINE_REVENUE_SQL)).to_d
     rate = (tax_rate || 0).to_d
     disc = (discount || 0).to_d
     ship = (shipping_cost || 0).to_d
@@ -196,10 +193,7 @@ class SaleOrder < ApplicationRecord
   def recalculate_totals!(persist: true)
     return self unless sale_order_items.exists?
 
-    sub = sale_order_items.sum(<<~SQL.squish)
-      COALESCE(total_line_cost,
-               quantity * COALESCE(unit_final_price, (unit_cost - COALESCE(unit_discount, 0))))
-    SQL
+    sub = sale_order_items.sum(Arel.sql(SaleOrderItem::LINE_REVENUE_SQL))
     self.subtotal = sub.to_d.round(2)
     compute_financials
     save(validate: false) if persist

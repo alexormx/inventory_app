@@ -2,10 +2,11 @@
 
 module Dashboard
   module Metrics
-    REV_SQL = 'COALESCE(sale_order_items.unit_final_price, 0) * COALESCE(sale_order_items.quantity, 0)'
-    COGS_SQL = 'COALESCE(products.average_purchase_cost, 0) * COALESCE(sale_order_items.quantity, 0)'
+    REV_SQL = SaleOrderItem::LINE_REVENUE_SQL
+    COGS_SQL = SaleOrderItem::LINE_COGS_SQL
     UNITS_SQL = 'COALESCE(sale_order_items.quantity, 0)'
     SALE_STATUSES = ['Confirmed', 'Preparing', 'In Transit', 'Delivered'].freeze
+    LOST_STATUSES = %w[Canceled Returned].freeze
 
     module_function
 
@@ -17,8 +18,37 @@ module Dashboard
       line_items(scope).sum(Arel.sql(REV_SQL)).to_d
     end
 
+    # El descuento vive en la orden, no en la línea, así que no puede sumarse
+    # dentro de REV_SQL sin multiplicarlo por el número de líneas.
+    def order_discount_total(scope)
+      scope.sum(:discount).to_d
+    end
+
+    # Ingreso reconciliado con lo que factura la orden. Los desgloses por
+    # producto o categoría siguen usando revenue_total porque un descuento de
+    # orden no es atribuible a una línea concreta.
+    def net_revenue_total(scope)
+      revenue_total(scope) - order_discount_total(scope)
+    end
+
     def cogs_total(scope)
       line_items_with_product(scope).sum(Arel.sql(COGS_SQL)).to_d
+    end
+
+    # Requiere un scope SIN filtrar por estado: el scope base del panel excluye
+    # 'Canceled' por defecto, y con él la tasa siempre daría cero.
+    def lost_orders_stats(unfiltered_scope)
+      counts = unfiltered_scope.where(status: LOST_STATUSES).group(:status).count
+      canceled = counts['Canceled'].to_i
+      returned = counts['Returned'].to_i
+      total = unfiltered_scope.count
+
+      {
+        canceled: canceled,
+        returned: returned,
+        total: total,
+        rate: total.positive? ? ((canceled + returned).to_d / total) : nil
+      }
     end
 
     def grouped_revenue(scope, group_expr)

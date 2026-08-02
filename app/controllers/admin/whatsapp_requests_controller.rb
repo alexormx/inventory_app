@@ -60,7 +60,7 @@ module Admin
         sale_order = SaleOrder.new(
           user: target_user,
           status: 'Pending',
-          currency: 'MXN',
+          order_date: Time.zone.today,
           origin: 'whatsapp',
           whatsapp_request_id: @request.id,
           notes: ["Convertido de #{@request.code}", @request.customer_notes, params[:internal_notes]].compact.reject(&:blank?).join("\n")
@@ -82,7 +82,10 @@ module Admin
           sale_order.sale_order_items.build(
             product: item.product,
             quantity: quantity,
-            unit_final_price: unit_price
+            unit_cost: item.product.average_purchase_cost.to_d,
+            unit_selling_price: unit_price,
+            unit_final_price: unit_price,
+            total_line_cost: unit_price * quantity
           )
         end
 
@@ -90,6 +93,18 @@ module Admin
           flash[:alert] = "Selecciona al menos un item para convertir."
           return redirect_to convert_admin_whatsapp_request_path(@request)
         end
+
+        # subtotal/tax son NOT NULL y se validan al guardar, así que no basta
+        # con dejar que recalculate_totals! los ajuste después del commit.
+        subtotal = sale_order.sale_order_items.sum { |i| i.total_line_cost.to_d }
+        tax_rate = Checkout::Totals.current_tax_rate
+        total_tax = (subtotal * tax_rate / 100).round(2)
+        sale_order.assign_attributes(
+          subtotal: subtotal,
+          tax_rate: tax_rate,
+          total_tax: total_tax,
+          total_order_value: subtotal + total_tax
+        )
 
         sale_order.save!
         @request.update!(status: :converted, sale_order_id: sale_order.id, converted_at: Time.current)

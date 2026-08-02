@@ -111,7 +111,7 @@ RSpec.describe "Admin Dashboard", type: :request do
          expect(response.body).to include('Ingresos: $ 600.00 · Egresos: $ 170.00')
       end
 
-      it "shows accurate recurring customers semantics and clarifies conversion baseline" do
+      it "shows accurate recurring customers semantics and scopes the conversion baseline to the period" do
         target_year = 2200 + SecureRandom.random_number(200)
 
         travel_to(Time.zone.local(target_year, 5, 15, 12, 0, 0)) do
@@ -124,15 +124,17 @@ RSpec.describe "Admin Dashboard", type: :request do
           create(:sale_order, user: repeat_customer, status: 'Confirmed', order_date: Date.current, subtotal: 120, tax_rate: 0, total_tax: 0, total_order_value: 120)
           create(:sale_order, user: one_time_customer, status: 'Confirmed', order_date: Date.current, subtotal: 80, tax_rate: 0, total_tax: 0, total_order_value: 80)
 
-          allow(VisitorLog).to receive(:sum).with(:visit_count).and_return(40)
+          VisitorLog.create!(ip_address: '10.0.0.1', path: '/', visit_count: 40, last_visited_at: Time.current)
+          # Fuera del rango: no debe contarse, o la tasa volvería a mezclar
+          # pedidos del periodo con visitas de todo el historial.
+          VisitorLog.create!(ip_address: '10.0.0.2', path: '/', visit_count: 500, last_visited_at: 2.years.ago)
 
           get admin_dashboard_path
 
           expect(response).to have_http_status(:success)
           expect(response.body).to include('50.0%')
           expect(response.body).to include('1 de 2 clientes activos')
-          expect(response.body).to include('Base acumulada:')
-          expect(response.body).to include('40 visitas registradas')
+          expect(response.body).to include('40 visitas en el periodo')
         end
       end
 

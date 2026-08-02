@@ -153,3 +153,28 @@ thead th { position: sticky; top: 0; z-index: 1; background: var(--bs-body-bg, #
 // Tab buttons compact
 .nav-tabs.nav-tabs-sm .nav-link { padding: .25rem .5rem; font-size: .85rem; }
 
+
+// Antigüedad de cartera y embudo de canal
+.admin-aging-bar,
+.admin-funnel-bar {
+  height: 10px;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.admin-aging-bar .progress-bar + .progress-bar {
+  border-left: 1px solid rgba(255, 255, 255, 0.65);
+}
+
+.admin-aging-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 0.4rem;
+  vertical-align: middle;
+}
+
+// Cubeta intermedia de morosidad: Bootstrap no trae un naranja entre
+// warning y danger, y sin él 31-60 y 61-90 se ven idénticas.
+.bg-orange { background-color: #fd7e14 !important; }

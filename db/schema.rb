@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_07_24_000001) do
+ActiveRecord::Schema[8.0].define(version: 2026_07_30_210803) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -580,12 +580,14 @@ ActiveRecord::Schema[8.0].define(version: 2026_07_24_000001) do
     t.integer "item_condition", default: 0, null: false
     t.decimal "unit_selling_price", precision: 10, scale: 2
     t.integer "assigned_quantity", default: 0, null: false
+    t.decimal "unit_acquisition_cost", precision: 10, scale: 2
     t.index ["assigned_quantity"], name: "index_sale_order_items_on_assigned_quantity"
     t.index ["backordered_quantity"], name: "index_sale_order_items_on_backordered_quantity"
     t.index ["item_condition"], name: "index_sale_order_items_on_item_condition"
     t.index ["preorder_quantity"], name: "index_sale_order_items_on_preorder_quantity"
     t.index ["product_id"], name: "index_sale_order_items_on_product_id"
     t.index ["sale_order_id"], name: "index_sale_order_items_on_sale_order_id"
+    t.index ["unit_acquisition_cost"], name: "index_sale_order_items_on_unit_acquisition_cost"
   end
 
   create_table "sale_orders", id: :string, force: :cascade do |t|

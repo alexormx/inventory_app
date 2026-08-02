@@ -38,11 +38,7 @@ module Admin
     # Turbo Frame: Top Sellers by period
     def sellers
       period = params[:period].presence || 'ytd'
-      scope = period_scope_for(period)
-      primary_scope = scope.where(status: PAID_STATUSES)
-
-      @rows = build_sellers_data(primary_scope)
-      @rows = build_sellers_data(scope) if @rows.empty?
+      @rows = build_sellers_data(period_scope_for(period).where(status: PAID_STATUSES))
       @period = period
 
       respond_to { |format| format.html { render layout: false } }
@@ -51,11 +47,7 @@ module Admin
     # Turbo Frame: Most Profitable Products by period
     def profitable
       period = params[:period].presence || 'ytd'
-      scope = period_scope_for(period)
-      primary_scope = scope.where(status: PAID_STATUSES)
-
-      @rows = build_profitable_data(primary_scope)
-      @rows = build_profitable_data(scope) if @rows.empty?
+      @rows = build_profitable_data(period_scope_for(period).where(status: PAID_STATUSES))
       @period = period
 
       respond_to { |format| format.html { render layout: false } }
@@ -165,6 +157,9 @@ module Admin
       @so_ytd = @so_scope.where(order_date: @range)
       @so_ytd_paid = @so_ytd.where(status: PAID_STATUSES)
       @po_ytd = @po_scope.where(order_date: @range)
+      # Sin filtro de estado: la tasa de cancelación necesita las canceladas en
+      # el denominador y en el numerador.
+      @so_ytd_all = SaleOrder.where(order_date: @range)
     end
 
     def period_scope_for(period)
@@ -183,9 +178,6 @@ module Admin
 
     # === KPI Loading ===
     def load_kpis
-      rev_sql_arel = Arel.sql(REV_SQL)
-      cogs_sql_arel = Arel.sql(COGS_SQL)
-
       @total_products = begin
         Product.active.count
       rescue StandardError
@@ -193,14 +185,16 @@ module Admin
       end
       @total_users = User.count
 
-      @sales_ytd = SaleOrderItem.joins(:sale_order).merge(@so_ytd).sum(rev_sql_arel).to_d
+      @gross_sales_ytd = Dashboard::Metrics.revenue_total(@so_ytd)
+      @order_discount_ytd = Dashboard::Metrics.order_discount_total(@so_ytd)
+      @sales_ytd = @gross_sales_ytd - @order_discount_ytd
       @purchases_ytd = purchase_total_for(@po_ytd) + manual_purchase_total_for(@range)
 
       @cash_in_ytd = completed_income_total_for(@now.beginning_of_year.to_date..@now.end_of_day)
       @cash_out_ytd = @purchases_ytd
       @cashflow_ytd = @cash_in_ytd - @cash_out_ytd
 
-      @cogs_ytd = SaleOrderItem.joins(:sale_order, :product).merge(@so_ytd).sum(cogs_sql_arel).to_d
+      @cogs_ytd = Dashboard::Metrics.cogs_total(@so_ytd)
       @profit_ytd = @sales_ytd - @cogs_ytd
       @margin_ytd = @sales_ytd.positive? ? (@profit_ytd / @sales_ytd) : 0.to_d
 
@@ -215,18 +209,40 @@ module Admin
       @purchases_total_mxn = purchase_total_for(@po_scope) + manual_purchase_total_for
 
       @avg_ticket_ytd = @orders_count_ytd.positive? ? (@sales_ytd / @orders_count_ytd) : 0.to_d
+      # Unidades por transacción: separa "vendemos más caro" de "vendemos más
+      # piezas" cuando sube el ticket promedio.
+      @units_per_order_ytd = @orders_count_ytd.positive? ? (@so_items_qty_ytd.to_d / @orders_count_ytd) : nil
+
+      # Se filtra por last_visited_at para que numerador y denominador cubran el
+      # mismo periodo; antes eran pedidos del rango sobre visitas de todo el
+      # historial, así que la tasa solo podía bajar con el tiempo.
       @visits_total = begin
-        VisitorLog.sum(:visit_count)
+        VisitorLog.where(last_visited_at: @range).sum(:visit_count)
       rescue StandardError
         nil
       end
       @conversion_rate_ytd = @visits_total.to_i.positive? ? (@orders_count_ytd.to_d / @visits_total.to_d) : nil
+
+      @lost_orders = Dashboard::Metrics.lost_orders_stats(@so_ytd_all)
 
       load_customer_metrics
       load_critical_stock
       load_inventory_turnover
       load_balance_summaries
       load_all_time_totals
+      load_receivables_aging
+      load_whatsapp_funnel
+    end
+
+    def load_receivables_aging
+      @receivables_aging = Dashboard::ReceivablesAgingBuilder.new(
+        net_revenue: @sales_ytd,
+        period_days: (@end_date.to_date - @start_date.to_date).to_i + 1
+      ).call
+    end
+
+    def load_whatsapp_funnel
+      @whatsapp_funnel = Dashboard::WhatsappFunnelBuilder.new(@range).call
     end
 
     def load_customer_metrics
@@ -276,16 +292,13 @@ module Admin
 
     # === Year-over-Year Comparisons ===
     def load_comparisons
-      rev_sql_arel = Arel.sql(REV_SQL)
-      cogs_sql_arel = Arel.sql(COGS_SQL)
-
       range_prev_start = @start_date.prev_year
       range_prev_end = @end_date.prev_year
       so_prev_range = @so_scope.where(order_date: range_prev_start..range_prev_end)
       po_prev_range = @po_scope.where(order_date: range_prev_start..range_prev_end)
 
-      @sales_prev = SaleOrderItem.joins(:sale_order).merge(so_prev_range).sum(rev_sql_arel).to_d
-      @cogs_prev = SaleOrderItem.joins(:sale_order, :product).merge(so_prev_range).sum(cogs_sql_arel).to_d
+      @sales_prev = Dashboard::Metrics.net_revenue_total(so_prev_range)
+      @cogs_prev = Dashboard::Metrics.cogs_total(so_prev_range)
       @profit_prev = @sales_prev - @cogs_prev
       @margin_prev = @sales_prev.positive? ? (@profit_prev / @sales_prev) : 0.to_d
       @orders_prev = so_prev_range.count
@@ -735,8 +748,10 @@ module Admin
 
     # === Top Sellers and Profitable (for index page tabs) ===
     def load_top_sellers_and_profitable
+      # Sin fallback a un scope más amplio: recaer en órdenes pendientes o
+      # devueltas presentaba como ventas lo que aún no se cobra, y con
+      # exclude_canceled=false incluso las canceladas entraban al ranking.
       @top_sellers_ytd = build_sellers_data(@so_ytd_paid)
-      @top_sellers_ytd = build_sellers_data(@so_ytd) if @top_sellers_ytd.empty?
 
       ly_start = @now.beginning_of_year - 1.year
       so_last_year_paid = @so_scope.where(order_date: ly_start..ly_start.end_of_year, status: PAID_STATUSES)

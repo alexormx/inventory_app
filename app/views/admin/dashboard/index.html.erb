@@ -14,6 +14,41 @@
     </div>
   </div>
 
+  <!-- ========== 1b · FILTRO DE PERIODO ========== -->
+  <%= form_with url: admin_dashboard_path, method: :get, class: 'admin-period-filter card mb-3' do %>
+    <div class="card-body py-2 d-flex flex-wrap align-items-end gap-2">
+      <div>
+        <label class="form-label small text-muted mb-1" for="range">Periodo</label>
+        <%= select_tag :range,
+              options_for_select([
+                ["YTD #{@now.year}", 'ytd'],
+                ['Últimos 30 días', 'last_30'],
+                ['Últimos 90 días', 'last_90'],
+                ['Personalizado', 'custom']
+              ], @range_key),
+              class: 'form-select form-select-sm' %>
+      </div>
+      <div>
+        <label class="form-label small text-muted mb-1" for="start_date">Desde</label>
+        <%= date_field_tag :start_date, @start_date.to_date, class: 'form-control form-control-sm' %>
+      </div>
+      <div>
+        <label class="form-label small text-muted mb-1" for="end_date">Hasta</label>
+        <%= date_field_tag :end_date, @end_date.to_date, class: 'form-control form-control-sm' %>
+      </div>
+      <div class="form-check ms-1 mb-1">
+        <%= hidden_field_tag :exclude_canceled, '0', id: nil %>
+        <%= check_box_tag :exclude_canceled, '1', @exclude_canceled, class: 'form-check-input' %>
+        <label class="form-check-label small" for="exclude_canceled">Excluir canceladas</label>
+      </div>
+      <button type="submit" class="btn btn-sm btn-primary mb-1">
+        <i class="fa-solid fa-filter"></i> Aplicar
+      </button>
+      <%= link_to 'Limpiar', admin_dashboard_path, class: 'btn btn-sm btn-outline-secondary mb-1' %>
+      <span class="text-muted small ms-auto mb-1">Las fechas solo aplican con el periodo «Personalizado».</span>
+    </div>
+  <% end %>
+
   <!-- ========== 2 · ACCIONES RÁPIDAS ========== -->
   <div class="admin-quick-actions d-flex flex-wrap gap-2 mb-3">
     <%= link_to new_admin_sale_order_path, class: 'btn btn-success btn-sm' do %>
@@ -101,7 +136,7 @@
         delta: @kpi_deltas&.dig(:sales),
         spark_id: "sparkline-revenue",
         variant: "text-bg-success-subtle",
-        tooltip: "Total de ventas del año actual vs mismo periodo del año anterior.",
+        tooltip: "Ventas netas del periodo (ya descontado el descuento de orden) vs mismo periodo del año anterior. Bruto: #{fmt_currency(@gross_sales_ytd)} · Descuentos: #{fmt_currency(@order_discount_ytd)}",
         health: @kpi_deltas&.dig(:sales).to_f >= 0 ? 'good' : 'warning'
       %>
     </div>
@@ -155,7 +190,7 @@
       <%= render 'kpi_stat', title: 'Clientes Activos', value: fmt_number(@active_customers_ytd), tooltip: 'Clientes con al menos una orden YTD.', health: @kpi_deltas&.dig(:customers).to_f >= 0 ? 'good' : 'warning' %>
     </div>
     <div class="col-6 col-md-4 col-xl">
-      <%= render 'kpi_stat', title: 'Conversión', value: fmt_percentage_ratio(@conversion_rate_ytd, precision: 2), help: "Base acumulada: #{fmt_number(@visits_total)} visitas registradas", tooltip: 'Órdenes del periodo entre visitas acumuladas registradas. Indicador referencial mientras no exista tráfico histórico por periodo.', health: @conversion_rate_ytd.to_f >= 0.03 ? 'good' : (@conversion_rate_ytd.to_f >= 0.01 ? 'warning' : 'danger') %>
+      <%= render 'kpi_stat', title: 'Conversión', value: fmt_percentage_ratio(@conversion_rate_ytd, precision: 2), help: "#{fmt_number(@visits_total)} visitas en el periodo", tooltip: 'Órdenes entre visitas, ambas dentro del periodo seleccionado. Las visitas se atribuyen por su última fecha registrada, así que es una aproximación.', health: @conversion_rate_ytd.to_f >= 0.03 ? 'good' : (@conversion_rate_ytd.to_f >= 0.01 ? 'warning' : 'danger') %>
     </div>
     <div class="col-6 col-md-4 col-xl">
       <%= render 'kpi_stat', title: 'Stock Crítico', value: (@critical_stock_count.nil? ? '—' : fmt_number(@critical_stock_count)), tooltip: 'Productos por debajo del punto de reorden.', health: @critical_stock_count.to_i > 5 ? 'danger' : (@critical_stock_count.to_i > 0 ? 'warning' : 'good') %>
@@ -174,6 +209,22 @@
     </div>
     <div class="col-6 col-md-4 col-xl">
       <%= render 'kpi_stat', title: 'Órdenes Compra YTD', value: number_with_delimiter(@po_count_ytd), tooltip: 'Purchase Orders creadas este año.', health: @kpi_deltas&.dig(:po_count).to_f >= 0 ? 'good' : nil %>
+    </div>
+    <div class="col-6 col-md-4 col-xl">
+      <%= render 'kpi_stat',
+        title: 'Unidades por Orden',
+        value: @units_per_order_ytd.nil? ? '—' : number_with_precision(@units_per_order_ytd, precision: 2, delimiter: ','),
+        help: "#{fmt_number(@so_items_qty_ytd)} unidades en #{fmt_number(@orders_count_ytd)} órdenes",
+        tooltip: 'Piezas promedio por orden. Distingue si el ticket promedio sube por precio o por volumen.',
+        health: @units_per_order_ytd.to_f >= 2 ? 'good' : nil %>
+    </div>
+    <div class="col-6 col-md-4 col-xl">
+      <%= render 'kpi_stat',
+        title: 'Cancelación y Devolución',
+        value: fmt_percentage_ratio(@lost_orders[:rate], precision: 1),
+        help: "#{fmt_number(@lost_orders[:canceled])} canceladas · #{fmt_number(@lost_orders[:returned])} devueltas",
+        tooltip: 'Órdenes canceladas o devueltas sobre el total del periodo, incluyendo canceladas en el denominador.',
+        health: @lost_orders[:rate].to_f <= 0.05 ? 'good' : (@lost_orders[:rate].to_f <= 0.10 ? 'warning' : 'danger') %>
     </div>
   </div>
 
@@ -206,6 +257,16 @@
         help: "Ingresos: #{fmt_currency(@collected_income_total_mxn)} · Egresos: #{fmt_currency(@purchases_total_mxn)}",
         tooltip: 'Cobros completados acumulados menos compras históricas. Es un indicador operativo y no sustituye una contabilidad formal.',
         health: @historical_net_total_mxn.to_f >= 0 ? 'good' : 'danger' %>
+    </div>
+  </div>
+
+  <!-- ========== 6b · CARTERA Y CANAL WHATSAPP ========== -->
+  <div class="row g-3 mb-4">
+    <div class="col-lg-7">
+      <%= render 'receivables_aging', aging: @receivables_aging %>
+    </div>
+    <div class="col-lg-5">
+      <%= render 'whatsapp_funnel', funnel: @whatsapp_funnel %>
     </div>
   </div>
 

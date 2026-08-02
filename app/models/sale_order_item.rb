@@ -14,12 +14,31 @@ class SaleOrderItem < ApplicationRecord
   ITEM_CONDITIONS = Inventory::ITEM_CONDITIONS
   enum :item_condition, ITEM_CONDITIONS, default: :brand_new
 
+  # Definición canónica del ingreso de una línea. Vive aquí porque tanto
+  # SaleOrder#recalculate_totals! como el dashboard deben usar la misma
+  # expresión: cuando divergieron, el panel reportaba ingresos distintos a los
+  # de las órdenes que agregaba.
+  LINE_REVENUE_SQL = <<~SQL.squish
+    COALESCE(sale_order_items.total_line_cost,
+             COALESCE(sale_order_items.quantity, 0) *
+             COALESCE(sale_order_items.unit_final_price,
+                      COALESCE(sale_order_items.unit_cost, 0) - COALESCE(sale_order_items.unit_discount, 0)))
+  SQL
+
+  # El costo congelado en la venta; cae al promedio vigente solo para filas
+  # anteriores al backfill.
+  LINE_COGS_SQL = <<~SQL.squish
+    COALESCE(sale_order_items.unit_acquisition_cost, products.average_purchase_cost, 0) *
+    COALESCE(sale_order_items.quantity, 0)
+  SQL
+
   validates :quantity, presence: true, numericality: { greater_than: 0 }
   validates :unit_cost, presence: true, numericality: { greater_than_or_equal_to: 0 }
   validates :total_line_cost, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true
   validates :preorder_quantity, :backordered_quantity, numericality: { greater_than_or_equal_to: 0 }
   validate :pending_quantities_not_exceed_total
 
+  before_validation :capture_acquisition_cost, on: :create
   before_validation :shrink_pending_to_fit, if: :will_reduce_quantity?
   # Guards de seguridad
   before_update :ensure_free_to_reduce, if: :will_reduce_quantity?
@@ -72,6 +91,14 @@ class SaleOrderItem < ApplicationRecord
   end
 
   private
+
+  # El costo de adquisición se congela al vender porque
+  # products.average_purchase_cost se recalcula con cada compra; sin esta copia
+  # el COGS histórico (y por tanto el margen de periodos ya cerrados) cambiaría
+  # retroactivamente.
+  def capture_acquisition_cost
+    self.unit_acquisition_cost ||= product&.average_purchase_cost
+  end
 
   def will_reduce_quantity?
     quantity_changed? && quantity_change_to_be_saved.first.to_i > quantity_change_to_be_saved.last.to_i
