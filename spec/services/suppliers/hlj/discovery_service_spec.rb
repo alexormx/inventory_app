@@ -198,4 +198,184 @@ RSpec.describe Suppliers::Hlj::DiscoveryService do
     expect(listing_url).to include("dateAdded2=-10")
     expect(listing_url).to include("dateArrivals=-10")
   end
+
+  describe "incremental sync" do
+    let(:live_entries) { {} }
+    let(:failed_skus) { [] }
+    let(:live_price_service) do
+      result = Suppliers::Hlj::LivePriceService::Result.new(prices: live_entries, failed_skus: failed_skus)
+      instance_double(Suppliers::Hlj::LivePriceService, call: result)
+    end
+    let(:requested_urls) { [] }
+    let(:total_pages_reported) { 2 }
+
+    def paged_list_html(pages)
+      list_html.sub('<ul class="pages"><li>1</li><li>2</li><li>Next</li></ul>',
+                    %(<ul class="pages"><li>1</li><li>#{pages}</li><li>Next</li></ul>))
+    end
+
+    before do
+      allow(connection).to receive(:get) do |url, &_block|
+        requested_urls << url
+        body = url.start_with?(described_class::SEARCH_URL) ? paged_list_html(total_pages_reported) : detail_html
+        instance_double(Faraday::Response, success?: true, status: 200, body: body)
+      end
+    end
+
+    def detail_requests
+      requested_urls.reject { |url| url.start_with?(described_class::SEARCH_URL) }
+    end
+
+    def run_discovery(**options)
+      described_class.new(connection: connection, live_price_service: live_price_service, **options).call
+    end
+
+    it "downloads the detail page for a SKU it has never seen" do
+      run_discovery(max_pages: 1, detail_policy: "new_only")
+
+      expect(detail_requests.size).to eq(1)
+      expect(SupplierCatalogItem.find_by(external_sku: "TKT95078").last_full_sync_at).to be_present
+    end
+
+    it "does not download the detail page for a SKU that already exists" do
+      create(:supplier_catalog_item, external_sku: "TKT95078", canonical_status: "in_stock")
+
+      run_discovery(max_pages: 1, detail_policy: "new_only")
+
+      expect(detail_requests).to be_empty
+    end
+
+    it "still downloads every detail page when the policy is all" do
+      create(:supplier_catalog_item, external_sku: "TKT95078", canonical_status: "in_stock")
+
+      run_discovery(max_pages: 1, detail_policy: "all")
+
+      expect(detail_requests.size).to eq(1)
+    end
+
+    it "counts an existing item with no changes as unchanged, not updated" do
+      create(:supplier_catalog_item, external_sku: "TKT95078", canonical_status: "in_stock")
+
+      run_discovery(max_pages: 1, detail_policy: "new_only")
+      run = SupplierSyncRun.last
+
+      expect(run.processed_count).to eq(1)
+      expect(run.created_count).to eq(0)
+      expect(run.updated_count).to eq(0)
+      expect(run.metadata["unchanged_count"]).to eq(1)
+    end
+
+    context "when the supplier reports a new status" do
+      let(:live_entries) { { "TKT95078" => { "availability" => "Sold Out" } } }
+
+      it "counts the item as updated" do
+        create(:supplier_catalog_item, external_sku: "TKT95078", canonical_status: "in_stock")
+
+        run_discovery(max_pages: 1, detail_policy: "new_only")
+        run = SupplierSyncRun.last
+
+        expect(run.updated_count).to eq(1)
+        expect(run.metadata["status_changed_count"]).to eq(1)
+        expect(SupplierCatalogItem.find_by(external_sku: "TKT95078").canonical_status).to eq("sold_out")
+      end
+    end
+
+    it "does not flag an unchanged item for review even on a review feed" do
+      item = create(:supplier_catalog_item, external_sku: "TKT95078", canonical_status: "in_stock",
+                                            needs_review: false)
+
+      run_discovery(max_pages: 1, detail_policy: "new_only", review_feed: "recent_arrivals")
+
+      expect(item.reload.needs_review).to be false
+      expect(item.last_hlj_recent_arrival_at).to be_present
+    end
+
+    it "keeps existing data when livePrice returns nothing for the SKU" do
+      item = create(:supplier_catalog_item, external_sku: "TKT95078", canonical_status: "in_stock",
+                                            canonical_price: BigDecimal("1000"), currency: "JPY")
+
+      run_discovery(max_pages: 1, detail_policy: "new_only")
+
+      item.reload
+      expect(item.canonical_status).to eq("in_stock")
+      expect(item.canonical_price).to eq(BigDecimal("1000"))
+      expect(item.canonical_name).to eq("No.43 Lamborghini Temerario")
+      expect(item.description_raw).to be_present
+    end
+
+    it "does not stamp last_full_sync_at when no detail page was downloaded" do
+      item = create(:supplier_catalog_item, external_sku: "TKT95078", last_full_sync_at: nil)
+
+      run_discovery(max_pages: 1, detail_policy: "new_only")
+
+      expect(item.reload.last_full_sync_at).to be_nil
+    end
+
+    it "looks up existing SKUs with a single query per page" do
+      create(:supplier_catalog_item, external_sku: "TKT95078")
+      queries = []
+      subscriber = ActiveSupport::Notifications.subscribe("sql.active_record") do |*, payload|
+        queries << payload[:sql] if payload[:sql].include?('FROM "supplier_catalog_items"')
+      end
+
+      begin
+        run_discovery(max_pages: 1, detail_policy: "new_only")
+      ensure
+        ActiveSupport::Notifications.unsubscribe(subscriber)
+      end
+
+      lookups = queries.count { |sql| sql.include?("external_sku") }
+      expect(lookups).to eq(1)
+    end
+
+    context "when HLJ reports far more pages than expected" do
+      let(:total_pages_reported) { 240 }
+
+      it "traverses only max_pages and records the anomaly" do
+        run_discovery(max_pages: 2, detail_policy: "new_only")
+
+        listing_requests = requested_urls.count { |url| url.start_with?(described_class::SEARCH_URL) }
+        run = SupplierSyncRun.last
+
+        expect(listing_requests).to eq(2)
+        expect(run.metadata["page_count_anomaly"]).to be true
+        expect(run.metadata["remote_total_pages"]).to eq(240)
+        expect(run.metadata["pages_traversed"]).to eq(2)
+        expect(run.metadata["max_pages"]).to eq(2)
+      end
+    end
+
+    it "records the detail policy and the configured limits in the run metadata" do
+      run_discovery(max_pages: 1, max_items: 1, detail_policy: "new_only")
+      run = SupplierSyncRun.last
+
+      expect(run.metadata["detail_policy"]).to eq("new_only")
+      expect(run.metadata["max_items"]).to eq(1)
+      expect(run.metadata["detail_fetch_count"]).to eq(1)
+    end
+
+    # Última red de seguridad si los límites por página fallan: la corrida se
+    # corta por reloj y lo deja registrado en vez de seguir horas.
+    it "stops on the wall-clock budget and records why" do
+      started = Time.current
+      allow(Time).to receive(:current).and_return(started, started, started + 2.hours)
+
+      run_discovery(max_pages: 2, detail_policy: "new_only", max_duration_seconds: 60)
+      run = SupplierSyncRun.last
+
+      expect(run.metadata["stopped_reason"]).to eq("max_duration_seconds")
+      expect(run.status).to eq("completed")
+    end
+
+    it "logs a per-item failure instead of aborting the run" do
+      allow(Suppliers::Catalog::ImportCatalogItemService).to receive(:new).and_raise(StandardError, "boom")
+
+      run_discovery(max_pages: 1, detail_policy: "new_only")
+      run = SupplierSyncRun.last
+
+      expect(run.status).to eq("completed")
+      expect(run.skipped_count).to eq(1)
+      expect(run.error_samples.first).to include("TKT95078", "boom")
+    end
+  end
 end

@@ -34,7 +34,10 @@ module Suppliers
           date_added_within_days: normalized[:date_added_within_days],
           date_arrivals_within_days: normalized[:date_arrivals_within_days],
           review_feed: normalized[:review_feed],
-          fetch_detail: normalized.key?(:fetch_detail) ? normalized[:fetch_detail] : true,
+          fetch_detail: normalized.key?(:fetch_detail) ? normalized[:fetch_detail] : nil,
+          detail_policy: normalized[:detail_policy],
+          page_anomaly_threshold: normalized[:page_anomaly_threshold],
+          max_duration_seconds: normalized.fetch(:max_duration_seconds, Suppliers::Hlj::DiscoveryService::DEFAULT_MAX_DURATION_SECONDS),
           run: run
         ).call
       rescue StandardError => e
@@ -57,7 +60,8 @@ module Suppliers
           "review_feed" => options[:review_feed],
           "max_pages" => options[:max_pages],
           "max_items" => options[:max_items],
-          "fetch_detail" => options.key?(:fetch_detail) ? options[:fetch_detail] : true
+          "fetch_detail" => options.key?(:fetch_detail) ? options[:fetch_detail] : true,
+          "detail_policy" => options[:detail_policy]
         }.compact
       end
     end

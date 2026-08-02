@@ -95,4 +95,108 @@ RSpec.describe Suppliers::Catalog::ImportCatalogItemService do
     expect(result.catalog_item.last_hlj_recent_added_at).to be_nil
     expect(result.catalog_item.canonical_status).to eq("in_stock")
   end
+
+  describe "change detection" do
+    it "reports a second identical import as unchanged" do
+      service.call
+      second = service.call
+
+      expect(second.created).to be false
+      expect(second.changed).to be false
+      expect(second.status_changed).to be false
+      expect(second.price_changed).to be false
+    end
+
+    it "reports a price move" do
+      service.call
+
+      result = described_class.new(
+        source: "hlj",
+        external_sku: "TKT95078",
+        name: "No.43 Lamborghini Temerario",
+        source_url: "https://www.hlj.com/no-43-lamborghini-temerario-tkt95078",
+        raw_status: "Future Release",
+        canonical_price: 99.99,
+        normalized_payload: { "series" => "Tomica", "item_type" => "Toys" },
+        raw_payload: { "stock_status_raw" => "Future Release" }
+      ).call
+
+      expect(result.price_changed).to be true
+      expect(result.changed).to be true
+    end
+
+    it "does not re-flag an unchanged review-feed item" do
+      created = described_class.new(
+        source: "hlj",
+        external_sku: "TKT95081",
+        name: "No.46 Mazda MX-5",
+        source_url: "https://www.hlj.com/no-46-mazda-mx-5-tkt95081",
+        raw_status: "In Stock",
+        review_feed: "recent_arrivals",
+        normalized_payload: { "series" => "Tomica" },
+        raw_payload: {}
+      ).call
+      created.catalog_item.update!(needs_review: false)
+
+      described_class.new(
+        source: "hlj",
+        external_sku: "TKT95081",
+        name: "No.46 Mazda MX-5",
+        source_url: "https://www.hlj.com/no-46-mazda-mx-5-tkt95081",
+        raw_status: "In Stock",
+        review_feed: "recent_arrivals",
+        normalized_payload: { "series" => "Tomica" },
+        raw_payload: {}
+      ).call
+
+      expect(created.catalog_item.reload.needs_review).to be false
+      expect(created.catalog_item.last_hlj_recent_arrival_at).to be_present
+    end
+  end
+
+  describe "full sync tracking" do
+    it "stamps last_full_sync_at when the detail page was processed" do
+      expect(service.call.catalog_item.last_full_sync_at).to be_present
+    end
+
+    it "leaves last_full_sync_at alone when only listing data was available" do
+      result = described_class.new(
+        source: "hlj",
+        external_sku: "TKT95082",
+        name: "No.47 Honda Civic",
+        source_url: "https://www.hlj.com/no-47-honda-civic-tkt95082",
+        raw_status: "In Stock",
+        full_sync: false,
+        normalized_payload: {},
+        raw_payload: {}
+      ).call
+
+      expect(result.catalog_item.last_full_sync_at).to be_nil
+    end
+  end
+
+  describe "field preservation" do
+    it "keeps existing descriptive values when the supplier omits them" do
+      service.call
+
+      described_class.new(
+        source: "hlj",
+        external_sku: "TKT95078",
+        name: "No.43 Lamborghini Temerario",
+        source_url: "https://www.hlj.com/no-43-lamborghini-temerario-tkt95078",
+        raw_status: nil,
+        description_raw: nil,
+        image_urls: [],
+        canonical_brand: nil,
+        normalized_payload: {},
+        raw_payload: {}
+      ).call
+
+      item = SupplierCatalogItem.find_by(external_sku: "TKT95078")
+      expect(item.canonical_status).to eq("future_release")
+      expect(item.description_raw).to be_present
+      expect(item.image_urls).to be_present
+      expect(item.canonical_brand).to eq("Takara Tomy")
+    end
+  end
 end
