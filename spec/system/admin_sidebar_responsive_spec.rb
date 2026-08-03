@@ -62,6 +62,37 @@ RSpec.describe 'Admin responsive sidebar', :js, :sidebar_responsive, type: :syst
     expect(page).to have_css('[data-sidebar-desktop-toggle][aria-expanded="false"]')
   end
 
+  # `overflow-x: hidden` en el body convierte el eje Y en `auto`, y el body pasa
+  # a ser el scrollport del sidebar sticky: como el body no desplaza, el sidebar
+  # se iba con el contenido. La contención horizontal vive en `html.admin-page`.
+  it 'keeps the desktop sidebar pinned while the page scrolls' do
+    resize_to(1440, 500)
+    visit admin_dashboard_path
+    expect(page).to have_css('#sidebar')
+
+    # El dashboard sin datos no llena la ventana; el alto forzado aísla el
+    # comportamiento del sticky del volumen de contenido de la página.
+    page.execute_script("document.querySelector('.admin-main').style.minHeight = '3000px'")
+    # `window.scrollTo` no mueve la ventana en este driver headless; la acción
+    # nativa de Selenium sí emite el evento de rueda real.
+    page.driver.browser.action.scroll_by(0, 400).perform
+
+    metrics = page.evaluate_script(<<~JS)
+      (() => {
+        const sidebar = document.getElementById('sidebar').getBoundingClientRect()
+        return {
+          scrollY: Math.round(window.scrollY),
+          sidebarTop: Math.round(sidebar.top),
+          bodyOverflowY: getComputedStyle(document.body).overflowY
+        }
+      })()
+    JS
+
+    expect(metrics['scrollY']).to be > 0, "no scrolleó: #{metrics.inspect}"
+    expect(metrics['sidebarTop']).to eq(0), "el sidebar se fue con el contenido: #{metrics.inspect}"
+    expect(metrics['bodyOverflowY']).to eq('visible')
+  end
+
   it 'starts closed on mobile without displacing or overflowing the main content' do
     resize_to(390, 844)
     visit admin_dashboard_path

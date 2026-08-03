@@ -680,6 +680,12 @@ aside#sidebar .sidebar-toggle-btn:focus-visible,
   .admin-navbar .sidebar-drawer-toggle:hover {
     background: rgba(15, 23, 42, 0.06);
   }
+  /* Recorta el drawer fuera de lienzo. Solo aquí: en escritorio el sidebar es
+     sticky, y un `overflow-x` en el body vuelve su eje Y `auto`, convirtiendo
+     al body en el scrollport del sticky, que entonces nunca se fija. */
+  body.admin-shell {
+    overflow-x: hidden;
+  }
   body.sidebar-drawer-open {
     overflow: hidden;
     touch-action: none;
@@ -976,7 +982,6 @@ img.product-order-image {
 body.admin-shell {
   background: var(--admin-shell-bg) !important;
   color: var(--admin-text);
-  overflow-x: hidden;
 }
 
 body.admin-shell .container-fluid,
