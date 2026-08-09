@@ -1,0 +1,13 @@
+<% summary = @cart.pending_summary %>
+<% if summary[:pending_total] > 0 %>
+  <div class="d-flex justify-content-between text-warning cart-pending-summary-content">
+    <span>Pendientes (<%= summary[:pending_total] %>)</span>
+    <span class="small">
+      <% parts = [] %>
+      <% parts << "En tránsito: #{summary[:in_transit_total]}" if summary[:in_transit_total] > 0 %>
+      <% parts << "Preventa: #{summary[:preorder_total]}" if summary[:preorder_total] > 0 %>
+      <% parts << "Sobre pedido: #{summary[:backorder_total]}" if summary[:backorder_total] > 0 %>
+      <%= parts.join(' · ') %>
+    </span>
+  </div>
+<% end %>

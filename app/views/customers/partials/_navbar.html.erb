@@ -123,7 +123,7 @@
           </li>
 
           <!-- Cart Button -->
-          <li class="nav-item">
+          <li class="nav-item cart-preview-nav-item">
       <% cart_count = cart_item_count %>
           <%= link_to cart_path,
         class: "nav-item-link position-relative d-flex align-items-center #{'active' if ['cart_items','carts'].include?(controller_path)}",
@@ -131,7 +131,7 @@
                 'aria-current': (['cart_items','carts'].include?(controller_path)) ? 'page' : nil,
                 'aria-label': "Ver carrito de compras (#{cart_count} artículos)" do %>
               <i class="fas fa-shopping-cart" aria-hidden="true"></i> <span class="link-text">Carrito</span>
-                <span id="cart-count" class="badge bg-danger rounded-pill position-absolute top-0 start-100 translate-middle" aria-live="polite" aria-atomic="true">
+                <span id="cart-count" class="badge bg-danger rounded-pill position-absolute top-0 start-100 translate-middle">
                 <%= cart_count %>
               </span>
             <% end %>
@@ -197,5 +197,4 @@
   updateNavActive();
 })();
 </script>
-
 

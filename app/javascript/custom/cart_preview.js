@@ -1,154 +1,257 @@
-// Mini preview del carrito: muestra panel al hover/foco sobre enlace del carrito
-(function(){
-  const STATE='__cartPreview'; if(window[STATE]) return; window[STATE]=true;
-  function ready(fn){ if(document.readyState!=='loading') fn(); else document.addEventListener('turbo:load', fn); }
+// Mini preview del carrito: muestra panel al hover/foco sobre enlace del carrito.
+(function () {
+  const STATE = '__cartPreview'
+  if (window[STATE]) return
+  window[STATE] = true
 
-  let currentLink=null;
-  let hideTimer=null;
-  const AUTOHIDE_DELAY=1500; // 1.5s para cerrar tras salir del link/panel
-  let linkListenersInstalled=false;
+  const MOBILE_QUERY = '(max-width: 991.98px)'
+  const VIEWPORT_MARGIN = 8
+  const MINIMUM_PANEL_HEIGHT = 320
+  const AUTOHIDE_DELAY = 1500
+  let currentLink = null
+  let linkListenersInstalled = false
+  let hideTimer = null
+  let concealTimer = null
 
-  function currentPanel(){ return document.getElementById('cart-preview'); }
-
-  function show(){
-    const panel=currentPanel(); if(!panel) return;
-    clearTimeout(hideTimer);
-    panel.hidden=false;
-    requestAnimationFrame(()=> panel.classList.add('show'));
-  }
-  function hideImmediate(){
-    const panel=currentPanel(); if(!panel) return;
-    panel.dataset.lockOpen='';
-    panel.classList.remove('show');
-    setTimeout(()=>{ const p=currentPanel(); if(p && !p.classList.contains('show')) p.hidden=true; },200);
+  function ready(callback) {
+    if (document.readyState !== 'loading') callback()
+    else document.addEventListener('DOMContentLoaded', callback, { once: true })
   }
 
-  let lastInteractionAt=0;
-  function scheduleHide(){
-    clearTimeout(hideTimer);
-    const panel=currentPanel(); if(!panel) return;
-    hideTimer=setTimeout(()=>{ hideImmediate(); }, AUTOHIDE_DELAY);
+  function currentPanel() {
+    return document.getElementById('cart-preview')
   }
 
-  function bindLink(){
-    const link=document.querySelector('.site-navbar a[href*="/cart"]');
-    if(!link) return;
-    if(currentLink === link && linkListenersInstalled) return;
-    // Si hubo link previo diferente, remover listeners previos
-    if(currentLink && currentLink !== link){
-      ['mouseenter','focus','mouseleave','blur'].forEach(ev=> currentLink.removeEventListener(ev, link._cartPrevHandlers?.[ev]));
-    }
-    // Preparar handlers y adjuntar
-    const handlers={};
-  handlers['mouseenter']=()=>{ lastInteractionAt=Date.now(); show(); clearTimeout(hideTimer); };
-  handlers['focus']=()=>{ lastInteractionAt=Date.now(); show(); clearTimeout(hideTimer); };
-  handlers['mouseleave']=()=>{ lastInteractionAt=Date.now(); scheduleHide(); };
-  handlers['blur']=()=>{ lastInteractionAt=Date.now(); scheduleHide(); };
-  ['mouseenter','focus','mouseleave','blur'].forEach(ev=> link.addEventListener(ev, handlers[ev]));
-    link._cartPrevHandlers=handlers; // guardar en nodo para remover futuro
-    currentLink=link;
-    linkListenersInstalled=true;
+  function currentNavbar() {
+    return document.querySelector('.site-navbar')
   }
 
-  function bindPanelHover(){
-    const panel=currentPanel(); if(!panel) return;
-    if(panel.__hoverBound){
-      // no rebind necesario, ya está
-      return;
-    }
-  panel.addEventListener('mouseenter', ()=>{ lastInteractionAt=Date.now(); show(); clearTimeout(hideTimer); });
-  panel.addEventListener('mouseleave', ()=>{ lastInteractionAt=Date.now(); scheduleHide(); });
-    panel.__hoverBound=true;
-    // Evitar cierre al hacer click en botones internos
-    panel.addEventListener('click', (e)=>{
-      if(e.target.closest('form')){
-          lastInteractionAt=Date.now();
-          show();
-      }
-    });
-    // Interceptar submits internos para mantener abierto tras respuesta
-    panel.addEventListener('submit', (e)=>{
-      if(e.target.closest('.cart-mini-qty-form') || e.target.matches('form[action*="/cart_items/"]')){
-          lastInteractionAt=Date.now();
-          show();
-      }
-    });
+  function usesMobilePreview() {
+    return window.matchMedia(MOBILE_QUERY).matches
   }
 
-  function autoPeekIfNeeded(){ /* ya no usado para body-only updates */ }
+  function updateScrollState() {
+    const scrollBox = currentPanel()?.querySelector('.cart-preview-scroll')
+    if (!scrollBox) return
 
-  function rebindAll(){
-    bindLink();
-    bindPanelHover();
-    autoPeekIfNeeded();
-    // Si panel estaba "lockOpen" mantenerlo visible tras re-render
-    const panel=currentPanel();
-  if(panel && (panel.dataset.lockOpen==='true' || panel.getAttribute('data-lock-open')==='true')){
-      panel.dataset.lockOpen='true';
-      show();
-      // Liberar bloqueo después de 5s sin interacción
-      clearTimeout(panel._unlockTimer);
-  panel._unlockTimer=setTimeout(()=>{ delete panel.dataset.lockOpen; },5000);
+    scrollBox.classList.toggle('has-top-fade', scrollBox.scrollTop > 2)
+    scrollBox.classList.toggle('is-scrollable', scrollBox.scrollHeight > scrollBox.clientHeight + 8)
+  }
+
+  function clearOpenState(panel = currentPanel()) {
+    currentNavbar()?.classList.remove('cart-preview-open')
+    panel?.style.removeProperty('--cart-preview-viewport-top')
+    currentLink?.setAttribute('aria-expanded', 'false')
+  }
+
+  function updatePreviewGeometry() {
+    const panel = currentPanel()
+    if (!panel) {
+      clearOpenState()
+      return
     }
-    // Fade superior basado en scroll
-    const scrollBox = panel && panel.querySelector('.cart-preview-scroll');
-    if(scrollBox && !scrollBox.__fadeBound){
-      const updateScrollState=()=>{
-        if(scrollBox.scrollTop>2) scrollBox.classList.add('has-top-fade'); else scrollBox.classList.remove('has-top-fade');
-        if(scrollBox.scrollHeight>scrollBox.clientHeight+8) scrollBox.classList.add('is-scrollable'); else scrollBox.classList.remove('is-scrollable');
-      };
-      scrollBox.addEventListener('scroll', updateScrollState, {passive:true});
-      window.addEventListener('resize', updateScrollState);
-      updateScrollState();
-      scrollBox.__fadeBound=true;
+
+    if (!usesMobilePreview()) {
+      clearOpenState(panel)
+      updateScrollState()
+      return
+    }
+
+    currentNavbar()?.classList.add('cart-preview-open')
+    const linkRect = currentLink?.getBoundingClientRect()
+    const belowLinkTop = Math.max(VIEWPORT_MARGIN, (linkRect?.bottom || 0) + VIEWPORT_MARGIN)
+    const minimumHeight = Math.min(MINIMUM_PANEL_HEIGHT, window.innerHeight - (VIEWPORT_MARGIN * 2))
+    const availableBelowLink = window.innerHeight - belowLinkTop - VIEWPORT_MARGIN
+    const top = availableBelowLink >= minimumHeight ? belowLinkTop : VIEWPORT_MARGIN
+
+    panel.style.setProperty('--cart-preview-viewport-top', `${top}px`)
+    updateScrollState()
+  }
+
+  function show() {
+    const panel = currentPanel()
+    if (!panel) return
+
+    window.clearTimeout(hideTimer)
+    window.clearTimeout(concealTimer)
+    panel.hidden = false
+    currentLink?.setAttribute('aria-expanded', 'true')
+    if (usesMobilePreview()) currentNavbar()?.classList.add('cart-preview-open')
+
+    requestAnimationFrame(() => {
+      panel.classList.add('show')
+      updatePreviewGeometry()
+      requestAnimationFrame(updateScrollState)
+    })
+  }
+
+  function conceal(panel) {
+    if (panel && !panel.classList.contains('show')) panel.hidden = true
+    clearOpenState(panel)
+  }
+
+  function hideImmediate({ restoreFocus = false, immediate = false } = {}) {
+    const panel = currentPanel()
+    window.clearTimeout(hideTimer)
+    window.clearTimeout(concealTimer)
+
+    if (!panel) {
+      clearOpenState()
+      return
+    }
+
+    delete panel.dataset.lockOpen
+    panel.classList.remove('show')
+    if (restoreFocus && panel.contains(document.activeElement)) currentLink?.focus()
+
+    if (immediate) conceal(panel)
+    else concealTimer = window.setTimeout(() => conceal(panel), 200)
+  }
+
+  function scheduleHide() {
+    window.clearTimeout(hideTimer)
+    hideTimer = window.setTimeout(() => {
+      const panel = currentPanel()
+      if (panel?.contains(document.activeElement)) return
+      hideImmediate()
+    }, AUTOHIDE_DELAY)
+  }
+
+  function unbindCurrentLink() {
+    if (!currentLink?._cartPrevHandlers) return
+
+    Object.entries(currentLink._cartPrevHandlers).forEach(([eventName, handler]) => {
+      currentLink.removeEventListener(eventName, handler)
+    })
+    delete currentLink._cartPrevHandlers
+  }
+
+  function bindLink() {
+    const link = document.querySelector('.site-navbar a[data-nav-link="cart"]')
+    if (!link) return
+    if (currentLink === link && linkListenersInstalled) return
+
+    if (currentLink && currentLink !== link) unbindCurrentLink()
+
+    const handlers = {
+      mouseenter: () => {
+        show()
+        window.clearTimeout(hideTimer)
+      },
+      focus: () => {
+        show()
+        window.clearTimeout(hideTimer)
+      },
+      mouseleave: scheduleHide,
+      blur: scheduleHide
+    }
+    Object.entries(handlers).forEach(([eventName, handler]) => link.addEventListener(eventName, handler))
+    link._cartPrevHandlers = handlers
+    link.setAttribute('aria-expanded', 'false')
+    currentLink = link
+    linkListenersInstalled = true
+  }
+
+  function bindPanelInteractions() {
+    const panel = currentPanel()
+    if (!panel || panel.__interactionsBound) return
+
+    panel.addEventListener('mouseenter', () => {
+      show()
+      window.clearTimeout(hideTimer)
+    })
+    panel.addEventListener('mouseleave', scheduleHide)
+    panel.addEventListener('focusin', () => {
+      show()
+      window.clearTimeout(hideTimer)
+    })
+    panel.addEventListener('focusout', (event) => {
+      if (!panel.contains(event.relatedTarget)) scheduleHide()
+    })
+    panel.addEventListener('click', (event) => {
+      if (event.target.closest('form')) show()
+    })
+    panel.addEventListener('submit', (event) => {
+      if (event.target.closest('.cart-mini-qty-form') || event.target.matches('form[action*="/cart_items/"]')) show()
+    })
+    panel.__interactionsBound = true
+  }
+
+  function bindScrollState() {
+    const scrollBox = currentPanel()?.querySelector('.cart-preview-scroll')
+    if (!scrollBox || scrollBox.__fadeBound) return
+
+    scrollBox.addEventListener('scroll', updateScrollState, { passive: true })
+    scrollBox.__fadeBound = true
+    updateScrollState()
+  }
+
+  function rebindAll() {
+    bindLink()
+    bindPanelInteractions()
+    bindScrollState()
+    const panel = currentPanel()
+
+    if (panel?.dataset.lockOpen === 'true') {
+      show()
+      window.clearTimeout(panel._unlockTimer)
+      panel._unlockTimer = window.setTimeout(() => { delete panel.dataset.lockOpen }, 5000)
+    } else if (panel?.classList.contains('show')) {
+      updatePreviewGeometry()
+    } else {
+      clearOpenState(panel)
     }
   }
 
-  // MutationObserver para detectar reemplazo de #cart-preview
-  const mo = new MutationObserver((mutations)=>{
-    for(const m of mutations){
-      if([...m.addedNodes].some(n=> n.id==='cart-preview' || (n.querySelector && n.querySelector('#cart-preview')))){
-        rebindAll();
-        break;
-      }
-    }
-  });
-  ready(()=>{ mo.observe(document.body,{childList:true,subtree:true}); rebindAll(); });
-  document.addEventListener('turbo:render', rebindAll);
-  document.addEventListener('turbo:before-cache', ()=>{
-    // Limpiar bandera para que al restaurar la página se re-bindee correctamente
-    const panel=currentPanel(); if(panel) panel.__hoverBound=false;
-    linkListenersInstalled=false; currentLink=null;
-    hideImmediate();
-  });
-  document.addEventListener('turbo:after-stream-render', (e)=>{
-    const panel=currentPanel();
-    if(!panel) return;
-    // Si se reemplazó solo el body, mantener abierto si estaba visible
-    if(e.target && e.target.querySelector && e.target.querySelector('#cart-preview-body')){
-      if(panel.classList.contains('show')){
-        show();
-      }
-    }
-    rebindAll();
-  });
+  const observer = new MutationObserver((mutations) => {
+    const previewAdded = mutations.some((mutation) => [...mutation.addedNodes].some((node) => (
+      node.id === 'cart-preview' || node.querySelector?.('#cart-preview')
+    )))
+    if (previewAdded) rebindAll()
+  })
 
-  // Cerrar con click en botón close o click fuera
-  document.addEventListener('click', (e)=>{
-    const panel=currentPanel(); if(!panel) return;
-    if(e.target.closest('[data-cart-preview-close]')){ hideImmediate(); return; }
-    if(panel.classList.contains('show')){
-      if(!panel.contains(e.target) && !(currentLink && currentLink.contains(e.target))){ hideImmediate(); }
-    }
-  });
+  ready(() => {
+    observer.observe(document.body, { childList: true, subtree: true })
+    rebindAll()
+  })
 
-  // Cerrar con Escape cuando el panel está abierto y foco dentro o en link
-  document.addEventListener('keydown', (e)=>{
-    if(e.key==='Escape'){
-      const panel=currentPanel(); if(panel && panel.classList.contains('show')) hideImmediate();
-    }
-  });
-  // Fallback: si el usuario mueve rápido el mouse hacia el panel después de salir del link
-  // Sin auto-apertura en mousemove para evitar flashes inesperados
-})();
+  document.addEventListener('turbo:render', rebindAll)
+  document.addEventListener('turbo:before-render', () => hideImmediate({ immediate: true }))
+  document.addEventListener('turbo:before-cache', () => {
+    hideImmediate({ immediate: true })
+    unbindCurrentLink()
+    linkListenersInstalled = false
+    currentLink = null
+  })
+  document.addEventListener('turbo:after-stream-render', () => {
+    rebindAll()
+    if (currentPanel()?.classList.contains('show')) updatePreviewGeometry()
+  })
 
+  document.addEventListener('click', (event) => {
+    const panel = currentPanel()
+    if (!panel) return
+
+    if (event.target.closest('[data-cart-preview-close]')) {
+      event.preventDefault()
+      hideImmediate({ restoreFocus: true })
+      return
+    }
+    if (panel.classList.contains('show') && !panel.contains(event.target) && !currentLink?.contains(event.target)) {
+      hideImmediate()
+    }
+  }, true)
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && currentPanel()?.classList.contains('show')) {
+      hideImmediate({ restoreFocus: true })
+    }
+  })
+
+  window.addEventListener('resize', () => {
+    const panel = currentPanel()
+    if (!usesMobilePreview()) clearOpenState(panel)
+    else if (panel?.classList.contains('show')) updatePreviewGeometry()
+    updateScrollState()
+  }, { passive: true })
+})()

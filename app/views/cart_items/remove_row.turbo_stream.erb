@@ -1,34 +1,36 @@
-<%# Elimina fila individual y actualiza totales y badge %>
-<% if @condition.present? %>
-  <%= turbo_stream.remove "cart_item_#{@product.id}_#{@condition}" %>
-<% else %>
-  <%# Cuando no se especifica condición, se eliminan todas las filas del producto %>
-  <% ['brand_new', 'misb', 'moc', 'mib', 'mint', 'loose', 'good', 'fair'].each do |cond| %>
-    <%= turbo_stream.remove "cart_item_#{@product.id}_#{cond}" %>
-  <% end %>
-<% end %>
-
-<%= turbo_stream.update 'cart-total', number_to_currency(@cart.total) %>
+<%# Elimina una fila individual y actualiza totales y badge %>
 <%= turbo_stream.update 'cart-count', @cart.item_count %>
-<%= turbo_stream.update 'cart-item-count', @cart.item_count %>
-<%= turbo_stream.update 'summary-subtotal', number_to_currency(@cart.subtotal) %>
-<% if @cart.tax_enabled? %>
-  <%= turbo_stream.update 'summary-tax', number_to_currency(@cart.tax_amount) %>
-<% else %>
-  <%= turbo_stream.remove 'summary-tax-row' %>
-<% end %>
-<%= turbo_stream.update 'summary-shipping', 'A calcular' %>
-<%= turbo_stream.update 'summary-grand-total', number_to_currency(@cart.subtotal + @cart.tax_amount) %>
-
-<%= turbo_stream.replace 'cart-pending-summary' do %>
-  <%= render 'carts/summary_pending' %>
-<% end %>
+<%= turbo_stream.update 'cart-status', @cart.empty? ? 'Carrito vacío.' : "Producto eliminado. Total del carrito: #{number_to_currency(@cart.total)}." %>
 
 <% if @cart.empty? %>
-  <%= turbo_stream.update 'cart-items' do %>
-    <tr><td colspan="5" class="text-center text-muted py-4">Tu carrito quedó vacío. <%= link_to 'Explorar productos', catalog_path, class: 'ms-1' %></td></tr>
+  <%= turbo_stream.update 'cart-content' do %>
+    <%= render 'carts/empty_state' %>
   <% end %>
   <%= turbo_stream.append 'flash-stack' do %>
-    <div class="alert alert-info flash-message" role="alert" data-timeout="3000">Carrito vacío.</div>
+    <div class="alert alert-info flash-message" data-timeout="3000">Carrito vacío.</div>
+  <% end %>
+<% else %>
+  <% if @condition.present? %>
+    <%= turbo_stream.remove "cart_item_#{@product.id}_#{@condition}" %>
+  <% else %>
+    <%# Cuando no se especifica condición, se eliminan todas las filas del producto %>
+    <% ['brand_new', 'misb', 'moc', 'mib', 'mint', 'loose', 'good', 'fair'].each do |cond| %>
+      <%= turbo_stream.remove "cart_item_#{@product.id}_#{cond}" %>
+    <% end %>
+  <% end %>
+
+  <%= turbo_stream.update 'cart-total', number_to_currency(@cart.total) %>
+  <%= turbo_stream.update 'cart-item-count', @cart.item_count %>
+  <%= turbo_stream.update 'summary-subtotal', number_to_currency(@cart.subtotal) %>
+  <% if @cart.tax_enabled? %>
+    <%= turbo_stream.update 'summary-tax', number_to_currency(@cart.tax_amount) %>
+  <% else %>
+    <%= turbo_stream.remove 'summary-tax-row' %>
+  <% end %>
+  <%= turbo_stream.update 'summary-shipping', 'A calcular' %>
+  <%= turbo_stream.update 'summary-grand-total', number_to_currency(@cart.subtotal + @cart.tax_amount) %>
+
+  <%= turbo_stream.update 'cart-pending-summary' do %>
+    <%= render 'carts/summary_pending_content' %>
   <% end %>
 <% end %>
