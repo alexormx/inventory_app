@@ -12,6 +12,7 @@ AllCops:
   SuggestExtensions: false
   Exclude:
     - 'vendor/bundle/**/*'
+    - 'tmp/**/*'
     - 'spec/**/*'
     - 'test/**/*'
     - 'db/schema.rb'
