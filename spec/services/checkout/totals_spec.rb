@@ -52,4 +52,20 @@ RSpec.describe 'Checkout::Totals' do
     expect(totals.tax_amount).to eq(0.to_d)
     expect(totals.total).to eq(199.to_d)
   end
+
+  it 'continues adding shipping to the total when the free-shipping promotion is disabled' do
+    SiteSetting.set('tax_enabled', false, 'boolean')
+    SiteSetting.set('free_shipping_enabled', false, 'boolean')
+
+    totals = Checkout::Totals.new(
+      cart: cart,
+      shipping_method: 'envio_estandar',
+      user: user,
+      address: address
+    ).call
+
+    expect(totals.subtotal).to eq(100.to_d)
+    expect(totals.shipping_amount).to eq(99.to_d)
+    expect(totals.total).to eq(199.to_d)
+  end
 end

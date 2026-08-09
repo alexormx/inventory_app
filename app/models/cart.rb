@@ -1,8 +1,9 @@
 # frozen_string_literal: true
 
 class Cart
-  FREE_SHIPPING_THRESHOLD = 1500
   SHIPPING_FLAT = 99
+
+  delegate :free_shipping_enabled?, :free_shipping_threshold, to: Shipping::Calculator
 
   # Límites por tipo de condición
   MAX_NEW_ITEMS_PER_PRODUCT = 3
@@ -134,9 +135,13 @@ class Cart
   # En el carrito mostramos el estimado; el costo real depende del método de envío en checkout
   def shipping_cost
     return 0 if empty?
-    return 0 if total >= FREE_SHIPPING_THRESHOLD
+    return 0 if free_shipping_eligible?
 
     SHIPPING_FLAT
+  end
+
+  def free_shipping_eligible?
+    Shipping::Calculator.free_shipping?(subtotal)
   end
 
   def grand_total

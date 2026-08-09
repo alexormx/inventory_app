@@ -71,7 +71,7 @@
           <% selected_method = params[:shipping_method].presence || previous_info[:method].presence || shipping_methods.first&.code %>
 
           <% if shipping_methods.any? %>
-            <% methods_map = shipping_methods.each_with_object({}) { |sm, h| h[sm.code] = { name: sm.name, cost: checkout_shipping_cost(sm.code, cart: @cart) } } %>
+            <% methods_map = shipping_methods.each_with_object({}) { |sm, h| h[sm.code] = { name: sm.name, cost: checkout_shipping_cost(sm.code, cart: @cart).to_f } } %>
             <div class="d-flex flex-column gap-2"
                  data-controller="checkout-shipping"
                  data-action="change->checkout-shipping#select"

@@ -43,17 +43,21 @@ export default class extends Controller {
     const method = this.methodsValue[code]
     if (!method) return
 
+    const shippingCost = Number(method.cost)
+    const subtotal = Number(this.subtotalValue)
+    if (!Number.isFinite(shippingCost) || !Number.isFinite(subtotal)) return
+
     const costEl = document.getElementById("checkout-shipping-cost")
     const nameEl = document.getElementById("checkout-shipping-method-name")
     const totalEl = document.getElementById("checkout-grand-total")
 
     if (costEl) {
-      costEl.innerHTML = method.cost === 0
+      costEl.innerHTML = shippingCost === 0
         ? '<span class="text-success">Gratis</span>'
-        : this.format(method.cost)
+        : this.format(shippingCost)
     }
     if (nameEl) nameEl.innerHTML = `<small>(${method.name})</small>`
-    if (totalEl) totalEl.textContent = this.format(this.subtotalValue + method.cost)
+    if (totalEl) totalEl.textContent = this.format(subtotal + shippingCost)
   }
 
   format(amount) {

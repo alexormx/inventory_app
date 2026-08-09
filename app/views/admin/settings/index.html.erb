@@ -233,6 +233,37 @@
 
 <div class="card mb-4">
 	<div class="card-header d-flex align-items-center gap-2">
+		<i class="fa-solid fa-truck-fast"></i>
+		<span>Configuración de Envío Gratis</span>
+	</div>
+	<div class="card-body">
+		<% free_shipping_enabled = Shipping::Calculator.free_shipping_enabled? %>
+		<% free_shipping_threshold = Shipping::Calculator.free_shipping_threshold %>
+		<p class="small text-muted">
+			Controla si el carrito ofrece envío gratis y el subtotal mínimo requerido. Las tarifas normales se administran en
+			<%= link_to 'Métodos de envío', admin_shipping_methods_path %>.
+		</p>
+		<%= form_with url: admin_settings_path, method: :post, data: { turbo: false }, class: 'row gy-2 gx-3 align-items-end' do %>
+			<div class="col-md-4">
+				<label class="form-label" for="free_shipping_enabled">Ofrecer envío gratis</label>
+				<select id="free_shipping_enabled" name="free_shipping_enabled" class="form-select form-select-sm">
+					<option value="true" <%= 'selected' if free_shipping_enabled %>>Sí</option>
+					<option value="false" <%= 'selected' unless free_shipping_enabled %>>No</option>
+				</select>
+			</div>
+			<div class="col-md-4">
+				<label class="form-label" for="free_shipping_threshold">Subtotal mínimo (MXN)</label>
+				<input id="free_shipping_threshold" type="number" min="0.01" step="0.01" name="free_shipping_threshold" class="form-control form-control-sm" value="<%= free_shipping_threshold.to_s('F') %>" required>
+			</div>
+			<div class="col-md-4">
+				<button class="btn btn-primary btn-sm" name="save_free_shipping" value="1">Guardar</button>
+			</div>
+		<% end %>
+	</div>
+</div>
+
+<div class="card mb-4">
+	<div class="card-header d-flex align-items-center gap-2">
 		<i class="fa-solid fa-globe"></i>
 		<span>Interfaz (Idioma / Tema)</span>
 	</div>
