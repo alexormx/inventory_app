@@ -133,6 +133,7 @@ class ProductsController < ApplicationController
     product_ids = @products.map(&:id)
     @on_hand_counts = Inventory.where(product_id: product_ids, status: :available)
                                .group(:product_id).count
+    @in_transit_counts = Inventory.customer_in_transit.where(product_id: product_ids).group(:product_id).count
     # Precalcular agregados de reseñas aprobadas para mostrar estrellas
     # en cada card sin N+1.
     approved_reviews = Review.approved.where(product_id: product_ids)

@@ -63,13 +63,52 @@ module ProductsHelper
   # Genera un badge unificado de disponibilidad (En stock / Preorden / Sobre pedido / Fuera de stock)
   # compact_eta: en la tarjeta del catálogo muestra la fecha corta sin año
   # ("Llega aprox. 6 ago."); el tooltip conserva la fecha completa.
-  def stock_badge(product, quantity: nil, suppress_pending_note: false, on_hand_override: nil, in_transit_eta_override: :unset, compact_eta: false)
-    on_hand = on_hand_override.nil? ? product.current_on_hand : on_hand_override
-    pending_split = quantity ? product.split_immediate_and_pending(quantity) : nil
+  def stock_badge(product, quantity: nil, condition: nil, suppress_pending_note: false, on_hand_override: nil,
+                  in_transit_override: nil, in_transit_eta_override: :unset, compact_eta: false)
+    condition_key = condition.to_s.presence
+    valid_condition = condition_key.blank? || Inventory.item_conditions.key?(condition_key)
+    on_hand = if on_hand_override.nil?
+                if condition_key.present? && valid_condition
+                  product.current_on_hand(condition: condition)
+                elsif valid_condition
+                  product.current_on_hand
+                else
+                  0
+                end
+              else
+                on_hand_override
+              end
+    pending_split = if quantity && condition_key.present? && valid_condition
+                      product.split_immediate_and_pending(quantity, condition: condition)
+                    elsif quantity && valid_condition
+                      product.split_immediate_and_pending(quantity)
+                    end
     base_classes = 'badge rounded-pill fw-normal'
+    orderable_condition = valid_condition && (condition_key.blank? || condition_key == 'brand_new')
     preorder_eta = SiteSetting.get('preorder_eta_days', 60).to_i
     backorder_eta = SiteSetting.get('backorder_eta_days', 60).to_i
-    in_transit_eta = in_transit_eta_override == :unset ? earliest_in_transit_eta(product) : in_transit_eta_override
+    in_transit = nil
+    in_transit_eta = nil
+    unless on_hand.positive?
+      in_transit = if in_transit_override.nil?
+                     if condition_key.present? && valid_condition
+                       product.in_transit_count(condition: condition)
+                     elsif valid_condition
+                       product.in_transit_count
+                     else
+                       0
+                     end
+                   else
+                     in_transit_override.to_i
+                   end
+      in_transit_eta = if !valid_condition
+                         nil
+                       elsif in_transit_eta_override == :unset
+                         earliest_in_transit_eta(product, condition: condition)
+                       else
+                         in_transit_eta_override
+                       end
+    end
 
     label, classes, tooltip = if on_hand.positive?
                                 ['En stock', 'bg-success', 'Disponible para envío inmediato']
@@ -77,7 +116,9 @@ module ProductsHelper
                                 full_fmt = spanish_short_date(in_transit_eta)
                                 label_txt = compact_eta ? "Llega aprox. #{spanish_compact_date(in_transit_eta)}" : "Llega ~#{full_fmt}"
                                 [label_txt, 'badge-incoming', "En tránsito desde proveedor · Llegada estimada #{full_fmt}"]
-                              elsif product.preorder_available
+                              elsif in_transit.positive?
+                                ['En tránsito', 'badge-incoming', 'En tránsito desde proveedor · Fecha de llegada por confirmar']
+                              elsif orderable_condition && product.preorder_available
                                 if product.respond_to?(:launch_date) && product.launch_date.present?
                                   estimated_date = begin
                                     (product.launch_date + preorder_eta.days)
@@ -95,7 +136,7 @@ module ProductsHelper
                                   tip = 'Sin fecha de lanzamiento confirmada · Disponible en ~90 días después de confirmar'
                                 end
                                 ['Preventa', 'bg-warning text-dark', tip]
-                              elsif product.backorder_allowed
+                              elsif orderable_condition && product.backorder_allowed
                                 ['Sobre pedido', 'bg-info text-dark', "Se solicitará al proveedor. Disponible aprox en #{backorder_eta} días tras confirmar"]
                               else
                                 ['Fuera de stock', 'bg-secondary', 'No disponible actualmente']
@@ -108,16 +149,35 @@ module ProductsHelper
     content_tag :span, label + (pending_note || ''), class: [base_classes, classes].join(' '), title: tooltip, data: { bs_toggle: 'tooltip' }
   end
 
-  def stock_eta(product, in_transit_eta_override: :unset)
-    on_hand = product.current_on_hand
+  def stock_eta(product, condition: nil, on_hand_override: nil, in_transit_eta_override: :unset)
+    condition_key = condition.to_s.presence
+    valid_condition = condition_key.blank? || Inventory.item_conditions.key?(condition_key)
+    on_hand = if on_hand_override.nil?
+                if condition_key.present? && valid_condition
+                  product.current_on_hand(condition: condition)
+                elsif valid_condition
+                  product.current_on_hand
+                else
+                  0
+                end
+              else
+                on_hand_override
+              end
     return nil if on_hand.positive?
 
-    in_transit_eta = in_transit_eta_override == :unset ? earliest_in_transit_eta(product) : in_transit_eta_override
+    in_transit_eta = if !valid_condition
+                       nil
+                     elsif in_transit_eta_override == :unset
+                       earliest_in_transit_eta(product, condition: condition)
+                     else
+                       in_transit_eta_override
+                     end
     return "Llegada estimada: #{spanish_short_date(in_transit_eta)}" if in_transit_eta.present?
 
     preorder_eta = SiteSetting.get('preorder_eta_days', 60).to_i
     backorder_eta = SiteSetting.get('backorder_eta_days', 60).to_i
-    if product.preorder_available
+    orderable_condition = valid_condition && (condition_key.blank? || condition_key == 'brand_new')
+    if orderable_condition && product.preorder_available
       return 'Disponible en ~90 días' unless product.respond_to?(:launch_date) && product.launch_date.present?
 
       estimated_date = begin
@@ -129,7 +189,7 @@ module ProductsHelper
 
       return "Disponible en ~#{preorder_eta} días"
 
-    elsif product.backorder_allowed
+    elsif orderable_condition && product.backorder_allowed
       return "Disponible en ~#{backorder_eta} días"
     end
     nil
@@ -139,14 +199,15 @@ module ProductsHelper
   # o nil si no hay piezas en camino. Solo se usa como fallback cuando el caller
   # no precomputó la fecha (ej. en la vista de detalle); en la grilla del catálogo
   # el controller pasa el override para evitar N+1.
-  def earliest_in_transit_eta(product)
+  def earliest_in_transit_eta(product, condition: nil)
     return nil unless product.respond_to?(:inventories)
+    return nil if condition.present? && !Inventory.item_conditions.key?(condition.to_s)
 
-    product.inventories.in_transit
-           .joins(:purchase_order)
-           .where.not(purchase_orders: { expected_delivery_date: nil })
-           .where('purchase_orders.expected_delivery_date >= ?', Date.current)
-           .minimum('purchase_orders.expected_delivery_date')
+    scope = product.inventories.in_transit
+    scope = scope.for_condition(condition) if condition.present?
+    scope.joins(:purchase_order)
+         .where(purchase_orders: { expected_delivery_date: Date.current.. })
+         .minimum('purchase_orders.expected_delivery_date')
   end
 
   # Helper para imágenes estáticas en `<picture>`

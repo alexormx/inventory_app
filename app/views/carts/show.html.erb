@@ -1,66 +1,68 @@
-<h1 class="mb-3">🛒 Tu Carrito</h1>
+<section class="cart-page" aria-labelledby="cart-page-heading">
+  <h1 id="cart-page-heading" class="mb-3">🛒 Tu Carrito</h1>
+  <div id="cart-status" class="visually-hidden" role="status" aria-live="polite" aria-atomic="true"></div>
 
-<% if @cart.empty? %>
-  <div class="card p-4 text-center bg-light-subtle">
-    <p class="text-muted mb-3">Tu carrito está vacío.</p>
-    <%= link_to 'Explorar productos', catalog_path, class: 'btn btn-outline-primary' %>
-  </div>
-<% else %>
-  <% items = @cart.items %>
-  <div class="row g-4">
-    <div class="col-lg-8">
-      <div class="table-responsive">
-        <table class="table align-middle" aria-describedby="cart-summary-heading">
+  <div id="cart-content">
+    <% if @cart.empty? %>
+      <%= render 'carts/empty_state' %>
+    <% else %>
+      <% items = @cart.items %>
+      <div class="row g-4 cart-layout">
+        <div class="col-lg-8 cart-items-column">
+          <div class="table-responsive cart-items-shell">
+            <table class="table align-middle cart-items-table" role="table" aria-describedby="cart-summary-heading">
           <caption class="visually-hidden">Listado de productos en el carrito</caption>
-          <thead>
-            <tr>
-              <th scope="col">Producto</th>
-              <th scope="col" class="text-center">Cantidad</th>
-              <th scope="col" class="cart-unit-price d-none d-sm-table-cell text-end">Precio</th>
-              <th scope="col" class="cart-line-total d-none d-sm-table-cell text-end">Total</th>
-              <th scope="col" class="cart-remove d-none d-sm-table-cell text-end"></th>
+          <thead role="rowgroup">
+            <tr role="row">
+              <th scope="col" role="columnheader">Producto</th>
+              <th scope="col" role="columnheader" class="text-center">Cantidad</th>
+              <th scope="col" role="columnheader" class="cart-unit-price text-end">Precio</th>
+              <th scope="col" role="columnheader" class="cart-line-total text-end">Total</th>
+              <th scope="col" role="columnheader" class="cart-remove text-end"><span class="visually-hidden">Acciones</span></th>
             </tr>
           </thead>
-          <tbody id="cart-items">
+          <tbody id="cart-items" role="rowgroup">
             <% items.each do |item| %>
               <%= render 'carts/cart_item', item: item, cart: @cart %>
             <% end %>
           </tbody>
-          <tfoot class="d-none d-sm-table-row-group">
-            <tr>
-              <td colspan="3" class="text-end"><strong>Total:</strong></td>
-              <td id="cart-total" class="text-end" aria-live="polite"><%= number_to_currency(@cart.total) %></td>
-              <td></td>
+          <tfoot class="d-none d-sm-table-row-group" role="rowgroup">
+            <tr role="row">
+              <td role="cell" colspan="3" class="text-end"><strong>Total:</strong></td>
+              <td role="cell" id="cart-total" class="text-end"><%= number_to_currency(@cart.total) %></td>
+              <td role="cell"></td>
             </tr>
           </tfoot>
-        </table>
-      </div>
-    </div>
-    <div class="col-lg-4">
-      <div class="card shadow-sm sticky-top" style="top:90px;">
-        <div class="card-body">
-          <h5 id="cart-summary-heading" class="card-title mb-3">Resumen</h5>
-          <ul class="list-unstyled small mb-3">
-            <li class="d-flex justify-content-between"><span>Productos (<span id="cart-item-count" aria-live="polite"><%= @cart.item_count %></span>)</span><strong id="summary-subtotal"><%= number_to_currency(@cart.subtotal) %></strong></li>
-            <%# Mostrar indicador de pendientes (preorder/backorder) %>
-            <%= render 'carts/summary_pending' %>
-            <% if @cart.tax_enabled? %>
-              <li class="d-flex justify-content-between" id="summary-tax-row"><span>Impuestos (<%= @cart.tax_rate_percent %>%)</span><span id="summary-tax"><%= number_to_currency(@cart.tax_amount) %></span></li>
-            <% end %>
-            <li class="d-flex justify-content-between text-muted"><span>Envío</span><span id="summary-shipping" class="small">A calcular</span></li>
-            <% if @cart.subtotal < Cart::FREE_SHIPPING_THRESHOLD %>
-              <li class="small text-info"><i class="fa fa-info-circle me-1"></i>Envío gratis a partir de <%= number_to_currency(Cart::FREE_SHIPPING_THRESHOLD) %></li>
-            <% else %>
-              <li class="small text-success"><i class="fa fa-check-circle me-1"></i>¡Envío gratis!</li>
-            <% end %>
-            <li class="d-flex justify-content-between border-top pt-2 fw-semibold"><span>Subtotal</span><strong id="summary-grand-total" aria-live="polite"><%= number_to_currency(@cart.subtotal + @cart.tax_amount) %></strong></li>
-          </ul>
-          <div class="d-grid gap-2">
-            <%= link_to 'Finalizar compra', checkout_step1_path, class: 'btn btn-primary btn-lg' %>
-            <%= link_to 'Seguir comprando', catalog_path, class: 'btn btn-outline-secondary btn-sm' %>
+            </table>
+          </div>
+        </div>
+        <div class="col-lg-4 cart-summary-column">
+          <div class="card shadow-sm cart-summary-card">
+            <div class="card-body">
+              <h2 id="cart-summary-heading" class="card-title h5 mb-3" tabindex="-1">Resumen</h2>
+              <ul class="list-unstyled small mb-3">
+                <li class="d-flex justify-content-between"><span>Productos (<span id="cart-item-count"><%= @cart.item_count %></span>)</span><strong id="summary-subtotal"><%= number_to_currency(@cart.subtotal) %></strong></li>
+                <%# Mostrar indicador de pendientes (preorder/backorder) %>
+                <%= render 'carts/summary_pending' %>
+                <% if @cart.tax_enabled? %>
+                  <li class="d-flex justify-content-between" id="summary-tax-row"><span>Impuestos (<%= @cart.tax_rate_percent %>%)</span><span id="summary-tax"><%= number_to_currency(@cart.tax_amount) %></span></li>
+                <% end %>
+                <li class="d-flex justify-content-between text-muted"><span>Envío</span><span id="summary-shipping" class="small">A calcular</span></li>
+                <% if @cart.subtotal < Cart::FREE_SHIPPING_THRESHOLD %>
+                  <li class="small text-info"><i class="fa fa-info-circle me-1"></i>Envío gratis a partir de <%= number_to_currency(Cart::FREE_SHIPPING_THRESHOLD) %></li>
+                <% else %>
+                  <li class="small text-success"><i class="fa fa-check-circle me-1"></i>¡Envío gratis!</li>
+                <% end %>
+                <li class="d-flex justify-content-between border-top pt-2 fw-semibold"><span>Total antes de envío</span><strong id="summary-grand-total"><%= number_to_currency(@cart.subtotal + @cart.tax_amount) %></strong></li>
+              </ul>
+              <div class="d-grid gap-2 cart-summary-actions">
+                <%= link_to 'Finalizar compra', checkout_step1_path, class: 'btn btn-primary btn-lg' %>
+                <%= link_to 'Seguir comprando', catalog_path, class: 'btn btn-outline-secondary btn-sm' %>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    <% end %>
   </div>
-<% end %>
+</section>

@@ -1,0 +1,10 @@
+<div id="cart-empty-state" class="card cart-empty-state p-4 text-center bg-light-subtle">
+  <div class="cart-empty-state-icon text-muted mb-2" aria-hidden="true">
+    <i class="fas fa-shopping-basket"></i>
+  </div>
+  <h2 class="h5 mb-2">Tu carrito está vacío</h2>
+  <p class="text-muted mb-3">Explora el catálogo para encontrar tu próxima pieza.</p>
+  <div>
+    <%= link_to 'Explorar productos', catalog_path, id: 'cart-empty-cta', class: 'btn btn-outline-primary' %>
+  </div>
+</div>

@@ -53,9 +53,11 @@
       clases row-cols se mantienen sincronizadas con esos anchos explícitos.
       El gutter/escala mobile vienen del bloque
       @media (max-width: 575.98px). %>
+  <% in_transit_counts = defined?(@in_transit_counts) && @in_transit_counts ? @in_transit_counts : {} %>
   <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 row-cols-xxl-6 g-2 g-md-3" id="product-grid-content" role="list">
     <% @products.each_with_index do |product, card_index| %>
       <% on_hand_cached = @on_hand_counts[product.id] || 0 %>
+      <% in_transit_cached = in_transit_counts.fetch(product.id, 0) %>
       <% in_transit_eta_cached = (defined?(@in_transit_etas) && @in_transit_etas[product.id]) || nil %>
       <% has_image = product.product_images.attached? %>
       <div class="col product-card-wrapper" data-product-id="<%= product.id %>" role="listitem">
@@ -97,7 +99,7 @@
               <%# (Nuevo / De vuelta / Resurtido) son conceptos separados: %>
               <%# máximo un badge de disponibilidad y uno de evento. %>
               <% if product.active? %>
-                <span><%= stock_badge(product, on_hand_override: on_hand_cached, in_transit_eta_override: in_transit_eta_cached, compact_eta: true) %></span>
+                <span><%= stock_badge(product, on_hand_override: on_hand_cached, in_transit_override: in_transit_cached, in_transit_eta_override: in_transit_eta_cached, compact_eta: true) %></span>
               <% else %>
                 <span class="badge bg-secondary">No disp.</span>
               <% end %>
@@ -150,7 +152,7 @@
             </p>
             <%# El badge ya muestra "Llega ~fecha" cuando hay inventario en tránsito,
                 así que solo mostramos el ETA cuando viene de preventa/sobre-pedido. %>
-            <% if product.active? && on_hand_cached <= 0 && in_transit_eta_cached.blank? && (eta = stock_eta(product)) %>
+            <% if product.active? && on_hand_cached <= 0 && in_transit_eta_cached.blank? && (eta = stock_eta(product, on_hand_override: on_hand_cached, in_transit_eta_override: in_transit_eta_cached)) %>
               <p class="catalog-card-eta text-muted extra-small"><i class="fa fa-clock me-1" aria-hidden="true"></i><span class="visually-hidden">Disponible: </span><%= eta %></p>
             <% end %>
             <% if product.active? %>

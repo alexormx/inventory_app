@@ -117,6 +117,9 @@ RSpec.describe 'CartItems', type: :request do
     end
 
     it 'uses the reachable cart-row stream without replacing live-region roots' do
+      remaining_product = create(:product)
+      post cart_items_path, params: { product_id: remaining_product.id }
+
       delete cart_item_path(product),
              params: { product_id: product.id, condition: 'brand_new' },
              headers: {
@@ -127,8 +130,27 @@ RSpec.describe 'CartItems', type: :request do
       expect(response).to have_http_status(:ok)
       expect(response.body).to include('action="update" target="cart-total"')
       expect(response.body).to include('action="update" target="cart-count"')
-      expect(response.body).to include('action="replace" target="cart-pending-summary"')
-      expect(response.body).to include('action="update" target="cart-items"')
+      expect(response.body).to include('action="update" target="cart-status"')
+      expect(response.body).to include('Producto eliminado. Total del carrito:')
+      expect(response.body).to include('action="update" target="cart-pending-summary"')
+      expect(response.body).not_to include('action="replace" target="cart-pending-summary"')
+      expect(response.body).not_to include('action="update" target="cart-content"')
+    end
+
+    it 'replaces the cart content with a focusable empty state after the final removal' do
+      delete cart_item_path(product),
+             params: { product_id: product.id, condition: 'brand_new' },
+             headers: {
+               'ACCEPT' => Mime[:turbo_stream].to_s,
+               'HTTP_REFERER' => cart_url
+             }
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include('action="update" target="cart-content"')
+      expect(response.body).to include('action="update" target="cart-status"')
+      expect(response.body).to include('Carrito vacío.')
+      expect(response.body).to include('id="cart-empty-cta"')
+      expect(response.body).not_to include('target="cart-total"')
     end
   end
 end
