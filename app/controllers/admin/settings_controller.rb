@@ -26,6 +26,17 @@ module Admin
         flash[:notice] = 'Configuración de impuestos guardada.'
         redirect_to admin_settings_path and return
       end
+      if request.post? && params[:save_free_shipping]
+        threshold = params[:free_shipping_threshold].to_d.round(2, BigDecimal::ROUND_HALF_UP)
+        if threshold <= 0
+          flash[:alert] = 'El monto mínimo para envío gratis debe ser mayor a cero.'
+        else
+          SiteSetting.set('free_shipping_enabled', params[:free_shipping_enabled] == 'true', 'boolean')
+          SiteSetting.set('free_shipping_threshold', threshold.to_s('F'), 'string')
+          flash[:notice] = 'Configuración de envío gratis guardada.'
+        end
+        redirect_to admin_settings_path and return
+      end
       if request.post? && params[:save_ui]
         SiteSetting.set('language_switcher_enabled', params[:language_switcher_enabled] == 'true', 'boolean')
         SiteSetting.set('dark_mode_enabled', params[:dark_mode_enabled] == 'true', 'boolean')

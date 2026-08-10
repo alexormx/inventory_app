@@ -7,6 +7,8 @@ RSpec.describe Shipping::Calculator do
   let(:address) { create(:shipping_address, user: user) }
   let(:cart) { instance_double(Cart, empty?: false, subtotal: 500.to_d, total: 500.to_d) }
 
+  before { SiteSetting.delete_all }
+
   describe '.quote' do
     it 'uses the configured base cost for a production shipping code' do
       create(:shipping_method, code: 'envio_estandar', base_cost: 99.00, active: true)
@@ -37,6 +39,31 @@ RSpec.describe Shipping::Calculator do
       )
 
       expect(quote).to eq(0.to_d)
+    end
+
+    it 'uses the free-shipping threshold configured by an administrator' do
+      create(:shipping_method, code: 'envio_estandar', base_cost: 99.00, active: true)
+      SiteSetting.set('free_shipping_enabled', true, 'boolean')
+      SiteSetting.set('free_shipping_threshold', '750.00', 'string')
+      eligible_cart = instance_double(Cart, empty?: false, subtotal: 750.to_d, total: 750.to_d)
+
+      quote = described_class.quote(
+        method_code: 'envio_estandar', user: user, address: address, cart: eligible_cart
+      )
+
+      expect(quote).to eq(0.to_d)
+    end
+
+    it 'charges the configured method when free shipping is disabled' do
+      create(:shipping_method, code: 'envio_estandar', base_cost: 99.00, active: true)
+      SiteSetting.set('free_shipping_enabled', false, 'boolean')
+      eligible_cart = instance_double(Cart, empty?: false, subtotal: 2_000.to_d, total: 2_000.to_d)
+
+      quote = described_class.quote(
+        method_code: 'envio_estandar', user: user, address: address, cart: eligible_cart
+      )
+
+      expect(quote).to eq(99.to_d)
     end
 
     it 'fails closed for an inactive or unknown method instead of returning free shipping' do

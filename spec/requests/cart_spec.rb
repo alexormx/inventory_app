@@ -5,6 +5,8 @@ require 'rails_helper'
 RSpec.describe 'Carts', type: :request do
   let!(:product) { create(:product) }
 
+  before { SiteSetting.delete_all }
+
   it 'shows products in cart' do
     post cart_items_path, params: { product_id: product.id }
     get cart_path
@@ -41,5 +43,28 @@ RSpec.describe 'Carts', type: :request do
     expect(document.css('tr.cart-item-row td[role="cell"]').count).to eq(4)
     expect(document.css('#cart-status[role="status"][aria-live="polite"][aria-atomic="true"]').count).to eq(1)
     expect(document.css('#cart-total[aria-live], #cart-item-count[aria-live], #summary-grand-total[aria-live], .cart-line-total-value[aria-live]')).to be_empty
+  end
+
+  it 'hides the free-shipping promotion when an administrator disables it' do
+    SiteSetting.set('free_shipping_enabled', false, 'boolean')
+
+    post cart_items_path, params: { product_id: product.id }
+    get cart_path
+
+    expect(response.body).not_to include('Envío gratis a partir de')
+    expect(response.body).not_to include('¡Envío gratis!')
+  end
+
+  it 'shows the configured free-shipping amount and recognizes eligible carts' do
+    SiteSetting.set('free_shipping_enabled', true, 'boolean')
+    SiteSetting.set('free_shipping_threshold', '2500.00', 'string')
+
+    post cart_items_path, params: { product_id: product.id }
+    get cart_path
+    expect(response.body).to include('Envío gratis a partir de $2,500.00')
+
+    product.update!(selling_price: 2_500.00)
+    get cart_path
+    expect(response.body).to include('¡Envío gratis!')
   end
 end
