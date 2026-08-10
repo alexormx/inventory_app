@@ -122,7 +122,7 @@ namespace :images do
           puts "→ #{File.basename(src)} @#{w}w -> #{File.basename(dest)}"
           begin
             pipeline = processor.source(src).resize_to_limit(w, nil).convert(fmt.to_s)
-            pipeline = pipeline.saver(opts)
+            pipeline = pipeline.saver(**opts)
             pipeline.call(destination: dest)
           rescue StandardError => e
             warn "Error generando #{dest}: #{e.message}"
