@@ -57,6 +57,19 @@ RSpec.describe 'InventoryServices::ReserveSaleOrderItem' do
     expect(incoming.sold_price).to eq(100.to_d)
   end
 
+  it 'never reserves available inventory without a confirmed location' do
+    line = unallocated_line
+    unverified = create(:inventory, product: product, status: :available, inventory_location: nil)
+    verified = create(:inventory, product: product, status: :available, inventory_location: location)
+
+    InventoryServices::ReserveSaleOrderItem.call(line)
+
+    expect(verified.reload.status).to eq('reserved')
+    expect(verified.sale_order_item_id).to eq(line.id)
+    expect(unverified.reload.status).to eq('available')
+    expect(unverified.sale_order_item_id).to be_nil
+  end
+
   it 'does not load the shared product once per inventory callback' do
     line = unallocated_line(quantity: 2)
     create_list(:inventory, 2, product: product, status: :available, inventory_location: location)

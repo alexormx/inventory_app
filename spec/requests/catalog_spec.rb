@@ -117,6 +117,35 @@ RSpec.describe 'Catalog browsing', type: :request do
       expect(response.body).not_to include(transit.product_name)
     end
 
+    it 'uses only confirmed free on-hand inventory for in-stock filters and facets' do
+      location = create(:inventory_location, :warehouse)
+      stocked = create(:product, skip_seed_inventory: true)
+      create(:inventory, product: stocked, status: :available, inventory_location: location)
+
+      unlocated = create(:product, skip_seed_inventory: true)
+      create(:inventory, product: unlocated, status: :available, inventory_location: nil)
+      unlocated.update_columns(status: 'active', auto_paused: false, auto_paused_at: nil)
+
+      assigned = create(:product, skip_seed_inventory: true)
+      assigned_unit = create(:inventory, product: assigned, status: :available, inventory_location: location)
+      assigned_unit.update_columns(sale_order_id: create(:sale_order).id)
+
+      transit = create(:product, skip_seed_inventory: true)
+      create(:inventory, product: transit, status: :in_transit)
+
+      get catalog_path, params: { in_stock: '1' }
+
+      expect(response.body).to include(stocked.product_name)
+      expect(response.body).not_to include(unlocated.product_name, assigned.product_name, transit.product_name)
+
+      get catalog_path
+
+      in_stock_chip = document.at_css('.availability-chip[aria-label="Filtrar por En stock"]')
+      new_condition = document.at_css('label[for="f-cond-nuevo"] .text-muted')
+      expect(in_stock_chip.at_css('.availability-chip-count').text).to eq('1')
+      expect(new_condition.text).to include('(1)')
+    end
+
     it 'renders both sidebar forms with the same active availability state' do
       product = create(:product, skip_seed_inventory: true, backorder_allowed: true)
       create(:inventory, product: product, status: :in_transit)

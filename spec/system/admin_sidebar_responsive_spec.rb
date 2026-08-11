@@ -201,10 +201,10 @@ RSpec.describe 'Admin responsive sidebar', :js, :sidebar_responsive, type: :syst
 
   it 'uses one current page for inventory children and keeps resource sections active' do
     resize_to(1024, 768)
-    visit admin_inventory_unlocated_path
+    visit admin_inventory_location_explorer_path(mode: 'unlocated')
 
     expect(page).to have_css('#sidebar a[aria-current="page"]', count: 1)
-    expect(page).to have_css('#sidebar a.active[aria-current="page"]', text: 'Sin Ubicación')
+    expect(page).to have_css('#sidebar a.active[aria-current="page"]', text: 'Explorar Ubicaciones')
     expect(page).to have_css('#sidebar a.section-active:not([aria-current])', text: 'Inventario')
 
     visit admin_product_path(product)

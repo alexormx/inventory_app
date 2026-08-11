@@ -35,4 +35,35 @@ RSpec.describe 'Products catalog inventory queries', type: :request do
     expect(individual_counts).to be_empty
     expect(grouped_counts.size).to eq(1)
   end
+
+  it 'uses one canonical grouped on-hand count for the visible page' do
+    create_list(:product, 12)
+
+    queries = capture_catalog_queries { get catalog_path }
+    on_hand_counts = queries.select do |sql|
+      sql.match?(/\ASELECT COUNT\(\*\)/i) &&
+        sql[/\bFROM "[^"]+"/] == 'FROM "inventories"' &&
+        sql.include?('"inventories"."sale_order_id" IS NULL') &&
+        sql.include?('"inventories"."inventory_location_id" IS NOT NULL')
+    end
+    grouped_counts = on_hand_counts.select { |sql| sql.include?('GROUP BY "inventories"."product_id"') }
+
+    expect(response).to have_http_status(:ok)
+    expect(grouped_counts.size).to eq(1)
+    expect(on_hand_counts).to eq(grouped_counts)
+  end
+
+  it 'does not advertise an unlocated related product as on-hand' do
+    product = create(:product, category: 'Autos', brand: 'Tomica')
+    related = create(:product, skip_seed_inventory: true, category: 'Autos', brand: 'Tomica')
+    create(:inventory, product: related, status: :available, inventory_location: nil)
+    related.update_columns(status: 'active', auto_paused: false, auto_paused_at: nil)
+
+    get product_path(product)
+
+    document = Nokogiri::HTML(response.body)
+    related_name = document.at_css("h6[title='#{related.product_name}']")
+    related_item = related_name.ancestors('.related-product-item').first
+    expect(related_item.text).not_to include('En stock')
+  end
 end

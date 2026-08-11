@@ -95,4 +95,33 @@ RSpec.describe 'Admin::Inventory location explorer', type: :request do
       expect(response.body).not_to include('Funko B')
     end
   end
+
+  describe 'FIFO bulk-assignment containment' do
+    it 'redirects the legacy unlocated assignment screen to read-only review' do
+      get admin_inventory_unlocated_path, params: { q: 'Tomica', sort: 'count_desc' }
+
+      expect(response).to redirect_to(
+        admin_inventory_location_explorer_path(mode: 'unlocated', q: 'Tomica', sort: 'count_desc')
+      )
+
+      follow_redirect!
+      expect(response.body).to include('Consulta segura')
+      expect(response.body).to include('verificación individual')
+      expect(response.body).not_to include('Asignar Todo a Ubicación', 'Carrito de Asignación')
+    end
+
+    it 'rejects product-and-quantity assignments without changing inventory' do
+      product = create(:product, skip_seed_inventory: true)
+      inventory = create(:inventory, product: product, status: :available, inventory_location: nil)
+      location = create(:inventory_location, :warehouse)
+
+      expect do
+        post admin_inventory_bulk_assign_location_path,
+             params: { inventory_location_id: location.id, assignments: { product.id => 1 } }
+      end.not_to(change { inventory.reload.inventory_location_id })
+
+      expect(response).to have_http_status(:see_other)
+      expect(response).to redirect_to(admin_inventory_location_explorer_path(mode: 'unlocated'))
+    end
+  end
 end

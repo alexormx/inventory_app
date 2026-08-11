@@ -202,7 +202,7 @@ module SeoHelper
   end
 
   # Genera JSON-LD ItemList para páginas de catálogo
-  def product_list_json_ld(products)
+  def product_list_json_ld(products, on_hand_counts: nil)
     return if products.blank?
 
     items = products.each_with_index.map do |product, index|
@@ -212,11 +212,15 @@ module SeoHelper
                     asset_url('placeholder.png')
                   end
 
-      on_hand = begin
-        product.current_on_hand
-      rescue StandardError
-        0
-      end
+      on_hand = if on_hand_counts
+                  on_hand_counts.fetch(product.id, 0)
+                else
+                  begin
+                    product.current_on_hand
+                  rescue StandardError
+                    0
+                  end
+                end
       availability = if on_hand.positive?
                        'https://schema.org/InStock'
                      elsif product.backorder_allowed?

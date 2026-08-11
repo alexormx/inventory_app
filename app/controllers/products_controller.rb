@@ -131,7 +131,7 @@ class ProductsController < ApplicationController
     @products = scope.with_attached_product_images.page(catalog_query.page).per(PUBLIC_PER_PAGE)
     # Precalcular on_hand counts en batch para evitar N+1 (simple hash)
     product_ids = @products.map(&:id)
-    @on_hand_counts = Inventory.where(product_id: product_ids, status: :available)
+    @on_hand_counts = Inventory.customer_on_hand.where(product_id: product_ids)
                                .group(:product_id).count
     @in_transit_counts = Inventory.customer_in_transit.where(product_id: product_ids).group(:product_id).count
     # Precalcular agregados de reseñas aprobadas para mostrar estrellas
@@ -144,7 +144,7 @@ class ProductsController < ApplicationController
     # más próxima de llegada (de la PO con expected_delivery_date más temprana).
     products_without_stock = product_ids - @on_hand_counts.keys
     @in_transit_etas = if products_without_stock.any?
-                         Inventory.where(product_id: products_without_stock, status: :in_transit)
+                         Inventory.customer_in_transit.where(product_id: products_without_stock)
                                   .joins(:purchase_order)
                                   .where.not(purchase_orders: { expected_delivery_date: nil })
                                   .where('purchase_orders.expected_delivery_date >= ?', Date.current)
@@ -171,7 +171,7 @@ class ProductsController < ApplicationController
 
     # Precalcular stock para productos relacionados
     related_ids = @related_products.map(&:id)
-    @related_on_hand = Inventory.where(product_id: related_ids, status: :available)
+    @related_on_hand = Inventory.customer_on_hand.where(product_id: related_ids)
                                 .group(:product_id).count
   end
 
@@ -193,17 +193,15 @@ class ProductsController < ApplicationController
 
     unless except == :availability
       # Grupo de disponibilidad — los 3 chips combinan con OR cuando hay 1+ activos.
-      avail_clauses = []
-      if f[:in_stock]
-        avail_clauses << "EXISTS (SELECT 1 FROM inventories i WHERE i.product_id = products.id AND i.status = #{Inventory.statuses[:available].to_i})"
+      availability_scopes = []
+      availability_scopes << Product.with_customer_on_hand if f[:in_stock]
+      availability_scopes << Product.with_customer_in_transit if f[:in_transit]
+      availability_scopes << Product.where(backorder_allowed: true).or(Product.where(preorder_available: true)) if f[:to_order]
+
+      if availability_scopes.any?
+        combined_availability = availability_scopes.reduce { |combined, candidate| combined.or(candidate) }
+        scope = scope.merge(combined_availability)
       end
-      if f[:in_transit]
-        avail_clauses << "EXISTS (SELECT 1 FROM inventories i WHERE i.product_id = products.id AND i.status = #{Inventory.statuses[:in_transit].to_i})"
-      end
-      if f[:to_order]
-        avail_clauses << "(products.backorder_allowed = TRUE OR products.preorder_available = TRUE)"
-      end
-      scope = scope.where(avail_clauses.join(' OR ')) if avail_clauses.any?
 
     end
 
@@ -218,7 +216,7 @@ class ProductsController < ApplicationController
     avail_scope  = apply_catalog_filters(base_scope, filters, except: :availability)
 
     condition_counts = Product::CONDITION_GROUPS.transform_values do |item_conditions|
-      cond_scope.where(id: Inventory.where(status: :available, sale_order_id: nil)
+      cond_scope.where(id: Inventory.customer_on_hand
                                     .where(item_condition: item_conditions)
                                     .select(:product_id)).count
     end
@@ -227,8 +225,8 @@ class ProductsController < ApplicationController
       categories: cat_scope.where.not(category: [nil, '']).group(:category).count,
       brands: brand_scope.where.not(brand: [nil, '']).group(:brand).count,
       series: series_scope.where.not(series: [nil, '']).group(:series).count,
-      in_stock: avail_scope.joins(:inventories).where(inventories: { status: Inventory.statuses[:available] }).distinct.count,
-      in_transit: avail_scope.where('EXISTS (SELECT 1 FROM inventories i WHERE i.product_id = products.id AND i.status = ?)', Inventory.statuses[:in_transit]).count,
+      in_stock: avail_scope.merge(Product.with_customer_on_hand).count,
+      in_transit: avail_scope.merge(Product.with_customer_in_transit).count,
       to_order: avail_scope.where('products.backorder_allowed = ? OR products.preorder_available = ?', true, true).count,
       conditions: condition_counts
     }

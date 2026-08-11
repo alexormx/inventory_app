@@ -97,18 +97,20 @@ class Product < ApplicationRecord
                        .where.not(inventory_location_id: nil)
                        .select(:product_id))
   }
+  # Customer-facing stock scopes delegate to Inventory's canonical definitions
+  # so catalog filters, facets and grouped counts cannot drift from checkout.
+  scope :with_customer_on_hand, -> {
+    where(id: Inventory.customer_on_hand.select(:product_id))
+  }
+  scope :with_customer_in_transit, -> {
+    where(id: Inventory.customer_in_transit.select(:product_id))
+  }
   # Productos ofertables en el catálogo (PDF y API): producto visible al público
   # (status active) con al menos una pieza realmente disponible para vender, es
   # decir disponible (:available), libre (sin sale_order_id, no apartada) y con
   # ubicación física confirmada. Excluye apartadas (reserved/pre_reserved) y
   # piezas :available ya asignadas a una orden.
-  scope :catalog_offerable, -> {
-    publicly_visible.where(
-      id: Inventory.where(status: :available, sale_order_id: nil)
-                   .where.not(inventory_location_id: nil)
-                   .select(:product_id)
-    )
-  }
+  scope :catalog_offerable, -> { publicly_visible.with_customer_on_hand }
   # Productos con al menos un inventario en bodega que aún no tiene ubicación asignada.
   scope :missing_location, -> {
     where(id: Inventory.where(status: Inventory::STATUSES_REQUIRING_LOCATION,
@@ -120,14 +122,7 @@ class Product < ApplicationRecord
   # Product#publishable_stock? (y de la consulta canónica del cron de pausa), para
   # que la lista "Listos para publicar" no muestre productos que el guard de
   # reactivación rechazaría (p. ej. piezas apartadas o sin ubicación).
-  scope :publishable, -> {
-    where(id: Inventory.where(sale_order_id: nil)
-                       .where(
-                         '(status = :avail AND inventory_location_id IS NOT NULL) OR status = :transit',
-                         avail: Inventory.statuses[:available], transit: Inventory.statuses[:in_transit]
-                       )
-                       .select(:product_id))
-  }
+  scope :publishable, -> { where(id: Inventory.customer_sellable.select(:product_id)) }
 
   # Productos con al menos una pieza en tránsito (stock por llegar). Candidatos
   # a preventa: se pueden ofrecer/ordenar antes de que la mercancía llegue.
@@ -160,10 +155,7 @@ class Product < ApplicationRecord
 
   # Productos con al menos una pieza vendible (fuente única: sellable_inventory).
   scope :with_sellable_inventory, lambda {
-    where(id: Inventory.where(sale_order_id: nil)
-                       .where('(status = :avail AND inventory_location_id IS NOT NULL) OR status = :transit',
-                              avail: Inventory.statuses[:available], transit: Inventory.statuses[:in_transit])
-                       .select(:product_id))
+    where(id: Inventory.customer_sellable.select(:product_id))
   }
 
   # Versión SQL de eligible_for_publication?: stock publicable o venta por
@@ -191,14 +183,14 @@ class Product < ApplicationRecord
     'variable'      => 'Estado variable (Good / Fair)'
   }.freeze
 
-  # Productos con al menos un inventario :available (sin venta asignada) cuya
-  # condición cae en alguno de los grupos pasados (array de strings).
+  # Productos con al menos un inventario on-hand confirmado cuya condición cae
+  # en alguno de los grupos pasados (array de strings).
   scope :with_condition_groups, ->(groups) {
     keys = Array(groups).map(&:to_s).select { |g| CONDITION_GROUPS.key?(g) }
     next none if keys.empty?
 
     item_conditions = keys.flat_map { |g| CONDITION_GROUPS[g] }.uniq
-    where(id: Inventory.where(status: :available, sale_order_id: nil)
+    where(id: Inventory.customer_on_hand
                        .where(item_condition: item_conditions)
                        .select(:product_id))
   }

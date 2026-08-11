@@ -202,71 +202,11 @@ module Admin
 
     # GET /admin/inventory/unlocated - Inventario sin ubicación asignada
     def unlocated
-      # Solo items que requieren ubicación y no la tienen
-      base_scope = Inventory.requiring_location.where(inventory_location_id: nil)
-
-      # Agrupar por producto con conteos
-      @products_data = base_scope.group(:product_id).count
-
-      product_ids = @products_data.keys
-
-      # Base de productos
-      products_scope = Product.where(id: product_ids)
-
-      # Filtro de búsqueda
-      @q = params[:q].to_s.strip
-      if @q.present?
-        term = "%#{@q.downcase}%"
-        products_scope = products_scope.where('LOWER(product_name) LIKE ? OR LOWER(product_sku) LIKE ?', term, term)
-      end
-
-      # Ordenación
-      @sort = params[:sort].presence || 'name'
-      case @sort
-      when 'count_desc'
-        # Ordenar por cantidad sin ubicar (descendente)
-        sorted_ids = @products_data.sort_by { |_id, count| -count }.map(&:first)
-        # Filtrar por IDs de productos que coincidan con la búsqueda
-        filtered_ids = products_scope.pluck(:id)
-        sorted_ids &= filtered_ids
-        # Paginar manualmente
-        page_num = (params[:page] || 1).to_i
-        per_page = 20
-        offset = (page_num - 1) * per_page
-        paged_ids = sorted_ids[offset, per_page] || []
-        @products = Product.where(id: paged_ids).index_by(&:id)
-        @products = paged_ids.map { |id| @products[id] }.compact
-        @total_products = sorted_ids.size
-        @current_page = page_num
-        @total_pages = (sorted_ids.size.to_f / per_page).ceil
-      when 'count_asc'
-        sorted_ids = @products_data.sort_by { |_id, count| count }.map(&:first)
-        filtered_ids = products_scope.pluck(:id)
-        sorted_ids &= filtered_ids
-        page_num = (params[:page] || 1).to_i
-        per_page = 20
-        offset = (page_num - 1) * per_page
-        paged_ids = sorted_ids[offset, per_page] || []
-        @products = Product.where(id: paged_ids).index_by(&:id)
-        @products = paged_ids.map { |id| @products[id] }.compact
-        @total_products = sorted_ids.size
-        @current_page = page_num
-        @total_pages = (sorted_ids.size.to_f / per_page).ceil
-      else
-        # Por nombre (default)
-        @products = products_scope.order(:product_name).page(params[:page]).per(20)
-        @total_products = products_scope.count
-        @current_page = @products.current_page
-        @total_pages = @products.total_pages
-      end
-
-      @total_unlocated = base_scope.count
-      @location_options = InventoryLocation.active.nested_options
-
-      respond_to do |format|
-        format.html
-        format.turbo_stream # for search within turbo frame
-      end
+      redirect_to admin_inventory_location_explorer_path(
+        mode: 'unlocated',
+        q: params[:q],
+        sort: params[:sort]
+      ), alert: 'La asignación masiva FIFO está deshabilitada. Revisa estas piezas sin modificar su ubicación.'
     end
 
     # GET /admin/inventory/location_explorer - Vista unificada: sin ubicación o por ubicación
@@ -428,66 +368,13 @@ module Admin
       render partial: 'admin/inventory/location_contents', locals: { items: @items, location: @location }
     end
 
-    # POST /admin/inventory/bulk_assign_location - Asignar ubicación masivamente
+    # La selección producto + cantidad no demuestra qué unidades existen
+    # físicamente. Se conserva la ruta para rechazar clientes antiguos sin
+    # permitir que conviertan inventario no verificado en stock vendible.
     def bulk_assign_location
-      location_id = params[:inventory_location_id].to_i
-      assignments = params[:assignments] || {}
-
-      @location = InventoryLocation.find_by(id: location_id)
-      unless @location
-        redirect_to admin_inventory_unlocated_path, alert: 'Ubicación no encontrada'
-        return
-      end
-
-      total_assigned = 0
-      @affected_products = {} # Track: product_id => { assigned: N, remaining: M }
-
-      ActiveRecord::Base.transaction do
-        assignments.each do |product_id, quantity|
-          qty = quantity.to_i
-          next if qty <= 0
-
-          pid = product_id.to_i
-
-          # FIFO: asignar los items más antiguos primero
-          items = Inventory.where(
-            product_id: pid,
-            status: %i[available reserved],
-            inventory_location_id: nil
-          ).order(:created_at).limit(qty)
-
-          assigned = items.update_all(
-            inventory_location_id: @location.id,
-            updated_at: Time.current
-          )
-
-          next unless assigned.positive?
-
-          total_assigned += assigned
-          # Calcular cuántos quedan sin ubicar para este producto
-          remaining = Inventory.where(
-            product_id: pid,
-            status: %i[available reserved],
-            inventory_location_id: nil
-          ).count
-          @affected_products[pid] = { assigned: assigned, remaining: remaining }
-        end
-      end
-
-      if total_assigned.positive?
-        respond_to do |format|
-          format.html { redirect_to admin_inventory_unlocated_path, notice: "#{total_assigned} piezas asignadas a #{@location.code}" }
-          format.turbo_stream do
-            flash.now[:notice] = "#{total_assigned} piezas asignadas a #{@location.code}"
-            # Solo calcular el total global para el badge del header
-            @total_unlocated = Inventory.where(status: %i[available reserved], inventory_location_id: nil).count
-            @total_products = Inventory.where(status: %i[available reserved], inventory_location_id: nil)
-                                       .distinct.count(:product_id)
-          end
-        end
-      else
-        redirect_to admin_inventory_unlocated_path, alert: 'No se asignó ninguna pieza'
-      end
+      redirect_to admin_inventory_location_explorer_path(mode: 'unlocated'),
+                  alert: 'Asignación rechazada: la verificación física deberá confirmar IDs de inventario individuales.',
+                  status: :see_other
     end
 
     # GET /admin/inventory/transfer - Vista para transferir entre ubicaciones
