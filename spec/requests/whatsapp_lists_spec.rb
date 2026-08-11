@@ -37,6 +37,81 @@ RSpec.describe 'WhatsApp Lists', type: :request do
       end
     end
 
+    context 'con inventario físico sin verificar' do
+      let(:product) { create(:product, skip_seed_inventory: true, selling_price: 250, status: :active) }
+
+      before do
+        create(:inventory, product: product, status: :available, inventory_location: nil)
+        product.update_columns(status: 'active', auto_paused: false, auto_paused_at: nil)
+      end
+
+      it 'no permite pedir usando available sin ubicación' do
+        expect do
+          post whatsapp_list_items_path,
+               params: { product_id: product.id },
+               headers: { 'Accept' => 'text/html' }
+        end.not_to change(WhatsappRequestItem, :count)
+      end
+    end
+
+    context 'con inventario on-hand confirmado' do
+      let(:product) { create(:product, skip_seed_inventory: true, selling_price: 250, status: :active) }
+      let(:location) { create(:inventory_location, :warehouse) }
+
+      before do
+        create(:inventory, product: product, status: :available, inventory_location: location)
+        create(:inventory, product: product, status: :available, inventory_location: nil)
+      end
+
+      it 'permite la cantidad localizada pero no aumenta el límite con la pieza sin ubicación' do
+        post whatsapp_list_items_path,
+             params: { product_id: product.id, quantity: 1 },
+             headers: { 'Accept' => 'text/html' }
+
+        expect(WhatsappRequestItem.last.quantity).to eq(1)
+
+        post whatsapp_list_items_path,
+             params: { product_id: product.id, quantity: 1 },
+             headers: { 'Accept' => 'text/html' }
+
+        expect(WhatsappRequestItem.last.quantity).to eq(1)
+      end
+    end
+
+    context 'con inventario legítimo en tránsito' do
+      let(:product) { create(:product, skip_seed_inventory: true, selling_price: 250, status: :active) }
+
+      before do
+        create(:inventory, product: product, status: :in_transit, item_condition: :brand_new)
+      end
+
+      it 'mantiene la unidad en tránsito como ordenable' do
+        expect do
+          post whatsapp_list_items_path,
+               params: { product_id: product.id },
+               headers: { 'Accept' => 'text/html' }
+        end.to change(WhatsappRequestItem, :count).by(1)
+      end
+    end
+
+    context 'con available ya ligado a una orden' do
+      let(:product) { create(:product, skip_seed_inventory: true, selling_price: 250, status: :active) }
+      let(:location) { create(:inventory_location, :warehouse) }
+
+      before do
+        inventory = create(:inventory, product: product, status: :available, inventory_location: location)
+        inventory.update_columns(sale_order_id: create(:sale_order).id)
+      end
+
+      it 'no lo cuenta como stock libre' do
+        expect do
+          post whatsapp_list_items_path,
+               params: { product_id: product.id },
+               headers: { 'Accept' => 'text/html' }
+        end.not_to change(WhatsappRequestItem, :count)
+      end
+    end
+
     context 'producto preorderable sin stock' do
       let(:product) do
         create(:product, skip_seed_inventory: true, selling_price: 250, status: :active, preorder_available: true)

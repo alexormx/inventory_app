@@ -170,9 +170,7 @@ class WhatsappListsController < ApplicationController
   end
 
   def available_brand_new_for(product)
-    product.inventories
-           .where(status: %i[available in_transit], item_condition: :brand_new, sale_order_id: nil)
-           .count
+    product.sellable_inventory.for_condition(:brand_new).count
   end
 
   def reject_add_item(msg)

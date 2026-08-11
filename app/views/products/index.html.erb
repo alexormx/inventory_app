@@ -3,7 +3,7 @@
 <%# JSON-LD Structured Data %>
 <% content_for :head do %>
   <%= breadcrumb_json_ld(catalog_breadcrumbs) %>
-  <%= product_list_json_ld(@products.first(10)) if @products.present? %>
+  <%= product_list_json_ld(@products.first(10), on_hand_counts: @on_hand_counts) if @products.present? %>
   <% if @seo_landing == :brand && @brand_name.present? %>
     <%= collection_page_json_ld(name: @brand_name, type: :brand, url: brand_landing_url(brand_slug: @brand_name.parameterize), products: @products) %>
   <% elsif @seo_landing == :category && @category_name.present? %>

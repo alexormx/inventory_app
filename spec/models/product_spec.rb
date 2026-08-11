@@ -225,6 +225,41 @@ RSpec.describe Product, type: :model do
     end
   end
 
+  describe 'customer-facing inventory scopes' do
+    let(:product) { create(:product, skip_seed_inventory: true) }
+    let(:location) { create(:inventory_location, :warehouse) }
+
+    it 'counts only free, located available units as customer on-hand' do
+      create(:inventory, product: product, status: :available, inventory_location: location)
+      create(:inventory, product: product, status: :available, inventory_location: nil)
+      assigned = create(:inventory, product: product, status: :available, inventory_location: location)
+      assigned.update_columns(sale_order_id: create(:sale_order).id)
+
+      expect(product.current_on_hand).to eq(1)
+      expect(described_class.with_customer_on_hand).to include(product)
+    end
+
+    it 'preserves free in-transit inventory as customer-sellable' do
+      create(:inventory, product: product, status: :in_transit)
+
+      expect(product.in_transit_count).to eq(1)
+      expect(product.sellable_count).to eq(1)
+      expect(described_class.with_customer_in_transit).to include(product)
+    end
+
+    it 'uses confirmed on-hand inventory for condition filters' do
+      create(:inventory, product: product, status: :available, item_condition: :brand_new,
+                         inventory_location: nil)
+
+      expect(described_class.with_condition_groups(['nuevo'])).not_to include(product)
+
+      create(:inventory, product: product, status: :available, item_condition: :brand_new,
+                         inventory_location: location)
+
+      expect(described_class.with_condition_groups(['nuevo'])).to include(product)
+    end
+  end
+
   describe '#has_collectibles?' do
     let(:product) { create(:product, skip_seed_inventory: true, selling_price: 100) }
     let(:location) { create(:inventory_location, :warehouse) }
