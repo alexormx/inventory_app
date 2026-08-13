@@ -91,6 +91,18 @@ RSpec.describe 'Admin physical inventory verifications', type: :request do
       expect(response.body).to include("data-inventory-id=\"#{inventory.id}\"")
     end
 
+    it 'treats wildcard characters literally in product-name searches' do
+      matching_product = create(:product, skip_seed_inventory: true, product_name: "Limited Edition '_100% Model")
+      other_product = create(:product, skip_seed_inventory: true, product_name: 'Limited Edition X100Y Model')
+      matching_inventory = create(:inventory, product: matching_product, inventory_location: nil)
+      other_inventory = create(:inventory, product: other_product, inventory_location: nil)
+
+      get admin_inventory_verifications_path, params: { search_by: 'product_name', q: "EDITION '_100%" }
+
+      expect(response.body).to include("data-inventory-id=\"#{matching_inventory.id}\"")
+      expect(response.body).not_to include("data-inventory-id=\"#{other_inventory.id}\"")
+    end
+
     it 'searches by PurchaseOrder and PurchaseOrderItem identifiers' do
       product = create(:product, skip_seed_inventory: true)
       purchase_order = create(:purchase_order)

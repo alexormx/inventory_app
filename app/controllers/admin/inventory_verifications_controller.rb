@@ -116,8 +116,16 @@ module Admin
 
     def query_product_field(field)
       escaped_query = ActiveRecord::Base.sanitize_sql_like(@query.downcase)
-      candidate_scope.joins(:product)
-                     .where("LOWER(products.#{field}) LIKE :query", query: "%#{escaped_query}%")
+      scope = candidate_scope.joins(:product)
+
+      case field
+      when :product_sku
+        scope.where('LOWER(products.product_sku) LIKE :query', query: "%#{escaped_query}%")
+      when :product_name
+        scope.where('LOWER(products.product_name) LIKE :query', query: "%#{escaped_query}%")
+      else
+        scope.none
+      end
     end
 
     def query_by_numeric_id(field)
