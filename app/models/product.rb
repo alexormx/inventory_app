@@ -277,10 +277,11 @@ class Product < ApplicationRecord
     attachments = product_images.attachments
     # Reutiliza la precarga (with_attached_product_images) cuando ya trae los
     # blobs; sólo consulta blobs si no vienen precargados, para evitar N+1.
-    unless attachments.loaded? && attachments.all? { |a| a.association(:blob).loaded? }
-      attachments = attachments.includes(:blob)
-    end
-    attachments = attachments.to_a
+    attachments = if attachments.loaded? && attachments.all? { |a| a.association(:blob).loaded? }
+                    attachments.sort_by { |attachment| [attachment.created_at, attachment.id] }
+                  else
+                    attachments.includes(:blob).order(:created_at, :id).to_a
+                  end
     return attachments if attachments.size <= 1
 
     primary_attachment = attachments.find { |attachment| attachment.id == primary_product_image_attachment_id }
@@ -303,7 +304,7 @@ class Product < ApplicationRecord
     return if primary_product_image_attachment_id.blank?
     return if product_images.attachments.where(id: primary_product_image_attachment_id).exists?
 
-    update_column(:primary_product_image_attachment_id, product_images.attachments.order(:created_at).pick(:id))
+    update_column(:primary_product_image_attachment_id, product_images.attachments.order(:created_at, :id).pick(:id))
   end
 
   # Normalize at assignment time: strip/downcase, default blank to 'draft'.
