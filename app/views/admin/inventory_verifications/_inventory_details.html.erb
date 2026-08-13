@@ -1,0 +1,45 @@
+<div class="row g-3">
+  <div class="col-6 col-lg-3">
+    <div class="text-muted small">Inventory ID</div>
+    <div class="fs-3 fw-bold text-break">#<%= inventory.id %></div>
+  </div>
+  <div class="col-12 col-lg-5">
+    <div class="text-muted small">Producto</div>
+    <div class="fw-semibold">
+      <%= link_to inventory.product.product_name, admin_product_path(inventory.product), class: 'text-decoration-none' %>
+    </div>
+    <div class="font-monospace small"><%= inventory.product.product_sku %></div>
+  </div>
+  <div class="col-6 col-lg-2">
+    <div class="text-muted small">Estado</div>
+    <span class="badge <%= inventory_verification_status_class(inventory.status) %>">
+      <%= inventory_verification_status_label(inventory.status) %>
+    </span>
+  </div>
+  <div class="col-6 col-lg-2">
+    <div class="text-muted small">Condición</div>
+    <div><%= inventory.condition_label %></div>
+  </div>
+  <div class="col-12 col-md-6">
+    <div class="text-muted small">Ubicación actual</div>
+    <div><%= inventory.inventory_location&.full_path || 'Sin ubicación' %></div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="text-muted small">Orden de compra</div>
+    <% if inventory.purchase_order %>
+      <%= link_to inventory.purchase_order_id, admin_purchase_order_path(inventory.purchase_order), class: 'text-decoration-none' %>
+    <% else %>
+      <%= inventory.purchase_order_id.presence || '—' %>
+    <% end %>
+    <div class="small text-muted">Partida: <%= inventory.purchase_order_item_id.presence || '—' %></div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="text-muted small">Orden de venta</div>
+    <% if inventory.sale_order %>
+      <%= link_to inventory.sale_order_id, admin_sale_order_path(inventory.sale_order), class: 'text-decoration-none' %>
+    <% else %>
+      <%= inventory.sale_order_id.presence || '—' %>
+    <% end %>
+    <div class="small text-muted">Partida: <%= inventory.sale_order_item_id.presence || '—' %></div>
+  </div>
+</div>

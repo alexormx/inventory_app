@@ -1,0 +1,25 @@
+<div class="container-fluid px-0">
+  <div class="card border-warning shadow-sm mx-auto" style="max-width: 960px;">
+    <div class="card-header bg-warning-subtle border-warning py-3">
+      <h1 class="h4 mb-1"><i class="fa-solid fa-rotate me-2"></i>El inventario cambió</h1>
+      <p class="mb-0"><%= @error_message %></p>
+    </div>
+    <div class="card-body">
+      <div class="alert alert-light border" role="status">
+        <strong>No se realizó ningún cambio.</strong>
+        Campos protegidos que cambiaron:
+        <%= @changed_fields.map { |field| inventory_snapshot_field_label(field) }.to_sentence %>.
+      </div>
+      <% if @inventory %>
+        <h2 class="h5">Estado actual</h2>
+        <%= render 'inventory_details', inventory: @inventory %>
+      <% end %>
+    </div>
+    <div class="card-footer bg-white d-flex flex-column flex-sm-row gap-2 justify-content-end">
+      <%= link_to 'Volver a la búsqueda', admin_inventory_verifications_path, class: 'btn btn-outline-secondary' %>
+      <% if @inventory %>
+        <%= link_to 'Revisar el estado actual', admin_inventory_verification_path(@inventory), class: 'btn btn-warning' %>
+      <% end %>
+    </div>
+  </div>
+</div>
