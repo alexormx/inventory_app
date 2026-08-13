@@ -380,7 +380,7 @@ RSpec.describe Product, type: :model do
     let(:product) { create(:product, skip_seed_inventory: true) }
 
     it 'returns the selected primary attachment first' do
-      second_attachment = product.product_images.attachments.second
+      second_attachment = product.product_images.attachments.order(:id).second
 
       product.set_primary_product_image!(second_attachment.id)
 
@@ -388,11 +388,41 @@ RSpec.describe Product, type: :model do
       expect(product.ordered_product_images.first.id).to eq(second_attachment.id)
     end
 
-    it 'falls back to the first available image when the stored primary attachment is missing' do
+    it 'falls back to the earliest attached image when the stored primary attachment is missing' do
+      attachments = product.product_images.attachments.order(:id).to_a
+      timestamp = Time.current.change(usec: 0)
+      attachments.first.update_column(:created_at, timestamp + 1.second)
+      attachments.second.update_column(:created_at, timestamp)
       product.update_column(:primary_product_image_attachment_id, 999_999)
 
       expect(product.reload.primary_product_image).to be_present
-      expect(product.primary_product_image.id).to eq(product.product_images.attachments.order(:created_at).first.id)
+      expect(product.primary_product_image.id).to eq(attachments.second.id)
+    end
+
+    it 'breaks matching attachment timestamps by attachment id' do
+      attachments = product.product_images.attachments.order(:id).to_a
+      timestamp = Time.current.change(usec: 0)
+      attachments.each { |attachment| attachment.update_column(:created_at, timestamp) }
+      product.update_column(:primary_product_image_attachment_id, 999_999)
+
+      expect(product.reload.primary_product_image.id).to eq(attachments.first.id)
+    end
+
+    it 'uses the same deterministic order when repairing a missing primary reference' do
+      attachments = product.product_images.attachments.order(:id).to_a
+      timestamp = Time.current.change(usec: 0)
+      attachments.each { |attachment| attachment.update_column(:created_at, timestamp) }
+      product.update_column(:primary_product_image_attachment_id, 999_999)
+
+      product.clear_primary_product_image_if_missing!
+
+      expect(product.primary_product_image_attachment_id).to eq(attachments.first.id)
+    end
+
+    it 'returns nil when the product has no images' do
+      product.product_images.purge
+
+      expect(product.reload.primary_product_image).to be_nil
     end
   end
 end
