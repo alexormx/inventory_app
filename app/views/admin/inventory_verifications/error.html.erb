@@ -1,0 +1,19 @@
+<div class="container-fluid px-0">
+  <div class="card border-danger shadow-sm mx-auto" style="max-width: 960px;">
+    <div class="card-header bg-danger-subtle border-danger py-3">
+      <h1 class="h4 mb-1"><i class="fa-solid fa-circle-exclamation me-2"></i>Verificación rechazada</h1>
+      <p class="mb-0"><%= @error_message %></p>
+    </div>
+    <div class="card-body">
+      <div class="alert alert-light border mb-0" role="status">
+        <strong>No se realizó ningún cambio.</strong>
+        <% if @inventory %>
+          La unidad #<%= @inventory.id %> debe revisarse nuevamente desde su estado actual.
+        <% end %>
+      </div>
+    </div>
+    <div class="card-footer bg-white text-end">
+      <%= link_to 'Volver a la búsqueda', admin_inventory_verifications_path, class: 'btn btn-primary' %>
+    </div>
+  </div>
+</div>

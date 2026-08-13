@@ -1,0 +1,78 @@
+<div class="container-fluid px-0">
+  <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+      <h1 class="h3 mb-1"><i class="fa-solid fa-clipboard-check me-2"></i>Verificación física</h1>
+      <p class="text-muted mb-0">Busca y confirma una unidad exacta de inventario a la vez.</p>
+    </div>
+    <%= link_to admin_inventory_location_explorer_path(mode: 'unlocated'), class: 'btn btn-outline-secondary' do %>
+      <i class="fa-solid fa-map-location-dot me-1"></i> Explorar inventario sin ubicación
+    <% end %>
+  </div>
+
+  <div class="alert alert-info d-flex gap-2" role="status">
+    <i class="fa-solid fa-shield-halved mt-1" aria-hidden="true"></i>
+    <div>
+      <strong>Flujo por unidad:</strong> cada acción utiliza un Inventory ID exacto.
+      No hay asignación FIFO, cantidades ni acciones masivas.
+      <span class="d-block mt-1"><%= number_with_delimiter(@candidate_count) %> unidades requieren revisión.</span>
+    </div>
+  </div>
+
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <%= form_with url: admin_inventory_verifications_path, method: :get, local: true, class: 'row g-3 align-items-end' do %>
+        <div class="col-12 col-md-4">
+          <%= label_tag :search_by, 'Buscar por', class: 'form-label fw-semibold' %>
+          <%= select_tag :search_by, options_for_select(@search_options, @search_by), class: 'form-select form-select-lg' %>
+        </div>
+        <div class="col-12 col-md-6">
+          <%= label_tag :q, 'Identificador o texto', class: 'form-label fw-semibold' %>
+          <%= search_field_tag :q, @query, class: 'form-control form-control-lg', placeholder: 'Ej. 19445, SKU, producto, PO o SO', autocomplete: 'off' %>
+        </div>
+        <div class="col-12 col-md-2 d-grid">
+          <%= submit_tag 'Buscar unidad', class: 'btn btn-primary btn-lg' %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="h5 mb-0"><%= @query.present? ? 'Resultados' : 'Unidades pendientes' %></h2>
+    <% if @query.present? %>
+      <%= link_to 'Limpiar búsqueda', admin_inventory_verifications_path, class: 'btn btn-sm btn-outline-secondary' %>
+    <% end %>
+  </div>
+
+  <% if @inventories.any? %>
+    <div class="row row-cols-1 row-cols-xl-2 g-3 mb-4" id="inventory-verification-results">
+      <% @inventories.each do |inventory| %>
+        <div class="col">
+          <article class="card h-100 shadow-sm <%= 'border-warning' if inventory.reserved? %>" data-inventory-id="<%= inventory.id %>">
+            <div class="card-body">
+              <%= render 'inventory_details', inventory: inventory %>
+              <hr>
+              <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <div class="small text-muted">
+                  Creado <%= l(inventory.created_at, format: :short) %>
+                  · Costo <%= number_to_currency(inventory.purchase_cost, unit: '$') %>
+                </div>
+                <%= link_to admin_inventory_verification_path(inventory), class: 'btn btn-primary btn-lg' do %>
+                  Verificar #<%= inventory.id %> <i class="fa-solid fa-arrow-right ms-1"></i>
+                <% end %>
+              </div>
+            </div>
+          </article>
+        </div>
+      <% end %>
+    </div>
+    <div class="d-flex justify-content-center"><%= paginate @inventories %></div>
+  <% else %>
+    <div class="card border-0 bg-light">
+      <div class="card-body text-center py-5">
+        <i class="fa-solid fa-magnifying-glass fa-2x text-muted mb-3"></i>
+        <h2 class="h5">No se encontraron unidades elegibles</h2>
+        <p class="text-muted mb-0">Revisa el tipo de búsqueda y confirma que la unidad siga sin ubicación.</p>
+      </div>
+    </div>
+  <% end %>
+</div>

@@ -16,7 +16,9 @@
       <i class="fa-solid fa-shield-halved me-1"></i>
       <strong>Consulta segura:</strong>
       la asignación masiva por producto y cantidad está deshabilitada porque no confirma qué unidad existe físicamente.
-      La ubicación se asignará posteriormente mediante el flujo de verificación individual.
+      Usa la
+      <%= link_to 'verificación individual', admin_inventory_verifications_path, class: 'alert-link' %>
+      para confirmar un Inventory ID exacto.
     </div>
   <% end %>
 

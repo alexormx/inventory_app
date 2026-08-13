@@ -1,0 +1,71 @@
+<% result_labels = {
+     'found' => ['Encontrado', 'success', 'Confirmar encontrado'],
+     'damaged' => ['Dañado', 'warning', 'Confirmar dañado'],
+     'missing' => ['Faltante', 'danger', 'Confirmar faltante']
+   } %>
+<% result_label, color, button_label = result_labels.fetch(result) %>
+<% resulting_status = { 'found' => inventory.status, 'damaged' => 'damaged', 'missing' => 'lost' }.fetch(result) %>
+
+<div class="card h-100 border-<%= color %> verification-option" data-verification-result="<%= result %>">
+  <div class="card-header bg-<%= color %>-subtle border-<%= color %>">
+    <h2 class="h5 mb-0"><%= result_label %></h2>
+  </div>
+  <div class="card-body d-flex flex-column">
+    <%= form_with scope: :verification,
+                  url: admin_inventory_verifications_path,
+                  method: :post,
+                  local: true,
+                  namespace: result,
+                  class: 'd-flex flex-column h-100' do |form| %>
+      <%= form.hidden_field :inventory_id, value: inventory.id %>
+      <%= form.hidden_field :result, value: result %>
+      <%= render 'snapshot_fields', expected_snapshot: expected_snapshot, form_namespace: result %>
+
+      <div class="rounded border bg-light p-3 mb-3" aria-label="Vista previa de la verificación">
+        <div class="row g-2 small">
+          <div class="col-4 text-muted">Actual</div>
+          <div class="col-8 fw-semibold">
+            <%= inventory_verification_status_label(inventory.status) %> / Sin ubicación
+          </div>
+          <div class="col-4 text-muted">Resultado</div>
+          <div class="col-8 fw-bold text-uppercase"><%= result_label %></div>
+          <div class="col-4 text-muted">Nuevo estado</div>
+          <div class="col-8 fw-semibold"><%= inventory_verification_status_label(resulting_status) %></div>
+        </div>
+      </div>
+
+      <% if result == 'found' %>
+        <div class="mb-3">
+          <%= form.label :location_id, 'Nueva ubicación física', class: 'form-label fw-semibold' %>
+          <%= form.select :location_id,
+                          options_for_select([['Selecciona una ubicación final', '']] + location_options),
+                          {},
+                          class: 'form-select form-select-lg',
+                          required: true %>
+          <div class="form-text">Solo se muestran ubicaciones activas y finales.</div>
+        </div>
+      <% else %>
+        <div class="alert alert-<%= color %> py-2" role="note">
+          La unidad cambiará de <strong>disponible</strong> a
+          <strong><%= inventory_verification_status_label(resulting_status).downcase %></strong> y continuará sin ubicación.
+        </div>
+      <% end %>
+
+      <div class="mb-3">
+        <%= form.label :notes, 'Notas (opcional)', class: 'form-label' %>
+        <%= form.text_area :notes, rows: 2, maxlength: 500, class: 'form-control', placeholder: 'Observación breve de la revisión física' %>
+      </div>
+
+      <div class="mt-auto d-grid">
+        <%= form.submit button_label,
+                        class: "btn btn-#{color} btn-lg py-3",
+                        data: {
+                          turbo_submits_with: 'Verificando…',
+                          turbo_confirm: "Se verificará únicamente el Inventory ##{inventory.id} como #{result_label.upcase}. ¿Deseas continuar?",
+                          confirm_title: "Confirmar #{result_label.downcase}",
+                          confirm_confirm_label: button_label
+                        } %>
+      </div>
+    <% end %>
+  </div>
+</div>

@@ -1,0 +1,6 @@
+<% Inventories::VerifyPhysicalUnitService::SNAPSHOT_FIELDS.each do |field| %>
+  <% value = expected_snapshot.fetch(field) { expected_snapshot.fetch(field.to_sym) } %>
+  <%= hidden_field_tag "verification[expected_snapshot][#{field}]",
+                       value,
+                       id: "#{form_namespace}_verification_expected_snapshot_#{field}" %>
+<% end %>

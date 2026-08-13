@@ -48,6 +48,8 @@ Rails.application.routes.draw do
     post 'inventory_audit/auto_assign', to: 'inventory_audits#auto_assign', as: :inventory_audit_auto_assign
     # Inventory Events (audit trail de cambios de costo / desvinculaciones)
     resources :inventory_events, only: [:index]
+    # Physical inventory verification (one exact Inventory row per action)
+    resources :inventory_verifications, only: %i[index show create]
     # Inventory reconciliation trigger
     resources :inventory_reconciliations, only: [:create]
     # Preorders audit
