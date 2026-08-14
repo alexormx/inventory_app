@@ -50,5 +50,3 @@ dump.rdb
 /.vscode/
 
 /config/credentials/*.key
-
-/docs
