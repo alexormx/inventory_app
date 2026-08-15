@@ -24,4 +24,20 @@ RSpec.describe 'Admin product edit submit', type: :system, js: true do
     expect(page).to have_content('Product updated successfully.')
     expect(page).to have_content('Tomica Supra editado')
   end
+
+  it 'connects the discontinued toggle controller' do
+    visit edit_admin_product_path(product)
+
+    expect(page).to have_css('[data-controller~="discontinued-toggle"]', visible: :all)
+    connected = page.evaluate_script(<<~JAVASCRIPT)
+      Boolean(
+        window.Stimulus?.getControllerForElementAndIdentifier(
+          document.querySelector('[data-controller~="discontinued-toggle"]'),
+          'discontinued-toggle'
+        )
+      )
+    JAVASCRIPT
+
+    expect(connected).to be(true)
+  end
 end
