@@ -290,7 +290,7 @@ Rails.application.routes.draw do
     resources :system_variables, only: %i[index create update]
 
     # General user management (admin-facing) con tabs
-    resources :users, only: %i[index new create edit update destroy] do
+    resources :users, only: %i[index show new create edit update destroy] do
       collection do
         get :customers
         get :suppliers
