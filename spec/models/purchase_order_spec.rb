@@ -16,6 +16,73 @@ RSpec.describe PurchaseOrder, type: :model do
     # Los campos numéricos son normalizados a 0 y recalculados; no probamos presence/numericality directos
   end
 
+  describe 'publication reconciliation after receipt' do
+    let(:product) { create(:product, skip_seed_inventory: true) }
+    let(:purchase_order) { create(:purchase_order, user: supplier, status: 'In Transit') }
+    let!(:inventory) do
+      create(:inventory, product: product, purchase_order: purchase_order, status: :in_transit)
+    end
+
+    it 'enqueues reconciliation after inventory is received as available' do
+      allow(Products::ReconcilePublicationJob).to receive(:perform_later) do
+        expect(inventory.reload).to be_available
+      end
+
+      purchase_order.update!(status: 'Delivered')
+
+      expect(Products::ReconcilePublicationJob).to have_received(:perform_later).once
+    end
+
+    it 'auto-pauses an active product received without a location when reconciliation runs' do
+      allow(Products::ReconcilePublicationJob).to receive(:perform_later) do
+        Products::ReconcilePublicationJob.perform_now
+      end
+
+      purchase_order.update!(status: 'Delivered')
+
+      expect(product.reload).to be_inactive
+      expect(product.auto_paused).to be(true)
+    end
+
+    it 'does not enqueue reconciliation for another status transition' do
+      allow(Products::ReconcilePublicationJob).to receive(:perform_later)
+
+      purchase_order.update!(status: 'Canceled')
+
+      expect(Products::ReconcilePublicationJob).not_to have_received(:perform_later)
+    end
+
+    it 'does not enqueue reconciliation when another status transitions directly to Delivered' do
+      pending_order = create(:purchase_order, user: supplier, status: 'Pending')
+      allow(Products::ReconcilePublicationJob).to receive(:perform_later)
+
+      pending_order.update!(status: 'Delivered')
+
+      expect(Products::ReconcilePublicationJob).not_to have_received(:perform_later)
+    end
+
+    it 'does not enqueue reconciliation when an update leaves the status unchanged' do
+      delivered_order = create(:purchase_order, user: supplier, status: 'Delivered')
+      allow(Products::ReconcilePublicationJob).to receive(:perform_later)
+
+      delivered_order.update!(notes: 'Status remains delivered')
+
+      expect(Products::ReconcilePublicationJob).not_to have_received(:perform_later)
+    end
+
+    it 'does not enqueue reconciliation when the receipt transaction rolls back' do
+      allow(Products::ReconcilePublicationJob).to receive(:perform_later)
+
+      PurchaseOrder.transaction(requires_new: true) do
+        purchase_order.update!(status: 'Delivered')
+        raise ActiveRecord::Rollback
+      end
+
+      expect(purchase_order.reload.status).to eq('In Transit')
+      expect(Products::ReconcilePublicationJob).not_to have_received(:perform_later)
+    end
+  end
+
   describe "Numeric normalization and totals" do
     it "normalizes nil and invalid numeric fields to 0 and keeps provided totals when no items" do
       po = PurchaseOrder.new(
