@@ -1,6 +1,6 @@
 # Matriz de remediación verificada — 2026-07
 
-Fuente de verdad: `docs/verificacion_auditorias_rails.md`, SHA-256 `96941b89bc5ba5f42d7bddc22b5a66c7ea9143d0de3d41195c10743ac328b0a3`, contrastada con `cf146eace01d56102a28c10d1ac5f91f93a1f10a`.
+Fuente de verdad: `docs/archive/audits/2026-07/verificacion_auditorias_rails.md`, SHA-256 `96941b89bc5ba5f42d7bddc22b5a66c7ea9143d0de3d41195c10743ac328b0a3`, contrastada con `cf146eace01d56102a28c10d1ac5f91f93a1f10a`.
 
 Estados iniciales: `PENDIENTE` requiere cambio y prueba; `PENDIENTE-AJUSTADO` limita el cambio al diagnóstico parcial; `SIN CAMBIO` aplica a falsos positivos; `SIN EVIDENCIA` aplica al único no verificable. Prioridad: P0 funcional inmediato, P1 riesgo de datos/flujo, P2 UX/accesibilidad/catálogo, P3 mantenimiento.
 
