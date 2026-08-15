@@ -6,13 +6,7 @@ export default class extends Controller {
   static values = { index: { type: Number, default: 0 } }
 
   connect() {
-    this.onKeydown = this.handleKeydown.bind(this)
-    this.element.addEventListener("keydown", this.onKeydown)
     this.update()
-  }
-
-  disconnect() {
-    this.element.removeEventListener("keydown", this.onKeydown)
   }
 
   show(event) {
