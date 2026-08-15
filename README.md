@@ -432,6 +432,10 @@ app/
 
 ---
 
+## Documentation
+
+See [docs/README.md](docs/README.md).
+
 ## 📝 Changelog Reciente
 
 ### v475 (Feb 2026)

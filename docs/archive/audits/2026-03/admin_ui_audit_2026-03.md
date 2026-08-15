@@ -60,12 +60,12 @@ Documentar el estado actual del panel administrativo, detectar inconsistencias v
 3. Añadir guideline de motion y microinteracciones.
 
 ## Archivos impactados en la primera iteración
-- [app/views/layouts/admin.html.erb](app/views/layouts/admin.html.erb)
-- [app/views/admin/partials/_sidebar.html.erb](app/views/admin/partials/_sidebar.html.erb)
-- [app/views/admin/partials/_navbar.html.erb](app/views/admin/partials/_navbar.html.erb)
-- [app/views/admin/partials/_footer.html.erb](app/views/admin/partials/_footer.html.erb)
-- [app/assets/stylesheets/custom.scss](app/assets/stylesheets/custom.scss)
-- [app/assets/stylesheets/dashboard.scss](app/assets/stylesheets/dashboard.scss)
-- [app/views/admin/dashboard/index.html.erb](app/views/admin/dashboard/index.html.erb)
-- [app/views/admin/dashboard/_kpi_card.html.erb](app/views/admin/dashboard/_kpi_card.html.erb)
-- [app/views/admin/dashboard/_kpi_stat.html.erb](app/views/admin/dashboard/_kpi_stat.html.erb)
+- [app/views/layouts/admin.html.erb](../../../../app/views/layouts/admin.html.erb)
+- [app/views/admin/partials/_sidebar.html.erb](../../../../app/views/admin/partials/_sidebar.html.erb)
+- [app/views/admin/partials/_navbar.html.erb](../../../../app/views/admin/partials/_navbar.html.erb)
+- [app/views/admin/partials/_footer.html.erb](../../../../app/views/admin/partials/_footer.html.erb)
+- [app/assets/stylesheets/custom.scss](../../../../app/assets/stylesheets/custom.scss)
+- [app/assets/stylesheets/dashboard.scss](../../../../app/assets/stylesheets/dashboard.scss)
+- [app/views/admin/dashboard/index.html.erb](../../../../app/views/admin/dashboard/index.html.erb)
+- [app/views/admin/dashboard/_kpi_card.html.erb](../../../../app/views/admin/dashboard/_kpi_card.html.erb)
+- [app/views/admin/dashboard/_kpi_stat.html.erb](../../../../app/views/admin/dashboard/_kpi_stat.html.erb)
