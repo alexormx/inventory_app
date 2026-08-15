@@ -66,4 +66,16 @@ RSpec.describe 'Products catalog inventory queries', type: :request do
     related_item = related_name.ancestors('.related-product-item').first
     expect(related_item.text).not_to include('En stock')
   end
+
+  it 'does not render stale product detail Stimulus identifiers' do
+    product = create(:product)
+
+    get product_path(product)
+
+    document = Nokogiri::HTML(response.body)
+    expect(response).to have_http_status(:ok)
+    expect(document.css('[data-controller~="product-conditions"]')).to be_empty
+    expect(document.css('[data-controller~="productMeta"]')).to be_empty
+    expect(document.css('[data-controller~="product-meta"]')).to be_empty
+  end
 end

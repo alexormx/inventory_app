@@ -6,18 +6,16 @@ import AuditProgressController from "./audit_progress_controller"
 import CartItemController from "./cart_item_controller"
 import ClearSearchController from "./clear_search_controller"
 import ConfirmController from "./confirm_controller"
-import CookiesController from "./cookies_controller"
+import DiscontinuedToggleController from "./discontinued_toggle_controller"
 import DropdownController from "./dropdown_controller"
 import DropzoneController from "./dropzone_controller"
 import GalleryController from "./gallery_controller"
-import HideModalController from "./hide_modal_controller"
 import KvEditorController from "./kv_editor_controller"
 import ModalController from "./modal_controller"
 import NavbarController from "./navbar_controller"
 import PaymentModalController from "./payment_modal_controller"
 import PollingFrameController from "./polling_frame_controller"
 import ProductFormController from "./product_form_controller"
-import ProductMetaController from "./product_meta_controller"
 import ShipmentGuardController from "./shipment_guard_controller"
 import SimpleAccordionController from "./simple_accordion_controller"
 import SimpleTabsController from "./simple_tabs_controller"
@@ -52,18 +50,16 @@ application.register("audit-progress", AuditProgressController)
 application.register("cart-item", CartItemController)
 application.register("clear-search", ClearSearchController)
 application.register("confirm", ConfirmController)
-application.register("cookies", CookiesController)
+application.register("discontinued-toggle", DiscontinuedToggleController)
 application.register("dropdown", DropdownController)
 application.register("dropzone", DropzoneController)
 application.register("gallery", GalleryController)
-application.register("hide-modal", HideModalController)
 application.register("kv-editor", KvEditorController)
 application.register("modal", ModalController)
 application.register("navbar", NavbarController)
 application.register("payment-modal", PaymentModalController)
 application.register("polling-frame", PollingFrameController)
 application.register("product-form", ProductFormController)
-application.register("product-meta", ProductMetaController)
 application.register("shipment-guard", ShipmentGuardController)
 application.register("simple-accordion", SimpleAccordionController)
 application.register("simple-tabs", SimpleTabsController)
