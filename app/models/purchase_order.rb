@@ -34,6 +34,8 @@ class PurchaseOrder < ApplicationRecord
   validate :actual_delivery_after_expected_delivery
 
   after_update :update_inventory_status_based_on_order_status
+  after_update_commit :enqueue_publication_reconciliation_after_receipt,
+                      if: :received_from_in_transit?
   before_destroy :ensure_inventories_safe_or_cleanup
 
   def may_be_deleted?
@@ -190,6 +192,21 @@ class PurchaseOrder < ApplicationRecord
       )
     end
   end
+
+  def received_from_in_transit?
+    saved_change_to_status == ['In Transit', 'Delivered']
+  end
+
+  def enqueue_publication_reconciliation_after_receipt
+    Products::ReconcilePublicationJob.perform_later
+  rescue StandardError => e
+    Rails.logger.error(
+      '[PurchaseOrder#enqueue_publication_reconciliation_after_receipt] ' \
+      "purchase_order_id=#{id} #{e.class}: #{e.message}"
+    )
+    Rails.error.report(e, handled: true, context: { purchase_order_id: id })
+  end
+  private :received_from_in_transit?, :enqueue_publication_reconciliation_after_receipt
 
   # Block if any locked; otherwise delete only free and allow destroy
   def ensure_inventories_safe_or_cleanup
