@@ -4,7 +4,7 @@ require 'rails_helper'
 
 Selenium::WebDriver.logger.level = :warn
 
-RSpec.describe 'Checkout shipping total', :js, type: :system do
+RSpec.describe 'Checkout shipping total', :js, :system_smoke, type: :system do
   include Warden::Test::Helpers
 
   let(:user) { create(:user, confirmed_at: Time.current) }

@@ -31,6 +31,16 @@ end
 # --- Capybara + Selenium setup ---
 Capybara.default_max_wait_time = 7
 Capybara.javascript_driver = :selenium_chrome_headless
+# Keep failure artifacts in a predictable place so CI can upload them.
+Capybara.save_path = Rails.root.join('tmp/capybara')
+
+# Resolve chromedriver across environments: the local Chromium path does not exist on
+# GitHub Actions runners, which publish a Chrome-matched driver via CHROMEWEBDRIVER/PATH.
+CHROMEDRIVER_PATH = [
+  ENV.fetch('CHROMEDRIVER_PATH', nil),
+  ENV['CHROMEWEBDRIVER'] && File.join(ENV['CHROMEWEBDRIVER'], 'chromedriver'),
+  '/usr/lib/chromium-browser/chromedriver'
+].compact.find { |path| File.executable?(path) }
 
 Capybara.register_driver :selenium_chrome_headless do |app|
   options = Selenium::WebDriver::Chrome::Options.new
@@ -43,10 +53,12 @@ Capybara.register_driver :selenium_chrome_headless do |app|
   # options.add_argument('--header=Accept=text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9')
 
   # Configure the driver to be silent
-  driver_path = '/usr/lib/chromium-browser/chromedriver'
-  service = Selenium::WebDriver::Service.chrome(
-    path: driver_path
-  )
+  service =
+    if CHROMEDRIVER_PATH
+      Selenium::WebDriver::Service.chrome(path: CHROMEDRIVER_PATH)
+    else
+      Selenium::WebDriver::Service.chrome
+    end
 
   Capybara::Selenium::Driver.new(app, browser: :chrome, options: options, service: service)
 end
@@ -122,11 +134,16 @@ RSpec.configure do |config|
     Capybara.reset_sessions!
   end
 
-  # If a JS/system spec fails, dump the HTML for easier debugging
+  # If a JS/system spec fails, dump the HTML and a screenshot for easier debugging
   config.after(:each, :js, type: :system) do |example|
     if example.exception
       # Always safe; writes HTML to tmp/capybara
       save_page
+      begin
+        save_screenshot
+      rescue StandardError
+        # rack_test and dead sessions can't screenshot – ignore
+      end
       # If you prefer opening the browser locally and have 'launchy' installed, uncomment:
       # save_and_open_page
     end
