@@ -88,7 +88,21 @@ function buildProductSearchItem(product) {
   return item;
 }
 
-document.addEventListener("turbo:load", () => {
+let addProductToCurrentPurchaseOrder = null;
+
+function handlePurchaseOrderProductSelection(event) {
+  if (!event.detail || !addProductToCurrentPurchaseOrder) return;
+
+  addProductToCurrentPurchaseOrder(event.detail);
+}
+
+function clearPurchaseOrderProductSelection() {
+  addProductToCurrentPurchaseOrder = null;
+}
+
+function initializePurchaseOrderProductSelection() {
+  clearPurchaseOrderProductSelection();
+
   const resultsBox = document.querySelector("#product-search-results");
   const tbody = document.querySelector("#purchase-order-items-table tbody") || document.querySelector("#order-items-table tbody");
   const contextElement = document.querySelector(".order-context");
@@ -98,7 +112,7 @@ document.addEventListener("turbo:load", () => {
   if (!resultsBox || !tbody || context !== "purchase-order") return;
 
   // Helper para agregar producto a la tabla de PO
-  function addProductToPO(product) {
+  addProductToCurrentPurchaseOrder = (product) => {
     const row = buildBlankPurchaseOrderItemRow(index);
 
     // Fill in product details
@@ -146,26 +160,15 @@ document.addEventListener("turbo:load", () => {
     // Trigger updates en orden
     updateLineTotals(row);
     updateItemTotals();
-  }
+  };
+}
 
-  // Nota: no adjuntamos listener de click directo aquí para evitar dobles inserciones.
-  // Usamos únicamente los eventos personalizados emitidos por el buscador.
-
-  // Soportar evento global product:selected (otros módulos de búsqueda)
-  document.addEventListener("product:selected", (ev) => {
-    const product = ev.detail;
-    if (!product) return;
-    addProductToPO(product);
-  });
-
-  // Soportar evento emitido por el controller Stimulus product-search
-  // Algunos componentes emiten 'product-search:selected' con detail = product
-  document.addEventListener("product-search:selected", (ev) => {
-    const product = ev.detail;
-    if (!product) return;
-    addProductToPO(product);
-  });
-});
+// Register the document-level selection handlers once. Each Turbo load only
+// replaces the callback that targets the current purchase-order DOM.
+document.addEventListener("product:selected", handlePurchaseOrderProductSelection);
+document.addEventListener("product-search:selected", handlePurchaseOrderProductSelection);
+document.addEventListener("turbo:load", initializePurchaseOrderProductSelection);
+document.addEventListener("turbo:before-cache", clearPurchaseOrderProductSelection);
 
 
 function buildBlankPurchaseOrderItemRow(index) {
