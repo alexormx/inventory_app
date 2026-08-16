@@ -1232,6 +1232,16 @@ input[type="number"] {
 .cookie-banner {
   z-index: 9999;
   font-size: 0.9rem;
+
+  /* El botón flotante de WhatsApp es `position: fixed` sobre la esquina inferior
+     derecha, justo encima de las acciones del banner: Chrome entregaba el clic al
+     botón flotante en lugar de a "Aceptar" (ElementClickInterceptedError).
+     Reservamos su huella dentro del banner para que ambos controles queden
+     separados horizontalmente en cualquier ancho, sin depender de la altura del
+     banner ni de z-index. */
+  .container {
+    padding-right: 88px;
+  }
 }
 
 .product-show {
