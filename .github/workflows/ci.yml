@@ -145,7 +145,11 @@ jobs:
       - name: Verify browser toolchain
         run: |
           google-chrome --version
-          "$CHROMEWEBDRIVER/chromedriver" --version
+          driver="$CHROMEWEBDRIVER/chromedriver"
+          [ -x "$driver" ] || driver="$(command -v chromedriver || true)"
+          [ -x "$driver" ] || { echo "No chromedriver available on this runner"; exit 1; }
+          "$driver" --version
+          echo "CHROMEDRIVER_PATH=$driver" >> "$GITHUB_ENV"
 
       - name: Run critical system smoke tests
         env:
