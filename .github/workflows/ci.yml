@@ -99,3 +99,67 @@ jobs:
           name: screenshots
           path: ${{ github.workspace }}/tmp/screenshots
           if-no-files-found: ignore
+
+  system_test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: --health-cmd="pg_isready" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    steps:
+      - name: Install packages
+        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y build-essential git libpq-dev libvips-dev imagemagick pkg-config
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: .ruby-version
+          bundler-cache: true
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install JavaScript dependencies
+        run: npm ci
+
+      # jsbundling-rails output (app/assets/builds) is gitignored, so the browser
+      # suite needs the esbuild bundles built before Sprockets can serve them.
+      - name: Build JavaScript bundles
+        run: npm run build
+
+      # The runner image ships Chrome with a version-matched chromedriver exposed
+      # through CHROMEWEBDRIVER; do not install another Chrome or they desync.
+      - name: Verify browser toolchain
+        run: |
+          google-chrome --version
+          "$CHROMEWEBDRIVER/chromedriver" --version
+
+      - name: Run critical system smoke tests
+        env:
+          RAILS_ENV: test
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432
+          RUN_SYSTEM_SPECS: 1
+        run: bin/rails db:test:prepare && bundle exec rspec spec/system --tag system_smoke --format documentation
+
+      - name: Keep failure artifacts from system smoke tests
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: system-smoke-failures
+          path: |
+            ${{ github.workspace }}/tmp/capybara
+            ${{ github.workspace }}/tmp/screenshots
+          if-no-files-found: ignore

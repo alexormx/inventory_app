@@ -2,7 +2,7 @@
 
 require 'rails_helper'
 
-RSpec.describe 'Purchase Order JS behaviour', type: :system, js: true do
+RSpec.describe 'Purchase Order JS behaviour', :system_smoke, type: :system, js: true do
   include Warden::Test::Helpers
 
   let(:admin) { create(:user, :admin) }
