@@ -1,8 +1,3 @@
-document.addEventListener("turbo:load", () => {
-  // Este módulo ya no construye la búsqueda; escucha eventos de selección
-  // emitidos por el componente de búsqueda genérico.
-});
-
 function createElementWithClasses(tag, classes = [], options = {}) {
   const el = document.createElement(tag);
   el.classList.add(...classes);
@@ -34,7 +29,21 @@ function buildProductSearchItem(product) {
   return item;
 }
 
-document.addEventListener("turbo:load", () => {
+let addProductToCurrentSaleOrder = null;
+
+function handleSaleOrderProductSelection(event) {
+  if (!event.detail || !addProductToCurrentSaleOrder) return;
+
+  addProductToCurrentSaleOrder(event.detail);
+}
+
+function clearSaleOrderProductSelection() {
+  addProductToCurrentSaleOrder = null;
+}
+
+function initializeSaleOrderProductSelection() {
+  clearSaleOrderProductSelection();
+
   const resultsBox = document.querySelector("#product-search-results");
   const tbody = document.querySelector("#order-items-table tbody");
   const contextElement = document.querySelector(".order-context");
@@ -44,7 +53,7 @@ document.addEventListener("turbo:load", () => {
   // Solo aplicar este manejador en el contexto de ventas para evitar choques con POs
   if (!resultsBox || !tbody || context !== "sale-order") return;
 
-  function addProductToOrder(product) {
+  addProductToCurrentSaleOrder = (product) => {
     const row = buildBlankPurchaseOrderItemRow(index);
 
     // Fill in product details
@@ -97,20 +106,15 @@ document.addEventListener("turbo:load", () => {
 
     // Trigger update of totals
     updateItemTotals();
-  }
+  };
+}
 
-  // Recibir selección desde buscador (eventos personalizados)
-  document.addEventListener("product:selected", (ev) => {
-    const product = ev.detail;
-    if (!product) return;
-    addProductToOrder(product);
-  });
-  document.addEventListener("product-search:selected", (ev) => {
-    const product = ev.detail;
-    if (!product) return;
-    addProductToOrder(product);
-  });
-});
+// Register the document-level selection handlers once. Each Turbo load only
+// replaces the callback that targets the current sale-order DOM.
+document.addEventListener("product:selected", handleSaleOrderProductSelection);
+document.addEventListener("product-search:selected", handleSaleOrderProductSelection);
+document.addEventListener("turbo:load", initializeSaleOrderProductSelection);
+document.addEventListener("turbo:before-cache", clearSaleOrderProductSelection);
 
 function buildBlankPurchaseOrderItemRow(index) {
   const tr = createElementWithClasses("tr", ["item-row"]);
