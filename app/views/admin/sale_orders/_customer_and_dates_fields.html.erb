@@ -46,13 +46,16 @@
   <%= f.label :status, "Estado", class: "form-label" %>
   <div class="input-group">
     <span class="input-group-text"><i class="fa-solid fa-flag"></i></span>
+    <%# 'Canceled' se excluye a propósito: cancelar exige la acción Cancelar, que
+        valida pagos, envío e inventario vendido antes de liberar nada. %>
     <%= f.select :status,
-        SaleOrder::STATUSES.map { |status| [sale_status_labels.fetch(status, status), status] },
+        (SaleOrder::STATUSES - ['Canceled']).map { |status| [sale_status_labels.fetch(status, status), status] },
         {},
         class: "form-select" %>
   </div>
   <div class="form-text admin-order-field-note">
     <i class="fa-solid fa-circle-info"></i> El estado refleja el avance comercial y logístico de la orden.
+    Para cancelar usa la acción <strong>Cancelar</strong> de la orden.
   </div>
 </div>
 

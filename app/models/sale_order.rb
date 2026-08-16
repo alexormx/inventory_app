@@ -33,6 +33,11 @@ class SaleOrder < ApplicationRecord
 
   accepts_nested_attributes_for :sale_order_items, allow_destroy: true
 
+  # Autorización de instancia que sólo concede SaleOrders::CancelOrderService.
+  # No es un flag global: vive en el objeto que el servicio está cancelando, así
+  # que ningún otro camino puede activarla por accidente.
+  attr_accessor :cancellation_authorized
+
   validates :order_date, presence: true
   validates :subtotal, presence: true, numericality: { greater_than_or_equal_to: 0 }
   validates :tax_rate, presence: true, numericality: { greater_than_or_equal_to: 0, less_than_or_equal_to: 100 }
@@ -44,14 +49,18 @@ class SaleOrder < ApplicationRecord
   # Scope para buscar órdenes por idempotency_key
   scope :by_idempotency_key, ->(key, user) { where(idempotency_key: key, user_id: user.id) }
   validate :ensure_payment_and_shipment_present
+  validate :cancellation_must_use_canonical_service
   validates :shipping_cost, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true
 
   before_validation :set_default_status, on: :create
   before_validation :compute_financials
   before_validation :normalize_status
   before_create :generate_custom_id
-  # Opcional: si cambias status a 'Canceled', libera lo reservado
-  after_update :release_reserved_if_canceled, if: :saved_change_to_status?
+  # La liberación de inventario al cancelar vive únicamente en
+  # SaleOrders::CancelOrderService. Antes existía aquí un after_update paralelo
+  # que soltaba reserved/pre_reserved sin comprobar pagos, envíos ni inventario
+  # vendido, y que además dejaba sold_price intacto: dos implementaciones que
+  # podían divergir. El guard de status hace que el servicio sea el único camino.
   # Sincronizar estado del shipment cuando la orden pase a Delivered
   after_update :ensure_shipment_status_matches, if: :saved_change_to_status?
   # Sincronizar inventarios reservado<->vendido al alternar Pending/Confirmed
@@ -292,11 +301,19 @@ class SaleOrder < ApplicationRecord
     inventories.where(status: %w[pre_reserved pre_sold]).update_all(release_incoming_inventory_attributes)
   end
 
-  def release_reserved_if_canceled
+  # Cancelar una orden viva exige el flujo canónico, que valida pagos, envíos e
+  # inventario vendido antes de tocar nada. Un registro nuevo se puede importar
+  # ya cancelado: todavía no tiene inventario ni pagos que proteger.
+  def cancellation_must_use_canonical_service
+    return if new_record?
+    return unless will_save_change_to_status?
     return unless status == 'Canceled'
+    return if cancellation_authorized
 
-    inventories.where(status: :reserved).update_all(release_inventory_attributes)
-    inventories.where(status: :pre_reserved).update_all(release_incoming_inventory_attributes)
+    errors.add(
+      :status,
+      'sólo puede cambiar a "Canceled" mediante SaleOrders::CancelOrderService; usa la acción Cancelar de la orden'
+    )
   end
 
   def release_inventory_attributes
