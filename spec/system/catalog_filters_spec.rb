@@ -11,13 +11,6 @@ RSpec.describe 'Catalog filter navigation', type: :system, js: true do
     Rack::Utils.parse_nested_query(URI.parse(page.current_url).query.to_s)
   end
 
-  def accept_cookies_if_present
-    return unless page.has_button?('Aceptar', wait: 2)
-
-    click_button 'Aceptar'
-    expect(page).to have_no_css('#cookie-overlay', visible: true)
-  end
-
   def expect_complete_filter_state
     expect(current_query).to include(
       'q' => 'Catalog System',

@@ -17,13 +17,17 @@ RSpec.describe 'Admin products pipeline (system)', type: :system, js: true do
   # Ir directo a la pestaña Drafts
   visit admin_products_drafts_path
     expect(page).to have_css('turbo-frame#products_frame')
-    expect(page).to have_content('Total Draft')
+    # El contador dejó de ser el badge "Total Draft:" y vive en la pestaña
+    # "Borradores (N)" desde que la UI de admin pasó a tabs (dde799c1). Lo que
+    # se verifica sigue siendo lo mismo: el total baja al activar un producto
+    # sin recargar la página completa.
+    expect(page).to have_content('Borradores')
 
     # Leer total inicial de Drafts y hacer clic en Activar
     initial_text = within('turbo-frame#products_frame') do
-      find('span.badge.bg-secondary', text: /Total Draft:/).text
+      find('a.nav-link', text: /Borradores \(\d+\)/).text
     end
-    initial = initial_text[/Total Draft:\s*(\d+)/, 1].to_i
+    initial = initial_text[/Borradores \((\d+)\)/, 1].to_i
 
     within('turbo-frame#products_frame') do
       click_link('Activar', match: :first)
@@ -32,7 +36,7 @@ RSpec.describe 'Admin products pipeline (system)', type: :system, js: true do
     # Esperar a que se reemplace el frame y verificar el nuevo total
     expect(page).to have_css('turbo-frame#products_frame')
     within('turbo-frame#products_frame') do
-      expect(page).to have_selector('span.badge.bg-secondary', text: /Total Draft:\s*#{initial - 1}/)
+      expect(page).to have_selector('a.nav-link', text: "Borradores (#{initial - 1})")
     end
 
     # Activar el primer producto
