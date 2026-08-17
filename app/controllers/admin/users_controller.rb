@@ -34,7 +34,12 @@ module Admin
 
       # Subconsultas para estadísticos por usuario (expresiones reutilizables)
       purchases_total_expr = '(SELECT COALESCE(SUM(total_cost_mxn),0) FROM purchase_orders po WHERE po.user_id = users.id)'
-      sales_total_expr     = '(SELECT COALESCE(SUM(total_order_value),0) FROM sale_orders so WHERE so.user_id = users.id)'
+      # Las canceladas no suman a ventas ni a adeudo: siguen en el historial,
+      # pero su valor ya no es realizable ni cobrable.
+      sales_total_expr     = <<~SQL.squish
+        (SELECT COALESCE(SUM(total_order_value),0) FROM sale_orders so
+         WHERE so.user_id = users.id AND #{SaleOrder.active_totals_sql_condition('so')})
+      SQL
       last_purchase_expr   = '(SELECT MAX(order_date) FROM purchase_orders po2 WHERE po2.user_id = users.id)'
       last_sale_expr       = '(SELECT MAX(order_date) FROM sale_orders so2 WHERE so2.user_id = users.id)'
       last_visit_expr      = '(SELECT MAX(last_visited_at) FROM visitor_logs vl WHERE vl.user_id = users.id)'
@@ -60,6 +65,7 @@ module Admin
           ), 0)
           FROM sale_orders so3
           WHERE so3.user_id = users.id
+            AND #{SaleOrder.active_totals_sql_condition('so3')}
         )
       SQL
 
@@ -185,17 +191,19 @@ module Admin
     def show
       @user = User.find(params[:id])
 
-      # Estadísticas del usuario
-      @total_purchases = PurchaseOrder.where(user_id: @user.id).sum(:total_cost_mxn)
-      @total_sales = SaleOrder.where(user_id: @user.id).sum(:total_order_value)
-      @purchase_count = PurchaseOrder.where(user_id: @user.id).count
-      @sale_count = SaleOrder.where(user_id: @user.id).count
+      # Estadísticas del usuario. Las canceladas quedan fuera de los totales
+      # financieros pero siguen contándose y listándose como historial.
+      user_sale_orders = SaleOrder.where(user_id: @user.id)
 
-      # Adeudo pendiente
-      @balance_due = SaleOrder.where(user_id: @user.id).sum do |so|
-        paid = so.payments.where(status: 'Completed').sum(:amount)
-        [so.total_order_value - paid, 0].max
-      end
+      @total_purchases = PurchaseOrder.where(user_id: @user.id).sum(:total_cost_mxn)
+      @total_sales = user_sale_orders.active_for_totals.sum(:total_order_value)
+      @purchase_count = PurchaseOrder.where(user_id: @user.id).count
+      @sale_count = user_sale_orders.count
+      @canceled_sale_count = user_sale_orders.where(status: SaleOrder::NON_ACTIVE_TOTAL_STATUSES).count
+
+      # Adeudo pendiente: suma de los saldos abiertos, en SQL. Antes cargaba
+      # todas las órdenes del cliente y consultaba pagos una por una.
+      @balance_due = user_sale_orders.open_receivables.sum(Arel.sql(SaleOrder::BALANCE_SQL)).to_d
 
       # Últimas órdenes
       @recent_sales = SaleOrder.where(user_id: @user.id).order(created_at: :desc).limit(5)
@@ -275,9 +283,16 @@ module Admin
                                     .pluck(:user_id, Arel.sql('SUM(total_cost_mxn) AS total_value'), Arel.sql('MAX(order_date) AS last_date'))
                                     .each_with_object({}) { |(uid, total, last_date), h| h[uid] = { total_value: total, last_date: last_date } }
 
+      # El importe excluye las canceladas; la fecha de última orden no, porque
+      # es actividad del cliente, no dinero.
+      active_value_sql = <<~SQL.squish
+        SUM(CASE WHEN #{SaleOrder.active_totals_sql_condition('sale_orders')}
+                 THEN COALESCE(total_order_value, 0) ELSE 0 END) AS total_value
+      SQL
+
       sales_stats = SaleOrder.where(user_id: user_ids)
                              .group(:user_id)
-                             .pluck(:user_id, Arel.sql('SUM(total_order_value) AS total_value'), Arel.sql('MAX(order_date) AS last_date'))
+                             .pluck(:user_id, Arel.sql(active_value_sql), Arel.sql('MAX(order_date) AS last_date'))
                              .each_with_object({}) { |(uid, total, last_date), h| h[uid] = { total_value: total, last_date: last_date } }
 
       last_visits = VisitorLog.where(user_id: user_ids).group(:user_id).maximum(:last_visited_at)

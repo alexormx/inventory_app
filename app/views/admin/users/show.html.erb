@@ -54,7 +54,12 @@
             <div>
               <div class="text-muted small">Total Ventas</div>
               <div class="h4 mb-0 text-primary"><%= number_to_currency(@total_sales, unit: '$', precision: 0) %></div>
-              <div class="small text-muted"><%= @sale_count %> órdenes</div>
+              <%# El total excluye las canceladas, así que el conteo aclara la diferencia. %>
+              <div class="small text-muted">
+                <%= @sale_count %> órdenes<% if @canceled_sale_count.to_i.positive? %>
+                  <span class="text-muted">(<%= @canceled_sale_count %> cancelada<%= 's' if @canceled_sale_count != 1 %>, sin sumar)</span>
+                <% end %>
+              </div>
             </div>
             <div class="text-primary opacity-25"><i class="fa-solid fa-cart-shopping fa-2x"></i></div>
           </div>

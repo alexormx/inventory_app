@@ -104,8 +104,12 @@ module Dashboard
       (current - previous).round(2)
     end
 
+    # Qué cuenta como venta activa lo define Dashboard::Metrics::SALE_STATUSES.
+    # Aquí estaba escrito a mano y omitía 'Preparing', un estado posterior a
+    # Confirmed (la orden ya está confirmada y se está surtiendo), así que esas
+    # órdenes desaparecían de los KPIs.
     def base_scope
-      SaleOrder.where(status: ['Confirmed', 'In Transit', 'Delivered'])
+      SaleOrder.where(status: Dashboard::Metrics::SALE_STATUSES)
     end
   end
 end
