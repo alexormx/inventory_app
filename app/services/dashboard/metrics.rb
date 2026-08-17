@@ -5,7 +5,9 @@ module Dashboard
     REV_SQL = SaleOrderItem::LINE_REVENUE_SQL
     COGS_SQL = SaleOrderItem::LINE_COGS_SQL
     UNITS_SQL = 'COALESCE(sale_order_items.quantity, 0)'
-    SALE_STATUSES = ['Confirmed', 'Preparing', 'In Transit', 'Delivered'].freeze
+    # Mismo concepto que las métricas de venta por producto, así que comparten
+    # una sola definición en el modelo que es dueño de la semántica de estados.
+    SALE_STATUSES = SaleOrder::ACTIVE_SALE_STATUSES
     LOST_STATUSES = %w[Canceled Returned].freeze
 
     module_function
