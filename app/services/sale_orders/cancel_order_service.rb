@@ -38,7 +38,7 @@ module SaleOrders
         release_inventories!(linked_inventories)
         cancel_linked_preorders!(sale_order_item_ids)
 
-        sale_order.update!(status: 'Canceled')
+        cancel_sale_order!
         update_product_stats!
         canceled_now = true
 
@@ -51,6 +51,16 @@ module SaleOrders
     end
 
     private
+
+    # Único punto de la aplicación autorizado a llevar una orden viva a Canceled.
+    # La autorización se concede sobre esta instancia y se retira enseguida, de
+    # modo que un objeto reutilizado no arrastre el permiso.
+    def cancel_sale_order!
+      sale_order.cancellation_authorized = true
+      sale_order.update!(status: 'Canceled')
+    ensure
+      sale_order.cancellation_authorized = false
+    end
 
     def block_if_payment_review_required!
       received_payment = sale_order.payments.lock

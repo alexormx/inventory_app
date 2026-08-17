@@ -95,9 +95,18 @@ module SaleOrders
 
         # 3) No eliminamos líneas; preservamos como historial. Si se desea, el admin puede luego editar cantidades manualmente.
 
-        # 4) Si ya no quedan inventarios ligados (excepto sold), marcar la SO como Canceled
+        # 4) Si ya no quedan inventarios ligados (excepto sold), cerrar la SO.
+        # Pasa por el flujo canónico: si la orden tiene inventario vendido, pagos
+        # recibidos o envío, el servicio la rechaza y la orden queda abierta para
+        # revisión en lugar de cancelarse dejando piezas huérfanas.
         remaining_non_sold = Inventory.where(sale_order_id: so.id).where.not(status: :sold).count
-        so.update!(status: 'Canceled') if remaining_non_sold.zero? && so.status != 'Canceled'
+        if remaining_non_sold.zero? && so.status != 'Canceled'
+          begin
+            SaleOrders::CancelOrderService.new(so).call
+          rescue SaleOrders::CancelOrderService::CancellationBlocked => e
+            errors << "SO #{so.id}: no se canceló automáticamente (#{e.message})"
+          end
+        end
 
         # 5) Recalcular totales de la SO
         so.recalculate_totals!(persist: true)
