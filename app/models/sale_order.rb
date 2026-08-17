@@ -109,12 +109,6 @@ class SaleOrder < ApplicationRecord
   # excluye es su aportación a los agregados financieros vivos.
   NON_ACTIVE_TOTAL_STATUSES = ['Canceled'].freeze
 
-  # Condición SQL equivalente, para las subconsultas que no pueden usar el scope.
-  def self.active_totals_sql_condition(table_alias)
-    quoted = NON_ACTIVE_TOTAL_STATUSES.map { |status| connection.quote(status) }.join(', ')
-    "#{table_alias}.status NOT IN (#{quoted})"
-  end
-
   # Órdenes que sí suman a ventas y adeudo del cliente.
   scope :active_for_totals, -> { where.not(status: NON_ACTIVE_TOTAL_STATUSES) }
 

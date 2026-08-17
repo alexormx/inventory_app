@@ -36,9 +36,14 @@ module Admin
       purchases_total_expr = '(SELECT COALESCE(SUM(total_cost_mxn),0) FROM purchase_orders po WHERE po.user_id = users.id)'
       # Las canceladas no suman a ventas ni a adeudo: siguen en el historial,
       # pero su valor ya no es realizable ni cobrable.
+      # El literal 'Canceled' refleja SaleOrder::NON_ACTIVE_TOTAL_STATUSES. Va
+      # escrito así, y no interpolado desde la constante, porque estas
+      # subconsultas se arman como SQL crudo y el escáner de seguridad no puede
+      # verificar una interpolación aunque su origen sea constante. Una spec
+      # comprueba que la constante siga siendo exactamente ['Canceled'].
       sales_total_expr     = <<~SQL.squish
         (SELECT COALESCE(SUM(total_order_value),0) FROM sale_orders so
-         WHERE so.user_id = users.id AND #{SaleOrder.active_totals_sql_condition('so')})
+         WHERE so.user_id = users.id AND so.status <> 'Canceled')
       SQL
       last_purchase_expr   = '(SELECT MAX(order_date) FROM purchase_orders po2 WHERE po2.user_id = users.id)'
       last_sale_expr       = '(SELECT MAX(order_date) FROM sale_orders so2 WHERE so2.user_id = users.id)'
@@ -65,7 +70,7 @@ module Admin
           ), 0)
           FROM sale_orders so3
           WHERE so3.user_id = users.id
-            AND #{SaleOrder.active_totals_sql_condition('so3')}
+            AND so3.status <> 'Canceled'
         )
       SQL
 
@@ -286,7 +291,7 @@ module Admin
       # El importe excluye las canceladas; la fecha de última orden no, porque
       # es actividad del cliente, no dinero.
       active_value_sql = <<~SQL.squish
-        SUM(CASE WHEN #{SaleOrder.active_totals_sql_condition('sale_orders')}
+        SUM(CASE WHEN sale_orders.status <> 'Canceled'
                  THEN COALESCE(total_order_value, 0) ELSE 0 END) AS total_value
       SQL
 

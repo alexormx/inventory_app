@@ -96,6 +96,16 @@ RSpec.describe 'Admin::Users canceled order financials', type: :request do
     end
   end
 
+  # Las subconsultas crudas del índice llevan 'Canceled' escrito como literal
+  # (el escáner de seguridad no puede verificar una interpolación aunque venga
+  # de una constante). Si la constante cambia, hay que actualizar esos literales
+  # y esta prueba lo obliga.
+  describe 'the raw-SQL literals and the constant' do
+    it 'still has Canceled as the only non-active status' do
+      expect(SaleOrder::NON_ACTIVE_TOTAL_STATUSES).to eq(['Canceled'])
+    end
+  end
+
   describe 'the canonical scope' do
     it 'keeps canceled orders out of active totals but inside the base relation' do
       live_order(1000.0)
