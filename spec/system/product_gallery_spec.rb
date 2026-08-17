@@ -17,13 +17,6 @@ RSpec.describe 'Product gallery', type: :system, js: true do
     end
   end
 
-  def accept_cookies_if_present
-    return unless page.has_button?('Aceptar', wait: 2)
-
-    click_button 'Aceptar'
-    expect(page).to have_no_css('#cookie-overlay', visible: true)
-  end
-
   it 'switches slides with thumbnails and handles each arrow key once' do
     visit product_path(product)
     accept_cookies_if_present

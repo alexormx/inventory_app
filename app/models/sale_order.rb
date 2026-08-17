@@ -14,6 +14,19 @@ class SaleOrder < ApplicationRecord
     'Returned'
   ].freeze
 
+  # Estados en los que la orden cuenta como venta realizada: alimentan las
+  # métricas de venta (unidades vendidas, ingreso, ranking, panel).
+  #
+  # 'Pending' queda fuera a propósito: es una orden todavía no confirmada como
+  # venta —sin pagar y cancelable— así que sus líneas no son unidades vendidas.
+  # 'Canceled' y 'Returned' tampoco cuentan.
+  #
+  # OJO: esto NO es lo mismo que NON_ACTIVE_TOTAL_STATUSES / active_for_totals.
+  # Para el adeudo del cliente una orden Pending SÍ cuenta (el cliente la debe);
+  # allí sólo se excluye la cancelada. Son dos conceptos distintos y no deben
+  # unificarse.
+  ACTIVE_SALE_STATUSES = ['Confirmed', 'Preparing', 'In Transit', 'Delivered'].freeze
+
   CANONICAL_STATUS = {
     'pending' => 'Pending',
     'confirmed' => 'Confirmed', 'preparing' => 'Preparing', 'in_transit' => 'In Transit',
@@ -33,6 +46,11 @@ class SaleOrder < ApplicationRecord
 
   accepts_nested_attributes_for :sale_order_items, allow_destroy: true
 
+  # Autorización de instancia que sólo concede SaleOrders::CancelOrderService.
+  # No es un flag global: vive en el objeto que el servicio está cancelando, así
+  # que ningún otro camino puede activarla por accidente.
+  attr_accessor :cancellation_authorized
+
   validates :order_date, presence: true
   validates :subtotal, presence: true, numericality: { greater_than_or_equal_to: 0 }
   validates :tax_rate, presence: true, numericality: { greater_than_or_equal_to: 0, less_than_or_equal_to: 100 }
@@ -44,14 +62,18 @@ class SaleOrder < ApplicationRecord
   # Scope para buscar órdenes por idempotency_key
   scope :by_idempotency_key, ->(key, user) { where(idempotency_key: key, user_id: user.id) }
   validate :ensure_payment_and_shipment_present
+  validate :cancellation_must_use_canonical_service
   validates :shipping_cost, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true
 
   before_validation :set_default_status, on: :create
   before_validation :compute_financials
   before_validation :normalize_status
   before_create :generate_custom_id
-  # Opcional: si cambias status a 'Canceled', libera lo reservado
-  after_update :release_reserved_if_canceled, if: :saved_change_to_status?
+  # La liberación de inventario al cancelar vive únicamente en
+  # SaleOrders::CancelOrderService. Antes existía aquí un after_update paralelo
+  # que soltaba reserved/pre_reserved sin comprobar pagos, envíos ni inventario
+  # vendido, y que además dejaba sold_price intacto: dos implementaciones que
+  # podían divergir. El guard de status hace que el servicio sea el único camino.
   # Sincronizar estado del shipment cuando la orden pase a Delivered
   after_update :ensure_shipment_status_matches, if: :saved_change_to_status?
   # Sincronizar inventarios reservado<->vendido al alternar Pending/Confirmed
@@ -60,6 +82,19 @@ class SaleOrder < ApplicationRecord
 
   # Actualizar UI (status badge) por Turbo cuando cambie el estado
   after_commit :broadcast_status_change, if: -> { previous_changes.key?('status') }
+
+  # Las estadísticas de venta del producto dependen del estado de la orden, no
+  # sólo de sus líneas. Sin esto, pasar de Pending a Confirmed dejaba las cifras
+  # del producto congeladas hasta que alguien tocara una línea.
+  #
+  # Sólo se recalcula cuando el estado cruza la frontera activo/inactivo:
+  # moverse dentro del conjunto activo (Confirmed -> Preparing -> Delivered) no
+  # cambia ninguna suma, y Pending -> Canceled tampoco (ninguno de los dos
+  # cuenta), lo que de paso evita duplicar el refresco que ya hace
+  # SaleOrders::CancelOrderService.
+  #
+  # after_commit: si la transición se revierte, las cifras no se tocan.
+  after_commit :refresh_product_sales_stats, on: %i[create update], if: :sales_activity_changed?
 
   def total_paid
     payments.where(status: 'Completed').sum(:amount)
@@ -104,11 +139,19 @@ class SaleOrder < ApplicationRecord
     select("sale_orders.*, #{BALANCE_SQL} AS balance")
   }
 
+  # Estados cuyo valor ya no cuenta como venta activa ni como adeudo cobrable.
+  # La orden sigue existiendo y visible en el historial del cliente; lo que se
+  # excluye es su aportación a los agregados financieros vivos.
+  NON_ACTIVE_TOTAL_STATUSES = ['Canceled'].freeze
+
+  # Órdenes que sí suman a ventas y adeudo del cliente.
+  scope :active_for_totals, -> { where.not(status: NON_ACTIVE_TOTAL_STATUSES) }
+
   # Filtra órdenes con balance > 0 (cuentas por cobrar abiertas).
   # Las canceladas quedan fuera: su saldo ya no es cobrable aunque
   # total_order_value siga registrado y no haya pagos que lo compensen.
   scope :open_receivables, lambda {
-    where.not(status: 'Canceled').where(Arel.sql("#{BALANCE_SQL} > 0"))
+    active_for_totals.where(Arel.sql("#{BALANCE_SQL} > 0"))
   }
 
   # Ordena por due_date con NULLS LAST y luego por created_at DESC, portable entre motores
@@ -292,11 +335,19 @@ class SaleOrder < ApplicationRecord
     inventories.where(status: %w[pre_reserved pre_sold]).update_all(release_incoming_inventory_attributes)
   end
 
-  def release_reserved_if_canceled
+  # Cancelar una orden viva exige el flujo canónico, que valida pagos, envíos e
+  # inventario vendido antes de tocar nada. Un registro nuevo se puede importar
+  # ya cancelado: todavía no tiene inventario ni pagos que proteger.
+  def cancellation_must_use_canonical_service
+    return if new_record?
+    return unless will_save_change_to_status?
     return unless status == 'Canceled'
+    return if cancellation_authorized
 
-    inventories.where(status: :reserved).update_all(release_inventory_attributes)
-    inventories.where(status: :pre_reserved).update_all(release_incoming_inventory_attributes)
+    errors.add(
+      :status,
+      'sólo puede cambiar a "Canceled" mediante SaleOrders::CancelOrderService; usa la acción Cancelar de la orden'
+    )
   end
 
   def release_inventory_attributes
@@ -409,6 +460,27 @@ class SaleOrder < ApplicationRecord
     )
   rescue StandardError => e
     Rails.logger.error "[SaleOrder#broadcast_status_change] #{e.class}: #{e.message}"
+  end
+
+  # ¿La transición cambió si esta orden cuenta como venta? Sólo entonces hay
+  # algo que recalcular.
+  def sales_activity_changed?
+    status_change = previous_changes['status']
+    return false if status_change.blank?
+
+    was_active, is_active = status_change.map { |value| ACTIVE_SALE_STATUSES.include?(value) }
+    was_active != is_active
+  end
+
+  def refresh_product_sales_stats
+    product_ids = sale_order_items.distinct.pluck(:product_id).compact
+    return if product_ids.empty?
+
+    Product.where(id: product_ids).find_each do |product|
+      Products::UpdateStatsService.new(product).call
+    end
+  rescue StandardError => e
+    Rails.logger.error "[SaleOrder#refresh_product_sales_stats] order_id=#{id} #{e.class}: #{e.message}"
   end
 
   def normalize_status

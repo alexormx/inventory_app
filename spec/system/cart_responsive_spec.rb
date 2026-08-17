@@ -50,13 +50,6 @@ RSpec.describe 'Responsive shopping cart', :js, type: :system do
     JS
   end
 
-  def accept_cookies_if_present
-    return unless page.has_button?('Aceptar', wait: 2)
-
-    click_button 'Aceptar'
-    expect(page).to have_no_css('#cookie-overlay', visible: true)
-  end
-
   def add_cart_item(product, expected_count:, condition: 'brand_new')
     result = page.evaluate_async_script(<<~JS, product.id, condition)
       const [productId, condition, done] = arguments;

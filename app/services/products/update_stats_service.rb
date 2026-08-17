@@ -59,8 +59,12 @@ module Products
     end
 
     def update_sales_stats
+      # Qué cuenta como venta lo define SaleOrder::ACTIVE_SALE_STATUSES.
+      # Esta lista estaba escrita a mano y divergía en los dos extremos: incluía
+      # 'Pending' (orden sin confirmar ni pagar, que no es una venta) y omitía
+      # 'Preparing' (orden ya confirmada y surtiéndose, que sí lo es).
       items = @product.sale_order_items.joins(:sale_order)
-                      .where(sale_orders: { status: ['Pending', 'Confirmed', 'In Transit', 'Delivered'] })
+                      .where(sale_orders: { status: SaleOrder::ACTIVE_SALE_STATUSES })
 
       @product.total_sales_quantity = items.sum(:quantity)
       @product.total_sales_value = items.sum('quantity * unit_final_price')

@@ -139,13 +139,17 @@ module Api
             if desired_status != 'Pending'
               # Recargar para asegurar que asociaciones persistan, y actualizar con callbacks/validaciones
               sales_order.reload
-              sales_order.update!(status: desired_status)
+              apply_sale_order_status!(sales_order, desired_status)
             end
             render_success(sales_order, response_extra)
             return
           end
         rescue ActiveRecord::RecordInvalid => e
           render_unprocessable_entity(e)
+        rescue SaleOrders::CancelOrderService::CancellationBlocked => e
+          # Cancelación rechazada por el flujo canónico: es una petición inválida
+          # para el cliente, no una falla del servidor.
+          render json: { status: 'error', message: e.message }, status: :unprocessable_entity and return
         rescue StandardError => e
           render_internal_error(e)
         end
@@ -276,7 +280,7 @@ module Api
               end
 
               # Aplicar status deseado (si viene), sin validaciones
-              sales_order.update!(status: desired_status) if incoming_status.present? && desired_status != sales_order.status
+              apply_sale_order_status!(sales_order, desired_status) if incoming_status.present? && desired_status != sales_order.status
             else
               # Flujo normal: actualizamos con validaciones y luego garantizamos payment/shipment si el estado deseado lo requiere
               sales_order.update!(update_attrs)
@@ -336,19 +340,33 @@ module Api
                 response_extra[:shipment] = shipment
               end
 
-              sales_order.update!(status: desired_status) if incoming_status.present? || desired_status != sales_order.status
+              apply_sale_order_status!(sales_order, desired_status) if incoming_status.present? || desired_status != sales_order.status
             end
 
             render json: { status: 'success', sales_order: sales_order.reload, extra: response_extra }, status: :ok and return
           end
         rescue ActiveRecord::RecordInvalid => e
           render json: { status: 'error', errors: e.record.errors.full_messages }, status: :unprocessable_entity and return
+        rescue SaleOrders::CancelOrderService::CancellationBlocked => e
+          # Cancelación rechazada por el flujo canónico: es una petición inválida
+          # para el cliente, no una falla del servidor.
+          render json: { status: 'error', message: e.message }, status: :unprocessable_entity and return
         rescue StandardError => e
           render json: { status: 'error', message: e.message }, status: :internal_server_error and return
         end
       end
 
       private
+
+      # Cancelar exige el flujo canónico (valida pagos, envío e inventario
+      # vendido). El resto de estados conserva el comportamiento previo.
+      def apply_sale_order_status!(sales_order, desired_status)
+        if desired_status == 'Canceled'
+          SaleOrders::CancelOrderService.new(sales_order).call
+        else
+          sales_order.update!(status: desired_status)
+        end
+      end
 
       def render_success(sales_order, extra)
         return if performed?

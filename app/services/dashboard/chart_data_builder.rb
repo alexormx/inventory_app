@@ -137,8 +137,10 @@ module Dashboard
       [now.beginning_of_year.to_date, now.end_of_day]
     end
 
+    # Mismo universo que el resto del panel: Dashboard::Metrics::SALE_STATUSES.
+    # La lista escrita a mano omitía 'Preparing'.
     def base_scope
-      SaleOrder.where(status: ['Confirmed', 'In Transit', 'Delivered'])
+      SaleOrder.where(status: Dashboard::Metrics::SALE_STATUSES)
     end
 
     def db_adapter

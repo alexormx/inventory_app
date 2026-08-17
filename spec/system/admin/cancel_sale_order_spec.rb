@@ -24,7 +24,10 @@ RSpec.describe 'Admin cancels sale order', type: :system do
   end
 
   it 'does not show the cancel button for an already canceled order' do
-    sale_order.update!(status: 'Canceled')
+    # Cancelar por el camino canónico: el guard de SaleOrder rechaza un
+    # update! directo a 'Canceled' sobre una orden viva, así que llegar al
+    # estado por el servicio es además lo que ocurre en producción.
+    SaleOrders::CancelOrderService.new(sale_order).call
     visit admin_sale_order_path(sale_order)
 
     expect(page).not_to have_css("form[action='#{cancel_admin_sale_order_path(sale_order)}']")

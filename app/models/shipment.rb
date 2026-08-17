@@ -83,7 +83,15 @@ class Shipment < ApplicationRecord
           Rails.logger.warn "[Shipment#sync] Blocked delivered without payment or credit (sale_order_id=#{so.id})"
         end
       when 'canceled'
-        so.update!(status: 'Canceled') unless %w[Delivered Canceled].include?(so.status)
+        # Cancelar el envío no puede cancelar la orden por la vía rápida: pasa por
+        # el flujo canónico y, si éste lo rechaza, la orden queda como estaba.
+        unless %w[Delivered Canceled].include?(so.status)
+          begin
+            SaleOrders::CancelOrderService.new(so).call
+          rescue SaleOrders::CancelOrderService::CancellationBlocked => e
+            Rails.logger.warn "[Shipment#sync] Cancelación bloqueada para sale_order_id=#{so.id}: #{e.message}"
+          end
+        end
       when 'returned'
         so.update!(status: 'Returned') unless so.status == 'Returned'
       end
