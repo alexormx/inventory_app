@@ -29,6 +29,7 @@ import PriceRangeController from "./price_range_controller"
 import InventoryLocationsController from "./inventory_locations_controller"
 import LocationSuggestController from "./location_suggest_controller"
 import BulkLocationAssignController from "./bulk_location_assign_controller"
+import BulkVerificationController from "./bulk_verification_controller"
 import InventoryTransferController from "./inventory_transfer_controller"
 import CollectibleQuickAddController from "./collectible_quick_add_controller"
 import CatalogLinkController from "./catalog_link_controller"
@@ -73,6 +74,7 @@ application.register("price-range", PriceRangeController)
 application.register("inventory-locations", InventoryLocationsController)
 application.register("location-suggest", LocationSuggestController)
 application.register("bulk-location-assign", BulkLocationAssignController)
+application.register("bulk-verification", BulkVerificationController)
 application.register("inventory-transfer", InventoryTransferController)
 application.register("collectible-quick-add", CollectibleQuickAddController)
 application.register("catalog-link", CatalogLinkController)

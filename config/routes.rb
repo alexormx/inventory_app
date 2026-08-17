@@ -48,8 +48,15 @@ Rails.application.routes.draw do
     post 'inventory_audit/auto_assign', to: 'inventory_audits#auto_assign', as: :inventory_audit_auto_assign
     # Inventory Events (audit trail de cambios de costo / desvinculaciones)
     resources :inventory_events, only: [:index]
-    # Physical inventory verification (one exact Inventory row per action)
-    resources :inventory_verifications, only: %i[index show create]
+    # Physical inventory verification (one exact Inventory row per write)
+    # bulk_review/bulk conservan esa garantía: reciben IDs exactos y llaman al
+    # servicio una vez por unidad. No existe asignación por producto+cantidad.
+    resources :inventory_verifications, only: %i[index show create] do
+      collection do
+        post :bulk_review
+        post :bulk
+      end
+    end
     # Inventory reconciliation trigger
     resources :inventory_reconciliations, only: [:create]
     # Preorders audit

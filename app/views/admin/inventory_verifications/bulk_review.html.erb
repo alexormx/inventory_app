@@ -1,0 +1,95 @@
+<div class="container-fluid px-0">
+  <div class="mb-4">
+    <h1 class="h3 mb-1"><i class="fa-solid fa-list-check me-2"></i>Revisar asignación de ubicación</h1>
+    <p class="text-muted mb-0">
+      Confirma las unidades exactas que tienes físicamente delante antes de escribir nada.
+    </p>
+  </div>
+
+  <% if @skipped_ids.any? %>
+    <div class="alert alert-warning" role="alert">
+      <strong><%= @skipped_ids.size %></strong> unidad(es) quedaron fuera de la revisión porque
+      ya no requieren ubicación física o dejaron de ser verificables:
+      <span class="font-monospace"><%= @skipped_ids.join(', ') %></span>
+    </div>
+  <% end %>
+
+  <%# Igual que el paso anterior: la confirmación responde con el desglose por %>
+  <%# unidad, no con una redirección, así que va fuera de Turbo. %>
+  <%= form_with url: bulk_admin_inventory_verifications_path, method: :post, local: true,
+                id: 'bulk-confirm-form', data: { turbo: false } do %>
+    <% @inventories.each do |inventory| %>
+      <%= hidden_field_tag 'inventory_ids[]', inventory.id, id: "bulk-confirm-id-#{inventory.id}" %>
+      <% Inventories::VerifyPhysicalUnitService::SNAPSHOT_FIELDS.each do |field| %>
+        <%= hidden_field_tag "expected_snapshots[#{inventory.id}][#{field}]",
+                             @expected_snapshots.fetch(inventory).fetch(field.to_sym),
+                             id: "bulk-snapshot-#{inventory.id}-#{field}" %>
+      <% end %>
+    <% end %>
+
+    <div class="card shadow-sm mb-4">
+      <div class="card-body">
+        <div class="row g-3 align-items-end">
+          <div class="col-12 col-lg-8">
+            <%= label_tag :location_id, 'Ubicación física confirmada', class: 'form-label fw-semibold' %>
+            <%= select_tag :location_id,
+                           options_for_select([['Selecciona una ubicación final', '']] + @location_options),
+                           class: 'form-select form-select-lg',
+                           required: true,
+                           id: 'bulk-location-id' %>
+            <div class="form-text">Sólo se listan ubicaciones activas y finales (hoja).</div>
+          </div>
+          <div class="col-12 col-lg-4">
+            <%= label_tag :notes, 'Notas (opcional)', class: 'form-label' %>
+            <%= text_field_tag :notes, nil, class: 'form-control', maxlength: 500,
+                               placeholder: 'Observación de la revisión física' %>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h2 class="h5 mb-0">Unidades seleccionadas</h2>
+        <span class="badge bg-primary" id="bulk-review-count"><%= @inventories.size %> unidades</span>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0" id="bulk-review-table">
+          <thead>
+            <tr>
+              <th scope="col">Inventory ID</th>
+              <th scope="col">Producto</th>
+              <th scope="col">SKU</th>
+              <th scope="col">Estado actual</th>
+              <th scope="col">Ubicación actual</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @inventories.each do |inventory| %>
+              <tr data-inventory-id="<%= inventory.id %>">
+                <td class="fw-bold">#<%= inventory.id %></td>
+                <td><%= inventory.product.product_name %></td>
+                <td class="font-monospace small"><%= inventory.product.product_sku %></td>
+                <td>
+                  <span class="badge <%= inventory_verification_status_class(inventory.status) %>">
+                    <%= inventory_verification_status_label(inventory.status) %>
+                  </span>
+                </td>
+                <td><%= inventory.inventory_location&.full_path || 'Sin ubicación' %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="d-flex flex-wrap gap-2">
+      <%# Esta pantalla ya es el paso de confirmación: las unidades exactas están %>
+      <%# listadas arriba, así que un modal encima sería redundante. %>
+      <%= submit_tag "Confirmar asignación de #{@inventories.size} unidad(es)",
+                     class: 'btn btn-success btn-lg',
+                     id: 'bulk-confirm-submit' %>
+      <%= link_to 'Cancelar', admin_inventory_verifications_path, class: 'btn btn-outline-secondary btn-lg' %>
+    </div>
+  <% end %>
+</div>

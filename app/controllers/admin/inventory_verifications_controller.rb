@@ -21,6 +21,11 @@ module Admin
       sale_order_item
     ].freeze
     PAGE_SIZE = 20
+    # La selección se hace sobre una página (PAGE_SIZE), así que este tope sólo
+    # entra en juego ante una petición armada a mano. Existe porque cada unidad
+    # es una transacción propia y el dyno de producción tiene 512 MB: conviene
+    # rechazar el lote entero antes que quedarse a medias.
+    MAX_BULK_UNITS = 100
 
     before_action :authenticate_user!
     before_action :authorize_admin!
@@ -56,6 +61,74 @@ module Admin
       prepare_verification_form
     end
 
+    # Paso 1 del flujo multi-unidad: el admin marcó casillas de unidades exactas
+    # y pasa a revisarlas. No se escribe nada todavía; aquí sólo se cargan las
+    # unidades y se congela el snapshot con el que se confirmará después.
+    def bulk_review
+      if requested_bulk_ids.size > MAX_BULK_UNITS
+        redirect_to admin_inventory_verifications_path,
+                    alert: "Selecciona como máximo #{MAX_BULK_UNITS} unidades por lote.",
+                    status: :see_other
+        return
+      end
+
+      @inventories = bulk_selected_inventories
+
+      if @inventories.empty?
+        redirect_to admin_inventory_verifications_path,
+                    alert: 'Selecciona al menos una unidad de inventario para asignar ubicación.',
+                    status: :see_other
+        return
+      end
+
+      @expected_snapshots = @inventories.index_with { |inventory| SERVICE.snapshot_for(inventory) }
+      @location_options = verification_location_options
+      @skipped_ids = requested_bulk_ids - @inventories.map(&:id)
+    end
+
+    # Paso 2: confirmar. Cada unidad pasa por el servicio canónico de forma
+    # independiente, con su propio snapshot y su propia transacción, para que una
+    # unidad obsoleta no arrastre a las demás.
+    def bulk
+      location_id = params[:location_id].presence
+
+      if requested_bulk_ids.empty?
+        redirect_to admin_inventory_verifications_path,
+                    alert: 'Selecciona al menos una unidad de inventario para asignar ubicación.',
+                    status: :see_other
+        return
+      end
+
+      if requested_bulk_ids.size > MAX_BULK_UNITS
+        redirect_to admin_inventory_verifications_path,
+                    alert: "Selecciona como máximo #{MAX_BULK_UNITS} unidades por lote.",
+                    status: :see_other
+        return
+      end
+
+      # Se cargan TODOS los IDs pedidos, no sólo los que siguen siendo
+      # candidatos: quien decide si una unidad puede escribirse es el servicio,
+      # y así cada unidad que el admin marcó recibe un resultado explícito en
+      # lugar de desaparecer sin explicación.
+      found = inventory_scope.where(id: requested_bulk_ids).index_by(&:id)
+
+      @location = InventoryLocation.find_by(id: location_id)
+      @results = requested_bulk_ids.map do |id|
+        inventory = found[id]
+        if inventory
+          assign_single_unit(inventory, location_id)
+        else
+          { status: :failed, id: id, inventory: nil, reason: :not_found,
+            message: "No existe inventario con ID #{id}.",
+            next_action: 'Vuelve a la lista de unidades pendientes.' }
+        end
+      end
+      @assigned = @results.select { |r| r[:status] == :assigned }
+      @failures = @results.reject { |r| r[:status] == :assigned }
+
+      render :bulk_result, status: (@failures.any? ? :unprocessable_entity : :ok)
+    end
+
     def create
       attributes = verification_attributes
       result = verification_service.call(
@@ -84,7 +157,82 @@ module Admin
     private
 
     def candidate_scope
-      Inventory.requiring_location.without_location.where(status: %i[available reserved])
+      Inventory.requiring_location.without_location.where(status: SERVICE::SUPPORTED_STATUSES)
+    end
+
+    # IDs exactos marcados por el admin. Se normalizan a enteros y se deduplican;
+    # cualquier cosa que no sea un ID se descarta en vez de ampliar la selección.
+    def requested_bulk_ids
+      @requested_bulk_ids ||= Array(params[:inventory_ids])
+                              .flat_map { |value| value.to_s.split(',') }
+                              .filter_map { |value| Integer(value.to_s.strip, 10, exception: false) }
+                              .uniq
+    end
+
+    # Sólo se opera sobre unidades que siguen siendo candidatas. Filtrar por
+    # candidate_scope impide que un ID manipulado alcance una pieza ya ubicada,
+    # vendida o de otro estado no verificable.
+    def bulk_selected_inventories
+      return [] if requested_bulk_ids.empty?
+
+      candidate_scope.includes(DISPLAY_ASSOCIATIONS)
+                     .where(id: requested_bulk_ids)
+                     .order(created_at: :asc, id: :asc)
+                     .to_a
+    end
+
+    def assign_single_unit(inventory, location_id)
+      snapshot = submitted_snapshot_for(inventory) || SERVICE.snapshot_for(inventory)
+      result = SERVICE.call(
+        inventory_id: inventory.id,
+        result: 'found',
+        location_id: location_id,
+        actor: current_user,
+        expected_snapshot: snapshot,
+        notes: params[:notes]
+      )
+      { status: :assigned, id: inventory.id, inventory: result.inventory, event: result.event }
+    rescue SERVICE::StaleInventory => e
+      bulk_failure(inventory, :stale,
+                   "Cambió después de cargarse (#{e.changed_fields.join(', ')}).",
+                   'Vuelve a cargar la unidad y revisa su estado actual antes de reintentar.')
+    rescue SERVICE::ReservedInventoryRequiresReconciliation => e
+      bulk_failure(inventory, :reserved_reconciliation, e.message,
+                   'Requiere conciliación a nivel de orden antes de tocar la pieza.')
+    rescue SERVICE::InvalidInventoryState => e
+      bulk_failure(inventory, :invalid_state, e.message,
+                   'La unidad ya no es elegible para este flujo.')
+    rescue SERVICE::InvalidLocation => e
+      bulk_failure(inventory, :invalid_location, e.message,
+                   'Elige una ubicación activa y final.')
+    rescue SERVICE::InvalidSnapshot => e
+      bulk_failure(inventory, :invalid_snapshot, e.message,
+                   'Recarga la selección para capturar el estado actual.')
+    end
+
+    def bulk_failure(inventory, reason, message, next_action)
+      { status: :failed, id: inventory.id, inventory: inventory, reason: reason,
+        message: message, next_action: next_action }
+    end
+
+    # El snapshot se captura en la pantalla de revisión, no en la confirmación:
+    # así una unidad que cambió entre ambos pasos falla como StaleInventory en
+    # lugar de asignarse sobre un estado que el admin nunca vio.
+    def submitted_snapshot_for(inventory)
+      raw = params.dig(:expected_snapshots, inventory.id.to_s)
+      return if raw.blank?
+
+      permitted = raw.permit(*SERVICE::SNAPSHOT_FIELDS).to_h
+      return if SERVICE::SNAPSHOT_FIELDS.any? { |field| !permitted.key?(field) }
+
+      permitted
+    end
+
+    def verification_location_options
+      verification_locations.map do |location|
+        label = location.path_cache.presence || location.name
+        ["#{label} (#{location.code})", location.id]
+      end
     end
 
     def inventory_scope
@@ -150,15 +298,12 @@ module Admin
     end
 
     def verification_candidate?(inventory)
-      inventory.inventory_location_id.nil? && inventory.status.in?(%w[available reserved])
+      inventory.inventory_location_id.nil? && inventory.status.in?(SERVICE::SUPPORTED_STATUSES)
     end
 
     def prepare_verification_form
       @expected_snapshot = verification_service.snapshot_for(@inventory)
-      @location_options = verification_locations.map do |location|
-        label = location.path_cache.presence || location.name
-        ["#{label} (#{location.code})", location.id]
-      end
+      @location_options = verification_location_options
     end
 
     def verification_locations
