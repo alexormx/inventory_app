@@ -166,14 +166,16 @@ module Dashboard
         end
     end
 
+    # Mismo universo que el resto del panel: Dashboard::Metrics::SALE_STATUSES.
+    # Las listas escritas a mano omitían 'Preparing'.
     def base_orders
-      SaleOrder.where(status: ['Confirmed', 'In Transit', 'Delivered'])
+      SaleOrder.where(status: Dashboard::Metrics::SALE_STATUSES)
                .where(order_date: start_date..end_date)
     end
 
     def base_items
       SaleOrderItem.joins(:sale_order)
-                   .where(sale_orders: { status: ['Confirmed', 'In Transit', 'Delivered'] })
+                   .where(sale_orders: { status: Dashboard::Metrics::SALE_STATUSES })
                    .where(sale_orders: { order_date: start_date..end_date })
     end
   end

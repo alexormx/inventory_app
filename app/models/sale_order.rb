@@ -113,11 +113,19 @@ class SaleOrder < ApplicationRecord
     select("sale_orders.*, #{BALANCE_SQL} AS balance")
   }
 
+  # Estados cuyo valor ya no cuenta como venta activa ni como adeudo cobrable.
+  # La orden sigue existiendo y visible en el historial del cliente; lo que se
+  # excluye es su aportación a los agregados financieros vivos.
+  NON_ACTIVE_TOTAL_STATUSES = ['Canceled'].freeze
+
+  # Órdenes que sí suman a ventas y adeudo del cliente.
+  scope :active_for_totals, -> { where.not(status: NON_ACTIVE_TOTAL_STATUSES) }
+
   # Filtra órdenes con balance > 0 (cuentas por cobrar abiertas).
   # Las canceladas quedan fuera: su saldo ya no es cobrable aunque
   # total_order_value siga registrado y no haya pagos que lo compensen.
   scope :open_receivables, lambda {
-    where.not(status: 'Canceled').where(Arel.sql("#{BALANCE_SQL} > 0"))
+    active_for_totals.where(Arel.sql("#{BALANCE_SQL} > 0"))
   }
 
   # Ordena por due_date con NULLS LAST y luego por created_at DESC, portable entre motores
