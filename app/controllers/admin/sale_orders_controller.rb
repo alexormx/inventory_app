@@ -53,6 +53,15 @@ module Admin
 
     def update
       @sale_order = SaleOrder.find(params[:id])
+
+      # La edición genérica no cancela: cancelar exige el flujo con validaciones
+      # de pago, envío e inventario. El modelo también lo impide, pero aquí lo
+      # redirigimos para dar una instrucción clara en vez de un error de validación.
+      if cancellation_requested? && @sale_order.status != 'Canceled'
+        return redirect_to admin_sale_order_path(@sale_order),
+                           alert: 'Para cancelar la orden usa la acción Cancelar; el estado no se cambia desde la edición general.'
+      end
+
       if @sale_order.update(sale_order_params)
         @sale_order.update_status_if_fully_paid!
         redirect_to admin_sale_order_path(@sale_order), notice: 'Orden de venta actualizada.'
@@ -244,6 +253,15 @@ module Admin
 
     def set_sale_order
       @sale_order = SaleOrder.find(params[:id])
+    end
+
+    # Contempla el alias en minúsculas porque SaleOrder#normalize_status lo
+    # convierte en 'Canceled' antes de validar.
+    def cancellation_requested?
+      requested = params.dig(:sale_order, :status).to_s.strip
+      return false if requested.blank?
+
+      SaleOrder::CANONICAL_STATUS[requested.downcase.tr(' ', '_')] == 'Canceled' || requested == 'Canceled'
     end
 
     def sale_order_params
