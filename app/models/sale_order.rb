@@ -14,6 +14,19 @@ class SaleOrder < ApplicationRecord
     'Returned'
   ].freeze
 
+  # Estados en los que la orden cuenta como venta realizada: alimentan las
+  # métricas de venta (unidades vendidas, ingreso, ranking, panel).
+  #
+  # 'Pending' queda fuera a propósito: es una orden todavía no confirmada como
+  # venta —sin pagar y cancelable— así que sus líneas no son unidades vendidas.
+  # 'Canceled' y 'Returned' tampoco cuentan.
+  #
+  # OJO: esto NO es lo mismo que NON_ACTIVE_TOTAL_STATUSES / active_for_totals.
+  # Para el adeudo del cliente una orden Pending SÍ cuenta (el cliente la debe);
+  # allí sólo se excluye la cancelada. Son dos conceptos distintos y no deben
+  # unificarse.
+  ACTIVE_SALE_STATUSES = ['Confirmed', 'Preparing', 'In Transit', 'Delivered'].freeze
+
   CANONICAL_STATUS = {
     'pending' => 'Pending',
     'confirmed' => 'Confirmed', 'preparing' => 'Preparing', 'in_transit' => 'In Transit',
@@ -69,6 +82,19 @@ class SaleOrder < ApplicationRecord
 
   # Actualizar UI (status badge) por Turbo cuando cambie el estado
   after_commit :broadcast_status_change, if: -> { previous_changes.key?('status') }
+
+  # Las estadísticas de venta del producto dependen del estado de la orden, no
+  # sólo de sus líneas. Sin esto, pasar de Pending a Confirmed dejaba las cifras
+  # del producto congeladas hasta que alguien tocara una línea.
+  #
+  # Sólo se recalcula cuando el estado cruza la frontera activo/inactivo:
+  # moverse dentro del conjunto activo (Confirmed -> Preparing -> Delivered) no
+  # cambia ninguna suma, y Pending -> Canceled tampoco (ninguno de los dos
+  # cuenta), lo que de paso evita duplicar el refresco que ya hace
+  # SaleOrders::CancelOrderService.
+  #
+  # after_commit: si la transición se revierte, las cifras no se tocan.
+  after_commit :refresh_product_sales_stats, on: %i[create update], if: :sales_activity_changed?
 
   def total_paid
     payments.where(status: 'Completed').sum(:amount)
@@ -434,6 +460,27 @@ class SaleOrder < ApplicationRecord
     )
   rescue StandardError => e
     Rails.logger.error "[SaleOrder#broadcast_status_change] #{e.class}: #{e.message}"
+  end
+
+  # ¿La transición cambió si esta orden cuenta como venta? Sólo entonces hay
+  # algo que recalcular.
+  def sales_activity_changed?
+    status_change = previous_changes['status']
+    return false if status_change.blank?
+
+    was_active, is_active = status_change.map { |value| ACTIVE_SALE_STATUSES.include?(value) }
+    was_active != is_active
+  end
+
+  def refresh_product_sales_stats
+    product_ids = sale_order_items.distinct.pluck(:product_id).compact
+    return if product_ids.empty?
+
+    Product.where(id: product_ids).find_each do |product|
+      Products::UpdateStatsService.new(product).call
+    end
+  rescue StandardError => e
+    Rails.logger.error "[SaleOrder#refresh_product_sales_stats] order_id=#{id} #{e.class}: #{e.message}"
   end
 
   def normalize_status
