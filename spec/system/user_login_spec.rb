@@ -7,6 +7,7 @@ RSpec.describe "User login/logout", type: :system do
   #
   it "successful login and logout", js: true do
     visit new_user_session_path
+    accept_cookies_if_present
     fill_in "user[email]", with: "user@example.com"
     fill_in "user[password]", with: "password123"
     click_button "Iniciar sesión"
@@ -44,6 +45,7 @@ RSpec.describe "User login/logout", type: :system do
   # ✅ Login fails with empty fields
   it "fails to login with empty fields", js: true do
     visit new_user_session_path
+    accept_cookies_if_present
     click_button "Iniciar sesión"
   
     expect(page).to have_content("Correo electrónico o password inválido(s)")
@@ -52,7 +54,8 @@ RSpec.describe "User login/logout", type: :system do
   # ✅ Redirect logged-in users away from login page
   it "redirects logged-in users away from login page", js: true do
     visit new_user_session_path
-  
+    accept_cookies_if_present
+
     fill_in "user[email]", with: "user@example.com"
     fill_in "user[password]", with: "password123"
     click_button "Iniciar sesión"
