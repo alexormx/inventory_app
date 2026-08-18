@@ -71,8 +71,13 @@ module Admin
       @reserved_value = Inventory.where(status: :reserved).sum(:purchase_cost)
       @in_transit_value = Inventory.where(status: :in_transit).sum(:purchase_cost)
       @total_value = Inventory.sum(:purchase_cost)
-      @unlocated_count = Inventory.where(status: %i[available reserved], inventory_location_id: nil).count
-      @located_count = Inventory.where(status: %i[available reserved]).where.not(inventory_location_id: nil).count
+      # Qué cuenta como "en bodega" lo define Inventory::STATUSES_REQUIRING_LOCATION,
+      # que es lo que usan el explorador de ubicaciones y el desglose por producto.
+      # Aquí estaba escrito a mano como [available, reserved], omitiendo
+      # pre_reserved: estos contadores discrepaban de esas dos pantallas en cuanto
+      # existiera una pieza pre-reservada.
+      @unlocated_count = Inventory.requiring_location.without_location.count
+      @located_count = Inventory.requiring_location.with_location.count
 
       # Ordenar por prioridad: disponible desc, reservado desc, en tránsito desc, vendido desc, total desc
       @export_products = products
