@@ -3,16 +3,8 @@
     (e.g. stock or limit errors) — we detect by absence of @product. %>
 <% if flash[:notice].present? && @product %>
   <%= turbo_stream.append 'flash-stack' do %>
-    <div class="alert alert-success alert-dismissible fade show flash-message flash-message--cart shadow" role="alert" data-timeout="4000">
-      <div class="d-flex align-items-center gap-2">
-        <% if @product.product_images.attached? %>
-          <%= image_tag url_for(@product.primary_product_image),
-                        alt: '',
-                        class: 'cart-toast-thumb',
-                        loading: 'lazy' %>
-        <% else %>
-          <div class="cart-toast-thumb cart-toast-thumb--empty"><i class="fas fa-image text-muted"></i></div>
-        <% end %>
+    <%= render 'layouts/flash_message', key: key, message: message %>
+  <% end %>
         <div class="flex-grow-1 min-width-0">
           <div class="fw-semibold small text-success">
             <i class="fas fa-check-circle me-1"></i>Agregado al carrito
