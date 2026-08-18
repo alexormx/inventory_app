@@ -82,8 +82,11 @@
             <% prod = inv.product %>
             <tr>
               <td>
+                <%# Ambas ramas devuelven un ActiveStorage::Attachment (o nil), nunca la
+                    proxy de la asociación: .attached? es de la proxy, así que llamarlo
+                    aquí reventaba con NoMethodError en cuanto la pieza tenía imagen. %>
                 <% img = inv.piece_images.attached? ? inv.piece_images.first : prod&.primary_product_image %>
-                <% if img&.attached? || img.is_a?(ActiveStorage::Attachment) %>
+                <% if img.present? %>
                   <%= image_tag img, class: 'rounded border', style: 'width:48px;height:48px;object-fit:cover;' %>
                 <% else %>
                   <div class="rounded border bg-light d-flex align-items-center justify-content-center" style="width:48px;height:48px;">
