@@ -25,9 +25,11 @@ RSpec.describe 'Admin assigns locations to several unlocated units', :js, type: 
   after { Warden.test_reset! }
 
   it 'assigns only the selected units and audits each one' do
-    visit admin_inventory_unlocated_path
+    # /admin/inventory/unlocated es ahora la asignación por producto+cantidad.
+    # Esta pantalla, pieza por pieza, queda para los casos excepcionales y se
+    # entra directo (o desde el enlace de aquella).
+    visit admin_inventory_verifications_path
 
-    expect(page).to have_current_path(admin_inventory_verifications_path, ignore_query: true)
     expect(page).to have_css('#bulk-assign-form')
 
     check "inventory-select-#{first_unit.id}"
@@ -59,7 +61,7 @@ RSpec.describe 'Admin assigns locations to several unlocated units', :js, type: 
   end
 
   it 'assigns the healthy unit and reports the one that changed underneath' do
-    visit admin_inventory_unlocated_path
+    visit admin_inventory_verifications_path
 
     check "inventory-select-#{first_unit.id}"
     check "inventory-select-#{second_unit.id}"
