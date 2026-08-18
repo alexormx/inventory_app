@@ -209,4 +209,70 @@ RSpec.describe 'Admin bulk inventory location assignment', type: :request do
       expect(Inventory.customer_sellable).not_to include(unit.reload)
     end
   end
+
+  # 'pre_reserved' es una pieza que aún viene EN TRÁNSITO y quedó apartada
+  # (ReserveSaleOrderItem sólo la marca así cuando inventory.in_transit?).
+  # Nadie puede tenerla en la mano, así que aparece en el backlog para que
+  # cuadre con el contador del panel, pero no se puede seleccionar ni escribir.
+  describe 'pre_reserved units' do
+    before { sign_in admin }
+
+    let!(:pre_reserved) do
+      create(:inventory, product: product, status: :pre_reserved, inventory_location: nil)
+    end
+
+    it 'still appears in the backlog so the count reconciles' do
+      get admin_inventory_verifications_path
+
+      expect(response.body).to include("inventory-select-#{pre_reserved.id}")
+      expect(response.body).to include('Pre apartado')
+    end
+
+    it 'renders its checkbox disabled with an explanation' do
+      get admin_inventory_verifications_path
+
+      expect(response.body).to match(
+        /id="inventory-select-#{pre_reserved.id}"[^>]*disabled|disabled[^>]*id="inventory-select-#{pre_reserved.id}"/
+      )
+      expect(response.body).to include("inventory-blocked-#{pre_reserved.id}")
+      expect(response.body).to include('sigue en tránsito')
+    end
+
+    it 'is counted by the same canonical scope the dashboard counter uses' do
+      expect(Inventory.requiring_location.without_location).to include(pre_reserved)
+    end
+
+    it 'refuses a forced selection without writing anything' do
+      post bulk_admin_inventory_verifications_path, params: {
+        inventory_ids: [pre_reserved.id],
+        location_id: location.id,
+        expected_snapshots: snapshot_params([pre_reserved])
+      }
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(pre_reserved.reload.inventory_location_id).to be_nil
+      expect(pre_reserved.reload).to be_pre_reserved
+      expect(InventoryEvent.count).to eq(0)
+    end
+
+    it 'explains itself instead of the generic message on the single-unit page' do
+      get admin_inventory_verification_path(pre_reserved)
+
+      expect(response).to redirect_to(admin_inventory_verifications_path)
+      expect(flash[:alert]).to include('Pre apartado')
+      expect(flash[:alert]).to include('en tránsito')
+    end
+
+    it 'never becomes customer sellable through this flow' do
+      expect(Inventory.customer_sellable).not_to include(pre_reserved)
+
+      post bulk_admin_inventory_verifications_path, params: {
+        inventory_ids: [pre_reserved.id],
+        location_id: location.id,
+        expected_snapshots: snapshot_params([pre_reserved])
+      }
+
+      expect(Inventory.customer_sellable).not_to include(pre_reserved.reload)
+    end
+  end
 end

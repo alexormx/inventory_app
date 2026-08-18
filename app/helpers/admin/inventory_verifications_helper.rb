@@ -5,6 +5,7 @@ module Admin
     STATUS_LABELS = {
       'available' => 'Disponible',
       'reserved' => 'Reservado',
+      'pre_reserved' => 'Pre apartado',
       'damaged' => 'Dañado',
       'lost' => 'Perdido'
     }.freeze
@@ -30,6 +31,7 @@ module Admin
       {
         'available' => 'text-bg-success',
         'reserved' => 'text-bg-warning',
+        'pre_reserved' => 'text-bg-info',
         'damaged' => 'text-bg-warning',
         'lost' => 'text-bg-danger'
       }.fetch(status.to_s, 'text-bg-secondary')

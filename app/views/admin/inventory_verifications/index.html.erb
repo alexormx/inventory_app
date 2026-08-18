@@ -81,13 +81,32 @@
           <div class="col">
             <article class="card h-100 shadow-sm <%= 'border-warning' if inventory.reserved? %>" data-inventory-id="<%= inventory.id %>">
               <div class="card-body">
-                <div class="form-check mb-2">
-                  <%= check_box_tag 'inventory_ids[]', inventory.id, false,
-                                    class: 'form-check-input bulk-unit-checkbox',
-                                    id: "inventory-select-#{inventory.id}",
-                                    data: { bulk_verification_target: 'unit', action: 'change->bulk-verification#refresh' } %>
-                  <%= label_tag "inventory-select-#{inventory.id}", "Seleccionar ##{inventory.id}", class: 'form-check-label fw-semibold' %>
-                </div>
+                <% selectable = selectable_for_verification?(inventory) %>
+                <% if selectable %>
+                  <div class="form-check mb-2">
+                    <%= check_box_tag 'inventory_ids[]', inventory.id, false,
+                                      class: 'form-check-input bulk-unit-checkbox',
+                                      id: "inventory-select-#{inventory.id}",
+                                      data: { bulk_verification_target: 'unit', action: 'change->bulk-verification#refresh' } %>
+                    <%= label_tag "inventory-select-#{inventory.id}", "Seleccionar ##{inventory.id}", class: 'form-check-label fw-semibold' %>
+                  </div>
+                <% else %>
+                  <%# Se lista para que el backlog cuadre con el contador del panel,
+                      pero no se puede verificar: la pieza aún viene en tránsito. %>
+                  <div class="form-check mb-2">
+                    <%= check_box_tag 'inventory_ids[]', inventory.id, false,
+                                      class: 'form-check-input',
+                                      id: "inventory-select-#{inventory.id}",
+                                      disabled: true,
+                                      aria: { describedby: "inventory-blocked-#{inventory.id}" } %>
+                    <%= label_tag "inventory-select-#{inventory.id}", "No seleccionable ##{inventory.id}", class: 'form-check-label text-muted' %>
+                  </div>
+                  <p class="small text-muted mb-2" id="inventory-blocked-<%= inventory.id %>">
+                    <i class="fa-solid fa-truck me-1" aria-hidden="true"></i>
+                    <%= inventory_verification_status_label(inventory.status) %>:
+                    la pieza sigue en tránsito, así que todavía no puede verificarse físicamente.
+                  </p>
+                <% end %>
                 <%= render 'inventory_details', inventory: inventory %>
                 <hr>
                 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">

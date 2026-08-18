@@ -142,7 +142,11 @@ RSpec.describe 'Admin physical inventory verifications', type: :request do
       expect(response.body).to include("data-inventory-id=\"#{inventory.id}\"")
     end
 
-    it 'only displays available or reserved units without a location' do
+    # El backlog lista lo mismo que cuenta el panel (Inventory.requiring_location
+    # sin ubicación). Lo que decide si una pieza se puede verificar es su estado,
+    # no si aparece: 'pre_reserved' sale listada pero con la casilla deshabilitada,
+    # porque sigue en tránsito y nadie puede tenerla en la mano.
+    it 'displays every unlocated unit that requires a location' do
       available = create(:inventory, status: :available, inventory_location: nil)
       reserved = create(:inventory, status: :reserved, inventory_location: nil)
       located = create(:inventory, status: :available, inventory_location: create(:inventory_location))
@@ -153,9 +157,23 @@ RSpec.describe 'Admin physical inventory verifications', type: :request do
 
       expect(response.body).to include("data-inventory-id=\"#{available.id}\"")
       expect(response.body).to include("data-inventory-id=\"#{reserved.id}\"")
+      expect(response.body).to include("data-inventory-id=\"#{pre_reserved.id}\"")
       expect(response.body).not_to include("data-inventory-id=\"#{located.id}\"")
-      expect(response.body).not_to include("data-inventory-id=\"#{pre_reserved.id}\"")
       expect(response.body).not_to include("data-inventory-id=\"#{sold.id}\"")
+    end
+
+    it 'only offers a usable checkbox for units that can be physically verified' do
+      available = create(:inventory, status: :available, inventory_location: nil)
+      pre_reserved = create(:inventory, status: :pre_reserved, inventory_location: nil)
+
+      get admin_inventory_verifications_path
+
+      expect(response.body).to match(
+        /id="inventory-select-#{available.id}"(?![^>]*disabled)/
+      )
+      expect(response.body).to match(
+        /id="inventory-select-#{pre_reserved.id}"[^>]*disabled|disabled[^>]*id="inventory-select-#{pre_reserved.id}"/
+      )
     end
 
     it 'paginates broad result sets' do

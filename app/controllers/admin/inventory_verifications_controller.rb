@@ -53,7 +53,7 @@ module Admin
 
       unless verification_candidate?(@inventory)
         redirect_to admin_inventory_verifications_path,
-                    alert: 'La unidad ya no requiere verificación física individual.',
+                    alert: non_candidate_alert_for(@inventory),
                     status: :see_other
         return
       end
@@ -156,9 +156,23 @@ module Admin
 
     private
 
+    # El backlog muestra TODO lo que la app considera "en bodega sin ubicar"
+    # (Inventory.requiring_location), para que cuadre con el contador del panel.
+    # Poder verificarse es otra cosa: eso lo decide selectable_for_verification?.
     def candidate_scope
-      Inventory.requiring_location.without_location.where(status: SERVICE::SUPPORTED_STATUSES)
+      Inventory.requiring_location.without_location
     end
+
+    # Sólo se puede verificar físicamente lo que está físicamente en bodega.
+    # 'pre_reserved' es una pieza que todavía viene EN TRÁNSITO y quedó apartada
+    # (InventoryServices::ReserveSaleOrderItem la marca así sólo cuando
+    # inventory.in_transit?, y al liberarla vuelve a in_transit). Nadie puede
+    # tenerla en la mano para confirmar dónde está, así que se lista pero no se
+    # selecciona; el servicio la rechaza igual si alguien fuerza la petición.
+    def selectable_for_verification?(inventory)
+      SERVICE::SUPPORTED_STATUSES.include?(inventory.status)
+    end
+    helper_method :selectable_for_verification?
 
     # IDs exactos marcados por el admin. Se normalizan a enteros y se deduplican;
     # cualquier cosa que no sea un ID se descarta en vez de ampliar la selección.
@@ -295,6 +309,14 @@ module Admin
 
     def verification_service
       SERVICE
+    end
+
+    def non_candidate_alert_for(inventory)
+      if inventory.pre_reserved?
+        'Pre apartado: la pieza sigue en tránsito, así que todavía no puede verificarse físicamente.'
+      else
+        'La unidad ya no requiere verificación física individual.'
+      end
     end
 
     def verification_candidate?(inventory)

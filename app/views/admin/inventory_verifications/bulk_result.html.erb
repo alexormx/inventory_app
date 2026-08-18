@@ -6,6 +6,14 @@
      invalid_snapshot: 'Snapshot inválido',
      not_found: 'Inventario inexistente'
    } %>
+<% reason_icons = {
+     stale: 'fa-rotate',
+     reserved_reconciliation: 'fa-scale-balanced',
+     invalid_state: 'fa-ban',
+     invalid_location: 'fa-map-location-dot',
+     invalid_snapshot: 'fa-triangle-exclamation',
+     not_found: 'fa-circle-question'
+   } %>
 <div class="container-fluid px-0">
   <div class="mb-4">
     <h1 class="h3 mb-1"><i class="fa-solid fa-clipboard-check me-2"></i>Resultado de la asignación</h1>
@@ -19,7 +27,9 @@
       <div class="card border-success h-100">
         <div class="card-body text-center">
           <div class="display-6 fw-bold text-success" id="bulk-count-assigned"><%= @assigned.size %></div>
-          <div class="small text-muted">Asignadas</div>
+          <div class="small text-muted">
+            <i class="fa-solid fa-circle-check me-1" aria-hidden="true"></i>Asignadas
+          </div>
         </div>
       </div>
     </div>
@@ -30,7 +40,9 @@
           <div class="card-body text-center">
             <div class="display-6 fw-bold <%= count.positive? ? 'text-danger' : 'text-muted' %>"
                  id="bulk-count-<%= reason.to_s.dasherize %>"><%= count %></div>
-            <div class="small text-muted"><%= reason_labels.fetch(reason) %></div>
+            <div class="small text-muted">
+              <i class="fa-solid <%= reason_icons.fetch(reason) %> me-1" aria-hidden="true"></i><%= reason_labels.fetch(reason) %>
+            </div>
           </div>
         </div>
       </div>
