@@ -390,6 +390,13 @@ module Admin
     end
 
     # --- Vistas por estado ---
+    #
+    # Las tres se pintan dentro de turbo-frame#products_frame al navegar entre
+    # pestañas, y ahí el layout sobra. Pero al entrar por URL directa la
+    # respuesta salía sin <head>: sin JS, Turbo no arrancaba y los botones
+    # Activar/Inactivar (data-turbo-method: :patch) se degradaban a GET contra
+    # rutas que sólo aceptan PATCH. Servir el layout cuando NO es petición de
+    # frame deja funcionando ambos caminos sin abrir una ruta GET que mute.
     def drafts
       @q = params[:q].to_s.strip
       scope = Product.where(status: 'draft').includes(:product_images_attachments)
@@ -401,7 +408,7 @@ module Admin
       scope = apply_sort(scope, @sort)
       @products = scope.page(params[:page]).per(PER_PAGE)
       compute_counts
-      render :drafts, layout: false
+      render :drafts, layout: !turbo_frame_request?
     end
 
     def active
@@ -415,7 +422,7 @@ module Admin
       scope = apply_sort(scope, @sort)
       @products = scope.page(params[:page]).per(PER_PAGE)
       compute_counts
-      render :active, layout: false
+      render :active, layout: !turbo_frame_request?
     end
 
     def inactive
@@ -429,7 +436,7 @@ module Admin
       scope = apply_sort(scope, @sort)
       @products = scope.page(params[:page]).per(PER_PAGE)
       compute_counts
-      render :inactive, layout: false
+      render :inactive, layout: !turbo_frame_request?
     end
 
     private
