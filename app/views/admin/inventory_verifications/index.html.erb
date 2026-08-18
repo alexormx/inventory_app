@@ -12,8 +12,9 @@
   <div class="alert alert-info d-flex gap-2" role="status">
     <i class="fa-solid fa-shield-halved mt-1" aria-hidden="true"></i>
     <div>
-      <strong>Flujo por unidad:</strong> cada acción utiliza un Inventory ID exacto.
-      No hay asignación FIFO, cantidades ni acciones masivas.
+      <strong>Siempre por unidad exacta:</strong> cada escritura usa un Inventory ID concreto.
+      Puedes seleccionar varias unidades para asignarles la misma ubicación, pero
+      nunca se asigna por producto y cantidad ni se eligen piezas automáticamente por FIFO.
       <span class="d-block mt-1"><%= number_with_delimiter(@candidate_count) %> unidades requieren revisión.</span>
     </div>
   </div>
@@ -44,27 +45,85 @@
   </div>
 
   <% if @inventories.any? %>
-    <div class="row row-cols-1 row-cols-xl-2 g-3 mb-4" id="inventory-verification-results">
-      <% @inventories.each do |inventory| %>
-        <div class="col">
-          <article class="card h-100 shadow-sm <%= 'border-warning' if inventory.reserved? %>" data-inventory-id="<%= inventory.id %>">
-            <div class="card-body">
-              <%= render 'inventory_details', inventory: inventory %>
-              <hr>
-              <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
-                <div class="small text-muted">
-                  Creado <%= l(inventory.created_at, format: :short) %>
-                  · Costo <%= number_to_currency(inventory.purchase_cost, unit: '$') %>
-                </div>
-                <%= link_to admin_inventory_verification_path(inventory), class: 'btn btn-primary btn-lg' do %>
-                  Verificar #<%= inventory.id %> <i class="fa-solid fa-arrow-right ms-1"></i>
-                <% end %>
-              </div>
-            </div>
-          </article>
+<%# turbo: false porque este paso responde con una pantalla de revisión (200) en %>
+    <%# lugar de redirigir; Turbo sólo acepta redirecciones al enviar formularios. %>
+    <%= form_with url: bulk_review_admin_inventory_verifications_path,
+                  method: :post,
+                  local: true,
+                  id: 'bulk-assign-form',
+                  data: { controller: 'bulk-verification', turbo: false } do %>
+      <div class="card shadow-sm mb-3 bulk-assign-toolbar">
+        <div class="card-body d-flex flex-wrap align-items-center gap-3">
+          <div class="form-check mb-0">
+            <%= check_box_tag 'select_all_page', '1', false,
+                              class: 'form-check-input',
+                              id: 'select-all-page',
+                              data: { bulk_verification_target: 'selectAll', action: 'change->bulk-verification#toggleAll' } %>
+            <%= label_tag 'select-all-page', 'Seleccionar las unidades de esta página', class: 'form-check-label fw-semibold' %>
+          </div>
+          <span class="badge bg-secondary" data-bulk-verification-target="counter" id="bulk-selected-count">0 seleccionadas</span>
+          <button type="button" class="btn btn-sm btn-outline-secondary"
+                  data-action="bulk-verification#clear">Limpiar selección</button>
+          <div class="ms-auto">
+            <%= submit_tag 'Asignar ubicación a la selección',
+                           class: 'btn btn-primary btn-lg',
+                           id: 'bulk-review-submit',
+                           data: { bulk_verification_target: 'submit' } %>
+          </div>
         </div>
-      <% end %>
-    </div>
+        <div class="card-footer small text-muted">
+          Sólo se envían las unidades marcadas en esta página. La paginación nunca añade unidades que no hayas visto.
+        </div>
+      </div>
+
+      <div class="row row-cols-1 row-cols-xl-2 g-3 mb-4" id="inventory-verification-results">
+        <% @inventories.each do |inventory| %>
+          <div class="col">
+            <article class="card h-100 shadow-sm <%= 'border-warning' if inventory.reserved? %>" data-inventory-id="<%= inventory.id %>">
+              <div class="card-body">
+                <% selectable = selectable_for_verification?(inventory) %>
+                <% if selectable %>
+                  <div class="form-check mb-2">
+                    <%= check_box_tag 'inventory_ids[]', inventory.id, false,
+                                      class: 'form-check-input bulk-unit-checkbox',
+                                      id: "inventory-select-#{inventory.id}",
+                                      data: { bulk_verification_target: 'unit', action: 'change->bulk-verification#refresh' } %>
+                    <%= label_tag "inventory-select-#{inventory.id}", "Seleccionar ##{inventory.id}", class: 'form-check-label fw-semibold' %>
+                  </div>
+                <% else %>
+                  <%# Se lista para que el backlog cuadre con el contador del panel,
+                      pero no se puede verificar: la pieza aún viene en tránsito. %>
+                  <div class="form-check mb-2">
+                    <%= check_box_tag 'inventory_ids[]', inventory.id, false,
+                                      class: 'form-check-input',
+                                      id: "inventory-select-#{inventory.id}",
+                                      disabled: true,
+                                      aria: { describedby: "inventory-blocked-#{inventory.id}" } %>
+                    <%= label_tag "inventory-select-#{inventory.id}", "No seleccionable ##{inventory.id}", class: 'form-check-label text-muted' %>
+                  </div>
+                  <p class="small text-muted mb-2" id="inventory-blocked-<%= inventory.id %>">
+                    <i class="fa-solid fa-truck me-1" aria-hidden="true"></i>
+                    <%= inventory_verification_status_label(inventory.status) %>:
+                    la pieza sigue en tránsito, así que todavía no puede verificarse físicamente.
+                  </p>
+                <% end %>
+                <%= render 'inventory_details', inventory: inventory %>
+                <hr>
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                  <div class="small text-muted">
+                    Creado <%= l(inventory.created_at, format: :short) %>
+                    · Costo <%= number_to_currency(inventory.purchase_cost, unit: '$') %>
+                  </div>
+                  <%= link_to admin_inventory_verification_path(inventory), class: 'btn btn-outline-primary' do %>
+                    Verificar #<%= inventory.id %> <i class="fa-solid fa-arrow-right ms-1"></i>
+                  <% end %>
+                </div>
+              </div>
+            </article>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
     <div class="d-flex justify-content-center"><%= paginate @inventories %></div>
   <% else %>
     <div class="card border-0 bg-light">

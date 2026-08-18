@@ -97,16 +97,17 @@ RSpec.describe 'Admin::Inventory location explorer', type: :request do
   end
 
   describe 'FIFO bulk-assignment containment' do
-    it 'redirects the legacy unlocated assignment screen to read-only review' do
+    # La pantalla dejó de ser sólo de consulta: ahora lleva al flujo donde sí se
+    # asigna ubicación, pero siempre marcando unidades exactas. Lo que no vuelve
+    # es el carrito de producto+cantidad, que es lo que cubre el ejemplo de abajo.
+    it 'sends the legacy unlocated screen to the per-unit assignment workflow' do
       get admin_inventory_unlocated_path, params: { q: 'Tomica', sort: 'count_desc' }
 
-      expect(response).to redirect_to(
-        admin_inventory_location_explorer_path(mode: 'unlocated', q: 'Tomica', sort: 'count_desc')
-      )
+      expect(response).to redirect_to(admin_inventory_verifications_path(q: 'Tomica'))
 
       follow_redirect!
-      expect(response.body).to include('Consulta segura')
-      expect(response.body).to include('verificación individual')
+      expect(response.body).to include('Verificación física')
+      expect(response.body).to include('Siempre por unidad exacta')
       expect(response.body).not_to include('Asignar Todo a Ubicación', 'Carrito de Asignación')
     end
 

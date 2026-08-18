@@ -1,0 +1,122 @@
+<% reason_labels = {
+     stale: 'Conflicto por cambio concurrente',
+     reserved_reconciliation: 'Reservado: requiere conciliación',
+     invalid_state: 'Estado no verificable',
+     invalid_location: 'Ubicación inválida',
+     invalid_snapshot: 'Snapshot inválido',
+     not_found: 'Inventario inexistente'
+   } %>
+<% reason_icons = {
+     stale: 'fa-rotate',
+     reserved_reconciliation: 'fa-scale-balanced',
+     invalid_state: 'fa-ban',
+     invalid_location: 'fa-map-location-dot',
+     invalid_snapshot: 'fa-triangle-exclamation',
+     not_found: 'fa-circle-question'
+   } %>
+<div class="container-fluid px-0">
+  <div class="mb-4">
+    <h1 class="h3 mb-1"><i class="fa-solid fa-clipboard-check me-2"></i>Resultado de la asignación</h1>
+    <% if @location %>
+      <p class="text-muted mb-0">Ubicación destino: <strong><%= @location.full_path %></strong></p>
+    <% end %>
+  </div>
+
+  <div class="row g-3 mb-4" id="bulk-result-summary">
+    <div class="col-6 col-lg-2">
+      <div class="card border-success h-100">
+        <div class="card-body text-center">
+          <div class="display-6 fw-bold text-success" id="bulk-count-assigned"><%= @assigned.size %></div>
+          <div class="small text-muted">
+            <i class="fa-solid fa-circle-check me-1" aria-hidden="true"></i>Asignadas
+          </div>
+        </div>
+      </div>
+    </div>
+    <% %i[stale reserved_reconciliation invalid_state invalid_location invalid_snapshot not_found].each do |reason| %>
+      <% count = @failures.count { |f| f[:reason] == reason } %>
+      <div class="col-6 col-lg-2">
+        <div class="card h-100 <%= count.positive? ? 'border-danger' : 'border-0 bg-light' %>">
+          <div class="card-body text-center">
+            <div class="display-6 fw-bold <%= count.positive? ? 'text-danger' : 'text-muted' %>"
+                 id="bulk-count-<%= reason.to_s.dasherize %>"><%= count %></div>
+            <div class="small text-muted">
+              <i class="fa-solid <%= reason_icons.fetch(reason) %> me-1" aria-hidden="true"></i><%= reason_labels.fetch(reason) %>
+            </div>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <% if @assigned.any? %>
+    <div class="card shadow-sm mb-4">
+      <div class="card-header"><h2 class="h5 mb-0">Unidades asignadas correctamente</h2></div>
+      <div class="table-responsive">
+        <table class="table table-sm mb-0" id="bulk-assigned-table">
+          <thead>
+            <tr>
+              <th scope="col">Inventory ID</th>
+              <th scope="col">Producto</th>
+              <th scope="col">Nueva ubicación</th>
+              <th scope="col">Evento</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @assigned.each do |row| %>
+              <tr data-inventory-id="<%= row[:inventory].id %>">
+                <td class="fw-bold">#<%= row[:inventory].id %></td>
+                <td><%= row[:inventory].product.product_name %></td>
+                <td><%= row[:inventory].inventory_location&.full_path %></td>
+                <td class="font-monospace small">#<%= row[:event].id %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  <% end %>
+
+  <% if @failures.any? %>
+    <div class="card shadow-sm mb-4 border-danger">
+      <div class="card-header bg-danger-subtle">
+        <h2 class="h5 mb-0">Unidades no asignadas</h2>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-sm mb-0" id="bulk-failures-table">
+          <thead>
+            <tr>
+              <th scope="col">Inventory ID</th>
+              <th scope="col">Motivo</th>
+              <th scope="col">Detalle</th>
+              <th scope="col">Siguiente paso</th>
+              <th scope="col"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @failures.each do |row| %>
+              <tr data-inventory-id="<%= row[:id] %>" data-failure-reason="<%= row[:reason] %>">
+                <td class="fw-bold">#<%= row[:id] %></td>
+                <td><%= reason_labels.fetch(row[:reason], 'No asignada') %></td>
+                <td class="small"><%= row[:message] %></td>
+                <td class="small text-muted"><%= row[:next_action] %></td>
+                <td>
+                  <% if row[:inventory] %>
+                    <%= link_to 'Revisar unidad', admin_inventory_verification_path(row[:inventory]),
+                                class: 'btn btn-sm btn-outline-danger' %>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+      <div class="card-footer small text-muted">
+        Ninguna de estas unidades se modificó. Revísalas una por una: no se reintenta automáticamente
+        sobre un estado que no viste.
+      </div>
+    </div>
+  <% end %>
+
+  <%= link_to 'Volver a unidades pendientes', admin_inventory_verifications_path, class: 'btn btn-primary btn-lg' %>
+</div>

@@ -206,12 +206,14 @@ module Admin
     end
 
     # GET /admin/inventory/unlocated - Inventario sin ubicación asignada
+    #
+    # Lleva al flujo de verificación física, que es el único lugar donde se
+    # escribe una ubicación. Ahí se pueden seleccionar varias unidades exactas y
+    # asignarles la misma ubicación; lo que no vuelve es elegir por producto y
+    # cantidad, porque eso nunca demostró qué piezas existen físicamente.
     def unlocated
-      redirect_to admin_inventory_location_explorer_path(
-        mode: 'unlocated',
-        q: params[:q],
-        sort: params[:sort]
-      ), alert: 'La asignación masiva FIFO está deshabilitada. Revisa estas piezas sin modificar su ubicación.'
+      redirect_to admin_inventory_verifications_path(q: params[:q]),
+                  notice: 'Selecciona las unidades exactas que tengas físicamente para asignarles ubicación.'
     end
 
     # GET /admin/inventory/location_explorer - Vista unificada: sin ubicación o por ubicación
