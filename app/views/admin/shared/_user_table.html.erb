@@ -57,10 +57,10 @@
               <div>
                 <div class="fw-medium"><%= u.name %></div>
                 <% if is_new %>
-                  <span class="badge text-bg-info" style="font-size: 0.65rem;">🆕 Nuevo</span>
+                  <span class="badge text-bg-info" style="font-size: 0.65rem;"><i class="fa-solid fa-star-of-life me-1" aria-hidden="true"></i>Nuevo</span>
                 <% end %>
                 <% if is_vip %>
-                  <span class="badge text-bg-warning" style="font-size: 0.65rem;">⭐ VIP</span>
+                  <span class="badge text-bg-warning" style="font-size: 0.65rem;"><i class="fa-solid fa-star me-1" aria-hidden="true"></i>VIP</span>
                 <% end %>
               </div>
             </div>
@@ -94,10 +94,16 @@
             end %>
             <span class="badge text-bg-<%= role_class %>"><%= u.role.to_s.capitalize %></span>
             <% if u.respond_to?(:created_offline?) && u.created_offline? %>
-              <span class="badge text-bg-warning" title="Cliente offline">📴</span>
+              <span class="badge text-bg-warning" title="Cliente offline">
+                <i class="fa-solid fa-plug-circle-xmark" aria-hidden="true"></i>
+                <span class="visually-hidden">Cliente offline</span>
+              </span>
             <% end %>
             <% if u.respond_to?(:credit_enabled) && u.credit_enabled %>
-              <span class="badge text-bg-info" title="Crédito habilitado">💳</span>
+              <span class="badge text-bg-info" title="Crédito habilitado">
+                <i class="fa-solid fa-credit-card" aria-hidden="true"></i>
+                <span class="visually-hidden">Crédito habilitado</span>
+              </span>
             <% end %>
           </td>
 
@@ -105,12 +111,12 @@
           <td>
             <div class="d-flex flex-wrap gap-1">
               <% if has_debt %>
-                <span class="badge text-bg-danger" title="Adeudo pendiente">⚠️ Debe</span>
+                <span class="badge text-bg-danger" title="Adeudo pendiente"><i class="fa-solid fa-triangle-exclamation me-1" aria-hidden="true"></i>Debe</span>
               <% end %>
               <% if is_inactive %>
-                <span class="badge text-bg-secondary" title="Sin actividad > 90 días">💤 Inactivo</span>
+                <span class="badge text-bg-secondary" title="Sin actividad > 90 días"><i class="fa-solid fa-moon me-1" aria-hidden="true"></i>Inactivo</span>
               <% elsif total_sales > 0 || total_purch > 0 %>
-                <span class="badge text-bg-success" title="Usuario activo">✓ Activo</span>
+                <span class="badge text-bg-success" title="Usuario activo"><i class="fa-solid fa-check me-1" aria-hidden="true"></i>Activo</span>
               <% else %>
                 <span class="badge text-bg-light" title="Sin transacciones">Sin actividad</span>
               <% end %>
@@ -159,8 +165,8 @@
             <% sd = u.attributes["last_sale_date"] || sstat[:last_date] %>
             <% if ld || sd %>
               <div class="small text-muted mt-1">
-                <% if sd %><span title="Última venta">🛒 <%= sd.is_a?(String) ? sd : sd.strftime('%d/%m') %></span><% end %>
-                <% if ld %><span title="Última compra" class="ms-1">📦 <%= ld.is_a?(String) ? ld : ld.strftime('%d/%m') %></span><% end %>
+                <% if sd %><span title="Última venta"><i class="fa-solid fa-cart-shopping" aria-hidden="true"></i><span class="visually-hidden">Última venta:</span> <%= sd.is_a?(String) ? sd : sd.strftime('%d/%m') %></span><% end %>
+                <% if ld %><span title="Última compra" class="ms-1"><i class="fa-solid fa-box" aria-hidden="true"></i><span class="visually-hidden">Última compra:</span> <%= ld.is_a?(String) ? ld : ld.strftime('%d/%m') %></span><% end %>
               </div>
             <% end %>
           </td>

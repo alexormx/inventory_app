@@ -108,7 +108,7 @@
 
         <dt class="col-7 border-top pt-1 mt-1">Resta por pagar:</dt>
         <dd class="col-5 text-end border-top pt-1 mt-1 fw-bold <%= is_paid ? 'text-success' : 'text-danger' %>">
-          <%= is_paid ? '✓ Pagado' : number_to_currency(balance_due) %>
+          <%= is_paid ? sanitize('<i class="fa-solid fa-check me-1" aria-hidden="true"></i>Pagado') : number_to_currency(balance_due) %>
         </dd>
       </dl>
 
