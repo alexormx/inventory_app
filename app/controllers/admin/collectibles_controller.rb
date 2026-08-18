@@ -2,6 +2,7 @@
 
 module Admin
   class CollectiblesController < ApplicationController
+    before_action :authenticate_user!
     before_action :authorize_admin!
     before_action :load_inventory, only: %i[edit update purge_image]
 
