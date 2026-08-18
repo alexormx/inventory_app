@@ -17,10 +17,12 @@ RSpec.describe "User login/logout", type: :system do
     if page.has_selector?("#hamburger", wait: 3)
       find("#hamburger").click
     end
-    
-    expect(page).to have_selector("#account", visible: :all)
-    
-    # Use Capybara click instead of JS where possible
+
+    # Esperar a que el menú esté REALMENTE abierto. have_selector(visible: :all)
+    # pasaba aunque el navbar siguiera colapsado, mientras que el find siguiente
+    # exige un elemento visible: por eso sólo funcionaba con ventanas anchas y
+    # fallaba en CI con Capybara::ElementNotFound.
+    expect(page).to have_selector("#account", visible: true)
     find("#account").click
 
     # Check if the logout button is visible
