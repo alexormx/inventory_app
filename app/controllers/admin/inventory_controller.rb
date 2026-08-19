@@ -497,7 +497,10 @@ module Admin
     def search_unlocated_products(counts)
       term = "%#{@q.downcase}%"
       product_ids = counts.keys.map(&:first).uniq
+      # Se precargan adjuntos y blobs: la lista muestra una miniatura por
+      # producto y sin esto sería una consulta por fila.
       Product.where(id: product_ids)
+             .includes(product_images_attachments: :blob)
              .where('LOWER(product_name) LIKE :q OR LOWER(product_sku) LIKE :q', q: term)
              .order(:product_name)
              .limit(UNLOCATED_SEARCH_LIMIT)

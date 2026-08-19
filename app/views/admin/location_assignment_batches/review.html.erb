@@ -27,7 +27,12 @@
         <tbody>
           <% @lines.each do |line| %>
             <tr data-review-product-id="<%= line[:product].id %>">
-              <td class="fw-semibold"><%= line[:product].product_name %></td>
+              <td>
+                <div class="d-flex align-items-center gap-2">
+                  <%= render 'admin/shared/product_thumb', product: line[:product], size: 44 %>
+                  <span class="fw-semibold"><%= line[:product].product_name %></span>
+                </div>
+              </td>
               <td class="font-monospace small"><%= line[:product].product_sku %></td>
               <td class="text-end fw-bold"><%= line[:quantity] %></td>
             </tr>

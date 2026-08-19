@@ -113,7 +113,12 @@
                     <% product = row[:product] %>
                     <% form_id = "add-form-#{product.id}" %>
                     <tr data-product-id="<%= product.id %>">
-                      <td class="fw-semibold"><%= product.product_name %></td>
+                      <td>
+                        <div class="d-flex align-items-center gap-2">
+                          <%= render 'admin/shared/product_thumb', product: product, size: 56 %>
+                          <span class="fw-semibold"><%= product.product_name %></span>
+                        </div>
+                      </td>
                       <td class="font-monospace small"><%= product.product_sku %></td>
                       <td class="text-end"><%= row[:available] %></td>
                       <td class="text-end"><%= row[:reserved] %></td>
@@ -162,8 +167,9 @@
               </table>
             </div>
             <% @search_results.each do |row| %>
+              <%# Con Turbo activo la respuesta es un stream que sólo toca el lote. %>
               <%= form_with url: admin_location_assignment_batch_lines_path, method: :post, local: true,
-                            id: "add-form-#{row[:product].id}", data: { turbo: false } do %>
+                            id: "add-form-#{row[:product].id}" do %>
                 <%= hidden_field_tag :product_id, row[:product].id, id: "add-product-#{row[:product].id}" %>
                 <%= hidden_field_tag :q, @q, id: "add-q-#{row[:product].id}" %>
               <% end %>
@@ -175,75 +181,6 @@
 
     <%# ============ PASO 3: el lote ============ %>
     <div class="col-12 col-xl-5">
-      <div class="card shadow-sm sticky-xl-top" style="top:1rem;">
-        <div class="card-header d-flex justify-content-between align-items-center">
-          <h2 class="h6 mb-0">
-            <i class="fa-solid fa-list-check me-1" aria-hidden="true"></i>
-            Paso 3 · Productos a ubicar
-          </h2>
-          <span class="badge bg-primary" id="batch-units"><%= @batch.total_units %> pieza(s)</span>
-        </div>
-        <div class="card-body">
-          <% if @batch.location %>
-            <p class="small text-muted mb-3">
-              En <strong><%= @batch.location.full_path %></strong>
-            </p>
-          <% end %>
-
-          <% if @batch_lines.empty? %>
-            <p class="text-muted mb-0" id="batch-empty">
-              Aún no agregas productos. Busca uno y pulsa <strong>Agregar</strong>.
-            </p>
-          <% else %>
-            <ul class="list-group list-group-flush mb-3" id="batch-lines">
-              <% @batch_lines.each do |line| %>
-                <li class="list-group-item px-0" data-batch-product-id="<%= line[:product].id %>">
-                  <div class="d-flex justify-content-between align-items-start gap-2">
-                    <div class="flex-grow-1" style="min-width:0;">
-                      <div class="fw-semibold text-truncate"><%= line[:product].product_name %></div>
-                      <div class="font-monospace small text-muted"><%= line[:product].product_sku %></div>
-                    </div>
-                    <%= form_with url: admin_location_assignment_batch_line_path(product_id: line[:product].id),
-                                  method: :patch, local: true, data: { turbo: false },
-                                  class: 'd-flex align-items-center gap-1' do %>
-                      <%= hidden_field_tag :q, @q %>
-                      <%= number_field_tag :quantity, line[:quantity], min: 1, step: 1,
-                                           class: 'form-control form-control-sm', style: 'width:5rem;',
-                                           id: "batch-qty-#{line[:product].id}",
-                                           'aria-label': "Cantidad de #{line[:product].product_name} en el lote" %>
-                      <%= submit_tag 'OK', class: 'btn btn-sm btn-outline-secondary',
-                                     id: "batch-update-#{line[:product].id}" %>
-                    <% end %>
-                    <%= button_to admin_location_assignment_batch_remove_line_path(product_id: line[:product].id),
-                                  method: :delete, form: { data: { turbo: false } },
-                                  class: 'btn btn-sm btn-outline-danger',
-                                  id: "batch-remove-#{line[:product].id}",
-                                  'aria-label': "Quitar #{line[:product].product_name} de la asignación" do %>
-                      <i class="fa-solid fa-xmark" aria-hidden="true"></i>
-                    <% end %>
-                  </div>
-                </li>
-              <% end %>
-            </ul>
-
-            <div class="d-flex justify-content-between small text-muted mb-3">
-              <span id="batch-products"><%= @batch.product_count %> producto(s)</span>
-              <span><strong><%= @batch.total_units %></strong> pieza(s) en total</span>
-            </div>
-
-            <div class="d-grid gap-2">
-              <%= link_to admin_location_assignment_batch_review_path, class: 'btn btn-primary btn-lg', id: 'review-batch' do %>
-                <i class="fa-solid fa-list-check me-1" aria-hidden="true"></i> Revisar asignación
-              <% end %>
-              <%= button_to admin_location_assignment_batch_clear_path, method: :delete,
-                            form: { data: { turbo: false } },
-                            class: 'btn btn-outline-secondary', id: 'clear-batch' do %>
-                <i class="fa-solid fa-trash me-1" aria-hidden="true"></i> Vaciar lote
-              <% end %>
-            </div>
-          <% end %>
-        </div>
-      </div>
-    </div>
+      <%= render "admin/inventory/location_batch_panel", batch: @batch, batch_lines: @batch_lines, q: @q %>
   </div>
 </div>

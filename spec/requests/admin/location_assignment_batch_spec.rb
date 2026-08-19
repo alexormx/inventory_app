@@ -235,22 +235,23 @@ RSpec.describe 'Admin location assignment batch', type: :request do
     end
   end
 
-  # El trabajo es en cadena: SKU, agregar, siguiente SKU. Dejar el término
-  # anterior obliga a borrarlo a mano cada vez.
-  describe 'search field after adding' do
+  # Corrección de UX: el operador trabaja sobre UN resultado de búsqueda y va
+  # agregando varios SKU de ahí. Limpiar el buscador tras cada alta le borraba el
+  # contexto y lo obligaba a repetir la búsqueda. Ahora la búsqueda se queda.
+  describe 'search state after adding' do
     before { stock(product_a, 10); stock(product_b, 8); select_location }
 
-    it 'clears the search after a successful add' do
+    it 'keeps the search term after a successful add' do
       post admin_location_assignment_batch_lines_path,
-           params: { product_id: product_a.id, quantity: 3, q: 'TOM-123' }
+           params: { product_id: product_a.id, quantity: 3, q: 'TOM' }
 
-      expect(response).to redirect_to(admin_inventory_unlocated_path)
+      expect(response).to redirect_to(admin_inventory_unlocated_path(q: 'TOM'))
       follow_redirect!
-      expect(response.body).to include('value=""')
-      expect(response.body).not_to include('search-results-table')
+      expect(response.body).to include('search-results-table')
+      expect(response.body).to include('Skyline GT-R')
     end
 
-    it 'keeps the search term and the typed quantity when the add fails' do
+    it 'keeps the search term and typed quantity when the add fails' do
       post admin_location_assignment_batch_lines_path,
            params: { product_id: product_a.id, quantity: 0, q: 'TOM-123' }
 
@@ -258,30 +259,41 @@ RSpec.describe 'Admin location assignment batch', type: :request do
         admin_inventory_unlocated_path(q: 'TOM-123', retry_product_id: product_a.id, retry_quantity: '0')
       )
       follow_redirect!
-      expect(response.body).to include('TOM-123')
       expect(response.body).to include('search-results-table')
     end
 
-    it 'lets the operator chain one SKU after another without clearing by hand' do
+    it 'lets several SKUs be added from the same result set' do
       post admin_location_assignment_batch_lines_path,
-           params: { product_id: product_a.id, quantity: 3, q: 'TOM-123' }
+           params: { product_id: product_a.id, quantity: 3, q: 'TOM' }
       post admin_location_assignment_batch_lines_path,
-           params: { product_id: product_b.id, quantity: 2, q: 'TOM-555' }
+           params: { product_id: product_b.id, quantity: 2, q: 'TOM' }
 
-      get admin_inventory_unlocated_path
+      get admin_inventory_unlocated_path, params: { q: 'TOM' }
       expect(response.body).to include('Skyline GT-R')
       expect(response.body).to include('Supra')
       expect(response.body).to include('2 producto(s)')
       expect(response.body).to include('5 pieza(s)')
     end
 
-    it 'keeps the location and the batch intact after clearing the search' do
+    it 'keeps the location and the batch intact' do
       post admin_location_assignment_batch_lines_path,
-           params: { product_id: product_a.id, quantity: 3, q: 'TOM-123' }
+           params: { product_id: product_a.id, quantity: 3, q: 'TOM' }
 
-      get admin_inventory_unlocated_path
+      get admin_inventory_unlocated_path, params: { q: 'TOM' }
       expect(response.body).to include(ERB::Util.html_escape(shelf.full_path))
       expect(response.body).to include('3 pieza(s)')
+    end
+
+    it 'answers a Turbo request by touching only the batch, never the search' do
+      post admin_location_assignment_batch_lines_path,
+           params: { product_id: product_a.id, quantity: 2, q: 'TOM' },
+           headers: { 'Accept' => 'text/vnd.turbo-stream.html' }
+
+      expect(response.media_type).to eq('text/vnd.turbo-stream.html')
+      expect(response.body).to include('location-batch-panel')
+      expect(response.body).to include("quantity-#{product_a.id}")
+      # La tabla de resultados no viaja en la respuesta: se queda como está.
+      expect(response.body).not_to include('search-results-table')
     end
   end
 end

@@ -1,0 +1,20 @@
+<%# Sólo se reemplaza el lote y la cantidad de la fila que se agregó. La búsqueda
+    y sus resultados quedan intactos en el DOM. %>
+<%= turbo_stream.replace 'location-batch-panel' do %>
+  <%= render 'admin/inventory/location_batch_panel', batch: @batch, batch_lines: @batch_lines, q: @q %>
+<% end %>
+
+<%= turbo_stream.replace "quantity-#{@added_product.id}" do %>
+  <%= number_field_tag :quantity, (1 if @assignable.positive?),
+                       min: 1, max: @assignable, step: 1,
+                       class: 'form-control', id: "quantity-#{@added_product.id}",
+                       form: "add-form-#{@added_product.id}", required: true,
+                       disabled: @assignable.zero?,
+                       'aria-label': "Cantidad de #{@added_product.product_name} a agregar al lote" %>
+<% end %>
+
+<% flash.each do |key, message| %>
+  <%= turbo_stream.append 'flash-stack' do %>
+    <%= render 'layouts/flash_message', key: key, message: message %>
+  <% end %>
+<% end %>

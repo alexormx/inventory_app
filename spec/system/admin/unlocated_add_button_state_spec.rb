@@ -63,8 +63,9 @@ RSpec.describe 'Unlocated: Agregar button state', :js, type: :system do
 
     expect(page).to have_css("li[data-batch-product-id='#{product.id}']")
     expect(page).to have_css('#batch-units', text: '1 pieza(s)')
-    # Y sigue listo para el siguiente SKU.
-    expect(page).to have_field('product-search', with: '')
+    # El contexto de búsqueda se queda: se puede agregar otro SKU del mismo
+    # resultado sin volver a teclear.
+    expect(page).to have_field('product-search', with: 'Nissan Skyline')
     expect(page).to have_css('#selected-location')
   end
 

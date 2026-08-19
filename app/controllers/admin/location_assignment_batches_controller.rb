@@ -40,8 +40,25 @@ module Admin
       return retry_page(alert: 'El producto no existe.') unless product
 
       batch.add(product.id, quantity)
-      redirect_back_to_page(notice: "#{quantity} × #{product.product_name} agregado al lote.",
-                            clear_search: true)
+      @added_product = product
+      @added_quantity = quantity
+
+      # Turbo actualiza SÓLO el panel del lote y repone la cantidad de la fila
+      # agregada. La sección de búsqueda no se toca: el término, sus resultados y
+      # el scroll se quedan como estaban, que es como se trabaja en bodega
+      # (varios SKU seguidos del mismo resultado de búsqueda).
+      respond_to do |format|
+        format.turbo_stream do
+          @batch = batch
+          @batch_lines = batch.detailed_lines
+          @q = params[:q].to_s.strip
+          @assignable = assignable_for(product)
+          flash.now[:notice] = "#{quantity} × #{product.product_name} agregado al lote."
+        end
+        format.html do
+          redirect_back_to_page(notice: "#{quantity} × #{product.product_name} agregado al lote.")
+        end
+      end
     rescue ArgumentError, TypeError
       retry_page(alert: 'La cantidad debe ser un número entero mayor a cero.')
     rescue Admin::LocationAssignmentBatch::TooManyLines
@@ -94,6 +111,11 @@ module Admin
     end
 
     private
+
+    # Cuánto queda asignable ahora mismo para reponer el input de cantidad.
+    def assignable_for(product)
+      Inventories::LocationAssignment.eligible_scope(product.id).count
+    end
 
     def batch = @batch ||= Admin::LocationAssignmentBatch.new(session)
 
