@@ -26,21 +26,26 @@ module Admin
       redirect_back_to_page(notice: batch.location ? "Ubicación seleccionada: #{batch.location.full_path}." : nil)
     end
 
+    # Al agregar bien se limpia el buscador: el trabajo es en cadena —SKU, agregar,
+    # siguiente SKU— y dejar el término anterior obliga a borrarlo a mano cada vez.
+    # Si algo falla se conserva lo tecleado (término y cantidad) para poder
+    # corregirlo sin volver a buscar.
     def add_line
-      return redirect_back_to_page(alert: 'Selecciona primero la ubicación destino.') if batch.location_id.blank?
+      return retry_page(alert: 'Selecciona primero la ubicación destino.') if batch.location_id.blank?
 
       quantity = Integer(params[:quantity].to_s.strip, 10)
       raise ArgumentError unless quantity.positive?
 
       product = Product.find_by(id: params[:product_id])
-      return redirect_back_to_page(alert: 'El producto no existe.') unless product
+      return retry_page(alert: 'El producto no existe.') unless product
 
       batch.add(product.id, quantity)
-      redirect_back_to_page(notice: "#{quantity} × #{product.product_name} agregado al lote.")
+      redirect_back_to_page(notice: "#{quantity} × #{product.product_name} agregado al lote.",
+                            clear_search: true)
     rescue ArgumentError, TypeError
-      redirect_back_to_page(alert: 'La cantidad debe ser un número entero mayor a cero.')
+      retry_page(alert: 'La cantidad debe ser un número entero mayor a cero.')
     rescue Admin::LocationAssignmentBatch::TooManyLines
-      redirect_back_to_page(alert: "El lote admite hasta #{Admin::LocationAssignmentBatch::MAX_LINES} productos.")
+      retry_page(alert: "El lote admite hasta #{Admin::LocationAssignmentBatch::MAX_LINES} productos.")
     end
 
     def update_line
@@ -92,9 +97,18 @@ module Admin
 
     def batch = @batch ||= Admin::LocationAssignmentBatch.new(session)
 
-    def redirect_back_to_page(notice: nil, alert: nil)
-      redirect_to admin_inventory_unlocated_path(q: params[:q]),
+    def redirect_back_to_page(notice: nil, alert: nil, clear_search: false, extra: {})
+      query = clear_search ? {} : { q: params[:q].presence }
+      redirect_to admin_inventory_unlocated_path(**query.compact, **extra.compact),
                   notice: notice, alert: alert, status: :see_other
+    end
+
+    # Vuelve a la página conservando lo que el operador tenía escrito, para que
+    # sólo tenga que corregir el dato que falló.
+    def retry_page(alert:)
+      redirect_back_to_page(alert: alert,
+                            extra: { retry_product_id: params[:product_id].presence,
+                                     retry_quantity: params[:quantity].presence })
     end
   end
 end

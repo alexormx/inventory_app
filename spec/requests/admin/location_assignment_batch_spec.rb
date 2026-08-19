@@ -234,4 +234,54 @@ RSpec.describe 'Admin location assignment batch', type: :request do
       expect(response).to redirect_to(root_path)
     end
   end
+
+  # El trabajo es en cadena: SKU, agregar, siguiente SKU. Dejar el término
+  # anterior obliga a borrarlo a mano cada vez.
+  describe 'search field after adding' do
+    before { stock(product_a, 10); stock(product_b, 8); select_location }
+
+    it 'clears the search after a successful add' do
+      post admin_location_assignment_batch_lines_path,
+           params: { product_id: product_a.id, quantity: 3, q: 'TOM-123' }
+
+      expect(response).to redirect_to(admin_inventory_unlocated_path)
+      follow_redirect!
+      expect(response.body).to include('value=""')
+      expect(response.body).not_to include('search-results-table')
+    end
+
+    it 'keeps the search term and the typed quantity when the add fails' do
+      post admin_location_assignment_batch_lines_path,
+           params: { product_id: product_a.id, quantity: 0, q: 'TOM-123' }
+
+      expect(response).to redirect_to(
+        admin_inventory_unlocated_path(q: 'TOM-123', retry_product_id: product_a.id, retry_quantity: '0')
+      )
+      follow_redirect!
+      expect(response.body).to include('TOM-123')
+      expect(response.body).to include('search-results-table')
+    end
+
+    it 'lets the operator chain one SKU after another without clearing by hand' do
+      post admin_location_assignment_batch_lines_path,
+           params: { product_id: product_a.id, quantity: 3, q: 'TOM-123' }
+      post admin_location_assignment_batch_lines_path,
+           params: { product_id: product_b.id, quantity: 2, q: 'TOM-555' }
+
+      get admin_inventory_unlocated_path
+      expect(response.body).to include('Skyline GT-R')
+      expect(response.body).to include('Supra')
+      expect(response.body).to include('2 producto(s)')
+      expect(response.body).to include('5 pieza(s)')
+    end
+
+    it 'keeps the location and the batch intact after clearing the search' do
+      post admin_location_assignment_batch_lines_path,
+           params: { product_id: product_a.id, quantity: 3, q: 'TOM-123' }
+
+      get admin_inventory_unlocated_path
+      expect(response.body).to include(ERB::Util.html_escape(shelf.full_path))
+      expect(response.body).to include('3 pieza(s)')
+    end
+  end
 end

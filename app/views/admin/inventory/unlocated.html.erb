@@ -81,7 +81,8 @@
             <div class="col-12 col-md-9">
               <%= label_tag :q, 'Producto o SKU', class: 'form-label fw-semibold' %>
               <%= search_field_tag :q, @q, class: 'form-control form-control-lg', id: 'product-search',
-                                   placeholder: 'Ej. Skyline o TOM-123', autocomplete: 'off', autofocus: @batch.location.present? %>
+                                   placeholder: 'Ej. Skyline o TOM-123', autocomplete: 'off',
+                                   autofocus: @batch.location.present? && @q.blank? %>
             </div>
             <div class="col-12 col-md-3 d-grid">
               <%= submit_tag 'Buscar', class: 'btn btn-outline-primary btn-lg' %>
@@ -127,7 +128,9 @@
                       <td>
                         <%# Un <form> no puede ser hijo de <tr>: los controles se
                             enlazan al form de abajo con el atributo form=. %>
-                        <%= number_field_tag :quantity, nil, min: 1, max: row[:assignable], step: 1,
+                        <% retried = params[:retry_product_id].to_s == product.id.to_s %>
+                        <%= number_field_tag :quantity, (params[:retry_quantity] if retried),
+                                             min: 1, max: row[:assignable], step: 1,
                                              class: 'form-control', id: "quantity-#{product.id}",
                                              form: form_id, required: true,
                                              disabled: row[:assignable].zero? || @batch.location.blank?,

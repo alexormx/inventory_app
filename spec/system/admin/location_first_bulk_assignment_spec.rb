@@ -119,4 +119,54 @@ RSpec.describe 'Admin assigns a whole batch to one location', :js, type: :system
     expect(page).to have_css('#batch-products', text: '1 producto(s)')
     expect(page).to have_no_css("li[data-batch-product-id='#{product_b.id}']")
   end
+
+  # Encadenar SKUs es el gesto normal: agregar, teclear el siguiente, agregar.
+  it 'clears the search after each add so the next SKU can be typed straight away' do
+    visit admin_inventory_unlocated_path
+    choose_shelf
+
+    fill_in 'product-search', with: product_a.product_sku
+    click_button 'Buscar'
+    fill_in "quantity-#{product_a.id}", with: '5'
+    click_button "add-#{product_a.id}"
+
+    expect(page).to have_css("li[data-batch-product-id='#{product_a.id}']")
+    # El buscador queda vacío y con el foco puesto, listo para el siguiente SKU.
+    expect(page).to have_field('product-search', with: '')
+    expect(page.evaluate_script("document.activeElement && document.activeElement.id")).to eq('product-search')
+
+    # Se teclea el siguiente SKU sin borrar nada a mano.
+    fill_in 'product-search', with: product_b.product_sku
+    click_button 'Buscar'
+    fill_in "quantity-#{product_b.id}", with: '3'
+    click_button "add-#{product_b.id}"
+
+    expect(page).to have_css("li[data-batch-product-id='#{product_a.id}']")
+    expect(page).to have_css("li[data-batch-product-id='#{product_b.id}']")
+    expect(page).to have_css('#batch-products', text: '2 producto(s)')
+    expect(page).to have_css('#batch-units', text: '8 pieza(s)')
+  end
+
+  it 'keeps what was typed when the add fails, so it can be corrected' do
+    visit admin_inventory_unlocated_path
+    choose_shelf
+
+    fill_in 'product-search', with: product_a.product_sku
+    click_button 'Buscar'
+    expect(page).to have_css("tr[data-product-id='#{product_a.id}']")
+    # Se relaja el min del input para poder ejercitar la validación del SERVIDOR.
+    page.execute_script("document.getElementById('quantity-#{product_a.id}').removeAttribute('min')")
+    fill_in "quantity-#{product_a.id}", with: '0'
+    click_button "add-#{product_a.id}"
+
+    expect(page).to have_content('mayor a cero')
+    # El término sigue ahí y el resultado también: sólo hay que corregir la cantidad.
+    expect(page).to have_field('product-search', with: product_a.product_sku)
+    expect(page).to have_css("tr[data-product-id='#{product_a.id}']")
+    expect(page).to have_css('#batch-empty')
+
+    fill_in "quantity-#{product_a.id}", with: '4'
+    click_button "add-#{product_a.id}"
+    expect(page).to have_css('#batch-units', text: '4 pieza(s)')
+  end
 end
