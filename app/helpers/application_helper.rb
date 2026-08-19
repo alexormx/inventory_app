@@ -3,14 +3,60 @@
 module ApplicationHelper
   include MetaTagsHelper
 
+  # Un flash llega con la clave que usó el controlador (:notice, :alert,
+  # :success, :warning, :error...). Todo lo visual y de accesibilidad se deriva
+  # de una única severidad normalizada, para que color, icono, urgencia y
+  # auto-cierre no puedan contradecirse entre sí.
+  FLASH_SEVERITIES = {
+    'notice' => :success,
+    'success' => :success,
+    'alert' => :error,
+    'error' => :error,
+    'danger' => :error,
+    'warning' => :warning
+  }.freeze
+
+  FLASH_ALERT_CLASSES = {
+    success: 'alert-success', warning: 'alert-warning',
+    error: 'alert-danger', info: 'alert-info'
+  }.freeze
+
+  FLASH_ICONS = {
+    success: 'fa-circle-check', warning: 'fa-triangle-exclamation',
+    error: 'fa-circle-exclamation', info: 'fa-circle-info'
+  }.freeze
+
+  def flash_severity(flash_type)
+    FLASH_SEVERITIES.fetch(flash_type.to_s, :info)
+  end
+
+  def flash_alert_class(severity)
+    FLASH_ALERT_CLASSES.fetch(severity, 'alert-info')
+  end
+
+  def flash_icon(severity)
+    FLASH_ICONS.fetch(severity, 'fa-circle-info')
+  end
+
+  # Sólo lo que interrumpe se anuncia como interrupción. Un "guardado" no debe
+  # cortar al lector de pantalla a mitad de frase.
+  def flash_aria_role(severity)
+    severity.in?(%i[error warning]) ? 'alert' : 'status'
+  end
+
+  def flash_aria_live(severity)
+    severity.in?(%i[error warning]) ? 'assertive' : 'polite'
+  end
+
+  # 0 = no se cierra solo. Los errores y avisos esperan a que el usuario los
+  # cierre; lo informativo se va solo.
+  def flash_auto_dismiss_ms(severity)
+    severity.in?(%i[error warning]) ? 0 : 3000
+  end
+
+  # Se conserva porque otras vistas siguen llamándolo.
   def bootstrap_class_for(flash_type)
-    case flash_type.to_sym
-    when :notice then 'alert-success'
-    when :alert then 'alert-danger'
-    when :error then 'alert-danger'
-    when :warning then 'alert-warning'
-    else 'alert-info'
-    end
+    flash_alert_class(flash_severity(flash_type))
   end
 
   def currency_symbol_for(code)

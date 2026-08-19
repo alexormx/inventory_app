@@ -7,8 +7,10 @@ function handleFlashMessages() {
 function scheduleFlash(flash){
   if(!flash || flash.dataset.init) return;
   flash.dataset.init = '1';
-  // Duración configurable vía data-timeout (ms) o default 5000
-  const delay = parseInt(flash.dataset.timeout || '3000', 10);
+  // Duración configurable vía data-timeout (ms). 0 (o negativo) significa
+  // "no se cierra solo": lo usan errores y avisos, que esperan al usuario.
+  const delay = parseInt(flash.dataset.timeout ?? '3000', 10);
+  if(!Number.isFinite(delay) || delay <= 0) return;
   flash.__flashTimeoutId = setTimeout(()=> dismissFlash(flash), delay);
 }
 
