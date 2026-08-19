@@ -16,7 +16,7 @@
      aria-live="<%= flash_aria_live(severity) %>"
      data-severity="<%= severity %>"
      data-timeout="<%= flash_auto_dismiss_ms(severity) %>"
-     style="border-radius:.65rem; backdrop-filter: blur(6px); margin-top:.5rem;">
+     style="border-radius:.65rem; backdrop-filter: blur(6px); margin-top:.5rem; pointer-events:auto;">
   <div class="d-flex align-items-start">
     <i class="fa-solid <%= flash_icon(severity) %> mt-1 me-2" aria-hidden="true"></i>
     <div class="flex-grow-1 pe-2"><%= message %></div>
