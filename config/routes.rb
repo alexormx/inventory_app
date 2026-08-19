@@ -88,6 +88,19 @@ Rails.application.routes.draw do
     get 'inventory/unlocated', to: 'inventory#unlocated', as: :inventory_unlocated
     get 'inventory/unlocated_items/:product_id', to: 'inventory#unlocated_items', as: :inventory_unlocated_items
     post 'inventory/bulk_assign_location', to: 'inventory#bulk_assign_location', as: :inventory_bulk_assign_location
+
+    # Lote de ubicación: se elige el estante una vez y se le van agregando
+    # productos antes de confirmar todo junto.
+    scope path: 'inventory/location_batch', controller: 'location_assignment_batches',
+          as: :location_assignment_batch do
+      post   'location',            action: :set_location, as: :location
+      post   'lines',               action: :add_line,     as: :lines
+      patch  'lines/:product_id',   action: :update_line,  as: :line
+      delete 'lines/:product_id',   action: :remove_line,  as: :remove_line
+      delete 'clear',               action: :clear,        as: :clear
+      get    'review',              action: :review,       as: :review
+      post   'confirm',             action: :confirm,      as: :confirm
+    end
     get 'inventory/location_contents/:location_id', to: 'inventory#location_contents', as: :inventory_location_contents
     get 'inventory/transfer', to: 'inventory#transfer', as: :inventory_transfer
     get 'inventory/location_items/:location_id', to: 'inventory#location_items', as: :inventory_location_items

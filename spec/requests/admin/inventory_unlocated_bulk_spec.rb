@@ -14,29 +14,29 @@ RSpec.describe 'Admin unlocated bulk location assignment', type: :request do
     create(:inventory, product: prod || product, status: status, inventory_location: nil)
   end
 
+  # La pantalla pasó a ser por UBICACIÓN: primero se elige el estante y luego se
+  # va armando el lote. El detalle producto-a-producto de la página vive ahora en
+  # spec/requests/admin/location_assignment_batch_spec.rb.
   describe 'GET /admin/inventory/unlocated' do
     before { sign_in admin }
 
-    it 'renders a full page grouped by product, not a redirect to unit verification' do
+    it 'leads with the location selector' do
       3.times { unlocated }
 
       get admin_inventory_unlocated_path
 
       expect(response).to have_http_status(:success)
-      expect(response.body).to include('Inventario sin ubicación')
-      expect(response.body).to include('Tomica Skyline')
-      expect(response.body).to include('TOM-123')
-      expect(response.body).to include('unlocated-products-table')
+      expect(response.body).to include('Ubicar inventario')
+      expect(response.body).to include('batch-location-id')
     end
 
-    it 'offers quantity and location inputs instead of per-unit checkboxes' do
+    it 'never asks the operator for Inventory ids' do
       2.times { unlocated }
 
-      get admin_inventory_unlocated_path
+      get admin_inventory_unlocated_path, params: { q: 'TOM-123' }
 
-      expect(response.body).to include("quantity-#{product.id}")
-      expect(response.body).to include("location-#{product.id}")
       expect(response.body).not_to include('inventory_ids[]')
+      expect(response.body).to include("quantity-#{product.id}")
     end
 
     it 'separates assignable stock from pre_reserved still in transit' do
@@ -44,9 +44,8 @@ RSpec.describe 'Admin unlocated bulk location assignment', type: :request do
       unlocated(status: :reserved)
       unlocated(status: :pre_reserved)
 
-      get admin_inventory_unlocated_path
+      get admin_inventory_unlocated_path, params: { q: 'TOM-123' }
 
-      # 2 available + 1 reserved assignable; the pre_reserved one shown apart.
       expect(response.body).to include('data-assignable="3"')
       expect(response.body).to include('Pre apartado / en tránsito')
     end
@@ -60,17 +59,6 @@ RSpec.describe 'Admin unlocated bulk location assignment', type: :request do
 
       expect(response.body).to include('Tomica Skyline')
       expect(response.body).not_to include('Hot Wheels Otro')
-    end
-
-    it 'paginates by product rather than by piece' do
-      30.times do |i|
-        p = create(:product, skip_seed_inventory: true, product_name: "Producto #{format('%02d', i)}")
-        2.times { unlocated(prod: p) }
-      end
-
-      get admin_inventory_unlocated_path
-
-      expect(response.body.scan('data-product-id=').size).to eq(Admin::InventoryController::UNLOCATED_PER_PAGE)
     end
   end
 

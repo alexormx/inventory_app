@@ -3,6 +3,7 @@
 module Admin
   class InventoryController < ApplicationController
     UNLOCATED_PER_PAGE = 25
+    UNLOCATED_SEARCH_LIMIT = 25
 
     before_action :authenticate_user!
     before_action :authorize_admin!
@@ -207,40 +208,32 @@ module Admin
       render partial: 'admin/inventory/location_badge', locals: { item: @item }
     end
 
-    # GET /admin/inventory/unlocated - Inventario sin ubicación, por producto.
+    # GET /admin/inventory/unlocated
     #
-    # En esta bodega las piezas no se etiquetan una por una: dos unidades del
-    # mismo SKU son intercambiables y nadie puede señalar cuál es la Inventory
-    # 12345. Lo que el operador sí sabe es "encontré 10 de este producto y las
-    # puse en este estante", así que la pantalla se agrupa por producto y pide
-    # producto + cantidad + ubicación. Las filas concretas las elige el sistema.
+    # El almacén trabaja por ubicación, no por producto: el operador se planta
+    # frente a un estante y acomoda ahí varios modelos distintos. Por eso la
+    # pantalla es "elige el estante, ve agregando productos, confirma una vez",
+    # y no una fila de asignación suelta por producto.
     #
-    # Se agrega en SQL (GROUP BY) y se pagina por PRODUCTO, no por pieza: hoy
-    # son ~2,600 piezas en ~800 productos y no tiene sentido traerlas todas.
+    # Las piezas no se etiquetan una por una, así que el operador nunca elige
+    # Inventory IDs: dice producto y cantidad, y el servicio elige las filas.
+    #
+    # Se agrega en SQL y el buscador sólo trae los productos que coinciden: hoy
+    # son ~2,600 piezas en ~800 productos y no tiene sentido cargarlas todas.
     def unlocated
       @q = params[:q].to_s.strip
-
-      counts = Inventory.where(inventory_location_id: nil)
-                        .where(status: Inventory::STATUSES_REQUIRING_LOCATION)
-                        .group(:product_id, :status)
-                        .count
-
-      product_ids = counts.keys.map(&:first).uniq
-      products_scope = Product.where(id: product_ids)
-      if @q.present?
-        term = "%#{@q.downcase}%"
-        products_scope = products_scope.where(
-          'LOWER(product_name) LIKE :q OR LOWER(product_sku) LIKE :q', q: term
-        )
-      end
-
-      @products = products_scope.order(:product_name).page(params[:page]).per(UNLOCATED_PER_PAGE)
-      @rows = @products.map { |product| unlocated_row_for(product, counts) }
+      @batch = Admin::LocationAssignmentBatch.new(session)
       @location_options = assignable_location_options
+      @batch_lines = @batch.detailed_lines
 
+      counts = unlocated_counts_by_product_and_status
       @total_assignable = counts.sum { |(_pid, status), n| assignable_status?(status) ? n : 0 }
       @total_in_transit = counts.sum { |(_pid, status), n| assignable_status?(status) ? 0 : n }
-      @total_products = product_ids.size
+      @total_products = counts.keys.map(&:first).uniq.size
+
+      # El listado sólo aparece cuando hay búsqueda: la pantalla es para ubicar
+      # lo que traes en la mano, no para pasear por 800 productos.
+      @search_results = @q.present? ? search_unlocated_products(counts) : []
     end
 
     # GET /admin/inventory/location_explorer - Vista unificada: sin ubicación o por ubicación
@@ -493,6 +486,23 @@ module Admin
     end
 
     private
+
+    def unlocated_counts_by_product_and_status
+      Inventory.where(inventory_location_id: nil)
+               .where(status: Inventory::STATUSES_REQUIRING_LOCATION)
+               .group(:product_id, :status)
+               .count
+    end
+
+    def search_unlocated_products(counts)
+      term = "%#{@q.downcase}%"
+      product_ids = counts.keys.map(&:first).uniq
+      Product.where(id: product_ids)
+             .where('LOWER(product_name) LIKE :q OR LOWER(product_sku) LIKE :q', q: term)
+             .order(:product_name)
+             .limit(UNLOCATED_SEARCH_LIMIT)
+             .map { |product| unlocated_row_for(product, counts) }
+    end
 
     # Hojas activas en UNA consulta. Recorrer InventoryLocation.active llamando
     # a leaf? hace una consulta por ubicación (N+1); esto excluye de golpe a
