@@ -102,16 +102,15 @@ RSpec.describe 'Admin::Inventory location explorer', type: :request do
   # bloqueo, validación de ubicación y todo-o-nada. Lo que NO vuelve es el
   # update_all a ciegas del código viejo.
   describe 'bulk assignment by product and quantity' do
-    it 'serves the unlocated screen as the bulk assignment page' do
+    it 'serves the unlocated screen as the location-first batch page' do
       product = create(:product, skip_seed_inventory: true, product_name: 'Tomica Bulk')
       create(:inventory, product: product, status: :available, inventory_location: nil)
 
       get admin_inventory_unlocated_path
 
       expect(response).to have_http_status(:success)
-      expect(response.body).to include('Inventario sin ubicación')
-      expect(response.body).to include('unlocated-products-table')
-      expect(response.body).to include('Tomica Bulk')
+      expect(response.body).to include('Ubicar inventario')
+      expect(response.body).to include('batch-location-id')
     end
 
     it 'assigns the requested quantity through the locked service' do
