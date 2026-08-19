@@ -41,7 +41,7 @@ export default class extends Controller {
 
     // Validar que el precio mínimo no sea menor al precio con descuento máximo
     if (minimumPrice > 0 && minimumPrice < priceWithMaxDiscount) {
-      this.showWarning(`⚠️ El precio mínimo ($${minimumPrice.toFixed(2)}) es menor al precio con descuento máximo ($${priceWithMaxDiscount.toFixed(2)})`)
+      this.showWarning(`El precio mínimo ($${minimumPrice.toFixed(2)}) es menor al precio con descuento máximo ($${priceWithMaxDiscount.toFixed(2)})`)
     } else {
       this.clearWarning()
     }
