@@ -12,7 +12,6 @@ import ClearSearchController from "./clear_search_controller"
 import ConfirmController from "./confirm_controller"
 import DropdownController from "./dropdown_controller"
 import GalleryController from "./gallery_controller"
-import ModalController from "./modal_controller"
 import NavbarController from "./navbar_controller"
 import PaymentModalController from "./payment_modal_controller"
 import PollingFrameController from "./polling_frame_controller"
@@ -39,7 +38,6 @@ application.register("clear-search", ClearSearchController)
 application.register("confirm", ConfirmController)
 application.register("dropdown", DropdownController)
 application.register("gallery", GalleryController)
-application.register("modal", ModalController)
 application.register("navbar", NavbarController)
 application.register("payment-modal", PaymentModalController)
 application.register("polling-frame", PollingFrameController)

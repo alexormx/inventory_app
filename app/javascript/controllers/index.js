@@ -11,7 +11,6 @@ import DropdownController from "./dropdown_controller"
 import DropzoneController from "./dropzone_controller"
 import GalleryController from "./gallery_controller"
 import KvEditorController from "./kv_editor_controller"
-import ModalController from "./modal_controller"
 import NavbarController from "./navbar_controller"
 import PaymentModalController from "./payment_modal_controller"
 import PollingFrameController from "./polling_frame_controller"
@@ -56,7 +55,6 @@ application.register("dropdown", DropdownController)
 application.register("dropzone", DropzoneController)
 application.register("gallery", GalleryController)
 application.register("kv-editor", KvEditorController)
-application.register("modal", ModalController)
 application.register("navbar", NavbarController)
 application.register("payment-modal", PaymentModalController)
 application.register("polling-frame", PollingFrameController)
