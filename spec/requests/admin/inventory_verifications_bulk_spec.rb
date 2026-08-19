@@ -39,13 +39,25 @@ RSpec.describe 'Admin bulk inventory location assignment', type: :request do
     end
   end
 
+  # /admin/inventory/unlocated dejó de redirigir aquí: ahora es la pantalla de
+  # asignación por producto + cantidad, que es la acción real del almacén. Esta
+  # pantalla queda para los casos pieza por pieza y se enlaza desde allá.
   describe 'entry point' do
-    it 'sends /admin/inventory/unlocated to a workflow that can assign locations' do
+    it 'is reachable and offers the per-unit workflow' do
       sign_in admin
 
-      get admin_inventory_unlocated_path
+      get admin_inventory_verifications_path
 
-      expect(response).to redirect_to(admin_inventory_verifications_path(q: nil))
+      expect(response).to have_http_status(:success)
+      expect(response.body).to include('Verificación de unidad individual')
+    end
+
+    it 'links back to the bulk product+quantity screen' do
+      sign_in admin
+
+      get admin_inventory_verifications_path
+
+      expect(response.body).to include(admin_inventory_unlocated_path)
     end
   end
 
