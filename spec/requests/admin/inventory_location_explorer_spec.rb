@@ -96,33 +96,67 @@ RSpec.describe 'Admin::Inventory location explorer', type: :request do
     end
   end
 
-  describe 'FIFO bulk-assignment containment' do
-    # La pantalla dejó de ser sólo de consulta: ahora lleva al flujo donde sí se
-    # asigna ubicación, pero siempre marcando unidades exactas. Lo que no vuelve
-    # es el carrito de producto+cantidad, que es lo que cubre el ejemplo de abajo.
-    it 'sends the legacy unlocated screen to the per-unit assignment workflow' do
-      get admin_inventory_unlocated_path, params: { q: 'Tomica', sort: 'count_desc' }
+  # Corrección de negocio: en esta bodega las piezas NO se etiquetan una por
+  # una, así que exigir Inventory IDs exactos era inoperable. Vuelve la acción
+  # real —producto + cantidad + ubicación— pero sobre el servicio nuevo, con
+  # bloqueo, validación de ubicación y todo-o-nada. Lo que NO vuelve es el
+  # update_all a ciegas del código viejo.
+  describe 'bulk assignment by product and quantity' do
+    it 'serves the unlocated screen as the bulk assignment page' do
+      product = create(:product, skip_seed_inventory: true, product_name: 'Tomica Bulk')
+      create(:inventory, product: product, status: :available, inventory_location: nil)
 
-      expect(response).to redirect_to(admin_inventory_verifications_path(q: 'Tomica'))
+      get admin_inventory_unlocated_path
 
-      follow_redirect!
-      expect(response.body).to include('Verificación física')
-      expect(response.body).to include('Siempre por unidad exacta')
-      expect(response.body).not_to include('Asignar Todo a Ubicación', 'Carrito de Asignación')
+      expect(response).to have_http_status(:success)
+      expect(response.body).to include('Inventario sin ubicación')
+      expect(response.body).to include('unlocated-products-table')
+      expect(response.body).to include('Tomica Bulk')
     end
 
-    it 'rejects product-and-quantity assignments without changing inventory' do
+    it 'assigns the requested quantity through the locked service' do
       product = create(:product, skip_seed_inventory: true)
-      inventory = create(:inventory, product: product, status: :available, inventory_location: nil)
-      location = create(:inventory_location, :warehouse)
+      pieces = Array.new(3) do
+        create(:inventory, product: product, status: :available, inventory_location: nil)
+      end
+      warehouse = create(:inventory_location, :warehouse)
+      shelf = create(:inventory_location, parent: warehouse)
 
       expect do
         post admin_inventory_bulk_assign_location_path,
-             params: { inventory_location_id: location.id, assignments: { product.id => 1 } }
+             params: { product_id: product.id, quantity: 2, inventory_location_id: shelf.id }
+      end.to change { product.inventories.where(inventory_location_id: shelf.id).count }.by(2)
+
+      expect(response).to have_http_status(:see_other)
+      # FIFO: se toman las dos más antiguas, la tercera sigue sin ubicar.
+      expect(pieces.last.reload.inventory_location_id).to be_nil
+    end
+
+    it 'still refuses to assign more units than exist, without partial writes' do
+      product = create(:product, skip_seed_inventory: true)
+      inventory = create(:inventory, product: product, status: :available, inventory_location: nil)
+      warehouse = create(:inventory_location, :warehouse)
+      shelf = create(:inventory_location, parent: warehouse)
+
+      expect do
+        post admin_inventory_bulk_assign_location_path,
+             params: { product_id: product.id, quantity: 5, inventory_location_id: shelf.id }
       end.not_to(change { inventory.reload.inventory_location_id })
 
       expect(response).to have_http_status(:see_other)
-      expect(response).to redirect_to(admin_inventory_location_explorer_path(mode: 'unlocated'))
+      expect(flash[:alert]).to include('No se asignó ninguna')
+    end
+
+    it 'still refuses a non-leaf location' do
+      product = create(:product, skip_seed_inventory: true)
+      inventory = create(:inventory, product: product, status: :available, inventory_location: nil)
+      warehouse = create(:inventory_location, :warehouse)
+      create(:inventory_location, parent: warehouse)
+
+      expect do
+        post admin_inventory_bulk_assign_location_path,
+             params: { product_id: product.id, quantity: 1, inventory_location_id: warehouse.id }
+      end.not_to(change { inventory.reload.inventory_location_id })
     end
   end
 end

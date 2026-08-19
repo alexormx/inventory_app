@@ -1,18 +1,158 @@
-<div id="flash-messages" class="container mt-3">
-  <% if flash[:notice] %>
-    <div class="alert alert-success alert-dismissible fade show" role="alert">
-      <i class="fa-solid fa-circle-check"></i> <%= flash[:notice] %>
-      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+<div class="container-fluid px-0">
+  <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+      <h1 class="h3 mb-1">
+        <i class="fa-solid fa-boxes-stacked me-2" aria-hidden="true"></i>Inventario sin ubicación
+      </h1>
+      <p class="text-muted mb-0">
+        Indica cuántas piezas encontraste de cada producto y a qué ubicación las moviste.
+      </p>
     </div>
-  <% end %>
-  <% if flash[:alert] %>
-    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-      <i class="fa-solid fa-circle-exclamation"></i> <%= flash[:alert] %>
-      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-  <% end %>
-</div>
+    <%= link_to admin_inventory_verifications_path, class: 'btn btn-outline-secondary' do %>
+      <i class="fa-solid fa-clipboard-check me-1" aria-hidden="true"></i> Verificar unidad individual
+    <% end %>
+  </div>
 
-<div id="unlocated-content">
-  <%= render partial: "admin/inventory/unlocated_content" %>
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+      <div class="card border-primary h-100"><div class="card-body text-center">
+        <div class="display-6 fw-bold text-primary" id="total-assignable"><%= number_with_delimiter(@total_assignable) %></div>
+        <div class="small text-muted"><i class="fa-solid fa-warehouse me-1" aria-hidden="true"></i>Asignables ahora</div>
+      </div></div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="card h-100"><div class="card-body text-center">
+        <div class="display-6 fw-bold" id="total-products"><%= number_with_delimiter(@total_products) %></div>
+        <div class="small text-muted"><i class="fa-solid fa-cubes me-1" aria-hidden="true"></i>Productos</div>
+      </div></div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="card h-100 <%= 'border-info' if @total_in_transit.positive? %>"><div class="card-body text-center">
+        <div class="display-6 fw-bold text-info" id="total-in-transit"><%= number_with_delimiter(@total_in_transit) %></div>
+        <div class="small text-muted"><i class="fa-solid fa-truck me-1" aria-hidden="true"></i>Pre apartado / en tránsito</div>
+      </div></div>
+    </div>
+  </div>
+
+  <% if @total_in_transit.positive? %>
+    <div class="alert alert-info d-flex gap-2" role="status">
+      <i class="fa-solid fa-circle-info mt-1" aria-hidden="true"></i>
+      <div>
+        <strong>Pre apartado no se puede ubicar todavía.</strong>
+        Esas piezas siguen en tránsito: no están físicamente en la bodega, así que no
+        cuentan como asignables. Aparecen aparte para que el total cuadre.
+      </div>
+    </div>
+  <% end %>
+
+  <div class="card shadow-sm mb-4"><div class="card-body">
+    <%= form_with url: admin_inventory_unlocated_path, method: :get, local: true, class: 'row g-2 align-items-end' do %>
+      <div class="col-12 col-md-8">
+        <%= label_tag :q, 'Buscar producto o SKU', class: 'form-label fw-semibold' %>
+        <%= search_field_tag :q, @q, class: 'form-control form-control-lg',
+                             placeholder: 'Ej. Tomica Skyline o TOM-123', autocomplete: 'off' %>
+      </div>
+      <div class="col-12 col-md-4 d-grid">
+        <%= submit_tag 'Buscar', class: 'btn btn-primary btn-lg' %>
+      </div>
+    <% end %>
+  </div></div>
+
+  <% if @rows.any? %>
+    <div class="card shadow-sm">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0" id="unlocated-products-table">
+          <thead class="table-light">
+            <tr>
+              <th scope="col">Producto</th>
+              <th scope="col">SKU</th>
+              <th scope="col" class="text-end">Disponible</th>
+              <th scope="col" class="text-end">Apartado</th>
+              <th scope="col" class="text-end">En tránsito</th>
+              <th scope="col" class="text-end">Asignable</th>
+              <th scope="col" style="min-width:110px;">Cantidad</th>
+              <th scope="col" style="min-width:230px;">Ubicación destino</th>
+              <th scope="col"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @rows.each do |row| %>
+              <% product = row[:product] %>
+              <% form_id = "assign-form-#{product.id}" %>
+              <tr data-product-id="<%= product.id %>">
+                <td>
+                  <%= link_to product.product_name, admin_product_path(product),
+                              class: 'fw-semibold text-decoration-none' %>
+                </td>
+                <td class="font-monospace small"><%= product.product_sku %></td>
+                <td class="text-end"><%= row[:available] %></td>
+                <td class="text-end"><%= row[:reserved] %></td>
+                <td class="text-end">
+                  <% if row[:in_transit].positive? %>
+                    <span class="badge text-bg-info" title="Pre apartado: sigue en tránsito">
+                      <%= row[:in_transit] %>
+                    </span>
+                  <% else %>
+                    <span class="text-muted">—</span>
+                  <% end %>
+                </td>
+                <td class="text-end fw-bold" data-assignable="<%= row[:assignable] %>">
+                  <%= row[:assignable] %>
+                </td>
+                <td>
+                  <%# Los controles viven en la fila pero pertenecen al form de
+                      abajo vía el atributo form=: un <form> no puede ser hijo de
+                      <tr>, el navegador lo saca y rompe la tabla. %>
+                  <%= number_field_tag :quantity, nil, min: 1, max: row[:assignable],
+                                       step: 1, class: 'form-control',
+                                       id: "quantity-#{product.id}",
+                                       form: form_id,
+                                       required: true,
+                                       disabled: row[:assignable].zero?,
+                                       'aria-label': "Cantidad a ubicar de #{product.product_name}" %>
+                </td>
+                <td>
+                  <%= select_tag :inventory_location_id,
+                                 options_for_select([['Selecciona ubicación', '']] + @location_options),
+                                 class: 'form-select',
+                                 id: "location-#{product.id}",
+                                 form: form_id,
+                                 required: true,
+                                 disabled: row[:assignable].zero?,
+                                 'aria-label': "Ubicación destino para #{product.product_name}" %>
+                </td>
+                <td>
+                  <%= submit_tag 'Asignar', class: 'btn btn-primary',
+                                 id: "assign-#{product.id}",
+                                 form: form_id,
+                                 disabled: row[:assignable].zero?,
+                                 data: { turbo_submits_with: 'Asignando…' } %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <%# Un form por producto, fuera de la tabla. Los controles de cada fila los
+        referencian con form="assign-form-<id>" (HTML5). %>
+    <% @rows.each do |row| %>
+      <%= form_with url: admin_inventory_bulk_assign_location_path, method: :post, local: true,
+                    id: "assign-form-#{row[:product].id}", data: { turbo: false } do %>
+        <%= hidden_field_tag :product_id, row[:product].id, id: "product-id-#{row[:product].id}" %>
+        <%= hidden_field_tag :q, @q, id: "q-#{row[:product].id}" %>
+        <%= hidden_field_tag :page, params[:page], id: "page-#{row[:product].id}" %>
+      <% end %>
+    <% end %>
+
+    <div class="d-flex justify-content-center mt-3"><%= paginate @products %></div>
+  <% else %>
+    <div class="card border-0 bg-light"><div class="card-body text-center py-5">
+      <i class="fa-solid fa-circle-check fa-2x text-success mb-3" aria-hidden="true"></i>
+      <h2 class="h5">No hay inventario pendiente de ubicar</h2>
+      <p class="text-muted mb-0">
+        <%= @q.present? ? 'Ningún producto coincide con la búsqueda.' : 'Todo el inventario en bodega tiene ubicación.' %>
+      </p>
+    </div></div>
+  <% end %>
 </div>

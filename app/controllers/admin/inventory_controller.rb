@@ -2,6 +2,8 @@
 
 module Admin
   class InventoryController < ApplicationController
+    UNLOCATED_PER_PAGE = 25
+
     before_action :authenticate_user!
     before_action :authorize_admin!
 
@@ -205,15 +207,40 @@ module Admin
       render partial: 'admin/inventory/location_badge', locals: { item: @item }
     end
 
-    # GET /admin/inventory/unlocated - Inventario sin ubicación asignada
+    # GET /admin/inventory/unlocated - Inventario sin ubicación, por producto.
     #
-    # Lleva al flujo de verificación física, que es el único lugar donde se
-    # escribe una ubicación. Ahí se pueden seleccionar varias unidades exactas y
-    # asignarles la misma ubicación; lo que no vuelve es elegir por producto y
-    # cantidad, porque eso nunca demostró qué piezas existen físicamente.
+    # En esta bodega las piezas no se etiquetan una por una: dos unidades del
+    # mismo SKU son intercambiables y nadie puede señalar cuál es la Inventory
+    # 12345. Lo que el operador sí sabe es "encontré 10 de este producto y las
+    # puse en este estante", así que la pantalla se agrupa por producto y pide
+    # producto + cantidad + ubicación. Las filas concretas las elige el sistema.
+    #
+    # Se agrega en SQL (GROUP BY) y se pagina por PRODUCTO, no por pieza: hoy
+    # son ~2,600 piezas en ~800 productos y no tiene sentido traerlas todas.
     def unlocated
-      redirect_to admin_inventory_verifications_path(q: params[:q]),
-                  notice: 'Selecciona las unidades exactas que tengas físicamente para asignarles ubicación.'
+      @q = params[:q].to_s.strip
+
+      counts = Inventory.where(inventory_location_id: nil)
+                        .where(status: Inventory::STATUSES_REQUIRING_LOCATION)
+                        .group(:product_id, :status)
+                        .count
+
+      product_ids = counts.keys.map(&:first).uniq
+      products_scope = Product.where(id: product_ids)
+      if @q.present?
+        term = "%#{@q.downcase}%"
+        products_scope = products_scope.where(
+          'LOWER(product_name) LIKE :q OR LOWER(product_sku) LIKE :q', q: term
+        )
+      end
+
+      @products = products_scope.order(:product_name).page(params[:page]).per(UNLOCATED_PER_PAGE)
+      @rows = @products.map { |product| unlocated_row_for(product, counts) }
+      @location_options = assignable_location_options
+
+      @total_assignable = counts.sum { |(_pid, status), n| assignable_status?(status) ? n : 0 }
+      @total_in_transit = counts.sum { |(_pid, status), n| assignable_status?(status) ? 0 : n }
+      @total_products = product_ids.size
     end
 
     # GET /admin/inventory/location_explorer - Vista unificada: sin ubicación o por ubicación
@@ -375,13 +402,35 @@ module Admin
       render partial: 'admin/inventory/location_contents', locals: { items: @items, location: @location }
     end
 
-    # La selección producto + cantidad no demuestra qué unidades existen
-    # físicamente. Se conserva la ruta para rechazar clientes antiguos sin
-    # permitir que conviertan inventario no verificado en stock vendible.
+    # POST /admin/inventory/bulk_assign_location
+    #
+    # Misma ruta de siempre, implementación nueva: ya no hace un update_all a
+    # ciegas. Delega en Inventories::BulkAssignLocationService, que dentro de una
+    # transacción revalida la ubicación, bloquea las filas FIFO y aplica todo o
+    # nada. La atomicidad es POR PRODUCTO, que es la unidad real de la acción
+    # física ("puse 10 de este modelo en este estante").
     def bulk_assign_location
-      redirect_to admin_inventory_location_explorer_path(mode: 'unlocated'),
-                  alert: 'Asignación rechazada: la verificación física deberá confirmar IDs de inventario individuales.',
+      result = Inventories::BulkAssignLocationService.call(
+        product_id: params[:product_id],
+        quantity: params[:quantity],
+        location_id: params[:inventory_location_id],
+        actor: current_user,
+        notes: params[:notes]
+      )
+
+      redirect_to admin_inventory_unlocated_path(q: params[:q], page: params[:page]),
+                  notice: "#{result.assigned_count} unidad(es) de #{result.product.product_name} " \
+                          "asignadas a #{result.location.full_path}.",
                   status: :see_other
+    rescue Inventories::BulkAssignLocationService::InsufficientEligibleInventory => e
+      redirect_to admin_inventory_unlocated_path(q: params[:q], page: params[:page]),
+                  alert: "No fue posible asignar #{e.requested} unidad(es). " \
+                         "Actualmente hay #{e.available} sin ubicación. No se asignó ninguna.",
+                  status: :see_other
+    rescue Inventories::BulkAssignLocationService::Error,
+           Inventories::LocationAssignment::InvalidLocation => e
+      redirect_to admin_inventory_unlocated_path(q: params[:q], page: params[:page]),
+                  alert: e.message, status: :see_other
     end
 
     # GET /admin/inventory/transfer - Vista para transferir entre ubicaciones
@@ -444,6 +493,34 @@ module Admin
     end
 
     private
+
+    # Hojas activas en UNA consulta. Recorrer InventoryLocation.active llamando
+    # a leaf? hace una consulta por ubicación (N+1); esto excluye de golpe a
+    # cualquiera que sea padre de otra.
+    def assignable_location_options
+      parent_ids = InventoryLocation.where.not(parent_id: nil).select(:parent_id)
+      InventoryLocation.active.where.not(id: parent_ids).order(:path_cache, :name).map do |location|
+        ["#{location.path_cache.presence || location.name} (#{location.code})", location.id]
+      end
+    end
+
+    # 'pre_reserved' requiere ubicación según el modelo, pero físicamente sigue
+    # en tránsito: se muestra aparte y no entra en lo asignable.
+    def assignable_status?(status)
+      Inventories::LocationAssignment::ELIGIBLE_STATUSES.include?(status.to_s)
+    end
+
+    def unlocated_row_for(product, counts)
+      per_status = counts.select { |(pid, _status), _n| pid == product.id }
+                         .transform_keys { |(_pid, status)| status.to_s }
+      {
+        product: product,
+        available: per_status['available'].to_i,
+        reserved: per_status['reserved'].to_i,
+        in_transit: per_status['pre_reserved'].to_i,
+        assignable: per_status.sum { |status, n| assignable_status?(status) ? n : 0 }
+      }
+    end
 
     def inventory_params
       params.expect(inventory: %i[status status_changed_at])
