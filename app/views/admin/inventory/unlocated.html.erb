@@ -129,17 +129,32 @@
                         <%# Un <form> no puede ser hijo de <tr>: los controles se
                             enlazan al form de abajo con el atributo form=. %>
                         <% retried = params[:retry_product_id].to_s == product.id.to_s %>
-                        <%= number_field_tag :quantity, (params[:retry_quantity] if retried),
-                                             min: 1, max: row[:assignable], step: 1,
+                        <% assignable = row[:assignable] %>
+                        <%# La cantidad arranca en 1 cuando hay algo que asignar. Si se deja
+                            vacía, el campo es required y el navegador bloquea el envío sin
+                            señalar el botón: para el operador "Agregar" parece muerto. %>
+                        <% default_quantity = retried ? params[:retry_quantity] : (1 if assignable.positive?) %>
+                        <%= number_field_tag :quantity, default_quantity,
+                                             min: 1, max: assignable, step: 1,
                                              class: 'form-control', id: "quantity-#{product.id}",
                                              form: form_id, required: true,
-                                             disabled: row[:assignable].zero? || @batch.location.blank?,
+                                             disabled: assignable.zero? || @batch.location.blank?,
                                              'aria-label': "Cantidad de #{product.product_name} a agregar al lote" %>
                       </td>
                       <td>
                         <%= submit_tag 'Agregar', class: 'btn btn-success', id: "add-#{product.id}",
                                        form: form_id,
-                                       disabled: row[:assignable].zero? || @batch.location.blank? %>
+                                       disabled: assignable.zero? || @batch.location.blank? %>
+                        <%# Un botón apagado sin explicación se lee como una falla. %>
+                        <% if assignable.zero? %>
+                          <div class="small text-muted mt-1" id="no-stock-<%= product.id %>">
+                            Sin inventario disponible para asignar
+                          </div>
+                        <% elsif @batch.location.blank? %>
+                          <div class="small text-muted mt-1" id="no-location-<%= product.id %>">
+                            Selecciona primero la ubicación destino
+                          </div>
+                        <% end %>
                       </td>
                     </tr>
                   <% end %>
