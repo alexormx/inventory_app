@@ -1,20 +1,23 @@
 <div class="container-fluid px-0">
   <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
     <div>
-      <h1 class="h3 mb-1"><i class="fa-solid fa-clipboard-check me-2"></i>Verificación física</h1>
-      <p class="text-muted mb-0">Busca y confirma una unidad exacta de inventario a la vez.</p>
+      <h1 class="h3 mb-1"><i class="fa-solid fa-clipboard-check me-2" aria-hidden="true"></i>Verificación de unidad individual</h1>
+      <p class="text-muted mb-0">
+        Para casos puntuales: marcar una pieza como dañada o faltante, o revisar una unidad concreta.
+        Para ubicar mercancía normal usa la asignación por producto y cantidad.
+      </p>
     </div>
-    <%= link_to admin_inventory_location_explorer_path(mode: 'unlocated'), class: 'btn btn-outline-secondary' do %>
-      <i class="fa-solid fa-map-location-dot me-1"></i> Explorar inventario sin ubicación
+    <%= link_to admin_inventory_unlocated_path, class: 'btn btn-primary' do %>
+      <i class="fa-solid fa-boxes-stacked me-1" aria-hidden="true"></i> Asignar ubicación por producto y cantidad
     <% end %>
   </div>
 
   <div class="alert alert-info d-flex gap-2" role="status">
     <i class="fa-solid fa-shield-halved mt-1" aria-hidden="true"></i>
     <div>
-      <strong>Siempre por unidad exacta:</strong> cada escritura usa un Inventory ID concreto.
-      Puedes seleccionar varias unidades para asignarles la misma ubicación, pero
-      nunca se asigna por producto y cantidad ni se eligen piezas automáticamente por FIFO.
+      <strong>Esta pantalla trabaja pieza por pieza.</strong> Es la vía para dañadas, faltantes
+      o para revisar una unidad concreta. Para ubicar mercancía normal, donde las piezas del mismo
+      SKU son intercambiables, usa la asignación por producto y cantidad.
       <span class="d-block mt-1"><%= number_with_delimiter(@candidate_count) %> unidades requieren revisión.</span>
     </div>
   </div>
