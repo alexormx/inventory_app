@@ -125,6 +125,9 @@ RSpec.describe 'Admin works a whole location through Turbo', :js, type: :system 
     expect(page).to have_css('#batch-units', text: '6 pieza(s)')
     expect(page).to have_css('#selected-location', text: 'Estante B03')
     expect(current_location_total).to eq('6 pieza(s)')
+    # El contexto de trabajo vuelve entero: también la búsqueda que traía hecha.
+    expect(page).to have_field('product-search', with: 'Skyline')
+    expect(page).to have_css('#search-results-table tr[data-product-id]', count: 3)
 
     click_link 'Revisar asignación'
     click_button(id: 'confirm-batch')

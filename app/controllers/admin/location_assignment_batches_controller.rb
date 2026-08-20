@@ -92,6 +92,9 @@ module Admin
       @location = batch.location
       @lines = batch.detailed_lines
       @total_units = batch.total_units
+      # Se arrastra el término para que "Regresar" devuelva al operador justo
+      # donde estaba, con su búsqueda hecha, y no a una pantalla en blanco.
+      @q = params[:q].to_s.strip
     end
 
     # Confirmación única del lote completo. Si algo no alcanza, no se guarda nada.
