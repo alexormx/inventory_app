@@ -1,0 +1,82 @@
+<%# Lo que YA está guardado en el estante. Es lo contrario del lote: aquí no hay
+    nada pendiente, todo esto ya tocó la base. Por eso NO se mueve al agregar al
+    lote, sólo al cambiar de ubicación o al confirmar una asignación. %>
+<div id="location-current-inventory">
+  <div class="card shadow-sm mb-3">
+    <div class="card-header d-flex justify-content-between align-items-center py-2">
+      <h2 class="h6 mb-0">
+        <i class="fa-solid fa-boxes-stacked me-1 text-secondary" aria-hidden="true"></i>
+        Actualmente en esta ubicación
+      </h2>
+      <% if location_inventory.present? %>
+        <span class="badge text-bg-secondary" id="current-location-units">
+          <%= location_inventory.total_units %> pieza(s)
+        </span>
+      <% end %>
+    </div>
+
+    <div class="card-body py-2">
+      <% if location_inventory.blank? %>
+        <p class="text-muted small mb-0" id="current-location-none">
+          Elige una ubicación para ver lo que ya está guardado ahí.
+        </p>
+      <% elsif location_inventory.lines.empty? %>
+        <p class="text-muted small mb-0" id="current-location-empty">
+          <i class="fa-regular fa-folder-open me-1" aria-hidden="true"></i>
+          Esta ubicación está vacía: no hay piezas registradas todavía.
+        </p>
+      <% else %>
+        <div class="d-flex flex-wrap gap-2 mb-2 small" id="current-location-totals">
+          <span class="badge bg-light text-dark border" id="current-location-products">
+            <%= location_inventory.product_count %> producto(s)
+          </span>
+          <% if location_inventory.available_units.positive? %>
+            <span class="badge bg-success-subtle text-dark border">
+              Disponibles: <strong><%= location_inventory.available_units %></strong>
+            </span>
+          <% end %>
+          <% if location_inventory.reserved_units.positive? %>
+            <span class="badge bg-warning-subtle text-dark border">
+              Apartadas: <strong><%= location_inventory.reserved_units %></strong>
+            </span>
+          <% end %>
+          <% if location_inventory.in_transit_units.positive? %>
+            <span class="badge bg-info-subtle text-dark border">
+              En tránsito: <strong><%= location_inventory.in_transit_units %></strong>
+            </span>
+          <% end %>
+        </div>
+
+        <%# Un estante puede acumular bastantes SKU: se deja crecer con scroll
+            propio para que no empuje el lote fuera de la pantalla. %>
+        <div class="table-responsive" style="max-height:16rem; overflow-y:auto;">
+          <table class="table table-sm align-middle mb-0" id="current-location-lines">
+            <caption class="visually-hidden">
+              Inventario ya registrado en <%= location_inventory.location.full_path %>
+            </caption>
+            <tbody>
+              <% location_inventory.lines.each do |line| %>
+                <tr data-current-product-id="<%= line.product.id %>" data-current-quantity="<%= line.total %>">
+                  <td style="width:44px;">
+                    <%= render 'admin/shared/product_thumb', product: line.product, size: 40 %>
+                  </td>
+                  <td>
+                    <div class="small fw-semibold text-truncate" style="max-width:14rem;">
+                      <%= line.product.product_name %>
+                    </div>
+                    <div class="font-monospace text-muted" style="font-size:.72rem;">
+                      <%= line.product.product_sku %>
+                    </div>
+                  </td>
+                  <td class="text-end fw-bold">
+                    <%= line.total %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,6 @@
+<%# Editar, quitar o vaciar: sólo cambia el lote. El resumen de la ubicación NO
+    se toca, porque nada de esto ha llegado todavía al inventario real. %>
+<%= turbo_stream.replace 'location-batch-panel' do %>
+  <%= render 'admin/inventory/location_batch_panel', batch: @batch, batch_lines: @batch_lines, q: @q %>
+<% end %>
+<%= render 'flash_streams' %>

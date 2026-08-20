@@ -30,6 +30,10 @@ RSpec.describe 'Admin assigns a whole batch to one location', :js, type: :system
     expect(page).to have_css("tr[data-product-id='#{product.id}']")
     fill_in "quantity-#{product.id}", with: quantity.to_s
     click_button "add-#{product.id}"
+    # El alta va por Turbo, así que es asíncrona: hay que esperar a que el lote
+    # la refleje antes de seguir. Sin esto el clic siguiente puede caer sobre el
+    # panel a medio reemplazar y perderse sin dar error.
+    expect(page).to have_css("li[data-batch-product-id='#{product.id}']")
   end
 
   before do
@@ -121,7 +125,7 @@ RSpec.describe 'Admin assigns a whole batch to one location', :js, type: :system
   end
 
   # Encadenar SKUs es el gesto normal: agregar, teclear el siguiente, agregar.
-  it 'clears the search after each add so the next SKU can be typed straight away' do
+  it 'keeps the search after each add and still allows a new search' do
     visit admin_inventory_unlocated_path
     choose_shelf
 
@@ -131,11 +135,11 @@ RSpec.describe 'Admin assigns a whole batch to one location', :js, type: :system
     click_button "add-#{product_a.id}"
 
     expect(page).to have_css("li[data-batch-product-id='#{product_a.id}']")
-    # El buscador queda vacío y con el foco puesto, listo para el siguiente SKU.
-    expect(page).to have_field('product-search', with: '')
-    expect(page.evaluate_script("document.activeElement && document.activeElement.id")).to eq('product-search')
+    # El buscador conserva el término: el operador suele agregar varios SKU del
+    # mismo resultado. Sólo cambia cuando él decide buscar otra cosa.
+    expect(page).to have_field('product-search', with: product_a.product_sku)
 
-    # Se teclea el siguiente SKU sin borrar nada a mano.
+    # Y buscar otra cosa sigue funcionando con normalidad.
     fill_in 'product-search', with: product_b.product_sku
     click_button 'Buscar'
     fill_in "quantity-#{product_b.id}", with: '3'

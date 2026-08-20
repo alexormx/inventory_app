@@ -1,0 +1,18 @@
+<%# Cambiar de ubicación: se repinta el encabezado, lo que ya hay guardado en el
+    estante nuevo, los resultados (cada botón Agregar depende de tener ubicación)
+    y el lote. Es el único stream que toca la búsqueda. %>
+<%= turbo_stream.replace 'selected-location-panel' do %>
+  <%= render 'admin/inventory/selected_location_panel',
+             batch: @batch, location_options: @location_options, q: @q %>
+<% end %>
+<%= turbo_stream.replace 'location-current-inventory' do %>
+  <%= render 'admin/inventory/location_current_inventory', location_inventory: @location_inventory %>
+<% end %>
+<%= turbo_stream.replace 'product-search-results' do %>
+  <%= render 'admin/inventory/product_search_results',
+             search_results: @search_results, batch: @batch, q: @q %>
+<% end %>
+<%= turbo_stream.replace 'location-batch-panel' do %>
+  <%= render 'admin/inventory/location_batch_panel', batch: @batch, batch_lines: @batch_lines, q: @q %>
+<% end %>
+<%= render 'flash_streams' %>

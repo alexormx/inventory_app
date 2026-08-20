@@ -1,0 +1,15 @@
+<%# Agregar toca SÓLO el lote y la cantidad de la fila agregada. La búsqueda no
+    se repinta: término, resultados y scroll se quedan como estaban. El resumen
+    de la ubicación tampoco, porque estas piezas aún no se han asignado. %>
+<%= turbo_stream.replace 'location-batch-panel' do %>
+  <%= render 'admin/inventory/location_batch_panel', batch: @batch, batch_lines: @batch_lines, q: @q %>
+<% end %>
+<%= turbo_stream.replace "quantity-#{@added_product.id}" do %>
+  <%= number_field_tag :quantity, (1 if @assignable.positive?),
+                       min: 1, max: @assignable, step: 1,
+                       class: 'form-control form-control-sm', id: "quantity-#{@added_product.id}",
+                       form: "add-form-#{@added_product.id}", required: true,
+                       disabled: @assignable.zero?,
+                       'aria-label': "Cantidad de #{@added_product.product_name} a agregar al lote" %>
+<% end %>
+<%= render 'flash_streams' %>
