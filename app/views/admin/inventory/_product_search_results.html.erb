@@ -62,8 +62,11 @@
                                      'aria-label': "Cantidad de #{product.product_name} a agregar al lote" %>
               </td>
               <td>
+                <%# El nombre visible es "Agregar" en todas las filas; el lector de
+                    pantalla necesita saber a cuál producto pertenece. %>
                 <%= submit_tag 'Agregar', class: 'btn btn-sm btn-success', id: "add-#{product.id}",
-                               form: form_id, disabled: blocked %>
+                               form: form_id, disabled: blocked,
+                               'aria-label': "Agregar #{product.product_name} al lote" %>
                 <%# Un botón apagado sin explicación se lee como una falla. %>
                 <% if assignable.zero? %>
                   <div class="text-muted mt-1" style="font-size:.72rem;" id="no-stock-<%= product.id %>">

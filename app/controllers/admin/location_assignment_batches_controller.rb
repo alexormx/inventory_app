@@ -29,10 +29,10 @@ module Admin
       respond_with_page(notice: batch.location ? "Ubicación seleccionada: #{batch.location.full_path}." : nil)
     end
 
-    # Al agregar bien se limpia el buscador: el trabajo es en cadena —SKU, agregar,
-    # siguiente SKU— y dejar el término anterior obliga a borrarlo a mano cada vez.
-    # Si algo falla se conserva lo tecleado (término y cantidad) para poder
-    # corregirlo sin volver a buscar.
+    # El buscador NO se limpia al agregar: de una misma búsqueda suelen salir
+    # varios SKU que van al mismo estante, y volver a teclearla cada vez era el
+    # gesto que sobraba. Si algo falla tampoco se toca nada, así que lo tecleado
+    # se queda donde estaba para corregirlo.
     def add_line
       return retry_page(alert: 'Selecciona primero la ubicación destino.') if batch.location_id.blank?
 

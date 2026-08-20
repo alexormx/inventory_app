@@ -43,7 +43,8 @@
                                        id: "batch-qty-#{line[:product].id}",
                                        'aria-label': "Cantidad de #{line[:product].product_name} en el lote" %>
                   <%= submit_tag 'OK', class: 'btn btn-sm btn-outline-secondary',
-                                 id: "batch-update-#{line[:product].id}" %>
+                                 id: "batch-update-#{line[:product].id}",
+                                 'aria-label': "Actualizar la cantidad de #{line[:product].product_name}" %>
                 <% end %>
                 <%= button_to admin_location_assignment_batch_remove_line_path(product_id: line[:product].id),
                               method: :delete,

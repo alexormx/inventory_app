@@ -1,3 +1,13 @@
+<% content_for :head do %>
+  <%# Turbo guarda una copia de la página y, al volver a ella, la pinta antes de
+      tener la respuesta buena. Aquí eso enseña existencias viejas: el operador
+      vería un "Asignable" que ya no es cierto durante un parpadeo, y encima el
+      cambiazo de cuerpo deja inservible cualquier control que estuviera tocando
+      en ese momento. La copia se sigue guardando para el botón atrás; lo que se
+      quita es enseñarla como si fuera el estado real. %>
+  <meta name="turbo-cache-control" content="no-preview">
+<% end %>
+
 <div class="container-fluid px-0" id="location-batch-page">
   <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
     <div>
@@ -70,7 +80,9 @@
 
     <%# ============ DERECHA: qué hay aquí ya, y qué estoy por dejar ============ %>
     <div class="col-12 col-xl-5">
-      <div class="sticky-xl-top" style="top:1rem;">
+      <%# Pegajoso sólo en escritorio, y con scroll propio: si la columna crece
+          más que la ventana, sin esto el final del lote quedaría inalcanzable. %>
+      <div class="sticky-xl-top" style="top:1rem; max-height:calc(100vh - 2rem); overflow-y:auto;">
         <%= render 'admin/inventory/location_current_inventory', location_inventory: @location_inventory %>
         <%= render 'admin/inventory/location_batch_panel', batch: @batch, batch_lines: @batch_lines, q: @q %>
       </div>
