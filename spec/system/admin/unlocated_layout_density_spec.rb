@@ -11,7 +11,13 @@ RSpec.describe 'Unlocated layout density', :js, type: :system do
   let(:admin) { create(:user, :admin) }
   let(:warehouse) { create(:inventory_location, name: 'Bodega A') }
   let!(:shelf) { create(:inventory_location, name: 'Estante B03', parent: warehouse) }
-  let(:product) { create(:product, skip_seed_inventory: true, product_name: 'Skyline Nueva', product_sku: 'NEW-111') }
+  # Nombre largo a proposito: con nombres cortos la tabla cabe siempre y el
+  # chequeo de ancho no comprueba nada.
+  let(:product) do
+    create(:product, skip_seed_inventory: true,
+                     product_name: 'Tomica Premium Skyline GT-R BNR34 V-Spec II Nur Edicion Aniversario',
+                     product_sku: 'NEW-111')
+  end
   let(:stored) { create(:product, skip_seed_inventory: true, product_name: 'Supra Guardada', product_sku: 'OLD-222') }
 
   def resize_to(width, height)
@@ -25,6 +31,22 @@ RSpec.describe 'Unlocated layout density', :js, type: :system do
         clientWidth: document.documentElement.clientWidth
       })
     JS
+  end
+
+  # El chequeo de la pagina no basta: la tabla vive dentro de un .table-responsive,
+  # asi que puede irse en scroll propio y cortar el nombre del producto sin que la
+  # pagina se desborde. El nombre es justo lo que no se puede cortar.
+  def expect_results_table_fits
+    metrics = page.evaluate_script(<<~JS)
+      (() => {
+        const box = document.querySelector('#search-results-table').closest('.table-responsive')
+        return { scrollWidth: box.scrollWidth, clientWidth: box.clientWidth }
+      })()
+    JS
+    expect(metrics['scrollWidth']).to(
+      be <= metrics['clientWidth'] + 1,
+      "la tabla de resultados no cabe y se corta: #{metrics.inspect}"
+    )
   end
 
   def expect_no_horizontal_overflow
@@ -74,6 +96,7 @@ RSpec.describe 'Unlocated layout density', :js, type: :system do
     prepare_screen
 
     expect_no_horizontal_overflow
+    expect_results_table_fits
   end
 
   it 'reparte en dos columnas: el lote queda al lado de la búsqueda, no debajo' do
@@ -91,6 +114,7 @@ RSpec.describe 'Unlocated layout density', :js, type: :system do
     prepare_screen
 
     expect_no_horizontal_overflow
+    expect_results_table_fits
     expect(page).to have_css('#location-current-inventory')
     expect(page).to have_css('#location-batch-panel')
   end
@@ -100,6 +124,7 @@ RSpec.describe 'Unlocated layout density', :js, type: :system do
     prepare_screen
 
     expect_no_horizontal_overflow
+    expect_results_table_fits
 
     # Apilado: el lote deja de estar a la derecha y pasa debajo.
     search_bottom = page.evaluate_script("document.getElementById('product-search-panel').getBoundingClientRect().bottom")

@@ -12,10 +12,8 @@
         <thead class="table-light">
           <tr>
             <th scope="col">Producto</th>
-            <th scope="col" class="text-end">Disp.</th>
-            <th scope="col" class="text-end">Apart.</th>
-            <th scope="col" class="text-end">Asignable</th>
-            <th scope="col" style="width:88px;">Cantidad</th>
+            <th scope="col" class="text-end text-nowrap">Asignable</th>
+            <th scope="col" style="width:84px;">Cantidad</th>
             <th scope="col"></th>
           </tr>
         </thead>
@@ -26,19 +24,28 @@
             <% assignable = row[:assignable] %>
             <% blocked = assignable.zero? || batch.location.blank? %>
             <tr data-product-id="<%= product.id %>">
-              <td>
+              <%# max-width:0 + width:100% es lo que hace que text-truncate funcione
+                  dentro de una tabla de ancho automatico: sin esto la celda crece
+                  con el nombre y empuja el resto fuera del contenedor. %>
+              <td style="max-width:0; width:100%;">
                 <div class="d-flex align-items-center gap-2">
                   <%= render 'admin/shared/product_thumb', product: product, size: 48 %>
+                  <%# El desglose va debajo del nombre y no en columnas propias.
+                      Lo que decide la accion es "Asignable"; disponible, apartado
+                      y en transito son el porque de ese numero. Como columnas
+                      fijas obligaban a hacer scroll horizontal justo encima del
+                      nombre, que es lo unico que no se puede cortar. %>
                   <div style="min-width:0;">
-                    <div class="fw-semibold text-truncate" style="max-width:13rem;"><%= product.product_name %></div>
-                    <div class="d-flex align-items-center gap-1">
+                    <div class="fw-semibold text-truncate"><%= product.product_name %></div>
+                    <div class="d-flex align-items-center gap-1 flex-wrap">
                       <span class="font-monospace text-muted" style="font-size:.72rem;"><%= product.product_sku %></span>
-                      <%# En tránsito va aquí y no en su propia columna: es un dato
-                          del producto, aparece pocas veces y una columna fija para
-                          él obligaba a hacer scroll horizontal en la tabla. %>
+                      <span class="text-muted" style="font-size:.72rem;"
+                            title="Piezas sin ubicar: disponibles y apartadas">
+                        · <%= row[:available] %> disp · <%= row[:reserved] %> apart
+                      </span>
                       <% if row[:in_transit].positive? %>
                         <span class="badge text-bg-info" style="font-size:.62rem;"
-                              title="Pre apartado: sigue en tránsito, no es asignable">
+                              title="Pre apartado: sigue en transito, no es asignable">
                           <i class="fa-solid fa-truck me-1" aria-hidden="true"></i><%= row[:in_transit] %>
                         </span>
                       <% end %>
@@ -46,9 +53,7 @@
                   </div>
                 </div>
               </td>
-              <td class="text-end"><%= row[:available] %></td>
-              <td class="text-end"><%= row[:reserved] %></td>
-              <td class="text-end fw-bold" data-assignable="<%= assignable %>"><%= assignable %></td>
+              <td class="text-end fw-bold text-nowrap" data-assignable="<%= assignable %>"><%= assignable %></td>
               <td>
                 <%# Un <form> no puede ser hijo de <tr>: los controles se
                     enlazan al form de abajo con el atributo form=. %>
