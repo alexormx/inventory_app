@@ -2,9 +2,9 @@
 <%# Uso: render 'checkouts/progress_bar', current_step: 1 %>
 <% current_step ||= 1 %>
 <% steps = [
-  { number: 1, name: 'Productos', icon: '🛒', path: checkout_step1_path },
-  { number: 2, name: 'Envío', icon: '🚚', path: checkout_step2_path },
-  { number: 3, name: 'Pago', icon: '💳', path: checkout_step3_path }
+  { number: 1, name: 'Productos', icon: 'fa-cart-shopping', path: checkout_step1_path },
+  { number: 2, name: 'Envío', icon: 'fa-truck', path: checkout_step2_path },
+  { number: 3, name: 'Pago', icon: 'fa-credit-card', path: checkout_step3_path }
 ] %>
 
 <nav class="checkout-progress-wrapper mb-4" aria-label="Progreso del checkout">
@@ -21,13 +21,13 @@
         <% if is_completed %>
           <%= link_to step[:path], class: 'text-decoration-none', 'aria-label': "Paso #{step[:number]}: #{step[:name]} (completado)" do %>
             <div class="progress-circle rounded-circle d-inline-flex align-items-center justify-content-center bg-success text-white" aria-hidden="true">
-              ✓
+              <i class="fa-solid fa-check"></i>
             </div>
             <div class="mt-2 small text-success fw-medium"><%= step[:name] %></div>
           <% end %>
         <% elsif is_current %>
           <div class="progress-circle rounded-circle d-inline-flex align-items-center justify-content-center bg-primary text-white shadow" aria-hidden="true">
-            <%= step[:icon] %>
+            <i class="fa-solid <%= step[:icon] %>"></i>
           </div>
           <div class="mt-2 small text-primary fw-bold"><%= step[:name] %></div>
         <% else %>

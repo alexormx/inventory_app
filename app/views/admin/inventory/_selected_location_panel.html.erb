@@ -1,0 +1,36 @@
+<%# Paso 1. Se extrae porque al cambiar de estante Turbo repinta este bloque, el
+    resumen de la ubicación y los resultados: elegir ubicación cambia el estado
+    de cada botón Agregar, no sólo el encabezado. %>
+<div id="selected-location-panel">
+  <div class="card shadow-sm mb-3">
+    <div class="card-header py-2">
+      <h2 class="h6 mb-0">
+        <i class="fa-solid fa-location-dot me-1" aria-hidden="true"></i>
+        Paso 1 · Ubicación destino
+      </h2>
+    </div>
+    <div class="card-body py-2">
+      <%= form_with url: admin_location_assignment_batch_location_path, method: :post,
+                    local: true, class: 'row g-2 align-items-end' do %>
+        <%= hidden_field_tag :q, q %>
+        <div class="col-12 col-md-9">
+          <%= label_tag :location_id, 'Estante o caja donde estás trabajando',
+                        class: 'form-label fw-semibold small mb-1' %>
+          <%= select_tag :location_id,
+                         options_for_select([['Selecciona una ubicación final', '']] + location_options, batch.location_id),
+                         class: 'form-select', id: 'batch-location-id', required: true %>
+        </div>
+        <div class="col-12 col-md-3 d-grid">
+          <%= submit_tag batch.location ? 'Cambiar' : 'Seleccionar', class: 'btn btn-primary', id: 'set-location' %>
+        </div>
+      <% end %>
+
+      <% if batch.location %>
+        <div class="alert alert-success mt-2 mb-0 py-2 d-flex gap-2 small" role="status" id="selected-location">
+          <i class="fa-solid fa-circle-check mt-1" aria-hidden="true"></i>
+          <div>Trabajando en <strong><%= batch.location.full_path %></strong></div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

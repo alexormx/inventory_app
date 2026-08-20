@@ -2,6 +2,7 @@
 
 module Admin
   class UserShippingAddressesController < ApplicationController
+    before_action :authenticate_user!
     before_action :authorize_admin!
     before_action :set_user
     before_action :set_address, only: %i[edit update destroy make_default]

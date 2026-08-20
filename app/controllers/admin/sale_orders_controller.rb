@@ -173,7 +173,7 @@ module Admin
         # El callback sync_sale_order_status_from_shipment se encarga de: Preparing → In Transit
         @sale_order.reload
         redirect_to admin_sale_order_path(@sale_order),
-                    notice: '📦 Paquete despachado. Orden en tránsito.'
+                    notice: 'Paquete despachado. Orden en tránsito.'
       else
         redirect_to prepare_admin_sale_order_path(@sale_order),
                     alert: "Error al despachar: #{shipment.errors.full_messages.join(', ')}"
@@ -195,7 +195,7 @@ module Admin
         # El callback sync_sale_order_status_from_shipment se encarga de: In Transit → Delivered
         @sale_order.reload
         redirect_to admin_sale_order_path(@sale_order),
-                    notice: '✅ Orden marcada como entregada.'
+                    notice: 'Orden marcada como entregada.'
       else
         redirect_to admin_sale_order_path(@sale_order),
                     alert: "Error al marcar como entregada: #{shipment.errors.full_messages.join(', ')}"
@@ -242,7 +242,7 @@ module Admin
         # El callback sync_sale_order_status_from_shipment se encarga de: Preparing → Delivered
         @sale_order.reload
         redirect_to admin_sale_order_path(@sale_order),
-                    notice: '🤝 Orden entregada personalmente.'
+                    notice: 'Orden entregada personalmente.'
       else
         redirect_to admin_sale_order_path(@sale_order),
                     alert: "Error al registrar entrega personal: #{shipment.errors.full_messages.join(', ')}"

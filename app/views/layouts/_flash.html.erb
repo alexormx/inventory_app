@@ -1,10 +1,9 @@
-<div id="flash-stack" class="flash-stack position-fixed" style="z-index:1300; width:min(360px,90vw); bottom:1rem; right:1rem; display:flex; flex-direction:column; align-items:stretch;">
+<%# Los avisos de error ya no se cierran solos, así que un panel fijo abajo a la
+     derecha se quedaba encima de los botones de acción (que en este admin van
+     alineados a la derecha) y los volvía inclicables. Se mueve a la izquierda y
+     el contenedor deja pasar los clics; cada mensaje sí los recibe. %>
+<div id="flash-stack" class="flash-stack position-fixed" style="z-index:1300; width:min(360px,90vw); bottom:1rem; left:1rem; display:flex; flex-direction:column; align-items:stretch; pointer-events:none;">
   <% flash.each do |key, message| %>
-    <div class="alert <%= bootstrap_class_for(key) %> alert-dismissible fade show flash-message shadow" role="alert" data-timeout="3000" style="border-radius:.65rem; backdrop-filter: blur(6px); margin-top:.5rem;">
-      <div class="d-flex align-items-start">
-        <div class="flex-grow-1 pe-2"><%= message %></div>
-        <button type="button" class="btn-close mt-1" aria-label="Cerrar"></button>
-      </div>
-    </div>
+    <%= render 'layouts/flash_message', key: key, message: message %>
   <% end %>
 </div>

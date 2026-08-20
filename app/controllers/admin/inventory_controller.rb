@@ -3,7 +3,6 @@
 module Admin
   class InventoryController < ApplicationController
     UNLOCATED_PER_PAGE = 25
-    UNLOCATED_SEARCH_LIMIT = 25
 
     before_action :authenticate_user!
     before_action :authorize_admin!
@@ -226,14 +225,16 @@ module Admin
       @location_options = assignable_location_options
       @batch_lines = @batch.detailed_lines
 
-      counts = unlocated_counts_by_product_and_status
-      @total_assignable = counts.sum { |(_pid, status), n| assignable_status?(status) ? n : 0 }
-      @total_in_transit = counts.sum { |(_pid, status), n| assignable_status?(status) ? 0 : n }
-      @total_products = counts.keys.map(&:first).uniq.size
+      overview = Inventories::UnlocatedOverview.new(term: @q)
+      @total_assignable = overview.total_assignable
+      @total_in_transit = overview.total_in_transit
+      @total_products = overview.total_products
+      @search_results = overview.rows
 
-      # El listado sólo aparece cuando hay búsqueda: la pantalla es para ubicar
-      # lo que traes en la mano, no para pasear por 800 productos.
-      @search_results = @q.present? ? search_unlocated_products(counts) : []
+      # Lo que YA está guardado en ese estante. Se calcula aquí y no en el lote
+      # porque son cosas distintas: esto es inventario comprometido, el lote es
+      # una nota temporal que todavía no ha tocado la base.
+      @location_inventory = Inventories::LocationInventorySummary.for(@batch.location)
     end
 
     # GET /admin/inventory/location_explorer - Vista unificada: sin ubicación o por ubicación
@@ -487,23 +488,6 @@ module Admin
 
     private
 
-    def unlocated_counts_by_product_and_status
-      Inventory.where(inventory_location_id: nil)
-               .where(status: Inventory::STATUSES_REQUIRING_LOCATION)
-               .group(:product_id, :status)
-               .count
-    end
-
-    def search_unlocated_products(counts)
-      term = "%#{@q.downcase}%"
-      product_ids = counts.keys.map(&:first).uniq
-      Product.where(id: product_ids)
-             .where('LOWER(product_name) LIKE :q OR LOWER(product_sku) LIKE :q', q: term)
-             .order(:product_name)
-             .limit(UNLOCATED_SEARCH_LIMIT)
-             .map { |product| unlocated_row_for(product, counts) }
-    end
-
     # Hojas activas en UNA consulta. Recorrer InventoryLocation.active llamando
     # a leaf? hace una consulta por ubicación (N+1); esto excluye de golpe a
     # cualquiera que sea padre de otra.
@@ -512,24 +496,6 @@ module Admin
       InventoryLocation.active.where.not(id: parent_ids).order(:path_cache, :name).map do |location|
         ["#{location.path_cache.presence || location.name} (#{location.code})", location.id]
       end
-    end
-
-    # 'pre_reserved' requiere ubicación según el modelo, pero físicamente sigue
-    # en tránsito: se muestra aparte y no entra en lo asignable.
-    def assignable_status?(status)
-      Inventories::LocationAssignment::ELIGIBLE_STATUSES.include?(status.to_s)
-    end
-
-    def unlocated_row_for(product, counts)
-      per_status = counts.select { |(pid, _status), _n| pid == product.id }
-                         .transform_keys { |(_pid, status)| status.to_s }
-      {
-        product: product,
-        available: per_status['available'].to_i,
-        reserved: per_status['reserved'].to_i,
-        in_transit: per_status['pre_reserved'].to_i,
-        assignable: per_status.sum { |status, n| assignable_status?(status) ? n : 0 }
-      }
     end
 
     def inventory_params

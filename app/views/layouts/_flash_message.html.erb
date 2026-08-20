@@ -1,0 +1,25 @@
+<%#
+  Único lugar donde se arma un mensaje flash. Lo usan tanto el layout como las
+  respuestas Turbo Stream, que antes repetían este marcado palabra por palabra.
+
+  La severidad decide tres cosas a la vez, para que no se contradigan:
+   - color (Bootstrap)
+   - icono
+   - si desaparece solo y con cuánta urgencia lo anuncia un lector de pantalla
+
+  Un error no se auto-cierra: si pide una acción del usuario, no puede
+  desvanecerse en 3 segundos antes de que alcance a leerlo.
+%>
+<% severity = flash_severity(key) %>
+<div class="alert <%= flash_alert_class(severity) %> alert-dismissible fade show flash-message shadow"
+     role="<%= flash_aria_role(severity) %>"
+     aria-live="<%= flash_aria_live(severity) %>"
+     data-severity="<%= severity %>"
+     data-timeout="<%= flash_auto_dismiss_ms(severity) %>"
+     style="border-radius:.65rem; backdrop-filter: blur(6px); margin-top:.5rem; pointer-events:auto;">
+  <div class="d-flex align-items-start">
+    <i class="fa-solid <%= flash_icon(severity) %> mt-1 me-2" aria-hidden="true"></i>
+    <div class="flex-grow-1 pe-2"><%= message %></div>
+    <button type="button" class="btn-close mt-1" aria-label="Cerrar"></button>
+  </div>
+</div>

@@ -74,7 +74,9 @@ module Admin
     def detailed_lines
       return [] if empty?
 
-      products = Product.where(id: lines.keys).index_by { |p| p.id.to_s }
+      products = Product.where(id: lines.keys)
+                        .includes(product_images_attachments: :blob)
+                        .index_by { |p| p.id.to_s }
       lines.filter_map do |product_id, quantity|
         product = products[product_id]
         next unless product

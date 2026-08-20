@@ -23,11 +23,11 @@
                 <td>
                   <% case payment.payment_method %>
                   <% when "tarjeta_de_credito" %>
-                    <span class="badge bg-primary">💳 Tarjeta</span>
+                    <span class="badge bg-primary"><i class="fa-solid fa-credit-card me-1" aria-hidden="true"></i>Tarjeta</span>
                   <% when "efectivo" %>
-                    <span class="badge bg-success">💵 Efectivo</span>
+                    <span class="badge bg-success"><i class="fa-solid fa-money-bill-wave me-1" aria-hidden="true"></i>Efectivo</span>
                   <% when "transferencia_bancaria" %>
-                    <span class="badge bg-info text-dark">🏦 Transferencia</span>
+                    <span class="badge bg-info text-dark"><i class="fa-solid fa-building-columns me-1" aria-hidden="true"></i>Transferencia</span>
                   <% else %>
                     <span class="text-muted fst-italic">-</span>
                   <% end %>

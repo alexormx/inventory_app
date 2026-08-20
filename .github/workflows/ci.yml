@@ -151,18 +151,21 @@ jobs:
           "$driver" --version
           echo "CHROMEDRIVER_PATH=$driver" >> "$GITHUB_ENV"
 
-      - name: Run critical system smoke tests
+      # La suite completa de sistema pasa en verde (54/54, repetido). Correrla
+      # entera en CI es lo que impide que vuelva a acumularse deuda como la que
+      # se limpió en #122: el subconjunto smoke dejaba 48 de 54 sin vigilancia.
+      - name: Run system tests
         env:
           RAILS_ENV: test
           DATABASE_URL: postgres://postgres:postgres@localhost:5432
           RUN_SYSTEM_SPECS: 1
-        run: bin/rails db:test:prepare && bundle exec rspec spec/system --tag system_smoke --format documentation
+        run: bin/rails db:test:prepare && bundle exec rspec spec/system --format documentation
 
-      - name: Keep failure artifacts from system smoke tests
+      - name: Keep failure artifacts from system tests
         uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: system-smoke-failures
+          name: system-test-failures
           path: |
             ${{ github.workspace }}/tmp/capybara
             ${{ github.workspace }}/tmp/screenshots

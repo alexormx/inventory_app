@@ -240,7 +240,7 @@ module Admin
         flash[:notice] = if dry_run
                            "Dry run completado: #{candidates.count} candidatas, #{skipped.count} omitidas. No se aplicaron cambios."
                          else
-                           "✅ Marcadas #{marked_count} Purchase Orders con costs_distributed_at."
+                           "Marcadas #{marked_count} Purchase Orders con costs_distributed_at."
                          end
       rescue StandardError => e
         run.update!(status: 'failed', finished_at: Time.current, error: "#{e.class}: #{e.message}")
