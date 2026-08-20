@@ -38,9 +38,25 @@ Capybara.save_path = Rails.root.join('tmp/capybara')
 # GitHub Actions runners, which publish a Chrome-matched driver via CHROMEWEBDRIVER/PATH.
 CHROMEDRIVER_PATH = [
   ENV.fetch('CHROMEDRIVER_PATH', nil),
-  ENV['CHROMEWEBDRIVER'] && File.join(ENV['CHROMEWEBDRIVER'], 'chromedriver'),
+  ENV.fetch('CHROMEWEBDRIVER', nil) && File.join(ENV.fetch('CHROMEWEBDRIVER', nil), 'chromedriver'),
   '/usr/lib/chromium-browser/chromedriver'
 ].compact.find { |path| File.executable?(path) }
+
+# Tamaño de ventana fijo para toda la suite de sistema.
+#
+# La ventana por defecto de Chrome headless es 800x600, y encima los specs
+# responsive la dejan donde acaban (390x844, 575x800, 1024x768...) sin
+# restaurarla. Como Selenium reutiliza la misma ventana entre ejemplos y
+# config.order = :random, cada ejemplo heredaba un viewport distinto según lo
+# que hubiera corrido antes: por eso la suite completa fallaba en CI en un spec
+# distinto cada vez, y por eso ese mismo spec pasaba al correrlo solo.
+#
+# A 800x600 el admin se apila y el panel fijo de avisos queda encima de los
+# botones alineados a la derecha, que es como aparecía el click interceptado.
+#
+# Los specs responsive siguen redimensionando a lo que necesiten; esto sólo
+# garantiza que cada ejemplo arranque desde un escritorio conocido.
+SYSTEM_SPEC_WINDOW_SIZE = [1440, 1000].freeze
 
 Capybara.register_driver :selenium_chrome_headless do |app|
   options = Selenium::WebDriver::Chrome::Options.new
@@ -132,6 +148,9 @@ RSpec.configure do |config|
       # rack_test doesn't implement this – ignore
     end
     Capybara.reset_sessions!
+    # Selenium reutiliza la misma ventana entre ejemplos y Capybara no la
+    # restaura, así que el tamaño que dejaba un spec se lo comía el siguiente.
+    page.current_window.resize_to(*SYSTEM_SPEC_WINDOW_SIZE)
   end
 
   # If a JS/system spec fails, dump the HTML and a screenshot for easier debugging
