@@ -3,7 +3,8 @@
 require 'rails_helper'
 
 # Una miniatura de referencia por producto, para reconocer la pieza de un vistazo
-# sin leer el SKU. Misma fuente de imagen en búsqueda, lote y revisión.
+# sin leer el SKU. Misma fuente de imagen en búsqueda, lote, revisión y en el
+# resumen de lo que ya está guardado en la ubicación.
 RSpec.describe 'Unlocated: product thumbnails', :js, type: :system do
   include Warden::Test::Helpers
 
@@ -94,5 +95,39 @@ RSpec.describe 'Unlocated: product thumbnails', :js, type: :system do
     fill_in "quantity-#{with_image.id}", with: '1'
     click_button "add-#{with_image.id}"
     expect(page).to have_css("li[data-batch-product-id='#{with_image.id}']")
+  end
+  # El resumen del estante usa el MISMO partial: si alguien lo duplicara, este
+  # ejemplo seguiría verde pero el de abajo —el del fallback— no.
+  context 'en el resumen de la ubicación' do
+    let!(:stored_with_image) do
+      create(:product, skip_seed_inventory: true, product_name: 'Guardada Con Imagen', product_sku: 'ST-1')
+    end
+    let!(:stored_without_image) do
+      create(:product, skip_seed_inventory: true, product_name: 'Guardada Sin Imagen', product_sku: 'ST-0')
+    end
+
+    before do
+      stored_with_image.product_images.attach(
+        io: File.open(image_path), filename: 'test1.png', content_type: 'image/png'
+      )
+      stored_without_image.product_images.purge
+      create(:inventory, product: stored_with_image, status: :available, inventory_location: shelf)
+      create(:inventory, product: stored_without_image, status: :available, inventory_location: shelf)
+    end
+
+    it 'pinta la miniatura de lo que ya está en el estante' do
+      visit admin_inventory_unlocated_path
+      choose_shelf
+
+      expect(page).to have_css("tr[data-current-product-id='#{stored_with_image.id}'] img")
+    end
+
+    it 'cae al icono de Font Awesome cuando el producto guardado no tiene imagen' do
+      visit admin_inventory_unlocated_path
+      choose_shelf
+
+      expect(page).to have_css("tr[data-current-product-id='#{stored_without_image.id}'] i.fa-image")
+      expect(page).to have_no_css("tr[data-current-product-id='#{stored_without_image.id}'] img")
+    end
   end
 end

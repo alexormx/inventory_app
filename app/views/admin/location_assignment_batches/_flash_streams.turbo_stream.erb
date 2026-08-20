@@ -1,0 +1,6 @@
+<%# Los avisos se añaden al panel canónico (#128) sin recargar la página. %>
+<% flash.each do |key, message| %>
+  <%= turbo_stream.append 'flash-stack' do %>
+    <%= render 'layouts/flash_message', key: key, message: message %>
+  <% end %>
+<% end %>
