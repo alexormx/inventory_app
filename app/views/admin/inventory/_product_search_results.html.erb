@@ -14,9 +14,8 @@
             <th scope="col">Producto</th>
             <th scope="col" class="text-end">Disp.</th>
             <th scope="col" class="text-end">Apart.</th>
-            <th scope="col" class="text-end">Tránsito</th>
             <th scope="col" class="text-end">Asignable</th>
-            <th scope="col" style="width:90px;">Cantidad</th>
+            <th scope="col" style="width:88px;">Cantidad</th>
             <th scope="col"></th>
           </tr>
         </thead>
@@ -31,20 +30,24 @@
                 <div class="d-flex align-items-center gap-2">
                   <%= render 'admin/shared/product_thumb', product: product, size: 48 %>
                   <div style="min-width:0;">
-                    <div class="fw-semibold text-truncate" style="max-width:16rem;"><%= product.product_name %></div>
-                    <div class="font-monospace text-muted" style="font-size:.72rem;"><%= product.product_sku %></div>
+                    <div class="fw-semibold text-truncate" style="max-width:13rem;"><%= product.product_name %></div>
+                    <div class="d-flex align-items-center gap-1">
+                      <span class="font-monospace text-muted" style="font-size:.72rem;"><%= product.product_sku %></span>
+                      <%# En tránsito va aquí y no en su propia columna: es un dato
+                          del producto, aparece pocas veces y una columna fija para
+                          él obligaba a hacer scroll horizontal en la tabla. %>
+                      <% if row[:in_transit].positive? %>
+                        <span class="badge text-bg-info" style="font-size:.62rem;"
+                              title="Pre apartado: sigue en tránsito, no es asignable">
+                          <i class="fa-solid fa-truck me-1" aria-hidden="true"></i><%= row[:in_transit] %>
+                        </span>
+                      <% end %>
+                    </div>
                   </div>
                 </div>
               </td>
               <td class="text-end"><%= row[:available] %></td>
               <td class="text-end"><%= row[:reserved] %></td>
-              <td class="text-end">
-                <% if row[:in_transit].positive? %>
-                  <span class="badge text-bg-info" title="Pre apartado: sigue en tránsito"><%= row[:in_transit] %></span>
-                <% else %>
-                  <span class="text-muted">—</span>
-                <% end %>
-              </td>
               <td class="text-end fw-bold" data-assignable="<%= assignable %>"><%= assignable %></td>
               <td>
                 <%# Un <form> no puede ser hijo de <tr>: los controles se

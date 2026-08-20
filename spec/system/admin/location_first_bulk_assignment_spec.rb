@@ -30,6 +30,10 @@ RSpec.describe 'Admin assigns a whole batch to one location', :js, type: :system
     expect(page).to have_css("tr[data-product-id='#{product.id}']")
     fill_in "quantity-#{product.id}", with: quantity.to_s
     click_button "add-#{product.id}"
+    # El alta va por Turbo, así que es asíncrona: hay que esperar a que el lote
+    # la refleje antes de seguir. Sin esto el clic siguiente puede caer sobre el
+    # panel a medio reemplazar y perderse sin dar error.
+    expect(page).to have_css("li[data-batch-product-id='#{product.id}']")
   end
 
   before do
