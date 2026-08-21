@@ -157,28 +157,26 @@ RSpec.describe 'Admin location batch Turbo targets', type: :request do
       expect(response.body).to include('batch-empty')
     end
   end
-  # El lote vive en la cookie de sesión (4 KB), así que tiene tope. Al llegar,
-  # el producto NO se cae en silencio: se avisa y el lote se queda como estaba.
-  describe 'tope de líneas del lote' do
+  # Ya no hay tope artificial de productos: el lote vive en la base, no en la
+  # cookie de sesión, así que el único límite es el inventario real.
+  describe 'sin tope artificial de líneas' do
     before { select_location }
 
-    it 'avisa y no toca el lote cuando ya no caben más productos' do
-      stub_const('Admin::LocationAssignmentBatch::MAX_LINES', 1)
-      add_line(1)
+    it 'acepta muchos más productos distintos que el viejo tope de 40' do
+      60.times do |i|
+        product = create(:product, skip_seed_inventory: true, product_name: "Masivo #{i}")
+        stock(product, 1)
+        post admin_location_assignment_batch_lines_path,
+             params: { product_id: product.id, quantity: 1, q: 'Masivo' }, headers: TURBO
+        expect(response).to have_http_status(:ok)
+      end
 
-      extra_product = create(:product, skip_seed_inventory: true, product_name: 'Se Pasa Del Tope')
-      stock(extra_product, 3)
-
-      post admin_location_assignment_batch_lines_path,
-           params: { product_id: extra_product.id, quantity: 1, q: 'TOM' }, headers: TURBO
-
-      expect(response.body).to include('admite hasta 1 productos')
-      expect(response.body).not_to include('location-batch-panel')
-      expect(response.body).not_to include('Se Pasa Del Tope')
+      draft = LocationAssignmentDraft.last
+      expect(draft.lines.count).to eq(60)
+      expect(draft.total_units).to eq(60)
     end
 
     it 'sí deja sumar más piezas a un producto que ya está en el lote' do
-      stub_const('Admin::LocationAssignmentBatch::MAX_LINES', 1)
       add_line(1)
       add_line(2)
 

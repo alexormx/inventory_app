@@ -139,7 +139,10 @@ RSpec.describe 'Unlocated: Agregar button state', :js, type: :system do
     expect(page).to have_css("#no-location-#{product.id}", text: 'Selecciona primero la ubicación destino')
   end
 
-  it 'still lets the server reject an over-request' do
+  # El max del input es sólo comodidad: quien decide es el servidor. Antes el
+  # lote aceptaba cualquier número y el fallo aparecía hasta el final; ahora se
+  # rechaza en el momento y se dice cuánto cabe.
+  it 'rejects an over-request server-side and says how many fit' do
     stock(product, 2)
 
     visit admin_inventory_unlocated_path
@@ -152,12 +155,8 @@ RSpec.describe 'Unlocated: Agregar button state', :js, type: :system do
     fill_in "quantity-#{product.id}", with: '99'
     click_button "add-#{product.id}"
 
-    # El lote lo acepta; quien manda es la confirmación, que revalida bajo bloqueo.
-    expect(page).to have_css('#batch-units', text: '99 pieza(s)')
-    click_link 'Revisar asignación'
-    click_button(id: 'confirm-batch')
-
-    expect(page).to have_content('No se realizó ninguna asignación')
+    expect(page).to have_content('sólo puedes agregar 2 más')
+    expect(page).to have_css('#batch-units', text: '0 pieza(s)')
     expect(product.inventories.where.not(inventory_location_id: nil)).to be_empty
   end
 end

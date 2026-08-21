@@ -1,0 +1,21 @@
+<%# La asignación entró: cambian exactamente tres zonas.
+
+    - el estante ya tiene la mercancía, así que su resumen se vuelve a consultar
+      contra la base (nunca se suma el lote en el cliente)
+    - el lote queda vacío
+    - los resultados de la búsqueda bajan su "Asignable": esas piezas ya están
+      ubicadas y no se pueden volver a ubicar
+
+    La ubicación elegida y el término buscado no se tocan: el operador sigue
+    parado en el mismo estante y normalmente va a seguir con la misma búsqueda. %>
+<%= turbo_stream.replace 'location-current-inventory' do %>
+  <%= render 'admin/inventory/location_current_inventory', location_inventory: @location_inventory %>
+<% end %>
+<%= turbo_stream.replace 'location-batch-panel' do %>
+  <%= render 'admin/inventory/location_batch_panel', batch: @batch, batch_lines: @batch_lines, q: @q %>
+<% end %>
+<%= turbo_stream.replace 'product-search-results' do %>
+  <%= render 'admin/inventory/product_search_results',
+             search_results: @search_results, batch: @batch, q: @q %>
+<% end %>
+<%= render 'flash_streams' %>
