@@ -189,22 +189,13 @@ module Admin
     # porque eso altera también los resultados y el resumen del estante.
     def load_page_state
       load_batch_state
-      @location_options = assignable_location_options
+      @location_options = Inventories::AssignableLocationOptions.call
       @location_inventory = Inventories::LocationInventorySummary.for(batch.location)
       overview = Inventories::UnlocatedOverview.new(term: @q)
       @total_assignable = overview.total_assignable
       @total_in_transit = overview.total_in_transit
       @total_products = overview.total_products
       @search_results = overview.rows
-    end
-
-    # Hojas activas en UNA consulta: recorrer InventoryLocation.active llamando a
-    # leaf? hace una consulta por ubicación.
-    def assignable_location_options
-      parent_ids = InventoryLocation.where.not(parent_id: nil).select(:parent_id)
-      InventoryLocation.active.where.not(id: parent_ids).order(:path_cache, :name).map do |location|
-        ["#{location.path_cache.presence || location.name} (#{location.code})", location.id]
-      end
     end
 
     def respond_with_batch(notice: nil, alert: nil)
