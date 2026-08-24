@@ -1,22 +1,6 @@
-<%# Rich "added to cart" toast: product thumb + name + Ver carrito CTA.
-    Falls back to a plain alert when the message isn't a successful add
-    (e.g. stock or limit errors) — we detect by absence of @product. %>
 <% if flash[:notice].present? && @product %>
   <%= turbo_stream.append 'flash-stack' do %>
-    <%= render 'layouts/flash_message', key: key, message: message %>
-  <% end %>
-        <div class="flex-grow-1 min-width-0">
-          <div class="fw-semibold small text-success">
-            <i class="fas fa-check-circle me-1"></i>Agregado al carrito
-          </div>
-          <div class="small text-dark text-truncate"><%= @product.product_name %></div>
-        </div>
-        <%= link_to cart_path, class: 'btn btn-sm btn-success flex-shrink-0', data: { turbo_frame: '_top' } do %>
-          <i class="fas fa-shopping-cart me-1"></i>Ver
-        <% end %>
-        <button type="button" class="btn-close ms-1" aria-label="Cerrar"></button>
-      </div>
-    </div>
+    <%= render 'layouts/flash_message', key: :notice, message: flash[:notice] %>
   <% end %>
 <% end %>
 
