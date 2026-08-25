@@ -189,7 +189,7 @@
                     <i class="fas <%= btn_icon %> me-1" aria-hidden="true"></i><%= btn_label %>
                   <% end %>
                 <% else %>
-                  <%= link_to new_user_session_path, class: "btn btn-outline-danger btn-sm flex-grow-1", title: "Inicia sesión para agregar al carrito" do %>
+                  <%= link_to new_user_session_path, class: "btn btn-outline-danger btn-sm flex-grow-1", title: "Inicia sesión para agregar al carrito", data: { turbo_frame: "_top" } do %>
                     <i class="fas fa-sign-in-alt me-1" aria-hidden="true"></i>Inicia sesión
                   <% end %>
                 <% end %>
