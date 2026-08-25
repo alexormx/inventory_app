@@ -379,6 +379,9 @@ Rails.application.routes.draw do
   # Hub agregado de toda la línea Tomica (todas las series Tomica %)
   get '/tomica', to: 'products#tomica_hub', as: :tomica_hub
   resources :products, only: [:show] do
+    collection do
+      get :recently_viewed
+    end
     resources :reviews, only: [:create]
   end
 

@@ -12,6 +12,19 @@ RSpec.describe 'CartItems', type: :request do
       expect(session[:cart][product.id.to_s]['brand_new']).to eq(1)
     end
 
+    it 'renders a successful Turbo Stream response when adding an item' do
+      post cart_items_path,
+           params: { product_id: product.id },
+           headers: { 'ACCEPT' => Mime[:turbo_stream].to_s }
+
+      expect(response).to have_http_status(:ok)
+      expect(response.media_type).to eq(Mime[:turbo_stream].to_s)
+      expect(response.body).to include('action="append" target="flash-stack"')
+      expect(response.body).to include(product.product_name)
+      expect(response.body).to include('action="update" target="cart-count"')
+      expect(session[:cart].dig(product.id.to_s, 'brand_new')).to eq(1)
+    end
+
     it 'adds item with specific condition' do
       # Crear inventario disponible con condición misb (localizable = vendible)
       create(:inventory, product: product, status: :available, item_condition: :misb,
