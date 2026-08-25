@@ -146,6 +146,47 @@ RSpec.describe 'Catalog filter navigation', type: :system, js: true do
     )
   end
 
+  it 'opens sign in above the products frame from a filtered catalog' do
+    transit_product = create(
+      :product,
+      product_name: 'Catalog Transit Sign In',
+      skip_seed_inventory: true
+    )
+    create(:inventory, product: transit_product, status: :in_transit)
+
+    visit catalog_path(in_transit: '1')
+    accept_cookies_if_present
+    expect(page).to have_css('turbo-frame#products_grid', text: transit_product.product_name)
+
+    page.execute_script(<<~JS)
+      sessionStorage.setItem("catalogFrameMissingCount", "0")
+      document.addEventListener("turbo:frame-missing", () => {
+        const count = Number(sessionStorage.getItem("catalogFrameMissingCount")) || 0
+        sessionStorage.setItem("catalogFrameMissingCount", String(count + 1))
+      })
+    JS
+
+    within('turbo-frame#products_grid') do
+      click_link 'Inicia sesión', match: :first
+    end
+
+    expect(page).to have_current_path(new_user_session_path)
+    expect(page).to have_button('Iniciar sesión')
+    expect(page).to have_no_content('Content missing')
+    expect(page.evaluate_script('sessionStorage.getItem("catalogFrameMissingCount")')).to eq('0')
+
+    page.go_back
+    expect(page).to have_current_path(catalog_path(in_transit: '1'))
+    expect(page).to have_css('turbo-frame#products_grid', text: transit_product.product_name)
+    expect(page).to have_css('.availability-chip.active', text: 'En tránsito')
+    expect(page).to have_no_content('Content missing')
+
+    page.go_forward
+    expect(page).to have_current_path(new_user_session_path)
+    expect(page).to have_button('Iniciar sesión')
+    expect(page).to have_no_content('Content missing')
+  end
+
   it 'announces a completed empty result update from one stable live region' do
     create(:product)
 

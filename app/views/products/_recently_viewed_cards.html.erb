@@ -1,0 +1,31 @@
+<% products.each do |product| %>
+  <%= link_to product_path(product),
+              class: 'recently-viewed-card',
+              title: product.product_name,
+              data: { product_slug: product.slug, turbo_frame: '_top' } do %>
+    <div class="recently-viewed-thumb">
+      <% image = product.primary_product_image %>
+      <% if image.present? %>
+        <%= image_tag rails_storage_proxy_path(image.variant(resize_to_limit: [240, 240])),
+                      alt: product.product_name,
+                      loading: 'lazy',
+                      decoding: 'async',
+                      width: 240,
+                      height: 240,
+                      data: { action: 'error->recently-viewed#imageError' } %>
+      <% else %>
+        <%= image_tag 'placeholder.png',
+                      alt: "Imagen no disponible para #{product.product_name}",
+                      loading: 'lazy',
+                      decoding: 'async',
+                      width: 240,
+                      height: 240,
+                      data: { action: 'error->recently-viewed#imageError' } %>
+      <% end %>
+    </div>
+    <div class="recently-viewed-meta">
+      <span class="recently-viewed-name"><%= product.product_name %></span>
+      <span class="recently-viewed-price text-danger fw-bold"><%= number_to_currency(product.selling_price) %></span>
+    </div>
+  <% end %>
+<% end %>

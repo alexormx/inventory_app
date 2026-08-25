@@ -196,11 +196,14 @@
     <i class="fas fa-arrow-up" aria-hidden="true"></i>
   </button>
 
-  <%# Recently viewed strip — hydrated client-side from localStorage.
+  <%# Recently viewed strip — stable slugs come from localStorage and cards
+      are resolved server-side from current public product state.
       Lives outside the products_grid Turbo frame so it stays visible
       across filter changes. Hidden by JS until entries exist. %>
   <section class="recently-viewed mt-5 pt-3 border-top" data-controller="recently-viewed"
            data-recently-viewed-mode-value="display"
+           data-recently-viewed-endpoint-value="<%= recently_viewed_products_path %>"
+           data-recently-viewed-placeholder-value="<%= asset_path('placeholder.png') %>"
            aria-label="Vistos recientemente" hidden>
     <div class="d-flex align-items-baseline justify-content-between mb-2">
       <h2 class="h6 fw-semibold mb-0 text-muted">
