@@ -21,7 +21,7 @@ module Admin
 
     attr_reader :draft
 
-    delegate :location, :location=, :location_id, :empty?, :product_count, :total_units,
+    delegate :location, :change_location, :location_id, :empty?, :product_count, :total_units,
              :assignable_for, :pending_for, :pending_map, :remaining_addable,
              :add, :add_all, :set_quantity, :remove, :clear_lines,
              :detailed_lines, :service_lines, :consume!, :just_assigned?,

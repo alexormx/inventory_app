@@ -12,7 +12,7 @@ RSpec.describe 'Admin location batch direct assignment', type: :request do
   let(:product) { create(:product, skip_seed_inventory: true, product_name: 'Skyline', product_sku: 'SKY-1') }
   let(:other) { create(:product, skip_seed_inventory: true, product_name: 'Supra', product_sku: 'SUP-1') }
 
-  TURBO_H = { 'Accept' => 'text/vnd.turbo-stream.html' }.freeze
+  def turbo_headers = { 'Accept' => 'text/vnd.turbo-stream.html' }
 
   def stock(prod, count, location: nil, status: :available)
     Array.new(count) { create(:inventory, product: prod, status: status, inventory_location: location) }
@@ -22,21 +22,21 @@ RSpec.describe 'Admin location batch direct assignment', type: :request do
 
   def add(prod, quantity, term: 'SKY')
     post admin_location_assignment_batch_lines_path,
-         params: { product_id: prod.id, quantity: quantity, q: term }, headers: TURBO_H
+         params: { product_id: prod.id, quantity: quantity, q: term }, headers: turbo_headers
   end
 
   def add_all(prod, term: 'SKY')
     post admin_location_assignment_batch_add_all_lines_path(product_id: prod.id),
-         params: { q: term }, headers: TURBO_H
+         params: { q: term }, headers: turbo_headers
   end
 
   def assign_all(term: 'SKY')
-    post admin_location_assignment_batch_assign_all_path, params: { q: term }, headers: TURBO_H
+    post admin_location_assignment_batch_assign_all_path, params: { q: term }, headers: turbo_headers
   end
 
   before do
     sign_in admin
-    post admin_location_assignment_batch_location_path, params: { location_id: shelf.id }, headers: TURBO_H
+    post admin_location_assignment_batch_location_path, params: { location_id: shelf.id }, headers: turbo_headers
   end
 
   describe 'no pasarse del inventario' do

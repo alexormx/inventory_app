@@ -251,8 +251,10 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_21_111131) do
     t.bigint "user_id", null: false
     t.bigint "inventory_location_id"
     t.datetime "last_assigned_at"
+    t.datetime "expires_at", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["expires_at"], name: "index_location_assignment_drafts_on_expires_at"
     t.index ["inventory_location_id"], name: "index_location_assignment_drafts_on_inventory_location_id"
     t.index ["user_id"], name: "index_location_assignment_drafts_on_user_id", unique: true
   end

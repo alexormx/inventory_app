@@ -11,18 +11,13 @@ module Admin
     # Un lote tiene UNA ubicación. Cambiarla con productos dentro se confirma
     # antes, para no acabar con un lote mezclado sin querer.
     def set_location
-      if batch.location_id.present? && batch.location_id.to_s != params[:location_id].to_s && !batch.empty?
-        unless ActiveModel::Type::Boolean.new.cast(params[:confirm_change])
-          return respond_with_page(
-            alert: "Ya tienes #{batch.total_units} pieza(s) preparadas para " \
-                   "#{batch.location&.full_path}. Vacía el lote si quieres cambiar de ubicación."
-          )
-        end
-
-        batch.clear_lines
+      discard_lines = ActiveModel::Type::Boolean.new.cast(params[:confirm_change])
+      unless batch.change_location(params[:location_id], discard_lines: discard_lines)
+        return respond_with_page(
+          alert: "Ya tienes #{batch.total_units} pieza(s) preparadas para " \
+                 "#{batch.location&.full_path}. Vacía el lote si quieres cambiar de ubicación."
+        )
       end
-
-      batch.location = params[:location_id]
       # Cambiar de estante mueve toda la pantalla: el encabezado, lo que ya hay
       # guardado ahí y el estado de cada botón Agregar. Por eso este es el único
       # stream que toca los resultados de la búsqueda.
@@ -128,9 +123,10 @@ module Admin
     # resumen del estante delante mientras trabaja, así que mandarlo a otra
     # pantalla a leer lo mismo sobraba.
     #
-    # El borrador se consume dentro de la transacción del servicio: quien se
-    # lleva las líneas las borra. Por eso un segundo envío del mismo lote —doble
-    # clic, dos pestañas— encuentra el borrador vacío y no asigna nada otra vez.
+    # El borrador queda bloqueado durante la transacción del servicio y sus
+    # líneas se borran sólo después de una asignación exitosa. Por eso un segundo
+    # envío —doble clic, dos pestañas— encuentra el borrador vacío, mientras que
+    # un fallo conserva el lote entero para que el operador pueda reintentarlo.
     def assign_all
       if batch.empty?
         return respond_with_batch(alert: 'El lote ya se había asignado.') if batch.draft.just_assigned?
@@ -144,12 +140,11 @@ module Admin
       taken = nil
 
       ActiveRecord::Base.transaction do
-        taken = batch.consume!
-        raise ActiveRecord::Rollback if taken.empty?
-
-        result = Inventories::BulkAssignLocationBatchService.call(
-          lines: taken, location_id: location.id, actor: current_user
-        )
+        taken = batch.consume! do |locked_lines|
+          result = Inventories::BulkAssignLocationBatchService.call(
+            lines: locked_lines, location_id: location.id, actor: current_user
+          )
+        end
       end
 
       return respond_with_batch(alert: 'El lote ya se había asignado.') if taken.blank?

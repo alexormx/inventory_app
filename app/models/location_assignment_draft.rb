@@ -11,6 +11,8 @@
 # Vive en la base y no en la sesión porque la sesión de esta app va en cookie: un
 # lote grande no cabía, y de ahí venía el viejo tope de 40 líneas.
 class LocationAssignmentDraft < ApplicationRecord
+  LIFETIME = 7.days
+
   belongs_to :user
   belongs_to :inventory_location, optional: true
   has_many :lines, class_name: 'LocationAssignmentDraftLine', dependent: :delete_all,
@@ -39,13 +41,32 @@ class LocationAssignmentDraft < ApplicationRecord
     end
   end
 
-  def self.for(user) = find_or_create_by!(user: user)
+  # El índice único por usuario es quien resuelve dos primeras peticiones
+  # simultáneas. find_or_create_by! puede hacer dos INSERT y dejar escapar
+  # RecordNotUnique; create_or_find_by! usa precisamente ese índice para volver
+  # a leer la fila ganadora.
+  def self.for(user)
+    draft = create_or_find_by!(user: user) { |record| record.expires_at = LIFETIME.from_now }
+    draft.reset_if_expired!
+  end
 
   def location = inventory_location
 
-  def location=(new_location_id)
-    self.inventory_location_id = new_location_id.presence && new_location_id.to_i
-    save!
+  # Cambiar de estante y, cuando corresponde, descartar las líneas tiene que ser
+  # una sola sección crítica. Dos pestañas no pueden agregar una línea entre el
+  # vaciado y el cambio de ubicación.
+  def change_location(new_location_id, discard_lines: false)
+    requested_id = new_location_id.presence && new_location_id.to_i
+
+    with_lock do
+      changing = inventory_location_id != requested_id
+      return false if changing && lines.exists? && !discard_lines
+
+      lines.delete_all if changing && discard_lines
+      self.inventory_location_id = requested_id
+      refresh_activity!(clear_assignment_marker: true)
+      true
+    end
   end
 
   def location_id = inventory_location_id
@@ -87,7 +108,9 @@ class LocationAssignmentDraft < ApplicationRecord
                                    remaining: remaining)
       end
 
-      upsert_line(product_id, pending_for(product_id) + quantity)
+      result = upsert_line(product_id, pending_for(product_id) + quantity)
+      refresh_activity!(clear_assignment_marker: true)
+      result
     end
   end
 
@@ -99,6 +122,7 @@ class LocationAssignmentDraft < ApplicationRecord
       return 0 if remaining.zero?
 
       upsert_line(product_id, pending_for(product_id) + remaining)
+      refresh_activity!(clear_assignment_marker: true)
       remaining
     end
   end
@@ -106,17 +130,32 @@ class LocationAssignmentDraft < ApplicationRecord
   def set_quantity(product_id, quantity)
     quantity = quantity.to_i
     with_lock do
-      next lines.where(product_id: product_id).delete_all unless quantity.positive?
-
-      # Editar a mano tampoco puede pasarse del inventario real.
-      capped = [quantity, assignable_for(product_id)].min
-      capped.positive? ? upsert_line(product_id, capped) : lines.where(product_id: product_id).delete_all
+      if quantity.positive?
+        # Editar a mano tampoco puede pasarse del inventario real.
+        capped = [quantity, assignable_for(product_id)].min
+        capped.positive? ? upsert_line(product_id, capped) : lines.where(product_id: product_id).delete_all
+      else
+        lines.where(product_id: product_id).delete_all
+      end
+      refresh_activity!(clear_assignment_marker: true)
     end
   end
 
-  def remove(product_id) = lines.where(product_id: product_id).delete_all
+  def remove(product_id)
+    with_lock do
+      removed = lines.where(product_id: product_id).delete_all
+      refresh_activity!(clear_assignment_marker: true)
+      removed
+    end
+  end
 
-  def clear_lines = lines.delete_all
+  def clear_lines
+    with_lock do
+      removed = lines.delete_all
+      refresh_activity!(clear_assignment_marker: true)
+      removed
+    end
+  end
 
   # Líneas listas para el servicio, con el producto cargado para mostrarlo.
   def detailed_lines
@@ -127,15 +166,21 @@ class LocationAssignmentDraft < ApplicationRecord
     lines.pluck(:product_id, :quantity).map { |product_id, quantity| { product_id: product_id, quantity: quantity } }
   end
 
-  # Consume el borrador dentro de una transacción: quien se lleva las líneas las
-  # borra. Un segundo envío del mismo lote encuentra el borrador vacío y no
-  # asigna nada, que es lo que hace inofensivo el doble clic en "Agregar todas
-  # a esta ubicación".
+  # Consume el borrador manteniendo su fila bloqueada durante el trabajo que
+  # recibe el bloque. Las líneas se borran SÓLO después de que ese trabajo
+  # termina: si el servicio de inventario falla, el lote nunca desaparece, ni
+  # siquiera bajo contención entre dos administradores.
+  #
+  # Un segundo envío del mismo lote espera el lock y después encuentra el
+  # borrador vacío, que es lo que hace inofensivo el doble clic final.
   def consume!
     with_lock do
       taken = service_lines
+      return taken if taken.empty?
+
+      yield(taken) if block_given?
       lines.delete_all
-      update!(last_assigned_at: Time.current) if taken.any?
+      update!(last_assigned_at: Time.current, expires_at: LIFETIME.from_now)
       taken
     end
   end
@@ -143,6 +188,19 @@ class LocationAssignmentDraft < ApplicationRecord
   # Vacío justo después de asignar, o vacío porque nunca se agregó nada. Al
   # operador que hizo doble clic hay que decirle lo primero.
   def just_assigned? = last_assigned_at.present? && last_assigned_at > 30.seconds.ago
+
+  # No borra la fila (hay como máximo una por administrador); sólo descarta el
+  # contexto abandonado. Es limpieza acotada y oportunista, sin depender de un
+  # proceso local, cron o worker.
+  def reset_if_expired!
+    with_lock do
+      if expires_at <= Time.current
+        lines.delete_all
+        update!(inventory_location: nil, last_assigned_at: nil, expires_at: LIFETIME.from_now)
+      end
+    end
+    self
+  end
 
   private
 
@@ -156,5 +214,11 @@ class LocationAssignmentDraft < ApplicationRecord
     line.quantity = quantity
     line.save!
     quantity
+  end
+
+  def refresh_activity!(clear_assignment_marker: false)
+    self.last_assigned_at = nil if clear_assignment_marker
+    self.expires_at = LIFETIME.from_now
+    save!
   end
 end
