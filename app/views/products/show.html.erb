@@ -13,14 +13,10 @@
 <% end %>
 
 <%# Recently-viewed tracker: silently pushes this product into localStorage
-    so it appears in the strip on the next catalog visit. No DOM output. %>
+    as a stable slug so the catalog can resolve current presentation data. %>
 <div data-controller="recently-viewed"
      data-recently-viewed-mode-value="track"
      data-recently-viewed-slug-value="<%= @product.slug %>"
-     data-recently-viewed-name-value="<%= @product.product_name %>"
-     data-recently-viewed-image-value="<%= @product.product_images.attached? ? absolute_url(url_for(@product.primary_product_image)) : '' %>"
-     data-recently-viewed-price-value="<%= number_to_currency(@product.selling_price) %>"
-     data-recently-viewed-product-path-value="<%= product_path(@product) %>"
      style="display:none"></div>
 
 <div class="container py-4 product-show">
