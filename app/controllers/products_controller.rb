@@ -5,8 +5,12 @@ class ProductsController < ApplicationController
   # Catálogo y detalle públicos (precio y carrito solo para autenticados)
   before_action :set_product, only: :show
   before_action :ensure_public_product_active, only: :show
+  skip_before_action :track_visitor, only: :recently_viewed
 
   PUBLIC_PER_PAGE = 24
+  MAX_RECENTLY_VIEWED_PRODUCTS = 10
+  MAX_RECENTLY_VIEWED_CANDIDATES = 50
+  RECENTLY_VIEWED_SLUG_PATTERN = /\A[a-z0-9]+(?:-[a-z0-9]+)*\z/
 
   # SEO-friendly brand landing page: /marca/:brand_slug
   def brand
@@ -175,7 +179,38 @@ class ProductsController < ApplicationController
                                 .group(:product_id).count
   end
 
+  # Resolves the visitor's compact, client-side slug history against current
+  # public product state. Presentation data deliberately never comes from
+  # localStorage, so renamed/repriced products and replaced images self-heal.
+  def recently_viewed
+    requested_slugs = recently_viewed_slugs
+    products_by_slug = Product.publicly_visible
+                              .includes(product_images_attachments: :blob)
+                              .where(slug: requested_slugs)
+                              .index_by(&:slug)
+    @recently_viewed_products = requested_slugs.filter_map { |slug| products_by_slug[slug] }
+                                               .first(MAX_RECENTLY_VIEWED_PRODUCTS)
+
+    render partial: 'recently_viewed_cards',
+           locals: { products: @recently_viewed_products },
+           layout: false
+  end
+
   private
+
+  def recently_viewed_slugs
+    return [] unless params[:slugs].is_a?(Array)
+
+    params[:slugs]
+      .first(MAX_RECENTLY_VIEWED_CANDIDATES)
+      .filter_map do |slug|
+        next unless slug.is_a?(String)
+
+        normalized = slug.strip.downcase
+        normalized if normalized.length <= 255 && normalized.match?(RECENTLY_VIEWED_SLUG_PATTERN)
+      end
+      .uniq
+  end
 
   # Aplica los filtros del catálogo a un scope. `except:` omite una dimensión
   # (usado por los contadores de facetas para no auto-filtrarse).
