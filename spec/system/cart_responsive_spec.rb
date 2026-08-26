@@ -158,6 +158,24 @@ RSpec.describe 'Responsive shopping cart', :js, type: :system do
     expect(page).to have_css('#cart-preview.show', visible: true)
   end
 
+  def expect_preview_concealed_with_focus(focus_selector = '[data-nav-link="cart"]')
+    # The old regression removed `.show` briefly, then focus restoration
+    # reopened the preview on the next animation frame. Waiting for `hidden`
+    # proves the complete 200 ms conceal cycle finished without reopening.
+    expect(page).to have_css('#cart-preview[hidden]:not(.show)', visible: :all)
+    expect(page).to have_no_css('.site-navbar.cart-preview-open')
+    expect(page.evaluate_script("document.activeElement.matches(#{focus_selector.to_json})")).to be(true)
+    expect(find('[data-nav-link="cart"]', visible: :all)['aria-expanded']).to eq('false')
+  end
+
+  def close_preview_from_focused_button
+    close_button = find('[data-cart-preview-close]')
+    page.execute_script('arguments[0].focus()', close_button)
+    expect(page.evaluate_script("document.activeElement.matches('[data-cart-preview-close]')")).to be(true)
+    close_button.click
+    expect_preview_concealed_with_focus
+  end
+
   def preview_metrics
     page.evaluate_script(<<~JS)
       (() => {
@@ -414,6 +432,34 @@ RSpec.describe 'Responsive shopping cart', :js, type: :system do
     expect_preview_contained(scrolled_metrics)
   end
 
+  it 'restores focus after mobile X close without reopening and preserves later keyboard opening' do
+    setup_cart_items(long_name_product)
+    open_mobile_preview(390, 844)
+
+    close_preview_from_focused_button
+
+    page.driver.browser.action.send_keys(:tab).perform
+    expect(page.evaluate_script("document.activeElement.matches('[data-nav-link=\"cart\"]')")).to be(false)
+    page.driver.browser.action.key_down(:shift).send_keys(:tab).key_up(:shift).perform
+
+    expect(page.evaluate_script("document.activeElement.matches('[data-nav-link=\"cart\"]')")).to be(true)
+    expect(page).to have_css('#cart-preview.show', visible: true)
+
+    close_preview_from_focused_button
+  end
+
+  it 'keeps repeated desktop X close cycles closed with focus restored' do
+    setup_cart_items(long_name_product)
+    resize_to(1440, 1000)
+    cart_link = find('[data-nav-link="cart"]', visible: true)
+
+    2.times do
+      cart_link.hover
+      expect(page).to have_css('#cart-preview.show', visible: true)
+      close_preview_from_focused_button
+    end
+  end
+
   it 'uses one delegated close route after Turbo replacement, Escape and an outside click' do
     setup_cart_items(long_name_product)
     open_mobile_preview(667, 375)
@@ -423,15 +469,14 @@ RSpec.describe 'Responsive shopping cart', :js, type: :system do
     expect(page).to have_css('#cart-preview .cart-mini-qty-current', text: '2')
     expect(page).to have_css('.site-navbar.cart-preview-open')
 
-    find('[data-cart-preview-close]').click
-    expect(page).to have_no_css('#cart-preview.show')
-    expect(page).to have_no_css('.site-navbar.cart-preview-open')
+    close_preview_from_focused_button
 
     find('[data-nav-link="cart"]', visible: true).hover
     expect(page).to have_css('#cart-preview.show', visible: true)
-    find('[data-cart-preview-close]').send_keys(:escape)
-    expect(page).to have_no_css('#cart-preview.show')
-    expect(page).to have_no_css('.site-navbar.cart-preview-open')
+    close_button = find('[data-cart-preview-close]')
+    page.execute_script('arguments[0].focus()', close_button)
+    page.driver.browser.action.send_keys(:escape).perform
+    expect_preview_concealed_with_focus('#hamburger')
 
     find('#hamburger', visible: true).click
     find('[data-nav-link="cart"]', visible: true).hover
