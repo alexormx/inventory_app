@@ -104,11 +104,11 @@
           <% end %>
 
           <!-- Account Dropdown -->
-          <li class="nav-item dropdown" data-controller="dropdown">
-            <button type="button" id="account" class="nav-item-link dropdown-toggle d-flex align-items-center" data-dropdown-target="button" data-action="click->dropdown#toggle" aria-expanded="false" aria-haspopup="true" aria-label="Menú de cuenta de usuario">
+          <li class="nav-item dropdown">
+            <button type="button" id="account" class="nav-item-link dropdown-toggle d-flex align-items-center" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true" aria-label="Menú de cuenta de usuario">
               <span class="user-avatar" aria-hidden="true"><%= user_initials(current_user) %></span> <span class="link-text">Mi cuenta</span>
             </button>
-            <ul class="dropdown-menu dropdown-menu-end" id="account-menu" aria-labelledby="account" data-dropdown-target="menu">
+            <ul class="dropdown-menu dropdown-menu-end" id="account-menu" aria-labelledby="account">
               <li><%= link_to "Mi Perfil", profile_path, class: "dropdown-item" %></li>
               <li><%= link_to "Mis Pedidos", orders_path, class: "dropdown-item" %></li>
               <li><hr class="dropdown-divider"></li>
@@ -197,4 +197,3 @@
   updateNavActive();
 })();
 </script>
-
