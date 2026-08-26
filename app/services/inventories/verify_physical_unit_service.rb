@@ -72,6 +72,10 @@ module Inventories
       validate_request!
 
       Inventory.transaction do
+        product_id = Inventory.where(id: @inventory_id).pick(:product_id)
+        raise ActiveRecord::RecordNotFound, "Couldn't find Inventory with 'id'=#{@inventory_id}" unless product_id
+
+        Product.lock.find(product_id)
         inventory = Inventory.lock.find(@inventory_id)
         validate_snapshot!(inventory)
         validate_inventory_state!(inventory)

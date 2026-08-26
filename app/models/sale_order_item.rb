@@ -44,6 +44,9 @@ class SaleOrderItem < ApplicationRecord
   before_update :ensure_free_to_reduce, if: :will_reduce_quantity?
   before_destroy :ensure_no_sold_and_release_reserved
   before_destroy :cleanup_preorders_and_preassignments
+  # Reconcilia antes de que la transacción de borrado publique el inventario
+  # liberado, para que la demanda vieja lo reclame primero.
+  after_destroy :allocate_preorders_after_release
   after_save :sync_inventory_records, if: :saved_change_to_quantity?
   after_commit :update_product_stats
   after_commit :recalculate_parent_order_totals
@@ -187,6 +190,7 @@ class SaleOrderItem < ApplicationRecord
   end
 
   def ensure_no_sold_and_release_reserved
+    Product.lock.find(product_id)
     sold = so_inventory.where(status: %i[sold pre_sold])
     if sold.exists?
       errors.add(:base,
@@ -223,13 +227,8 @@ class SaleOrderItem < ApplicationRecord
     raise
   end
 
-  # Luego de confirmar la eliminación, intenta asignar preventas pendientes con el inventario liberado
-  after_destroy_commit :allocate_preorders_after_release
-
   def allocate_preorders_after_release
     Preorders::PreorderAllocator.new(product).call
-  rescue StandardError => e
-    Rails.logger.error "[SOI#allocate_preorders_after_release] #{e.class}: #{e.message}"
   end
 
   def update_product_stats

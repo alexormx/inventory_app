@@ -188,12 +188,15 @@ RSpec.describe Admin::PurchaseOrdersController, type: :controller do
         expect(Inventory.where(product: product, sale_order: preorder_so2, status: :reserved).count).to be > 0
       end
 
-      it 'logs the allocation process' do
-        # Permitir otros logs de Rails y validar que el de asignación aparece
-        allow(Rails.logger).to receive(:info).and_call_original
-        expect(Rails.logger).to receive(:info).with(/Allocating received inventory to preorders/).and_call_original
-
+      it 'leaves no committed demand unbacked once the receipt completes' do
         patch :confirm_receipt, params: { id: purchase_order.id }
+
+        # La reconciliación ocurre en cuanto entra el suministro, no al recibir,
+        # así que al cerrar la recepción no puede quedar demanda vieja pendiente
+        # ni stock libre publicado por delante de ella.
+        expect(PreorderReservation.pending.where(product: product).sum(:quantity)).to eq(0)
+        expect(Inventory.customer_sellable.where(product: product).count).to eq(0)
+        expect(Inventory.where(product: product, status: :reserved).count).to eq(2)
       end
     end
 
@@ -285,10 +288,15 @@ RSpec.describe Admin::PurchaseOrdersController, type: :controller do
         expect(preorder_p2.reload.status).to eq('assigned')
       end
 
-      it 'calls batch_allocate with all product IDs' do
-        expect(Preorders::PreorderAllocator).to receive(:batch_allocate).with(array_including(product.id, product2.id))
-
+      it 'reconciles every product in the receipt, not just the first' do
         patch :confirm_receipt, params: { id: purchase_order.id }
+
+        [product, product2].each do |reconciled|
+          expect(PreorderReservation.pending.where(product: reconciled).sum(:quantity)).to eq(0)
+          expect(Inventory.customer_sellable.where(product: reconciled).count).to eq(0)
+        end
+        expect(preorder_line1.reload.inventory_units.count).to eq(1)
+        expect(preorder_line2.reload.inventory_units.count).to eq(1)
       end
     end
 

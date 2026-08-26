@@ -64,8 +64,10 @@ class Inventory < ApplicationRecord
 
   before_save :clear_sale_order_for_free_status, if: :will_change_status_to_free?
   before_save :clear_location_if_status_not_requires_it
+  before_save :lock_product_for_preorder_reconciliation, if: :will_become_customer_sellable?
   before_update :track_status_change
   after_save :log_sale_order_cleared_event, if: :sale_order_cleared?
+  after_save :reconcile_preorders_before_publication, if: :preorder_reconciliation_required?
   # La publicabilidad depende de status, ubicación física y si la pieza está
   # libre (sale_order_id). Recalculamos ante cualquiera de esos cambios y
   # también al destruir la pieza (hard-delete del último stock publicable).
@@ -73,8 +75,11 @@ class Inventory < ApplicationRecord
   # deduplique y solo conserve el último).
   after_commit :update_product_stock_quantities, on: %i[create update destroy],
                                                  if: :product_stock_update_required?
-  after_commit :allocate_preorders_if_now_available, if: -> { saved_change_to_status? || saved_change_to_sale_order_id? }
   after_commit :trigger_auto_assignment_if_available, if: -> { saved_change_to_status? && status == 'available' }
+
+  # Bulk boundaries can defer the per-row callback after taking the same
+  # Product lock, then reconcile the whole batch once before commit.
+  attr_accessor :defer_preorder_reconciliation
 
   # inventory.rb
   scope :customer_on_hand, lambda {
@@ -180,16 +185,48 @@ class Inventory < ApplicationRecord
     Rails.error.report(e, handled: true, context: { inventory_id: id, product_id: product_id })
   end
 
-  def allocate_preorders_if_now_available
-    return unless status == 'available' && sale_order_id.nil? # libres
+  def will_become_customer_sellable?
+    return false unless customer_sellable_state?(status, sale_order_id, inventory_location_id)
 
-    # Calcular cuántas unidades nuevas se añadieron a available en este commit
-    # Simplificación: 1 unidad por registro Inventory.
-    begin
-      Preorders::PreorderAllocator.new(product, newly_available_units: 1).call
-    rescue StandardError => e
-      Rails.logger.error "[Preorders] Allocation error for product=#{product_id} inv=#{id}: #{e.class} #{e.message}"
+    previous_status = new_record? ? nil : attribute_in_database(:status)
+    previous_sale_order_id = new_record? ? nil : attribute_in_database(:sale_order_id)
+    previous_location_id = new_record? ? nil : attribute_in_database(:inventory_location_id)
+
+    !customer_sellable_state?(previous_status, previous_sale_order_id, previous_location_id)
+  end
+
+  def customer_sellable_state?(candidate_status, candidate_sale_order_id, candidate_location_id)
+    normalized_status = if candidate_status.is_a?(Integer)
+                          self.class.statuses.key(candidate_status)
+                        else
+                          candidate_status.to_s
+                        end
+    return false if candidate_sale_order_id.present?
+
+    normalized_status == 'in_transit' ||
+      (normalized_status == 'available' && candidate_location_id.present?)
+  end
+
+  def lock_product_for_preorder_reconciliation
+    @preorder_reconciliation_product = Product.lock.find(product_id)
+    @preorder_reconciliation_required = true
+  end
+
+  def preorder_reconciliation_required?
+    @preorder_reconciliation_required
+  end
+
+  def reconcile_preorders_before_publication
+    unless defer_preorder_reconciliation
+      Preorders::PreorderAllocator.new(
+        @preorder_reconciliation_product,
+        newly_available_units: 1
+      ).call
     end
+  ensure
+    @preorder_reconciliation_required = false
+    @preorder_reconciliation_product = nil
+    self.defer_preorder_reconciliation = false
   end
 
   # Dispara auto-asignación de inventario a Sale Orders cuando una pieza se vuelve available

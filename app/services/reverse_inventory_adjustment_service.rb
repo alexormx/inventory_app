@@ -14,6 +14,9 @@ class ReverseInventoryAdjustmentService
     raise NotApplied unless @adjustment.status == 'applied'
 
     ActiveRecord::Base.transaction do
+      product_ids = @adjustment.inventory_adjustment_lines.pluck(:product_id).uniq.sort
+      locked_products = Product.where(id: product_ids).lock.order(:id).to_a
+
       @adjustment.inventory_adjustment_lines.each do |line|
         if line.direction == 'increase'
           # Eliminar inventarios creados cuando estén libres y en estado seguro
@@ -32,14 +35,18 @@ class ReverseInventoryAdjustmentService
           line.inventory_adjustment_entries.where(action: %w[status_changed marked_lost marked_damaged
                                                              marked_scrap]).includes(:inventory).find_each do |entry|
             inv = entry.inventory
-            inv.update!(status: :available, status_changed_at: @now, adjustment_reference: nil) if inv.status.in?(%w[damaged lost scrap marketing])
+            if inv.status.in?(%w[damaged lost scrap marketing])
+              inv.defer_preorder_reconciliation = true
+              inv.update!(status: :available, status_changed_at: @now, adjustment_reference: nil)
+            end
           end
         end
       end
 
+      locked_products.each { |product| Preorders::PreorderAllocator.new(product).call }
+
       @adjustment.update!(status: 'draft', reversed_at: @now, reversed_by: @reversed_by)
 
-      product_ids = @adjustment.inventory_adjustment_lines.pluck(:product_id).uniq
       product_ids.each do |pid|
         Products::UpdateStatsService.new(Product.find(pid)).call
       rescue StandardError
