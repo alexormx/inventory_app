@@ -1,13 +1,24 @@
 require 'rails_helper'
 # spec/system/user_login_spec.rb
+Selenium::WebDriver.logger.level = :warn
+
 RSpec.describe "User login/logout", type: :system do
   let!(:user) { create(:user, email: "user@example.com", password: "password123") }
+
+  after(:each, :js) do
+    page.driver.browser.execute_cdp("Emulation.setCPUThrottlingRate", rate: 1)
+  end
 
   # ✅ Successful login and logout
   #
   it "successful login and logout", js: true do
     visit new_user_session_path
     accept_cookies_if_present
+    page.driver.browser.execute_cdp("Emulation.setCPUThrottlingRate", rate: 6)
+    # Simulate a delayed Stimulus connection across the Turbo login render.
+    # The account dropdown has a synchronous, idempotent turbo:render owner, so
+    # its first click must still work instead of being lost in the connect gap.
+    page.execute_script("window.Stimulus.stop()")
     fill_in "user[email]", with: "user@example.com"
     fill_in "user[password]", with: "password123"
     click_button "Iniciar sesión"
@@ -18,16 +29,27 @@ RSpec.describe "User login/logout", type: :system do
       find("#hamburger").click
     end
 
-    # Esperar a que el menú esté REALMENTE abierto. have_selector(visible: :all)
-    # pasaba aunque el navbar siguiera colapsado, mientras que el find siguiente
-    # exige un elemento visible: por eso sólo funcionaba con ventanas anchas y
-    # fallaba en CI con Capybara::ElementNotFound.
-    expect(page).to have_selector("#account", visible: true)
+    # Wait for the real lifecycle readiness marker, not mere DOM visibility.
+    expect(page).to have_selector("#account[data-dropdown-enhanced='1']", visible: true)
     find("#account").click
 
-    # Check if the logout button is visible
-    # and click it
-    expect(page).to have_selector("#logout-button", visible: true)
+    expect(page).to have_selector("#account[aria-expanded='true']", visible: true)
+    expect(page).to have_selector("#account-menu.show #logout-button", visible: true)
+
+    # One click must cause exactly one transition, including after another
+    # Turbo visit where the replacement navbar is enhanced again.
+    find("#account").click
+    expect(page).to have_selector("#account[aria-expanded='false']", visible: true)
+    expect(page).to have_no_selector("#account-menu.show")
+
+    find("#account").click
+    click_link "Mi Perfil"
+    expect(page).to have_current_path(profile_path)
+    expect(page).to have_selector("#account[data-dropdown-enhanced='1']", visible: true)
+    find("#account").click
+    expect(page).to have_selector("#account[aria-expanded='true']", visible: true)
+    expect(page).to have_selector("#account-menu.show #logout-button", visible: true)
+
     find("#logout-button").click
 
     expect(page).to have_content("Sesión finalizada.")
