@@ -201,6 +201,7 @@ module Admin
         # Marcar inventario como disponible
         Inventory.where(purchase_order_id: @purchase_order.id).in_transit.update_all(
           status: :available,
+          inventory_location_id: nil,
           updated_at: Time.current,
           status_changed_at: Time.current
         )

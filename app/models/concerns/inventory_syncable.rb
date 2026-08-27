@@ -26,13 +26,15 @@ module InventorySyncable
   private
 
   def sync_inventory_for_purchase(desired_quantity)
+    locked_product = Product.lock.find(product.id)
     # Manage inventory per line item to avoid interfering across lines for the same PO
-    existing_items = Inventory.where(product_id: product.id, purchase_order_item_id: id)
+    existing_items = Inventory.where(product_id: locked_product.id, purchase_order_item_id: id)
     current_count = existing_items.count
     difference = desired_quantity - current_count
 
     # Update existing items
     existing_items.each do |item|
+      item.defer_preorder_reconciliation = true
       item.update!(
         status: inventory_status_from_order,
         status_changed_at: Time.current,
@@ -43,14 +45,16 @@ module InventorySyncable
 
     if difference.positive?
       difference.times do
-        Inventory.create!(
-          product: product,
+        inventory = Inventory.new(
+          product: locked_product,
           purchase_order_id: purchase_order_id,
           purchase_order_item_id: id,
           status: inventory_status_from_order,
           status_changed_at: Time.current,
           purchase_cost: respond_to?(:unit_compose_cost_in_mxn) ? unit_compose_cost_in_mxn.to_f : 0
         )
+        inventory.defer_preorder_reconciliation = true
+        inventory.save!
       end
     elsif difference.negative?
       # Remove excess unassigned items
@@ -59,6 +63,8 @@ module InventorySyncable
                     .limit(difference.abs)
                     .destroy_all
     end
+
+    Preorders::PreorderAllocator.new(locked_product).call
   end
 
   def sync_inventory_for_sale(_desired_quantity)
