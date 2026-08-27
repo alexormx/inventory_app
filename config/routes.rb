@@ -95,6 +95,8 @@ Rails.application.routes.draw do
           as: :location_assignment_batch do
       post   'location',            action: :set_location, as: :location
       post   'lines',               action: :add_line,     as: :lines
+      post   'lines/:product_id/all', action: :add_all,    as: :add_all_lines
+      post   'assign',              action: :assign_all,   as: :assign_all
       patch  'lines/:product_id',   action: :update_line,  as: :line
       delete 'lines/:product_id',   action: :remove_line,  as: :remove_line
       delete 'clear',               action: :clear,        as: :clear

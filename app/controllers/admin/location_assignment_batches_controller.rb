@@ -11,18 +11,13 @@ module Admin
     # Un lote tiene UNA ubicación. Cambiarla con productos dentro se confirma
     # antes, para no acabar con un lote mezclado sin querer.
     def set_location
-      if batch.location_id.present? && batch.location_id.to_s != params[:location_id].to_s && !batch.empty?
-        unless ActiveModel::Type::Boolean.new.cast(params[:confirm_change])
-          return respond_with_page(
-            alert: "Ya tienes #{batch.total_units} pieza(s) preparadas para " \
-                   "#{batch.location&.full_path}. Vacía el lote si quieres cambiar de ubicación."
-          )
-        end
-
-        batch.clear_lines
+      discard_lines = ActiveModel::Type::Boolean.new.cast(params[:confirm_change])
+      unless batch.change_location(params[:location_id], discard_lines: discard_lines)
+        return respond_with_page(
+          alert: "Ya tienes #{batch.total_units} pieza(s) preparadas para " \
+                 "#{batch.location&.full_path}. Vacía el lote si quieres cambiar de ubicación."
+        )
       end
-
-      batch.location = params[:location_id]
       # Cambiar de estante mueve toda la pantalla: el encabezado, lo que ya hay
       # guardado ahí y el estado de cada botón Agregar. Por eso este es el único
       # stream que toca los resultados de la búsqueda.
@@ -36,13 +31,13 @@ module Admin
     def add_line
       return retry_page(alert: 'Selecciona primero la ubicación destino.') if batch.location_id.blank?
 
-      quantity = Integer(params[:quantity].to_s.strip, 10)
-      raise ArgumentError unless quantity.positive?
-
       product = Product.find_by(id: params[:product_id])
       return retry_page(alert: 'El producto no existe.') unless product
 
-      batch.add(product.id, quantity)
+      # El límite lo pone el inventario, no el formulario: la comprobación vive
+      # en el modelo, dentro de una transacción con la fila bloqueada, porque dos
+      # clics seguidos leen el mismo "quedan 2" y si no acaban metiendo 4.
+      quantity = batch.add(product.id, params[:quantity])
       @added_product = product
       @added_quantity = quantity
 
@@ -53,17 +48,42 @@ module Admin
       respond_to do |format|
         format.turbo_stream do
           load_batch_state
-          @assignable = assignable_for(product)
-          flash.now[:notice] = "#{quantity} × #{product.product_name} agregado al lote."
+          @added_row = search_row_for(product)
+          flash.now[:notice] = "#{@added_quantity} × #{product.product_name} en el lote."
         end
         format.html do
-          redirect_back_to_page(notice: "#{quantity} × #{product.product_name} agregado al lote.")
+          redirect_back_to_page(notice: "#{@added_quantity} × #{product.product_name} en el lote.")
         end
       end
     rescue ArgumentError, TypeError
       retry_page(alert: 'La cantidad debe ser un número entero mayor a cero.')
-    rescue Admin::LocationAssignmentBatch::TooManyLines
-      retry_page(alert: "El lote admite hasta #{Admin::LocationAssignmentBatch::MAX_LINES} productos.")
+    rescue Admin::LocationAssignmentBatch::ExceedsAvailable => e
+      retry_page(alert: e.message)
+    end
+
+    # "Agregar todas las disponibles": la cantidad la calcula el servidor al
+    # momento. Si el navegador mandara un número, dos pestañas con datos viejos
+    # se pasarían del inventario.
+    def add_all
+      return retry_page(alert: 'Selecciona primero la ubicación destino.') if batch.location_id.blank?
+
+      product = Product.find_by(id: params[:product_id])
+      return retry_page(alert: 'El producto no existe.') unless product
+
+      added = batch.add_all(product.id)
+      return retry_page(alert: "#{product.product_name}: ya tienes en el lote todo el inventario que se puede ubicar.") if added.zero?
+
+      @added_product = product
+      @added_quantity = batch.pending_for(product.id)
+      respond_to do |format|
+        format.turbo_stream do
+          load_batch_state
+          @added_row = search_row_for(product)
+          flash.now[:notice] = "#{added} × #{product.product_name} agregado al lote."
+          render :add_line
+        end
+        format.html { redirect_back_to_page(notice: "#{added} × #{product.product_name} agregado al lote.") }
+      end
     end
 
     # Editar, quitar y vaciar tocan SÓLO el lote. Ni la búsqueda ni el resumen de
@@ -97,35 +117,65 @@ module Admin
       @q = params[:q].to_s.strip
     end
 
-    # Confirmación única del lote completo. Si algo no alcanza, no se guarda nada.
-    def confirm
-      result = Inventories::BulkAssignLocationBatchService.call(
-        lines: batch.service_lines,
-        location_id: batch.location_id,
-        actor: current_user
-      )
+    # Asignación directa de TODO el lote, desde la misma pantalla de trabajo.
+    #
+    # Ya no se pasa por una página de revisión: el operador tiene el lote y el
+    # resumen del estante delante mientras trabaja, así que mandarlo a otra
+    # pantalla a leer lo mismo sobraba.
+    #
+    # El borrador queda bloqueado durante la transacción del servicio y sus
+    # líneas se borran sólo después de una asignación exitosa. Por eso un segundo
+    # envío —doble clic, dos pestañas— encuentra el borrador vacío, mientras que
+    # un fallo conserva el lote entero para que el operador pueda reintentarlo.
+    def assign_all
+      if batch.empty?
+        return respond_with_batch(alert: 'El lote ya se había asignado.') if batch.draft.just_assigned?
+
+        return respond_with_batch(alert: 'Agrega al menos un producto antes de asignar.')
+      end
+      return respond_with_batch(alert: 'Selecciona la ubicación destino.') if batch.location.blank?
+
+      location = batch.location
+      result = nil
+      taken = nil
+
+      ActiveRecord::Base.transaction do
+        taken = batch.consume! do |locked_lines|
+          result = Inventories::BulkAssignLocationBatchService.call(
+            lines: locked_lines, location_id: location.id, actor: current_user
+          )
+        end
+      end
+
+      return respond_with_batch(alert: 'El lote ya se había asignado.') if taken.blank?
 
       detail = result.lines.map { |l| "#{l[:inventories].size} #{l[:product].product_name}" }.join(', ')
-      # Se vacían las líneas pero se conserva el estante: el operador sigue
-      # parado delante del mismo, y así al volver ve el resumen ya actualizado
-      # con lo que acaba de dejar ahí.
-      batch.clear_lines
-      redirect_to admin_inventory_unlocated_path,
-                  notice: "#{result.assigned_count} unidades fueron asignadas a " \
-                          "#{result.location.full_path}: #{detail}.",
-                  status: :see_other
-    rescue Inventories::BulkAssignLocationBatchService::InsufficientEligibleInventory => e
-      redirect_to admin_location_assignment_batch_review_path, alert: e.message, status: :see_other
-    rescue Inventories::BulkAssignLocationBatchService::Error,
+      respond_with_assignment(
+        notice: "#{result.assigned_count} unidades fueron asignadas a #{location.full_path}: #{detail}."
+      )
+    rescue Inventories::BulkAssignLocationBatchService::InsufficientEligibleInventory,
+           Inventories::BulkAssignLocationBatchService::Error,
            Inventories::LocationAssignment::InvalidLocation => e
-      redirect_to admin_inventory_unlocated_path, alert: e.message, status: :see_other
+      # Todo o nada: la transacción se deshizo, así que el borrador sigue entero
+      # y el resumen del estante no se movió. Sólo aparece el aviso.
+      respond_with_batch(alert: e.message)
+    end
+
+    # Se conserva la ruta de revisión por compatibilidad, pero ya no forma parte
+    # del camino normal: el panel del lote asigna directo.
+    def confirm
+      assign_all
     end
 
     private
 
-    # Cuánto queda asignable ahora mismo para reponer el input de cantidad.
-    def assignable_for(product)
-      Inventories::LocationAssignment.eligible_scope(product.id).count
+    # La fila del producto tal y como la pinta la búsqueda, para poder repintar
+    # sólo esa fila tras agregar. Se reusa el mismo overview que arma la lista,
+    # así los números salen del mismo sitio y no pueden divergir.
+    def search_row_for(product)
+      Inventories::UnlocatedOverview.new(term: product.product_sku.to_s).rows
+                                    .find { |row| row[:product].id == product.id } ||
+        { product: product, assignable: 0, available: 0, reserved: 0, in_transit: 0 }
     end
 
     # Estado mínimo para repintar el panel del lote.
@@ -165,6 +215,21 @@ module Admin
       end
     end
 
+    # Éxito de la asignación: cambian tres cosas a la vez y ninguna más.
+    # El estante ya tiene la mercancía (resumen), el lote quedó vacío, y lo que
+    # sigue siendo asignable en los resultados bajó. La búsqueda y la ubicación
+    # elegida se quedan como estaban.
+    def respond_with_assignment(notice:)
+      respond_to do |format|
+        format.turbo_stream do
+          load_page_state
+          flash.now[:notice] = notice
+          render :assignment_done
+        end
+        format.html { redirect_back_to_page(notice: notice) }
+      end
+    end
+
     def respond_with_page(notice: nil, alert: nil)
       respond_to do |format|
         format.turbo_stream do
@@ -177,7 +242,7 @@ module Admin
       end
     end
 
-    def batch = @batch ||= Admin::LocationAssignmentBatch.new(session)
+    def batch = @batch ||= Admin::LocationAssignmentBatch.for(current_user)
 
     def redirect_back_to_page(notice: nil, alert: nil, clear_search: false, extra: {})
       query = clear_search ? {} : { q: params[:q].presence }

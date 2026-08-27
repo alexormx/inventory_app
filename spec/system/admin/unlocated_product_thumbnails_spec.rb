@@ -56,7 +56,7 @@ RSpec.describe 'Unlocated: product thumbnails', :js, type: :system do
     expect(page).to have_css("#{row} i.fa-image")
   end
 
-  it 'carries the thumbnail into the batch and the review screen' do
+  it 'carries the thumbnail into the batch' do
     visit admin_inventory_unlocated_path
     choose_shelf
     fill_in 'product-search', with: 'IMG-1'
@@ -65,9 +65,6 @@ RSpec.describe 'Unlocated: product thumbnails', :js, type: :system do
     click_button "add-#{with_image.id}"
 
     expect(page).to have_css("li[data-batch-product-id='#{with_image.id}'] img")
-
-    click_link 'Revisar asignación'
-    expect(page).to have_css("#review-lines tr[data-review-product-id='#{with_image.id}'] img")
   end
 
   it 'renders a mixed result set without blowing up' do

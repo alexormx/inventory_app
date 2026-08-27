@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_07_30_210803) do
+ActiveRecord::Schema[8.0].define(version: 2026_08_21_111131) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -234,6 +234,29 @@ ActiveRecord::Schema[8.0].define(version: 2026_07_30_210803) do
     t.index ["location_type"], name: "index_inventory_locations_on_location_type"
     t.index ["parent_id", "position"], name: "index_inventory_locations_on_parent_id_and_position"
     t.index ["parent_id"], name: "index_inventory_locations_on_parent_id"
+  end
+
+  create_table "location_assignment_draft_lines", force: :cascade do |t|
+    t.bigint "location_assignment_draft_id", null: false
+    t.bigint "product_id", null: false
+    t.integer "quantity", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["location_assignment_draft_id", "product_id"], name: "index_la_draft_lines_on_draft_and_product", unique: true
+    t.index ["location_assignment_draft_id"], name: "index_la_draft_lines_on_draft"
+    t.index ["product_id"], name: "index_location_assignment_draft_lines_on_product_id"
+  end
+
+  create_table "location_assignment_drafts", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "inventory_location_id"
+    t.datetime "last_assigned_at"
+    t.datetime "expires_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["expires_at"], name: "index_location_assignment_drafts_on_expires_at"
+    t.index ["inventory_location_id"], name: "index_location_assignment_drafts_on_inventory_location_id"
+    t.index ["user_id"], name: "index_location_assignment_drafts_on_user_id", unique: true
   end
 
   create_table "location_types", force: :cascade do |t|
@@ -1014,6 +1037,10 @@ ActiveRecord::Schema[8.0].define(version: 2026_07_30_210803) do
   add_foreign_key "inventory_events", "inventories"
   add_foreign_key "inventory_events", "products"
   add_foreign_key "inventory_locations", "inventory_locations", column: "parent_id"
+  add_foreign_key "location_assignment_draft_lines", "location_assignment_drafts"
+  add_foreign_key "location_assignment_draft_lines", "products"
+  add_foreign_key "location_assignment_drafts", "inventory_locations"
+  add_foreign_key "location_assignment_drafts", "users"
   add_foreign_key "order_shipping_addresses", "sale_orders"
   add_foreign_key "payments", "sale_orders"
   add_foreign_key "posts", "users"

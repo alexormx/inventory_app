@@ -1,15 +1,13 @@
-<%# Agregar toca SÓLO el lote y la cantidad de la fila agregada. La búsqueda no
-    se repinta: término, resultados y scroll se quedan como estaban. El resumen
-    de la ubicación tampoco, porque estas piezas aún no se han asignado. %>
+<%# Agregar toca el lote y la fila del producto agregado, nada más. La búsqueda
+    no se repinta: término, resto de filas y scroll se quedan como estaban. El
+    resumen de la ubicación tampoco, porque estas piezas aún NO se han asignado:
+    sólo una asignación confirmada mueve "Actualmente en esta ubicación". %>
 <%= turbo_stream.replace 'location-batch-panel' do %>
   <%= render 'admin/inventory/location_batch_panel', batch: @batch, batch_lines: @batch_lines, q: @q %>
 <% end %>
-<%= turbo_stream.replace "quantity-#{@added_product.id}" do %>
-  <%= number_field_tag :quantity, (1 if @assignable.positive?),
-                       min: 1, max: @assignable, step: 1,
-                       class: 'form-control form-control-sm', id: "quantity-#{@added_product.id}",
-                       form: "add-form-#{@added_product.id}", required: true,
-                       disabled: @assignable.zero?,
-                       'aria-label': "Cantidad de #{@added_product.product_name} a agregar al lote" %>
+<%= turbo_stream.replace "result-row-#{@added_product.id}" do %>
+  <%= render 'admin/inventory/product_search_row',
+             row: @added_row, batch: @batch, q: @q,
+             pending: @batch.pending_for(@added_product.id) %>
 <% end %>
 <%= render 'flash_streams' %>

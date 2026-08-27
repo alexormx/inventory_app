@@ -1,0 +1,88 @@
+<%# Una fila de resultado.
+
+    Se separa para que Turbo pueda repintar SOLO la fila del producto que se
+    acaba de agregar: así "En lote" y "Restantes" quedan al día sin tocar el
+    término, el resto de filas ni el scroll.
+
+    locals: row, batch, pending, q %>
+<% product = row[:product] %>
+<% assignable = row[:assignable] %>
+<% remaining = [assignable - pending, 0].max %>
+<% no_location = batch.location.blank? %>
+<% blocked = remaining.zero? || no_location %>
+<tr data-product-id="<%= product.id %>" id="result-row-<%= product.id %>">
+  <%# max-width:0 + width:100% es lo que hace que text-truncate funcione dentro
+      de una tabla de ancho automatico. %>
+  <td style="max-width:0; width:100%;">
+    <div class="d-flex align-items-center gap-2">
+      <%= render 'admin/shared/product_thumb', product: product, size: 48 %>
+      <div style="min-width:0;">
+        <div class="fw-semibold text-truncate"><%= product.product_name %></div>
+        <div class="d-flex align-items-center gap-1 flex-wrap">
+          <span class="font-monospace text-muted" style="font-size:.72rem;"><%= product.product_sku %></span>
+          <% if row[:in_transit].positive? %>
+            <span class="badge text-bg-info" style="font-size:.62rem;"
+                  title="Pre apartado: sigue en transito, no es asignable">
+              <i class="fa-solid fa-truck me-1" aria-hidden="true"></i><%= row[:in_transit] %>
+            </span>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </td>
+  <%# Los tres numeros que explican por que el boton acepta o no acepta mas:
+      lo que hay para ubicar, lo que ya lleva el lote, y la resta. Sin esto el
+      operador ve un boton apagado y no sabe si es un fallo. %>
+  <%# Los tres numeros en una sola columna apretada: explican por que el boton
+      acepta o no acepta mas, sin estirar la fila. %>
+  <td class="text-end text-nowrap lh-sm" style="font-size:.7rem;">
+    <span data-assignable="<%= assignable %>" id="assignable-<%= product.id %>">
+      Asignables: <strong><%= assignable %></strong>
+    </span><br>
+    <span class="text-primary" data-pending="<%= pending %>" id="pending-<%= product.id %>">
+      En lote: <strong><%= pending %></strong>
+    </span><br>
+    <span class="<%= remaining.zero? ? 'text-muted' : 'text-success' %>"
+          data-remaining="<%= remaining %>" id="remaining-<%= product.id %>">
+      Restantes: <strong><%= remaining %></strong>
+    </span>
+  </td>
+  <td>
+    <%= number_field_tag :quantity, (1 if remaining.positive?),
+                         min: 1, max: remaining, step: 1,
+                         class: 'form-control form-control-sm', id: "quantity-#{product.id}",
+                         form: "add-form-#{product.id}", required: true,
+                         disabled: blocked,
+                         'aria-label': "Cantidad de #{product.product_name} a agregar al lote" %>
+  </td>
+  <td class="text-nowrap">
+    <%# En horizontal para no estirar la fila. El boton corto dice "Todas"; el
+        nombre completo vive en title y aria-label, que es lo que necesita quien
+        usa lector de pantalla. %>
+    <div class="d-flex gap-1">
+      <%= submit_tag 'Agregar', class: 'btn btn-sm btn-success', id: "add-#{product.id}",
+                     form: "add-form-#{product.id}", disabled: blocked,
+                     'aria-label': "Agregar #{product.product_name} al lote" %>
+      <%# El servidor decide cuantas son "todas": si lo calculara el navegador,
+          dos pestanas con datos viejos se pasarian del inventario. %>
+      <%= submit_tag 'Todas', class: 'btn btn-sm btn-outline-success',
+                     id: "add-all-#{product.id}", form: "add-all-form-#{product.id}",
+                     disabled: blocked,
+                     title: 'Agregar todas las disponibles',
+                     'aria-label': "Agregar todas las piezas disponibles de #{product.product_name} al lote" %>
+    </div>
+    <% if no_location %>
+      <div class="text-muted mt-1" style="font-size:.72rem;" id="no-location-<%= product.id %>">
+        Selecciona primero la ubicación destino
+      </div>
+    <% elsif assignable.zero? %>
+      <div class="text-muted mt-1" style="font-size:.72rem;" id="no-stock-<%= product.id %>">
+        Sin inventario disponible para asignar
+      </div>
+    <% elsif remaining.zero? %>
+      <div class="text-muted mt-1" style="font-size:.72rem;" id="all-pending-<%= product.id %>">
+        Todo el inventario disponible ya está en el lote.
+      </div>
+    <% end %>
+  </td>
+</tr>
