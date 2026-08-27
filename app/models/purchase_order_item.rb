@@ -9,6 +9,12 @@ class PurchaseOrderItem < ApplicationRecord
   validates :quantity, presence: true, numericality: { greater_than: 0 }
 
   before_validation :compute_line_volume_and_weight, if: :should_compute_volume_weight?
+  # El producto es el punto de serialización por SKU para cambios de suministro.
+  # Hay que tomarlo ANTES de escribir la línea: insertar una fila que referencia
+  # products adquiere FOR KEY SHARE sobre ese producto, y subir ese candado a
+  # FOR UPDATE después provoca un deadlock entre dos líneas concurrentes del
+  # mismo producto. Tomarlo aquí las serializa en vez de enfrentarlas.
+  before_save :lock_product_for_supply_change, if: :will_save_change_to_quantity?
   before_update :ensure_free_units_for_quantity_reduction, if: :will_reduce_quantity?
   before_destroy :ensure_enough_free_inventory_to_remove
   after_save :sync_inventory_records, if: :saved_change_to_quantity?
@@ -16,6 +22,10 @@ class PurchaseOrderItem < ApplicationRecord
   after_commit :recalculate_parent_order_totals
 
   private
+
+  def lock_product_for_supply_change
+    Product.lock.find(product_id)
+  end
 
   def will_reduce_quantity?
     quantity_changed? && quantity_change_to_be_saved.first.to_i > quantity_change_to_be_saved.last.to_i

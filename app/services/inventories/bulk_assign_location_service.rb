@@ -58,7 +58,7 @@ module Inventories
       validate_actor!
 
       Inventory.transaction do
-        product = Product.find_by(id: @product_id)
+        product = Product.lock.find_by(id: @product_id)
         raise ProductNotFound, 'El producto no existe.' unless product
 
         location = Inventories::LocationAssignment.validated_leaf_location!(@location_id)
@@ -70,10 +70,13 @@ module Inventories
         raise InsufficientEligibleInventory.new(quantity, inventories.size) if inventories.size < quantity
 
         events = inventories.map do |inventory|
+          inventory.defer_preorder_reconciliation = true
           Inventories::LocationAssignment.assign_located!(
             inventory, location, actor: @actor, source: SOURCE, notes: @notes
           )
         end
+
+        Preorders::PreorderAllocator.new(product).call
 
         Result.new(product: product, location: location, inventories: inventories, events: events)
       end
