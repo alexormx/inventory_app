@@ -151,6 +151,18 @@ RSpec.configure do |config|
     # Selenium reutiliza la misma ventana entre ejemplos y Capybara no la
     # restaura, así que el tamaño que dejaba un spec se lo comía el siguiente.
     page.current_window.resize_to(*SYSTEM_SPEC_WINDOW_SIZE)
+    # La emulación CDP vive en el navegador, no en la sesión: ni
+    # `reset_sessions!` ni `driven_by` la limpian. Medido: 17 ms de referencia,
+    # 65 ms con throttle 6x, y 63 ms en el ejemplo SIGUIENTE que nunca lo pidió.
+    # Un spec que estrangula la CPU para simular lentitud puede así contagiar al
+    # resto de la suite y hacer fallar un ejemplo cualquiera. Se restablece al
+    # ENTRAR a cada ejemplo, no al salir del que lo puso: así un cleanup que
+    # falle en otro spec no puede contaminar a los demás.
+    begin
+      page.driver.browser.execute_cdp('Emulation.setCPUThrottlingRate', rate: 1)
+    rescue StandardError
+      nil
+    end
   end
 
   # If a JS/system spec fails, dump the HTML and a screenshot for easier debugging

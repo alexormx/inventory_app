@@ -145,10 +145,13 @@
     const toggles = Array.from(document.querySelectorAll('[data-bs-toggle="dropdown"]'));
     toggles.forEach((btn)=>{
       if(btn.dataset.dropdownEnhanced === '1') return;
-      btn.dataset.dropdownEnhanced = '1';
 
       const parent = btn.closest('.btn-group') || btn.closest('.dropdown') || btn.parentElement;
       const menu = parent ? parent.querySelector('.dropdown-menu') : null;
+      // Sin menú no hay nada que enlazar. Se sale SIN marcar: si el botón llegó
+      // antes que su menú, un pase posterior del ciclo de Turbo debe poder
+      // intentarlo de nuevo. Marcar aquí dejaba el botón "mejorado" para
+      // siempre pero sin listener, y el control quedaba muerto para el usuario.
       if(!menu) return;
 
       function open(){
@@ -168,6 +171,12 @@
       menu.addEventListener('click', (e)=>{
         if(e.target.closest('.dropdown-item')) close();
       });
+
+      // El marcador se escribe sólo cuando la mejora quedó realmente aplicada.
+      // Cumple dos papeles y ambos exigen este orden: es la guarda de
+      // idempotencia que evita listeners duplicados, y es la señal de que el
+      // control ya responde a un click.
+      btn.dataset.dropdownEnhanced = '1';
     });
   }
 
