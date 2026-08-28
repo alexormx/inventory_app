@@ -204,21 +204,26 @@ RSpec.describe 'Preorder supply queue', type: :service do
       end
     end
 
-    # PRE-EXISTING DEFECT, independently reproduced against production baseline
-    # beeef567: Inventory has no `has_many :inventory_events` and the database
-    # carries `add_foreign_key "inventory_events", "inventories"` with no
-    # cascade. Any row that ever had its sale-order link cleared owns a
-    # 'sale_order_link_cleared' event, so destroying it raises. A legitimate
-    # reduction over genuinely free supply therefore blows up instead of
-    # trimming. Pinned so the behaviour is visible and cannot change silently.
-    it 'currently raises instead of trimming free inbound units carrying audit history' do
+    # Antes esto reventaba: `inventory_events` tiene llave foránea a
+    # `inventories` sin cascade, así que destruir una pieza con auditoría
+    # lanzaba InvalidForeignKey. Ahora la pieza libre sobrante se retira a
+    # :scrap en vez de destruirse, y el rastro sobrevive.
+    it 'trims free inbound units carrying audit history without touching committed demand' do
       preorder_demand(quantity: 2, reserved_at: 2.days.ago)
       _purchase_order, item = inbound_purchase_order(6)
 
       expect(backed_inbound).to eq(2)
       expect(free_inbound).to eq(4)
 
-      expect { item.update!(quantity: 3) }.to raise_error(ActiveRecord::InvalidForeignKey)
+      expect { item.update!(quantity: 3) }.not_to raise_error
+
+      aggregate_failures do
+        # La demanda vieja sigue respaldada; sólo se retiró suministro libre.
+        expect(backed_inbound).to eq(2)
+        expect(free_inbound).to eq(1)
+        expect(pending_demand).to eq(0)
+        expect(Inventory.where(product: product, status: :scrap).count).to eq(3)
+      end
     end
   end
 

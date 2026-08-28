@@ -4,6 +4,15 @@
 module InventorySyncable
   extend ActiveSupport::Concern
 
+  # Una pieza que ya tiene dueño no vuelve a ser suministro libre porque la
+  # línea de compra cambie de cantidad. El estado derivado de la PO describe
+  # únicamente stock sin comprometer.
+  COMMITTED_INVENTORY_STATUSES = %w[reserved pre_reserved pre_sold sold].freeze
+
+  # Piezas retiradas: ya no representan cantidad viva de la línea, así que no
+  # se cuentan ni se reescriben.
+  RETIRED_INVENTORY_STATUSES = %w[scrap].freeze
+
   def sync_inventory_records
     Rails.logger.debug { "[🔍 InventorySync] Syncing for product_id=#{product_id}, order_id=#{parent_order&.id}" }
     return unless product && parent_order&.persisted?
@@ -29,18 +38,25 @@ module InventorySyncable
     locked_product = Product.lock.find(product.id)
     # Manage inventory per line item to avoid interfering across lines for the same PO
     existing_items = Inventory.where(product_id: locked_product.id, purchase_order_item_id: id)
-    current_count = existing_items.count
+    live_items = existing_items.where.not(status: RETIRED_INVENTORY_STATUSES)
+    current_count = live_items.count
     difference = desired_quantity - current_count
 
     # Update existing items
-    existing_items.each do |item|
+    live_items.each do |item|
       item.defer_preorder_reconciliation = true
-      item.update!(
-        status: inventory_status_from_order,
-        status_changed_at: Time.current,
+      attributes = {
         purchase_cost: respond_to?(:unit_compose_cost_in_mxn) ? unit_compose_cost_in_mxn.to_f : item.purchase_cost,
         purchase_order_item_id: id
-      )
+      }
+      # Sólo el stock libre sigue al estado de la PO. Reescribir una pieza
+      # comprometida la devolvería a in_transit, y como in_transit cuenta como
+      # "libre" se le borraría el vínculo con la orden del cliente.
+      unless committed_inventory?(item)
+        attributes[:status] = inventory_status_from_order
+        attributes[:status_changed_at] = Time.current
+      end
+      item.update!(attributes)
     end
 
     if difference.positive?
@@ -57,14 +73,55 @@ module InventorySyncable
         inventory.save!
       end
     elsif difference.negative?
-      # Remove excess unassigned items
-      existing_items.where(status: %i[in_transit available])
-                    .order(status_changed_at: :desc)
-                    .limit(difference.abs)
-                    .destroy_all
+      retire_excess_inventory(live_items, difference.abs)
     end
 
     Preorders::PreorderAllocator.new(locked_product).call
+  end
+
+  def committed_inventory?(item)
+    item.sale_order_id.present? || COMMITTED_INVENTORY_STATUSES.include?(item.status.to_s)
+  end
+
+  # Reducir la cantidad de una PO retira suministro entrante que ya no va a
+  # llegar. La pieza NO se destruye: InventoryEvent es un libro de auditoría con
+  # llave foránea a inventories, así que borrar la fila rompe el rastro (o
+  # exige borrar la auditoría con ella). La aplicación ya tiene este ciclo de
+  # vida —cancelar una PO completa retira sus piezas no comprometidas a
+  # :scrap— y una reducción de cantidad es una cancelación parcial de la misma
+  # orden, así que sigue exactamente el mismo camino.
+  #
+  # Sólo se retiran piezas genuinamente libres; las comprometidas quedan fuera
+  # del alcance y la guarda de PurchaseOrderItem ya impide pedir más de las que
+  # hay libres.
+  def retire_excess_inventory(live_items, count)
+    retirable = live_items.where(status: %i[in_transit available], sale_order_id: nil)
+                          .order(status_changed_at: :desc, id: :desc)
+                          .lock
+                          .limit(count)
+                          .to_a
+
+    retirable.each do |item|
+      previous_status = item.status
+      item.defer_preorder_reconciliation = true
+      item.update!(status: :scrap, status_changed_at: Time.current)
+      log_retirement_event(item, previous_status)
+    end
+  end
+
+  def log_retirement_event(item, previous_status)
+    InventoryEvent.create!(
+      inventory: item,
+      product_id: item.product_id,
+      event_type: 'status_change',
+      metadata: {
+        'reason' => 'purchase_order_quantity_reduced',
+        'previous_status' => previous_status,
+        'new_status' => item.status,
+        'purchase_order_id' => item.purchase_order_id,
+        'purchase_order_item_id' => item.purchase_order_item_id
+      }
+    )
   end
 
   def sync_inventory_for_sale(_desired_quantity)
