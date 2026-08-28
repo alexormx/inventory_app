@@ -17,6 +17,7 @@ import "./custom/navbar_shrink"
 import "./custom/navbar_toggle"
 // Flash messages: auto‑dismiss + close button
 import "./modules/flash_messages"
+import "./modules/catalog_frame_restore"
 // Customer layout: polyfills para collapse/offcanvas sin Bootstrap JS
 import "./custom/bootstrap_polyfills"
 // Tema claro/oscuro (persistencia en localStorage)
