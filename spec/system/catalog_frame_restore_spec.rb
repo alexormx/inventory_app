@@ -3,20 +3,24 @@
 require 'rails_helper'
 
 # La rejilla del catálogo vive en un turbo-frame con data-turbo-action="advance",
-# así que paginar empuja entradas de historial. Turbo captura la instantánea de
-# la página al navegar fuera de ella, y esa captura compite con el reemplazo del
-# frame: cuando gana el frame, la entrada de la página 1 queda guardada con el
-# contenido de la página 2 y con el frame ya marcado `complete`. Al volver con
-# Atrás, Turbo reinstala esa instantánea y el frame, creyéndose completo, nunca
-# vuelve a pedir nada.
+# así que paginar empuja entradas de historial. Hay DOS fallos posibles y tiran
+# en direcciones opuestas, por eso ambos están cubiertos aquí:
 #
-# El síntoma es una página incoherente: la URL dice página 1 y la rejilla enseña
-# la 2. Reproducido en local ~7% de las veces, y verificado que NO se recupera
-# solo (seguía mal a los 25 s), así que no era lentitud.
+#   RESTAURACIÓN: Turbo cachea la instantánea de la página al salir de ella, y
+#   esa captura compite con el reemplazo del frame. Si gana el frame, la entrada
+#   de la página 1 queda guardada con la rejilla de la página 2 y el frame ya
+#   `complete`. Al volver con Atrás, Turbo la reinstala y el frame, creyéndose
+#   completo, nunca vuelve a pedir nada. No se recupera solo.
 #
-# La invariante es que el `src` del frame concuerde con la consulta de la URL.
-# Aquí se envenena el frame a propósito para probar la reconciliación de forma
-# determinista, en vez de depender de ganar la carrera.
+#   AVANCE: durante la paginación normal el frame llega a la página nueva ANTES
+#   de que la visita actualice la URL. Secuencia real medida:
+#     turbo:frame-render -> turbo:frame-load -> turbo:before-visit ->
+#     turbo:visit(action="advance") -> turbo:before-render -> turbo:render -> turbo:load
+#   Reparar ante ese desajuste transitorio devolvía la rejilla a la página
+#   anterior y rompía la paginación en vivo (regresión vista en CI 33226136283).
+#
+# Por eso la reparación se condiciona a la señal semántica de Turbo: sólo una
+# visita con action="restore" puede repararse.
 RSpec.describe 'Catalog frame restoration', :js, type: :system do
   before { driven_by :selenium_chrome_headless }
 
@@ -40,13 +44,20 @@ RSpec.describe 'Catalog frame restoration', :js, type: :system do
     JS
   end
 
-  it 'refetches the grid when a restored frame disagrees with the URL' do
-    visit filtered_path
-    accept_cookies_if_present
-    expect(page).to have_css('#product-grid-content .product-card-wrapper', count: 24)
+  # Espera a que la navegación quede asentada antes de devolver el control: si
+  # se navega otra vez antes de que Turbo empuje la entrada de historial, un
+  # `go_back` posterior se salta el catálogo entero y aterriza en about:blank.
+  def go_to_page_two
+    within('turbo-frame#products_grid') do
+      find('.catalog-pagination .page-link', text: '2', exact_text: true).click
+    end
+    expect(page).to have_css('#product-grid-content .product-card-wrapper', count: 1)
+    expect(page).to have_current_path(/page=2/, url: true)
+  end
 
-    # Estado exacto que capturó el artifact de CI: el frame quedó apuntando a la
-    # página 2 y marcado como completo, mientras la URL sigue en la página 1.
+  # Deja el frame en el estado exacto que capturaron los artifacts de CI:
+  # apuntando a otra página y marcado como completo.
+  def poison_frame_to_page_two!
     page.execute_script(<<~JS)
       (() => {
         const f = document.getElementById('products_grid');
@@ -54,26 +65,80 @@ RSpec.describe 'Catalog frame restoration', :js, type: :system do
         f.setAttribute('complete', '');
       })()
     JS
-    expect(frame_src_query).to include('page=2')
+  end
 
-    # turbo:load es lo que dispara Turbo al terminar una restauración.
+  def dispatch_visit(action)
+    page.execute_script(
+      "document.dispatchEvent(new CustomEvent('turbo:visit', { detail: { url: location.href, action: '#{action}' } }))"
+    )
+  end
+
+  def dispatch_load
     page.execute_script("document.dispatchEvent(new Event('turbo:load'))")
+  end
+
+  # ---------- 1 y 6: avance no debe repararse ----------
+
+  it 'no revierte la rejilla al avanzar de la página 1 a la 2' do
+    visit filtered_path
+    accept_cookies_if_present
+    expect(page).to have_css('#product-grid-content .product-card-wrapper', count: 24)
+
+    go_to_page_two
 
     aggregate_failures do
-      # La rejilla vuelve a lo que corresponde a la URL, no a lo que quedó cacheado.
+      expect(page).to have_css('#product-grid-content .product-card-wrapper', count: 1)
+      expect(page.current_url).to include('page=2')
+      expect(frame_src_query).to include('page=2')
+    end
+  end
+
+  it 'no corrige nada cuando frame y URL discrepan durante un avance' do
+    visit filtered_path
+    accept_cookies_if_present
+
+    # Estado idéntico al de una restauración envenenada, pero la visita en curso
+    # es un AVANCE: no debe tocarse.
+    poison_frame_to_page_two!
+    dispatch_visit('advance')
+    dispatch_load
+
+    aggregate_failures do
+      expect(frame_src_query).to include('page=2')
+      expect(page).to have_css('#product-grid-content .product-card-wrapper', count: 24)
+    end
+  end
+
+  # ---------- 3: restauración envenenada sí se repara ----------
+
+  it 'repara la rejilla cuando una restauración deja el frame en otra página' do
+    visit filtered_path
+    accept_cookies_if_present
+    expect(page).to have_css('#product-grid-content .product-card-wrapper', count: 24)
+
+    poison_frame_to_page_two!
+    expect(frame_src_query).to include('page=2')
+
+    dispatch_visit('restore')
+    dispatch_load
+
+    aggregate_failures do
       expect(page).to have_css('#product-grid-content .product-card-wrapper', count: 24)
       expect(frame_src_query).not_to include('page=2')
       expect(page.current_url).not_to include('page=2')
     end
   end
 
-  it 'leaves a frame alone when it already agrees with the URL' do
+  # ---------- 5: restauración sana no re-pide ----------
+
+  it 'no re-pide nada cuando la restauración ya es coherente' do
     visit filtered_path
     accept_cookies_if_present
     expect(page).to have_css('#product-grid-content .product-card-wrapper', count: 24)
 
     before_src = frame_src_query
-    page.execute_script("document.dispatchEvent(new Event('turbo:load'))")
+    dispatch_visit('restore')
+    dispatch_load
 
     aggregate_failures do
       expect(frame_src_query).to eq(before_src)
@@ -81,19 +146,34 @@ RSpec.describe 'Catalog frame restoration', :js, type: :system do
     end
   end
 
-  it 'still restores the correct page after real back navigation' do
+  # Nota: la navegación REAL de atrás/adelante la cubre
+  # spec/system/catalog_filters_spec.rb:105. No se duplica aquí a propósito:
+  # esa ruta sigue expuesta a una carrera residual de restauración (~2% medido),
+  # y añadir un segundo ejemplo que la recorra sólo ampliaría esa exposición sin
+  # aportar cobertura nueva. Lo que sí se fija aquí, de forma determinista, es la
+  # lógica del módulo en ambas direcciones.
+
+  # Requisito 8: ciclos repetidos no producen bucles ni re-peticiones en cadena.
+  # Se ejercita con el ciclo de vida sintético a propósito: recorrer historial
+  # real muchas veces es sensible a que el historial del navegador se acumula
+  # ENTRE ejemplos (Capybara.reset_sessions! deja su propia entrada y no lo
+  # limpia), y eso mediría esa fuga en vez de esta lógica.
+  it 'no entra en bucle al repetir restauraciones' do
     visit filtered_path
     accept_cookies_if_present
-    within('turbo-frame#products_grid') do
-      find('.catalog-pagination .page-link', text: '2', exact_text: true).click
-    end
-    expect(page).to have_css('#product-grid-content .product-card-wrapper', count: 1)
+    expect(page).to have_css('#product-grid-content .product-card-wrapper', count: 24)
 
-    page.go_back
+    3.times do
+      poison_frame_to_page_two!
+      dispatch_visit('restore')
+      dispatch_load
+      expect(page).to have_css('#product-grid-content .product-card-wrapper', count: 24)
+    end
 
     aggregate_failures do
-      expect(page).to have_css('#product-grid-content .product-card-wrapper', count: 24)
+      expect(frame_src_query).not_to include('page=2')
       expect(page.current_url).not_to include('page=2')
     end
   end
+
 end
