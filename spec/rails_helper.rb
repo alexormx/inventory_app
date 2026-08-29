@@ -158,11 +158,7 @@ RSpec.configure do |config|
     # resto de la suite y hacer fallar un ejemplo cualquiera. Se restablece al
     # ENTRAR a cada ejemplo, no al salir del que lo puso: así un cleanup que
     # falle en otro spec no puede contaminar a los demás.
-    begin
-      page.driver.browser.execute_cdp('Emulation.setCPUThrottlingRate', rate: 1)
-    rescue StandardError
-      nil
-    end
+    SystemSpecCdpEmulation.reset!(page.driver.browser)
   end
 
   # If a JS/system spec fails, dump the HTML and a screenshot for easier debugging
