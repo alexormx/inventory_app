@@ -140,10 +140,12 @@ RSpec.describe 'Admin location batch Turbo targets', type: :request do
     end
 
     it 'refresca el resumen de la ubicación con lo recién asignado' do
-      post admin_location_assignment_batch_confirm_path
+      post admin_location_assignment_batch_confirm_path, headers: turbo_headers
 
-      follow_redirect!
+      expect(response.media_type).to eq('text/vnd.turbo-stream.html')
       expect(response.body).to include('location-current-inventory')
+      expect(response.body).to include('unlocated-overview-totals')
+      expect(response.body).to include('data-total-assignable="4"')
       # 4 que ya estaban + 2 recién asignadas.
       expect(response.body).to include('6 pieza(s)')
       expect(response.body).to include('Skyline GT-R')

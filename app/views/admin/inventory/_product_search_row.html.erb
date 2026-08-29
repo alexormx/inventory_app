@@ -39,9 +39,17 @@
     <span data-assignable="<%= assignable %>" id="assignable-<%= product.id %>">
       Asignables: <strong><%= assignable %></strong>
     </span><br>
+    <span class="text-success" data-available="<%= row[:available] %>" id="available-<%= product.id %>">
+      Disponibles: <strong><%= row[:available] %></strong>
+    </span>
+    <span aria-hidden="true">·</span>
+    <span class="text-warning" data-reserved="<%= row[:reserved] %>" id="reserved-<%= product.id %>">
+      Apartadas: <strong><%= row[:reserved] %></strong>
+    </span><br>
     <span class="text-primary" data-pending="<%= pending %>" id="pending-<%= product.id %>">
       En lote: <strong><%= pending %></strong>
-    </span><br>
+    </span>
+    <span aria-hidden="true">·</span>
     <span class="<%= remaining.zero? ? 'text-muted' : 'text-success' %>"
           data-remaining="<%= remaining %>" id="remaining-<%= product.id %>">
       Restantes: <strong><%= remaining %></strong>
