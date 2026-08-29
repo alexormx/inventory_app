@@ -313,5 +313,24 @@ RSpec.describe Admin::PurchaseOrdersController, type: :controller do
         expect(purchase_order.reload.status).to eq('Delivered')
       end
     end
+
+    context 'when the purchase order status write fails' do
+      let!(:inventory) { create(:inventory, product: product, purchase_order: purchase_order, status: :in_transit) }
+
+      it 'does not receive inventory without receiving the purchase order' do
+        allow_any_instance_of(PurchaseOrder).to receive(:update!)
+          .with(status: 'Delivered')
+          .and_raise(ActiveRecord::RecordInvalid.new(purchase_order))
+
+        expect { patch :confirm_receipt, params: { id: purchase_order.id } }
+          .to raise_error(ActiveRecord::RecordInvalid)
+
+        aggregate_failures do
+          expect(purchase_order.reload.status).to eq('In Transit')
+          expect(inventory.reload.status).to eq('in_transit')
+          expect(inventory.inventory_location_id).to be_nil
+        end
+      end
+    end
   end
 end
