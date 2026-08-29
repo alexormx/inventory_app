@@ -20,6 +20,46 @@ RSpec.describe 'Admin responsive sidebar', :js, :sidebar_responsive, type: :syst
   def open_drawer
     find('[data-sidebar-drawer-toggle]').click
     expect(page).to have_css('#sidebar.is-open')
+    wait_for_drawer_settled
+  end
+
+  # El drawer entra deslizándose: `aside#sidebar` anima `transform` durante
+  # 0.22s. La clase `.is-open` y los atributos aria se ponen de golpe al abrir,
+  # así que TODAS las aserciones de estado pasan de inmediato, mucho antes de
+  # que el panel llegue a su sitio.
+  #
+  # Eso dejaba una ventana real: medido justo tras abrir, el centro del botón de
+  # cerrar estaba en x=-19 (fuera de la pantalla, `elementFromPoint` devolvía
+  # null) cuando su posición final es x=75. Un click emitido en ese instante no
+  # aterriza en el botón, no corre ningún handler, y el drawer se queda abierto
+  # con TODO su estado coherente: `is-open`, backdrop visible, body bloqueado y
+  # ambos controles en aria-expanded="true". Es exactamente lo que capturaron
+  # los artifacts de CI de 9c88c8ab y b0a0eac8, idénticos entre sí.
+  #
+  # No es un defecto del runtime: una persona hace click cuando ya ve el panel.
+  # Lo que faltaba era esperar a que el control sea realmente alcanzable, que es
+  # la condición que gobierna si el click va a llegar.
+  def wait_for_drawer_settled
+    page.document.synchronize(Capybara.default_max_wait_time, errors: [RuntimeError]) do
+      raise 'drawer todavía en transición' unless drawer_close_button_hittable?
+    end
+  end
+
+  # ¿Un click en el centro del botón de cerrar lo alcanzaría ahora mismo?
+  def drawer_close_button_hittable?
+    page.evaluate_script(<<~JS)
+      (() => {
+        const btn = document.querySelector('[data-sidebar-drawer-close]');
+        if (!btn) return false;
+        const rect = btn.getBoundingClientRect();
+        if (rect.width === 0 || rect.height === 0) return false;
+        const x = Math.round(rect.left + rect.width / 2);
+        const y = Math.round(rect.top + rect.height / 2);
+        if (x < 0 || y < 0) return false;
+        const hit = document.elementFromPoint(x, y);
+        return !!hit && (hit === btn || btn.contains(hit));
+      })()
+    JS
   end
 
   def expect_drawer_closed
@@ -157,9 +197,45 @@ RSpec.describe 'Admin responsive sidebar', :js, :sidebar_responsive, type: :syst
     expect(page.evaluate_script("document.activeElement.matches('[data-sidebar-drawer-close]')")).to be(true)
     expect(visible_toggle_count).to eq(1)
 
+    # Ninguna de las aserciones anteriores espera al deslizamiento: todas miran
+    # clases y atributos que se ponen al instante. Sin esto, el click podía
+    # salir mientras el panel seguía entrando.
+    wait_for_drawer_settled
+
     find('[data-sidebar-drawer-close]').click
     expect_drawer_closed
     expect(page.evaluate_script("document.activeElement.matches('[data-sidebar-drawer-toggle]')")).to be(true)
+  end
+
+  # Fija el motivo por el que existe la espera anterior. Si alguien la quita
+  # creyéndola redundante, este ejemplo explica qué se rompe: el control de
+  # cierre no es alcanzable en el instante en que `.is-open` aparece.
+  it 'no expone el control de cierre hasta que el panel termina de entrar' do
+    resize_to(390, 844)
+    visit admin_dashboard_path
+
+    find('[data-sidebar-drawer-toggle]').click
+    expect(page).to have_css('#sidebar.is-open')
+
+    # El estado declarativo ya está completo...
+    aggregate_failures do
+      expect(page).to have_css('body.sidebar-drawer-open')
+      expect(page).to have_css('[data-sidebar-drawer-toggle][aria-expanded="true"]', visible: :all)
+    end
+
+    # ...y aun así el botón puede no estar todavía donde se le va a hacer click.
+    # Tras esperar a la transición, alcanzarlo es determinista.
+    wait_for_drawer_settled
+    expect(drawer_close_button_hittable?).to be(true)
+
+    geometry = page.evaluate_script(<<~JS)
+      (() => {
+        const r = document.querySelector('[data-sidebar-drawer-close]').getBoundingClientRect();
+        return Math.round(r.left + r.width / 2);
+      })()
+    JS
+    # Posición final dentro del viewport, no el x negativo de mitad de animación.
+    expect(geometry).to be > 0
   end
 
   it 'closes with the backdrop and Escape' do
