@@ -2,19 +2,29 @@
 // así que paginar y filtrar empujan entradas de historial. Turbo captura la
 // instantánea de la página al navegar fuera de ella, y esa captura compite con
 // el reemplazo del frame: cuando gana el frame, la entrada de la página 1 queda
-// guardada con el contenido de la página 2 y con el frame ya marcado `complete`.
-//
+// guardada con el contenido de la página 2 y el frame ya marcado `complete`.
 // Al volver con Atrás, Turbo reinstala esa instantánea y, como el frame se cree
-// completo, nunca vuelve a pedir nada. El resultado es que la URL dice una cosa
-// y la rejilla muestra otra: el usuario ve 1 producto donde debería ver 24.
-// Verificado que NO se recupera solo (seguía mal a los 25 s), así que no es
-// lentitud: la página queda en un estado incoherente hasta que se recarga.
+// completo, nunca vuelve a pedir nada: la URL dice una página y la rejilla
+// muestra otra, y no se recupera solo.
 //
-// La invariante que se restablece aquí es simple: el `src` del frame tiene que
-// coincidir con la consulta de la URL. Cuando no coincide, se vuelve a pedir el
-// contenido que corresponde a la URL. En el camino sano no hace nada, porque
-// ambos ya concuerdan.
+// La reparación NO puede dispararse por "el src no coincide con la URL": durante
+// una navegación hacia adelante ese desajuste es NORMAL y transitorio. La
+// secuencia real de Turbo al paginar es
+//
+//   turbo:frame-render -> turbo:frame-load -> turbo:before-visit ->
+//   turbo:visit(action="advance") -> turbo:before-render -> turbo:render -> turbo:load
+//
+// es decir, el frame llega a la página nueva ANTES de que la visita actualice la
+// URL. Reparar ahí devolvía la rejilla a la página anterior y rompía la
+// paginación en vivo.
+//
+// Turbo distingue las restauraciones de forma explícita: al volver con Atrás,
+// `popstate` arranca una visita con `action: "restore"`, y ese valor viaja en el
+// detail de `turbo:visit`. Se usa esa señal semántica en vez de adivinar por
+// tiempos, y `turbo:visit` siempre precede a `turbo:load` en ambos caminos.
 const FRAME_ID = "products_grid"
+
+let restoringVisit = false
 
 function frameQuery(frame) {
   const src = frame.getAttribute("src")
@@ -27,20 +37,31 @@ function frameQuery(frame) {
   }
 }
 
-function resyncCatalogFrame() {
+function resyncRestoredFrame() {
+  // La marca NO se consume aquí. Una visita de restauración puede renderizar
+  // primero la vista previa cacheada y después la respuesta definitiva, así que
+  // dispara más de un `turbo:load`; el estado envenenado puede aparecer en el
+  // segundo. Consumirla en el primero dejaba la reparación sin efecto. La marca
+  // describe la visita en curso y sólo la reemplaza la visita siguiente.
+  if (!restoringVisit) return
+
   const frame = document.getElementById(FRAME_ID)
   if (!frame) return
 
   const current = frameQuery(frame)
-  // Sin `src` el frame muestra lo que renderizó el servidor para esta URL, que
-  // es justo lo que se quiere; no hay nada que reconciliar.
+  // Sin `src` el frame muestra lo que el servidor renderizó para esta URL, que
+  // es exactamente lo que se quiere: la restauración quedó limpia.
   if (current === null) return
   if (current === window.location.search) return
 
-  // Volver a pedir lo que corresponde a la URL restaurada. Quitar `complete` es
-  // lo que permite que Turbo haga la petición en vez de darse por satisfecho.
+  // Restauración envenenada: el frame quedó apuntando a otra página y se cree
+  // completo. Quitar `complete` es lo que permite que Turbo vuelva a pedirlo.
   frame.removeAttribute("complete")
   frame.setAttribute("src", window.location.pathname + window.location.search)
 }
 
-document.addEventListener("turbo:load", resyncCatalogFrame)
+document.addEventListener("turbo:visit", (event) => {
+  restoringVisit = event.detail?.action === "restore"
+})
+
+document.addEventListener("turbo:load", resyncRestoredFrame)
