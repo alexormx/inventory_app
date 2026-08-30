@@ -31,7 +31,12 @@ RSpec.describe "User login/logout", type: :system do
 
     # Wait for the real lifecycle readiness marker, not mere DOM visibility.
     expect(page).to have_selector("#account[data-dropdown-enhanced='1']", visible: true)
-    find("#account").click
+    # DIAGNÓSTICO TEMPORAL (rama desechable): mismo click de Capybara, pero con
+    # telemetría alrededor. Si entrega eventos, el test sigue igual; si vuelve
+    # sin generar ninguno, se ejecuta UNA acción W3C en el mismo estado y el
+    # ejemplo falla a propósito con la clasificación.
+    diag_env!
+    diag_click_account!
 
     expect(page).to have_selector("#account[aria-expanded='true']", visible: true)
     expect(page).to have_selector("#account-menu.show #logout-button", visible: true)
