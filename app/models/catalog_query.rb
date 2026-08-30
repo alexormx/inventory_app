@@ -9,7 +9,11 @@ class CatalogQuery
   ARRAY_KEYS = %w[categories brands series conditions].freeze
   PRICE_KEYS = %w[price_min price_max].freeze
   AVAILABILITY_KEYS = %w[in_stock in_transit to_order].freeze
-  SORT_VALUES = %w[newest popular reviews_desc price_asc price_desc name_asc].freeze
+  # `launch_desc` ordena por fecha de lanzamiento al catálogo
+  # (Product#first_published_at), que NO es lo mismo que `newest`: ese usa la
+  # antigüedad del registro. Un producto dado de alta hace meses y publicado
+  # ayer es un lanzamiento de ayer.
+  SORT_VALUES = %w[newest popular reviews_desc price_asc price_desc name_asc launch_desc].freeze
   DEFAULT_SORT = 'newest'
 
   attr_reader :q, :sort, :page, :categories, :brands, :series, :conditions,
@@ -25,6 +29,7 @@ class CatalogQuery
     @price_min = price_value('price_min')
     @price_max = price_value('price_max')
     @availability = AVAILABILITY_KEYS.index_with { |key| boolean_value(key) }
+    @recently_readded = boolean_value('recently_readded')
 
     requested_sort = scalar_value('sort')
     @sort_explicit = SORT_VALUES.include?(requested_sort)
@@ -42,7 +47,8 @@ class CatalogQuery
       price_max: price_max,
       in_stock: in_stock?,
       in_transit: in_transit?,
-      to_order: to_order?
+      to_order: to_order?,
+      recently_readded: recently_readded?
     }
   end
 
@@ -57,6 +63,7 @@ class CatalogQuery
       in_stock_only: in_stock?,
       in_transit_only: in_transit?,
       to_order_only: to_order?,
+      recently_readded_only: recently_readded?,
       has_filters: filters_active?
     )
   end
@@ -74,6 +81,7 @@ class CatalogQuery
       values[key] = value if value.present?
     end
     AVAILABILITY_KEYS.each { |key| values[key] = '1' if public_send("#{key}?") }
+    values['recently_readded'] = '1' if recently_readded?
     values['sort'] = sort if @sort_explicit
     values['page'] = page if page.present?
     values.except(*excluded)
@@ -89,6 +97,17 @@ class CatalogQuery
 
   def to_order?
     @availability['to_order']
+  end
+
+  # "De vuelta recientemente": se apoya en la marca de republicación y su
+  # ventana, no en Product#catalog_event. El evento mostrado puede ser otro
+  # (por ejemplo un resurtido más reciente) y aun así el producto sigue siendo
+  # uno que regresó al catálogo dentro de la ventana.
+  def recently_readded?
+    # `boolean_value` devuelve nil cuando el parámetro no viene; aquí interesa
+    # un booleano de verdad porque el valor viaja al hash de filtros y a la
+    # vista.
+    @recently_readded == true
   end
 
   private

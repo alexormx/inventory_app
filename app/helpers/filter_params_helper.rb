@@ -79,6 +79,18 @@ module FilterParamsHelper
     catalog_path(qp)
   end
 
+  # Los dos anteriores sólo ponen o quitan una clave del query string, así que
+  # sirven igual para dimensiones que no son de disponibilidad. Estos alias
+  # existen para que el llamador no tenga que decir "availability" cuando está
+  # activando, por ejemplo, "de vuelta recientemente".
+  def enable_catalog_flag_url(flag_key)
+    enable_availability_url(flag_key)
+  end
+
+  def clear_catalog_flag_url(flag_key)
+    clear_availability_url(flag_key)
+  end
+
   # URL para limpiar todos los filtros (mantiene sort y q)
   def clear_all_filters_url
     catalog_path(catalog_query.query_parameters.slice('q', 'sort'))

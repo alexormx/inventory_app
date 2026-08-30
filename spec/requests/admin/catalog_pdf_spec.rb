@@ -43,15 +43,22 @@ RSpec.describe 'Admin Catalog PDF', type: :request do
                                            filename: filename, content_type: content_type)
     end
 
-    it 'serves a single PDF inline' do
+    # Antes el PDF se servía `inline` y el navegador lo abría en una pestaña.
+    # Ahora el catálogo terminado se descarga a la PC, así que ambos formatos
+    # viajan como adjunto y con el nombre que decide el servidor.
+    it 'serves a single PDF as an attachment' do
       seed_job(basename: "catalog_test_#{SecureRandom.hex(4)}.pdf",
                content_type: 'application/pdf', filename: 'catalogo.pdf')
 
       get admin_catalog_pdf_download_path, params: { job_id: @job_id }
 
-      expect(response).to have_http_status(:success)
-      expect(response.media_type).to eq('application/pdf')
-      expect(response.headers['Content-Disposition']).to include('inline')
+      aggregate_failures do
+        expect(response).to have_http_status(:success)
+        expect(response.media_type).to eq('application/pdf')
+        expect(response.headers['Content-Disposition']).to include('attachment')
+        expect(response.headers['Content-Disposition']).not_to include('inline')
+        expect(response.headers['Content-Disposition']).to include('catalogo.pdf')
+      end
     end
 
     it 'serves a multi-format ZIP as an attachment' do

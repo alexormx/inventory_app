@@ -105,6 +105,9 @@ class ProductsController < ApplicationController
             when 'price_asc'  then scope.order(selling_price: :asc)
             when 'price_desc' then scope.order(selling_price: :desc)
             when 'name_asc'   then scope.order(Arel.sql('LOWER(product_name) ASC'))
+            # Lanzamiento al catálogo, no alta del registro. NULLS LAST deja al
+            # final los que nunca se publicaron; el id desempata.
+            when 'launch_desc' then scope.order(Arel.sql('products.first_published_at DESC NULLS LAST, products.id DESC'))
             when 'popular'
               # Productos con más unidades vendidas históricas
               scope.left_joins(:sale_order_items)
@@ -225,6 +228,7 @@ class ProductsController < ApplicationController
     end
 
     scope = scope.with_condition_groups(f[:conditions]) if except != :conditions && f[:conditions].any?
+    scope = scope.merge(Product.recently_readded) if except != :recently_readded && f[:recently_readded]
 
     unless except == :availability
       # Grupo de disponibilidad — los 3 chips combinan con OR cuando hay 1+ activos.
@@ -263,8 +267,16 @@ class ProductsController < ApplicationController
       in_stock: avail_scope.merge(Product.with_customer_on_hand).count,
       in_transit: avail_scope.merge(Product.with_customer_in_transit).count,
       to_order: avail_scope.where('products.backorder_allowed = ? OR products.preorder_available = ?', true, true).count,
+      recently_readded: recently_readded_facet_count(base_scope, filters),
       conditions: condition_counts
     }
+  end
+
+  # Conteo de la faceta "de vuelta recientemente": se excluye a sí misma del
+  # resto de filtros, igual que las demás dimensiones.
+  def recently_readded_facet_count(base_scope, filters)
+    scope = apply_catalog_filters(base_scope, filters, except: :recently_readded)
+    scope.merge(Product.recently_readded).count
   end
 
   def set_product

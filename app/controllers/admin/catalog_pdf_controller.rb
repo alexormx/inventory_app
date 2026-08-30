@@ -59,9 +59,11 @@ module Admin
       end
 
       content_type = state[:content_type] || 'application/pdf'
-      disposition = content_type == 'application/pdf' ? 'inline' : 'attachment'
+      # Siempre `attachment`: al terminar la generación el archivo se descarga a
+      # la PC en vez de abrirse en una pestaña. El navegador decide la carpeta
+      # final (o pregunta), que es lo único que la web puede y debe controlar.
       send_data File.binread(state[:path]), filename: state[:filename] || 'catalogo.pdf',
-                                             type: content_type, disposition: disposition
+                                             type: content_type, disposition: 'attachment'
     end
 
     private
@@ -113,7 +115,14 @@ module Admin
 
     def pdf_bytes(title, number, items, rate, orientation)
       CatalogPdf::Generator.new(title: title, whatsapp_number: number, items: items,
-                                usd_rate: rate, orientation: orientation).to_pdf
+                                usd_rate: rate, orientation: orientation,
+                                include_launch_date: include_launch_date?).to_pdf
+    end
+
+    # Opción del generador: mostrar la fecha de lanzamiento en cada tarjeta.
+    # Apagada por defecto.
+    def include_launch_date?
+      ActiveModel::Type::Boolean.new.cast(params[:include_launch_date]) || false
     end
 
     # Un solo PDF se sirve tal cual; cualquier otra combinación (imágenes o

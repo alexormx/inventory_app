@@ -101,9 +101,65 @@ RSpec.describe Product, type: :model do
       expect(Product.new(restocked_at: 2.days.ago).catalog_event).to eq(:restocked)
     end
 
-    it 'prioritizes :new over :reappeared and :restocked' do
-      product = Product.new(first_published_at: 2.days.ago, republished_at: 1.day.ago, restocked_at: 1.day.ago)
+    # Este ejemplo afirmaba que :new ganaba SIEMPRE, incluso con una
+    # republicación posterior. Codificaba el defecto: un producto que salió del
+    # catálogo y volvió seguía anunciándose como "Nuevo" mientras durase la
+    # ventana del lanzamiento original. Ahora manda el hecho más reciente.
+    it 'prioriza :new sobre :restocked cuando el lanzamiento sigue siendo el hecho vigente' do
+      product = Product.new(first_published_at: 2.days.ago, restocked_at: 1.day.ago)
       expect(product.catalog_event).to eq(:new)
+    end
+
+    # C: lanzado hace 10 días (dentro de la ventana de novedad) pero republicado
+    # hoy. El evento comercial vigente es el regreso, no el lanzamiento.
+    it 'devuelve :reappeared cuando la republicación es posterior al lanzamiento' do
+      product = Product.new(first_published_at: 10.days.ago, republished_at: Time.current)
+      aggregate_failures do
+        expect(product.catalog_event).to eq(:reappeared)
+        expect(product.catalog_event).not_to eq(:new)
+      end
+    end
+
+    it 'devuelve :reappeared aunque el lanzamiento sea muy reciente' do
+      product = Product.new(first_published_at: 2.days.ago, republished_at: 1.day.ago)
+      expect(product.catalog_event).to eq(:reappeared)
+    end
+
+    # D: sin republicación, un lanzamiento reciente sigue siendo :new.
+    it 'mantiene :new cuando nunca hubo republicación' do
+      product = Product.new(first_published_at: 3.days.ago)
+      expect(product.catalog_event).to eq(:new)
+    end
+
+    # Marcas idénticas: típico de un backfill histórico, no es un regreso real.
+    it 'no trata como republicación una marca igual al lanzamiento' do
+      moment = 3.days.ago
+      product = Product.new(first_published_at: moment, republished_at: moment)
+      expect(product.catalog_event).to eq(:new)
+    end
+
+    # F: el resurtido conserva su semántica y su prioridad frente a un regreso
+    # más antiguo dentro de ventana.
+    it 'devuelve :reappeared antes que :restocked cuando ambos están vigentes' do
+      product = Product.new(first_published_at: 90.days.ago, republished_at: 2.days.ago, restocked_at: 1.day.ago)
+      expect(product.catalog_event).to eq(:reappeared)
+    end
+
+    it 'devuelve :restocked cuando es el único evento vigente' do
+      product = Product.new(first_published_at: 90.days.ago, restocked_at: 1.day.ago)
+      expect(product.catalog_event).to eq(:restocked)
+    end
+
+    # E: ventanas vencidas, ningún badge activo.
+    it 'no devuelve evento cuando todas las ventanas vencieron' do
+      product = Product.new(first_published_at: 400.days.ago, republished_at: 300.days.ago, restocked_at: 200.days.ago)
+      expect(product.catalog_event).to be_nil
+    end
+
+    it 'no devuelve :reappeared con la ventana de republicación vencida' do
+      SiteSetting.set('badge_republished_days', 5, 'integer')
+      product = Product.new(first_published_at: 400.days.ago, republished_at: 10.days.ago)
+      expect(product.catalog_event).to be_nil
     end
 
     it 'returns nil once the timestamp falls outside the configurable window' do

@@ -46,6 +46,11 @@ module CatalogPdf
         price: product.selling_price,
         event: event&.to_s,
         event_label: event && EVENT_LABELS[event],
+        # Fecha de lanzamiento al catálogo. Se transporta en ISO 8601 para que
+        # la fuente remota no tenga que adivinar el formato ni la zona. Es
+        # SIEMPRE first_published_at: created_at es cuándo se dio de alta el
+        # registro y republished_at es un regreso, no un estreno.
+        launch_date: product.first_published_at&.iso8601,
         unique_piece: on_hand(product) == 1
       }
     end

@@ -153,6 +153,19 @@ class Product < ApplicationRecord
   # revisa y aprueba la reactivación uno a uno (ver Admin::ProductsController).
   scope :auto_paused_queue, -> { where(status: 'inactive', auto_paused: true) }
 
+  # Productos que volvieron al catálogo dentro de la ventana configurada.
+  # Se consulta la marca de republicación directamente, no #catalog_event: el
+  # badge visible puede corresponder a otro evento (un resurtido posterior) y
+  # el producto sigue siendo uno que regresó. La ventana comparte configuración
+  # con el badge para que filtro e insignia no se contradigan.
+  scope :recently_readded, lambda { |now: Time.current|
+    cfg = CATALOG_EVENTS[:reappeared]
+    days = SiteSetting.get(cfg[:setting], cfg[:default]).to_i
+    next none unless days.positive?
+
+    where(republished_at: (now - days.days)..)
+  }
+
   # Productos con al menos una pieza vendible (fuente única: sellable_inventory).
   scope :with_sellable_inventory, lambda {
     where(id: Inventory.customer_sellable.select(:product_id))
@@ -679,11 +692,25 @@ class Product < ApplicationRecord
     CATALOG_EVENTS.each do |type, cfg|
       days = SiteSetting.get(cfg[:setting], cfg[:default]).to_i
       next unless days.positive?
+      # Un lanzamiento deja de ser el evento vigente en cuanto el producto se
+      # volvió a publicar DESPUÉS: salió del catálogo y regresó, y eso es lo que
+      # el cliente está viendo hoy. Sin esto, un producto relanzado seguía
+      # anunciándose como "Nuevo" hasta que vencía la ventana del lanzamiento
+      # original, tapando el evento de "De vuelta" que sí acababa de ocurrir.
+      next if type == :new && republication_supersedes_launch?
 
       ts = public_send(cfg[:timestamp])
       return type if ts.present? && ts >= (now - days.days)
     end
     nil
+  end
+
+  # ¿La republicación es posterior al lanzamiento? Se comparan las marcas entre
+  # sí y no contra "ahora": lo que decide es cuál de los dos hechos ocurrió al
+  # final, no cuánto falta para que expire cada ventana. Marcas iguales (típico
+  # de un backfill histórico) NO cuentan como republicación.
+  def republication_supersedes_launch?
+    republished_at.present? && first_published_at.present? && republished_at > first_published_at
   end
 
   # ---- Dimensiones / Peso helpers ----
