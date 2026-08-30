@@ -68,12 +68,22 @@ Capybara.register_driver :selenium_chrome_headless do |app|
   # FIX: Add Accept header to prevent 406 Not Acceptable errors with Rails 7/Turbo
   # options.add_argument('--header=Accept=text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9')
 
-  # Configure the driver to be silent
+  # DIAGNÓSTICO TEMPORAL — rama desechable, no mergear.
+  # Enciende el log detallado de ChromeDriver para poder ver, ante una entrega
+  # nula de eventos, si el driver recibió el comando de click, qué respondió a
+  # Selenium y si llegó a despachar entrada al navegador. `args:` y `log:` son
+  # la API soportada por Selenium 4.10 para el servicio explícito; no se cambia
+  # el driver, ni Chrome, ni las opciones del navegador, ni la semántica de los
+  # tests.
+  chromedriver_log = Rails.root.join('tmp/chromedriver/chromedriver.log')
+  FileUtils.mkdir_p(chromedriver_log.dirname)
+
+  service_options = { args: %w[--verbose], log: chromedriver_log.to_s }
   service =
     if CHROMEDRIVER_PATH
-      Selenium::WebDriver::Service.chrome(path: CHROMEDRIVER_PATH)
+      Selenium::WebDriver::Service.chrome(path: CHROMEDRIVER_PATH, **service_options)
     else
-      Selenium::WebDriver::Service.chrome
+      Selenium::WebDriver::Service.chrome(**service_options)
     end
 
   Capybara::Selenium::Driver.new(app, browser: :chrome, options: options, service: service)

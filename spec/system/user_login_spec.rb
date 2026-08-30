@@ -38,7 +38,12 @@ RSpec.describe "User login/logout", type: :system do
     expect(page).to have_current_path(profile_path)
     expect(page).to have_content("Configuración de Cuenta")
 
+    # DIAGNÓSTICO TEMPORAL: marcas para localizar esta interacción dentro del
+    # log del driver, que cubre las 122 pruebas de la suite. No alteran el
+    # comportamiento del navegador ni de la prueba.
+    puts "INPUTDIAG BEFORE_LOGOUT_CLICK #{Time.now.to_f} mono=#{Process.clock_gettime(Process::CLOCK_MONOTONIC)}"
     click_button "Cerrar sesión"
+    puts "INPUTDIAG AFTER_LOGOUT_CLICK #{Time.now.to_f} mono=#{Process.clock_gettime(Process::CLOCK_MONOTONIC)}"
 
     expect(page).to have_content("Sesión finalizada.")
   end
