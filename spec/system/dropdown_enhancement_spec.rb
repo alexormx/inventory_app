@@ -279,6 +279,11 @@ RSpec.describe 'Dropdown enhancement lifecycle', :js, type: :system do
     aggregate_failures do
       expect(page).to have_css("#account[aria-expanded='true']")
       expect(page).to have_css('#account-menu.show')
+      # El acceso a cerrar sesión desde la barra vive dentro de este menú. Se
+      # afirma aquí porque es el único ejemplo que abre el desplegable real: el
+      # spec de autenticación ya no lo abre, así que sin esto nadie notaría que
+      # el elemento desapareció del menú.
+      expect(page).to have_css('#account-menu.show #logout-button', visible: true)
     end
 
     find('#account').click
