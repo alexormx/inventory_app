@@ -78,6 +78,31 @@ Capybara.register_driver :selenium_chrome_headless do |app|
   chromedriver_log = Rails.root.join('tmp/chromedriver/chromedriver.log')
   FileUtils.mkdir_p(chromedriver_log.dirname)
 
+  # DIAGNÓSTICO TEMPORAL — rama desechable, no mergear.
+  # Log nativo del propio Chrome, para ver el ciclo de vida de renderer/frame
+  # alrededor de un click que no entrega eventos. Medido contra el Chrome
+  # instalado antes de escribir esto:
+  #
+  #   --log-file=RUTA            -> ignorado, no crea el archivo
+  #   --enable-logging=file      -> apaga el logging (394 bytes, sin archivo)
+  #   CHROME_LOG_FILE + --enable-logging --v=1 -> sí escribe el archivo
+  #
+  # Por eso el destino se fija por variable de entorno (ChromeDriver lanza
+  # Chrome heredando este entorno) y se mantiene --log-file como respaldo por
+  # si el Chrome de CI sí lo honra; pasarlo de más es inocuo.
+  #
+  # El archivo lleva marca de tiempo porque Chrome TRUNCA el log al arrancar:
+  # con una ruta fija, un reinicio del navegador borraría la evidencia del
+  # fallo anterior. Una ruta por arranque hace que ningún arranque destruya al
+  # anterior; CI sube el directorio completo.
+  chrome_log_dir = Rails.root.join('tmp/chrome')
+  FileUtils.mkdir_p(chrome_log_dir)
+  chrome_log = chrome_log_dir.join("chrome_debug-#{Process.pid}-#{Time.now.strftime('%H%M%S%L')}.log")
+  ENV['CHROME_LOG_FILE'] = chrome_log.to_s
+  options.add_argument('--enable-logging')
+  options.add_argument('--v=1')
+  options.add_argument("--log-file=#{chrome_log}")
+
   service_options = { args: %w[--verbose], log: chromedriver_log.to_s }
   service =
     if CHROMEDRIVER_PATH

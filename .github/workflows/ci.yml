@@ -181,3 +181,33 @@ jobs:
           name: chromedriver-verbose-log
           path: ${{ github.workspace }}/tmp/chromedriver
           if-no-files-found: ignore
+
+      # DIAGNÓSTICO TEMPORAL — rama desechable. Chrome puede aceptar las flags
+      # y aun así no escribir el archivo (medido localmente: --log-file solo se
+      # ignora). Esto comprueba que el log existe, no está vacío y lo escribió
+      # Chrome de verdad, en lugar de darlo por hecho.
+      - name: Verify Chrome native log was actually written
+        if: always()
+        run: |
+          dir="${{ github.workspace }}/tmp/chrome"
+          if [ ! -d "$dir" ]; then echo "MISSING: $dir was never created"; exit 0; fi
+          ls -la "$dir"
+          found=0
+          for f in "$dir"/*.log; do
+            [ -e "$f" ] || continue
+            found=1
+            bytes=$(wc -c < "$f")
+            lines=$(wc -l < "$f")
+            chrome_lines=$(grep -cE '^\[[0-9]{4}/[0-9]{6}\.[0-9]+:(INFO|VERBOSE[0-9]|WARNING|ERROR|FATAL)' "$f" || true)
+            echo "file=$f bytes=$bytes lines=$lines chrome_formatted_lines=$chrome_lines"
+            echo "--- head ---"; head -3 "$f"
+          done
+          [ "$found" = "1" ] || echo "MISSING: no .log files under $dir"
+
+      - name: Upload Chrome native log
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: chrome-native-log
+          path: ${{ github.workspace }}/tmp/chrome
+          if-no-files-found: ignore
