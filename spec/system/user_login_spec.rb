@@ -25,11 +25,17 @@ RSpec.describe "User login/logout", type: :system do
   # La sesión se cierra desde el control de la página de perfil, que es UI de
   # producto normal y no depende del menú desplegable.
   it "successful login and logout", js: true do
+    # DIAGNOSTICO TEMPORAL — rama desechable, no mergear.
+    # Solo observa: no cambia que se pulsa, ni el orden, ni las aserciones.
+    CallsiteTelemetry.install(page)
+
     visit new_user_session_path
     accept_cookies_if_present
 
     fill_in "user[email]", with: "user@example.com"
     fill_in "user[password]", with: "password123"
+    # Control sano: mismo ejemplo, misma sesion, click inmediatamente anterior.
+    CallsiteTelemetry.snapshot(page, 'BEFORE_LOGIN_SUBMIT', CallsiteTelemetry::LOGIN_SUBMIT_SELECTOR)
     click_button "Iniciar sesión"
 
     expect(page).to have_content("Sesión iniciada.")
@@ -38,7 +44,9 @@ RSpec.describe "User login/logout", type: :system do
     expect(page).to have_current_path(profile_path)
     expect(page).to have_content("Configuración de Cuenta")
 
+    CallsiteTelemetry.snapshot(page, 'BEFORE_LOGOUT_CLICK', CallsiteTelemetry::LOGOUT_SELECTOR)
     click_button "Cerrar sesión"
+    CallsiteTelemetry.snapshot(page, 'AFTER_LOGOUT_CLICK', CallsiteTelemetry::LOGOUT_SELECTOR)
 
     expect(page).to have_content("Sesión finalizada.")
   end

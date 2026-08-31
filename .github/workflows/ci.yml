@@ -170,3 +170,14 @@ jobs:
             ${{ github.workspace }}/tmp/capybara
             ${{ github.workspace }}/tmp/screenshots
           if-no-files-found: ignore
+
+      # DIAGNOSTICO TEMPORAL - rama desechable. El log del servidor es la
+      # evidencia de "no llego ninguna peticion" que exige la clasificacion de
+      # entrega nula; sin el no se distingue de un fallo cualquiera.
+      - name: Keep Rails test log for zero-delivery classification
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: rails-test-log
+          path: ${{ github.workspace }}/log/test.log
+          if-no-files-found: ignore
