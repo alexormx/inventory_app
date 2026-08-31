@@ -38,6 +38,20 @@ RSpec.describe "User login/logout", type: :system do
     expect(page).to have_current_path(profile_path)
     expect(page).to have_content("Configuración de Cuenta")
 
+    # DIAGNOSTICO TEMPORAL — rama desechable, no mergear.
+    #
+    # Brazo A/B. El snapshot de estado del experimento anterior hacia dos cosas
+    # a la vez justo antes de este click: un viaje de ida y vuelta de WebDriver,
+    # y trabajo real del renderer (elementFromPoint fuerza hit-test,
+    # getBoundingClientRect y getComputedStyle fuerzan estilo y layout). Con el
+    # snapshot completo la entrega nula no se reprodujo en 8 ejecuciones, pero
+    # no se puede saber cual de las dos cosas la enmascaraba.
+    #
+    # Este brazo conserva SOLO el viaje de ida y vuelta y elimina todo el
+    # trabajo del renderer: evalua una expresion literal, sin consultar el DOM.
+    # No es una correccion ni pretende serlo.
+    page.evaluate_script('1')
+
     click_button "Cerrar sesión"
 
     expect(page).to have_content("Sesión finalizada.")
