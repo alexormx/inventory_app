@@ -7,8 +7,6 @@ module CatalogPdf
   class Builder
     SECONDARY_FIELDS = %w[name price code].freeze
     # Prioridad de las novedades cuando se pide mostrarlas primero.
-    EVENT_RANK = { 'new' => 0, 'reappeared' => 1, 'restocked' => 2 }.freeze
-
     def initialize(source:, series: [], sort: 'name', direction: 'asc',
                    prioritize_new: false, api_url: nil, api_token: nil)
       @source = source == 'local' ? 'local' : 'api'
@@ -84,15 +82,13 @@ module CatalogPdf
 
     def compare(a, b, index)
       if @prioritize_new
-        # Todas las novedades (cualquier evento vigente) van primero, de forma
-        # global (sin importar la serie) y ordenadas por prioridad de evento.
-        by_group = novelty_group(a) <=> novelty_group(b)
+        # Sólo los ESTRENOS encabezan el catálogo. "De vuelta" y "Resurtido" son
+        # eventos comerciales distintos: siguen mostrando su badge, pero no se
+        # adelantan, porque el cliente que hojea busca lo que nunca había estado.
+        # Un producto relanzado ya llega aquí como :reappeared desde
+        # Product#catalog_event, así que no entra por la puerta de atrás.
+        by_group = launch_group(a) <=> launch_group(b)
         return by_group unless by_group.zero?
-
-        if novelty_group(a).zero?
-          by_rank = event_rank(a) <=> event_rank(b)
-          return by_rank unless by_rank.zero?
-        end
       end
 
       by_series = index[a[:series]] <=> index[b[:series]]
@@ -103,12 +99,8 @@ module CatalogPdf
     end
 
     # 0 = novedad (tiene evento vigente), 1 = resto. Menor va primero.
-    def novelty_group(item)
-      item[:event].present? ? 0 : 1
-    end
-
-    def event_rank(item)
-      EVENT_RANK.fetch(item[:event].to_s, 99)
+    def launch_group(item)
+      item[:event].to_s == 'new' ? 0 : 1
     end
 
     def secondary_key(item)

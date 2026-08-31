@@ -121,6 +121,7 @@
     .card .series { font-size: 10.5px; color: #c0392b; font-weight: bold; text-transform: uppercase; letter-spacing: 0.4px; margin-top: 2px; }
     .card .brand { font-size: 10px; color: #999; text-transform: uppercase; letter-spacing: 0.5px; }
     .card .meta-label { color: #555; font-weight: bold; }
+    .card .launch { font-size: 11px; color: #555; line-height: 1.2; }
     .card .price { font-size: 19px; font-weight: bold; color: #111; margin-top: auto; padding-top: 6px; }
     .card .price-usd { font-size: 12px; font-weight: 600; color: #1f3a93; margin-top: 1px; }
 
@@ -228,6 +229,12 @@
         <div class="name"><%= truncate(item[:name].to_s, length: 60) %></div>
         <% if item[:series].present? %><div class="series"><span class="meta-label">Serie:</span> <%= item[:series] %></div><% end %>
         <% if item[:brand].present? %><div class="brand"><span class="meta-label">Marca:</span> <%= item[:brand] %></div><% end %>
+        <%# Fecha de lanzamiento: opcional y siempre desde first_published_at.
+            Si el producto no la tiene, se omite la línea entera en vez de
+            imprimir un hueco o una fecha inventada. %>
+        <% if include_launch_date && (launch = catalog_pdf_launch_date(item[:launch_date])) %>
+          <div class="launch"><span class="meta-label">Lanzamiento:</span> <%= launch %></div>
+        <% end %>
         <div class="price">
           <%= number_to_currency(item[:price], unit: "$", precision: 0) %> MXN
           <% if usd_rate.to_f > 0 && item[:price].to_f > 0 %>

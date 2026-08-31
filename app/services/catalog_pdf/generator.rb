@@ -17,12 +17,14 @@ module CatalogPdf
     MAX_RENDER_ATTEMPTS = 3
     TRANSIENT_RENDER_ERROR = /frame was detached|Target closed|Session closed|Navigation failed/i
 
-    def initialize(title:, whatsapp_number:, items:, usd_rate: nil, orientation: :portrait)
+    def initialize(title:, whatsapp_number:, items:, usd_rate: nil, orientation: :portrait,
+                   include_launch_date: false)
       @title = title
       @whatsapp_number = whatsapp_number
       @items = items
       @usd_rate = usd_rate
       @orientation = orientation == :landscape ? :landscape : :portrait
+      @include_launch_date = ActiveModel::Type::Boolean.new.cast(include_launch_date) || false
     end
 
     def to_pdf
@@ -44,7 +46,8 @@ module CatalogPdf
       ApplicationController.render(
         template: 'catalog_pdf/show',
         layout: false,
-        locals: { title: @title, whatsapp_number: formatted_whatsapp, items: @items, logo: logo_data_uri, usd_rate: @usd_rate, orientation: @orientation }
+        locals: { title: @title, whatsapp_number: formatted_whatsapp, items: @items, logo: logo_data_uri,
+                  usd_rate: @usd_rate, orientation: @orientation, include_launch_date: @include_launch_date }
       )
     end
 

@@ -61,6 +61,7 @@ module CatalogPdf
         price: item['price'],
         event: item['event'].presence,
         event_label: item['event_label'].presence,
+        launch_date: item['launch_date'].presence,
         unique_piece: item['unique_piece'] ? true : false,
         image_url: item['image_url']
       }
