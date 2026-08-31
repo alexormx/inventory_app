@@ -160,6 +160,22 @@
               <% end %>
             </div>
           </div>
+
+          <%# Cerrar sesión también desde aquí: hasta ahora el único acceso para
+              un cliente estaba dentro del menú desplegable de la barra, así que
+              quien no lo encontrara no tenía forma de salir desde su cuenta.
+              Misma ruta y método que usa la barra (Devise, DELETE); no se
+              duplica lógica ni se abre una ruta GET. %>
+          <div class="row mt-3">
+            <div class="col-12">
+              <%= button_to destroy_user_session_path,
+                            method: :delete,
+                            class: "btn btn-outline-danger w-100",
+                            form: { data: { turbo: false } } do %>
+                <i class="fas fa-right-from-bracket me-2"></i>Cerrar sesión
+              <% end %>
+            </div>
+          </div>
         </div>
       </div>
     </div>
