@@ -38,6 +38,29 @@ RSpec.describe "User login/logout", type: :system do
     expect(page).to have_current_path(profile_path)
     expect(page).to have_content("Configuración de Cuenta")
 
+    # DIAGNOSTICO TEMPORAL — rama desechable, no mergear. No es una correccion.
+    #
+    # Ultimo brazo del A/B. Con el snapshot completo de estado la entrega nula
+    # no se reprodujo en 8 ejecuciones; conservando SOLO el viaje de ida y
+    # vuelta de WebDriver (`evaluate_script('1')`) volvio a la primera. Asi que
+    # lo que enmascaraba el fallo no era el tiempo transcurrido, sino algo del
+    # trabajo que el snapshot hacia en el renderer.
+    #
+    # Aqui queda una unica operacion de DOM: la consulta de hit-test. No se
+    # miden geometrias ni estilos, que es justo lo que se quiere separar.
+    #
+    # La coordenada va fija a proposito: derivarla con getBoundingClientRect
+    # reintroduciria la medicion de layout que este brazo intenta aislar. Es
+    # estable y esta comprobada: en C2, C3, C4 y C8 el boton ocupa exactamente
+    # 525.5,749.73 806x43.59 en un viewport de 1440x857, su centro cae en
+    # (928, 771), y elementFromPoint devuelve ahi el propio BUTTON. Es tambien
+    # la coordenada exacta que ChromeDriver despacho en la reproduccion
+    # instrumentada.
+    #
+    # No se inspecciona el nodo devuelto: interesa forzar el hit-test, no
+    # afirmar su resultado.
+    page.evaluate_script('(function () { document.elementFromPoint(928, 771); return 1; })()')
+
     click_button "Cerrar sesión"
 
     expect(page).to have_content("Sesión finalizada.")
