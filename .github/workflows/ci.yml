@@ -154,12 +154,20 @@ jobs:
       # La suite completa de sistema pasa en verde (54/54, repetido). Correrla
       # entera en CI es lo que impide que vuelva a acumularse deuda como la que
       # se limpió en #122: el subconjunto smoke dejaba 48 de 54 sin vigilancia.
+      #
+      # Se excluye UNICAMENTE la etiqueta browser_input_quarantine, que marca un
+      # solo ejemplo: el cierre de sesion extremo a extremo por navegador real.
+      # No se excluye el archivo, ni una linea, ni una lista de tests inestables;
+      # el resto de user_login_spec.rb, incluido el login por UI, sigue
+      # bloqueando. Ese ejemplo se sigue ejecutando a diario y bajo demanda en
+      # .github/workflows/browser-input-diagnostic.yml, que documenta el motivo,
+      # el alcance y la condicion de salida de la cuarentena.
       - name: Run system tests
         env:
           RAILS_ENV: test
           DATABASE_URL: postgres://postgres:postgres@localhost:5432
           RUN_SYSTEM_SPECS: 1
-        run: bin/rails db:test:prepare && bundle exec rspec spec/system --format documentation
+        run: bin/rails db:test:prepare && bundle exec rspec spec/system --tag '~browser_input_quarantine' --format documentation
 
       - name: Keep failure artifacts from system tests
         uses: actions/upload-artifact@v4
