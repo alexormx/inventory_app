@@ -1,0 +1,123 @@
+# Ejecuta el unico ejemplo en cuarentena por no entrega de entrada del
+# navegador. NO es un check requerido y no puede bloquear un merge.
+#
+# POR QUE
+#   Chrome acepta los comandos de entrada CDP sin entregarlos. En el fallo, con
+#   evidencia del log detallado de ChromeDriver: Selenium emite ClickElement, el
+#   driver lo recibe, despacha mouseMoved/mousePressed/mouseReleased con las
+#   coordenadas correctas sobre la misma sesion DevTools, el mismo target, el
+#   mismo frame de nivel superior y el mismo renderer, Chrome responde a los
+#   tres comandos, y aun asi no se materializa ningun evento de entrada en el
+#   DOM ni sale peticion alguna a /users/sign_out. No aparece ningun error ni
+#   aviso de Chrome, ni transicion de target, frame o renderer.
+#
+#   Se reprodujo con el par desalineado de la imagen del runner (Chrome
+#   151.0.7922.173 con driver .138), con el par exacto 151.0.7922.138 y con el
+#   par exacto 152.0.7977.64, el Stable vigente de Chrome for Testing. No es un
+#   problema de version ni de provisioning.
+#
+#   No se identifico ninguna condicion determinista de preparacion que el test
+#   pueda esperar. Insertar una consulta de estado antes del click enmascaraba
+#   el fallo, pero ni un viaje de ida y vuelta vacio ni una consulta de
+#   hit-test lo hacian de forma fiable, asi que ese JavaScript de diagnostico
+#   no se convirtio en la correccion.
+#
+#   La evidencia completa (logs de ChromeDriver y nativos de Chrome, auditoria
+#   de enrutado, A/B de versiones y de estado del punto de llamada) queda en el
+#   historial de los PRs de diagnostico.
+#
+# ALCANCE
+#   Un solo ejemplo: "successful logout through the real browser" en
+#   spec/system/user_login_spec.rb. Nada mas lleva la etiqueta.
+#
+# QUE SIGUE BLOQUEANDO EN SU LUGAR
+#   - login por UI real ....... spec/system/user_login_spec.rb
+#   - semantica de logout ..... spec/requests/user_session_lifecycle_spec.rb
+#   - controles de logout ..... spec/requests/user_session_lifecycle_spec.rb
+#     (tarjeta de perfil y desplegable de la barra, ruta y metodo DELETE)
+#   - ciclo del desplegable ... spec/system/dropdown_enhancement_spec.rb
+#   - todos los demas ejemplos de sistema siguen bloqueando
+#
+# CONDICION DE SALIDA
+#   Retirar la etiqueta :browser_input_quarantine y esta workflow cuando el
+#   comportamiento del navegador sea demostrablemente estable, o cuando se
+#   identifique una condicion determinista de preparacion que el test pueda
+#   esperar. Esto no debe quedarse como un skip permanente sin documentar: si
+#   esta workflow lleva mucho tiempo en verde, es la senal para reevaluarla.
+name: Browser input diagnostic (non-blocking)
+
+on:
+  workflow_dispatch:
+  schedule:
+    # A diario. Solo informativo: nunca bloquea un merge.
+    - cron: '30 6 * * *'
+
+jobs:
+  browser_input_quarantine:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: --health-cmd="pg_isready" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    steps:
+      - name: Install packages
+        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y build-essential git libpq-dev libvips-dev imagemagick pkg-config
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: .ruby-version
+          bundler-cache: true
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install JavaScript dependencies
+        run: npm ci
+
+      - name: Build JavaScript bundles
+        run: npm run build
+
+      # Mismo entorno de navegador que el job bloqueante: la imagen del runner
+      # publica un chromedriver via CHROMEWEBDRIVER; no se instala otro Chrome.
+      - name: Verify browser toolchain
+        run: |
+          google-chrome --version
+          driver="$CHROMEWEBDRIVER/chromedriver"
+          [ -x "$driver" ] || driver="$(command -v chromedriver || true)"
+          [ -x "$driver" ] || { echo "No chromedriver available on this runner"; exit 1; }
+          "$driver" --version
+          echo "CHROMEDRIVER_PATH=$driver" >> "$GITHUB_ENV"
+
+      # Una sola ejecucion. Sin reintentos, sin gemas de reintento y sin
+      # bucles hasta verde: un rojo aqui debe seguir viendose como rojo.
+      - name: Run the quarantined browser-input example
+        env:
+          RAILS_ENV: test
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432
+          RUN_SYSTEM_SPECS: 1
+        run: bin/rails db:test:prepare && bundle exec rspec spec/system --tag browser_input_quarantine --format documentation
+
+      - name: Keep failure artifacts
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: browser-input-quarantine-failure
+          path: |
+            ${{ github.workspace }}/tmp/capybara
+            ${{ github.workspace }}/tmp/screenshots
+            ${{ github.workspace }}/log/test.log
+          if-no-files-found: ignore
