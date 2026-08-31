@@ -140,16 +140,53 @@ jobs:
       - name: Build JavaScript bundles
         run: npm run build
 
-      # The runner image ships Chrome with a version-matched chromedriver exposed
-      # through CHROMEWEBDRIVER; do not install another Chrome or they desync.
-      - name: Verify browser toolchain
+      # DIAGNOSTICO TEMPORAL - rama desechable, no mergear.
+      #
+      # Unica variable independiente de este experimento: el par
+      # Chrome/ChromeDriver. La imagen del runner trae Chrome 151.0.7922.173
+      # junto a ChromeDriver 151.0.7922.138, es decir un par DESALINEADO en el
+      # patch. Chrome for Testing no publica .173; el par exacto mas alto
+      # disponible dentro de 151 es .138, que es justo la version del driver
+      # que el runner ya usaba. Provisionamos AMBOS binarios de la misma
+      # fuente y version para que Chrome y ChromeDriver coincidan exactamente.
+      - name: Provision exact Chrome + ChromeDriver pair (Chrome for Testing)
+        env:
+          CFT_VERSION: 151.0.7922.138
         run: |
-          google-chrome --version
-          driver="$CHROMEWEBDRIVER/chromedriver"
-          [ -x "$driver" ] || driver="$(command -v chromedriver || true)"
-          [ -x "$driver" ] || { echo "No chromedriver available on this runner"; exit 1; }
-          "$driver" --version
+          set -euo pipefail
+          base="https://storage.googleapis.com/chrome-for-testing-public/${CFT_VERSION}/linux64"
+          dir="$RUNNER_TEMP/cft"
+          mkdir -p "$dir"
+          curl -fsSL "$base/chrome-linux64.zip"       -o "$dir/chrome.zip"
+          curl -fsSL "$base/chromedriver-linux64.zip" -o "$dir/chromedriver.zip"
+          unzip -q "$dir/chrome.zip"       -d "$dir"
+          unzip -q "$dir/chromedriver.zip" -d "$dir"
+          chrome="$dir/chrome-linux64/chrome"
+          driver="$dir/chromedriver-linux64/chromedriver"
+          chmod +x "$chrome" "$driver"
+          echo "CHROME_BINARY_PATH=$chrome" >> "$GITHUB_ENV"
           echo "CHROMEDRIVER_PATH=$driver" >> "$GITHUB_ENV"
+
+      # El experimento solo es valido si el par es EXACTO: si no lo es, el job
+      # debe fallar aqui en vez de producir una corrida no interpretable.
+      - name: Require exact Chrome/ChromeDriver version match
+        env:
+          CFT_VERSION: 151.0.7922.138
+        run: |
+          set -euo pipefail
+          echo "runner-provided Chrome:  $(google-chrome --version 2>/dev/null || echo 'n/a')"
+          echo "Chrome binary path:      $CHROME_BINARY_PATH"
+          echo "ChromeDriver path:       $CHROMEDRIVER_PATH"
+          cv="$("$CHROME_BINARY_PATH" --version)"
+          dv="$("$CHROMEDRIVER_PATH" --version)"
+          echo "Chrome version:          $cv"
+          echo "ChromeDriver version:    $dv"
+          cvn="$(printf '%s' "$cv" | grep -oE '[0-9]+(\.[0-9]+){3}' | head -1)"
+          dvn="$(printf '%s' "$dv" | grep -oE '[0-9]+(\.[0-9]+){3}' | head -1)"
+          echo "parsed chrome=$cvn driver=$dvn expected=$CFT_VERSION"
+          [ "$cvn" = "$CFT_VERSION" ] || { echo "FAIL: Chrome $cvn != $CFT_VERSION"; exit 1; }
+          [ "$dvn" = "$CFT_VERSION" ] || { echo "FAIL: ChromeDriver $dvn != $CFT_VERSION"; exit 1; }
+          echo "EXACT PAIR OK: $CFT_VERSION"
 
       # La suite completa de sistema pasa en verde (54/54, repetido). Correrla
       # entera en CI es lo que impide que vuelva a acumularse deuda como la que
@@ -169,4 +206,15 @@ jobs:
           path: |
             ${{ github.workspace }}/tmp/capybara
             ${{ github.workspace }}/tmp/screenshots
+          if-no-files-found: ignore
+
+      # DIAGNOSTICO TEMPORAL - rama desechable. El log del servidor es la
+      # evidencia de "no llego ninguna peticion" que exige la clasificacion de
+      # entrega nula; sin el no se puede distinguir de un fallo cualquiera.
+      - name: Keep Rails test log for zero-delivery classification
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: rails-test-log
+          path: ${{ github.workspace }}/log/test.log
           if-no-files-found: ignore
