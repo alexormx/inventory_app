@@ -21,6 +21,14 @@ require 'rails_helper'
 #
 # Por eso la reparación se condiciona a la señal semántica de Turbo: sólo una
 # visita con action="restore" puede repararse.
+#
+#   MARCA PISADA: si la petición del frame lanzada al paginar sigue en vuelo
+#   cuando el usuario pulsa Atrás, la respuesta tardía renderiza el frame
+#   durante la restauración y Turbo sintetiza una visita "advance" (el frame
+#   declara action="advance"). Esa visita llega entre el "restore" y el
+#   turbo:load, y antes borraba la marca: el estado envenenado quedaba sin
+#   reparar. Una visita normal sólo puede retirar la marca cuando la
+#   restauración ya se resolvió.
 RSpec.describe 'Catalog frame restoration', :js, type: :system do
   before { driven_by :selenium_chrome_headless }
 
@@ -127,6 +135,72 @@ RSpec.describe 'Catalog frame restoration', :js, type: :system do
       expect(frame_src_query).not_to include('page=2')
       expect(page.current_url).not_to include('page=2')
     end
+  end
+
+  # ---------- 4: la marca de restauración sobrevive a una visita intercalada ----------
+
+  # Regresión exacta observada en CI: la restauración quedó envenenada y la
+  # reparación se saltó porque una respuesta de frame tardía sintetizó una
+  # visita "advance" entre el "restore" y el turbo:load. Con la marca reasignada
+  # en cada visita este ejemplo falla (la rejilla se queda en 1 tarjeta bajo la
+  # URL de la página 1); la marca sólo puede retirarse si la restauración ya se
+  # resolvió.
+  it 'repara aunque una visita de avance se cuele durante la restauración' do
+    visit filtered_path
+    accept_cookies_if_present
+    expect(page).to have_css('#product-grid-content .product-card-wrapper', count: 24)
+
+    poison_frame_to_page_two!
+    dispatch_visit('restore')
+    # Respuesta tardía del click de paginación renderizando dentro de la
+    # restauración: el frame lleva data-turbo-action="advance", así que Turbo
+    # propone una visita de avance antes de que llegue el turbo:load.
+    dispatch_visit('advance')
+    dispatch_load
+
+    aggregate_failures do
+      expect(page).to have_css('#product-grid-content .product-card-wrapper', count: 24)
+      expect(frame_src_query).not_to include('page=2')
+      expect(page.current_url).not_to include('page=2')
+    end
+  end
+
+  # Una vez resuelta la restauración, un avance legítimo sí retira la marca: de
+  # lo contrario la reparación seguiría armada y podría revertir la paginación.
+  it 'deja de reparar cuando la restauración ya se resolvió y el usuario avanza' do
+    visit filtered_path
+    accept_cookies_if_present
+
+    dispatch_visit('restore')
+    dispatch_load
+
+    poison_frame_to_page_two!
+    dispatch_visit('advance')
+    dispatch_load
+
+    aggregate_failures do
+      expect(frame_src_query).to include('page=2')
+      expect(page).to have_css('#product-grid-content .product-card-wrapper', count: 24)
+    end
+  end
+
+  # La reparación corrige la entrada actual; no navega. Si empujara historial
+  # (pushState) truncaría las entradas hacia adelante y Adelante dejaría de
+  # funcionar justo después de Atrás, que es la regresión que arregló #149.
+  it 'no empuja historial al reparar, para no truncar el Adelante' do
+    visit filtered_path
+    accept_cookies_if_present
+    expect(page).to have_css('#product-grid-content .product-card-wrapper', count: 24)
+
+    before_length = page.evaluate_script('history.length')
+
+    poison_frame_to_page_two!
+    dispatch_visit('restore')
+    dispatch_load
+    expect(page).to have_css('#product-grid-content .product-card-wrapper', count: 24)
+    expect(frame_src_query).not_to include('page=2')
+
+    expect(page.evaluate_script('history.length')).to eq(before_length)
   end
 
   # ---------- 5: restauración sana no re-pide ----------
