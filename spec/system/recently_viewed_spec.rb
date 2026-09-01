@@ -139,25 +139,41 @@ RSpec.describe 'Recently viewed product recovery', :js, type: :system do
     current_image = cards.first.find('img')
     expect(page.evaluate_script('arguments[0].complete && arguments[0].naturalWidth > 0', current_image)).to be(true)
 
+    # Tras CUALQUIER navegación, la tira se reconstruye sola: Turbo restaura la
+    # instantánea con las tarjetas cacheadas, y acto seguido el controlador se
+    # reconecta y llama a `renderCurrentProducts`, que vacía el contenedor con
+    # `replaceChildren()` y lo vuelve a llenar con la respuesta del servidor.
+    # Eso es justo lo que hace que la tira se auto-repare, y es correcto.
+    #
+    # Por eso aquí NO se puede capturar un nodo y afirmar sobre él: entre
+    # `have_css(count: 2)` —que ya se satisface con las tarjetas restauradas— y
+    # la comprobación del texto, el controlador puede sustituir ese nodo, y la
+    # aserción muere con StaleElementReferenceError aunque el DOM final sea
+    # correcto. Medido: 4 fallos en 25 ejecuciones con `taskset -c 0,1`, y en el
+    # fallo capturado el orden era correcto antes y después.
+    #
+    # `have_css` con el selector re-consulta el DOM vivo, así que expresa lo
+    # mismo —la PRIMERA tarjeta muestra el producto actual— sin sostener una
+    # referencia a través del re-render. Sigue fallando si el orden es otro.
     cards.first.click
     expect(page).to have_current_path(product_path(current))
     page.go_back
     expect(page).to have_css('.recently-viewed-card', count: 2)
-    expect(all('.recently-viewed-card').first).to have_text('Current Product Name')
+    expect_first_recently_viewed_card('Current Product Name')
 
     find('#header-sort-form select[name="sort"]').select('Precio ↑')
     expect(page).to have_current_path(/sort=price_asc/, url: true)
     expect(page).to have_css('.recently-viewed-card', count: 2)
-    expect(all('.recently-viewed-card').first).to have_text('Current Product Name')
+    expect_first_recently_viewed_card('Current Product Name')
 
     page.go_back
     expect(page).to have_css('.recently-viewed-card', count: 2)
-    expect(all('.recently-viewed-card').first).to have_text('Current Product Name')
+    expect_first_recently_viewed_card('Current Product Name')
 
     page.go_forward
     expect(page).to have_current_path(/sort=price_asc/, url: true)
     expect(page).to have_css('.recently-viewed-card', count: 2)
-    expect(all('.recently-viewed-card').first).to have_text('Current Product Name')
+    expect_first_recently_viewed_card('Current Product Name')
   end
 
   it 'falls back without a broken icon when a current image request fails' do
@@ -200,6 +216,14 @@ RSpec.describe 'Recently viewed product recovery', :js, type: :system do
       })()
     JS
     expect(dimensions).to eq('stripScrollable' => true, 'bodyFitsViewport' => true)
+  end
+
+  # Afirma sobre el DOM VIVO en vez de sostener un nodo: ver la nota en el
+  # ejemplo de auto-reparación. `have_css` re-consulta, así que sobrevive al
+  # re-render del controlador sin perder fuerza (sigue exigiendo que sea la
+  # PRIMERA tarjeta).
+  def expect_first_recently_viewed_card(name)
+    expect(page).to have_css('.recently-viewed-track .recently-viewed-card:first-child', text: name)
   end
 end
 # rubocop:enable RSpec/ExampleLength, RSpec/MultipleExpectations
