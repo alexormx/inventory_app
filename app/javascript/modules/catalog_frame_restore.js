@@ -1,3 +1,5 @@
+import { Turbo } from "@hotwired/turbo-rails"
+
 // La rejilla del catálogo vive en un turbo-frame con data-turbo-action="advance",
 // así que paginar y filtrar empujan entradas de historial. Eso abre una carrera
 // cuando la respuesta del frame lanzada al paginar todavía está EN VUELO y el
@@ -74,27 +76,30 @@ function frameQuery(frame) {
 }
 
 // La petición que lanza la PROPIA reparación tampoco puede empujar historial, y
-// esa sí se puede controlar por atributo porque Turbo lee la acción al arrancar
-// la navegación del frame: se pone "replace" antes de tocar el `src` y se
-// devuelve a "advance" cuando esa carga termina.
+// el atributo NO sirve para conseguirlo. Turbo lee `data-turbo-action` una sola
+// vez, cuando una navegación real del frame propone su visita, y guarda esa
+// acción en el delegado del frame. A partir de ahí CADA respuesta del frame
+// llama a `changeHistory()` con la acción guardada, también las cargas
+// disparadas cambiando `src` a mano. Por eso poner "replace" en el atributo
+// antes de tocar `src` no cambiaba nada: tras ordenar el catálogo la acción
+// guardada seguía siendo "advance" y la reparación hacía pushState. Estando el
+// usuario en la entrada anterior (acaba de pulsar Atrás), ese pushState TRUNCA
+// el Adelante: justo el fallo que este módulo existe para evitar. Traza real:
+//
+//   history.pushState url=/catalog :: History.update
+//                                  << FrameController.changeHistory
+//                                  << #loadFrameResponse << loadResponse
+//   ...y la entrada ordenada ya no existe cuando el usuario pulsa Adelante.
+//
+// `turbo:before-visit` tampoco alcanza a esto: la mutación de historial la hace
+// el frame directamente, sin pasar por ninguna visita cancelable.
+//
+// `Turbo.visit(url, { frame, action })` es la vía pública que sí fija la acción
+// guardada. Con "replace" la carga reescribe la entrada actual —la misma URL en
+// la que ya estamos— en vez de empujar una nueva, y el Adelante sobrevive.
 function repairWithoutHistoryPush(frame, url) {
-  const previousAction = frame.getAttribute("data-turbo-action")
-
-  frame.addEventListener(
-    "turbo:frame-load",
-    () => {
-      if (previousAction === null) {
-        frame.removeAttribute("data-turbo-action")
-      } else {
-        frame.setAttribute("data-turbo-action", previousAction)
-      }
-    },
-    { once: true }
-  )
-
-  frame.setAttribute("data-turbo-action", NON_PUSHING_ACTION)
   frame.removeAttribute("complete")
-  frame.setAttribute("src", url)
+  Turbo.visit(url, { frame: FRAME_ID, action: NON_PUSHING_ACTION })
 }
 
 function resyncRestoredFrame() {
