@@ -85,6 +85,28 @@ RSpec.describe 'Catalog frame restoration', :js, type: :system do
     page.execute_script("document.dispatchEvent(new Event('turbo:load'))")
   end
 
+  # Turbo numera las entradas que crea. Un pushState hecho estando en una
+  # entrada anterior NO cambia `history.length` —trunca lo que hubiera delante y
+  # ocupa su sitio—, así que el índice es lo que delata el avance.
+  def restoration_index
+    page.evaluate_script('history.state && history.state.turbo ? history.state.turbo.restorationIndex : null')
+  end
+
+  # Deja el frame apuntando a otra página Y vacía la rejilla, para poder esperar
+  # a que la respuesta de la reparación llegue de verdad: sin vaciarla, la
+  # rejilla ya contiene lo que la reparación va a volver a pintar y no hay señal
+  # observable de que la carga terminó.
+  def poison_frame_and_empty_grid!
+    page.execute_script(<<~JS)
+      (() => {
+        const f = document.getElementById('products_grid');
+        f.setAttribute('src', location.pathname + location.search + '&page=99');
+        f.setAttribute('complete', '');
+        document.getElementById('product-grid-content').replaceChildren();
+      })()
+    JS
+  end
+
   # ---------- 1 y 6: avance no debe repararse ----------
 
   it 'no revierte la rejilla al avanzar de la página 1 a la 2' do
@@ -201,6 +223,49 @@ RSpec.describe 'Catalog frame restoration', :js, type: :system do
     expect(frame_src_query).not_to include('page=2')
 
     expect(page.evaluate_script('history.length')).to eq(before_length)
+  end
+
+  # Turbo cachea la acción del frame cuando una navegación REAL la propone
+  # (`delegate.action`, fijada en `proposeVisitIfNavigatedWithAction`) y NO
+  # vuelve a leer `data-turbo-action` cuando el `src` cambia por atributo. Al
+  # terminar CUALQUIER carga del frame llama a `changeHistory()` con esa acción
+  # cacheada, así que la petición de la PROPIA reparación acababa haciendo
+  # pushState: estando el usuario en la entrada anterior (tras Atrás) eso trunca
+  # el Adelante, que es justo lo que #162 quería evitar. El intercambio del
+  # atributo no lo impedía y `turbo:before-visit` tampoco, porque esa mutación
+  # de historial no pasa por ninguna visita cancelable. Traza real del fallo:
+  #
+  #   history.pushState url=/catalog :: History.update << FrameController.changeHistory
+  #                                     << #loadFrameResponse << loadResponse
+  #   T6_before_forward  href=/catalog  restorationIndex=1  <- la entrada
+  #                                     ordenada ya no existe; Adelante no mueve
+  #
+  # Aquí la navegación real de paginación deja esa acción cacheada y después se
+  # fuerza la reparación: si vuelve a empujar, el índice avanza.
+  it 'no avanza el historial cuando repara un frame que ya navegó de verdad' do
+    visit filtered_path
+    accept_cookies_if_present
+    expect(page).to have_css('#product-grid-content .product-card-wrapper', count: 24)
+
+    # Navegación real del frame: aquí Turbo cachea action="advance".
+    go_to_page_two
+
+    before_length = page.evaluate_script('history.length')
+    before_index = restoration_index
+    before_url = page.current_url
+
+    poison_frame_and_empty_grid!
+    dispatch_visit('restore')
+    dispatch_load
+
+    # La respuesta de la reparación ya se pintó: la rejilla vuelve a la página 2.
+    expect(page).to have_css('#product-grid-content .product-card-wrapper', count: 1)
+
+    aggregate_failures do
+      expect(restoration_index).to eq(before_index)
+      expect(page.evaluate_script('history.length')).to eq(before_length)
+      expect(page.current_url).to eq(before_url)
+    end
   end
 
   # ---------- 5: restauración sana no re-pide ----------
