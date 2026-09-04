@@ -141,8 +141,8 @@ RSpec.describe 'Recently viewed product recovery', :js, type: :system do
 
     # Tras CUALQUIER navegación, la tira se reconstruye sola: Turbo restaura la
     # instantánea con las tarjetas cacheadas, y acto seguido el controlador se
-    # reconecta y llama a `renderCurrentProducts`, que vacía el contenedor con
-    # `replaceChildren()` y lo vuelve a llenar con la respuesta del servidor.
+    # reconecta y llama a `renderCurrentProducts`, que sustituye las tarjetas
+    # cuando la respuesta actual del servidor está lista.
     # Eso es justo lo que hace que la tira se auto-repare, y es correcto.
     #
     # Por eso aquí NO se puede capturar un nodo y afirmar sobre él: entre
@@ -190,6 +190,49 @@ RSpec.describe 'Recently viewed product recovery', :js, type: :system do
     expect(image['data-recently-viewed-fallback-applied']).to eq('true')
   end
 
+  it 'keeps restored cards visible while refreshing, then replaces them with current data' do
+    current = create(:product, product_name: 'Name Before Refresh')
+    companion = create(:product, product_name: 'Companion Product')
+
+    visit catalog_path
+    accept_cookies_if_present
+    seed_storage(v2_key, [
+                   { slug: current.slug, at: 200 },
+                   { slug: companion.slug, at: 100 }
+                 ])
+    page.refresh
+    expect(page).to have_css('.recently-viewed-card', count: 2)
+    expect_first_recently_viewed_card('Name Before Refresh')
+
+    gate_recently_viewed_fetch
+    find('.recently-viewed-card', text: 'Name Before Refresh').click
+    expect(page).to have_current_path(product_path(current))
+    current.update!(product_name: 'Name After Refresh')
+
+    page.go_back
+    wait_for_recently_viewed_fetch_to_be_pending
+
+    pending_state = page.evaluate_script(<<~JS)
+      (() => {
+        const section = document.querySelector(".recently-viewed");
+        return {
+          hidden: section.hidden,
+          names: Array.from(section.querySelectorAll(".recently-viewed-name"), node => node.textContent.trim())
+        };
+      })()
+    JS
+    expect(pending_state).to eq(
+      'hidden' => false,
+      'names' => ['Name Before Refresh', 'Companion Product']
+    )
+
+    release_recently_viewed_fetch
+
+    expect(page).to have_css('.recently-viewed-card', count: 2)
+    expect_first_recently_viewed_card('Name After Refresh')
+    expect(page).to have_no_css('.recently-viewed-card', text: 'Name Before Refresh')
+  end
+
   it 'hides deleted-only history and keeps the mobile strip scrollable without page overflow' do
     deleted = create(:product, skip_seed_inventory: true)
     deleted_slug = deleted.slug
@@ -224,6 +267,45 @@ RSpec.describe 'Recently viewed product recovery', :js, type: :system do
   # PRIMERA tarjeta).
   def expect_first_recently_viewed_card(name)
     expect(page).to have_css('.recently-viewed-track .recently-viewed-card:first-child', text: name)
+  end
+
+  def gate_recently_viewed_fetch
+    page.execute_script(<<~JS)
+      (() => {
+        const originalFetch = window.fetch.bind(window);
+        window.__recentlyViewedFetchGate = { pending: false, rendered: false };
+        document.addEventListener("turbo:render", () => {
+          if (window.__recentlyViewedFetchGate?.pending) {
+            window.__recentlyViewedFetchGate.rendered = true;
+          }
+        });
+        window.fetch = (resource, options) => {
+          const url = resource instanceof Request ? resource.url : String(resource);
+          if (!url.includes("/products/recently_viewed")) return originalFetch(resource, options);
+
+          window.__recentlyViewedFetchGate.pending = true;
+          return new Promise((resolve, reject) => {
+            window.__recentlyViewedFetchGate.release = () => {
+              originalFetch(resource, options).then(resolve, reject);
+            };
+          });
+        };
+      })();
+    JS
+  end
+
+  def wait_for_recently_viewed_fetch_to_be_pending
+    page.document.synchronize do
+      pending = page.evaluate_script(<<~JS)
+        window.__recentlyViewedFetchGate?.pending === true &&
+          window.__recentlyViewedFetchGate?.rendered === true
+      JS
+      raise Capybara::ExpectationNotMet unless pending
+    end
+  end
+
+  def release_recently_viewed_fetch
+    page.execute_script('window.__recentlyViewedFetchGate.release()')
   end
 end
 # rubocop:enable RSpec/ExampleLength, RSpec/MultipleExpectations
