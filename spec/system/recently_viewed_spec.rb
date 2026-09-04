@@ -116,7 +116,9 @@ RSpec.describe 'Recently viewed product recovery', :js, type: :system do
     expect(cards.first).to have_text('Current Product Name')
     expect(cards.first).to have_text('$650.00')
     expect(cards.first['href']).to end_with(product_path(current))
-    expect(cards.first).to have_css('img[src*="current-recently-viewed.png"]')
+    expect(cards.first).to have_css(
+      'img[src*="/rails/active_storage/representations/proxy/"][src*="current-recently-viewed.png"]'
+    )
     expect(cards[1]).to have_css('img[src*="placeholder"]')
     expect(page).to have_no_text('Historical Name')
     expect(page).to have_no_text('$600.00')
@@ -136,8 +138,9 @@ RSpec.describe 'Recently viewed product recovery', :js, type: :system do
                                       ])
     expect(page.evaluate_script('window.localStorage.getItem(arguments[0])', v1_key)).to be_nil
 
-    current_image = cards.first.find('img')
-    expect(page.evaluate_script('arguments[0].complete && arguments[0].naturalWidth > 0', current_image)).to be(true)
+    # A lazy image may legitimately be incomplete while it is offscreen. Bring
+    # this card into view, then require the real browser load to succeed.
+    expect_recently_viewed_image_to_load(current.slug)
 
     # Tras CUALQUIER navegación, la tira se reconstruye sola: Turbo restaura la
     # instantánea con las tarjetas cacheadas, y acto seguido el controlador se
@@ -267,6 +270,24 @@ RSpec.describe 'Recently viewed product recovery', :js, type: :system do
   # PRIMERA tarjeta).
   def expect_first_recently_viewed_card(name)
     expect(page).to have_css('.recently-viewed-track .recently-viewed-card:first-child', text: name)
+  end
+
+  def expect_recently_viewed_image_to_load(slug)
+    selector = %(.recently-viewed-card[data-product-slug="#{slug}"] img)
+    image = find(selector)
+    page.execute_script('arguments[0].scrollIntoView({ block: "center" })', image)
+
+    page.document.synchronize do
+      live_image = find(selector)
+      visible_and_ready = page.evaluate_script(<<~JS, live_image)
+        (() => {
+          const image = arguments[0];
+          const rect = image.getBoundingClientRect();
+          return rect.bottom > 0 && rect.top < window.innerHeight && image.complete && image.naturalWidth > 0;
+        })()
+      JS
+      raise Capybara::ExpectationNotMet, 'recently viewed image did not become visible and load' unless visible_and_ready
+    end
   end
 
   def gate_recently_viewed_fetch
