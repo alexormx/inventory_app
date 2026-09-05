@@ -73,19 +73,86 @@ Mientras `SOLID_QUEUE_IN_PUMA=true`, cualquier job comparte los 512 MB del dyno
 web. Las optimizaciones de arriba bastan para volver a entrar en la cuota, pero
 la separación sigue siendo la mejora estructural.
 
-**No está aplicada.** Para hacerlo:
+**No está aplicada.** El `Procfile` debe declarar el proceso, sin escalarlo:
 
-1. Agregar al `Procfile`:
+```
+worker: bundle exec rake solid_queue:start
+```
 
+Publicar esa declaración no mueve la cola por sí solo: el tipo nuevo debe seguir
+en `worker=0` y `SOLID_QUEUE_IN_PUMA` debe permanecer activo hasta una ventana
+operativa aprobada. El worker adicional tiene costo y exige autorización
+separada.
+
+### Rollout futuro (no ejecutar como parte del PR)
+
+1. Fusionar y desplegar primero el `Procfile`; confirmar `/up` y la versión
+   esperada.
+2. Verificar con `heroku ps -a evening-anchorage-70843` que sólo está activo
+   `web.1` y que no existe `worker.1` (`worker=0`). No cambiar todavía la
+   configuración.
+3. Elegir una ventana segura. Los jobs permanecen durables en PostgreSQL durante
+   el breve cambio, pero no se procesarán entre los pasos 4 y 5.
+4. Desactivar el supervisor de Puma **eliminando** la variable:
+
+   ```bash
+   heroku config:unset SOLID_QUEUE_IN_PUMA -a evening-anchorage-70843
    ```
-   worker: bundle exec bin/jobs
+
+   No usar `SOLID_QUEUE_IN_PUMA=false`: para `ENV['SOLID_QUEUE_IN_PUMA']`, la
+   cadena `"false"` sigue siendo verdadera y arrancaría un segundo supervisor.
+5. Inmediatamente después, arrancar exactamente un worker:
+
+   ```bash
+   heroku ps:scale worker=1 -a evening-anchorage-70843
    ```
 
-2. `heroku config:set SOLID_QUEUE_IN_PUMA=false -a evening-anchorage-70843`
-3. `heroku ps:scale worker=1 -a evening-anchorage-70843`
+6. Confirmar que `web.1` y `worker.1` están `up`, que `/up` responde 200 y que
+   los logs muestran el supervisor únicamente en `worker.1`. Tras dejar pasar el
+   umbral de heartbeat/pruning (5 minutos), verificar sólo conteos, nunca
+   payloads ni argumentos de jobs:
 
-El paso 3 tiene costo: es un dyno adicional. El paso 2 sin el 3 deja de procesar
-jobs por completo, así que deben aplicarse juntos.
+   ```bash
+   heroku run --no-tty bin/rails runner '
+     cutoff = SolidQueue.process_alive_threshold.ago
+     puts SolidQueue::Process.where(last_heartbeat_at: cutoff..).group(:kind).count.inspect
+   ' -a evening-anchorage-70843
+   ```
+
+   Con la configuración por defecto se espera exactamente un `Supervisor`, un
+   `Dispatcher`, un `Worker` y un `Scheduler`.
+7. Verificar que la cola avanza comparando sólo conteos agregados antes y después
+   de un job programado conocido:
+
+   ```bash
+   heroku run --no-tty bin/rails runner '
+     puts({
+       ready: SolidQueue::ReadyExecution.count,
+       claimed: SolidQueue::ClaimedExecution.count,
+       unfinished: SolidQueue::Job.where(finished_at: nil).count,
+       failed: SolidQueue::FailedExecution.count
+     }.inspect)
+   ' -a evening-anchorage-70843
+   ```
+
+   No imprimir argumentos, payloads, credenciales ni configuración completa.
+8. Vigilar memoria del dyno web y eventos `R14` por al menos una hora, incluida
+   una ejecución real de jobs. El objetivo es que el proceso web deje de cargar
+   Supervisor/Dispatcher/Worker/Scheduler; no cambiar `MALLOC_ARENA_MAX` ni
+   `RAILS_MAX_THREADS` como parte de este rollout.
+
+### Rollback futuro
+
+Evitar dos supervisores usando este orden exacto:
+
+1. `heroku ps:scale worker=0 -a evening-anchorage-70843`
+2. `heroku config:set SOLID_QUEUE_IN_PUMA=true -a evening-anchorage-70843`
+3. Confirmar `/up`, esperar el heartbeat del supervisor dentro de `web.1` y
+   comprobar que la cola vuelve a avanzar.
+
+El intervalo entre 1 y 2 pausa el procesamiento, pero no pierde jobs porque la
+cola usa PostgreSQL. No revertir el `Procfile` durante una emergencia: dejar el
+tipo declarado en cero simplifica la recuperación y no consume un dyno.
 
 ## Verificación post-deploy
 
