@@ -59,6 +59,11 @@ const NON_PUSHING_ACTION = "replace"
 let pendingRestore = false
 // Esa restauración ya llegó a `turbo:load` al menos una vez.
 let restoreSettled = false
+// Distingue una restauración de cualquier Atrás/Adelante posterior. Una
+// reparación pertenece a la generación que la lanzó y no puede terminar sobre
+// otra entrada del historial.
+let restoreGeneration = 0
+let activeRepair = null
 
 function catalogFrame() {
   return document.getElementById(FRAME_ID)
@@ -99,6 +104,11 @@ function frameQuery(frame) {
 // la que ya estamos— en vez de empujar una nueva, y el Adelante sobrevive.
 function repairWithoutHistoryPush(frame, url) {
   frame.removeAttribute("complete")
+  activeRepair = {
+    generation: restoreGeneration,
+    url: new URL(url, window.location.href).href,
+    signal: null
+  }
   Turbo.visit(url, { frame: FRAME_ID, action: NON_PUSHING_ACTION })
 }
 
@@ -127,6 +137,7 @@ function resyncRestoredFrame() {
 
 document.addEventListener("turbo:visit", (event) => {
   if (event.detail?.action === "restore") {
+    restoreGeneration += 1
     pendingRestore = true
     restoreSettled = false
     return
@@ -139,6 +150,39 @@ document.addEventListener("turbo:visit", (event) => {
     pendingRestore = false
     restoreSettled = false
   }
+})
+
+// Conserva la identidad de la petición creada por `repairWithoutHistoryPush`.
+// Si otra navegación del frame la sustituye, Turbo aborta esta señal y deja de
+// ser una reparación activa; así una petición normal a la misma URL nunca se
+// confunde con ella.
+document.addEventListener("turbo:before-fetch-request", (event) => {
+  const repair = activeRepair
+  if (!repair || repair.signal || event.target?.id !== FRAME_ID) return
+
+  const requestUrl = event.detail?.url
+  if (!requestUrl || new URL(requestUrl, window.location.href).href !== repair.url) return
+
+  const signal = event.detail?.fetchOptions?.signal
+  repair.signal = signal
+  signal?.addEventListener("abort", () => {
+    if (activeRepair === repair) activeRepair = null
+  }, { once: true })
+})
+
+// `FrameController` llama a `changeHistory()` al procesar una respuesta, antes
+// de `turbo:before-frame-render`. Por eso ésta es la última frontera segura: si
+// el usuario ya hizo otro Atrás/Adelante, se descarta la respuesta de la
+// reparación anterior antes de que su action="replace" reescriba la URL nueva.
+document.addEventListener("turbo:before-fetch-response", (event) => {
+  const repair = activeRepair
+  if (!repair || event.target?.id !== FRAME_ID) return
+
+  const responseUrl = event.detail?.fetchResponse?.response?.url
+  if (!responseUrl || new URL(responseUrl, window.location.href).href !== repair.url) return
+
+  if (repair.generation !== restoreGeneration) event.preventDefault()
+  activeRepair = null
 })
 
 // La respuesta tardía de la paginación es la que mata el Adelante, y no se puede

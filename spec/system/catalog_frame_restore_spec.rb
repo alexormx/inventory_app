@@ -92,6 +92,81 @@ RSpec.describe 'Catalog frame restoration', :js, type: :system do
     page.evaluate_script('history.state && history.state.turbo ? history.state.turbo.restorationIndex : null')
   end
 
+  def install_catalog_repair_gate(repair_url:, forward_url:)
+    page.execute_script(<<~JS, repair_url, forward_url)
+      (() => {
+        const repairUrl = arguments[0];
+        const forwardUrl = arguments[1];
+        const nativeFetch = window.fetch.bind(window);
+        const gate = window.__catalogRepairGate = {
+          repairPending: false,
+          repairResponseReady: false,
+          repairResponseObserved: false,
+          repairPrevented: false,
+          repairFrameLoaded: false,
+          forwardRenderPending: false
+        };
+
+        const deferredFetch = (resource, options) => new Promise((resolve, reject) => {
+          gate.repairPending = true;
+          let response;
+          let released = false;
+          nativeFetch(resource, options).then((value) => {
+            response = value;
+            gate.repairResponseReady = true;
+            if (released) resolve(response);
+          }, reject);
+          gate.releaseRepair = () => {
+            released = true;
+            if (response) resolve(response);
+          };
+        });
+
+        window.fetch = (resource, options) => {
+          const requestUrl = resource instanceof Request ? resource.url : String(resource);
+          const headers = new Headers(options?.headers || (resource instanceof Request ? resource.headers : undefined));
+          const frameRequest = headers.get("Turbo-Frame") === "products_grid";
+
+          if (!gate.repairPending && frameRequest && new URL(requestUrl, location.href).href === repairUrl) {
+            return deferredFetch(resource, options);
+          }
+          return nativeFetch(resource, options);
+        };
+
+        document.addEventListener("turbo:before-fetch-response", (event) => {
+          const responseUrl = event.detail?.fetchResponse?.response?.url;
+          if (event.target?.id === "products_grid" && responseUrl === repairUrl) {
+            gate.repairResponseObserved = true;
+            gate.repairPrevented = event.defaultPrevented;
+          }
+        });
+        document.addEventListener("turbo:frame-load", (event) => {
+          if (event.target?.id === "products_grid" && gate.repairResponseObserved) {
+            gate.repairFrameLoaded = true;
+          }
+        });
+        document.addEventListener("turbo:before-render", (event) => {
+          if (!gate.forwardRenderPending && location.href === forwardUrl) {
+            event.preventDefault();
+            gate.forwardRenderPending = true;
+            gate.releaseForwardRender = event.detail.resume;
+          }
+        });
+      })();
+    JS
+  end
+
+  def wait_for_catalog_repair_gate(expression)
+    page.document.synchronize do
+      ready = page.evaluate_script("Boolean(window.__catalogRepairGate && (#{expression}))")
+      raise Capybara::ExpectationNotMet, "catalog repair gate did not reach: #{expression}" unless ready
+    end
+  end
+
+  def release_catalog_repair_gate(kind)
+    page.execute_script("window.__catalogRepairGate.release#{kind.to_s.camelize}()")
+  end
+
   # Deja el frame apuntando a otra página Y vacía la rejilla, para poder esperar
   # a que la respuesta de la reparación llegue de verdad: sin vaciarla, la
   # rejilla ya contiene lo que la reparación va a volver a pintar y no hay señal
@@ -268,6 +343,58 @@ RSpec.describe 'Catalog frame restoration', :js, type: :system do
     end
   end
 
+  it 'no deja que una reparación de Back reescriba la entrada restaurada por Forward' do
+    visit filtered_path
+    accept_cookies_if_present
+    expect(page).to have_css('#product-grid-content .product-card-wrapper', count: 24)
+
+    find('#header-sort-form select[name="sort"]').select('Precio ↑')
+    expect(page).to have_current_path(/sort=price_asc/, url: true)
+    sorted_url = page.current_url
+
+    page.go_back
+    expect(page).to have_current_path(/sort=name_asc/, url: true)
+    expect(page).to have_css('#product-grid-content .product-card-wrapper', count: 24)
+    restored_url = page.current_url
+
+    install_catalog_repair_gate(repair_url: restored_url, forward_url: sorted_url)
+    page.execute_script(<<~JS, sorted_url)
+      (() => {
+        const frame = document.getElementById("products_grid");
+        frame.setAttribute("src", arguments[0]);
+        frame.setAttribute("complete", "");
+      })();
+    JS
+    dispatch_visit('restore')
+    dispatch_load
+    wait_for_catalog_repair_gate('window.__catalogRepairGate.repairPending')
+    wait_for_catalog_repair_gate('window.__catalogRepairGate.repairResponseReady')
+
+    page.go_forward
+    expect(page).to have_current_path(/sort=price_asc/, url: true)
+    wait_for_catalog_repair_gate('window.__catalogRepairGate.forwardRenderPending')
+
+    release_catalog_repair_gate(:repair)
+    wait_for_catalog_repair_gate(<<~JS.squish)
+      window.__catalogRepairGate.repairResponseObserved &&
+        (window.__catalogRepairGate.repairPrevented || window.__catalogRepairGate.repairFrameLoaded)
+    JS
+    url_after_stale_repair = page.current_url
+    stale_repair_state = page.evaluate_script(<<~JS)
+      ({
+        prevented: window.__catalogRepairGate.repairPrevented,
+        frameLoaded: window.__catalogRepairGate.repairFrameLoaded
+      })
+    JS
+    release_catalog_repair_gate(:forward_render)
+    expect(page).to have_css('#product-grid-content .product-card-wrapper', count: 24)
+
+    aggregate_failures do
+      expect(url_after_stale_repair).to eq(sorted_url)
+      expect(stale_repair_state).to eq('prevented' => true, 'frameLoaded' => false)
+    end
+  end
+
   # ---------- 5: restauración sana no re-pide ----------
 
   it 'no re-pide nada cuando la restauración ya es coherente' do
@@ -285,12 +412,10 @@ RSpec.describe 'Catalog frame restoration', :js, type: :system do
     end
   end
 
-  # Nota: la navegación REAL de atrás/adelante la cubre
-  # spec/system/catalog_filters_spec.rb:105. No se duplica aquí a propósito:
-  # esa ruta sigue expuesta a una carrera residual de restauración (~2% medido),
-  # y añadir un segundo ejemplo que la recorra sólo ampliaría esa exposición sin
-  # aportar cobertura nueva. Lo que sí se fija aquí, de forma determinista, es la
-  # lógica del módulo en ambas direcciones.
+  # La navegación real ordinaria de atrás/adelante también está cubierta en
+  # spec/system/catalog_filters_spec.rb. El ejemplo anterior controla la entrega
+  # de la respuesta para cubrir, sin depender del azar, la carrera que esa ruta
+  # por sí sola sólo reproducía de manera intermitente.
 
   # Requisito 8: ciclos repetidos no producen bucles ni re-peticiones en cadena.
   # Se ejercita con el ciclo de vida sintético a propósito: recorrer historial
