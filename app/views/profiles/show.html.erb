@@ -61,24 +61,19 @@
                   <div class="card h-100 border">
                     <div class="card-body">
                       <h6 class="card-title">
-                        <%= address.recipient_name %>
-                        <% if address.is_default? %>
+                        <%= address.full_name %>
+                        <% if address.default? %>
                           <span class="badge bg-primary ms-2">Principal</span>
                         <% end %>
                       </h6>
                       <p class="card-text small text-muted mb-1">
-                        <%= address.street_address %><br>
-                        <% if address.address_line_2.present? %>
-                          <%= address.address_line_2 %><br>
+                        <%= address.line1 %><br>
+                        <% if address.line2.present? %>
+                          <%= address.line2 %><br>
                         <% end %>
-                        <%= address.city %>, <%= address.state %> <%= address.postal_code %><br>
+                        <%= address.city_state_line %> <%= address.postal_code %><br>
                         <%= address.country %>
                       </p>
-                      <% if address.phone.present? %>
-                        <p class="card-text small mb-0">
-                          <i class="fas fa-phone me-1"></i><%= address.phone %>
-                        </p>
-                      <% end %>
                     </div>
                   </div>
                 </div>
