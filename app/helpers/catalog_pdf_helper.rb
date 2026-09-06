@@ -2,6 +2,15 @@
 
 # Formato de la fecha de lanzamiento en las tarjetas del PDF.
 module CatalogPdfHelper
+  def catalog_pdf_title_class(value)
+    length = value.to_s.length
+    return 'name--very-long' if length > 95
+    return 'name--long' if length > 65
+    return 'name--medium' if length > 42
+
+    'name--short'
+  end
+
   # Acepta lo que llega de cualquiera de las dos fuentes: la local entrega un
   # String ISO 8601 y la remota el mismo String tal cual salió de la API. Se
   # devuelve nil ante cualquier valor ausente o ilegible para que la vista

@@ -16,6 +16,7 @@ RSpec.describe 'CatalogPdf: fecha de lanzamiento' do
       aggregate_failures do
         expect(fields[:launch_date]).to eq(launched.iso8601)
         expect(fields[:launch_date]).to be_a(String)
+        expect(fields[:product_url]).to eq("https://pasatiempos.com.mx/products/#{product.to_param}")
       end
     end
 
@@ -38,9 +39,13 @@ RSpec.describe 'CatalogPdf: fecha de lanzamiento' do
   describe CatalogPdf::RemoteSource do
     it 'normaliza launch_date igual que la fuente local' do
       item = described_class.normalize('code' => 'A1', 'name' => 'X', 'series' => 'S',
-                                       'price' => 10, 'launch_date' => '2026-03-04T10:30:00-06:00')
+                                       'price' => 10, 'launch_date' => '2026-03-04T10:30:00-06:00',
+                                       'product_url' => 'https://pasatiempos.com.mx/products/x')
 
-      expect(item[:launch_date]).to eq('2026-03-04T10:30:00-06:00')
+      aggregate_failures do
+        expect(item[:launch_date]).to eq('2026-03-04T10:30:00-06:00')
+        expect(item[:product_url]).to eq('https://pasatiempos.com.mx/products/x')
+      end
     end
 
     it 'deja nil cuando la API no manda la fecha' do

@@ -30,6 +30,17 @@ RSpec.describe CatalogPdf::Builder do
       order = build_with(metadata, sort: 'name').send(:selection).map { |i| i[:name] }
       expect(order).to eq(%w[B-plain C-restk A-new D-plain E-reapp])
     end
+
+    it 'limita selección, conteo e índice a las series filtradas' do
+      selected = build_with(metadata, series: ['Beta']).send(:selection)
+      presentation = CatalogPdf::Presentation.new(items: selected, orientation: :portrait)
+
+      aggregate_failures do
+        expect(selected.map { |entry| entry[:series] }.uniq).to eq(['Beta'])
+        expect(presentation.sections.map(&:name)).to eq(['Beta'])
+        expect(presentation.sections.sum(&:product_count)).to eq(3)
+      end
+    end
   end
 
   describe 'prioritize_new' do
