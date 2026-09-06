@@ -51,6 +51,7 @@ module CatalogPdf
         # SIEMPRE first_published_at: created_at es cuándo se dio de alta el
         # registro y republished_at es un regreso, no un estreno.
         launch_date: product.first_published_at&.iso8601,
+        product_url: Links.product_url(product),
         unique_piece: on_hand(product) == 1
       }
     end
@@ -86,7 +87,7 @@ module CatalogPdf
         rescue StandardError
           attachment.download
         end
-      "data:#{blob.content_type};base64,#{Base64.strict_encode64(data)}"
+      ImageEncoder.data_uri(data) || "data:#{blob.content_type};base64,#{Base64.strict_encode64(data)}"
     rescue StandardError
       nil
     end

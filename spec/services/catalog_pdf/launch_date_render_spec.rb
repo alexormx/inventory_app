@@ -10,17 +10,22 @@ RSpec.describe 'CatalogPdf: render con fecha de lanzamiento' do
       code: 'AB01', name: 'Mazda 787B', brand: 'Tomica', series: 'Premium',
       scale: '1/64', price: 199.99, event: nil, event_label: nil,
       launch_date: '2026-03-04T10:30:00-06:00', unique_piece: false,
-      image_url: nil
+      image_url: nil, product_url: 'https://pasatiempos.com.mx/products/mazda-787b'
     }.merge(overrides)
   end
 
   def render(items:, include_launch_date:, orientation: :portrait, usd_rate: nil)
+    presentation = CatalogPdf::Presentation.new(items: items, orientation: orientation)
+    whatsapp_number = '5215555555555'
+    cover_whatsapp_url = CatalogPdf::Links.whatsapp_url(number: whatsapp_number)
     ApplicationController.render(
       template: 'catalog_pdf/show',
       layout: false,
-      locals: { title: 'Catálogo', whatsapp_number: '5215555555555', items: items,
+      locals: { title: 'Catálogo', whatsapp_number: whatsapp_number, items: items,
                 logo: nil, usd_rate: usd_rate, orientation: orientation,
-                include_launch_date: include_launch_date }
+                include_launch_date: include_launch_date, presentation: presentation,
+                cover_whatsapp_url: cover_whatsapp_url, whatsapp_number_raw: whatsapp_number,
+                qr_code: CatalogPdf::QrCode.data_uri(cover_whatsapp_url) }
     )
   end
 

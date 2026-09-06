@@ -43,11 +43,15 @@ module CatalogPdf
     end
 
     def html
+      presentation = Presentation.new(items: @items, orientation: @orientation)
+      cover_whatsapp_url = Links.whatsapp_url(number: @whatsapp_number)
       ApplicationController.render(
         template: 'catalog_pdf/show',
         layout: false,
         locals: { title: @title, whatsapp_number: formatted_whatsapp, items: @items, logo: logo_data_uri,
-                  usd_rate: @usd_rate, orientation: @orientation, include_launch_date: @include_launch_date }
+                  usd_rate: @usd_rate, orientation: @orientation, include_launch_date: @include_launch_date,
+                  presentation: presentation, cover_whatsapp_url: cover_whatsapp_url,
+                  whatsapp_number_raw: @whatsapp_number, qr_code: QrCode.data_uri(cover_whatsapp_url) }
       )
     end
 
@@ -97,7 +101,7 @@ module CatalogPdf
                     border-bottom:2px solid #c0392b;">
           #{brand}
           <span class="title" style="font-weight:bold; color:#333; font-size:19px;"></span>
-          <span style="color:#999;">Coleccionables</span>
+          <span style="color:#999;">pasatiempos.com.mx</span>
         </div>
       HTML
     end
