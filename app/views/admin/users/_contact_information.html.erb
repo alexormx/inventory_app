@@ -1,0 +1,55 @@
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-header bg-white border-0">
+    <h5 class="mb-0"><i class="fa-solid fa-id-card me-2 text-primary"></i>Información de Contacto</h5>
+  </div>
+  <div class="card-body">
+    <div class="mb-3">
+      <div class="small text-muted">Email</div>
+      <% if @user.email.present? %>
+        <a href="mailto:<%= @user.email %>" class="text-decoration-none">
+          <i class="fa-solid fa-envelope me-1 text-muted"></i><%= @user.email %>
+        </a>
+      <% else %>
+        <span class="text-muted">— No especificado</span>
+      <% end %>
+    </div>
+
+    <div class="mb-3">
+      <div class="small text-muted">Teléfono</div>
+      <% if @user.phone.present? %>
+        <a href="tel:<%= @user.phone %>" class="text-decoration-none">
+          <i class="fa-solid fa-phone me-1 text-muted"></i><%= @user.phone %>
+        </a>
+      <% else %>
+        <span class="text-muted">— No especificado</span>
+      <% end %>
+    </div>
+
+    <div class="mb-3">
+      <div class="small text-muted">Dirección Principal</div>
+      <% if @user.address.present? %>
+        <i class="fa-solid fa-location-dot me-1 text-muted"></i><%= @user.address %>
+      <% else %>
+        <span class="text-muted">— No especificada</span>
+      <% end %>
+    </div>
+
+    <% if @user.role == 'customer' %>
+      <hr>
+      <div class="mb-3">
+        <div class="small text-muted">Descuento</div>
+        <div><%= @user.discount_rate.to_i > 0 ? number_to_percentage(@user.discount_rate, precision: 0) : '0%' %></div>
+      </div>
+      <div class="mb-3">
+        <div class="small text-muted">Creado en tienda</div>
+        <div><%= @user.created_offline? ? '<span class="badge bg-secondary">Sí</span>'.html_safe : '<span class="badge bg-light text-dark">No</span>'.html_safe %></div>
+      </div>
+    <% end %>
+
+    <% if @user.notes.present? %>
+      <hr>
+      <div class="small text-muted mb-1">Notas</div>
+      <div class="small"><%= simple_format(@user.notes) %></div>
+    <% end %>
+  </div>
+</div>

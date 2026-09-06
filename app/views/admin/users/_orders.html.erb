@@ -1,0 +1,108 @@
+<% if @user.role == 'customer' && @recent_sales.any? %>
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center">
+      <h5 class="mb-0"><i class="fa-solid fa-cart-shopping me-2 text-primary"></i>Ventas Recientes</h5>
+      <%= link_to admin_sale_orders_path(user_id: @user.id), class: "btn btn-sm btn-outline-primary" do %>
+        Ver todas <i class="fa-solid fa-arrow-right ms-1"></i>
+      <% end %>
+    </div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Orden</th>
+              <th>Fecha</th>
+              <th>Estado</th>
+              <th class="text-end">Total</th>
+              <th class="text-end">Pagado</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @recent_sales.each do |order| %>
+              <% pending = sale_order_pending_amount(order) %>
+              <tr>
+                <td>
+                  <%= link_to admin_sale_order_path(order), class: "text-decoration-none fw-medium" do %>
+                    #<%= order.id %>
+                  <% end %>
+                </td>
+                <td class="text-muted"><%= l(order.created_at, format: :short) %></td>
+                <td>
+                  <span class="badge bg-<%= sale_order_status_badge_color(order.status) %>"><%= order.status.humanize %></span>
+                </td>
+                <td class="text-end"><%= number_to_currency(order.total_order_value, unit: '$', precision: 0) %></td>
+                <td class="text-end">
+                  <% if pending > 0 %>
+                    <span class="text-danger" title="Pendiente: <%= number_to_currency(pending, unit: '$', precision: 0) %>">
+                      <%= number_to_currency(sale_order_paid_amount(order), unit: '$', precision: 0) %>
+                      <i class="fa-solid fa-circle-exclamation ms-1"></i>
+                    </span>
+                  <% else %>
+                    <span class="text-success"><%= number_to_currency(sale_order_paid_amount(order), unit: '$', precision: 0) %></span>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+<% end %>
+
+<% if @user.role == 'supplier' && @recent_purchases.any? %>
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center">
+      <h5 class="mb-0"><i class="fa-solid fa-boxes-stacked me-2 text-info"></i>Compras Recientes</h5>
+      <%= link_to admin_purchase_orders_path(supplier_id: @user.id), class: "btn btn-sm btn-outline-info" do %>
+        Ver todas <i class="fa-solid fa-arrow-right ms-1"></i>
+      <% end %>
+    </div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Orden</th>
+              <th>Fecha</th>
+              <th>Estado</th>
+              <th class="text-end">Total MXN</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @recent_purchases.each do |order| %>
+              <tr>
+                <td>
+                  <%= link_to admin_purchase_order_path(order), class: "text-decoration-none fw-medium" do %>
+                    #<%= order.id %>
+                  <% end %>
+                </td>
+                <td class="text-muted"><%= l(order.created_at, format: :short) %></td>
+                <td>
+                  <span class="badge bg-<%= purchase_order_status_badge_color(order.status) %>"><%= order.status.humanize %></span>
+                </td>
+                <td class="text-end"><%= number_to_currency(order.total_cost_mxn, unit: '$', precision: 0) %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+<% end %>
+
+<%# Si no hay órdenes mostrar un placeholder %>
+<% if (@user.role == 'customer' && @recent_sales.empty?) || (@user.role == 'supplier' && @recent_purchases.empty?) %>
+  <div class="card border-0 shadow-sm">
+    <div class="card-body text-center py-5">
+      <div class="text-muted mb-3">
+        <i class="fa-solid fa-inbox fa-3x opacity-25"></i>
+      </div>
+      <h5 class="text-muted">Sin órdenes aún</h5>
+      <p class="text-muted small mb-0">
+        Este <%= @user.role == 'customer' ? 'cliente' : 'proveedor' %> no tiene órdenes registradas.
+      </p>
+    </div>
+  </div>
+<% end %>

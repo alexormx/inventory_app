@@ -211,7 +211,7 @@ module Admin
       @balance_due = user_sale_orders.open_receivables.sum(Arel.sql(SaleOrder::BALANCE_SQL)).to_d
 
       # Últimas órdenes
-      @recent_sales = SaleOrder.where(user_id: @user.id).order(created_at: :desc).limit(5)
+      @recent_sales = SaleOrder.where(user_id: @user.id).with_balance.order(created_at: :desc).limit(5)
       @recent_purchases = PurchaseOrder.where(user_id: @user.id).order(created_at: :desc).limit(5)
 
       # Última visita
