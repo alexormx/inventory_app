@@ -1,0 +1,48 @@
+<% if @user.role == 'customer' %>
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white border-0">
+      <h5 class="mb-0"><i class="fa-solid fa-truck-fast me-2 text-primary"></i>Envíos Recientes</h5>
+    </div>
+    <% if @recent_shipments.any? %>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Orden</th>
+                <th>Paquetería</th>
+                <th>Rastreo</th>
+                <th>Estado</th>
+                <th>Entrega Estimada</th>
+                <th>Entrega Real</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @recent_shipments.each do |shipment| %>
+                <tr>
+                  <td class="text-nowrap">
+                    <%= link_to admin_sale_order_path(shipment.sale_order), class: "text-decoration-none fw-medium" do %>
+                      #<%= shipment.sale_order_id %>
+                    <% end %>
+                  </td>
+                  <td><%= shipment.carrier %></td>
+                  <td class="text-muted"><%= shipment.tracking_number.presence || '—' %></td>
+                  <td>
+                    <span class="badge <%= shipment_status_badge_class(shipment.status) %>"><%= shipment.status.humanize %></span>
+                  </td>
+                  <td class="text-muted"><%= l(shipment.estimated_delivery, format: :short) %></td>
+                  <td class="text-muted"><%= shipment.actual_delivery ? l(shipment.actual_delivery, format: :short) : '—' %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    <% else %>
+      <div class="card-body text-center py-4">
+        <i class="fa-solid fa-truck-fast fa-2x text-muted opacity-25 mb-2"></i>
+        <p class="text-muted mb-0">Sin envíos registrados</p>
+      </div>
+    <% end %>
+  </div>
+<% end %>

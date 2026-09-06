@@ -14,6 +14,7 @@
               <th>Orden</th>
               <th>Fecha</th>
               <th>Estado</th>
+              <th>Envío</th>
               <th class="text-end">Total</th>
               <th class="text-end">Pagado</th>
             </tr>
@@ -29,7 +30,14 @@
                 </td>
                 <td class="text-muted"><%= l(order.created_at, format: :short) %></td>
                 <td>
-                  <span class="badge bg-<%= sale_order_status_badge_color(order.status) %>"><%= order.status.humanize %></span>
+                  <span class="badge <%= sale_order_status_badge_class(order.status) %>"><%= order.status.humanize %></span>
+                </td>
+                <td>
+                  <% if order.shipment.present? %>
+                    <span class="badge <%= shipment_status_badge_class(order.shipment.status) %>"><%= order.shipment.status.humanize %></span>
+                  <% else %>
+                    <span class="text-muted">—</span>
+                  <% end %>
                 </td>
                 <td class="text-end"><%= number_to_currency(order.total_order_value, unit: '$', precision: 0) %></td>
                 <td class="text-end">
