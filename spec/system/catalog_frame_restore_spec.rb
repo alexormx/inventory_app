@@ -347,15 +347,32 @@ RSpec.describe 'Catalog frame restoration', :js, type: :system do
     visit filtered_path
     accept_cookies_if_present
     expect(page).to have_css('#product-grid-content .product-card-wrapper', count: 24)
+    restored_url = page.current_url
 
     find('#header-sort-form select[name="sort"]').select('Precio ↑')
     expect(page).to have_current_path(/sort=price_asc/, url: true)
     sorted_url = page.current_url
 
+    page.execute_script(<<~JS, restored_url)
+      (() => {
+        const restoredUrl = arguments[0];
+        window.__catalogBackRestoreLoaded = false;
+        const observeBackRestore = (event) => {
+          if (event.detail?.url !== restoredUrl) return;
+
+          window.__catalogBackRestoreLoaded = true;
+          document.removeEventListener("turbo:load", observeBackRestore);
+        };
+        document.addEventListener("turbo:load", observeBackRestore);
+      })();
+    JS
     page.go_back
     expect(page).to have_current_path(/sort=name_asc/, url: true)
     expect(page).to have_css('#product-grid-content .product-card-wrapper', count: 24)
-    restored_url = page.current_url
+    page.document.synchronize do
+      restored = page.evaluate_script('Boolean(window.__catalogBackRestoreLoaded)')
+      raise Capybara::ExpectationNotMet, 'Back restoration did not reach turbo:load' unless restored
+    end
 
     install_catalog_repair_gate(repair_url: restored_url, forward_url: sorted_url)
     page.execute_script(<<~JS, sorted_url)
