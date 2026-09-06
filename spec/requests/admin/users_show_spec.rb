@@ -3,6 +3,8 @@
 require 'rails_helper'
 
 RSpec.describe 'Admin user details', type: :request do
+  include ActionView::Helpers::NumberHelper
+
   let(:admin) { create(:user, :admin) }
   let(:customer) { create(:user, name: 'Cliente de prueba') }
 
@@ -124,9 +126,12 @@ RSpec.describe 'Admin user details', type: :request do
       sign_in admin
 
       queries = capture_admin_user_show_queries { get admin_user_path(customer) }
+      # 2 is the fixed cost of the Customer 360 payments section's own bounded
+      # query (an any?/each pair against @recent_payments) - it does not scale
+      # with the number of sale orders, unlike the per-order N+1 this guards against.
       payments_queries = queries.select { |sql| sql.match?(/FROM "payments"/) }
 
-      expect(payments_queries.size).to be <= 1
+      expect(payments_queries.size).to be <= 2
     end
 
     it 'renders a supplier with recent purchases and total compras' do
@@ -149,6 +154,166 @@ RSpec.describe 'Admin user details', type: :request do
 
       expect(response).to have_http_status(:ok)
       expect(response.body).to include('15%', 'Cliente VIP de tienda física')
+    end
+
+    it 'redirects a supplier from the admin route like any other non-admin' do
+      supplier = create(:user, :supplier)
+      sign_in supplier
+
+      get admin_user_path(customer)
+
+      expect(response).to redirect_to(root_path)
+      expect(flash[:alert]).to include('Acceso denegado')
+    end
+  end
+
+  describe 'Customer 360 overview' do
+    it 'shows the delivered order count' do
+      create(:sale_order, user: customer, status: 'Delivered')
+      create(:sale_order, user: customer, status: 'Pending')
+      sign_in admin
+
+      get admin_user_path(customer)
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include('Órdenes Entregadas')
+      document = Nokogiri::HTML(response.body)
+      metric = document.css('.text-muted').find { |el| el.text.strip == 'Órdenes Entregadas' }.parent
+      expect(metric.text).to include('1')
+    end
+  end
+
+  describe 'Customer 360 orders fulfillment status' do
+    it "shows each recent order's shipment status, or none when unshipped" do
+      shipped_order = create(:sale_order, user: customer, total_order_value: 100)
+      create(:shipment, sale_order: shipped_order, status: :shipped, carrier: 'DHL')
+      unshipped_order = create(:sale_order, user: customer, total_order_value: 50)
+      sign_in admin
+
+      get admin_user_path(customer)
+
+      expect(response).to have_http_status(:ok)
+      document = Nokogiri::HTML(response.body)
+      rows = document.css('table').first.css('tbody tr').index_by { |row| row.at_css('td:first-child').text.strip }
+
+      expect(rows["##{shipped_order.id}"].text).to include('Shipped')
+      expect(rows["##{unshipped_order.id}"].text).to include('—')
+    end
+
+    it 'uses the correct badge color for a Delivered order status' do
+      order = create(:sale_order, user: customer, status: 'Delivered', total_order_value: 100)
+      create(:payment, sale_order: order, amount: 100, status: 'Completed')
+      sign_in admin
+
+      get admin_user_path(customer)
+
+      expect(response).to have_http_status(:ok)
+      document = Nokogiri::HTML(response.body)
+      row = document.css('table').first.css('tbody tr').find { |r| r.text.include?("##{order.id}") }
+      expect(row.at_css('.badge')['class']).to include('bg-success')
+    end
+  end
+
+  describe 'Customer 360 payments' do
+    it 'renders recent payments with order link, method, amount and status' do
+      order = create(:sale_order, user: customer, total_order_value: 200)
+      completed = create(:payment, sale_order: order, amount: 120, payment_method: 'efectivo', status: 'Completed')
+      pending = create(:payment, sale_order: order, amount: 80, payment_method: 'transferencia_bancaria',
+                                 status: 'Pending')
+      sign_in admin
+
+      get admin_user_path(customer)
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include(admin_sale_order_path(order))
+      expect(response.body).to include('Efectivo', 'Transferencia bancaria', 'Completed', 'Pending')
+      expect(response.body).to include(number_to_currency(completed.amount, unit: '$', precision: 0))
+      expect(response.body).to include(number_to_currency(pending.amount, unit: '$', precision: 0))
+    end
+
+    it 'shows the empty state when the customer has no payments' do
+      sign_in admin
+
+      get admin_user_path(customer)
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include('Sin pagos registrados')
+    end
+
+    it 'does not run a separate sale_order query per recent payment' do
+      create_list(:sale_order, 3, user: customer).each do |order|
+        create(:payment, sale_order: order, amount: 10, status: 'Completed')
+      end
+      sign_in admin
+
+      queries = capture_admin_user_show_queries { get admin_user_path(customer) }
+      # The N+1 signature is a separate single-record lookup per association
+      # access (`... WHERE "sale_orders"."id" = $1`); a correct `includes`
+      # preload issues one batched `IN (...)` query instead. Matching on the
+      # singular form (not `sale_order_id`, which appears in unrelated
+      # subqueries) proves no per-row query was introduced.
+      per_row_sale_order_queries = queries.select { |sql| sql.match?(/FROM "sale_orders" WHERE "sale_orders"\."id" = /) }
+
+      expect(per_row_sale_order_queries).to be_empty
+    end
+  end
+
+  describe 'Customer 360 shipments' do
+    it 'renders recent shipments with carrier, tracking, status and order link' do
+      order = create(:sale_order, user: customer, total_order_value: 100)
+      shipment = create(:shipment, sale_order: order, carrier: 'FedEx', tracking_number: 'TRACK-1',
+                                    status: :delivered, estimated_delivery: Date.new(2026, 1, 10),
+                                    actual_delivery: Date.new(2026, 1, 12))
+      sign_in admin
+
+      get admin_user_path(customer)
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include(admin_sale_order_path(order))
+      expect(response.body).to include(shipment.carrier, shipment.tracking_number, 'Delivered')
+    end
+
+    it 'shows the empty state when the customer has no shipments' do
+      sign_in admin
+
+      get admin_user_path(customer)
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include('Sin envíos registrados')
+    end
+
+    it 'does not run a separate sale_order query per recent shipment' do
+      create_list(:sale_order, 3, user: customer).each do |order|
+        create(:shipment, sale_order: order)
+      end
+      sign_in admin
+
+      queries = capture_admin_user_show_queries { get admin_user_path(customer) }
+      # The N+1 signature is a separate single-record lookup per association
+      # access (`... WHERE "sale_orders"."id" = $1`); a correct `includes`
+      # preload issues one batched `IN (...)` query instead. Matching on the
+      # singular form (not `sale_order_id`, which appears in unrelated
+      # subqueries) proves no per-row query was introduced.
+      per_row_sale_order_queries = queries.select { |sql| sql.match?(/FROM "sale_orders" WHERE "sale_orders"\."id" = /) }
+
+      expect(per_row_sale_order_queries).to be_empty
+    end
+  end
+
+  describe 'Customer 360 cross-customer isolation' do
+    it "never shows customer B's orders, payments, shipments or addresses on customer A's page" do
+      other = create(:user, name: 'Cliente B Privado')
+      other_order = create(:sale_order, user: other, total_order_value: 999)
+      create(:payment, sale_order: other_order, amount: 999, status: 'Completed')
+      create(:shipment, sale_order: other_order, carrier: 'PRIVATE-CARRIER', tracking_number: 'PRIVATE-TRACK')
+      create(:shipping_address, user: other, full_name: 'PRIVATE-RECIPIENT')
+      sign_in admin
+
+      get admin_user_path(customer)
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).not_to include(other.name, other_order.id, 'PRIVATE-CARRIER', 'PRIVATE-TRACK',
+                                            'PRIVATE-RECIPIENT', '999')
     end
   end
 end

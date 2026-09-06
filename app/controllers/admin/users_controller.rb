@@ -205,14 +205,24 @@ module Admin
       @purchase_count = PurchaseOrder.where(user_id: @user.id).count
       @sale_count = user_sale_orders.count
       @canceled_sale_count = user_sale_orders.where(status: SaleOrder::NON_ACTIVE_TOTAL_STATUSES).count
+      @delivered_sale_count = user_sale_orders.where(status: 'Delivered').count
 
       # Adeudo pendiente: suma de los saldos abiertos, en SQL. Antes cargaba
       # todas las órdenes del cliente y consultaba pagos una por una.
       @balance_due = user_sale_orders.open_receivables.sum(Arel.sql(SaleOrder::BALANCE_SQL)).to_d
 
-      # Últimas órdenes
-      @recent_sales = SaleOrder.where(user_id: @user.id).with_balance.order(created_at: :desc).limit(5)
+      # Últimas órdenes, con envío precargado para evitar N+1 al mostrar el
+      # estado de cumplimiento de cada una.
+      @recent_sales = SaleOrder.where(user_id: @user.id).with_balance.includes(:shipment)
+                               .order(created_at: :desc).limit(5)
       @recent_purchases = PurchaseOrder.where(user_id: @user.id).order(created_at: :desc).limit(5)
+
+      # Pagos y envíos recientes del cliente (a través de sus órdenes), con la
+      # orden precargada para los enlaces "Ver orden" sin consulta por fila.
+      @recent_payments = Payment.where(sale_order_id: user_sale_orders.select(:id))
+                                .includes(:sale_order).order(created_at: :desc).limit(5)
+      @recent_shipments = Shipment.where(sale_order_id: user_sale_orders.select(:id))
+                                  .includes(:sale_order).order(last_update: :desc).limit(5)
 
       # Última visita
       @last_visit = VisitorLog.where(user_id: @user.id).maximum(:last_visited_at)
