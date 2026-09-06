@@ -196,16 +196,12 @@
       </div>
       <div class="card-body">
         <% addr = @sale_order.order_shipping_address %>
-        <p class="mb-1"><strong><%= addr.recipient_name %></strong></p>
-        <p class="mb-1"><%= addr.street %> <%= addr.ext_number %><%= ", Int. #{addr.int_number}" if addr.int_number.present? %></p>
-        <p class="mb-1"><%= addr.neighborhood %>, <%= addr.city %></p>
-        <p class="mb-1"><%= addr.state %>, CP <%= addr.zip_code %></p>
-        <% if addr.phone.present? %>
-          <p class="mb-0"><i class="fa-solid fa-phone me-1"></i> <%= addr.phone %></p>
+        <p class="mb-1"><strong><%= addr.full_name %></strong></p>
+        <p class="mb-1"><%= addr.line1 %></p>
+        <% if addr.line2.present? %>
+          <p class="mb-1"><%= addr.line2 %></p>
         <% end %>
-        <% if addr.delivery_instructions.present? %>
-          <p class="mb-0 mt-2 text-muted"><i class="fa-solid fa-circle-info me-1"></i> <%= addr.delivery_instructions %></p>
-        <% end %>
+        <p class="mb-1"><%= [addr.city, addr.state].compact_blank.join(', ') %>, CP <%= addr.postal_code %></p>
       </div>
     </div>
   <% end %>
