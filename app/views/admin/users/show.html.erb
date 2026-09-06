@@ -239,14 +239,14 @@
           <% @shipping_addresses.each do |address| %>
             <div class="mb-3 pb-3 <%= address != @shipping_addresses.last ? 'border-bottom' : '' %>">
               <div class="d-flex justify-content-between">
-                <strong><%= address.recipient_name %></strong>
-                <% if address.is_default %>
+                <strong><%= address.full_name %></strong>
+                <% if address.default? %>
                   <span class="badge bg-success">Principal</span>
                 <% end %>
               </div>
               <div class="small text-muted">
-                <%= address.street_address %><br>
-                <%= [address.city, address.state, address.zip_code].compact.join(', ') %>
+                <%= address.line1 %><br>
+                <%= [address.city, address.state, address.postal_code].compact.join(', ') %>
               </div>
             </div>
           <% end %>

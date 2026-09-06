@@ -219,7 +219,7 @@ module Admin
       @visit_count = VisitorLog.where(user_id: @user.id).sum(:visit_count)
 
       # Direcciones
-      @shipping_addresses = @user.shipping_addresses.order(is_default: :desc, created_at: :desc).limit(3) if @user.respond_to?(:shipping_addresses)
+      @shipping_addresses = @user.shipping_addresses.ordered.limit(3) if @user.respond_to?(:shipping_addresses)
     end
 
     def new
