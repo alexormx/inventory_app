@@ -34,6 +34,24 @@ RSpec.describe 'CatalogPdf: fecha de lanzamiento' do
 
       expect(described_class.base_fields(product.reload)[:launch_date]).to be_nil
     end
+
+    # Product#launch_date es la fecha de lanzamiento del FABRICANTE (sincronizada
+    # desde el catálogo del proveedor) y se usa para ETAs de preventa. La
+    # opción del PDF es "primera publicación en el catálogo": first_published_at.
+    it 'no sustituye first_published_at por Product#launch_date (fecha del fabricante)' do
+      first_published = Time.zone.parse('2026-03-04 10:30:00')
+      manufacturer_launch = Date.new(2025, 1, 15)
+      product = create(:product, skip_seed_inventory: true, status: 'active')
+      product.update_columns(first_published_at: first_published, launch_date: manufacturer_launch,
+                             created_at: 2.years.ago)
+
+      launch_date = described_class.base_fields(product.reload)[:launch_date]
+
+      aggregate_failures do
+        expect(launch_date).to eq(first_published.iso8601)
+        expect(launch_date).not_to eq(manufacturer_launch.to_s)
+      end
+    end
   end
 
   describe CatalogPdf::RemoteSource do
