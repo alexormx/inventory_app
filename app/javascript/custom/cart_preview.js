@@ -12,6 +12,8 @@
   let linkListenersInstalled = false
   let hideTimer = null
   let concealTimer = null
+  let showFrame = null
+  let restoringFocus = false
 
   function ready(callback) {
     if (document.readyState !== 'loading') callback()
@@ -74,11 +76,15 @@
 
     window.clearTimeout(hideTimer)
     window.clearTimeout(concealTimer)
+    window.cancelAnimationFrame(showFrame)
     panel.hidden = false
     currentLink?.setAttribute('aria-expanded', 'true')
     if (usesMobilePreview()) currentNavbar()?.classList.add('cart-preview-open')
 
-    requestAnimationFrame(() => {
+    showFrame = requestAnimationFrame(() => {
+      showFrame = null
+      if (panel !== currentPanel()) return
+
       panel.classList.add('show')
       updatePreviewGeometry()
       requestAnimationFrame(updateScrollState)
@@ -94,6 +100,8 @@
     const panel = currentPanel()
     window.clearTimeout(hideTimer)
     window.clearTimeout(concealTimer)
+    window.cancelAnimationFrame(showFrame)
+    showFrame = null
 
     if (!panel) {
       clearOpenState()
@@ -102,7 +110,14 @@
 
     delete panel.dataset.lockOpen
     panel.classList.remove('show')
-    if (restoreFocus && panel.contains(document.activeElement)) currentLink?.focus()
+    if (restoreFocus && panel.contains(document.activeElement) && currentLink) {
+      restoringFocus = true
+      try {
+        currentLink.focus()
+      } finally {
+        restoringFocus = false
+      }
+    }
 
     if (immediate) conceal(panel)
     else concealTimer = window.setTimeout(() => conceal(panel), 200)
@@ -139,6 +154,8 @@
         window.clearTimeout(hideTimer)
       },
       focus: () => {
+        if (restoringFocus) return
+
         show()
         window.clearTimeout(hideTimer)
       },

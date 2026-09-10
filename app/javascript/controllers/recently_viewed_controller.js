@@ -48,9 +48,11 @@ export default class extends Controller {
   async renderCurrentProducts() {
     const list = this.read()
     const container = this.hasContainerTarget ? this.containerTarget : this.element
-    container.replaceChildren()
-    this.element.hidden = true
-    if (!list.length || !this.hasEndpointValue) return
+    if (!list.length || !this.hasEndpointValue) {
+      container.replaceChildren()
+      this.element.hidden = true
+      return
+    }
 
     this.abortController?.abort()
     this.abortController = new AbortController()
@@ -69,7 +71,10 @@ export default class extends Controller {
       })
       if (!response.ok) throw new Error(`Recently viewed request failed: ${response.status}`)
 
-      container.innerHTML = await response.text()
+      const html = await response.text()
+      // Turbo may restore current cards from its snapshot. Keep them visible
+      // until the canonical server response is ready to replace them.
+      container.innerHTML = html
       this.element.hidden = !container.querySelector(".recently-viewed-card")
     } catch (error) {
       if (error.name === "AbortError") return

@@ -61,24 +61,19 @@
                   <div class="card h-100 border">
                     <div class="card-body">
                       <h6 class="card-title">
-                        <%= address.recipient_name %>
-                        <% if address.is_default? %>
+                        <%= address.full_name %>
+                        <% if address.default? %>
                           <span class="badge bg-primary ms-2">Principal</span>
                         <% end %>
                       </h6>
                       <p class="card-text small text-muted mb-1">
-                        <%= address.street_address %><br>
-                        <% if address.address_line_2.present? %>
-                          <%= address.address_line_2 %><br>
+                        <%= address.line1 %><br>
+                        <% if address.line2.present? %>
+                          <%= address.line2 %><br>
                         <% end %>
-                        <%= address.city %>, <%= address.state %> <%= address.postal_code %><br>
+                        <%= address.city_state_line %> <%= address.postal_code %><br>
                         <%= address.country %>
                       </p>
-                      <% if address.phone.present? %>
-                        <p class="card-text small mb-0">
-                          <i class="fas fa-phone me-1"></i><%= address.phone %>
-                        </p>
-                      <% end %>
                     </div>
                   </div>
                 </div>
@@ -157,6 +152,22 @@
             <div class="col-md-6">
               <%= link_to edit_profile_path, class: "btn btn-outline-primary w-100" do %>
                 <i class="fas fa-user-edit me-2"></i>Editar Información
+              <% end %>
+            </div>
+          </div>
+
+          <%# Cerrar sesión también desde aquí: hasta ahora el único acceso para
+              un cliente estaba dentro del menú desplegable de la barra, así que
+              quien no lo encontrara no tenía forma de salir desde su cuenta.
+              Misma ruta y método que usa la barra (Devise, DELETE); no se
+              duplica lógica ni se abre una ruta GET. %>
+          <div class="row mt-3">
+            <div class="col-12">
+              <%= button_to destroy_user_session_path,
+                            method: :delete,
+                            class: "btn btn-outline-danger w-100",
+                            form: { data: { turbo: false } } do %>
+                <i class="fas fa-right-from-bracket me-2"></i>Cerrar sesión
               <% end %>
             </div>
           </div>

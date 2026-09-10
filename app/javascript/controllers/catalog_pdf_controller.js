@@ -9,7 +9,7 @@ import { Controller } from "@hotwired/stimulus"
 export default class extends Controller {
   static targets = ["source", "apiFields", "apiUrl", "apiToken", "status", "list", "rowTemplate",
                     "submitBtn", "progressCard", "progressBar", "progressLabel", "progressPercent", "progressError",
-                    "usdEnabled", "usdRate", "title", "sort", "direction", "prioritizeNew",
+                    "usdEnabled", "usdRate", "title", "sort", "direction", "prioritizeNew", "includeLaunchDate",
                     "fmtPortrait", "fmtLandscape", "fmtImages"]
   static values = { seriesUrl: String, progressUrl: String, downloadUrl: String }
 
@@ -59,6 +59,7 @@ export default class extends Controller {
     if (this.polling) clearInterval(this.polling)
     this.finished = false
     this.inFlight = false
+    this.downloaded = false
 
     this.saveOrder()
     this.saveOptions()
@@ -135,18 +136,21 @@ export default class extends Controller {
   // Content-Disposition: attachment (el ZIP de imágenes) hace que el navegador
   // cancele la descarga. Un <a> temporal descarga en la misma página; el PDF
   // (inline) sí se abre en pestaña nueva para verlo.
+  // Una sola descarga por generación. El PDF ya no se abre en una pestaña: el
+  // servidor responde con `attachment` y aquí sólo se dispara el enlace. La
+  // guarda `downloaded` evita que dos respuestas de polling solapadas produzcan
+  // dos descargas del mismo archivo.
   downloadResult(jobId, state) {
+    if (this.downloaded) return
+    this.downloaded = true
+
     const url = new URL(this.downloadUrlValue, window.location.origin)
     url.searchParams.set("job_id", jobId)
 
     const link = document.createElement("a")
     link.href = url.toString()
-    if (state.content_type === "application/pdf") {
-      link.target = "_blank"
-      link.rel = "noopener"
-    } else {
-      link.download = state.filename || "catalogo.zip"
-    }
+    // Nombre propuesto por el servidor; si falta, el Content-Disposition manda.
+    if (state.filename) link.download = state.filename
     document.body.appendChild(link)
     link.click()
     link.remove()
@@ -279,6 +283,7 @@ export default class extends Controller {
       sort: this.hasSortTarget ? this.sortTarget.value : "",
       direction: this.hasDirectionTarget ? this.directionTarget.value : "",
       prioritizeNew: this.hasPrioritizeNewTarget ? this.prioritizeNewTarget.checked : false,
+      includeLaunchDate: this.hasIncludeLaunchDateTarget ? this.includeLaunchDateTarget.checked : false,
       includeUsd: this.hasUsdEnabledTarget ? this.usdEnabledTarget.checked : false,
       usdRate: this.hasUsdRateTarget ? this.usdRateTarget.value : "",
       fmtPortrait: this.hasFmtPortraitTarget ? this.fmtPortraitTarget.checked : true,
@@ -298,6 +303,7 @@ export default class extends Controller {
     if (this.hasSortTarget && opts.sort) this.sortTarget.value = opts.sort
     if (this.hasDirectionTarget && opts.direction) this.directionTarget.value = opts.direction
     if (this.hasPrioritizeNewTarget && opts.prioritizeNew != null) this.prioritizeNewTarget.checked = !!opts.prioritizeNew
+    if (this.hasIncludeLaunchDateTarget && opts.includeLaunchDate != null) this.includeLaunchDateTarget.checked = !!opts.includeLaunchDate
     if (this.hasUsdEnabledTarget && opts.includeUsd != null) this.usdEnabledTarget.checked = !!opts.includeUsd
     if (this.hasUsdRateTarget && opts.usdRate != null) this.usdRateTarget.value = opts.usdRate
     if (this.hasFmtPortraitTarget && opts.fmtPortrait != null) this.fmtPortraitTarget.checked = !!opts.fmtPortrait

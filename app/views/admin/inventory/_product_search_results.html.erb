@@ -1,6 +1,8 @@
 <%# Resultados de la búsqueda. Turbo los repinta al cambiar de ubicación —de eso
-    depende que el botón Agregar esté vivo— pero NO al agregar al lote: ahí el
-    término, las filas y el scroll se quedan exactamente como estaban. %>
+    depende que los botones estén vivos— y al asignar el lote, porque entonces el
+    inventario asignable de verdad bajó. Al agregar al lote sólo se repinta la
+    fila tocada: término, resto de filas y scroll se quedan como estaban. %>
+<% pending_map = batch.pending_map %>
 <div id="product-search-results">
   <% if q.blank? %>
     <p class="text-muted small mb-0">Escribe el nombre o el SKU para encontrar el producto.</p>
@@ -12,91 +14,30 @@
         <thead class="table-light">
           <tr>
             <th scope="col">Producto</th>
-            <th scope="col" class="text-end text-nowrap">Asignable</th>
+            <th scope="col" class="text-end text-nowrap">Inventario</th>
             <th scope="col" style="width:84px;">Cantidad</th>
             <th scope="col"></th>
           </tr>
         </thead>
         <tbody>
           <% search_results.each do |row| %>
-            <% product = row[:product] %>
-            <% form_id = "add-form-#{product.id}" %>
-            <% assignable = row[:assignable] %>
-            <% blocked = assignable.zero? || batch.location.blank? %>
-            <tr data-product-id="<%= product.id %>">
-              <%# max-width:0 + width:100% es lo que hace que text-truncate funcione
-                  dentro de una tabla de ancho automatico: sin esto la celda crece
-                  con el nombre y empuja el resto fuera del contenedor. %>
-              <td style="max-width:0; width:100%;">
-                <div class="d-flex align-items-center gap-2">
-                  <%= render 'admin/shared/product_thumb', product: product, size: 48 %>
-                  <%# El desglose va debajo del nombre y no en columnas propias.
-                      Lo que decide la accion es "Asignable"; disponible, apartado
-                      y en transito son el porque de ese numero. Como columnas
-                      fijas obligaban a hacer scroll horizontal justo encima del
-                      nombre, que es lo unico que no se puede cortar. %>
-                  <div style="min-width:0;">
-                    <div class="fw-semibold text-truncate"><%= product.product_name %></div>
-                    <div class="d-flex align-items-center gap-1 flex-wrap">
-                      <span class="font-monospace text-muted" style="font-size:.72rem;"><%= product.product_sku %></span>
-                      <span class="text-muted" style="font-size:.72rem;"
-                            title="Piezas sin ubicar: disponibles y apartadas">
-                        · <%= row[:available] %> disp · <%= row[:reserved] %> apart
-                      </span>
-                      <% if row[:in_transit].positive? %>
-                        <span class="badge text-bg-info" style="font-size:.62rem;"
-                              title="Pre apartado: sigue en transito, no es asignable">
-                          <i class="fa-solid fa-truck me-1" aria-hidden="true"></i><%= row[:in_transit] %>
-                        </span>
-                      <% end %>
-                    </div>
-                  </div>
-                </div>
-              </td>
-              <td class="text-end fw-bold text-nowrap" data-assignable="<%= assignable %>"><%= assignable %></td>
-              <td>
-                <%# Un <form> no puede ser hijo de <tr>: los controles se
-                    enlazan al form de abajo con el atributo form=. %>
-                <% retried = params[:retry_product_id].to_s == product.id.to_s %>
-                <%# La cantidad arranca en 1 cuando hay algo que asignar. Si se deja
-                    vacía, el campo es required y el navegador bloquea el envío sin
-                    señalar el botón: para el operador "Agregar" parece muerto. %>
-                <% default_quantity = retried ? params[:retry_quantity] : (1 if assignable.positive?) %>
-                <%= number_field_tag :quantity, default_quantity,
-                                     min: 1, max: assignable, step: 1,
-                                     class: 'form-control form-control-sm', id: "quantity-#{product.id}",
-                                     form: form_id, required: true,
-                                     disabled: blocked,
-                                     'aria-label': "Cantidad de #{product.product_name} a agregar al lote" %>
-              </td>
-              <td>
-                <%# El nombre visible es "Agregar" en todas las filas; el lector de
-                    pantalla necesita saber a cuál producto pertenece. %>
-                <%= submit_tag 'Agregar', class: 'btn btn-sm btn-success', id: "add-#{product.id}",
-                               form: form_id, disabled: blocked,
-                               'aria-label': "Agregar #{product.product_name} al lote" %>
-                <%# Un botón apagado sin explicación se lee como una falla. %>
-                <% if assignable.zero? %>
-                  <div class="text-muted mt-1" style="font-size:.72rem;" id="no-stock-<%= product.id %>">
-                    Sin inventario disponible para asignar
-                  </div>
-                <% elsif batch.location.blank? %>
-                  <div class="text-muted mt-1" style="font-size:.72rem;" id="no-location-<%= product.id %>">
-                    Selecciona primero la ubicación destino
-                  </div>
-                <% end %>
-              </td>
-            </tr>
+            <%= render 'admin/inventory/product_search_row',
+                       row: row, batch: batch, q: q,
+                       pending: pending_map[row[:product].id].to_i %>
           <% end %>
         </tbody>
       </table>
     </div>
+    <%# Un <form> no puede ser hijo de <tr>: los controles se enlazan con form=. %>
     <% search_results.each do |row| %>
-      <%# Con Turbo activo la respuesta es un stream que sólo toca el lote. %>
       <%= form_with url: admin_location_assignment_batch_lines_path, method: :post, local: true,
                     id: "add-form-#{row[:product].id}" do %>
         <%= hidden_field_tag :product_id, row[:product].id, id: "add-product-#{row[:product].id}" %>
         <%= hidden_field_tag :q, q, id: "add-q-#{row[:product].id}" %>
+      <% end %>
+      <%= form_with url: admin_location_assignment_batch_add_all_lines_path(product_id: row[:product].id),
+                    method: :post, local: true, id: "add-all-form-#{row[:product].id}" do %>
+        <%= hidden_field_tag :q, q, id: "add-all-q-#{row[:product].id}" %>
       <% end %>
     <% end %>
   <% end %>

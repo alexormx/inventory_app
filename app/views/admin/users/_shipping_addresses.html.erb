@@ -1,0 +1,26 @@
+<% if @user.role == 'customer' && @shipping_addresses&.any? %>
+  <div class="card border-0 shadow-sm">
+    <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center">
+      <h5 class="mb-0"><i class="fa-solid fa-truck me-2 text-primary"></i>Direcciones de Envío</h5>
+      <%= link_to admin_user_shipping_addresses_path(@user), class: "btn btn-sm btn-outline-primary" do %>
+        Ver todas <i class="fa-solid fa-arrow-right ms-1"></i>
+      <% end %>
+    </div>
+    <div class="card-body">
+      <% @shipping_addresses.each do |address| %>
+        <div class="mb-3 pb-3 <%= address != @shipping_addresses.last ? 'border-bottom' : '' %>">
+          <div class="d-flex justify-content-between">
+            <strong><%= address.full_name %></strong>
+            <% if address.default? %>
+              <span class="badge bg-success">Principal</span>
+            <% end %>
+          </div>
+          <div class="small text-muted">
+            <%= address.line1 %><br>
+            <%= [address.city, address.state, address.postal_code].compact.join(', ') %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+<% end %>

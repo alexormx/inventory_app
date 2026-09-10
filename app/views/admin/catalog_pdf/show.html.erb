@@ -50,8 +50,14 @@
 
           <div class="form-check mt-3">
             <%= check_box_tag :prioritize_new, '1', false, class: 'form-check-input', id: 'prioritize_new', data: { 'catalog-pdf-target': 'prioritizeNew', action: 'catalog-pdf#saveOptions' } %>
-            <label class="form-check-label" for="prioritize_new">Priorizar novedades (mostrarlas primero)</label>
-            <div class="form-text">Nuevos, de vuelta y resurtidos van al inicio, ordenados por prioridad; el resto sigue con el orden elegido.</div>
+            <label class="form-check-label" for="prioritize_new">Priorizar lanzamientos recientes</label>
+            <div class="form-text">Los productos publicados por primera vez recientemente aparecen al inicio. Los productos de vuelta o resurtidos conservan el orden normal.</div>
+          </div>
+
+          <div class="form-check mt-3">
+            <%= check_box_tag :include_launch_date, '1', false, class: 'form-check-input', id: 'include_launch_date', data: { 'catalog-pdf-target': 'includeLaunchDate', action: 'catalog-pdf#saveOptions' } %>
+            <label class="form-check-label" for="include_launch_date">Mostrar fecha de lanzamiento</label>
+            <div class="form-text">Agrega "Lanzamiento: DD/MM/AAAA" en cada tarjeta, tomada de la primera publicación en el catálogo.</div>
           </div>
 
           <div class="mt-3 border-top pt-3">

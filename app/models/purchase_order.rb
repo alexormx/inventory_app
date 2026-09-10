@@ -155,6 +155,7 @@ class PurchaseOrder < ApplicationRecord
     case status
     when 'Delivered'
       product_ids = scope.distinct.pluck(:product_id)
+      Product.where(id: product_ids).lock.order(:id).load
       # Conteo de disponibles ANTES de recibir para detectar resurtidos reales
       # (0 -> positivo). Cuando la recepción pasa por confirm_receipt las piezas
       # ya están available aquí, así que was_zero será falso y la detección real
@@ -162,8 +163,13 @@ class PurchaseOrder < ApplicationRecord
       prev_available = Inventory.where(product_id: product_ids, status: :available)
                                 .group(:product_id).count
       # Solo mover a available aquellos que están en tránsito o available
-      scope.where(status: %i[in_transit available]).update_all(
+      scope.where(status: :in_transit).update_all(
         status: Inventory.statuses[:available],
+        inventory_location_id: nil,
+        status_changed_at: Time.current,
+        updated_at: Time.current
+      )
+      scope.where(status: :available).update_all(
         status_changed_at: Time.current,
         updated_at: Time.current
       )
@@ -179,11 +185,15 @@ class PurchaseOrder < ApplicationRecord
       )
       Products::RestockDetector.call(product_ids, prev_available_counts: prev_available) if product_ids.present?
     when 'Pending', 'In Transit'
+      product_ids = scope.distinct.pluck(:product_id)
+      locked_products = Product.where(id: product_ids).lock.order(:id).to_a
       scope.where(status: %i[available in_transit]).update_all(
         status: Inventory.statuses[:in_transit],
+        inventory_location_id: nil,
         status_changed_at: Time.current,
         updated_at: Time.current
       )
+      locked_products.each { |product| Preorders::PreorderAllocator.new(product).call }
     when 'Canceled'
       scope.where.not(status: terminal).update_all(
         status: Inventory.statuses[:scrap],

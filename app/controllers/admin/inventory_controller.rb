@@ -221,7 +221,7 @@ module Admin
     # son ~2,600 piezas en ~800 productos y no tiene sentido cargarlas todas.
     def unlocated
       @q = params[:q].to_s.strip
-      @batch = Admin::LocationAssignmentBatch.new(session)
+      @batch = Admin::LocationAssignmentBatch.for(current_user)
       @location_options = assignable_location_options
       @batch_lines = @batch.detailed_lines
 

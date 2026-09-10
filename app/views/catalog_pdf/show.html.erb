@@ -15,14 +15,14 @@
       min-height: 24.5cm; display: flex; flex-direction: column;
     }
     .cover-head { text-align: center; }
-    .cover h1 { color: #c0392b; font-size: 32px; margin: 8px 0 2px; }
-    .cover .sub { color: #555; font-size: 13px; margin: 0 0 18px; }
-    .cover .lead { text-align: center; font-size: 13.5px; color: #333; margin: 0 0 18px; }
-    .cover h2 { font-size: 17px; color: #333; margin: 0 0 12px; }
+    .cover h1 { color: #c0392b; font-size: 32px; margin: 5px 0 2px; }
+    .cover .sub { color: #555; font-size: 13px; margin: 0 0 10px; }
+    .cover .lead { text-align: center; font-size: 13.5px; color: #333; margin: 0 0 10px; }
+    .cover h2 { font-size: 17px; color: #333; margin: 0 0 7px; }
 
     .steps { list-style: none; padding: 0; margin: 0; counter-reset: step; }
     .steps li {
-      position: relative; padding: 12px 14px 12px 52px; margin-bottom: 11px;
+      position: relative; padding: 8px 14px 8px 52px; margin-bottom: 7px;
       background: #fafafa; border: 1px solid #eee; border-radius: 10px; font-size: 13.5px;
     }
     .steps li::before {
@@ -33,16 +33,22 @@
     }
 
     .wa-box {
-      margin-top: 22px; padding: 18px 16px; border: 2px dashed #25D366; border-radius: 12px;
+      margin-top: 12px; padding: 12px 16px; border: 2px dashed #25D366; border-radius: 12px;
       background: #f3fff7; text-align: center;
     }
     .wa-box .label { font-size: 13px; color: #128C7E; }
     .wa-box .num { font-size: 25px; font-weight: bold; color: #128C7E; letter-spacing: 1px; margin: 3px 0; }
     .wa-box .web { font-size: 14px; font-weight: bold; color: #c0392b; }
+    .wa-box a { color: inherit; text-decoration: none; }
+    .wa-order { display: flex; align-items: center; justify-content: center; gap: 16px; }
+    .wa-qr { width: 96px; height: 96px; flex: 0 0 96px; }
+    .wa-qr img { display: block; width: 100%; height: 100%; }
+    .sales-points { text-align: center; color: #555; font-size: 12.5px; margin: 6px 0 16px; }
+    .sales-points strong { color: #c0392b; }
 
-    .features { display: flex; gap: 10px; margin-top: 22px; align-items: stretch; }
+    .features { display: flex; gap: 10px; margin-top: 12px; align-items: stretch; }
     .feature {
-      flex: 1; border: 1px solid #eee; border-radius: 10px; padding: 14px 14px;
+      flex: 1; border: 1px solid #eee; border-radius: 10px; padding: 10px 12px;
       text-align: left; background: #fafafa;
     }
     .feature .t { font-weight: bold; color: #c0392b; font-size: 13.5px; margin-bottom: 6px; text-align: center; }
@@ -57,19 +63,40 @@
     .feature .note { font-size: 10px; color: #777; line-height: 1.35; margin-top: 8px; font-style: italic; }
 
     .currency-note {
-      margin-top: 18px; padding: 10px 14px; border: 1px solid #1f3a9333; border-radius: 10px;
+      margin-top: 10px; padding: 8px 14px; border: 1px solid #1f3a9333; border-radius: 10px;
       background: #eef2ff; text-align: center; font-size: 11.5px; color: #1f3a93; line-height: 1.4;
     }
 
     /* Empuja el fineprint al pie de la portada, repartiendo el espacio sobrante. */
-    .fineprint { margin-top: auto; padding-top: 22px; text-align: center; font-size: 10px; color: #999; line-height: 1.4; }
+    .fineprint { margin-top: auto; padding-top: 8px; text-align: center; font-size: 10px; color: #999; line-height: 1.4; }
+
+    /* ---------- Índice calculado ---------- */
+    .toc-page { min-height: 24.5cm; padding: 8px 16px; page-break-after: always; }
+    .toc-page h2 { color: #c0392b; font-size: 25px; margin: 4px 0 5px; }
+    .toc-intro { color: #666; font-size: 11.5px; margin: 0 0 18px; }
+    .toc-list { list-style: none; margin: 0; padding: 0; }
+    .toc-entry { display: flex; align-items: baseline; margin: 0 0 9px; font-size: 13px; }
+    .toc-entry a { color: #222; text-decoration: none; font-weight: 600; }
+    .toc-entry .dots { flex: 1; border-bottom: 1px dotted #aaa; margin: 0 8px 4px; }
+    .toc-entry .count { color: #777; font-size: 10.5px; margin-left: 5px; font-weight: normal; }
+    .toc-entry .page { color: #c0392b; font-weight: bold; min-width: 22px; text-align: right; }
+
+    /* Cada bloque controla una página física para que índice y encabezados sean deterministas. */
+    .product-page { page-break-after: always; }
+    .product-page:last-child { page-break-after: auto; }
+    .section-heading {
+      height: 0.62cm; margin: 0 2px 0.12cm; padding: 0 8px 4px;
+      border-bottom: 1px solid #c0392b55; color: #c0392b;
+      font-size: 13px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
 
     /* ---------- Parrilla de productos: 2 columnas x 3 filas ---------- */
     .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.45cm; padding: 2px; }
     .card {
       border: 1px solid #d9d9d9; border-radius: 10px; padding: 10px 9px 9px; position: relative;
       break-inside: avoid; text-align: center; background: #fff;
-      height: 7.7cm; display: flex; flex-direction: column;
+      height: 7.45cm; display: flex; flex-direction: column;
     }
 
     /* ---------- Horizontal (Letter apaisado): 3 columnas x 2 filas ---------- */
@@ -79,15 +106,20 @@
     body.landscape .cover-col .wa-box { margin-top: 0; }
     body.landscape .cover-col .features { margin-top: 16px; }
     body.landscape .grid { grid-template-columns: 1fr 1fr 1fr; }
-    body.landscape .card { height: 8.7cm; }
+    body.landscape .card { height: 8.35cm; }
+    body.landscape .toc-page { min-height: 17cm; padding: 2px 20px; }
+    body.landscape .toc-list { columns: 2; column-gap: 34px; }
+    body.landscape .toc-entry { break-inside: avoid; }
 
     /* Código de pedido (dato principal para WhatsApp) */
     .card .code {
-      position: absolute; top: 7px; left: 7px; z-index: 2;
+      align-self: flex-start; flex: 0 0 auto; z-index: 2;
       background: #fff; color: #c0392b; border: 1px solid #c0392b40;
       border-radius: 7px; padding: 3px 8px; line-height: 1.1;
-      box-shadow: 0 1px 2px #0000000f; white-space: nowrap;
+      white-space: nowrap;
     }
+    .card a { color: inherit; text-decoration: none; }
+    .card .code a { display: inline-block; }
     .card .code .label {
       font-size: 9.5px; font-weight: 600; text-transform: uppercase;
       letter-spacing: 0.5px; opacity: 0.85; margin-right: 2px;
@@ -107,20 +139,31 @@
 
     /* Área de imagen fija y centrada (evita que fotos horizontales/verticales desbalanceen) */
     .card .photo-area {
-      flex: 0 0 auto; height: 4.4cm; margin: 9px 0 5px;
+      flex: 0 0 auto; height: 3.65cm; margin: 2px 0 4px;
       display: flex; align-items: center; justify-content: center;
     }
-    .card .photo { max-width: 100%; max-height: 4.4cm; object-fit: contain; }
+    .card .photo-link {
+      width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
+    }
+    .card .photo { max-width: 100%; max-height: 3.65cm; object-fit: contain; }
     .card .photo-missing {
       width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
       color: #bbb; font-size: 12px; background: #f5f5f5; border-radius: 6px;
     }
 
     /* Bloque de texto: nombre/serie/marca arriba, precio anclado abajo (alineación consistente) */
-    .card .name { font-size: 13px; color: #333; line-height: 1.25; min-height: 30px; }
+    .card .name { color: #333; line-height: 1.18; min-height: 30px; overflow-wrap: anywhere; }
+    .card .name--short { font-size: 13px; }
+    .card .name--medium { font-size: 12px; }
+    .card .name--long { font-size: 11px; }
+    .card .name--very-long { font-size: 10.5px; }
+    body.landscape .card .name--medium { font-size: 12.5px; }
+    body.landscape .card .name--long { font-size: 11.5px; }
+    body.landscape .card .name--very-long { font-size: 11px; }
     .card .series { font-size: 10.5px; color: #c0392b; font-weight: bold; text-transform: uppercase; letter-spacing: 0.4px; margin-top: 2px; }
     .card .brand { font-size: 10px; color: #999; text-transform: uppercase; letter-spacing: 0.5px; }
     .card .meta-label { color: #555; font-weight: bold; }
+    .card .launch { font-size: 11px; color: #555; line-height: 1.2; }
     .card .price { font-size: 19px; font-weight: bold; color: #111; margin-top: auto; padding-top: 6px; }
     .card .price-usd { font-size: 12px; font-weight: 600; color: #1f3a93; margin-top: 1px; }
 
@@ -130,18 +173,28 @@
       background: #eef2ff; color: #1f3a93; border: 1px solid #1f3a9340;
       border-radius: 7px; padding: 2px 7px; line-height: 1.1;
       font-size: 12px; font-weight: 600; white-space: nowrap;
-      box-shadow: 0 1px 2px #0000000f;
     }
+
+    .card.cta-card {
+      border: 2px dashed #25D366; background: #f3fff7; color: #128C7E;
+      align-items: center; justify-content: center; padding: 16px;
+    }
+    .cta-card h3 { font-size: 18px; margin: 0 0 7px; color: #128C7E; }
+    .cta-card p { font-size: 12px; margin: 0 0 8px; line-height: 1.35; }
+    .cta-card .cta-qr { width: 88px; height: 88px; margin: 3px auto 6px; }
+    .cta-card .cta-num { font-size: 15px; font-weight: bold; }
+    .cta-card .cta-link { font-size: 12px; font-weight: bold; text-decoration: underline; }
   </style>
 </head>
 <body class="<%= orientation %>">
   <section class="cover">
     <div class="cover-head">
       <% if logo.present? %>
-        <img src="<%= logo %>" alt="Pasatiempos" style="height:90px; margin-bottom:6px;">
+        <img src="<%= logo %>" alt="Pasatiempos" style="height:70px; margin-bottom:3px;">
       <% end %>
       <h1><%= title %></h1>
       <p class="sub">Pasatiempos — Coleccionables</p>
+      <p class="sales-points"><strong><%= items.size %> <%= items.one? ? 'coleccionable disponible' : 'coleccionables disponibles' %></strong> · Envíos a todo México · Compra directa por WhatsApp</p>
     </div>
 
     <p class="lead">Para ordenar, envíanos el <strong>código del producto</strong> por WhatsApp.</p>
@@ -160,9 +213,14 @@
 
     <div class="cover-col">
     <div class="wa-box">
-      <div class="label">Pide por WhatsApp</div>
-      <div class="num"><%= whatsapp_number %></div>
-      <div class="web">pasatiempos.com.mx</div>
+      <div class="wa-order">
+        <a class="wa-qr" href="<%= cover_whatsapp_url %>"><img src="<%= qr_code %>" alt="QR para pedir por WhatsApp"></a>
+        <div>
+          <div class="label">Escanea para pedir por WhatsApp</div>
+          <a href="<%= cover_whatsapp_url %>"><div class="num"><%= whatsapp_number %></div></a>
+          <a href="<%= CatalogPdf::Links::SITE_URL %>" class="web">pasatiempos.com.mx</a>
+        </div>
+      </div>
     </div>
 
     <div class="features">
@@ -196,16 +254,39 @@
     <% end %>
 
     <p class="fineprint">
-      Disponibilidad sujeta a cambio sin previo aviso · Precios sujetos a confirmación · pasatiempos.com.mx
+      Disponibilidad y precios vigentes al momento de generación del catálogo.<br>
+      Confirma existencia al realizar tu pedido · pasatiempos.com.mx
     </p>
   </section>
 
-  <section class="grid">
-    <% items.each do |item| %>
+  <% presentation.toc_pages.each_with_index do |toc_sections, toc_index| %>
+    <section class="toc-page">
+      <h2>ÍNDICE</h2>
+      <p class="toc-intro">Encuentra cada serie y ve directamente a sus productos.<% if presentation.toc_page_count > 1 %> Página <%= toc_index + 1 %> de <%= presentation.toc_page_count %>.<% end %></p>
+      <ol class="toc-list">
+        <% toc_sections.each do |catalog_section| %>
+          <li class="toc-entry">
+            <a href="#<%= catalog_section.anchor %>"><%= catalog_section.name %><span class="count">(<%= catalog_section.product_count %>)</span></a>
+            <span class="dots"></span>
+            <span class="page"><%= catalog_section.first_page %></span>
+          </li>
+        <% end %>
+      </ol>
+    </section>
+  <% end %>
+
+  <% presentation.product_pages.each_with_index do |product_page, page_index| %>
+    <section class="product-page">
+      <div class="section-heading"><%= product_page.section_names.join(' · ') %></div>
+      <div class="grid">
+    <% product_page.items.each do |item| %>
       <div class="card">
-        <span class="code">
-          <span class="label">Código:</span><span class="value"><%= item[:code] %></span>
-        </span>
+        <% if item[:section_anchor] %><span id="<%= item[:section_anchor] %>"></span><% end %>
+        <div class="code">
+          <a href="<%= CatalogPdf::Links.product_whatsapp_url(number: whatsapp_number_raw, code: item[:code], name: item[:name]) %>">
+            <span class="label">Código:</span><span class="value"><%= item[:code] %></span>
+          </a>
+        </div>
         <% if item[:event].present? || item[:unique_piece] %>
           <span class="badges">
             <% if item[:event].present? %>
@@ -219,15 +300,24 @@
 
         <div class="photo-area">
           <% if item[:image].present? %>
-            <img class="photo" src="<%= item[:image] %>" alt="">
+            <% if item[:product_url].present? %><a class="photo-link" href="<%= item[:product_url] %>"><% end %>
+              <img class="photo" src="<%= item[:image] %>" alt="">
+            <% if item[:product_url].present? %></a><% end %>
           <% else %>
             <div class="photo-missing">Sin imagen</div>
           <% end %>
         </div>
 
-        <div class="name"><%= truncate(item[:name].to_s, length: 60) %></div>
+        <% name_tag = content_tag(:div, item[:name].to_s, class: "name #{catalog_pdf_title_class(item[:name])}") %>
+        <% if item[:product_url].present? %><a href="<%= item[:product_url] %>"><%= name_tag %></a><% else %><%= name_tag %><% end %>
         <% if item[:series].present? %><div class="series"><span class="meta-label">Serie:</span> <%= item[:series] %></div><% end %>
         <% if item[:brand].present? %><div class="brand"><span class="meta-label">Marca:</span> <%= item[:brand] %></div><% end %>
+        <%# Fecha de lanzamiento: opcional y siempre desde first_published_at.
+            Si el producto no la tiene, se omite la línea entera en vez de
+            imprimir un hueco o una fecha inventada. %>
+        <% if include_launch_date && (launch = catalog_pdf_launch_date(item[:launch_date])) %>
+          <div class="launch"><span class="meta-label">Lanzamiento:</span> <%= launch %></div>
+        <% end %>
         <div class="price">
           <%= number_to_currency(item[:price], unit: "$", precision: 0) %> MXN
           <% if usd_rate.to_f > 0 && item[:price].to_f > 0 %>
@@ -240,6 +330,17 @@
         <% end %>
       </div>
     <% end %>
-  </section>
+      <% if page_index == presentation.product_pages.size - 1 && product_page.unused_slots.positive? %>
+        <div class="card cta-card">
+          <h3>¿Encontraste algo que te gustó?</h3>
+          <p>Envíanos los códigos por WhatsApp.</p>
+          <a href="<%= cover_whatsapp_url %>"><img class="cta-qr" src="<%= qr_code %>" alt="QR para pedir por WhatsApp"></a>
+          <div class="cta-num"><%= whatsapp_number %></div>
+          <a class="cta-link" href="<%= cover_whatsapp_url %>">Pedir por WhatsApp</a>
+        </div>
+      <% end %>
+      </div>
+    </section>
+  <% end %>
 </body>
 </html>

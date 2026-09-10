@@ -22,7 +22,10 @@ module CatalogPdf
     ].freeze
 
     def items
-      SAMPLES.map { |s| s.merge(series: 'Demo', image: placeholder) }
+      SAMPLES.map.with_index do |sample, index|
+        sample.merge(series: 'Demo', image: placeholder,
+                     product_url: "https://pasatiempos.com.mx/products/#{index + 1}")
+      end
     end
 
     def placeholder

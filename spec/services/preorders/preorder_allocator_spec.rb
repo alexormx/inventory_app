@@ -50,7 +50,7 @@ RSpec.describe Preorders::PreorderAllocator do
       .to raise_error(StandardError, 'allocation failed')
   end
 
-  it 'does not allocate the same stale reservation twice under concurrent callbacks' do
+  it 'serializes concurrent callbacks without losing or duplicating quantity' do
     reservation = create(
       :preorder_reservation,
       product: product,
@@ -59,16 +59,9 @@ RSpec.describe Preorders::PreorderAllocator do
       sale_order_item: line,
       quantity: 2
     )
-    create_list(:inventory, 2, product: product, status: :in_transit)
-    arrived = Queue.new
-    release = Queue.new
+    supply = create_list(:inventory, 2, product: product, status: :damaged)
+    Inventory.where(id: supply).update_all(status: Inventory.statuses[:in_transit])
     outcomes = Queue.new
-
-    allow_any_instance_of(described_class).to receive(:allocate_to_originating_line).and_wrap_original do |original, *args|
-      arrived << true
-      release.pop
-      original.call(*args)
-    end
 
     threads = 2.times.map do
       Thread.new do
@@ -77,14 +70,13 @@ RSpec.describe Preorders::PreorderAllocator do
         end
       end
     end
-    2.times { arrived.pop }
-    2.times { release << true }
     threads.each(&:join)
 
-    expect(2.times.sum { outcomes.pop }).to eq(1)
+    expect(2.times.sum { outcomes.pop }).to eq(2)
     expect(reservation.reload).to be_assigned
-    expect(PreorderReservation.pending.where(sale_order_item: line).sum(:quantity)).to eq(1)
-    expect(line.reload.preorder_quantity).to eq(1)
-    expect(line.inventory_units.count).to eq(1)
+    expect(PreorderReservation.pending.where(sale_order_item: line).sum(:quantity)).to eq(0)
+    expect(line.reload.preorder_quantity).to eq(0)
+    expect(line.inventory_units.distinct.count).to eq(2)
+    expect(PreorderReservation.where(sale_order_item: line).sum(:quantity)).to eq(2)
   end
 end

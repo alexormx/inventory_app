@@ -65,8 +65,18 @@
         </div>
 
         <div class="d-grid gap-2">
-          <%= link_to admin_location_assignment_batch_review_path(q: q.presence), class: 'btn btn-primary', id: 'review-batch' do %>
-            <i class="fa-solid fa-list-check me-1" aria-hidden="true"></i> Revisar asignación
+          <%# Asignación directa, sin pasar por una pantalla de revisión: el lote y
+              el resumen del estante ya están los dos a la vista aquí mismo.
+              data-turbo-submits-with apaga el botón mientras va la petición, pero
+              quien de verdad impide asignar dos veces es el servidor, que consume
+              el borrador dentro de la transacción. %>
+          <%= button_to admin_location_assignment_batch_assign_all_path, method: :post,
+                        params: { q: q },
+                        class: 'btn btn-primary', id: 'assign-batch',
+                        form: { data: { turbo: true } },
+                        data: { turbo_submits_with: 'Agregando...' } do %>
+            <i class="fa-solid fa-boxes-packing me-1" aria-hidden="true"></i>
+            Agregar todas a esta ubicación
           <% end %>
           <%= button_to admin_location_assignment_batch_clear_path, method: :delete,
                         params: { q: q },

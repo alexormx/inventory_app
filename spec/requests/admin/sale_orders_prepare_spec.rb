@@ -28,6 +28,27 @@ RSpec.describe 'Admin::SaleOrders#prepare', type: :request do
         sale_order.reload
         expect(sale_order.status).to eq('Preparing')
       end
+
+      it 'renders the order shipping address snapshot' do
+        address = create(:order_shipping_address, sale_order: sale_order, full_name: 'Ana Destinataria',
+                                                   line1: 'Calle Roble 123', line2: 'Interior 4',
+                                                   city: 'Monterrey', state: 'Nuevo León', postal_code: '64000')
+
+        get prepare_admin_sale_order_path(sale_order)
+
+        expect(response).to have_http_status(:ok)
+        expect(response.body).to include(address.full_name, address.line1, address.line2, address.city,
+                                          address.state, address.postal_code)
+      end
+
+      it 'renders the address snapshot without an optional line2 or state' do
+        address = create(:order_shipping_address, sale_order: sale_order, line2: nil, state: nil)
+
+        get prepare_admin_sale_order_path(sale_order)
+
+        expect(response).to have_http_status(:ok)
+        expect(response.body).to include(address.full_name, address.line1, address.city, address.postal_code)
+      end
     end
 
     context 'when order has inventory pieces in transit from supplier' do

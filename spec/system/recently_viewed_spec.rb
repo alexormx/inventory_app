@@ -116,7 +116,9 @@ RSpec.describe 'Recently viewed product recovery', :js, type: :system do
     expect(cards.first).to have_text('Current Product Name')
     expect(cards.first).to have_text('$650.00')
     expect(cards.first['href']).to end_with(product_path(current))
-    expect(cards.first).to have_css('img[src*="current-recently-viewed.png"]')
+    expect(cards.first).to have_css(
+      'img[src*="/rails/active_storage/representations/proxy/"][src*="current-recently-viewed.png"]'
+    )
     expect(cards[1]).to have_css('img[src*="placeholder"]')
     expect(page).to have_no_text('Historical Name')
     expect(page).to have_no_text('$600.00')
@@ -136,28 +138,45 @@ RSpec.describe 'Recently viewed product recovery', :js, type: :system do
                                       ])
     expect(page.evaluate_script('window.localStorage.getItem(arguments[0])', v1_key)).to be_nil
 
-    current_image = cards.first.find('img')
-    expect(page.evaluate_script('arguments[0].complete && arguments[0].naturalWidth > 0', current_image)).to be(true)
+    # A lazy image may legitimately be incomplete while it is offscreen. Bring
+    # this card into view, then require the real browser load to succeed.
+    expect_recently_viewed_image_to_load(current.slug)
 
+    # Tras CUALQUIER navegación, la tira se reconstruye sola: Turbo restaura la
+    # instantánea con las tarjetas cacheadas, y acto seguido el controlador se
+    # reconecta y llama a `renderCurrentProducts`, que sustituye las tarjetas
+    # cuando la respuesta actual del servidor está lista.
+    # Eso es justo lo que hace que la tira se auto-repare, y es correcto.
+    #
+    # Por eso aquí NO se puede capturar un nodo y afirmar sobre él: entre
+    # `have_css(count: 2)` —que ya se satisface con las tarjetas restauradas— y
+    # la comprobación del texto, el controlador puede sustituir ese nodo, y la
+    # aserción muere con StaleElementReferenceError aunque el DOM final sea
+    # correcto. Medido: 4 fallos en 25 ejecuciones con `taskset -c 0,1`, y en el
+    # fallo capturado el orden era correcto antes y después.
+    #
+    # `have_css` con el selector re-consulta el DOM vivo, así que expresa lo
+    # mismo —la PRIMERA tarjeta muestra el producto actual— sin sostener una
+    # referencia a través del re-render. Sigue fallando si el orden es otro.
     cards.first.click
     expect(page).to have_current_path(product_path(current))
     page.go_back
     expect(page).to have_css('.recently-viewed-card', count: 2)
-    expect(all('.recently-viewed-card').first).to have_text('Current Product Name')
+    expect_first_recently_viewed_card('Current Product Name')
 
     find('#header-sort-form select[name="sort"]').select('Precio ↑')
     expect(page).to have_current_path(/sort=price_asc/, url: true)
     expect(page).to have_css('.recently-viewed-card', count: 2)
-    expect(all('.recently-viewed-card').first).to have_text('Current Product Name')
+    expect_first_recently_viewed_card('Current Product Name')
 
     page.go_back
     expect(page).to have_css('.recently-viewed-card', count: 2)
-    expect(all('.recently-viewed-card').first).to have_text('Current Product Name')
+    expect_first_recently_viewed_card('Current Product Name')
 
     page.go_forward
     expect(page).to have_current_path(/sort=price_asc/, url: true)
     expect(page).to have_css('.recently-viewed-card', count: 2)
-    expect(all('.recently-viewed-card').first).to have_text('Current Product Name')
+    expect_first_recently_viewed_card('Current Product Name')
   end
 
   it 'falls back without a broken icon when a current image request fails' do
@@ -172,6 +191,49 @@ RSpec.describe 'Recently viewed product recovery', :js, type: :system do
 
     expect(image['src']).to include('placeholder')
     expect(image['data-recently-viewed-fallback-applied']).to eq('true')
+  end
+
+  it 'keeps restored cards visible while refreshing, then replaces them with current data' do
+    current = create(:product, product_name: 'Name Before Refresh')
+    companion = create(:product, product_name: 'Companion Product')
+
+    visit catalog_path
+    accept_cookies_if_present
+    seed_storage(v2_key, [
+                   { slug: current.slug, at: 200 },
+                   { slug: companion.slug, at: 100 }
+                 ])
+    page.refresh
+    expect(page).to have_css('.recently-viewed-card', count: 2)
+    expect_first_recently_viewed_card('Name Before Refresh')
+
+    gate_recently_viewed_fetch
+    find('.recently-viewed-card', text: 'Name Before Refresh').click
+    expect(page).to have_current_path(product_path(current))
+    current.update!(product_name: 'Name After Refresh')
+
+    page.go_back
+    wait_for_recently_viewed_fetch_to_be_pending
+
+    pending_state = page.evaluate_script(<<~JS)
+      (() => {
+        const section = document.querySelector(".recently-viewed");
+        return {
+          hidden: section.hidden,
+          names: Array.from(section.querySelectorAll(".recently-viewed-name"), node => node.textContent.trim())
+        };
+      })()
+    JS
+    expect(pending_state).to eq(
+      'hidden' => false,
+      'names' => ['Name Before Refresh', 'Companion Product']
+    )
+
+    release_recently_viewed_fetch
+
+    expect(page).to have_css('.recently-viewed-card', count: 2)
+    expect_first_recently_viewed_card('Name After Refresh')
+    expect(page).to have_no_css('.recently-viewed-card', text: 'Name Before Refresh')
   end
 
   it 'hides deleted-only history and keeps the mobile strip scrollable without page overflow' do
@@ -200,6 +262,71 @@ RSpec.describe 'Recently viewed product recovery', :js, type: :system do
       })()
     JS
     expect(dimensions).to eq('stripScrollable' => true, 'bodyFitsViewport' => true)
+  end
+
+  # Afirma sobre el DOM VIVO en vez de sostener un nodo: ver la nota en el
+  # ejemplo de auto-reparación. `have_css` re-consulta, así que sobrevive al
+  # re-render del controlador sin perder fuerza (sigue exigiendo que sea la
+  # PRIMERA tarjeta).
+  def expect_first_recently_viewed_card(name)
+    expect(page).to have_css('.recently-viewed-track .recently-viewed-card:first-child', text: name)
+  end
+
+  def expect_recently_viewed_image_to_load(slug)
+    selector = %(.recently-viewed-card[data-product-slug="#{slug}"] img)
+    image = find(selector)
+    page.execute_script('arguments[0].scrollIntoView({ block: "center" })', image)
+
+    page.document.synchronize do
+      live_image = find(selector)
+      visible_and_ready = page.evaluate_script(<<~JS, live_image)
+        (() => {
+          const image = arguments[0];
+          const rect = image.getBoundingClientRect();
+          return rect.bottom > 0 && rect.top < window.innerHeight && image.complete && image.naturalWidth > 0;
+        })()
+      JS
+      raise Capybara::ExpectationNotMet, 'recently viewed image did not become visible and load' unless visible_and_ready
+    end
+  end
+
+  def gate_recently_viewed_fetch
+    page.execute_script(<<~JS)
+      (() => {
+        const originalFetch = window.fetch.bind(window);
+        window.__recentlyViewedFetchGate = { pending: false, rendered: false };
+        document.addEventListener("turbo:render", () => {
+          if (window.__recentlyViewedFetchGate?.pending) {
+            window.__recentlyViewedFetchGate.rendered = true;
+          }
+        });
+        window.fetch = (resource, options) => {
+          const url = resource instanceof Request ? resource.url : String(resource);
+          if (!url.includes("/products/recently_viewed")) return originalFetch(resource, options);
+
+          window.__recentlyViewedFetchGate.pending = true;
+          return new Promise((resolve, reject) => {
+            window.__recentlyViewedFetchGate.release = () => {
+              originalFetch(resource, options).then(resolve, reject);
+            };
+          });
+        };
+      })();
+    JS
+  end
+
+  def wait_for_recently_viewed_fetch_to_be_pending
+    page.document.synchronize do
+      pending = page.evaluate_script(<<~JS)
+        window.__recentlyViewedFetchGate?.pending === true &&
+          window.__recentlyViewedFetchGate?.rendered === true
+      JS
+      raise Capybara::ExpectationNotMet unless pending
+    end
+  end
+
+  def release_recently_viewed_fetch
+    page.execute_script('window.__recentlyViewedFetchGate.release()')
   end
 end
 # rubocop:enable RSpec/ExampleLength, RSpec/MultipleExpectations

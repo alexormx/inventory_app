@@ -61,15 +61,11 @@ RSpec.describe 'Admin assigns a whole batch to one location', :js, type: :system
     expect(page).to have_css('#batch-products', text: '3 producto(s)')
     expect(page).to have_css('#batch-units', text: '10 pieza(s)')
 
-    # Paso 4: revisar antes de escribir nada.
-    click_link 'Revisar asignación'
-    expect(page).to have_css('#review-location', text: 'Estante B03')
-    expect(page).to have_css('#review-lines tr[data-review-product-id]', count: 3)
-    expect(page).to have_css('#review-total', text: '10 piezas')
+    # Nada ha tocado la base todavía.
     expect(Inventory.where.not(inventory_location_id: nil)).to be_empty
 
-    # Paso 5: una sola confirmación para todo el lote.
-    click_button(id: 'confirm-batch')
+    # Paso 4: una sola acción deja todo el lote en el estante, sin revisión.
+    click_button(id: 'assign-batch')
 
     expect(page).to have_content('10 unidades fueron asignadas')
     expect(page).to have_content('Estante B03')
@@ -94,13 +90,12 @@ RSpec.describe 'Admin assigns a whole batch to one location', :js, type: :system
     add_product(product_a, 5)
     add_product(product_b, 3)
 
-    click_link 'Revisar asignación'
 
     # Otro operador se lleva casi todo el Supra justo antes de confirmar.
     Inventories::LocationAssignment.fifo_scope(product_b.id).limit(6)
                                    .each { |i| i.update!(inventory_location: shelf) }
 
-    click_button(id: 'confirm-batch')
+    click_button(id: 'assign-batch')
 
     expect(page).to have_content('No se realizó ninguna asignación')
     expect(page).to have_content('Tomica Supra')

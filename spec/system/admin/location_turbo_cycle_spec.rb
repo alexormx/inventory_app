@@ -116,25 +116,17 @@ RSpec.describe 'Admin works a whole location through Turbo', :js, type: :system 
     # Nada ha tocado la base todavía.
     expect(Inventory.where(inventory_location_id: shelf.id).count).to eq(6)
 
-    # Revisar y volver: el contexto se restaura.
-    click_link 'Revisar asignación'
-    expect(page).to have_css('#review-location', text: 'Estante B03')
-    expect(page).to have_css('#review-total', text: '6 piezas')
-
-    click_link 'Regresar'
-    expect(page).to have_css('#batch-units', text: '6 pieza(s)')
-    expect(page).to have_css('#selected-location', text: 'Estante B03')
-    expect(current_location_total).to eq('6 pieza(s)')
-    # El contexto de trabajo vuelve entero: también la búsqueda que traía hecha.
-    expect(page).to have_field('product-search', with: 'Skyline')
-    expect(page).to have_css('#search-results-table tr[data-product-id]', count: 3)
-
-    click_link 'Revisar asignación'
-    click_button(id: 'confirm-batch')
+    # Asignación directa desde la misma pantalla: ya no hay página de revisión.
+    mark_window
+    click_button(id: 'assign-batch')
 
     # Ahora sí: la mercancía se movió y el resumen lo refleja.
     expect(page).to have_content('6 unidades fueron asignadas')
     expect(page).to have_css('#batch-empty')
+    # Turbo: la asignación no recargó la pantalla.
+    expect_no_reload
+    # Y la búsqueda sigue donde estaba.
+    expect(page).to have_field('product-search', with: 'Skyline')
     expect(page).to have_css('#selected-location', text: 'Estante B03')
     expect(page).to have_css('#current-location-units', text: '12 pieza(s)')
     expect(page).to have_css("tr[data-current-product-id='#{new_a.id}'][data-current-quantity='4']")
@@ -163,14 +155,15 @@ RSpec.describe 'Admin works a whole location through Turbo', :js, type: :system 
     fill_in 'product-search', with: 'Skyline'
     click_button 'Buscar'
     add_product(new_a, 3)
+    # Se espera a que el lote refleje la alta antes de seguir: si no, el clic de
+    # asignar cae mientras Turbo todavía está reemplazando el panel.
+    expect(page).to have_css('#batch-units', text: '3 pieza(s)')
 
-    click_link 'Revisar asignación'
-
-    # Otro operador se lleva casi todo justo antes de confirmar.
+    # Otro operador se lleva casi todo justo antes de asignar.
     Inventories::LocationAssignment.fifo_scope(new_a.id).limit(8)
                                    .each { |i| i.update!(inventory_location: shelf) }
 
-    click_button(id: 'confirm-batch')
+    click_button(id: 'assign-batch')
 
     expect(page).to have_content('No se realizó ninguna asignación')
 
@@ -178,8 +171,6 @@ RSpec.describe 'Admin works a whole location through Turbo', :js, type: :system 
     # tenga debajo hasta que el operador lo cierra. Cerrarlo es parte del flujo.
     find('#flash-stack .alert-danger .btn-close').click
     expect(page).to have_no_css('#flash-stack .alert-danger')
-
-    click_link 'Regresar'
 
     # El lote sigue ahí para poder corregirlo, y el estante no inventó piezas.
     expect(page).to have_css('#batch-units', text: '3 pieza(s)')

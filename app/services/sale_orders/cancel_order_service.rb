@@ -21,8 +21,6 @@ module SaleOrders
     end
 
     def call
-      canceled_now = false
-
       ActiveRecord::Base.transaction do
         sale_order.lock!
         next if sale_order.status == 'Canceled'
@@ -31,7 +29,10 @@ module SaleOrders
         block_unless_pending!
 
         sale_order_item_ids = sale_order.sale_order_items.ids
-        linked_inventories = linked_inventory_scope(sale_order_item_ids).lock.to_a
+        linked_scope = linked_inventory_scope(sale_order_item_ids)
+        @product_ids = linked_scope.distinct.pluck(:product_id)
+        Product.where(id: @product_ids).lock.order(:id).load
+        linked_inventories = linked_scope.lock.order(:product_id, :id).to_a
         block_if_inventory_ownership_conflicts!(linked_inventories, sale_order_item_ids)
         block_if_fulfilled_inventory_exists!(linked_inventories)
 
@@ -40,12 +41,10 @@ module SaleOrders
 
         cancel_sale_order!
         update_product_stats!
-        canceled_now = true
+        allocate_to_pending_preorders!
 
         Rails.logger.info "[CancelOrderService] SO #{sale_order.id} canceled, #{@released_count} inventories released"
       end
-
-      allocate_to_pending_preorders! if canceled_now
 
       sale_order.reload
     end
@@ -137,7 +136,7 @@ module SaleOrders
         inventory.id if inventory.status.in?(RELEASABLE_INVENTORY_STATUSES)
       end
       releasable = Inventory.where(id: releasable_ids)
-      @product_ids = releasable.distinct.pluck(:product_id)
+      @product_ids = releasable.distinct.pluck(:product_id).sort
 
       on_hand = releasable.where(status: :reserved)
       incoming = releasable.where(status: :pre_reserved)

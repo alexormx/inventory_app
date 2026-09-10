@@ -107,6 +107,7 @@
           <option value="price_asc" <%= 'selected' if @sort=='price_asc' %>>Precio ↑</option>
           <option value="price_desc" <%= 'selected' if @sort=='price_desc' %>>Precio ↓</option>
           <option value="name_asc" <%= 'selected' if @sort=='name_asc' %>>Nombre A-Z</option>
+          <option value="launch_desc" <%= 'selected' if @sort=='launch_desc' %>>Más recientes por lanzamiento</option>
         </select>
       <% end %>
     </div>
@@ -144,6 +145,26 @@
       <% end %>
     </button>
   </div>
+
+  <%# Dimensión aparte de la disponibilidad: no habla de si hay stock, sino de
+      si el producto volvió al catálogo hace poco. Se combina con el resto de
+      filtros con AND, como cualquier otro. %>
+  <% readded_active = filter_state.recently_readded_only %>
+  <% readded_count = (@facet_counts && @facet_counts[:recently_readded]).to_i %>
+  <% if readded_active || readded_count > 0 %>
+    <div class="catalog-availability-chips d-flex flex-wrap gap-2 mb-3" role="group" aria-label="Filtrar por regreso al catálogo">
+      <%= link_to (readded_active ? clear_catalog_flag_url(:recently_readded) : enable_catalog_flag_url(:recently_readded)),
+                   class: ["availability-chip", (readded_active ? 'active' : nil)].compact.join(' '),
+                   title: 'Productos que volvieron al catálogo hace poco',
+                   "aria-label": (readded_active ? 'De vuelta recientemente: filtro activo, quitar' : 'Filtrar por de vuelta recientemente'),
+                   data: { turbo_frame: "_top" } do %>
+        <i class="fas fa-rotate-left me-1" aria-hidden="true"></i>De vuelta recientemente
+        <% if readded_count > 0 %>
+          <span class="chip-count"><%= readded_count %></span>
+        <% end %>
+      <% end %>
+    </div>
+  <% end %>
 
   <%# Chips primarios de disponibilidad (3 opciones principales). Toggle individual; varios = OR. %>
   <% availability_chips = [

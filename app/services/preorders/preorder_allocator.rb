@@ -15,7 +15,7 @@ module Preorders
       return {} if product_ids.blank?
 
       results = {}
-      product_ids.uniq.each do |product_id|
+      product_ids.uniq.sort.each do |product_id|
         product = Product.find_by(id: product_id)
         next unless product
 
@@ -29,25 +29,34 @@ module Preorders
     def call
       return 0 unless @product
 
-      remaining = if @units
-                    @units.to_i
-                  else
-                    Inventory.customer_sellable.where(product_id: @product.id).count
-                  end
-      return 0 if remaining <= 0
+      ActiveRecord::Base.transaction do
+        # Product is the per-SKU serialization lock shared with checkout and
+        # every supply boundary. Holding it before demand/inventory locks keeps
+        # a newer checkout from overtaking older committed demand.
+        @product = Product.lock.find(@product.id)
+        remaining = if @units
+                      @units.to_i
+                    else
+                      Inventory.customer_sellable.where(product_id: @product.id).count
+                    end
+        next 0 if remaining <= 0
 
-      pending_scope = PreorderReservation.fifo_pending.where(product_id: @product.id)
-      return 0 if pending_scope.none?
+        pending = PreorderReservation.fifo_pending
+                                     .where(product_id: @product.id)
+                                     .lock
+                                     .to_a
+        next 0 if pending.empty?
 
-      assigned_total = 0
-      pending_scope.each do |reservation|
-        break if remaining <= 0
+        assigned_total = 0
+        pending.each do |reservation|
+          break if remaining <= 0
 
-        assigned = allocate_to_originating_line(reservation, remaining)
-        assigned_total += assigned
-        remaining -= assigned
+          assigned = allocate_to_originating_line(reservation, remaining)
+          assigned_total += assigned
+          remaining -= assigned
+        end
+        assigned_total
       end
-      assigned_total
     rescue StandardError => e
       Rails.logger.error "[Preorders::PreorderAllocator] #{e.class}: #{e.message}"
       raise

@@ -144,31 +144,36 @@
   function initDropdowns(){
     const toggles = Array.from(document.querySelectorAll('[data-bs-toggle="dropdown"]'));
     toggles.forEach((btn)=>{
-      if(btn.dataset.dropdownEnhanced === '1') return;
+      // The click owner is delegated to document, so it survives Turbo's cloned
+      // snapshots. This marker now reports that a complete toggle/menu pair is
+      // covered by that owner; it is not a serializable claim about a listener
+      // attached to this particular DOM node.
+      if(!dropdownMenuFor(btn)) {
+        delete btn.dataset.dropdownEnhanced;
+        return;
+      }
       btn.dataset.dropdownEnhanced = '1';
-
-      const parent = btn.closest('.btn-group') || btn.closest('.dropdown') || btn.parentElement;
-      const menu = parent ? parent.querySelector('.dropdown-menu') : null;
-      if(!menu) return;
-
-      function open(){
-        closeAllDropdowns();
-        menu.classList.add('show');
-        btn.setAttribute('aria-expanded','true');
-      }
-      function close(){
-        menu.classList.remove('show');
-        btn.setAttribute('aria-expanded','false');
-      }
-      function toggle(){ menu.classList.contains('show') ? close() : open(); }
-
-      btn.addEventListener('click', (e)=>{ e.preventDefault(); e.stopPropagation(); toggle(); });
-
-      // Close when clicking a menu item (let the link navigate)
-      menu.addEventListener('click', (e)=>{
-        if(e.target.closest('.dropdown-item')) close();
-      });
     });
+  }
+
+  function dropdownMenuFor(btn){
+    const parent = btn.closest('.btn-group') || btn.closest('.dropdown') || btn.parentElement;
+    return parent ? parent.querySelector('.dropdown-menu') : null;
+  }
+
+  function openDropdown(btn, menu){
+    closeAllDropdowns();
+    menu.classList.add('show');
+    btn.setAttribute('aria-expanded','true');
+  }
+
+  function closeDropdown(btn, menu){
+    menu.classList.remove('show');
+    btn.setAttribute('aria-expanded','false');
+  }
+
+  function toggleDropdown(btn, menu){
+    menu.classList.contains('show') ? closeDropdown(btn, menu) : openDropdown(btn, menu);
   }
 
   function closeAllDropdowns(){
@@ -176,9 +181,35 @@
     document.querySelectorAll('[data-bs-toggle="dropdown"][aria-expanded="true"]').forEach(b => b.setAttribute('aria-expanded','false'));
   }
 
-  // Close dropdowns on click outside
+  // One delegated owner covers both fresh and Turbo-restored nodes. A Stimulus
+  // dropdown action runs on the toggle itself and stops propagation, so it owns
+  // that click; when Stimulus is delayed or stopped, the event reaches this
+  // fallback instead. Either path produces exactly one state transition.
   document.addEventListener('click', (e)=>{
-    if(!e.target.closest('.btn-group') && !e.target.closest('.dropdown')){
+    const target = e.target instanceof Element ? e.target : null;
+    if(!target) return;
+
+    const btn = target.closest('[data-bs-toggle="dropdown"]');
+    if(btn){
+      const menu = dropdownMenuFor(btn);
+      if(!menu) return;
+
+      e.preventDefault();
+      e.stopPropagation();
+      toggleDropdown(btn, menu);
+      return;
+    }
+
+    const item = target.closest('.dropdown-menu .dropdown-item');
+    if(item){
+      const menu = item.closest('.dropdown-menu');
+      const parent = menu.closest('.btn-group, .dropdown');
+      const owner = parent && parent.querySelector('[data-bs-toggle="dropdown"]');
+      if(owner) closeDropdown(owner, menu);
+      return;
+    }
+
+    if(!target.closest('.btn-group') && !target.closest('.dropdown')){
       closeAllDropdowns();
     }
   });

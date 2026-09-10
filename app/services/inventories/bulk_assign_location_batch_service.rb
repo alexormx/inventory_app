@@ -62,6 +62,15 @@ module Inventories
       batch_id = SecureRandom.uuid
 
       Inventory.transaction do
+        locked_products = Product.where(id: requested.map { |line| line[:product].id })
+                                 .lock
+                                 .order(:id)
+                                 .index_by(&:id)
+        raise ProductNotFound, 'Uno de los productos ya no existe.' if locked_products.size != requested.size
+
+        requested = requested.map do |line|
+          line.merge(product: locked_products.fetch(line[:product].id))
+        end
         location = Inventories::LocationAssignment.validated_leaf_location!(@location_id)
 
         # PASO 1 — bloquear y verificar TODAS las líneas antes de escribir una
@@ -85,12 +94,20 @@ module Inventories
         # paso 1, así que nadie pudo llevárselas en medio.
         prepared.each do |line|
           line[:inventories].each do |inventory|
+            inventory.defer_preorder_reconciliation = true
             Inventories::LocationAssignment.assign_located!(
               inventory, location,
               actor: @actor, source: SOURCE, notes: @notes, batch_id: batch_id
             )
           end
         end
+
+        # No se puede fusionar con el bucle anterior: la reconciliación tiene que
+        # ver el lote COMPLETO ya ubicado. Si se asignara línea por línea, una
+        # preventa vieja podría quedarse sin piezas que aún no se habían ubicado.
+        # rubocop:disable Style/CombinableLoops
+        prepared.each { |line| Preorders::PreorderAllocator.new(line[:product]).call }
+        # rubocop:enable Style/CombinableLoops
 
         Result.new(location: location, lines: prepared, batch_id: batch_id)
       end

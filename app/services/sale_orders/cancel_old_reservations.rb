@@ -25,18 +25,32 @@ module SaleOrders
       so = @sale_order
 
       ApplicationRecord.transaction do
+        product_ids = so.sale_order_items.distinct.pluck(:product_id).sort
+        locked_products = Product.where(id: product_ids).lock.order(:id).to_a
+
         # 1) No tocar vendidos; abortar si intentan cancelar una SO ya Delivered completa sin intención
         # Nota: Permitimos cancelar reservas aun si Delivered, siempre que no toquemos sold.
 
         # 2) Para cada línea, registrar CanceledOrderItem por la cantidad de reservas liberadas
         so.sale_order_items.includes(:product).find_each do |li|
           # Conteos actuales
-          assigned_reserved = Inventory.where(sale_order_id: so.id, product_id: li.product_id, status: %i[reserved pre_reserved pre_sold]).count
+          assigned_reserved = Inventory.where(sale_order_id: so.id, product_id: li.product_id,
+                                              status: %i[reserved pre_reserved pre_sold]).count
 
           # 2a) Liberar reserved y pre_* -> available (mantener sold intacto)
           if assigned_reserved.positive?
-            changed = Inventory.where(sale_order_id: so.id, product_id: li.product_id, status: %i[reserved pre_reserved pre_sold])
-                               .update_all(status: Inventory.statuses[:available], sale_order_id: nil, sale_order_item_id: nil, status_changed_at: Time.current, updated_at: Time.current)
+            base_scope = Inventory.where(sale_order_id: so.id, product_id: li.product_id)
+            on_hand_changed = base_scope.where(status: :reserved).update_all(
+              status: Inventory.statuses[:available], sale_order_id: nil,
+              sale_order_item_id: nil, sold_price: nil,
+              status_changed_at: Time.current, updated_at: Time.current
+            )
+            inbound_changed = base_scope.where(status: %i[pre_reserved pre_sold]).update_all(
+              status: Inventory.statuses[:in_transit], sale_order_id: nil,
+              sale_order_item_id: nil, sold_price: nil, inventory_location_id: nil,
+              status_changed_at: Time.current, updated_at: Time.current
+            )
+            changed = on_hand_changed + inbound_changed
             released += changed.to_i
 
             # 2b) Registrar en CanceledOrderItem la cantidad liberada
@@ -107,6 +121,8 @@ module SaleOrders
             errors << "SO #{so.id}: no se canceló automáticamente (#{e.message})"
           end
         end
+
+        locked_products.each { |product| Preorders::PreorderAllocator.new(product).call }
 
         # 5) Recalcular totales de la SO
         so.recalculate_totals!(persist: true)

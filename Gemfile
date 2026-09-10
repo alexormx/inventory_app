@@ -96,6 +96,7 @@ group :development do
   gem 'grover', require: false # HTML→PDF vía Puppeteer (generador de catálogo, solo local)
   gem 'letter_opener' # Preview email in the browser instead of sending
   gem 'overcommit' # Git hooks for code quality
+  gem 'rqrcode', '~> 3.2' # QR vectorial para el catálogo PDF local
   gem 'web-console' # Rails console in browser for debugging
 end
 
