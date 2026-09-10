@@ -1,0 +1,14 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Punto de entrada canónico del worker de Solid Queue (el que instala
+# `solid_queue:install`). Arranca el supervisor, que a su vez levanta
+# dispatcher, workers y scheduler según config/queue.yml y config/recurring.yml.
+#
+# A diferencia de `rake solid_queue:start`, la CLI acepta banderas —entre ellas
+# --skip-recurring—, necesarias si algún día se escala a más de un worker: sólo
+# uno debe correr el scheduler.
+require_relative '../config/environment'
+require 'solid_queue/cli'
+
+SolidQueue::Cli.start(ARGV)

@@ -76,8 +76,18 @@ la separación sigue siendo la mejora estructural.
 **No está aplicada.** El `Procfile` debe declarar el proceso, sin escalarlo:
 
 ```
-worker: bundle exec rake solid_queue:start
+worker: bundle exec bin/jobs
 ```
+
+`bin/jobs` es el punto de entrada canónico que instala `solid_queue:install`
+(`SolidQueue::Cli.start`). Equivale a `rake solid_queue:start` —ambos llaman a
+`SolidQueue::Supervisor.start` con la misma configuración— pero la CLI acepta
+banderas, entre ellas `--skip-recurring`, que hace falta si algún día se escala
+a más de un worker: sólo uno debe correr el scheduler.
+
+La concurrencia vive en `config/queue.yml`: un dispatcher y un worker de 2 hilos.
+Solid Queue exige `hilos + 2 <= pool de ActiveRecord` (RAILS_MAX_THREADS, 5 por
+defecto), así que subir `threads` obliga a subir también el pool.
 
 Publicar esa declaración no mueve la cola por sí solo: el tipo nuevo debe seguir
 en `worker=0` y `SOLID_QUEUE_IN_PUMA` debe permanecer activo hasta una ventana
