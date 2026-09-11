@@ -96,3 +96,47 @@ destroyed. A past approval, a general "you're authorized to..." grant, or an
 inference from task context never satisfies this — only an explicit,
 present-tense human instruction does. If you are ever unsure whether this
 threshold is met, it is not met: stop and ask.
+
+## CRITICAL SECRET SAFETY
+
+A previous session ran `heroku releases:info`, which prints a release's **entire
+config var set**. Production credential values were written into AI-visible
+terminal history as a result. The failure was procedural, not a code defect.
+Full guidance: `docs/production_secret_safety.md`.
+
+**Never run a command whose output contains credential values.** Prohibited:
+
+- `heroku releases:info`
+- `heroku config`, `heroku config --json`, `heroku config:get <KEY>`
+- `heroku run env`, `heroku run printenv`
+- `heroku pg:credentials:url`
+- `env`, `printenv`, `set`, `export -p`
+
+The rule is about the *output*, not the command name — anything that enumerates
+the environment (e.g. `heroku run rails runner 'puts ENV.to_h'`) is equally
+prohibited.
+
+**Use scoped metadata commands instead:** `heroku releases -n 5` (deployed SHA,
+and config changes shown as key names only), `heroku ps`, `heroku ps:scale`,
+`heroku pg:info`, `heroku info`, and bounded `heroku logs -n <N>`.
+`heroku config:set` / `config:unset` are fine for **non-secret** flags, since
+they do not read a value back.
+
+**If secret-backed functionality must be tested, consume the credential without
+echoing it** — assert on behaviour (does the image render, does the mail send,
+does `SELECT 1` succeed), never by printing the value.
+
+**Never place a credential value in** terminal output, a final report, a commit,
+a PR description, an issue comment, a deliberately generated debug log, or a
+test fixture. Refer to credentials by key name only.
+
+**If a secret is printed anyway:** stop secret-related inspection; do not repeat,
+re-read or "verify" the value; do not try to scrub shell/chat/git/Heroku history
+(that is not containment and often re-exposes it); report only the credential
+*category*; recommend rotation.
+
+**Production credential rotation always requires explicit human authorization in
+the current turn.** A past approval, a general "you are authorized to operate
+production" grant, or an inference from task context never satisfies this. If
+unsure, it is not authorized: stop and ask. Rotation procedure:
+`docs/credential_rotation_runbook.md`.
