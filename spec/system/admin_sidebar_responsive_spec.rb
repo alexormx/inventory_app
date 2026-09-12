@@ -40,23 +40,47 @@ RSpec.describe 'Admin responsive sidebar', :js, :sidebar_responsive, type: :syst
   # Lo que faltaba era esperar a que el control sea realmente alcanzable, que es
   # la condición que gobierna si el click va a llegar.
   def wait_for_drawer_settled
+    page.execute_script('window.__drawerRect = null')
     page.document.synchronize(Capybara.default_max_wait_time, errors: [RuntimeError]) do
       raise 'drawer todavía en transición' unless drawer_close_button_hittable?
     end
   end
 
-  # ¿Un click en el centro del botón de cerrar lo alcanzaría ahora mismo?
+  # ¿El botón de cerrar está QUIETO y es el objetivo real de un click en su
+  # centro? Comprobar la posición una sola vez no basta: la instrumentación de
+  # la ruta del evento demostró que el click podía salir con `document` como
+  # receptor y `d-flex justify-content-between...` —el contenedor de la cabecera
+  # del drawer, ANCESTRO del botón— como target. Es decir, Selenium calculaba
+  # coordenadas sobre una geometría que seguía moviéndose y el puntero aterrizaba
+  # fuera del botón; el handler delegado hacía `closest('[data-sidebar-drawer-close]')`,
+  # obtenía null, y no cerraba nada. El drawer quedaba abierto con todo su estado
+  # coherente, que es justo lo que capturaron los artifacts.
+  #
+  # Por eso se exige que el rectángulo sea IDÉNTICO en dos fotogramas seguidos
+  # antes de considerar que la animación terminó, además de que el punto central
+  # resuelva al propio botón.
   def drawer_close_button_hittable?
     page.evaluate_script(<<~JS)
       (() => {
         const btn = document.querySelector('[data-sidebar-drawer-close]');
-        if (!btn) return false;
-        const rect = btn.getBoundingClientRect();
-        if (rect.width === 0 || rect.height === 0) return false;
-        const x = Math.round(rect.left + rect.width / 2);
-        const y = Math.round(rect.top + rect.height / 2);
-        if (x < 0 || y < 0) return false;
-        const hit = document.elementFromPoint(x, y);
+        if (!btn) { window.__drawerRect = null; return false; }
+
+        const r = btn.getBoundingClientRect();
+        const now = [Math.round(r.left), Math.round(r.top),
+                     Math.round(r.width), Math.round(r.height)].join(',');
+        const previous = window.__drawerRect;
+        window.__drawerRect = now;
+
+        // Primera observación: sólo se guarda. `synchronize` vuelve a llamar,
+        // y dos lecturas idénticas seguidas son la prueba de que el panel dejó
+        // de moverse.
+        if (previous !== now) return false;
+        if (r.width === 0 || r.height === 0 || r.left < 0 || r.top < 0) return false;
+
+        const hit = document.elementFromPoint(
+          Math.round(r.left + r.width / 2),
+          Math.round(r.top + r.height / 2)
+        );
         return !!hit && (hit === btn || btn.contains(hit));
       })()
     JS
