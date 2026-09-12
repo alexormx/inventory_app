@@ -115,6 +115,27 @@ A check that prints the credential is not a better check.
 
 ---
 
+### Provider error messages can contain key fragments
+
+An authentication failure from a third-party API often echoes part of the
+credential you sent — OpenAI returns `Incorrect API key provided: sk-…XXXX`, and
+other providers behave similarly. Treat those strings as credential material,
+not as neutral diagnostics.
+
+This matters because the error usually gets **persisted**. In this app an OpenAI
+failure is written to `ProductDescriptionDraft#error_message` and to the
+`worker.1` log, so a later `SELECT` that looks like ordinary debugging can
+re-expose a key fragment long after the original request.
+
+- Do not select or print such columns verbatim; filter to the columns you need
+  (`status`, counts) and leave the error text out.
+- Do not paste authentication exception text or full provider exception bodies
+  into a terminal, a report, or an AI session.
+- Report the error **category** — "OpenAI authentication failure" — and let a
+  human read the detail in the admin UI if the exact text is genuinely required.
+
+See `credential_rotation_runbook.md` §1 for the concrete OpenAI case.
+
 ## Never place a credential value in
 
 - terminal output
