@@ -20,6 +20,13 @@
 - [Purchase order fixes and improvements](purchase_order_fixes_and_improvements.md)
 - [Sale order item deletion troubleshooting](sale_order_item_delete_troubleshooting.md)
 
+## Security
+
+- [Production secret safety](production_secret_safety.md) — safe Heroku
+  inspection; commands that must never be run
+- [Credential rotation runbook](credential_rotation_runbook.md) — staged
+  rotation plan (planning only, not executed)
+
 ## Archived Documentation
 
 Historical audits and completed implementation reports are preserved under
