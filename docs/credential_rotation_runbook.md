@@ -62,7 +62,7 @@ rotations before the dangerous one:
 
 | # | Credential | Blast radius | Reversible? |
 | --- | --- | --- | --- |
-| 1 | OpenAI | One admin feature | Yes, trivially |
+| 1 | OpenAI | Two admin features (see §1) | Yes, while old key lives |
 | 2 | AWS | All image serving | Yes, if old key retained |
 | 3 | Brevo SMTP | Outbound email | Yes, if old key retained |
 | 4 | PostgreSQL | Total outage if wrong | **Limited — see §4** |
@@ -76,48 +76,236 @@ rotations before the dangerous one:
 
 **Risk.** Grants full API access to the account's OpenAI quota, billed to the
 owner. An abused key is a direct financial loss and a rate-limit denial of
-service against the enrichment feature. This is the highest-likelihood target of
+service against the features below. This is the highest-likelihood target of
 the five — leaked LLM keys are actively harvested and abused — which is why it is
 rotated first despite the smallest functional blast radius.
 
-**Where it is consumed.** `config/initializers/openai.rb` reads
-`ENV.fetch("OPENAI_API_KEY", nil)` and falls back to
-`Rails.application.credentials.dig(:openai, :api_key)`. Used by the product
-enrichment path (`Admin::ProductEnrichmentController`,
-`Products::Enrichment::GenerateDraftJob`).
+**Client configuration.** `config/initializers/openai.rb` calls
+`OpenAI.configure` once at boot with `request_timeout = 60`. Both consumers
+construct `OpenAI::Client.new` with no arguments, so they inherit that global
+configuration — which means **a key change only takes effect after a dyno
+restart**. The Heroku config update forces that restart, so no extra action is
+needed.
 
-> ⚠️ **Check the fallback before rotating.** If a value is also baked into Rails
-> encrypted credentials, clearing the ENV var silently falls back to the old,
-> compromised key. Confirm which source is live, and rotate the credentials
-> entry too if one exists.
+### Credential precedence — read this before rotating
 
-**Create / rotate.** Create a **new** key in the OpenAI dashboard first. OpenAI
-supports multiple concurrent keys, so create-new-before-revoke-old applies
-cleanly.
+`config/initializers/openai.rb` resolves the key in this exact order:
 
-**Heroku update.** Set `OPENAI_API_KEY` to the new value — via the Heroku
-Dashboard (Settings → Config Vars), not an inline shell command.
-
-**Verification.** Generate one enrichment draft from the admin UI and confirm it
-completes. Because generation runs as a job, confirm on the worker:
-
-```bash
-heroku logs -a evening-anchorage-70843 --dyno worker.1 -n 100
-# expect: Performed Products::Enrichment::GenerateDraftJob ... (no 401)
+```
+ENV["OPENAI_API_KEY"]                              (wins if present)
+  → Rails.application.credentials.dig(:openai, :api_key)   (only if ENV is blank)
+    → nil                                          (app still boots; OpenAI unconfigured)
 ```
 
-A 401 from OpenAI surfaces as a job failure; check `solid_queue_failed_executions`
-count is unchanged.
+> 🚫 **DO NOT rotate by unsetting `OPENAI_API_KEY`.** The replacement credential
+> must be **SET**. Unsetting the variable does not disable OpenAI — it silently
+> falls through to the encrypted-credentials entry, which may hold the **old,
+> compromised** key. There is no visible symptom: the app boots normally and
+> requests keep succeeding against the credential you believed you had retired.
 
-**Revoke old.** Only after a successful draft. Delete the old key in the OpenAI
-dashboard.
+`config/credentials.yml.enc` is tracked in this repository, so the fallback
+entry is a real possibility and must be checked rather than assumed absent.
 
-**Rollback.** Re-set `OPENAI_API_KEY` to the previous value — possible only while
-the old key still exists, which is the reason revocation is last.
+**Pre-flight check — presence only, never the value:**
 
-**Expected side effects.** Dyno restart: **yes** (both). Sessions: unaffected.
-Jobs: brief interruption; enrichment drafts queued during the restart are
-re-claimed. Email/storage: unaffected.
+```bash
+bin/rails runner 'puts Rails.application.credentials.dig(:openai, :api_key).present?'
+```
+
+This prints exactly `true` or `false` and discloses nothing else. Never use
+`credentials:show`, `credentials:edit`, or anything else that renders the
+decrypted file into a terminal.
+
+| Result | Meaning | Action |
+| --- | --- | --- |
+| `false` | No encrypted-credentials OpenAI fallback exists. | Rotating `OPENAI_API_KEY` is sufficient. |
+| `true` | An OpenAI credential **also** lives in Rails encrypted credentials and is reachable whenever the ENV var is blank. | It must be **removed or rotated too**, or the compromised key stays reachable. Rotation is not complete until this is resolved. |
+
+---
+
+### Where the credential is consumed — two paths
+
+#### Path A — Product enrichment (asynchronous, `worker.1`)
+
+| Layer | Component |
+| --- | --- |
+| Entry | `Admin::ProductEnrichmentController#generate` / `#regenerate` |
+| Job | `Products::Enrichment::GenerateDraftJob` (`queue_as :enrichment`) |
+| Service | `Products::Enrichment::GenerateDraftService` |
+
+Runs on **`worker.1`**. `config/queue.yml` declares `queues: "*"`, so the
+dedicated Solid Queue worker serves the `:enrichment` queue.
+
+**Failure behaviour is safe and non-destructive:**
+
+- The job retries — `RateLimitError` ×5 and `GenerationError` ×3, both with
+  `wait: :polynomially_longer`; `discard_on ActiveRecord::RecordNotFound`.
+- It is idempotent: `perform` returns early if the draft is already
+  `draft_generated?` or `published?`.
+- On failure the draft reaches a clean terminal state — `status: :failed` with an
+  `error_message`. Nothing is left half-written.
+- **A failed draft never auto-publishes.** Drafts are staging records;
+  product copy changes only through the separate, explicit
+  `Products::Enrichment::PublishDraftService`.
+- **Business product data therefore remains unchanged until an explicit
+  publish.** A bad credential cannot corrupt the catalog.
+
+#### Path B — Purchase-order reception OCR (**synchronous, `web.1`**)
+
+| Layer | Component |
+| --- | --- |
+| Entry | `Admin::PurchaseOrdersController#build_reception_parser` |
+| Service | `PurchaseOrders::ReceptionDocumentParserService` |
+
+Runs **synchronously inside the web request** on **`web.1`** — no job, no retry,
+no backoff. Model comes from `ENV["PO_RECEPTION_OCR_MODEL"]` (default `gpt-4o`);
+that variable is **not** a secret.
+
+**Failure behaviour:**
+
+- All errors are wrapped as `ReceptionDocumentParserService::ParseError`.
+- The controller rescues it, sets a Spanish `flash.now[:alert]`, and renders the
+  reception screen with **HTTP 422** (`:unprocessable_entity`).
+- **No 500.** The admin sees a readable message, not an error page.
+- **Fallback:** CSV uploads route to `PurchaseOrders::ReceptionCsvParserService`,
+  which does not call OpenAI at all. PO reception by CSV keeps working even with
+  a completely invalid key.
+
+#### Scope of impact
+
+Both paths are **admin-only**. No public or customer-facing surface calls
+OpenAI — the storefront, catalog, product pages and checkout are unaffected by an
+invalid key.
+
+**No recurring job uses OpenAI.** None of the nine entries in
+`config/recurring.yml` touches it, so there is **no automatic OpenAI traffic**: a
+broken key produces no background errors and raises no alarm on its own. It stays
+silent until an admin acts. **Post-rotation verification must therefore be a
+deliberate manual action** — waiting to "see if anything breaks" will not work.
+
+---
+
+### ⚠️ Masked-key safety in error messages
+
+OpenAI authentication failures (401/403) return a message that **may embed a
+masked fragment of the submitted key**, in the form
+`Incorrect API key provided: sk-…XXXX`.
+
+That string is persisted into `ProductDescriptionDraft#error_message` and also
+appears in `worker.1` logs. It is credential material, not neutral diagnostics.
+
+**During rotation diagnosis an agent must NOT:**
+
+- `SELECT` `product_description_drafts.error_message` verbatim
+- paste authentication exception text into an AI-visible terminal, report or chat
+- print full OpenAI exception bodies
+
+**Allowed instead:**
+
+- read the draft `status` only (`queued` / `generating` / `draft_generated` / `failed`)
+- report the error *category* ("OpenAI authentication failure"), not its text
+- have the **human** read the detailed message in the admin UI if the specific
+  text is genuinely needed
+
+A read that filters columns is fine — for example
+`SELECT status, count(*) FROM product_description_drafts GROUP BY status;` —
+provided `error_message` is never selected.
+
+---
+
+### Rotation sequence
+
+1. **Run the credentials-fallback presence check** (above). Record `true`/`false`.
+2. **If the fallback exists (`true`), plan its remediation too** — the rotation is
+   not complete while a compromised key remains reachable through Rails
+   credentials.
+3. **Create the replacement credential** in the OpenAI console.
+4. **Keep the old credential active** for now. OpenAI supports concurrent keys,
+   so create-new-before-revoke-old applies cleanly; the old key is the only
+   rollback path.
+5. **SET `OPENAI_API_KEY`** to the new value through the **Heroku Dashboard**
+   (Settings → Config Vars). Not an inline `config:set` — that puts the value in
+   shell history and the process argument list. **Never unset** (see precedence).
+6. **Allow the restart.** The config change creates a release and restarts both
+   `web.1` and `worker.1`.
+7. **Verify infrastructure** (below).
+8. **Perform one legitimate enrichment action** (below).
+9. **Confirm success** before touching the old credential.
+10. **Revoke the old credential** in the OpenAI console.
+11. **Confirm no compromised fallback remains reachable** — re-run the step-1
+    check and confirm the credentials entry has been removed or rotated.
+
+No credential value belongs in any step above.
+
+### Verification
+
+**Infrastructure:**
+
+```bash
+heroku ps -a evening-anchorage-70843              # web.1 up, worker.1 up
+heroku releases -a evening-anchorage-70843 -n 3   # new release; key NAME only
+for p in /up / /catalog; do
+  curl -s -o /dev/null -w "$p %{http_code}\n" -L "https://pasatiempos.com.mx$p"
+done                                              # expect 200 200 200
+heroku logs -a evening-anchorage-70843 -n 200 | grep -E "R1[0-9]|State changed"
+```
+
+Confirm Solid Queue re-registered — exactly one hostname, four processes:
+
+```sql
+SELECT hostname, string_agg(kind, ',' ORDER BY kind), max(last_heartbeat_at)
+FROM solid_queue_processes GROUP BY hostname;
+```
+
+**Functional — Path A is the credential proof.**
+
+Use `POST /admin/product_enrichment/:id/generate` from the admin UI. Both
+`generate` and `regenerate` create a new `ProductDescriptionDraft`; there is no
+in-place re-run action. So **pick a product that genuinely needs enrichment**
+rather than manufacturing throwaway data — the verification then doubles as real
+work and leaves nothing to clean up.
+
+Success evidence:
+
+- the draft advances `queued → generating → draft_generated`
+  (`GET /admin/product_enrichment/:id/status` returns `{status, done}`; the admin
+  UI already polls it)
+- `worker.1` logs show `Performed Products::Enrichment::GenerateDraftJob`
+- the draft has populated `draft_content`, `ai_model`, `tokens_input/output`
+- the `solid_queue_failed_executions` count **does not increase**
+
+Failure evidence: the draft flips to `failed` on the first attempt, then retries
+three times with polynomial backoff before landing in
+`solid_queue_failed_executions` — so a definitive verdict takes roughly two
+minutes. Diagnose by *status*, per the masked-key rule above.
+
+**Path B is optional.** Path A already proves the credential works. If you want
+coverage of the synchronous path as well, upload one PDF or image on the PO
+reception screen and confirm it parses; a bad key yields a 422 with a Spanish
+flash, never a 500.
+
+### Rollback
+
+Rollback is possible **only while the old OpenAI key is still active** — which is
+precisely why revocation is step 10 and not step 5.
+
+1. In the **Heroku Dashboard**, set `OPENAI_API_KEY` back to the previous value.
+2. Both dynos restart (~20–30 s).
+3. Confirm `heroku ps` shows `web.1` and `worker.1` up and `/up` returns 200.
+4. Confirm Solid Queue re-registered and the queue drains.
+5. Re-run the Path A enrichment check and confirm the draft reaches
+   `draft_generated`.
+6. Investigate the replacement credential before retrying — common causes are
+   wrong project scope, insufficient permissions, or a credentials-fallback
+   shadow (step 1).
+
+Never paste either the old or the new key into a terminal, an AI assistant
+(Claude, ChatGPT or otherwise), a PR, an issue, a commit, or a log.
+
+**Expected side effects.** Dyno restart: **yes** (both `web.1` and `worker.1`).
+Sessions: unaffected. Jobs: brief interruption; anything queued during the
+restart is re-claimed by Solid Queue. Email/storage: unaffected. Customer-facing
+impact: none beyond the ~20–30 s restart.
 
 ---
 
@@ -432,6 +620,10 @@ but outstanding reset/confirmation links are dead.
 - [ ] `solid_queue_processes` shows exactly one hostname with four processes
 - [ ] `solid_queue_failed_executions` count has not increased
 - [ ] No credential value appears in any log, report, commit, or PR
+- [ ] OpenAI only: credentials-fallback presence re-checked and confirmed
+      remediated, so no compromised key remains reachable (§1)
+- [ ] No provider authentication-error text — which may embed a masked key
+      fragment — was pasted into a terminal, report or AI session (§1)
 - [ ] Follow-up: move the Brevo SMTP `user_name` out of
       `config/environments/production.rb` into an ENV var
 - [ ] Follow-up: remove the commented-out generated example secrets from
