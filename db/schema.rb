@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_08_21_111131) do
+ActiveRecord::Schema[8.0].define(version: 2026_09_06_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -71,6 +71,18 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_21_111131) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["product_id"], name: "index_cart_items_on_product_id"
+  end
+
+  create_table "cart_session_imports", force: :cascade do |t|
+    t.bigint "shopping_cart_id", null: false
+    t.string "import_key_digest", null: false
+    t.string "source_payload_digest", null: false
+    t.jsonb "source_payload", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["import_key_digest"], name: "index_cart_session_imports_on_import_key_digest", unique: true
+    t.index ["shopping_cart_id"], name: "index_cart_session_imports_on_shopping_cart_id"
+    t.check_constraint "octet_length(source_payload::text) <= 8192", name: "cart_session_imports_payload_bounded"
   end
 
   create_table "category_attribute_templates", force: :cascade do |t|
@@ -690,6 +702,45 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_21_111131) do
     t.index ["position"], name: "index_shipping_methods_on_position"
   end
 
+  create_table "shopping_cart_items", force: :cascade do |t|
+    t.bigint "shopping_cart_id", null: false
+    t.bigint "product_id"
+    t.bigint "product_reference", null: false
+    t.integer "condition", default: 0, null: false
+    t.integer "quantity", null: false
+    t.string "product_name_snapshot"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["product_id"], name: "index_shopping_cart_items_on_product_id"
+    t.index ["shopping_cart_id", "product_reference", "condition"], name: "index_cart_items_on_cart_product_ref_and_condition", unique: true
+    t.index ["shopping_cart_id"], name: "index_shopping_cart_items_on_shopping_cart_id"
+    t.check_constraint "quantity <= 100000", name: "shopping_cart_items_quantity_bounded"
+    t.check_constraint "quantity > 0", name: "shopping_cart_items_quantity_positive"
+  end
+
+  create_table "shopping_carts", force: :cascade do |t|
+    t.bigint "user_id"
+    t.string "status", default: "active", null: false
+    t.string "anonymous_token_digest"
+    t.integer "lock_version", default: 0, null: false
+    t.datetime "last_activity_at", null: false
+    t.datetime "converted_at"
+    t.datetime "closed_at"
+    t.string "sale_order_id"
+    t.bigint "merged_into_cart_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["anonymous_token_digest"], name: "index_shopping_carts_on_anon_token_digest", unique: true, where: "(anonymous_token_digest IS NOT NULL)"
+    t.index ["last_activity_at"], name: "index_shopping_carts_on_last_activity_when_active", where: "((status)::text = 'active'::text)"
+    t.index ["merged_into_cart_id"], name: "index_shopping_carts_on_merged_into_cart_id"
+    t.index ["sale_order_id"], name: "index_shopping_carts_on_sale_order_id", unique: true
+    t.index ["user_id", "created_at"], name: "index_shopping_carts_on_user_id_and_created_at"
+    t.index ["user_id"], name: "index_shopping_carts_on_user_id"
+    t.index ["user_id"], name: "index_shopping_carts_on_user_id_when_active", unique: true, where: "(((status)::text = 'active'::text) AND (user_id IS NOT NULL))"
+    t.check_constraint "merged_into_cart_id IS NULL OR merged_into_cart_id <> id", name: "shopping_carts_no_self_merge"
+    t.check_constraint "status::text = 'active'::text AND sale_order_id IS NULL AND converted_at IS NULL AND closed_at IS NULL AND merged_into_cart_id IS NULL OR status::text = 'converted'::text AND sale_order_id IS NOT NULL AND converted_at IS NOT NULL AND closed_at IS NOT NULL AND anonymous_token_digest IS NULL OR status::text = 'merged'::text AND merged_into_cart_id IS NOT NULL AND closed_at IS NOT NULL AND anonymous_token_digest IS NULL OR status::text = 'cleared'::text AND closed_at IS NOT NULL AND anonymous_token_digest IS NULL", name: "shopping_carts_lifecycle_invariants"
+  end
+
   create_table "site_settings", force: :cascade do |t|
     t.string "key", null: false
     t.string "value"
@@ -1024,6 +1075,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_21_111131) do
   add_foreign_key "canceled_order_items", "products"
   add_foreign_key "canceled_order_items", "sale_orders"
   add_foreign_key "cart_items", "products"
+  add_foreign_key "cart_session_imports", "shopping_carts", on_delete: :restrict
   add_foreign_key "comments", "posts"
   add_foreign_key "comments", "users"
   add_foreign_key "inventories", "inventory_locations"
@@ -1061,6 +1113,11 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_21_111131) do
   add_foreign_key "sale_orders", "users"
   add_foreign_key "shipments", "sale_orders"
   add_foreign_key "shipping_addresses", "users"
+  add_foreign_key "shopping_cart_items", "products", on_delete: :nullify
+  add_foreign_key "shopping_cart_items", "shopping_carts"
+  add_foreign_key "shopping_carts", "sale_orders"
+  add_foreign_key "shopping_carts", "shopping_carts", column: "merged_into_cart_id"
+  add_foreign_key "shopping_carts", "users"
   add_foreign_key "solid_queue_blocked_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_claimed_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_failed_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
