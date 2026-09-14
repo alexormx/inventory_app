@@ -7,7 +7,23 @@ module Suppliers
 
       retry_on StandardError, wait: :polynomially_longer, attempts: 3
 
+      # Integración en pausa. El endpoint de TakaraTomyMall acepta la conexión
+      # TCP y el handshake TLS, pero no devuelve ningún byte hasta que salta
+      # Net::ReadTimeout; se reprodujo igual desde la red local y desde Heroku,
+      # y no hay ninguna respuesta exitosa registrada. La implementación se
+      # conserva intacta para reactivarla: basta poner ENABLED = true y
+      # restaurar la entrada en config/recurring.yml. No requiere migración.
+      ENABLED = false
+
       def perform
+        # Salida temprana antes de crear el SupplierSyncRun, de recorrer el
+        # catálogo o de abrir cualquier conexión: así un job ya encolado que se
+        # vuelva a reclamar tras un reinicio termina limpio en vez de reintentar.
+        unless ENABLED
+          Rails.logger.info("[TakaraTomyMall] weekly backfill is paused; skipping run")
+          return
+        end
+
         run = SupplierSyncRun.create!(source: "takaratomy_mall", mode: "weekly_backfill", status: "queued")
         run.start!
 
