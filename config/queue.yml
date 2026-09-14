@@ -1,0 +1,34 @@
+# Configuración de procesos de Solid Queue.
+#
+# Sin este archivo Solid Queue usa sus valores por defecto (1 dispatcher y 1
+# worker de 3 hilos). Se declaran explícitos porque el worker dedicado arranca
+# en un dyno de 512 MB y la carga más pesada de esta app son los jobs
+# programados de importación/scraping de proveedores: conviene empezar con poca
+# concurrencia y subirla con evidencia, no al revés.
+#
+# OJO con los hilos: SolidQueue::Configuration valida que
+#   (hilos del worker más grande) + 2 <= tamaño del pool de ActiveRecord
+# El pool es RAILS_MAX_THREADS (5 por defecto, ver config/database.yml), así que
+# 2 hilos dejan una conexión de holgura. Subir `threads` aquí obliga a subir
+# también RAILS_MAX_THREADS.
+#
+# `queues: "*"` mantiene el comportamiento actual: un solo worker atiende todas
+# las colas. No hay colas con nombre en uso hoy.
+default: &default
+  dispatchers:
+    - polling_interval: 1
+      batch_size: 500
+  workers:
+    - queues: "*"
+      threads: 2
+      processes: 1
+      polling_interval: 0.1
+
+development:
+  <<: *default
+
+test:
+  <<: *default
+
+production:
+  <<: *default

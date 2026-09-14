@@ -27,6 +27,83 @@ RSpec.describe 'Admin Catalog PDF', type: :request do
     end
   end
 
+  # "Mostrar fecha de lanzamiento" viaja del formulario al Generator. El fallo
+  # anterior: la opción se leía de `params` DENTRO del hilo de fondo, ya
+  # desligado del ciclo de la petición, así que llegaba en falso a la
+  # generación. Ahora se captura en el hilo de la petición y se pasa explícito
+  # por generate -> run_generation -> build_artifacts -> pdf_bytes -> Generator.
+  describe 'POST generate — include_launch_date propagation' do
+    let(:pdf_double) { instance_double(CatalogPdf::Generator, to_pdf: 'PDF-BYTES') }
+    let(:builder_double) { instance_double(CatalogPdf::Builder) }
+    let(:sample_items) do
+      [{ code: 'A1', name: 'Uno', brand: 'Tomica', series: 'Premium', scale: nil,
+         price: 100, event: nil, event_label: nil,
+         launch_date: '2026-03-04T10:30:00-06:00',
+         product_url: 'https://pasatiempos.com.mx/products/uno', unique_piece: false }]
+    end
+
+    before do
+      allow(CatalogPdf::Builder).to receive(:new).and_return(builder_double)
+      allow(builder_double).to receive(:items).and_return(sample_items)
+      allow(CatalogPdf::Generator).to receive(:new).and_return(pdf_double)
+    end
+
+    after { Dir.glob(Rails.root.join('tmp/catalog_*.pdf')).each { |file| File.delete(file) } }
+
+    # Corre la generación en línea pero registrando el orden real de las
+    # llamadas, para poder afirmar que la bandera se evalúa ANTES del hilo.
+    def run_generate(extra_params)
+      order = []
+      allow_any_instance_of(Admin::CatalogPdfController)
+        .to receive(:include_launch_date?).and_wrap_original do |original|
+          order << :flag_evaluated
+          original.call
+        end
+      allow(Thread).to receive(:new) do |&block|
+        order << :background_job_started
+        block&.call
+        instance_double(Thread)
+      end
+      post admin_catalog_pdf_generate_path, params: { formats: ['pdf_landscape'] }.merge(extra_params)
+      order
+    end
+
+    it 'evaluates the flag in the request thread, before the background job runs' do
+      order = run_generate(include_launch_date: '1')
+
+      expect(response).to have_http_status(:ok)
+      expect(order.index(:flag_evaluated)).to be < order.index(:background_job_started)
+    end
+
+    it 'passes include_launch_date: true to the generator when the box is checked' do
+      run_generate(include_launch_date: '1')
+
+      expect(CatalogPdf::Generator).to have_received(:new)
+        .with(hash_including(include_launch_date: true)).at_least(:once)
+    end
+
+    it 'passes include_launch_date: false when the param is absent' do
+      run_generate({})
+
+      expect(CatalogPdf::Generator).to have_received(:new)
+        .with(hash_including(include_launch_date: false)).at_least(:once)
+    end
+
+    it 'passes include_launch_date: false for an explicit "0"' do
+      run_generate(include_launch_date: '0')
+
+      expect(CatalogPdf::Generator).to have_received(:new)
+        .with(hash_including(include_launch_date: false)).at_least(:once)
+    end
+
+    it 'keeps the option independent from "Priorizar lanzamientos recientes"' do
+      run_generate(include_launch_date: '1', prioritize_new: '0')
+
+      expect(CatalogPdf::Generator).to have_received(:new)
+        .with(hash_including(include_launch_date: true)).at_least(:once)
+    end
+  end
+
   describe 'GET download' do
     around do |example|
       example.run

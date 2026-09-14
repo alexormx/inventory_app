@@ -28,17 +28,21 @@ RSpec.describe 'CatalogPdf: navegación y pedidos' do
     end
 
     it 'pagina índices largos según la orientación sin cálculo circular' do
+      portrait_cap = described_class::TOC_ENTRIES_PER_PAGE.fetch(:portrait)
+      landscape_cap = described_class::TOC_ENTRIES_PER_PAGE.fetch(:landscape)
       portrait = described_class.new(
-        items: Array.new(19) { |index| item(index, series: "Serie #{index}") }, orientation: :portrait
+        items: Array.new(portrait_cap + 1) { |index| item(index, series: "Serie #{index}") },
+        orientation: :portrait
       )
       landscape = described_class.new(
-        items: Array.new(15) { |index| item(index, series: "Serie #{index}") }, orientation: :landscape
+        items: Array.new(landscape_cap + 1) { |index| item(index, series: "Serie #{index}") },
+        orientation: :landscape
       )
 
       aggregate_failures do
-        expect(portrait.toc_pages.map(&:size)).to eq([18, 1])
+        expect(portrait.toc_pages.map(&:size)).to eq([portrait_cap, 1])
         expect(portrait.sections.first.first_page).to eq(4)
-        expect(landscape.toc_pages.map(&:size)).to eq([14, 1])
+        expect(landscape.toc_pages.map(&:size)).to eq([landscape_cap, 1])
         expect(landscape.sections.first.first_page).to eq(4)
       end
     end

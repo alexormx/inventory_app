@@ -49,7 +49,7 @@ RSpec.describe ShoppingCart, type: :model do
       create(:shopping_cart, :owned, anonymous_token_digest: nil)
       second = build(:shopping_cart, :owned, anonymous_token_digest: nil)
 
-      expect(second).to be_valid
+      expect { second.save! }.not_to raise_error
     end
   end
 
@@ -143,7 +143,7 @@ RSpec.describe ShoppingCart, type: :model do
 
       expect do
         ShoppingCart.where(id: cart.id).update_all(status: 'merged', closed_at: Time.current,
-                                                    merged_into_cart_id: cart.id)
+                                                   merged_into_cart_id: cart.id)
       end.to raise_error(ActiveRecord::StatementInvalid, /shopping_carts_no_self_merge/)
     end
 
@@ -175,6 +175,110 @@ RSpec.describe ShoppingCart, type: :model do
 
       expect { user.destroy }.not_to change(User, :count)
       expect(user.errors[:base]).to be_present
+    end
+  end
+
+  describe 'lifecycle matrix under validation bypass' do
+    { active: %i[sale_order_id converted_at closed_at merged_into_cart_id],
+      converted: %i[sale_order_id converted_at closed_at],
+      merged: %i[merged_into_cart_id closed_at],
+      cleared: %i[closed_at] }.each do |status, fields|
+      it "persists a valid #{status} cart" do
+        cart = build(:shopping_cart, *(status == :active ? [] : [status]))
+
+        expect(cart).to be_valid
+        expect { cart.save!(validate: false) }.not_to raise_error
+      end
+
+      fields.each do |field|
+        it "rejects #{status} with an invalid #{field} in Rails and PostgreSQL" do
+          cart = build(:shopping_cart, *(status == :active ? [] : [status]))
+          cart[field] = if status != :active
+                          nil
+                        elsif field == :sale_order_id
+                          create(:sale_order).id
+                        elsif field == :merged_into_cart_id
+                          create(:shopping_cart).id
+                        else
+                          Time.current
+                        end
+
+          expect(cart).not_to be_valid
+          expect(cart.errors[field]).to be_present
+          expect { cart.save!(validate: false) }
+            .to raise_error(ActiveRecord::StatementInvalid, /shopping_carts_lifecycle_invariants/)
+        end
+      end
+    end
+
+    %i[converted merged cleared].each do |status|
+      ['digest', ''].each do |digest|
+        it "rejects #{status} with token #{digest.inspect} in Rails and PostgreSQL" do
+          cart = build(:shopping_cart, status, anonymous_token_digest: digest)
+
+          expect(cart).not_to be_valid
+          expect(cart.errors[:anonymous_token_digest]).to be_present
+          expect { cart.save!(validate: false) }
+            .to raise_error(ActiveRecord::StatementInvalid, /shopping_carts_lifecycle_invariants/)
+        end
+      end
+    end
+
+    it 'rejects an unknown lifecycle status in Rails and PostgreSQL' do
+      cart = build(:shopping_cart, status: 'unknown')
+
+      expect(cart).not_to be_valid
+      expect { cart.save!(validate: false) }
+        .to raise_error(ActiveRecord::StatementInvalid, /shopping_carts_lifecycle_invariants/)
+    end
+  end
+
+  describe 'history and locking' do
+    it 'restricts destroying a user whose only dependency is a shopping cart' do
+      user = create(:user)
+      create(:shopping_cart, :cleared, user: user)
+
+      expect(user.destroy).to be false
+      expect(user.errors[:base]).to be_present
+      expect(User.exists?(user.id)).to be true
+    end
+
+    it 'restricts deleting a cart owner without callbacks' do
+      user = create(:user)
+      create(:shopping_cart, user: user)
+
+      expect { user.delete }.to raise_error(ActiveRecord::InvalidForeignKey)
+    end
+
+    it 'protects the converted sale order from deletion' do
+      cart = create(:shopping_cart, :converted)
+
+      expect { cart.sale_order.delete }.to raise_error(ActiveRecord::InvalidForeignKey)
+    end
+
+    it 'protects a merge destination from deletion' do
+      cart = create(:shopping_cart, :merged)
+
+      expect { cart.merged_into_cart.delete }.to raise_error(ActiveRecord::InvalidForeignKey)
+    end
+
+    it 'rejects an update from a stale cart instance' do
+      cart = create(:shopping_cart)
+      stale = described_class.find(cart.id)
+      cart.update!(last_activity_at: 1.minute.from_now)
+
+      expect(cart.lock_version).to eq(1)
+      expect { stale.update!(status: 'cleared', closed_at: Time.current) }
+        .to raise_error(ActiveRecord::StaleObjectError)
+      expect(cart.reload.status).to eq('active')
+    end
+
+    it 'rejects reactivating a historical cart when the owner already has an active cart' do
+      active = create(:shopping_cart, :owned)
+      historical = create(:shopping_cart, :cleared, user: active.user)
+
+      expect { historical.update_columns(status: 'active', closed_at: nil) }
+        .to raise_error(ActiveRecord::RecordNotUnique, /index_shopping_carts_on_user_id_when_active/)
     end
   end
 end

@@ -5,7 +5,11 @@ module CatalogPdf
   # ordenado. No persiste taxonomía: :series sigue siendo la fuente canónica.
   class Presentation
     PRODUCTS_PER_PAGE = 6
-    TOC_ENTRIES_PER_PAGE = { portrait: 18, landscape: 14 }.freeze
+    # Capacidad real de una página de índice. La apaisada se maqueta a dos
+    # columnas balanceadas (ver `body.landscape .toc-list { columns: 2 }` en
+    # la plantilla), así que 30 entradas caben de sobra en una sola página y
+    # el índice solo se parte en dos cuando el catálogo supera esa cifra.
+    TOC_ENTRIES_PER_PAGE = { portrait: 18, landscape: 30 }.freeze
 
     Section = Struct.new(:name, :product_count, :first_page, :anchor, keyword_init: true)
     ProductPage = Struct.new(:items, :section_names, :page_number, :unused_slots, keyword_init: true)

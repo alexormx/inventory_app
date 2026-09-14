@@ -32,11 +32,15 @@ module Admin
       title = catalog_title
       number = Rails.application.config.whatsapp_number
       rate = usd_rate
+      # Se evalúa AQUÍ, en el hilo de la petición. Dentro del Thread.new de
+      # abajo `params` ya no es de fiar (la petición se cerró), así que leer la
+      # opción ahí hacía que llegara siempre apagada a la generación.
+      include_launch_date = include_launch_date?
       job_id = CatalogPdf::Progress.start
 
       Thread.new do
         Rails.application.executor.wrap do
-          run_generation(job_id, builder_for_job, title, number, rate, formats)
+          run_generation(job_id, builder_for_job, title, number, rate, formats, include_launch_date)
         end
       end
 
@@ -68,7 +72,7 @@ module Admin
 
     private
 
-    def run_generation(job_id, builder, title, number, rate, formats)
+    def run_generation(job_id, builder, title, number, rate, formats, include_launch_date)
       CatalogPdf::Progress.update(job_id, status: 'building', name: 'Conectando con la fuente de datos…')
       items = builder.items do |current, total, name|
         CatalogPdf::Progress.update(job_id, status: 'building', current: current, total: total, name: name)
@@ -81,7 +85,7 @@ module Admin
 
       # Los items (con imágenes descargadas) se construyen una sola vez y se
       # reutilizan para cada formato seleccionado.
-      artifacts = build_artifacts(job_id, items, title, number, rate, formats)
+      artifacts = build_artifacts(job_id, items, title, number, rate, formats, include_launch_date)
       path, filename, content_type = finalize_artifacts(job_id, artifacts)
       CatalogPdf::Progress.update(job_id, status: 'done', path: path.to_s, filename: filename, content_type: content_type)
     rescue StandardError => e
@@ -89,17 +93,17 @@ module Admin
     end
 
     # Genera cada formato pedido y devuelve [[nombre_en_zip, bytes], ...].
-    def build_artifacts(job_id, items, title, number, rate, formats)
+    def build_artifacts(job_id, items, title, number, rate, formats, include_launch_date)
       artifacts = []
 
       if formats.include?('pdf_portrait')
         CatalogPdf::Progress.update(job_id, status: 'rendering', name: 'Generando PDF vertical…')
-        artifacts << ['catalogo_vertical.pdf', pdf_bytes(title, number, items, rate, :portrait)]
+        artifacts << ['catalogo_vertical.pdf', pdf_bytes(title, number, items, rate, :portrait, include_launch_date)]
       end
 
       if formats.include?('pdf_landscape')
         CatalogPdf::Progress.update(job_id, status: 'rendering', name: 'Generando PDF horizontal…')
-        artifacts << ['catalogo_horizontal.pdf', pdf_bytes(title, number, items, rate, :landscape)]
+        artifacts << ['catalogo_horizontal.pdf', pdf_bytes(title, number, items, rate, :landscape, include_launch_date)]
       end
 
       if formats.include?('images')
@@ -113,14 +117,15 @@ module Admin
       artifacts
     end
 
-    def pdf_bytes(title, number, items, rate, orientation)
+    def pdf_bytes(title, number, items, rate, orientation, include_launch_date)
       CatalogPdf::Generator.new(title: title, whatsapp_number: number, items: items,
                                 usd_rate: rate, orientation: orientation,
-                                include_launch_date: include_launch_date?).to_pdf
+                                include_launch_date: include_launch_date).to_pdf
     end
 
     # Opción del generador: mostrar la fecha de lanzamiento en cada tarjeta.
-    # Apagada por defecto.
+    # Apagada por defecto. Se lee SIEMPRE en el hilo de la petición (ver
+    # #generate) y se pasa explícita hacia el hilo de generación.
     def include_launch_date?
       ActiveModel::Type::Boolean.new.cast(params[:include_launch_date]) || false
     end

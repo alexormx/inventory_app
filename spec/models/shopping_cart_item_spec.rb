@@ -31,6 +31,7 @@ RSpec.describe ShoppingCartItem, type: :model do
         item = build(:shopping_cart_item, condition: condition.to_s)
 
         expect(item).to be_valid, "expected #{condition} to be valid"
+        expect { item.save! }.not_to raise_error
       end
     end
 
@@ -66,17 +67,17 @@ RSpec.describe ShoppingCartItem, type: :model do
       create(:shopping_cart_item, shopping_cart: cart, product: product, condition: 'brand_new')
       other_condition = build(:shopping_cart_item, shopping_cart: cart, product: product, condition: 'loose')
 
-      expect(other_condition).to be_valid
+      expect { other_condition.save! }.not_to raise_error
     end
 
     it 'allows the same product and condition in a different cart' do
       product = create(:product)
       create(:shopping_cart_item, shopping_cart: create(:shopping_cart, :owned), product: product,
-                                   condition: 'brand_new')
+                                  condition: 'brand_new')
       other_cart_item = build(:shopping_cart_item, shopping_cart: create(:shopping_cart, :anonymous),
-                                                     product: product, condition: 'brand_new')
+                                                   product: product, condition: 'brand_new')
 
-      expect(other_cart_item).to be_valid
+      expect { other_cart_item.save! }.not_to raise_error
     end
   end
 
@@ -84,7 +85,7 @@ RSpec.describe ShoppingCartItem, type: :model do
     it 'nullifies product_id while retaining product_reference and product_name_snapshot' do
       product = create(:product, product_name: 'Doomed Product', skip_seed_inventory: true)
       item = create(:shopping_cart_item, product: product, product_reference: product.id,
-                                          product_name_snapshot: product.product_name)
+                                         product_name_snapshot: product.product_name)
 
       product.destroy!
       item.reload
@@ -103,6 +104,40 @@ RSpec.describe ShoppingCartItem, type: :model do
       cart.destroy!
 
       expect(ShoppingCartItem.exists?(item.id)).to be false
+    end
+  end
+
+  describe 'technical storage bounds' do
+    it 'rejects quantities above the technical bound in Rails and PostgreSQL' do
+      item = build(:shopping_cart_item, quantity: 100_001)
+
+      expect(item).not_to be_valid
+      expect { item.save!(validate: false) }
+        .to raise_error(ActiveRecord::StatementInvalid, /shopping_cart_items_quantity_bounded/)
+    end
+
+    it 'persists the technical maximum without applying storefront business caps' do
+      item = build(:shopping_cart_item, quantity: 100_000, condition: :loose)
+
+      expect { item.save! }.not_to raise_error
+    end
+
+    it 'rejects a missing condition in Rails and PostgreSQL' do
+      item = build(:shopping_cart_item, condition: nil)
+
+      expect(item).not_to be_valid
+      expect { item.save!(validate: false) }.to raise_error(ActiveRecord::NotNullViolation)
+    end
+
+    it 'nullifies the product link even when product callbacks are bypassed' do
+      item = create(:shopping_cart_item)
+      reference = item.product_reference
+      snapshot = item.product_name_snapshot
+      item.product.delete
+
+      expect(item.reload.product_id).to be_nil
+      expect(item.product_reference).to eq(reference)
+      expect(item.product_name_snapshot).to eq(snapshot)
     end
   end
 end

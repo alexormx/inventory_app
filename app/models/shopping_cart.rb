@@ -65,7 +65,7 @@ class ShoppingCart < ApplicationRecord
   # done - a converted/merged/cleared cart can no longer be claimed via token.
   def terminal_cart_has_no_anonymous_token
     return if status == 'active'
-    return if anonymous_token_digest.blank?
+    return if anonymous_token_digest.nil?
 
     errors.add(:anonymous_token_digest, 'must be cleared once a cart reaches a terminal status')
   end

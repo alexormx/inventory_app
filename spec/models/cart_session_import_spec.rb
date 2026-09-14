@@ -60,4 +60,34 @@ RSpec.describe CartSessionImport, type: :model do
     # parent class so the test isn't coupled to that version difference.
     expect { cart.delete }.to raise_error(ActiveRecord::StatementInvalid)
   end
+
+  it 'requires a source payload digest' do
+    import = build(:cart_session_import, source_payload_digest: nil)
+
+    expect(import).not_to be_valid
+    expect { import.save!(validate: false) }.to raise_error(ActiveRecord::NotNullViolation)
+  end
+
+  it 'accepts exactly 8192 bytes of serialized jsonb' do
+    # PostgreSQL renders this single-key object with 12 bytes of JSON syntax.
+    import = build(:cart_session_import, source_payload: { 'blob' => 'x' * (8192 - 12) })
+
+    expect { import.save! }.not_to raise_error
+  end
+
+  it 'rejects one byte beyond the serialized jsonb limit' do
+    import = build(:cart_session_import, source_payload: { 'blob' => 'x' * (8193 - 12) })
+
+    expect { import.save!(validate: false) }
+      .to raise_error(ActiveRecord::StatementInvalid, /cart_session_imports_payload_bounded/)
+  end
+
+  it 'rolls back item destruction when an import receipt prevents cart destruction' do
+    cart = create(:shopping_cart)
+    item = create(:shopping_cart_item, shopping_cart: cart)
+    create(:cart_session_import, shopping_cart: cart)
+
+    expect(cart.destroy).to be false
+    expect(ShoppingCartItem.exists?(item.id)).to be true
+  end
 end

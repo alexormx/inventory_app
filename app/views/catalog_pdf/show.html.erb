@@ -262,7 +262,7 @@
   <% presentation.toc_pages.each_with_index do |toc_sections, toc_index| %>
     <section class="toc-page">
       <h2>ÍNDICE</h2>
-      <p class="toc-intro">Encuentra cada serie y ve directamente a sus productos. Página <%= toc_index + 1 %> de <%= presentation.toc_page_count %>.</p>
+      <p class="toc-intro">Encuentra cada serie y ve directamente a sus productos.<% if presentation.toc_page_count > 1 %> Página <%= toc_index + 1 %> de <%= presentation.toc_page_count %>.<% end %></p>
       <ol class="toc-list">
         <% toc_sections.each do |catalog_section| %>
           <li class="toc-entry">
