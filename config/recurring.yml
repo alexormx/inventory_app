@@ -28,9 +28,15 @@ production:
     class: Suppliers::Hlj::WeeklyDiscoveryJob
     schedule: "0 6 * * 1"
 
-  suppliers_takara_tomy_mall_weekly_backfill:
-    class: Suppliers::TakaraTomyMall::WeeklyBackfillJob
-    schedule: "30 6 * * 1"
+  # Backfill de TakaraTomyMall en pausa. El endpoint acepta la conexión TCP y
+  # el handshake TLS, pero no devuelve ningún byte hasta que salta
+  # Net::ReadTimeout; el mismo comportamiento se reprodujo desde la red local y
+  # desde Heroku, y no hay ninguna respuesta exitosa registrada. La corrida
+  # semanal tampoco alcanza a terminar dentro del ciclo de vida normal del dyno.
+  # Para reactivarla: restaurar esta entrada y poner ENABLED = true en el job.
+  # suppliers_takara_tomy_mall_weekly_backfill:
+  #   class: Suppliers::TakaraTomyMall::WeeklyBackfillJob
+  #   schedule: "30 6 * * 1"
 
   suppliers_tomica_fandom_weekly_backfill:
     class: Suppliers::TomicaFandom::WeeklyBackfillJob
