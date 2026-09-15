@@ -45,6 +45,7 @@ RSpec.describe User, type: :model do
   describe "Associations" do
     it { should have_many(:purchase_orders).dependent(:restrict_with_error) }
     it { should have_many(:sale_orders).dependent(:restrict_with_error) }
+    it { should have_many(:shopping_carts).dependent(:restrict_with_error) }
   end
 
   describe "Default values" do
