@@ -1,7 +1,8 @@
 # frozen_string_literal: true
 
-# A crash-safe, exactly-once receipt for a future legacy session-cart import
-# (PR B). This PR only defines the model/table; nothing writes to it yet.
+# A crash-safe, exactly-once receipt for a legacy session-cart import: one
+# row per browser-session import key, written first inside the import
+# transaction by ShoppingCarts::SessionReconciler.
 class CartSessionImport < ApplicationRecord
   belongs_to :shopping_cart
 

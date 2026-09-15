@@ -96,7 +96,8 @@ RSpec.describe 'Checkout and the persistent cart', type: :request do
     post cart_items_path, params: { product_id: product.id }
     cart = user.shopping_carts.sole
     token = prepare_checkout
-    allow(ShoppingCarts::ConvertCart).to receive(:call).and_wrap_original do |m, **kwargs|
+    # Another tab's add lands after the checkout snapshot and before the cart lock.
+    allow(ShoppingCarts::ConvertCart).to receive(:lock_and_verify!).and_wrap_original do |m, **kwargs|
       ShoppingCarts::ActiveCartMutation.add(user: user, product: other_product, condition: 'brand_new')
       m.call(**kwargs)
     end

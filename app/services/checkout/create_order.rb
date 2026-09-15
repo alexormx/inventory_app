@@ -66,6 +66,25 @@ module Checkout
       revalidation_errors = []
 
       ActiveRecord::Base.transaction do
+        # Primero el carrito persistente, ANTES de los productos: todo escritor
+        # del carrito bloquea su fila primero y luego toma un candado de clave
+        # sobre el producto al insertar una línea; tomar aquí el carrito al
+        # final formaría un ciclo con un "agregar" concurrente. Bajo el candado
+        # se verifica que las líneas vivas sigan siendo las de la instantánea.
+        if @shopping_cart
+          begin
+            ShoppingCarts::ConvertCart.lock_and_verify!(
+              cart: @shopping_cart,
+              user_id: @user.id,
+              lines: @cart.items.map { |item| [item[:product].id, item[:condition], item[:quantity]] }
+            )
+          rescue ShoppingCarts::ConvertCart::CartChanged => e
+            Rails.logger.warn("[Checkout::CreateOrder] cart_changed user_id=#{@user.id} cart_id=#{@shopping_cart.id} #{e.message}")
+            revalidation_errors << 'Tu carrito cambió mientras confirmabas el pedido. Revísalo e inténtalo de nuevo.'
+            raise ActiveRecord::Rollback
+          end
+        end
+
         # @cart.items ahora es array de hashes con :product, :condition, :quantity, :price, etc.
         product_ids = @cart.items.map { |item| item[:product].id }.uniq
         # Cargamos y bloqueamos filas de producto (SELECT ... FOR UPDATE)
@@ -190,22 +209,8 @@ module Checkout
           )
         end
 
-        # Último paso de la transacción: cerrar el carrito persistente como
-        # convertido. Si otra pestaña lo modificó desde que se tomó la
-        # instantánea, la orden no describe ese carrito y todo se revierte.
-        if @shopping_cart
-          begin
-            ShoppingCarts::ConvertCart.call(
-              cart: @shopping_cart,
-              sale_order: sale_order,
-              lines: @cart.items.map { |item| [item[:product].id, item[:condition], item[:quantity]] }
-            )
-          rescue ShoppingCarts::ConvertCart::CartChanged => e
-            Rails.logger.warn("[Checkout::CreateOrder] cart_changed user_id=#{@user.id} cart_id=#{@shopping_cart.id} #{e.message}")
-            revalidation_errors << 'Tu carrito cambió mientras confirmabas el pedido. Revísalo e inténtalo de nuevo.'
-            raise ActiveRecord::Rollback
-          end
-        end
+        # Último paso: cerrar el carrito (su fila sigue bloqueada desde el inicio).
+        ShoppingCarts::ConvertCart.close!(@shopping_cart, sale_order) if @shopping_cart
       end
 
       # Si hubo errores de revalidación después del rollback, retornarlos

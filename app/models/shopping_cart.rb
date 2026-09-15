@@ -1,9 +1,10 @@
 # frozen_string_literal: true
 
-# Persistence foundation for the future shopping cart. Nothing in the
-# storefront writes to this table yet - session[:cart] (see app/models/cart.rb)
-# remains the live source of truth until import/reconciliation ships in a
-# later PR. These are lifecycle invariants only; no reconciliation service.
+# The durable cart. For an authenticated customer the ACTIVE cart is the
+# storefront authority (see ShoppingCarts::Storefront); session[:cart] only
+# mirrors it. A visitor keeps the session cart (app/models/cart.rb). This
+# model holds the lifecycle invariants only; writes go through
+# ShoppingCarts::ActiveCartMutation, SessionReconciler and ConvertCart.
 class ShoppingCart < ApplicationRecord
   STATUSES = %w[active converted merged cleared].freeze
 

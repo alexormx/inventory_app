@@ -4,10 +4,11 @@ Phase B connects the legacy cookie cart (`session[:cart]`, see
 `app/models/cart.rb`) with the persistent cart tables introduced by the
 foundation PR (#174), **at the authentication boundary only**.
 
-`session[:cart]` remains the live storefront source of truth. Add, update,
-remove, the cart page and checkout keep reading and writing the session.
-Persistent carts are written exactly once per browser session, when the
-customer authenticates.
+Phase B alone kept `session[:cart]` as the storefront source of truth; with
+Phase C (below) the ACTIVE `ShoppingCart` is the authority for an
+authenticated customer and the session is only a projection. What this
+section describes - the import of a browser cart exactly once per browser
+session at authentication - is unchanged.
 
 ## Flow
 
@@ -160,10 +161,11 @@ point for controllers, helpers and views:
   retries, while reads still come from durable state.
 * **Checkout.** `CheckoutsController` prices and validates from the
   durable-backed `Cart` exactly as before; `Checkout::CreateOrder` receives
-  the `ShoppingCart` and, as the last step of its own transaction,
-  `ShoppingCarts::ConvertCart` locks the cart, verifies the live lines still
-  equal the order snapshot, and closes it as `converted` with the
-  `sale_order_id`. Any mutation that landed in between (another tab) makes
+  the `ShoppingCart`, locks it **first** in its transaction (before the
+  product locks - every cart writer is cart-first, and inserting a line takes
+  a key-share lock on the product, so locking the cart last would deadlock
+  against a concurrent add), verifies the live lines still equal the order
+  snapshot, and closes it as `converted` with the `sale_order_id` at the end. Any mutation that landed in between (another tab) makes
   the checkout fail with a message and rolls the order back; a failed
   checkout of any kind leaves the cart ACTIVE with its contents. The next
   add after a conversion creates a fresh active cart; the converted one is
