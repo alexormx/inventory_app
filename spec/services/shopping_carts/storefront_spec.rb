@@ -101,6 +101,20 @@ RSpec.describe ShoppingCarts::Storefront do
       end
     end
 
+    it 'never writes a stale bound session back over newer durable state' do
+      cart = create(:shopping_cart, user: user)
+      create(:shopping_cart_item, shopping_cart: cart, product: product, quantity: 1)
+      # This browser's cookie still shows an older, larger cart; another device already changed it.
+      session[:cart] = { product.id.to_s => { 'brand_new' => 3 }, other.id.to_s => { 'brand_new' => 2 } }
+      session[marker_key] = { 'cart_id' => cart.id, 'digest' => 'stale' }
+
+      expect(storefront.cart.quantity_for(product.id)).to eq(1)
+      expect(storefront.cart.quantity_for(other.id)).to eq(0)
+      expect(session[:cart]).to eq(product.id.to_s => { 'brand_new' => 1 })
+      expect(cart.shopping_cart_items.pluck(:product_reference, :quantity)).to eq([[product.id, 1]])
+      expect(CartSessionImport.count).to eq(0)
+    end
+
     it 'projects an empty session cart (with a marker) when the durable cart does not fit the cookie' do
       cart = create(:shopping_cart, user: user)
       create_list(:product, 120, skip_seed_inventory: true).each do |p|

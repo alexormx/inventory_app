@@ -125,9 +125,59 @@ persistence.
 * Logs carry the result category, user id, cart id, receipt id and line
   counts only.
 
-## Non-goals (Phase C and later)
+## Phase C: the persistent cart is the authenticated authority
 
-Storefront cutover to `ShoppingCart`, continuous synchronization on every
-mutation, checkout conversion from the persistent cart, persistent pricing /
-discounts / taxes, inventory reservation changes, Customer 360 cart UI,
-abandoned-cart features. No migration is introduced by Phase B.
+Phase C removes the Phase B limitation ("edits after login are session-only").
+
+| identity | authority | session[:cart] |
+|---|---|---|
+| visitor | `Cart` PORO on the session, unchanged | the cart |
+| authenticated | the ACTIVE `ShoppingCart` | a projection of committed state, never read as authority |
+
+`ShoppingCarts::Storefront.for(user:, session:)` (reached through
+`ApplicationController#current_cart` / `storefront_cart`) is the single entry
+point for controllers, helpers and views:
+
+* **Reads.** `Storefront::Persistent#cart` builds the `Cart` PORO from an
+  in-memory projection of the durable cart on every request, so the existing
+  pricing, tax, shipping and view code work unchanged and a second device or
+  tab sees committed state on its next request. The session receives the
+  same projection (bounded by the cookie budget) plus the marker.
+* **Writes.** `ShoppingCarts::ActiveCartMutation` — `add`, `set_quantity`,
+  `remove`, `clear` — each in one transaction under `SELECT ... FOR UPDATE`
+  on the cart row. The storefront's per-condition caps (`Cart.max_allowed_for`)
+  are enforced under the lock (`:limit_exceeded` writes nothing). A line a
+  login merge left above the cap is never clamped; the customer can lower or
+  remove it. A cart that became terminal between lookup and lock is retried
+  against a fresh active cart. Removing the last line keeps the cart ACTIVE
+  and empty. A mutation that cannot commit is reported as a failure, never
+  as success.
+* **Unbound sessions.** If the session carries a browser cart but no marker
+  (the login-time reconciliation failed, or the customer was already signed
+  in when persistence shipped), the facade reconciles it late — idempotently,
+  through the same `AuthenticationHandoff` — before projecting. If that fails
+  the cookie is left untouched, so nothing is lost and the next request
+  retries, while reads still come from durable state.
+* **Checkout.** `CheckoutsController` prices and validates from the
+  durable-backed `Cart` exactly as before; `Checkout::CreateOrder` receives
+  the `ShoppingCart` and, as the last step of its own transaction,
+  `ShoppingCarts::ConvertCart` locks the cart, verifies the live lines still
+  equal the order snapshot, and closes it as `converted` with the
+  `sale_order_id`. Any mutation that landed in between (another tab) makes
+  the checkout fail with a message and rolls the order back; a failed
+  checkout of any kind leaves the cart ACTIVE with its contents. The next
+  add after a conversion creates a fresh active cart; the converted one is
+  never written again.
+* **Marker.** `session[:cart_reconciled]` keeps its Phase B role — a bound
+  session is never an import source — and is now also rewritten by every
+  projection, so a renewed session id after re-authentication rehydrates
+  instead of importing.
+
+Still true after Phase C: no price, discount, tax or availability is stored
+on cart rows; adding to the cart reserves no inventory; cart ids never come
+from the browser; no migration.
+
+## Non-goals (later)
+
+Customer 360 cart UI, cart history, abandoned-cart features, viewed-product
+tracking, real-time cross-device push.
