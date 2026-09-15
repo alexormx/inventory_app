@@ -37,8 +37,11 @@ class CartItemsController < ApplicationController
       return
     end
 
-    # Validar límites del carrito (3 nuevos, 1 coleccionable)
-    unless @cart.can_add?(@product.id, condition: @condition, quantity: 1)
+    # Validar límites del carrito (3 nuevos, 1 coleccionable) y persistir: para
+    # un cliente autenticado la mutación se confirma en la base antes de
+    # responder; para un visitante sigue en la sesión.
+    outcome = @storefront.add(@product, @condition)
+    if outcome == :limit_exceeded
       max = @cart.max_allowed(@condition)
       msg = if @collectible
               'Solo puedes agregar 1 pieza coleccionable de esta condición por producto.'
@@ -53,7 +56,9 @@ class CartItemsController < ApplicationController
       return
     end
 
-    @cart.add_product(@product.id, 1, condition: @condition)
+    return render_cart_unavailable(catalog_path) unless outcome == :ok
+
+    @cart = @storefront.cart
     label = @collectible ? "(#{condition_label(@condition)})" : ''
     flash.now[:notice] = "#{@product.product_name} #{label} fue agregado exitosamente" if request.format.turbo_stream?
 
@@ -99,8 +104,9 @@ class CartItemsController < ApplicationController
       return
     end
 
-    # Validar límite del carrito
-    if desired > max_allowed
+    # Validar límite del carrito y persistir la cantidad exacta
+    outcome = @storefront.set_quantity(@product, @condition, desired)
+    if outcome == :limit_exceeded
       msg = @collectible ? 'Máximo 1 pieza coleccionable.' : "Máximo #{max_allowed} unidades."
       respond_to do |format|
         format.turbo_stream { flash.now[:alert] = msg }
@@ -110,7 +116,9 @@ class CartItemsController < ApplicationController
       return
     end
 
-    @cart.update(@product.id, desired, condition: @condition)
+    return render_cart_unavailable(cart_path) unless outcome == :ok
+
+    @cart = @storefront.cart
 
     respond_to do |format|
       format.turbo_stream { render :update }
@@ -153,7 +161,9 @@ class CartItemsController < ApplicationController
     @condition = params[:condition].presence
     @stay_open = params[:stay_open].present?
 
-    @cart.remove(@product.id, condition: @condition)
+    return render_cart_unavailable(cart_path) unless @storefront.remove(@product, condition: @condition) == :ok
+
+    @cart = @storefront.cart
 
     respond_to do |format|
       format.turbo_stream do
@@ -185,8 +195,20 @@ class CartItemsController < ApplicationController
   private
 
   def set_cart
-    session[:cart] ||= {}
-    @cart = Cart.new(session)
+    @storefront = storefront_cart
+    @cart = @storefront.cart
+  end
+
+  # La mutación durable no pudo confirmarse (p. ej. carrera agotada): nunca se
+  # reporta éxito ni se toca sólo la sesión; el estado persistente sigue
+  # siendo el canónico y el cliente puede reintentar.
+  def render_cart_unavailable(fallback)
+    msg = 'No pudimos actualizar tu carrito. Intenta de nuevo.'
+    respond_to do |format|
+      format.turbo_stream { flash.now[:alert] = msg }
+      format.html { redirect_back fallback_location: fallback, alert: msg }
+      format.json { render json: { error: msg }, status: :unprocessable_entity }
+    end
   end
 
   def available_for_condition(product, condition)

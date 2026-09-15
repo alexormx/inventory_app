@@ -208,6 +208,6 @@ module ApplicationHelper
   # Helper para contar items del carrito desde la sesión
   # Maneja el nuevo formato {product_id => {condition => qty}}
   def cart_item_count
-    Cart.new(session).item_count
+    current_cart.item_count
   end
 end

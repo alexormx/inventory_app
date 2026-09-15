@@ -99,12 +99,12 @@ RSpec.describe 'Session cart reconciliation at authentication', type: :request d
       log_in
       cart = user.shopping_carts.sole
 
-      post cart_items_path, params: { product_id: other_product.id } # session-only edit after hydration
+      post cart_items_path, params: { product_id: other_product.id } # persisted directly once authenticated
       sign_in user                                                   # e.g. remember-me re-authenticating
       get cart_path
       expect(response).to have_http_status(:ok)
 
-      expect(quantities(cart)).to eq([product.id, 'brand_new'] => 1)
+      expect(quantities(cart)).to eq([product.id, 'brand_new'] => 1, [other_product.id, 'brand_new'] => 1)
       expect(session[:cart]).to eq(product.id.to_s => { 'brand_new' => 1 }, other_product.id.to_s => { 'brand_new' => 1 })
       expect(CartSessionImport.count).to eq(1)
     end
@@ -232,17 +232,17 @@ RSpec.describe 'Session cart reconciliation at authentication', type: :request d
     end
   end
 
-  describe 'storefront non-interference after reconciliation' do
-    it 'keeps add, update, view, checkout entry and removal on the session, never on the persistent cart' do
+  describe 'storefront mutations after reconciliation' do
+    it 'keeps add, update, view, checkout entry and removal on the durable cart, mirrored into the session' do
       post cart_items_path, params: { product_id: product.id }
       log_in
       cart = user.shopping_carts.sole
-      persisted_before = [quantities(cart), CartSessionImport.count, ShoppingCart.count]
 
       post cart_items_path, params: { product_id: other_product.id }, as: :json
       expect(response).to have_http_status(:ok)
       put cart_item_path(product.id), params: { product_id: product.id, quantity: 3 }, as: :json
       expect(response).to have_http_status(:ok)
+      expect(quantities(cart)).to eq([product.id, 'brand_new'] => 3, [other_product.id, 'brand_new'] => 1)
       expect(session[:cart]).to eq(product.id.to_s => { 'brand_new' => 3 }, other_product.id.to_s => { 'brand_new' => 1 })
 
       get cart_path
@@ -252,9 +252,11 @@ RSpec.describe 'Session cart reconciliation at authentication', type: :request d
       expect(response.body).to include(product.product_name)
 
       delete cart_item_path(other_product.id), params: { product_id: other_product.id }, as: :json
+      expect(quantities(cart)).to eq([product.id, 'brand_new'] => 3)
       expect(session[:cart]).to eq(product.id.to_s => { 'brand_new' => 3 })
 
-      expect([quantities(cart), CartSessionImport.count, ShoppingCart.count]).to eq(persisted_before)
+      expect(CartSessionImport.count).to eq(1)
+      expect(ShoppingCart.count).to eq(1)
     end
   end
 
