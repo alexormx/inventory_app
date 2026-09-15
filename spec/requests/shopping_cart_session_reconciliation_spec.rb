@@ -110,6 +110,34 @@ RSpec.describe 'Session cart reconciliation at authentication', type: :request d
     end
   end
 
+  describe 'other ways of establishing a session' do
+    it 'reconciles after a password reset signs the user in' do
+      post cart_items_path, params: { product_id: product.id }
+      raw_token = user.send_reset_password_instructions
+
+      put user_password_path, params: {
+        user: { reset_password_token: raw_token, password: 'newpassword123', password_confirmation: 'newpassword123' }
+      }
+      expect(response).to have_http_status(:redirect)
+
+      cart = user.shopping_carts.sole
+      expect(quantities(cart)).to eq([product.id, 'brand_new'] => 1)
+      expect(session[:cart]).to eq(product.id.to_s => { 'brand_new' => 1 })
+      expect(session[:cart_reconciled]).to include('cart_id' => cart.id)
+    end
+
+    it 'never imports for an unconfirmed account, whose login is rejected' do
+      unconfirmed = create(:user, password: password, confirmed_at: nil)
+      post cart_items_path, params: { product_id: product.id }
+
+      log_in(unconfirmed)
+
+      get profile_path
+      expect(response).to redirect_to(new_user_session_path)
+      expect_persistence_empty
+    end
+  end
+
   describe 'failed login' do
     it 'never imports' do
       post cart_items_path, params: { product_id: product.id }

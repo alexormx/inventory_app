@@ -31,10 +31,8 @@ module ShoppingCarts
         session_id: session_public_id,
         reconciled_marker: @session[MARKER_KEY]
       )
-      if result.hydrate?
-        @session[:cart] = result.session_cart
-        @session[MARKER_KEY] = result.session_marker
-      end
+      @session[:cart] = result.session_cart if result.hydrate?
+      @session[MARKER_KEY] = result.session_marker if result.mark?
       log(result)
       result
     rescue StandardError => e
@@ -56,7 +54,9 @@ module ShoppingCarts
       details = result.details.except(:errors, :error)
       summary += " #{details.map { |k, v| "#{k}=#{v}" }.join(' ')}" if details.any?
 
-      if result.success?
+      # :session_ahead is the expected outcome of a re-authentication after
+      # storefront edits, not a problem worth a warning.
+      if result.success? || result.status == :session_ahead
         Rails.logger.info(summary)
       else
         Rails.logger.warn(summary)

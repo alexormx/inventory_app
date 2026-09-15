@@ -421,6 +421,33 @@ RSpec.describe ShoppingCarts::SessionReconciler do
     end
   end
 
+  describe 'hydration that would not fit the cookie session' do
+    it 'imports and records the marker but leaves the session cart alone, and never re-imports' do
+      cart = create(:shopping_cart, user: user)
+      products = create_list(:product, 120, skip_seed_inventory: true)
+      products.each { |p| create(:shopping_cart_item, shopping_cart: cart, product: p, quantity: 1) }
+      session_cart = { product.id.to_s => { 'brand_new' => 1 } }
+
+      result = reconcile(session_cart)
+
+      expect(result.status).to eq(:hydration_too_large)
+      expect(result).to be_success
+      expect(result).not_to be_hydrate
+      expect(result).to be_mark
+      expect(result.session_marker).to eq(
+        'cart_id' => cart.id, 'digest' => ShoppingCarts::SessionCartNormalizer.call(session_cart).digest
+      )
+      expect(result.details[:persistent_lines]).to eq(121)
+      expect(quantities(cart)[[product.id, 'brand_new']]).to eq(1)
+      expect(CartSessionImport.count).to eq(1)
+
+      again = reconcile(session_cart, marker: result.session_marker, session_id: SecureRandom.hex(16))
+      expect(again.status).to eq(:hydration_too_large)
+      expect(quantities(cart)[[product.id, 'brand_new']]).to eq(1)
+      expect(CartSessionImport.count).to eq(1)
+    end
+  end
+
   describe 'authority boundaries' do
     it 'never touches inventory, sale orders or pricing' do
       seeded = create(:product)

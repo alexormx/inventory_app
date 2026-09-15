@@ -7,6 +7,18 @@ module ShoppingCarts
   # Cart#build_items would skip them anyway, and re-adding the id would only
   # keep a ghost line in the cookie. Their rows are not touched.
   class SessionHydrator
+    # session[:cart] travels in the 4 KB cookie next to the user key, CSRF
+    # token, flash and checkout data. A persistent cart merged from several
+    # browsers can legitimately outgrow that, and a CookieOverflow while
+    # committing the login response would turn a cart problem into a failed
+    # sign-in. The reconciler treats a hydration above this budget as
+    # "too large" (no session rewrite, marker still recorded).
+    MAX_SESSION_CART_BYTES = 2_048
+
+    def self.fits_session?(session_cart)
+      JSON.generate(session_cart).bytesize <= MAX_SESSION_CART_BYTES
+    end
+
     def self.call(cart)
       cart.shopping_cart_items
           .where.not(product_id: nil)

@@ -59,16 +59,21 @@ module ShoppingCarts
     MAX_ATTEMPTS = 3
     MAX_QUANTITY = SessionCartNormalizer::MAX_QUANTITY
 
-    SUCCESS_STATUSES = %i[imported reused rehydrated noop].freeze
+    SUCCESS_STATUSES = %i[imported reused rehydrated noop hydration_too_large].freeze
 
     Result = Struct.new(:status, :cart, :receipt, :session_cart, :session_marker, :details, keyword_init: true) do
       def success?
         SUCCESS_STATUSES.include?(status)
       end
 
-      # Only a result carrying a session cart may rewrite the session.
+      # Only a result carrying a session cart may rewrite the session cart;
+      # the marker is written whenever one is returned.
       def hydrate?
         !session_cart.nil?
+      end
+
+      def mark?
+        !session_marker.nil?
       end
     end
 
@@ -233,9 +238,18 @@ module ShoppingCarts
     end
 
     # Every successful result that rewrites the session also hands back the
-    # marker for it, so the next authentication knows what was hydrated.
+    # marker for it, so the next authentication knows what was hydrated. When
+    # the persistent cart is too large for the cookie the session is left as
+    # it is, but the marker is still recorded (with the digest of the cart the
+    # browser keeps) so a later authentication cannot re-import it.
     def hydrated(status, active_cart, receipt: nil, cart: active_cart, details: {})
       session_cart = active_cart ? SessionHydrator.call(active_cart) : {}
+      unless SessionHydrator.fits_session?(session_cart)
+        marker = { 'cart_id' => active_cart&.id, 'digest' => SessionCartNormalizer.call(@raw_session_cart).digest }
+        return result(:hydration_too_large, cart: cart, receipt: receipt, session_marker: marker,
+                                            details: details.merge(persistent_lines: session_cart.values.sum(&:size)))
+      end
+
       marker = { 'cart_id' => active_cart&.id, 'digest' => SessionCartNormalizer.call(session_cart).digest }
       result(status, cart: cart, receipt: receipt, session_cart: session_cart, session_marker: marker, details: details)
     end

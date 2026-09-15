@@ -60,6 +60,20 @@ RSpec.describe ShoppingCarts::AuthenticationHandoff do
     expect(ShoppingCart.count).to eq(0)
   end
 
+  it 'records the marker without rewriting the cart when hydration would not fit the cookie' do
+    cart = create(:shopping_cart, user: user)
+    create_list(:product, 120, skip_seed_inventory: true).each do |p|
+      create(:shopping_cart_item, shopping_cart: cart, product: p, quantity: 1)
+    end
+    session = build_session({ product.id.to_s => { 'brand_new' => 1 } })
+
+    result = described_class.call(user: user, session: session)
+
+    expect(result.status).to eq(:hydration_too_large)
+    expect(session[:cart]).to eq(product.id.to_s => { 'brand_new' => 1 })
+    expect(session[described_class::MARKER_KEY]).to eq(result.session_marker)
+  end
+
   it 'swallows and logs any failure so authentication continues' do
     allow(ShoppingCarts::SessionReconciler).to receive(:call).and_raise(ActiveRecord::StatementInvalid, 'db gone')
     session = build_session({ product.id.to_s => { 'brand_new' => 1 } })

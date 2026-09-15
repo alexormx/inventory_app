@@ -23,8 +23,11 @@ module ShoppingCarts
     DIGEST_VERSION = 'v1'
     # Mirrors the shopping_cart_items_quantity_bounded check constraint.
     MAX_QUANTITY = 100_000
-    # Mirrors the cart_session_imports_payload_bounded check constraint.
-    MAX_PAYLOAD_BYTES = 8_192
+    # Half of the cart_session_imports_payload_bounded check (8192 bytes):
+    # that constraint measures jsonb rendered as text, which is longer than
+    # the compact JSON measured here, and a session cart is bounded by the
+    # 4 KB cookie anyway.
+    MAX_PAYLOAD_BYTES = 4_096
 
     CONDITIONS = Inventory::ITEM_CONDITIONS.keys.map(&:to_s).freeze
     CONDITION_ORDER = CONDITIONS.each_with_index.to_h.freeze
