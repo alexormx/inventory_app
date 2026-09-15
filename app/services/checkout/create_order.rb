@@ -6,9 +6,15 @@ module Checkout
       def success? = errors.empty?
     end
 
-    def initialize(user:, cart:, shipping_address_id:, shipping_method:, payment_method:, notes:, idempotency_key: nil)
+    # shopping_cart: the customer's durable ACTIVE ShoppingCart when there is
+    # one. It is converted inside the same transaction that creates the
+    # SaleOrder, after verifying its live lines still match the cart snapshot
+    # the order was priced from. Optional so duck-typed carts keep working.
+    def initialize(user:, cart:, shipping_address_id:, shipping_method:, payment_method:, notes:,
+                   idempotency_key: nil, shopping_cart: nil)
       @user = user
       @cart = cart
+      @shopping_cart = shopping_cart
       @shipping_address_id = shipping_address_id
       @shipping_method = shipping_method.presence || 'standard'
       @payment_method = payment_method
@@ -60,6 +66,25 @@ module Checkout
       revalidation_errors = []
 
       ActiveRecord::Base.transaction do
+        # Primero el carrito persistente, ANTES de los productos: todo escritor
+        # del carrito bloquea su fila primero y luego toma un candado de clave
+        # sobre el producto al insertar una línea; tomar aquí el carrito al
+        # final formaría un ciclo con un "agregar" concurrente. Bajo el candado
+        # se verifica que las líneas vivas sigan siendo las de la instantánea.
+        if @shopping_cart
+          begin
+            ShoppingCarts::ConvertCart.lock_and_verify!(
+              cart: @shopping_cart,
+              user_id: @user.id,
+              lines: @cart.items.map { |item| [item[:product].id, item[:condition], item[:quantity]] }
+            )
+          rescue ShoppingCarts::ConvertCart::CartChanged => e
+            Rails.logger.warn("[Checkout::CreateOrder] cart_changed user_id=#{@user.id} cart_id=#{@shopping_cart.id} #{e.message}")
+            revalidation_errors << 'Tu carrito cambió mientras confirmabas el pedido. Revísalo e inténtalo de nuevo.'
+            raise ActiveRecord::Rollback
+          end
+        end
+
         # @cart.items ahora es array de hashes con :product, :condition, :quantity, :price, etc.
         product_ids = @cart.items.map { |item| item[:product].id }.uniq
         # Cargamos y bloqueamos filas de producto (SELECT ... FOR UPDATE)
@@ -183,6 +208,9 @@ module Checkout
             status: 'Pending'
           )
         end
+
+        # Último paso: cerrar el carrito (su fila sigue bloqueada desde el inicio).
+        ShoppingCarts::ConvertCart.close!(@shopping_cart, sale_order) if @shopping_cart
       end
 
       # Si hubo errores de revalidación después del rollback, retornarlos

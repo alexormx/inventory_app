@@ -172,15 +172,16 @@ class Cart
     current = quantity_for(product_id, condition: condition)
     new_total = current + quantity.to_i
 
-    new_total <= if condition.to_s == 'brand_new'
-                   MAX_NEW_ITEMS_PER_PRODUCT
-                 else
-                   # Coleccionables: máximo 1 por condición
-                   MAX_COLLECTIBLE_ITEMS_PER_PIECE
-                 end
+    new_total <= max_allowed(condition)
   end
 
   def max_allowed(condition)
+    self.class.max_allowed_for(condition)
+  end
+
+  # Single source of the per-condition purchase caps, shared with the
+  # persistent-cart mutation path so both identities enforce the same rule.
+  def self.max_allowed_for(condition)
     condition.to_s == 'brand_new' ? MAX_NEW_ITEMS_PER_PRODUCT : MAX_COLLECTIBLE_ITEMS_PER_PIECE
   end
 
@@ -207,8 +208,10 @@ class Cart
 
   def build_items
     result = []
+    # Una consulta para todos los productos del carrito en vez de una por línea.
+    products = Product.where(id: @session[:cart].keys).index_by(&:id)
     @session[:cart].each do |product_id, conditions|
-      product = Product.find_by(id: product_id)
+      product = products[product_id.to_s.to_i]
       next unless product
 
       conditions.each do |condition, quantity|

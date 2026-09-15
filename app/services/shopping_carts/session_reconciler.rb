@@ -4,9 +4,11 @@ module ShoppingCarts
   # Reconciles a browser's legacy session[:cart] with the authenticated user's
   # persistent ACTIVE ShoppingCart, exactly once per browser session.
   #
-  # session[:cart] stays the live storefront source of truth: this service
-  # only runs at the authentication boundary, and its output (Result#session_cart
-  # plus Result#session_marker) is what the caller writes back into the session.
+  # It runs at the authentication boundary (Warden hook) and, for a session
+  # that reached the storefront still unbound, from ShoppingCarts::Storefront.
+  # Its output (Result#session_cart plus Result#session_marker) is what the
+  # caller writes back into the session; once bound, the session is only a
+  # projection of the durable cart.
   #
   # Exactly-once design
   # -------------------

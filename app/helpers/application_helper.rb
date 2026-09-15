@@ -207,7 +207,12 @@ module ApplicationHelper
 
   # Helper para contar items del carrito desde la sesión
   # Maneja el nuevo formato {product_id => {condition => qty}}
+  # Reads the request's storefront cart (durable for an authenticated customer,
+  # the session for a visitor). Outside a controller context - helper specs,
+  # any view rendered without the controller helper - there is no current_cart,
+  # so the session cart is the only thing there is to count.
   def cart_item_count
-    Cart.new(session).item_count
+    cart = respond_to?(:current_cart) ? current_cart : ShoppingCarts::Storefront.for(user: nil, session: session).cart
+    cart.item_count
   end
 end

@@ -145,7 +145,8 @@ class CheckoutsController < ApplicationController
       shipping_method: shipping_info[:method],
       payment_method: payment_method,
       notes: checkout_notes,
-      idempotency_key: stored_token
+      idempotency_key: stored_token,
+      shopping_cart: storefront_cart.persistent_cart
     }
 
     # Intentar crear orden
@@ -197,7 +198,7 @@ class CheckoutsController < ApplicationController
   private
 
   def set_cart
-    @cart = Cart.new(session)
+    @cart = current_cart
   end
 
   def ensure_cart_not_empty

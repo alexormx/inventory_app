@@ -4,6 +4,6 @@ class CartsController < ApplicationController
   layout 'customer'
 
   def show
-    @cart = Cart.new(session)
+    @cart = current_cart
   end
 end

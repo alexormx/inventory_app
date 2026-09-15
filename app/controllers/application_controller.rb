@@ -9,8 +9,20 @@ class ApplicationController < ActionController::Base
   before_action :ensure_confirmed_user!
   before_action :set_locale
   helper Admin::SortHelper if defined?(Admin::SortHelper)
+  helper_method :current_cart
 
   protected
+
+  # The storefront cart for this request: the legacy session cart for a
+  # visitor, the durable ACTIVE ShoppingCart (projected into a Cart PORO) for
+  # an authenticated customer. See ShoppingCarts::Storefront.
+  def storefront_cart
+    @storefront_cart ||= ShoppingCarts::Storefront.for(user: current_user, session: session)
+  end
+
+  def current_cart
+    storefront_cart.cart
+  end
 
   def after_sign_in_path_for(resource)
     if resource.admin?
