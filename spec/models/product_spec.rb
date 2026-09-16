@@ -158,11 +158,17 @@ RSpec.describe Product, type: :model do
         create_list(:inventory, 2, product: product, status: :in_transit, item_condition: :brand_new, inventory_location: nil)
       end
 
-      it 'counts in_transit as sellable brand_new' do
-        result = product.available_by_condition
-        expect(result.size).to eq(1)
-        expect(result.first[:condition]).to eq('brand_new')
-        expect(result.first[:count]).to eq(2)
+      # In-transit stock is future availability, not available now: it must
+      # not be offered as a normal purchase. It stays visible through
+      # #in_transit_count / #sellable_inventory, which feed the ETA and the
+      # explicit "Reservar" CTA.
+      it 'excludes in_transit from available-now availability' do
+        expect(product.available_by_condition).to eq([])
+      end
+
+      it 'still reports in_transit separately for the reservation path' do
+        expect(product.in_transit_count).to eq(2)
+        expect(product.sellable_inventory.for_condition(:brand_new).count).to eq(2)
       end
     end
 
