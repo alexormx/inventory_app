@@ -156,11 +156,18 @@
               <p class="catalog-card-eta text-muted extra-small"><i class="fa fa-clock me-1" aria-hidden="true"></i><span class="visually-hidden">Disponible: </span><%= eta %></p>
             <% end %>
             <% if product.active? %>
-              <% on_hand = @on_hand_counts[product.id] || 0 %>
+              <%# The direct add posts no condition, so the backend defaults to
+                  brand_new - the CTA must therefore be decided on brand_new
+                  available-now, never on a product-wide total. When only
+                  another condition is buyable we send the customer to the
+                  detail page, where conditions are chosen explicitly. %>
+              <% brand_new_on_hand = (@brand_new_available_now || {})[product.id].to_i %>
+              <% other_condition_on_hand = (@other_condition_available_now || {})[product.id].to_i %>
               <% has_in_transit = in_transit_eta_cached.present? %>
               <% can_reserve = has_in_transit || product.oversell_allowed? %>
-              <% is_reservation = on_hand <= 0 && can_reserve %>
-              <% disabled = on_hand <= 0 && !can_reserve %>
+              <% options_only = brand_new_on_hand <= 0 && other_condition_on_hand.positive? %>
+              <% is_reservation = brand_new_on_hand <= 0 && !options_only && can_reserve %>
+              <% disabled = brand_new_on_hand <= 0 && !options_only && !can_reserve %>
               <% reservation_tooltip = if has_in_transit
                                           "Reserva · Llega #{spanish_short_date(in_transit_eta_cached)}"
                                         elsif product.preorder_available
@@ -177,8 +184,21 @@
                              elsif is_reservation then reservation_tooltip
                              else 'Agregar al carrito'
                              end %>
+              <% if options_only %>
+                <p class="catalog-card-eta text-muted extra-small mb-1">
+                  <i class="fa fa-layer-group me-1" aria-hidden="true"></i>Disponible en otra condición
+                </p>
+              <% end %>
               <div class="catalog-card-actions d-flex gap-1 mt-auto">
-                <% if user_signed_in? %>
+                <% if options_only %>
+                  <%= link_to product_path(product),
+                              class: "btn btn-outline-danger btn-sm flex-grow-1",
+                              title: 'Ver condiciones disponibles',
+                              data: { turbo_frame: "_top" },
+                              aria: { label: "Ver opciones de #{product.product_name}" } do %>
+                    <i class="fas fa-layer-group me-1" aria-hidden="true"></i>Ver opciones
+                  <% end %>
+                <% elsif user_signed_in? %>
                   <%= button_to cart_items_path,
                                 params: { product_id: product.id },
                                 method: :post,

@@ -138,8 +138,11 @@ class ProductsController < ApplicationController
     @products = scope.with_attached_product_images.page(catalog_query.page).per(PUBLIC_PER_PAGE)
     # Precalcular on_hand counts en batch para evitar N+1 (simple hash)
     product_ids = @products.map(&:id)
-    @on_hand_counts = Inventory.customer_on_hand.where(product_id: product_ids)
-                               .group(:product_id).count
+    # One grouped available-now query for the whole page, split per condition
+    # so a card never advertises a direct brand_new add on the strength of a
+    # collectible piece. Product-level totals are derived from the same rows,
+    # so this stays a single inventory query - never one per card.
+    assign_condition_availability(product_ids)
     @in_transit_counts = Inventory.customer_in_transit.where(product_id: product_ids).group(:product_id).count
     # Precalcular agregados de reseñas aprobadas para mostrar estrellas
     # en cada card sin N+1.
@@ -277,6 +280,23 @@ class ProductsController < ApplicationController
   def recently_readded_facet_count(base_scope, filters)
     scope = apply_catalog_filters(base_scope, filters, except: :recently_readded)
     scope.merge(Product.recently_readded).count
+  end
+
+  # Splits canonical available-now counts into the two figures a catalog card
+  # needs: brand_new (the condition its add button would post) and whether any
+  # other condition is buyable right now (which earns "Ver opciones" instead).
+  def assign_condition_availability(product_ids)
+    @brand_new_available_now = Hash.new(0)
+    @other_condition_available_now = Hash.new(0)
+    @on_hand_counts = Hash.new(0)
+    Inventories::Availability.counts_for(product_ids).each do |(product_id, condition), count|
+      @on_hand_counts[product_id] += count
+      if condition == 'brand_new'
+        @brand_new_available_now[product_id] += count
+      else
+        @other_condition_available_now[product_id] += count
+      end
+    end
   end
 
   def set_product
