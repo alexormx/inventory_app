@@ -17,13 +17,16 @@ class CartItemsController < ApplicationController
       return
     end
 
-    # Validar disponibilidad de inventario por condición
-    available_count = available_for_condition(@product, @condition)
+    # Disponibilidad canónica por condición: la compra normal se satisface con
+    # inventario DISPONIBLE AHORA; lo que excede eso solo se permite como
+    # reservación explícita (ver #orderable_ceiling).
+    availability = condition_availability
     current_in_cart = @cart.quantity_for(@product.id, condition: @condition)
     desired_total = current_in_cart + 1
+    available_count = orderable_quantity(availability)
 
     # Validar stock disponible
-    if desired_total > available_count && !@product.oversell_allowed?
+    if desired_total > orderable_ceiling(availability)
       msg = if @collectible
               'Esta pieza coleccionable ya no está disponible.'
             else
@@ -90,11 +93,12 @@ class CartItemsController < ApplicationController
     end
 
     desired = params[:quantity].to_i
-    available_count = available_for_condition(@product, @condition)
+    availability = condition_availability
+    available_count = orderable_quantity(availability)
     max_allowed = @cart.max_allowed(@condition)
 
     # Validar stock
-    if desired.positive? && desired > available_count && !@product.oversell_allowed?
+    if desired.positive? && desired > orderable_ceiling(availability)
       msg = "No puedes agregar #{desired} unidades. Stock disponible: #{available_count}."
       respond_to do |format|
         format.turbo_stream { flash.now[:alert] = msg }
@@ -211,11 +215,30 @@ class CartItemsController < ApplicationController
     end
   end
 
-  def available_for_condition(product, condition)
-    # Sólo piezas vendibles: :available CON ubicación física o :in_transit
-    # (ya comprado, en camino). Espejo de Product#publishable_stock? para no
-    # permitir ordenar piezas que el admin no puede localizar.
-    product.sellable_inventory.where(item_condition: condition).count
+  # Disponibilidad canónica de la condición solicitada, compartida con el
+  # catálogo y la ficha de producto (Inventories::Availability).
+  def condition_availability
+    Inventories::Availability.for(@product, condition: @condition)
+  end
+
+  # Tope de unidades que se pueden pedir de esta condición.
+  #
+  # La compra NORMAL se satisface únicamente con inventario DISPONIBLE AHORA
+  # (:available, con ubicación física, sin sale_order). Por encima de eso la
+  # línea solo se admite como RESERVACIÓN explícita, nunca como "Agregar":
+  #
+  #   - preventa / sobre pedido (#oversell_allowed?): sin tope de stock, su
+  #     flujo dedicado decide (ver InventoryServices::AvailabilitySplitter).
+  #   - piezas ya compradas y en tránsito: reservables; el catálogo etiqueta
+  #     ese CTA como "Reservar · Llega <fecha>", jamás como "Agregar".
+  def orderable_ceiling(availability)
+    return Float::INFINITY if @product.oversell_allowed?
+
+    orderable_quantity(availability)
+  end
+
+  def orderable_quantity(availability)
+    availability.available_now + availability.in_transit
   end
 
   def price_for_condition(product, condition)

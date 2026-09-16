@@ -532,13 +532,15 @@ class Product < ApplicationRecord
   # Retorna: [{ condition: 'brand_new', label: 'Nuevo', count: 5, price: 150.0 }, ...]
   def available_by_condition
     @available_by_condition ||= begin
-      # Sólo inventario VENDIBLE: libre (sin sale_order) que sea :available con
-      # ubicación física confirmada, o :in_transit. Espejo de #publishable_stock?
-      # y del tope de orden en CartItemsController, para no ofrecer ni mostrar
-      # piezas que el admin no puede localizar.
-      sellable = sellable_inventory
+      # Sólo inventario DISPONIBLE AHORA: libre (sin sale_order), :available y
+      # con ubicación física confirmada. Regla canónica del storefront
+      # (Inventories::Availability), para no ofrecer ni mostrar piezas que el
+      # admin no puede localizar ni piezas que aún vienen en camino: el
+      # inventario :in_transit es disponibilidad FUTURA y se presenta aparte
+      # como reservación (ver #in_transit_count y ProductsHelper#stock_eta).
+      sellable = available_now_inventory
 
-      # Agrupar inventario vendible por condición
+      # Agrupar inventario disponible ahora por condición
       counts = sellable.group(:item_condition).count
 
       # Obtener precio representativo por condición (promedio de selling_price o product price)
@@ -642,6 +644,14 @@ class Product < ApplicationRecord
   # cantidad del carrito, para que mostrar, ordenar y publicar coincidan siempre.
   def sellable_inventory
     inventories.customer_sellable
+  end
+
+  # Piezas que el cliente puede comprar AHORA: libres, :available y con
+  # ubicación física confirmada. Es la regla canónica del storefront
+  # (Inventories::Availability); #sellable_inventory la sigue complementando
+  # con :in_transit para asignación, preventa y reservación.
+  def available_now_inventory
+    inventories.customer_available_now
   end
 
   # ¿Debería poder estar :active? Tiene stock publicable, o se vende por

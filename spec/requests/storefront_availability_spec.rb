@@ -158,6 +158,65 @@ RSpec.describe 'Storefront availability', type: :request do
     end
   end
 
+  describe 'product detail' do
+    it 'counts only available-now stock per condition, never in-transit' do
+      product = bare_product
+      located_available(product, condition: :brand_new, count: 2)
+      in_transit(product, condition: :brand_new)
+
+      brand_new = product.available_by_condition.find { |c| c[:condition] == 'brand_new' }
+
+      expect(brand_new[:count]).to eq(2)
+    end
+
+    it 'offers the collectible condition that has located stock' do
+      product = bare_product
+      located_available(product, condition: :mint)
+
+      get product_path(product)
+
+      expect(response).to have_http_status(:ok)
+      expect(product.available_by_condition.map { |c| c[:condition] }).to eq(['mint'])
+    end
+
+    it 'does not offer a normal add for in-transit-only stock, but keeps it reservable' do
+      product = bare_product
+      in_transit(product, condition: :brand_new)
+
+      get product_path(product)
+
+      expect(response).to have_http_status(:ok)
+      expect(product.available_by_condition).to be_empty
+      expect(response.body).not_to include('Agregar al carrito')
+      expect(response.body).to include('Reservar')
+    end
+  end
+
+  # WhatsApp lists are a guest-only affordance (whatsapp_list_available? is
+  # false for a signed-in customer), so these run signed out.
+  describe 'whatsapp list' do
+    before { sign_out user }
+
+    it 'does not advertise in-transit-only stock as available now' do
+      product = bare_product
+      in_transit(product, condition: :brand_new)
+
+      expect(Inventories::Availability.for(product, condition: 'brand_new').available_now).to eq(0)
+      expect(product.sellable_inventory.for_condition(:brand_new).count).to eq(1)
+    end
+
+    it 'rejects a quantity beyond what is orderable' do
+      product = bare_product
+      located_available(product, condition: :brand_new)
+
+      post whatsapp_list_items_path, params: { product_id: product.id, quantity: 3 },
+                                     headers: { 'Accept' => 'application/json' }
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(WhatsappRequestItem.count).to eq(0)
+    end
+  end
+
   describe 'in stock facet' do
     it 'counts only products with located available stock' do
       in_stock = bare_product
