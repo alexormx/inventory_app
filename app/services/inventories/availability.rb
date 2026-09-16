@@ -43,15 +43,46 @@ module Inventories
     # [product_id, condition_name] - the catalog renders a card per product
     # and must not issue a query per card.
     def self.counts_for(product_ids, conditions: nil)
+      grouped_counts(Inventory.customer_available_now, product_ids, conditions: conditions)
+    end
+
+    # In-transit counts, same shape. Reservation is condition-specific too: a
+    # CTA that submits one condition must never be authorized by another
+    # condition's incoming supply.
+    def self.in_transit_counts_for(product_ids, conditions: nil)
+      grouped_counts(Inventory.customer_in_transit, product_ids, conditions: conditions)
+    end
+
+    # Earliest arrival per [product_id, condition], so a reservation label
+    # shows the ETA of the condition it actually reserves - never a different
+    # condition's date. Arrivals already in the past are ignored.
+    def self.in_transit_etas_for(product_ids)
       ids = Array(product_ids).compact.uniq
       return {} if ids.empty?
 
-      scope = Inventory.customer_available_now.where(product_id: ids)
+      Inventory.customer_in_transit
+               .where(product_id: ids)
+               .joins(:purchase_order)
+               .where.not(purchase_orders: { expected_delivery_date: nil })
+               .where(purchase_orders: { expected_delivery_date: Date.current.. })
+               .group(:product_id, :item_condition)
+               .minimum('purchase_orders.expected_delivery_date')
+               .each_with_object({}) do |((pid, cond), eta), acc|
+        acc[[pid, normalize_condition(cond)]] = eta
+      end
+    end
+
+    def self.grouped_counts(scope, product_ids, conditions: nil)
+      ids = Array(product_ids).compact.uniq
+      return {} if ids.empty?
+
+      scope = scope.where(product_id: ids)
       scope = scope.where(item_condition: conditions) if conditions.present?
       scope.group(:product_id, :item_condition).count.each_with_object({}) do |((pid, cond), count), acc|
         acc[[pid, normalize_condition(cond)]] = count
       end
     end
+    private_class_method :grouped_counts
 
     # Grouping by an enum column can yield either the integer or the label
     # depending on how the column is read back; callers key on the label.

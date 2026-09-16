@@ -163,13 +163,29 @@
                   detail page, where conditions are chosen explicitly. %>
               <% brand_new_on_hand = (@brand_new_available_now || {})[product.id].to_i %>
               <% other_condition_on_hand = (@other_condition_available_now || {})[product.id].to_i %>
-              <% has_in_transit = in_transit_eta_cached.present? %>
-              <% can_reserve = has_in_transit || product.oversell_allowed? %>
-              <% options_only = brand_new_on_hand <= 0 && other_condition_on_hand.positive? %>
-              <% is_reservation = brand_new_on_hand <= 0 && !options_only && can_reserve %>
-              <% disabled = brand_new_on_hand <= 0 && !options_only && !can_reserve %>
+              <% brand_new_in_transit = (@brand_new_in_transit || {})[product.id].to_i %>
+              <% other_condition_in_transit = (@other_condition_in_transit || {})[product.id].to_i %>
+              <%# ETA de la condición que de verdad se reservaría (brand_new),
+                  no el mínimo del producto. %>
+              <% brand_new_eta = (@in_transit_etas_by_condition || {})[[product.id, 'brand_new']] %>
+              <%# Precedencia, toda condition-aware:
+                    1. brand_new disponible ahora        -> "Agregar"
+                    2. otra condición disponible ahora   -> "Ver opciones" (comprar ya gana)
+                    3. brand_new en tránsito             -> "Reservar" brand_new explícito
+                    4. preventa / sobre pedido           -> "Reservar" brand_new (por bandera
+                                                            del producto, no por stock ajeno)
+                    5. otra condición en tránsito        -> "Ver opciones"
+                    6. nada                              -> "Sin stock" %>
+              <% add_now = brand_new_on_hand.positive? %>
+              <% reserve_brand_new = !add_now && other_condition_on_hand.zero? &&
+                                     (brand_new_in_transit.positive? || product.oversell_allowed?) %>
+              <% options_only = !add_now && !reserve_brand_new &&
+                                (other_condition_on_hand.positive? || other_condition_in_transit.positive?) %>
+              <% is_reservation = reserve_brand_new %>
+              <% has_in_transit = brand_new_in_transit.positive? && brand_new_eta.present? %>
+              <% disabled = !add_now && !reserve_brand_new && !options_only %>
               <% reservation_tooltip = if has_in_transit
-                                          "Reserva · Llega #{spanish_short_date(in_transit_eta_cached)}"
+                                          "Reserva · Llega #{spanish_short_date(brand_new_eta)}"
                                         elsif product.preorder_available
                                           'Reserva · Preventa'
                                         elsif product.backorder_allowed
@@ -199,8 +215,10 @@
                     <i class="fas fa-layer-group me-1" aria-hidden="true"></i>Ver opciones
                   <% end %>
                 <% elsif user_signed_in? %>
+                  <%# Condición explícita: la tarjeta solo decide sobre
+                      brand_new, así que nunca queda implícita. %>
                   <%= button_to cart_items_path,
-                                params: { product_id: product.id },
+                                params: { product_id: product.id, condition: 'brand_new' },
                                 method: :post,
                                 class: "btn btn-danger btn-sm flex-grow-1 #{'disabled' if disabled}",
                                 disabled: disabled,

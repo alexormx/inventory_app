@@ -102,4 +102,58 @@ RSpec.describe Inventories::Availability do
       expect(described_class.counts_for([])).to eq({})
     end
   end
+
+  describe '.in_transit_counts_for' do
+    it 'returns in-transit counts keyed by product and condition' do
+      create(:inventory, product: product, status: :in_transit, item_condition: :brand_new)
+      create(:inventory, product: product, status: :in_transit, item_condition: :brand_new)
+      create(:inventory, product: product, status: :in_transit, item_condition: :mint)
+
+      counts = described_class.in_transit_counts_for([product.id])
+
+      expect(counts[[product.id, 'brand_new']]).to eq(2)
+      expect(counts[[product.id, 'mint']]).to eq(1)
+      expect(counts[[product.id, 'good']]).to be_nil
+    end
+
+    it 'excludes located available stock' do
+      located_available(condition: :brand_new)
+
+      expect(described_class.in_transit_counts_for([product.id])).to eq({})
+    end
+
+    it 'returns an empty hash for no product ids' do
+      expect(described_class.in_transit_counts_for([])).to eq({})
+    end
+  end
+
+  describe '.in_transit_etas_for' do
+    it 'returns the earliest arrival per product and condition' do
+      soon = create(:purchase_order, expected_delivery_date: 3.days.from_now.to_date)
+      later = create(:purchase_order, expected_delivery_date: 20.days.from_now.to_date)
+      create(:inventory, product: product, status: :in_transit,
+                         item_condition: :brand_new, purchase_order: later)
+      create(:inventory, product: product, status: :in_transit,
+                         item_condition: :brand_new, purchase_order: soon)
+      create(:inventory, product: product, status: :in_transit,
+                         item_condition: :mint, purchase_order: later)
+
+      etas = described_class.in_transit_etas_for([product.id])
+
+      expect(etas[[product.id, 'brand_new']]).to eq(soon.expected_delivery_date)
+      expect(etas[[product.id, 'mint']]).to eq(later.expected_delivery_date)
+    end
+
+    it 'ignores arrivals already in the past' do
+      # A PurchaseOrder cannot be created with a past delivery date; an
+      # overdue arrival only happens by the date passing, so back-date the
+      # column the way time would.
+      past = create(:purchase_order, expected_delivery_date: 5.days.from_now.to_date)
+      create(:inventory, product: product, status: :in_transit,
+                         item_condition: :brand_new, purchase_order: past)
+      past.update_columns(expected_delivery_date: 2.days.ago.to_date)
+
+      expect(described_class.in_transit_etas_for([product.id])).to eq({})
+    end
+  end
 end

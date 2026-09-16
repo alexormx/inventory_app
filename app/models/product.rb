@@ -562,6 +562,28 @@ class Product < ApplicationRecord
     end
   end
 
+  # Piezas ya compradas que vienen en camino, agrupadas POR CONDICIÓN y con
+  # su llegada más próxima. Es disponibilidad FUTURA: alimenta el CTA
+  # "Reservar", que debe corresponder a la condición que de verdad viene en
+  # camino - reservar brand_new por una pieza mint sería el mismo error de
+  # ceguera de condición que corrige #available_by_condition.
+  def in_transit_by_condition
+    @in_transit_by_condition ||= begin
+      counts = Inventories::Availability.in_transit_counts_for([id])
+      etas = Inventories::Availability.in_transit_etas_for([id])
+      counts.map do |(_product_id, condition), count|
+        {
+          condition: condition,
+          label: Inventory::CONDITION_LABELS[condition] || condition.titleize,
+          short_label: condition_short_label(condition),
+          count: count,
+          eta: etas[[id, condition]],
+          collectible: condition != 'brand_new'
+        }
+      end.sort_by { |c| Inventory::ITEM_CONDITIONS[c[:condition].to_sym] || 99 }
+    end
+  end
+
   def customer_price_for_condition(condition)
     return selling_price.to_d if condition.to_s == 'brand_new'
 

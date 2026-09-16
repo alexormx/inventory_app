@@ -164,9 +164,12 @@ class WhatsappListsController < ApplicationController
       return "Máximo #{Cart::MAX_NEW_ITEMS_PER_PRODUCT} unidades por producto."
     end
 
-    orderable = available_brand_new_for(product)
+    availability = Inventories::Availability.for(product, condition: 'brand_new')
+    orderable = availability.available_now + availability.in_transit
     if desired > orderable && !product.oversell_allowed?
-      return "Stock insuficiente (disponibles: #{orderable}). Este producto no permite preventa ni sobre pedido."
+      parts = ["Disponible ahora: #{availability.available_now}"]
+      parts << "en tránsito reservable: #{availability.in_transit}" if availability.in_transit.positive?
+      return "Stock insuficiente (#{parts.join(', ')}). Este producto no permite preventa ni sobre pedido."
     end
 
     nil

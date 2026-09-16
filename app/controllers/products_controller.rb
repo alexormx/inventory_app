@@ -143,26 +143,20 @@ class ProductsController < ApplicationController
     # collectible piece. Product-level totals are derived from the same rows,
     # so this stays a single inventory query - never one per card.
     assign_condition_availability(product_ids)
-    @in_transit_counts = Inventory.customer_in_transit.where(product_id: product_ids).group(:product_id).count
     # Precalcular agregados de reseñas aprobadas para mostrar estrellas
     # en cada card sin N+1.
     approved_reviews = Review.approved.where(product_id: product_ids)
     @review_counts = approved_reviews.group(:product_id).count
     @review_averages = approved_reviews.group(:product_id).average(:rating)
                                        .transform_values { |v| v.to_f.round(1) }
-    # Para productos sin stock pero con piezas en tránsito, calcular la fecha
-    # más próxima de llegada (de la PO con expected_delivery_date más temprana).
-    products_without_stock = product_ids - @on_hand_counts.keys
-    @in_transit_etas = if products_without_stock.any?
-                         Inventory.customer_in_transit.where(product_id: products_without_stock)
-                                  .joins(:purchase_order)
-                                  .where.not(purchase_orders: { expected_delivery_date: nil })
-                                  .where('purchase_orders.expected_delivery_date >= ?', Date.current)
-                                  .group(:product_id)
-                                  .minimum('purchase_orders.expected_delivery_date')
-                       else
-                         {}
-                       end
+    # Fecha de llegada más próxima POR CONDICIÓN: la etiqueta de una
+    # reservación debe mostrar el ETA de la condición que realmente reserva,
+    # nunca la de otra condición. Se conserva la vista por producto
+    # (@in_transit_etas) para el badge/resumen, que no autoriza nada.
+    @in_transit_etas_by_condition = Inventories::Availability.in_transit_etas_for(product_ids)
+    @in_transit_etas = @in_transit_etas_by_condition.each_with_object({}) do |((pid, _cond), eta), acc|
+      acc[pid] = [acc[pid], eta].compact.min
+    end
     # Top 4 categorías por número de productos para sugerir en el empty state
     @top_categories = Product.publicly_visible.where.not(category: [nil, ''])
                              .group(:category).order(Arel.sql('COUNT(*) DESC'))
@@ -291,11 +285,19 @@ class ProductsController < ApplicationController
     @on_hand_counts = Hash.new(0)
     Inventories::Availability.counts_for(product_ids).each do |(product_id, condition), count|
       @on_hand_counts[product_id] += count
-      if condition == 'brand_new'
-        @brand_new_available_now[product_id] += count
-      else
-        @other_condition_available_now[product_id] += count
-      end
+      bucket = condition == 'brand_new' ? @brand_new_available_now : @other_condition_available_now
+      bucket[product_id] += count
+    end
+
+    # Reservación también por condición: una tarjeta solo puede ofrecer
+    # "Reservar" de brand_new si brand_new es lo que viene en camino.
+    @brand_new_in_transit = Hash.new(0)
+    @other_condition_in_transit = Hash.new(0)
+    @in_transit_counts = Hash.new(0)
+    Inventories::Availability.in_transit_counts_for(product_ids).each do |(product_id, condition), count|
+      @in_transit_counts[product_id] += count
+      bucket = condition == 'brand_new' ? @brand_new_in_transit : @other_condition_in_transit
+      bucket[product_id] += count
     end
   end
 

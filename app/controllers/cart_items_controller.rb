@@ -23,14 +23,14 @@ class CartItemsController < ApplicationController
     availability = condition_availability
     current_in_cart = @cart.quantity_for(@product.id, condition: @condition)
     desired_total = current_in_cart + 1
-    available_count = orderable_quantity(availability)
 
     # Validar stock disponible
     if desired_total > orderable_ceiling(availability)
       msg = if @collectible
               'Esta pieza coleccionable ya no está disponible.'
             else
-              "Stock insuficiente (disponibles: #{available_count}). Este producto no permite preventa ni sobre pedido."
+              "Stock insuficiente (#{availability_sentence(availability)}). " \
+                'Este producto no permite preventa ni sobre pedido.'
             end
       respond_to do |format|
         format.turbo_stream { flash.now[:alert] = msg }
@@ -99,7 +99,7 @@ class CartItemsController < ApplicationController
 
     # Validar stock
     if desired.positive? && desired > orderable_ceiling(availability)
-      msg = "No puedes agregar #{desired} unidades. Stock disponible: #{available_count}."
+      msg = "No puedes agregar #{desired} unidades. #{availability_sentence(availability)}."
       respond_to do |format|
         format.turbo_stream { flash.now[:alert] = msg }
         format.html { redirect_back fallback_location: cart_path, alert: msg }
@@ -239,6 +239,14 @@ class CartItemsController < ApplicationController
 
   def orderable_quantity(availability)
     availability.available_now + availability.in_transit
+  end
+
+  # No etiquetamos como "disponible" un número que mezcla stock inmediato con
+  # piezas que aún vienen en camino: se reportan por separado.
+  def availability_sentence(availability)
+    parts = ["Disponible ahora: #{availability.available_now}"]
+    parts << "en tránsito reservable: #{availability.in_transit}" if availability.in_transit.positive?
+    parts.join(', ')
   end
 
   def price_for_condition(product, condition)
