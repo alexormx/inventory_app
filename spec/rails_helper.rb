@@ -68,6 +68,15 @@ Capybara.register_driver :selenium_chrome_headless do |app|
   # FIX: Add Accept header to prevent 406 Not Acceptable errors with Rails 7/Turbo
   # options.add_argument('--header=Accept=text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9')
 
+  # DIAGNOSTICO TEMPORAL — rama desechable, no mergear.
+  # Permite fijar explicitamente el binario de Chrome cuando el workflow
+  # provisiona un par exacto Chrome/ChromeDriver, en vez de dejar que el driver
+  # descubra el Chrome de la imagen del runner (que esta desalineado con el).
+  # Sin la variable no hace nada, asi que fuera del experimento el
+  # comportamiento es identico al actual.
+  chrome_binary = ENV.fetch('CHROME_BINARY_PATH', nil)
+  options.binary = chrome_binary if chrome_binary && File.executable?(chrome_binary)
+
   # Configure the driver to be silent
   service =
     if CHROMEDRIVER_PATH
