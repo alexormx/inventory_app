@@ -2,13 +2,20 @@
 
 module Preorders
   class PreorderAllocator
-    # Si newly_available_units no se pasa, intentará asignar todas las piezas libres (available + in_transit)
+    # Si newly_available_units no se pasa, intentará asignar todas las piezas
+    # libres (available + in_transit).
     #
-    # `condition` acota esas unidades a una sola condición: quien publica una
-    # pieza sabe de qué condición es, y esa oferta sólo puede satisfacer
-    # demanda de la MISMA condición. Sin él se conserva el comportamiento
-    # previo, pero el presupuesto sigue siendo por condición: la demanda de
-    # brand_new nunca se autoriza con existencias mint.
+    # Toda asignación respeta DOS topes a la vez:
+    #
+    #   1. newly_available_units es un presupuesto COMPARTIDO por llamada. Lo
+    #      ha sido desde que existe la clase: N unidades nuevas reparten N
+    #      piezas en total, no N por condición.
+    #   2. Cada condición no puede exceder su propia oferta real. Una pieza
+    #      mint no autoriza ni satisface demanda brand_new.
+    #
+    # `condition` acota además la llamada a una sola condición: quien publica
+    # una pieza sabe de qué condición es, y esa oferta sólo puede satisfacer
+    # demanda de la MISMA condición.
     def initialize(product, newly_available_units: nil, condition: nil)
       @product   = product
       @units     = newly_available_units
@@ -41,8 +48,14 @@ module Preorders
         # every supply boundary. Holding it before demand/inventory locks keeps
         # a newer checkout from overtaking older committed demand.
         @product = Product.lock.find(@product.id)
-        budget = budget_by_condition
-        next 0 if budget.empty?
+        # Dos topes independientes, ambos obligatorios:
+        #   supply -> cuántas piezas existen DE CADA CONDICIÓN (corrección nueva)
+        #   pool   -> cuántas unidades puede repartir esta llamada en total
+        #             (semántica histórica de newly_available_units)
+        supply = supply_by_condition
+        supply = supply.slice(@condition) if @condition
+        pool = @units ? @units.to_i : supply.values.sum
+        next 0 if pool <= 0 || supply.empty?
 
         pending = PreorderReservation.fifo_pending
                                      .where(product_id: @product.id)
@@ -52,17 +65,18 @@ module Preorders
 
         assigned_total = 0
         pending.each do |reservation|
-          break if budget.values.sum <= 0
+          break if pool <= 0
 
           # La condición de la demanda vive en la línea de venta, que es la
           # misma que consume InventoryServices::ReserveSaleOrderItem.
           condition = demand_condition(reservation)
-          remaining = budget[condition].to_i
-          next if remaining <= 0
+          limit = [supply[condition].to_i, pool].min
+          next if limit <= 0
 
-          assigned = allocate_to_originating_line(reservation, remaining)
+          assigned = allocate_to_originating_line(reservation, limit)
           assigned_total += assigned
-          budget[condition] = remaining - assigned
+          supply[condition] = supply[condition].to_i - assigned
+          pool -= assigned
         end
         assigned_total
       end
@@ -88,24 +102,6 @@ module Preorders
                .count
                .each_with_object(Hash.new(0)) do |(condition, count), acc|
         acc[Inventories::Availability.normalize_condition(condition)] += count
-      end
-    end
-
-    def budget_by_condition
-      supply = supply_by_condition
-      return supply if @units.nil?
-
-      units = @units.to_i
-      return Hash.new(0) if units <= 0
-
-      # Unidades recién publicadas de una condición conocida: sólo esa
-      # condición puede gastarlas.
-      return { @condition => [units, supply[@condition]].min } if @condition
-
-      # Sin condición explícita se conserva el tope histórico por llamada,
-      # pero acotado por la oferta real de cada condición.
-      supply.each_with_object(Hash.new(0)) do |(condition, count), acc|
-        acc[condition] = [units, count].min
       end
     end
 
