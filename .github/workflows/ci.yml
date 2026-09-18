@@ -140,16 +140,59 @@ jobs:
       - name: Build JavaScript bundles
         run: npm run build
 
-      # The runner image ships Chrome with a version-matched chromedriver exposed
-      # through CHROMEWEBDRIVER; do not install another Chrome or they desync.
-      - name: Verify browser toolchain
+      # DIAGNOSTICO TEMPORAL - rama desechable, no mergear.
+      #
+      # Unica variable independiente de este experimento: la version mayor y
+      # exacta del par Chrome/ChromeDriver.
+      #
+      # Antecedente: con el par EXACTO 151.0.7922.138 (experimento A, PR #157)
+      # la entrega nula se reprodujo en la primera ejecucion, asi que el
+      # desalineamiento de patch del runner no era la causa y no quedan
+      # experimentos justificados dentro de Chrome 151. Aqui se prueba hacia
+      # adelante, con el Stable actual de Chrome for Testing.
+      #
+      # Se provisionan AMBOS binarios de la misma fuente y version; no se usa
+      # ni el navegador ni el driver de la imagen del runner.
+      - name: Provision exact Chrome + ChromeDriver pair (Chrome for Testing)
+        env:
+          CFT_VERSION: 152.0.7977.64
         run: |
-          google-chrome --version
-          driver="$CHROMEWEBDRIVER/chromedriver"
-          [ -x "$driver" ] || driver="$(command -v chromedriver || true)"
-          [ -x "$driver" ] || { echo "No chromedriver available on this runner"; exit 1; }
-          "$driver" --version
+          set -euo pipefail
+          base="https://storage.googleapis.com/chrome-for-testing-public/${CFT_VERSION}/linux64"
+          dir="$RUNNER_TEMP/cft"
+          mkdir -p "$dir"
+          curl -fsSL "$base/chrome-linux64.zip"       -o "$dir/chrome.zip"
+          curl -fsSL "$base/chromedriver-linux64.zip" -o "$dir/chromedriver.zip"
+          unzip -q "$dir/chrome.zip"       -d "$dir"
+          unzip -q "$dir/chromedriver.zip" -d "$dir"
+          chrome="$dir/chrome-linux64/chrome"
+          driver="$dir/chromedriver-linux64/chromedriver"
+          chmod +x "$chrome" "$driver"
+          echo "CHROME_BINARY_PATH=$chrome" >> "$GITHUB_ENV"
           echo "CHROMEDRIVER_PATH=$driver" >> "$GITHUB_ENV"
+
+      # El experimento solo es valido si el par es EXACTO: si no lo es, el job
+      # debe fallar aqui en vez de producir una corrida no interpretable.
+      - name: Require exact Chrome/ChromeDriver version match
+        env:
+          CFT_VERSION: 152.0.7977.64
+        run: |
+          set -euo pipefail
+          echo "runner-provided Chrome:  $(google-chrome --version 2>/dev/null || echo 'n/a')"
+          echo "Chrome binary path:      $CHROME_BINARY_PATH"
+          echo "ChromeDriver path:       $CHROMEDRIVER_PATH"
+          cv="$("$CHROME_BINARY_PATH" --version)"
+          dv="$("$CHROMEDRIVER_PATH" --version)"
+          echo "Chrome version:          $cv"
+          echo "ChromeDriver version:    $dv"
+          cvn="$(printf '%s' "$cv" | grep -oE '[0-9]+(\.[0-9]+){3}' | head -1)"
+          dvn="$(printf '%s' "$dv" | grep -oE '[0-9]+(\.[0-9]+){3}' | head -1)"
+          echo "parsed chrome=$cvn driver=$dvn expected=$CFT_VERSION"
+          [ "$cvn" = "$CFT_VERSION" ] || { echo "FAIL: Chrome $cvn != $CFT_VERSION"; exit 1; }
+          [ "$dvn" = "$CFT_VERSION" ] || { echo "FAIL: ChromeDriver $dvn != $CFT_VERSION"; exit 1; }
+          echo "Selenium version:        $(bundle exec ruby -e 'require "selenium-webdriver"; puts Selenium::WebDriver::VERSION' 2>/dev/null || echo unknown)"
+          echo "Capybara version:        $(bundle exec ruby -e 'require "capybara"; puts Capybara::VERSION' 2>/dev/null || echo unknown)"
+          echo "EXACT PAIR OK: $CFT_VERSION"
 
       # La suite completa de sistema pasa en verde (54/54, repetido). Correrla
       # entera en CI es lo que impide que vuelva a acumularse deuda como la que
@@ -177,4 +220,15 @@ jobs:
           path: |
             ${{ github.workspace }}/tmp/capybara
             ${{ github.workspace }}/tmp/screenshots
+          if-no-files-found: ignore
+
+      # DIAGNOSTICO TEMPORAL - rama desechable. El log del servidor es la
+      # evidencia de "no llego ninguna peticion" que exige la clasificacion de
+      # entrega nula; sin el no se puede distinguir de un fallo cualquiera.
+      - name: Keep Rails test log for zero-delivery classification
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: rails-test-log
+          path: ${{ github.workspace }}/log/test.log
           if-no-files-found: ignore
