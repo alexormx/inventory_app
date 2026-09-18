@@ -39,9 +39,41 @@
           <% end %>
         </div>
 
-        <button class="btn btn-secondary btn-lg w-100 disabled" disabled title="Sin stock disponible">
-          <i class="fas fa-times-circle"></i> Sin stock
-        </button>
+        <%# Sin inventario disponible AHORA. Si la pieza ya viene en camino, o
+            el producto es de preventa/sobre pedido, sigue siendo reservable:
+            es una RESERVACIÓN explícita, nunca un "Agregar al carrito".
+            Una reservación por CONDICIÓN que de verdad viene en camino: si
+            hay varias se ofrecen todas, nunca se elige una en silencio. %>
+        <% future = product.in_transit_by_condition %>
+        <% preorder_only = product.oversell_allowed? && future.none? { |f| f[:condition] == 'brand_new' } %>
+        <% if future.any? || preorder_only %>
+          <% future.each do |option| %>
+            <%= button_to cart_items_path,
+                  params: { product_id: product.id, condition: option[:condition] },
+                  method: :post,
+                  class: "btn btn-danger btn-lg w-100 mb-2",
+                  title: "Reservar #{option[:label]}" do %>
+              <i class="fas fa-bookmark"></i>
+              Reservar<%= " #{option[:short_label]}" if future.size > 1 || option[:collectible] %>
+              <% if option[:eta].present? %>
+                <span class="small">· Llega <%= spanish_short_date(option[:eta]) %></span>
+              <% end %>
+            <% end %>
+          <% end %>
+          <% if preorder_only %>
+            <%= button_to cart_items_path,
+                  params: { product_id: product.id, condition: 'brand_new' },
+                  method: :post,
+                  class: "btn btn-danger btn-lg w-100",
+                  title: product.preorder_available ? 'Reserva · Preventa' : 'Reserva · Sobre pedido' do %>
+              <i class="fas fa-bookmark"></i> Reservar
+            <% end %>
+          <% end %>
+        <% else %>
+          <button class="btn btn-secondary btn-lg w-100 disabled" disabled title="Sin stock disponible">
+            <i class="fas fa-times-circle"></i> Sin stock
+          </button>
+        <% end %>
       <% elsif !has_collectibles && conditions.size == 1 %>
         <%# Solo productos nuevos - vista simple %>
         <% cond = conditions.first %>

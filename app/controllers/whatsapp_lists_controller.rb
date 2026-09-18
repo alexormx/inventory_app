@@ -150,9 +150,12 @@ class WhatsappListsController < ApplicationController
     params.fetch(:whatsapp_request, {}).permit(:customer_name, :customer_phone, :customer_email, :customer_notes)
   end
 
-  # Aplica las mismas reglas que el carrito (asumiendo brand_new):
+  # Aplica las mismas reglas que el carrito (asumiendo brand_new), sobre la
+  # misma regla canónica de disponibilidad (Inventories::Availability):
   #  - producto activo (Product.publicly_visible ya lo asegura aguas arriba)
-  #  - desired <= disponible (available + in_transit) si el producto NO permite preorder/backorder
+  #  - la compra normal se satisface con inventario DISPONIBLE AHORA; las
+  #    piezas :in_transit solo suman como reservación explícita, igual que en
+  #    CartItemsController#orderable_ceiling
   #  - desired <= MAX_NEW_ITEMS_PER_PRODUCT
   def validate_desired_quantity(product, desired)
     return "Producto no disponible" unless product.active?
@@ -161,16 +164,20 @@ class WhatsappListsController < ApplicationController
       return "Máximo #{Cart::MAX_NEW_ITEMS_PER_PRODUCT} unidades por producto."
     end
 
-    available = available_brand_new_for(product)
-    if desired > available && !product.oversell_allowed?
-      return "Stock insuficiente (disponibles: #{available}). Este producto no permite preventa ni sobre pedido."
+    availability = Inventories::Availability.for(product, condition: 'brand_new')
+    orderable = availability.available_now + availability.in_transit
+    if desired > orderable && !product.oversell_allowed?
+      parts = ["Disponible ahora: #{availability.available_now}"]
+      parts << "en tránsito reservable: #{availability.in_transit}" if availability.in_transit.positive?
+      return "Stock insuficiente (#{parts.join(', ')}). Este producto no permite preventa ni sobre pedido."
     end
 
     nil
   end
 
   def available_brand_new_for(product)
-    product.sellable_inventory.for_condition(:brand_new).count
+    availability = Inventories::Availability.for(product, condition: 'brand_new')
+    availability.available_now + availability.in_transit
   end
 
   def reject_add_item(msg)

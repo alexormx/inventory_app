@@ -86,6 +86,16 @@ class Inventory < ApplicationRecord
     where(status: :available, sale_order_id: nil).where.not(inventory_location_id: nil)
   }
   scope :customer_in_transit, -> { where(status: :in_transit, sale_order_id: nil) }
+  # Canonical storefront "available now": physical, located, unallocated stock
+  # the customer can buy immediately. Deliberately an alias of
+  # #customer_on_hand rather than a second definition — one rule, two names,
+  # so the storefront reads intent while allocators keep their own vocabulary.
+  # In-transit stock is future availability (#customer_in_transit) and is NOT
+  # available now; #customer_sellable (available-now OR in-transit) stays the
+  # allocator/preorder rule and must not be used to authorize a normal add.
+  # Condition is part of availability identity — always compose with
+  # #for_condition. See Inventories::Availability.
+  scope :customer_available_now, -> { customer_on_hand }
   scope :customer_sellable, lambda {
     where(sale_order_id: nil)
       .where(
