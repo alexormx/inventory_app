@@ -94,13 +94,34 @@ RSpec.describe CartInventoryHold do
       expect(described_class.active).to include(record)
 
       # Move the row's own deadline into the past rather than Ruby's clock:
-      # the scopes are judged by DATABASE time (CURRENT_TIMESTAMP), which
-      # travel_to cannot move. Nothing deletes the row.
+      # the scopes are judged by DATABASE time, which travel_to cannot move.
+      # Nothing deletes the row.
       record.update_columns(expires_at: 1.second.ago)
 
       expect(described_class.active).not_to include(record)
       expect(described_class.expired).to include(record)
       expect(described_class.where(id: record.id)).to exist
+    end
+
+    # The distinguishing case for clock_timestamp() over CURRENT_TIMESTAMP.
+    # CURRENT_TIMESTAMP freezes at transaction start, so a deadline that falls
+    # DURING a long transaction would still read as active and a slow checkout
+    # could consume a lapsed hold. clock_timestamp() advances, so the boundary
+    # is real wall-clock time even mid-transaction.
+    it 'sees a deadline that passes during an open transaction' do
+      record = nil
+
+      described_class.transaction do
+        record = hold(expires_at: 0.2.seconds.from_now)
+        expect(described_class.active).to include(record)
+
+        sleep 0.4
+
+        # Still the same transaction: CURRENT_TIMESTAMP has not moved, but the
+        # hold is genuinely past its deadline and must read as expired.
+        expect(described_class.active).not_to include(record)
+        expect(described_class.expired).to include(record)
+      end
     end
 
     # The scopes decide ownership on database time; the Ruby predicates are a

@@ -42,7 +42,54 @@ RSpec.describe 'Cart hold exclusion, layer by layer' do
                              unit_final_price: 100, total_line_cost: 40 * quantity)
   end
 
+  def preorder_line(quantity: 1, condition: :brand_new)
+    order = create(:sale_order)
+    line = create(:sale_order_item, sale_order: order, product: product, quantity: quantity,
+                                    preorder_quantity: quantity, item_condition: condition,
+                                    unit_cost: 40, unit_selling_price: 100,
+                                    unit_final_price: 100, total_line_cost: 40 * quantity)
+    reservation = create(:preorder_reservation, product: product, user: order.user,
+                                                sale_order: order, sale_order_item: line,
+                                                quantity: quantity)
+    [line, reservation]
+  end
+
   describe 'layer 1: the allocator supply budget' do
+    # The decisive isolation test. If a held unit counted as supply, the
+    # allocator would ENTER its allocation loop and churn the line's
+    # preorder_quantity down and back up before the reservation layer refused
+    # the row. With the unit correctly excluded, supply is empty and the
+    # allocator returns without touching the line at all.
+    #
+    # This fails if ONLY the allocator-supply exclusion is removed, even
+    # though ReserveSaleOrderItem would still reject the row, because it
+    # observes work the allocator should never have started.
+    it 'never even attempts allocation when its only unit is held' do
+      unit
+      held_unit
+      line, reservation = preorder_line
+      before = line.reload.updated_at
+
+      expect(Preorders::PreorderAllocator.new(product).call).to eq(0)
+
+      expect(line.reload.updated_at).to eq(before)
+      expect(line.preorder_quantity).to eq(1)
+      expect(reservation.reload).to be_pending
+    end
+
+    it 'does attempt allocation once the hold expires' do
+      unit
+      held_unit
+      line, reservation = preorder_line
+      before = line.reload.updated_at
+      CartInventoryHold.update_all(expires_at: 1.second.ago)
+
+      expect(Preorders::PreorderAllocator.new(product).call).to eq(1)
+
+      expect(line.reload.updated_at).to be > before
+      expect(reservation.reload).to be_assigned
+    end
+
     it 'does not count a held unit as preorder supply' do
       unit
       _cart, held_id = held_unit
