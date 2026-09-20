@@ -2,10 +2,24 @@
 
 module Preorders
   class PreorderAllocator
-    # Si newly_available_units no se pasa, intentará asignar todas las piezas libres (available + in_transit)
-    def initialize(product, newly_available_units: nil)
-      @product = product
-      @units   = newly_available_units
+    # Si newly_available_units no se pasa, intentará asignar todas las piezas
+    # libres (available + in_transit).
+    #
+    # Toda asignación respeta DOS topes a la vez:
+    #
+    #   1. newly_available_units es un presupuesto COMPARTIDO por llamada. Lo
+    #      ha sido desde que existe la clase: N unidades nuevas reparten N
+    #      piezas en total, no N por condición.
+    #   2. Cada condición no puede exceder su propia oferta real. Una pieza
+    #      mint no autoriza ni satisface demanda brand_new.
+    #
+    # `condition` acota además la llamada a una sola condición: quien publica
+    # una pieza sabe de qué condición es, y esa oferta sólo puede satisfacer
+    # demanda de la MISMA condición.
+    def initialize(product, newly_available_units: nil, condition: nil)
+      @product   = product
+      @units     = newly_available_units
+      @condition = condition.presence && Inventories::Availability.normalize_condition(condition)
     end
 
     # Método de clase para procesar múltiples productos
@@ -34,12 +48,14 @@ module Preorders
         # every supply boundary. Holding it before demand/inventory locks keeps
         # a newer checkout from overtaking older committed demand.
         @product = Product.lock.find(@product.id)
-        remaining = if @units
-                      @units.to_i
-                    else
-                      Inventory.customer_sellable.where(product_id: @product.id).count
-                    end
-        next 0 if remaining <= 0
+        # Dos topes independientes, ambos obligatorios:
+        #   supply -> cuántas piezas existen DE CADA CONDICIÓN (corrección nueva)
+        #   pool   -> cuántas unidades puede repartir esta llamada en total
+        #             (semántica histórica de newly_available_units)
+        supply = supply_by_condition
+        supply = supply.slice(@condition) if @condition
+        pool = @units ? @units.to_i : supply.values.sum
+        next 0 if pool <= 0 || supply.empty?
 
         pending = PreorderReservation.fifo_pending
                                      .where(product_id: @product.id)
@@ -49,11 +65,18 @@ module Preorders
 
         assigned_total = 0
         pending.each do |reservation|
-          break if remaining <= 0
+          break if pool <= 0
 
-          assigned = allocate_to_originating_line(reservation, remaining)
+          # La condición de la demanda vive en la línea de venta, que es la
+          # misma que consume InventoryServices::ReserveSaleOrderItem.
+          condition = demand_condition(reservation)
+          limit = [supply[condition].to_i, pool].min
+          next if limit <= 0
+
+          assigned = allocate_to_originating_line(reservation, limit)
           assigned_total += assigned
-          remaining -= assigned
+          supply[condition] = supply[condition].to_i - assigned
+          pool -= assigned
         end
         assigned_total
       end
@@ -63,6 +86,28 @@ module Preorders
     end
 
     private
+
+    # Presupuesto de oferta POR CONDICIÓN. La semántica de oferta de preventa
+    # no cambia -- sigue siendo customer_sellable (disponible ahora O en
+    # tránsito, ver Inventory#customer_sellable) -- lo único que se corrige es
+    # que ya no se agrega entre condiciones: una pieza mint no puede autorizar
+    # ni satisfacer demanda brand_new.
+    #
+    # Es la MISMA relación que antes, sólo agrupada; no añade una consulta
+    # extra ni toca el orden de bloqueos.
+    def supply_by_condition
+      Inventory.customer_sellable
+               .where(product_id: @product.id)
+               .group(:item_condition)
+               .count
+               .each_with_object(Hash.new(0)) do |(condition, count), acc|
+        acc[Inventories::Availability.normalize_condition(condition)] += count
+      end
+    end
+
+    def demand_condition(reservation)
+      Inventories::Availability.normalize_condition(reservation.sale_order_item&.item_condition)
+    end
 
     def allocate_to_originating_line(reservation, limit)
       line = reservation.sale_order_item

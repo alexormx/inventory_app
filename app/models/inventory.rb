@@ -228,9 +228,12 @@ class Inventory < ApplicationRecord
 
   def reconcile_preorders_before_publication
     unless defer_preorder_reconciliation
+      # La pieza que se publica tiene una condición concreta: sólo puede
+      # satisfacer demanda de preventa de ESA condición.
       Preorders::PreorderAllocator.new(
         @preorder_reconciliation_product,
-        newly_available_units: 1
+        newly_available_units: 1,
+        condition: item_condition
       ).call
     end
   ensure
