@@ -14,14 +14,21 @@ module InventoryServices
       keyword_init: true
     )
 
-    def self.call(sale_order_item, strict: true, dry_run: false)
-      new(sale_order_item, strict: strict, dry_run: dry_run).call
+    # held_inventory_ids: exact physical units the CALLER already owns through
+    # an active CartInventoryHold. They are consumed first and are the only
+    # active holds this call may touch; every other cart's hold is invisible.
+    # Allocators that own nothing (PreorderAllocator, admin paths) pass none
+    # and therefore see no held unit at all.
+    def self.call(sale_order_item, strict: true, dry_run: false, held_inventory_ids: [])
+      new(sale_order_item, strict: strict, dry_run: dry_run,
+                           held_inventory_ids: held_inventory_ids).call
     end
 
-    def initialize(sale_order_item, strict:, dry_run:)
+    def initialize(sale_order_item, strict:, dry_run:, held_inventory_ids: [])
       @sale_order_item = sale_order_item
       @strict = strict
       @dry_run = dry_run
+      @held_inventory_ids = Array(held_inventory_ids).compact.uniq
     end
 
     def call
@@ -63,17 +70,52 @@ module InventoryServices
     def locked_candidates(line, needed)
       return [] if needed.zero?
 
-      available_status = Inventory.statuses.fetch('available')
+      # The caller's own held units come first and exactly: checkout must
+      # consume the rows it reserved for this cart, never swap them for
+      # equivalent ones while leaving the held rows claimed.
+      held = locked_held_rows(line, needed)
+      remaining = needed - held.size
+      return held if remaining <= 0
+
+      held + locked_free_rows(line, remaining, exclude: held.map(&:id))
+    end
+
+    # Re-validated under FOR UPDATE rather than trusted from the request that
+    # computed them: right product, right condition, still sellable, and the
+    # hold still active at database time. An expired hold yields nothing here,
+    # so checkout can never resurrect one.
+    def locked_held_rows(line, needed)
+      return [] if @held_inventory_ids.empty?
+
       Inventory.customer_sellable
                .where(product_id: line.product_id, item_condition: line.item_condition)
-               .order(
-                 Arel.sql("CASE WHEN status = #{available_status} THEN 0 ELSE 1 END"),
-                 :created_at,
-                 :id
-               )
+               .where(id: CartInventoryHold.active
+                                           .where(inventory_id: @held_inventory_ids)
+                                           .select(:inventory_id))
+               .order(:id)
                .lock
                .limit(needed)
                .to_a
+    end
+
+    def locked_free_rows(line, needed, exclude: [])
+      available_status = Inventory.statuses.fetch('available')
+      scope = Inventory.customer_sellable
+                       .where(product_id: line.product_id, item_condition: line.item_condition)
+      scope = scope.where.not(id: exclude) if exclude.any?
+      # Units held by anyone else are not free stock. Rows this caller owns are
+      # already in `held`, so excluding the rest is correct here.
+      scope.where.not(id: CartInventoryHold.active
+                                           .where.not(inventory_id: @held_inventory_ids)
+                                           .select(:inventory_id))
+           .order(
+             Arel.sql("CASE WHEN status = #{available_status} THEN 0 ELSE 1 END"),
+             :created_at,
+             :id
+           )
+           .lock
+           .limit(needed)
+           .to_a
     end
 
     def reserve!(line, inventories)

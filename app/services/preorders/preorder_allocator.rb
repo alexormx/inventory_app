@@ -96,7 +96,10 @@ module Preorders
     # Es la MISMA relación que antes, sólo agrupada; no añade una consulta
     # extra ni toca el orden de bloqueos.
     def supply_by_condition
-      Inventory.customer_sellable
+      # A unit a cart actively holds is spoken for: the allocator has no cart,
+      # so every active hold is excluded. Expired holds are ignored and the
+      # unit becomes allocatable again with no cleanup required.
+      Inventories::Availability.claimable(Inventory.customer_sellable)
                .where(product_id: @product.id)
                .group(:item_condition)
                .count
