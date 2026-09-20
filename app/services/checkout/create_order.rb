@@ -125,6 +125,11 @@ module Checkout
         # Si hay errores de revalidación, hacemos rollback y retornamos
         raise ActiveRecord::Rollback if revalidation_errors.any?
 
+        # Unidades físicas exactas que este carrito ya tiene retenidas. Se leen
+        # bajo el candado del carrito y se revalidan de nuevo dentro de
+        # ReserveSaleOrderItem con FOR UPDATE: una retención vencida no cuenta.
+        held_by_line = held_inventory_ids_by_line
+
         sale_order = @user.sale_orders.create!(
           order_date: Time.zone.today,
           subtotal: totals.subtotal,
@@ -163,9 +168,13 @@ module Checkout
             total_line_cost: item_price.to_d * qty,
             item_condition: condition,
             preorder_quantity: preorder_qty,
-            backordered_quantity: backorder_qty
+            backordered_quantity: backorder_qty,
+            held_inventory_ids: held_by_line[[product.id, condition.to_s]] || []
           )
-          InventoryServices::ReserveSaleOrderItem.call(soi)
+          InventoryServices::ReserveSaleOrderItem.call(
+            soi,
+            held_inventory_ids: held_by_line[[product.id, condition.to_s]] || []
+          )
 
           # Crear reservación de preorder si aplica
           next unless preorder_qty.positive?
@@ -209,6 +218,12 @@ module Checkout
           )
         end
 
+        # Las retenciones ya cumplieron su función: las unidades quedaron
+        # reservadas a nombre de la orden. Se consumen DESPUÉS de la
+        # transferencia y dentro de la misma transacción, así que un rollback
+        # las devuelve intactas.
+        CartInventoryHold.for_cart(@shopping_cart).delete_all if @shopping_cart
+
         # Último paso: cerrar el carrito (su fila sigue bloqueada desde el inicio).
         ShoppingCarts::ConvertCart.close!(@shopping_cart, sale_order) if @shopping_cart
       end
@@ -227,6 +242,20 @@ module Checkout
     end
 
     private
+
+    # { [product_id, condition] => [inventory_id, ...] } para el carrito
+    # durable, sólo retenciones vigentes.
+    def held_inventory_ids_by_line
+      return {} unless @shopping_cart
+
+      CartInventoryHold.active
+                       .for_cart(@shopping_cart)
+                       .joins(:inventory)
+                       .pluck('inventories.product_id', 'inventories.item_condition', :inventory_id)
+                       .each_with_object(Hash.new { |hash, key| hash[key] = [] }) do |(pid, cond, inv_id), acc|
+        acc[[pid, Inventories::Availability.normalize_condition(cond)]] << inv_id
+      end
+    end
 
     def fail_with(errors)
       Result.new(sale_order: nil, errors: errors, warnings: [], availability: {})

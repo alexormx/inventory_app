@@ -39,6 +39,19 @@ module ShoppingCarts
       end
     end
 
+    # Brings the line's exact-unit holds in step with its quantity, inside the
+    # same transaction and under the same cart lock as the write itself.
+    # Claiming is opportunistic: a line with no physical unit to hold (preorder
+    # or backorder demand) is still a perfectly valid line.
+    def self.sync_holds(cart, item, product, condition, quantity)
+      return if item.nil?
+
+      Carts::HoldInventory.sync(
+        cart: cart, cart_item: item, product: product,
+        condition: condition, target_quantity: quantity
+      )
+    end
+
     def self.set_quantity(user:, product:, condition:, quantity:)
       return remove(user: user, product: product, condition: condition) if quantity <= 0
 
@@ -54,6 +67,10 @@ module ShoppingCarts
       new(user).mutate(create_cart: false) do |cart, _items|
         scope = cart.shopping_cart_items.where(product_reference: product.id)
         scope = scope.where(condition: condition) if condition
+        # Release explicitly before delete_all: the FK's ON DELETE SET NULL is
+        # a backstop, not the release mechanism, and would otherwise strand
+        # rows with a live expiry and no owning line.
+        CartInventoryHold.where(shopping_cart_item_id: scope.select(:id)).delete_all
         scope.delete_all
         0
       end
@@ -61,6 +78,7 @@ module ShoppingCarts
 
     def self.clear(user:)
       new(user).mutate(create_cart: false) do |cart, _items|
+        CartInventoryHold.for_cart(cart).delete_all
         cart.shopping_cart_items.delete_all
         0
       end
@@ -70,7 +88,7 @@ module ShoppingCarts
       if item
         item.update!(quantity: quantity)
       else
-        cart.shopping_cart_items.create!(
+        item = cart.shopping_cart_items.create!(
           product: product,
           product_reference: product.id,
           condition: condition,
@@ -78,6 +96,7 @@ module ShoppingCarts
           product_name_snapshot: product.product_name
         )
       end
+      sync_holds(cart, item, product, condition, quantity)
       quantity
     end
 
