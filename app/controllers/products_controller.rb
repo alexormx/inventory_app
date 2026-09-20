@@ -283,7 +283,8 @@ class ProductsController < ApplicationController
     @brand_new_available_now = Hash.new(0)
     @other_condition_available_now = Hash.new(0)
     @on_hand_counts = Hash.new(0)
-    Inventories::Availability.counts_for(product_ids).each do |(product_id, condition), count|
+    Inventories::Availability.counts_for(product_ids, for_cart: current_holding_cart)
+                             .each do |(product_id, condition), count|
       @on_hand_counts[product_id] += count
       bucket = condition == 'brand_new' ? @brand_new_available_now : @other_condition_available_now
       bucket[product_id] += count
@@ -294,7 +295,8 @@ class ProductsController < ApplicationController
     @brand_new_in_transit = Hash.new(0)
     @other_condition_in_transit = Hash.new(0)
     @in_transit_counts = Hash.new(0)
-    Inventories::Availability.in_transit_counts_for(product_ids).each do |(product_id, condition), count|
+    Inventories::Availability.in_transit_counts_for(product_ids, for_cart: current_holding_cart)
+                             .each do |(product_id, condition), count|
       @in_transit_counts[product_id] += count
       bucket = condition == 'brand_new' ? @brand_new_in_transit : @other_condition_in_transit
       bucket[product_id] += count

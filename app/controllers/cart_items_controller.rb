@@ -218,7 +218,7 @@ class CartItemsController < ApplicationController
   # Disponibilidad canónica de la condición solicitada, compartida con el
   # catálogo y la ficha de producto (Inventories::Availability).
   def condition_availability
-    Inventories::Availability.for(@product, condition: @condition)
+    Inventories::Availability.for(@product, condition: @condition, for_cart: current_holding_cart)
   end
 
   # Tope de unidades que se pueden pedir de esta condición.

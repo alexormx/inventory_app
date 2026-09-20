@@ -22,6 +22,7 @@ RSpec.describe "Recurring schedule" do
 
   it "leaves every unrelated supplier and maintenance schedule in place" do
     expect(production_tasks.keys).to contain_exactly(
+      "carts_expire_inventory_holds_hourly",
       "products_reconcile_publication_daily",
       "suppliers_hlj_status_sync_daily",
       "suppliers_hlj_tomica_recent_additions_daily",
@@ -31,6 +32,11 @@ RSpec.describe "Recurring schedule" do
       "visitor_logs_retention_daily",
       "whatsapp_requests_cleanup_drafts_daily"
     )
+  end
+
+  it "schedules expired cart-hold cleanup as hygiene only" do
+    expect(production_tasks.fetch("carts_expire_inventory_holds_hourly"))
+      .to include("class" => "Carts::ExpireInventoryHoldsJob", "schedule" => "15 * * * *")
   end
 
   it "keeps the TomicaFandom weekly backfill on its original schedule" do

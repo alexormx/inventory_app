@@ -50,7 +50,7 @@ class SaleOrderItem < ApplicationRecord
   # Exact physical units the buyer's cart already holds. Transient, never a
   # column: set by Checkout::CreateOrder just before save so the reservation
   # callback consumes THOSE rows instead of equivalent free ones.
-  attr_accessor :held_inventory_ids
+  attr_accessor :held_inventory_ids, :holding_cart_id
 
   after_save :sync_inventory_records, if: :saved_change_to_quantity?
   after_commit :update_product_stats

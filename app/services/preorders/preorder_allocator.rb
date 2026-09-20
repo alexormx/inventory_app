@@ -100,10 +100,10 @@ module Preorders
       # so every active hold is excluded. Expired holds are ignored and the
       # unit becomes allocatable again with no cleanup required.
       Inventories::Availability.claimable(Inventory.customer_sellable)
-               .where(product_id: @product.id)
-               .group(:item_condition)
-               .count
-               .each_with_object(Hash.new(0)) do |(condition, count), acc|
+                               .where(product_id: @product.id)
+                               .group(:item_condition)
+                               .count
+                               .each_with_object(Hash.new(0)) do |(condition, count), acc|
         acc[Inventories::Availability.normalize_condition(condition)] += count
       end
     end

@@ -23,6 +23,10 @@ module Carts
   # for the same unit therefore cannot both win: the loser simply gets nothing
   # back and tries elsewhere.
   class HoldInventory
+    # Fetch a few more candidates than strictly needed so a lost race still has
+    # somewhere to go without a second round trip.
+    CANDIDATE_OVERSCAN = 3
+
     Result = Struct.new(:held, :requested, :inventory_ids, keyword_init: true) do
       def complete?
         held >= requested
@@ -107,10 +111,6 @@ module Carts
                .limit(count * CANDIDATE_OVERSCAN)
                .pluck(:id)
     end
-
-    # Fetch a few more candidates than strictly needed so a lost race still has
-    # somewhere to go without a second round trip.
-    CANDIDATE_OVERSCAN = 3
 
     def claim_one(inventory_id)
       sql = <<~SQL.squish

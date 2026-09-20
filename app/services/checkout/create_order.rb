@@ -169,11 +169,13 @@ module Checkout
             item_condition: condition,
             preorder_quantity: preorder_qty,
             backordered_quantity: backorder_qty,
-            held_inventory_ids: held_by_line[[product.id, condition.to_s]] || []
+            held_inventory_ids: held_by_line[[product.id, condition.to_s]] || [],
+            holding_cart_id: @shopping_cart&.id
           )
           InventoryServices::ReserveSaleOrderItem.call(
             soi,
-            held_inventory_ids: held_by_line[[product.id, condition.to_s]] || []
+            held_inventory_ids: held_by_line[[product.id, condition.to_s]] || [],
+            holding_cart_id: @shopping_cart&.id
           )
 
           # Crear reservación de preorder si aplica
