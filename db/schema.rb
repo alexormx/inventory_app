@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_09_06_120000) do
+ActiveRecord::Schema[8.0].define(version: 2026_09_20_160000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -63,6 +63,19 @@ ActiveRecord::Schema[8.0].define(version: 2026_09_06_120000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["product_id"], name: "index_canceled_order_items_on_product_id"
+  end
+
+  create_table "cart_inventory_holds", force: :cascade do |t|
+    t.bigint "shopping_cart_id", null: false
+    t.bigint "inventory_id", null: false
+    t.bigint "shopping_cart_item_id"
+    t.datetime "expires_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["expires_at"], name: "index_cart_inventory_holds_on_expires_at"
+    t.index ["inventory_id"], name: "index_cart_inventory_holds_on_inventory_id", unique: true
+    t.index ["shopping_cart_id"], name: "index_cart_inventory_holds_on_shopping_cart_id"
+    t.index ["shopping_cart_item_id"], name: "index_cart_inventory_holds_on_shopping_cart_item_id"
   end
 
   create_table "cart_items", force: :cascade do |t|
@@ -1074,6 +1087,9 @@ ActiveRecord::Schema[8.0].define(version: 2026_09_06_120000) do
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "canceled_order_items", "products"
   add_foreign_key "canceled_order_items", "sale_orders"
+  add_foreign_key "cart_inventory_holds", "inventories", on_delete: :cascade
+  add_foreign_key "cart_inventory_holds", "shopping_cart_items", on_delete: :nullify
+  add_foreign_key "cart_inventory_holds", "shopping_carts", on_delete: :cascade
   add_foreign_key "cart_items", "products"
   add_foreign_key "cart_session_imports", "shopping_carts", on_delete: :restrict
   add_foreign_key "comments", "posts"
