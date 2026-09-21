@@ -112,7 +112,36 @@ module Carts
                .pluck(:id)
     end
 
+    # Two claims on one physical unit only serialize if they meet on the unit
+    # itself. A hold writes cart_inventory_holds while a reservation writes
+    # inventories, so the FK between them makes the INSERT *wait* for an open
+    # reservation but does not make it *re-think*: once the reservation commits,
+    # an unguarded INSERT would happily hold a unit that is now sold.
+    #
+    # So the candidate row is locked FOR UPDATE first and its eligibility
+    # re-read afterwards, inside one transaction with the claim. Lock order is
+    # unchanged - inventories stays the innermost lock on every path.
     def claim_one(inventory_id)
+      claimed = false
+      CartInventoryHold.transaction do
+        claimed = locked_and_still_eligible?(inventory_id) && insert_hold(inventory_id)
+      end
+      claimed
+    end
+
+    # SELECT ... FOR UPDATE. If a reservation holds this row the call blocks;
+    # when that transaction commits PostgreSQL re-evaluates the predicate
+    # against the new row version, so a unit that stopped being sellable
+    # simply drops out and yields nothing.
+    def locked_and_still_eligible?(inventory_id)
+      Inventory.customer_sellable
+               .where(id: inventory_id, product_id: @product.id, item_condition: @condition)
+               .lock
+               .first
+               .present?
+    end
+
+    def insert_hold(inventory_id)
       sql = <<~SQL.squish
         INSERT INTO cart_inventory_holds
           (inventory_id, shopping_cart_id, shopping_cart_item_id, expires_at, created_at, updated_at)

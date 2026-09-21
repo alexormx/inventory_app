@@ -129,6 +129,24 @@ module InventoryServices
            .lock
            .limit(needed)
            .to_a
+           .then { |rows| reject_newly_held(rows, owned_ids) }
+    end
+
+    # The hold exclusion above rides inside the same statement as the
+    # FOR UPDATE, so it is judged on that statement's snapshot. If a cart
+    # claimed one of these units while we were blocked on the lock, the
+    # subquery may not have seen it. Re-ask once the rows are actually locked.
+    def reject_newly_held(rows, owned_ids)
+      return rows if rows.empty?
+
+      newly_held = CartInventoryHold.active
+                                    .where(inventory_id: rows.map(&:id))
+                                    .where.not(inventory_id: owned_ids)
+                                    .pluck(:inventory_id)
+                                    .to_set
+      return rows if newly_held.empty?
+
+      rows.reject { |row| newly_held.include?(row.id) }
     end
 
     def reserve!(line, inventories)
