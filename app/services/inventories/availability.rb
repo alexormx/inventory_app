@@ -33,24 +33,39 @@ module Inventories
 
     EMPTY = Result.new(available_now: 0, in_transit: 0).freeze
 
-    def self.for(product, condition:)
+    # `for_cart` is the cart doing the looking. A unit another cart actively
+    # holds is not available to this one; a unit THIS cart holds still is.
+    # Passing no cart (catalog for a visitor, or any allocator) excludes every
+    # active hold, which is the conservative reading.
+    def self.for(product, condition:, for_cart: nil)
       return EMPTY if product.nil? || condition.blank?
 
-      new(product, condition).call
+      new(product, condition, for_cart: for_cart).call
+    end
+
+    # Physical units that are NOT spoken for by some other cart's active hold.
+    # Expired holds are ignored entirely, so correctness never waits on the
+    # cleanup job.
+    def self.claimable(scope, for_cart: nil)
+      held = CartInventoryHold.active
+      held = held.where.not(shopping_cart_id: for_cart.id) if for_cart
+      scope.where.not(id: held.select(:inventory_id))
     end
 
     # Available-now counts for many products in one grouped query, keyed
     # [product_id, condition_name] - the catalog renders a card per product
     # and must not issue a query per card.
-    def self.counts_for(product_ids, conditions: nil)
-      grouped_counts(Inventory.customer_available_now, product_ids, conditions: conditions)
+    def self.counts_for(product_ids, conditions: nil, for_cart: nil)
+      grouped_counts(claimable(Inventory.customer_available_now, for_cart: for_cart),
+                     product_ids, conditions: conditions)
     end
 
     # In-transit counts, same shape. Reservation is condition-specific too: a
     # CTA that submits one condition must never be authorized by another
     # condition's incoming supply.
-    def self.in_transit_counts_for(product_ids, conditions: nil)
-      grouped_counts(Inventory.customer_in_transit, product_ids, conditions: conditions)
+    def self.in_transit_counts_for(product_ids, conditions: nil, for_cart: nil)
+      grouped_counts(claimable(Inventory.customer_in_transit, for_cart: for_cart),
+                     product_ids, conditions: conditions)
     end
 
     # Earliest arrival per [product_id, condition], so a reservation label
@@ -92,9 +107,10 @@ module Inventories
       Inventory.item_conditions.key(value) || value.to_s
     end
 
-    def initialize(product, condition)
+    def initialize(product, condition, for_cart: nil)
       @product = product
       @condition = condition.to_s
+      @for_cart = for_cart
     end
 
     def call
@@ -105,7 +121,8 @@ module Inventories
     private
 
     def count_for(scope)
-      scope.where(product_id: @product.id).for_condition(@condition).count
+      self.class.claimable(scope, for_cart: @for_cart)
+          .where(product_id: @product.id).for_condition(@condition).count
     end
   end
 end

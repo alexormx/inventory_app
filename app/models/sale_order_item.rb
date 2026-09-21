@@ -47,6 +47,11 @@ class SaleOrderItem < ApplicationRecord
   # Reconcilia antes de que la transacción de borrado publique el inventario
   # liberado, para que la demanda vieja lo reclame primero.
   after_destroy :allocate_preorders_after_release
+  # Exact physical units the buyer's cart already holds. Transient, never a
+  # column: set by Checkout::CreateOrder just before save so the reservation
+  # callback consumes THOSE rows instead of equivalent free ones.
+  attr_accessor :held_inventory_ids, :holding_cart_id
+
   after_save :sync_inventory_records, if: :saved_change_to_quantity?
   after_commit :update_product_stats
   after_commit :recalculate_parent_order_totals

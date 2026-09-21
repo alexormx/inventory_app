@@ -54,6 +54,12 @@ production:
     class: Products::ReconcilePublicationJob
     schedule: "0 3 * * *"
 
+  # Hygiene only: an expired cart hold is already inactive by expires_at, so
+  # correctness never waits on this running.
+  carts_expire_inventory_holds_hourly:
+    class: Carts::ExpireInventoryHoldsJob
+    schedule: "15 * * * *"
+
 development:
   # No recurring sitemap generation
 

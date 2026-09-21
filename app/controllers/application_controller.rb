@@ -24,6 +24,12 @@ class ApplicationController < ActionController::Base
     storefront_cart.cart
   end
 
+  # The durable cart whose own inventory holds should stay visible to it.
+  # nil for a visitor, who holds nothing.
+  def current_holding_cart
+    storefront_cart.persistent_cart
+  end
+
   def after_sign_in_path_for(resource)
     if resource.admin?
       admin_dashboard_path

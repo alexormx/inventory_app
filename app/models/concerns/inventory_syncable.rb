@@ -125,7 +125,11 @@ module InventorySyncable
   end
 
   def sync_inventory_for_sale(_desired_quantity)
-    result = InventoryServices::ReserveSaleOrderItem.call(self, strict: false)
+    result = InventoryServices::ReserveSaleOrderItem.call(
+      self, strict: false,
+            held_inventory_ids: (respond_to?(:held_inventory_ids) ? Array(held_inventory_ids) : []),
+            holding_cart_id: (respond_to?(:holding_cart_id) ? holding_cart_id : nil)
+    )
 
     if result.missing.positive?
       append_pending_note(result.missing)
