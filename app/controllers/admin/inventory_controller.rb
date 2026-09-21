@@ -100,7 +100,12 @@ module Admin
       # Consulta directa (evita efectos colaterales del proxy de asociación) y quitar límites ocultos
       status_filter = params[:status].to_s
       valid_statuses = Inventory.statuses.keys
-      base_scope = Inventory.where(product_id: @product.id).includes(:inventory_location).unscope(:limit, :offset)
+      # cart_inventory_hold se precarga aquí: la vista muestra la retención por
+      # pieza y esta lista puede ser larga, así que una consulta por fila sería
+      # un N+1 inmediato.
+      base_scope = Inventory.where(product_id: @product.id)
+                            .includes(:inventory_location, :cart_inventory_hold)
+                            .unscope(:limit, :offset)
       if status_filter.present? && status_filter != 'all' && valid_statuses.include?(status_filter)
         base_scope = base_scope.where(status: Inventory.statuses[status_filter])
       end
@@ -147,25 +152,65 @@ module Admin
     def update_status
       @item = Inventory.find(params[:id])
       new_status = params[:status].to_s
-      allowed = VALID_STATUS_TRANSITIONS[@item.status] || []
 
-      if allowed.include?(new_status)
-        @item.update(status: new_status, status_changed_at: Time.current)
-        @product = @item.product
+      # Todo pasa por el candado de la fila física: tanto la lista de
+      # transiciones permitidas como la retención del carrito se evalúan
+      # sobre el estado bloqueado, no sobre una lectura previa que pudo
+      # quedar obsoleta entre la comprobación y la escritura.
+      #
+      # Una pieza retenida en el carrito de un cliente no puede marcarse como
+      # perdida/dañada/scrap ni reservarse a mano: eso se la quitaría a quien
+      # ya la tiene. La protección vive en el servidor, no en la UI.
+      result = Inventories::HoldProtection.guard(@item.id) do |locked|
+        allowed = VALID_STATUS_TRANSITIONS[locked.status] || []
+        next false unless allowed.include?(new_status)
 
-        respond_to do |format|
-          format.turbo_stream do
-            render turbo_stream: [
-              turbo_stream.replace("inventory_status_#{@item.id}", partial: 'admin/inventory/status_badge', locals: { item: @item }),
-              turbo_stream.replace("inventory-summary-#{@product.id}", partial: 'admin/inventory/summary', locals: { product: @product })
-            ]
-          end
-          format.html do
-            redirect_to admin_inventory_index_path, notice: 'Status updated'
-          end
+        locked.update!(status: new_status, status_changed_at: Time.current)
+      end
+
+      return render_hold_blocked(result.hold) if result.held?
+
+      if result.blocked?
+        return redirect_to admin_inventory_index_path,
+                           alert: "Transición de '#{@item.reload.status}' a '#{params[:status]}' no permitida."
+      end
+
+      @item.reload
+      @product = @item.product
+
+      respond_to do |format|
+        format.turbo_stream do
+          render turbo_stream: [
+            turbo_stream.replace("inventory_status_#{@item.id}", partial: 'admin/inventory/status_badge', locals: { item: @item }),
+            turbo_stream.replace("inventory-summary-#{@product.id}", partial: 'admin/inventory/summary', locals: { product: @product })
+          ]
         end
-      else
-        redirect_to admin_inventory_index_path, alert: "Transición de '#{@item.status}' a '#{params[:status]}' no permitida."
+        format.html do
+          redirect_to admin_inventory_index_path, notice: 'Status updated'
+        end
+      end
+    end
+
+    # Motivo visible, nunca un no-op silencioso. Sólo se expone el vencimiento
+    # de la retención: basta para operar y no añade datos del cliente.
+    def render_hold_blocked(hold)
+      message = if hold
+                  'Esta pieza está retenida en el carrito de un cliente hasta ' \
+                    "#{I18n.l(hold.expires_at.in_time_zone, format: :short)}. " \
+                    'No puede modificarse hasta que la retención venza.'
+                else
+                  'Esta pieza ya no está disponible para modificarse.'
+                end
+
+      respond_to do |format|
+        format.turbo_stream do
+          flash.now[:alert] = message
+          render turbo_stream: turbo_stream.replace(
+            "inventory_status_#{@item.id}",
+            partial: 'admin/inventory/status_badge', locals: { item: @item.reload }
+          ), status: :unprocessable_entity
+        end
+        format.html { redirect_to admin_inventory_index_path, alert: message }
       end
     end
 
@@ -186,7 +231,21 @@ module Admin
       @item = Inventory.includes(:inventory_location).find(params[:id])
       location_id = params[:inventory_location_id].presence
 
-      @item.update(inventory_location_id: location_id)
+      # Quitarle la ubicación a una pieza retenida la saca de
+      # customer_on_hand y se la esconde a su dueño. Mover entre ubicaciones
+      # reales es inocuo y sigue permitido.
+      if location_id.nil?
+        result = Inventories::HoldProtection.guard(@item.id) do |locked|
+          locked.update!(inventory_location_id: nil)
+        end
+
+        return render_hold_blocked(result.hold) if result.held?
+
+        @item.reload
+      else
+        @item.update(inventory_location_id: location_id)
+      end
+
       @product = @item.product
 
       respond_to do |format|

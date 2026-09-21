@@ -10,6 +10,11 @@ class Inventory < ApplicationRecord
   belongs_to :product
   belongs_to :inventory_location, optional: true
 
+  # Temporary cart ownership, at most one per physical unit (the holds table
+  # carries UNIQUE(inventory_id)). Physical state stays in #status; this is a
+  # separate dimension, not a status value. See CartInventoryHold.
+  has_one :cart_inventory_hold, dependent: :destroy
+
   # Fotos específicas para piezas no nuevas (coleccionables)
   has_many_attached :piece_images
 

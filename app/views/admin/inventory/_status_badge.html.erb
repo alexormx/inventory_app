@@ -3,6 +3,17 @@
   <i class="fa-solid fa-tag me-1"></i><%= inventory_status_label(item.status) %>
   </span>
 
+  <%# Dimensión SEPARADA del status físico: la pieza sigue estando
+      "Disponible", pero ahora mismo la tiene retenida el carrito de un
+      cliente. No se expone ningún dato del cliente, sólo el vencimiento. %>
+  <% if (hold = active_cart_hold_for(item)) %>
+    <span class="badge bg-warning text-dark ms-1"
+          title="Retenida por el carrito de un cliente hasta <%= I18n.l(hold.expires_at.in_time_zone, format: :short) %>">
+      <i class="fa-solid fa-cart-shopping me-1"></i>Retenido en carrito ·
+      vence <%= I18n.l(hold.expires_at.in_time_zone, format: :short) %>
+    </span>
+  <% end %>
+
   <% unless item.status == "sold" %>
     <%= link_to edit_status_admin_inventory_path(item),
                 data: { turbo_frame: "inventory_status_#{item.id}" },
