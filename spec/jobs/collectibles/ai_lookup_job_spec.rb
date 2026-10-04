@@ -50,6 +50,16 @@ RSpec.describe Collectibles::AiLookupJob do
     expect(lookup.error_message).to include('saturado')
   end
 
+  it 'no paga una búsqueda que la pantalla ya dio por fallida' do
+    allow(service).to receive(:call)
+    lookup.update_columns(created_at: 4.minutes.ago)
+    described_class.perform_now(lookup.id)
+
+    expect(service).not_to have_received(:call)
+    expect(lookup.reload).to be_failed
+    expect(lookup.error_message).to include('tardó demasiado')
+  end
+
   it 'no repite una búsqueda ya terminada' do
     lookup.update!(status: :done)
     allow(service).to receive(:call)

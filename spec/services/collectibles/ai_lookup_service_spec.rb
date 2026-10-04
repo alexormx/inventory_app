@@ -71,6 +71,18 @@ RSpec.describe Collectibles::AiLookupService do
     expect(described_class.new(lookup).call.data['prices_mx']).to be_nil
   end
 
+  it 'descarta un precio mundial que se quedó en yenes y lo avisa' do
+    answer = ai_lookup_answer
+    answer['prices_world']['listings'] << { 'title' => 'Sin convertir', 'price' => 1320.0, 'price_original' => '¥1,320',
+                                            'url' => 'https://www.amazon.co.jp/dp/X', 'sold' => false }
+    stub_ai_lookup_openai(ai_lookup_openai_response(answer))
+    data = described_class.new(lookup).call.data
+
+    expect(data['prices_world']['listings'].map { |l| l['price'] }).to eq([8.9])
+    expect(data['prices_world']['max']).to eq(8.9)
+    expect(data['warnings'].join).to include('yenes')
+  end
+
   it 'limita a 5 enlaces por mercado' do
     answer = ai_lookup_answer
     answer['prices_world']['listings'] = Array.new(8) do |i|

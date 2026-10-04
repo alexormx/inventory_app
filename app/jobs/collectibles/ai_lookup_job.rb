@@ -21,6 +21,13 @@ module Collectibles
       lookup = Collectibles::AiLookup.find(lookup_id)
       return if lookup.done? || lookup.failed?
 
+      # La pantalla ya la dio por fallida (cola atorada o reintentos de 429): si
+      # se pagara ahora, nadie vería el resultado y el admin ya pidió otra.
+      if lookup.stale?
+        return lookup.update!(status: :failed, finished_at: Time.current,
+                              error_message: 'La búsqueda tardó demasiado. Intenta de nuevo.')
+      end
+
       lookup.update!(status: :running, started_at: lookup.started_at || Time.current,
                      ai_model: Collectibles::AiLookupService::MODEL)
       result = Collectibles::AiLookupService.new(lookup).call

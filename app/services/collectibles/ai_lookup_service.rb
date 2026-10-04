@@ -17,6 +17,7 @@ module Collectibles
     REQUEST_TIMEOUT = 90
     IMAGE_MAX_EDGE = 1024
     MAX_LISTINGS = 5
+    YEN = /[¥￥円]|JPY/
     # USD, página de precios de OpenAI verificada el 2026-10-04 (gpt-4.1; en
     # modelos no razonadores los tokens del contenido buscado no se cobran).
     COST_INPUT_PER_M_USD = 2.00
@@ -130,6 +131,7 @@ module Collectibles
     def sanitize(data)
       data = data.deep_dup
       data['warnings'] = Array(data['warnings'])
+      drop_unconverted_yen(data)
       data['prices_mx'] = sanitize_market(data['prices_mx'], :mx, 'MXN')
       data['prices_world'] = sanitize_market(data['prices_world'], :world, 'USD')
 
@@ -139,6 +141,27 @@ module Collectibles
         data['warnings'] << 'La fuente de la fecha de lanzamiento no es un sitio confiable; verifícala.'
       end
       data
+    end
+
+    # HLJ y Amazon JP publican en yenes; si la IA copia ¥1,320 como `price: 1320`
+    # el rango diría USD $1,320. Un precio ya convertido es ~1/150 del monto en
+    # yenes, así que cualquiera que llegue a la mitad del original no se convirtió.
+    def drop_unconverted_yen(data)
+      market = data['prices_world']
+      return unless market.is_a?(Hash) && market['listings'].is_a?(Array)
+
+      kept = market['listings'].reject { |listing| unconverted_yen?(listing) }
+      return if kept.size == market['listings'].size
+
+      market['listings'] = kept
+      data['warnings'] << 'Se descartaron precios en yenes que no venían convertidos a USD.'
+    end
+
+    def unconverted_yen?(listing)
+      return false unless listing.is_a?(Hash) && listing['price'].is_a?(Numeric) && listing['price_original'].to_s.match?(YEN)
+
+      amount = listing['price_original'].to_s.delete(',')[/\d+(?:\.\d+)?/].to_f
+      amount.positive? && listing['price'] >= amount * 0.5
     end
 
     def sanitize_market(market, key, currency)
