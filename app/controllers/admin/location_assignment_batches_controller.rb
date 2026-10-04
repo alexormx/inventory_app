@@ -189,22 +189,13 @@ module Admin
     # porque eso altera también los resultados y el resumen del estante.
     def load_page_state
       load_batch_state
-      @location_options = assignable_location_options
+      @location_options = Inventories::AssignableLocationOptions.call
       @location_inventory = Inventories::LocationInventorySummary.for(batch.location)
       overview = Inventories::UnlocatedOverview.new(term: @q)
       @total_assignable = overview.total_assignable
       @total_in_transit = overview.total_in_transit
       @total_products = overview.total_products
       @search_results = overview.rows
-    end
-
-    # Hojas activas en UNA consulta: recorrer InventoryLocation.active llamando a
-    # leaf? hace una consulta por ubicación.
-    def assignable_location_options
-      parent_ids = InventoryLocation.where.not(parent_id: nil).select(:parent_id)
-      InventoryLocation.active.where.not(id: parent_ids).order(:path_cache, :name).map do |location|
-        ["#{location.path_cache.presence || location.name} (#{location.code})", location.id]
-      end
     end
 
     def respond_with_batch(notice: nil, alert: nil)
@@ -219,10 +210,10 @@ module Admin
       end
     end
 
-    # Éxito de la asignación: cambian cuatro cosas a la vez y ninguna más.
-    # El estante ya tiene la mercancía (resumen), el lote quedó vacío, y lo que
-    # sigue siendo asignable en los resultados y en los totales bajó. La búsqueda
-    # y la ubicación elegida se quedan como estaban.
+    # Éxito de la asignación: cambian cinco cosas a la vez y ninguna más.
+    # El estante ya tiene la mercancía (resumen y conteo del selector), el lote
+    # quedó vacío, y lo que sigue siendo asignable en los resultados y en los
+    # totales bajó. La búsqueda y la ubicación elegida se quedan como estaban.
     def respond_with_assignment(notice:)
       respond_to do |format|
         format.turbo_stream do

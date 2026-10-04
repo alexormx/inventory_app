@@ -26,6 +26,12 @@ RSpec.describe 'Admin works a whole location through Turbo', :js, type: :system 
     Array.new(count) { create(:inventory, product: product, status: :available, inventory_location: location) }
   end
 
+  # El texto del <option> del estante, para comprobar el conteo que enseña el
+  # selector antes de elegir nada.
+  def shelf_option_text
+    find("#batch-location-id option[value='#{shelf.id}']", visible: :all).text
+  end
+
   def choose_shelf
     select "#{shelf.path_cache.presence || shelf.name} (#{shelf.code})", from: 'batch-location-id'
     click_button 'Seleccionar'
@@ -69,6 +75,8 @@ RSpec.describe 'Admin works a whole location through Turbo', :js, type: :system 
 
     # Lo que YA está en el estante, antes de tocar nada.
     expect(page).to have_css('#current-location-units', text: '6 pieza(s)')
+    # El selector adelanta la misma cifra, para elegir estante sin entrar a ciegas.
+    expect(shelf_option_text).to end_with('(6 piezas)')
     expect(page).to have_css('#current-location-products', text: '2 producto(s)')
     expect(page).to have_css("tr[data-current-product-id='#{existing_a.id}'][data-current-quantity='4']")
     expect(page).to have_css("tr[data-current-product-id='#{existing_b.id}'][data-current-quantity='2']")
@@ -87,6 +95,8 @@ RSpec.describe 'Admin works a whole location through Turbo', :js, type: :system 
     expect(page).to have_css('#search-results-table tr[data-product-id]', count: 3)
     # Y sobre todo: el estante sigue con lo mismo que tenía.
     expect(current_location_total).to eq('6 pieza(s)')
+    # El selector tampoco se adelanta: el lote todavía no ha tocado la base.
+    expect(shelf_option_text).to end_with('(6 piezas)')
 
     add_product(new_b, 2)
     expect(page).to have_css('#batch-products', text: '2 producto(s)')
@@ -129,6 +139,7 @@ RSpec.describe 'Admin works a whole location through Turbo', :js, type: :system 
     expect(page).to have_field('product-search', with: 'Skyline')
     expect(page).to have_css('#selected-location', text: 'Estante B03')
     expect(page).to have_css('#current-location-units', text: '12 pieza(s)')
+    expect(shelf_option_text).to end_with('(12 piezas)')
     expect(page).to have_css("tr[data-current-product-id='#{new_a.id}'][data-current-quantity='4']")
     expect(page).to have_css("tr[data-current-product-id='#{new_c.id}'][data-current-quantity='2']")
 
