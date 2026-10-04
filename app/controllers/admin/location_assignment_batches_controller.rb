@@ -210,10 +210,10 @@ module Admin
       end
     end
 
-    # Éxito de la asignación: cambian cuatro cosas a la vez y ninguna más.
-    # El estante ya tiene la mercancía (resumen), el lote quedó vacío, y lo que
-    # sigue siendo asignable en los resultados y en los totales bajó. La búsqueda
-    # y la ubicación elegida se quedan como estaban.
+    # Éxito de la asignación: cambian cinco cosas a la vez y ninguna más.
+    # El estante ya tiene la mercancía (resumen y conteo del selector), el lote
+    # quedó vacío, y lo que sigue siendo asignable en los resultados y en los
+    # totales bajó. La búsqueda y la ubicación elegida se quedan como estaban.
     def respond_with_assignment(notice:)
       respond_to do |format|
         format.turbo_stream do
