@@ -23,6 +23,8 @@ module Collectibles
       if @errors.any?
         { success: false, errors: @errors, product: @product, inventory: @inventory }
       else
+        # Después del commit, para que el worker encuentre la pieza y sus fotos.
+        Collectibles::CopyPhotosToProductJob.perform_later(@inventory.id) if @copy_photos_to_product
         {
           success: true,
           message: "Coleccionable agregado: #{@product.product_name} (#{@inventory.condition_label})",
@@ -75,19 +77,19 @@ module Collectibles
       @errors.concat(@inventory.errors.full_messages)
     end
 
-    # Las fotos son de la pieza. Si este alta creó el producto, también se
-    # vuelven sus fotos de catálogo, en el mismo orden (la vista 3/4 primero,
-    # que queda como principal). Cada attach crea su propio blob: borrar una
-    # foto de la pieza no le borra la foto al producto. Un producto existente
-    # no se toca.
+    # Las fotos son de la pieza; la vista 3/4 llega en su propio campo y va
+    # primero. Si este alta creó el producto y hay vista 3/4, las fotos también
+    # se vuelven sus fotos de catálogo (la 3/4 queda como principal): las copia
+    # CopyPhotosToProductJob, sin metadatos, en el worker. Sin 3/4 no se copian,
+    # para que la foto principal de la tienda nunca sea la base o un detalle.
+    # Un producto existente no se toca.
     def attach_images
-      images = Array(@params.dig(:inventory, :piece_images)).compact_blank
+      three_quarter = @params.dig(:inventory, :three_quarter_image).presence
+      images = ([three_quarter] + Array(@params.dig(:inventory, :piece_images))).compact_blank
       return if images.empty?
 
-      images.each do |image|
-        @inventory.piece_images.attach(image)
-        @product.product_images.attach(image) if @product_created
-      end
+      images.each { |image| @inventory.piece_images.attach(image) }
+      @copy_photos_to_product = @product_created && three_quarter.present?
     end
 
     def update_product_stats

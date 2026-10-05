@@ -49,7 +49,9 @@
                 <span class="d-block fw-semibold small"><%= title %></span>
                 <span class="d-block text-muted" style="font-size: .75rem;"><%= help %></span>
               </label>
-              <%= file_field_tag 'inventory[piece_images][]', accept: 'image/*', id: "piece_photo_#{role}", class: 'd-none',
+              <%# La 3/4 va en su propio campo: el alta sabe si existe y la guarda primero. %>
+              <%= file_field_tag role == 'three_quarter' ? 'inventory[three_quarter_image]' : 'inventory[piece_images][]',
+                                 accept: 'image/*', id: "piece_photo_#{role}", class: 'd-none',
                                  data: { action: 'change->collectible-ai-lookup#slotChanged' } %>
               <button type="button" class="btn btn-link btn-sm text-danger p-0 d-none" data-slot-clear
                       data-action="collectible-ai-lookup#clearSlot">Quitar</button>
