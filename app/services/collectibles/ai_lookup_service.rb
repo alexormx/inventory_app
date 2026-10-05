@@ -92,7 +92,7 @@ module Collectibles
     # La foto de un teléfono pesa varios MB y trae GPS en el EXIF: se reduce y se
     # limpia antes de salir del servidor, y nunca se carga el original como base64.
     def image_data_url
-      @lookup.photo.blob.open do |file|
+      @lookup.ordered_photos.first.blob.open do |file|
         # `.strip` se pasa tal cual a ImageMagick como -strip (quita EXIF/GPS y comentarios).
         resized = ImageProcessing::MiniMagick.source(file.path)
                                              .resize_to_limit(IMAGE_MAX_EDGE, IMAGE_MAX_EDGE)

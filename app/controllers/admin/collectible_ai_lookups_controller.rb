@@ -20,8 +20,8 @@ module Admin
                       status: :too_many_requests
       end
 
-      lookup = Collectibles::AiLookup.new(user: current_user)
-      lookup.photo.attach(params[:photo]) if params[:photo].respond_to?(:read)
+      lookup = Collectibles::AiLookup.new(user: current_user, hints: params[:hints].to_s.strip.presence)
+      uploaded_photos.each { |file| lookup.photos.attach(file) }
 
       if lookup.save
         Collectibles::AiLookupJob.perform_later(lookup.id)
@@ -29,6 +29,14 @@ module Admin
       else
         render json: { error: lookup.errors.full_messages.to_sentence }, status: :unprocessable_entity
       end
+    end
+
+    private
+
+    # `photo` (una sola) es lo que mandaba la versión anterior de la página; se
+    # sigue aceptando por si alguien la tiene abierta durante el deploy.
+    def uploaded_photos
+      (Array(params[:photos]) + [params[:photo]]).select { |file| file.respond_to?(:read) }
     end
   end
 end

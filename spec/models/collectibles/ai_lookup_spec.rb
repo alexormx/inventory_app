@@ -6,7 +6,7 @@ RSpec.describe Collectibles::AiLookup do
   let(:admin) { create(:user, :admin) }
 
   def attach(lookup, filename:, content_type:, io: File.open(Rails.root.join('spec/fixtures/files/test1.png')))
-    lookup.photo.attach(io: io, filename: filename, content_type: content_type)
+    lookup.photos.attach(io: io, filename: filename, content_type: content_type)
     lookup
   end
 
@@ -64,6 +64,49 @@ RSpec.describe Collectibles::AiLookup do
       expect(lookup.as_status_json[:result]).to be_nil
       lookup.update!(status: :done)
       expect(lookup.as_status_json[:result]).to eq('x' => 1)
+    end
+  end
+  it 'acepta hasta 3 fotos y rechaza la cuarta con un mensaje claro' do
+    lookup = described_class.new(user: admin)
+    3.times { attach(lookup, filename: 'a.png', content_type: 'image/png') }
+    expect(lookup).to be_valid
+
+    attach(lookup, filename: 'd.png', content_type: 'image/png')
+    expect(lookup).not_to be_valid
+    expect(lookup.errors.full_messages.join).to include('Máximo 3 fotos')
+  end
+
+  it 'rechaza pistas de más de 300 caracteres con un mensaje en español' do
+    lookup = attach(described_class.new(user: admin, hints: 'x' * 301), filename: 'a.png', content_type: 'image/png')
+    expect(lookup).not_to be_valid
+    expect(lookup.errors.full_messages).to include('Las pistas no pueden pasar de 300 caracteres.')
+  end
+
+  it 'devuelve las fotos en el orden en que se subieron' do
+    lookup = described_class.new(user: admin)
+    attach(lookup, filename: 'frente.png', content_type: 'image/png')
+    attach(lookup, filename: 'base.png', content_type: 'image/png')
+    lookup.save!
+    expect(lookup.reload.ordered_photos.map { |p| p.filename.to_s }).to eq(%w[frente.png base.png])
+  end
+
+  describe '.vision_monthly_cap_reached?' do
+    def lookup_with_vision(used:, at: Time.current)
+      travel_to(at) do
+        attach(described_class.new(user: admin, vision_used: used), filename: 'a.png', content_type: 'image/png').tap(&:save!)
+      end
+    end
+
+    before { stub_const('Collectibles::AiLookup::VISION_MONTHLY_CAP', 2) }
+
+    it 'cuenta sólo las búsquedas de este mes que sí llamaron a Google' do
+      lookup_with_vision(used: true)
+      lookup_with_vision(used: false)
+      lookup_with_vision(used: true, at: 2.months.ago)
+      expect(described_class.vision_monthly_cap_reached?).to be(false)
+
+      lookup_with_vision(used: true)
+      expect(described_class.vision_monthly_cap_reached?).to be(true)
     end
   end
 end

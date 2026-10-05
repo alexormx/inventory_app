@@ -7,7 +7,7 @@ RSpec.describe Collectibles::AiLookupJob do
 
   let(:lookup) do
     Collectibles::AiLookup.new(user: create(:user, :admin)).tap do |l|
-      l.photo.attach(io: File.open(Rails.root.join('spec/fixtures/files/test1.png')), filename: 'a.png', content_type: 'image/png')
+      l.photos.attach(io: File.open(Rails.root.join('spec/fixtures/files/test1.png')), filename: 'a.png', content_type: 'image/png')
       l.save!
     end
   end

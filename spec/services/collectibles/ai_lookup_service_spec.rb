@@ -6,7 +6,7 @@ RSpec.describe Collectibles::AiLookupService do
   let(:admin) { create(:user, :admin) }
   let(:lookup) do
     Collectibles::AiLookup.new(user: admin).tap do |l|
-      l.photo.attach(io: File.open(Rails.root.join('spec/fixtures/files/test1.png')), filename: 'a.png', content_type: 'image/png')
+      l.photos.attach(io: File.open(Rails.root.join('spec/fixtures/files/test1.png')), filename: 'a.png', content_type: 'image/png')
       l.save!
     end
   end
@@ -125,17 +125,20 @@ RSpec.describe Collectibles::AiLookupService do
   end
 
   it 'no llama a OpenAI si el archivo no es una imagen legible' do
-    lookup.photo.attach(io: StringIO.new('hola, no soy imagen'), filename: 'falsa.png', content_type: 'image/png')
+    fake = Collectibles::AiLookup.new(user: admin).tap do |l|
+      l.photos.attach(io: StringIO.new('hola, no soy imagen'), filename: 'falsa.png', content_type: 'image/png')
+      l.save!
+    end
     sent = stub_ai_lookup_openai(ai_lookup_openai_response(ai_lookup_answer))
 
-    expect { described_class.new(lookup).call }.to raise_error(described_class::Error, /no es una imagen válida/)
+    expect { described_class.new(fake).call }.to raise_error(described_class::Error, /no es una imagen válida/)
     expect(sent).to be_empty
   end
 
   it 'reduce la foto a 1024 px y le quita los metadatos antes de mandarla' do
     big = Tempfile.new(['big', '.jpg'])
     system('convert', '-size', '3000x2000', 'xc:red', '-set', 'comment', 'GPS 19.43,-99.13', big.path, exception: true)
-    lookup.photo.attach(io: File.open(big.path), filename: 'big.jpg', content_type: 'image/jpeg')
+    lookup.photos.attach(io: File.open(big.path), filename: 'big.jpg', content_type: 'image/jpeg')
 
     sent = stub_ai_lookup_openai(ai_lookup_openai_response(ai_lookup_answer))
     described_class.new(lookup).call
