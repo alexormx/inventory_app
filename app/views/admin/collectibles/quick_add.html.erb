@@ -37,10 +37,11 @@
       </div>
       <div class="d-none" data-collectible-ai-lookup-target="actions">
         <div class="mb-2">
-          <%# Sin `name`: las pistas son para la IA, no para el alta del producto. %>
+          <%# Sin `name`: las pistas son para la IA, no para el alta del producto; Enter busca en vez de enviar el formulario. %>
           <label class="form-label" for="ai_lookup_hints">Pistas (opcional)</label>
           <input type="text" id="ai_lookup_hints" class="form-control" maxlength="300"
-                 placeholder="Marca, texto de la base, número, serie…" data-collectible-ai-lookup-target="hints">
+                 placeholder="Marca, texto de la base, número, serie…" data-collectible-ai-lookup-target="hints"
+                 data-action="keydown.enter->collectible-ai-lookup#start:prevent">
           <small class="text-muted">Lo que ya sepas de la pieza ayuda a la IA a acertar; una foto de cerca de la base también.</small>
         </div>
         <div class="d-flex align-items-center gap-2">

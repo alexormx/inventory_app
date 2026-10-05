@@ -235,6 +235,24 @@ RSpec.describe Collectibles::AiLookupService do
       expect(lookup.reload.vision_used).to be(false)
     end
 
+    it 'en un reintento reusa lo que dio Google en vez de volver a llamarlo' do
+      lookup.update_columns(vision_used: true, result: { 'reverse_image' => google })
+      expect(Collectibles::ReverseImageSearch).not_to receive(:new)
+      sent = stub_ai_lookup_openai(ai_lookup_openai_response(ai_lookup_answer))
+      data = described_class.new(lookup).call.data
+
+      expect(user_text(sent)).to include('tomica skyline gt-r r34')
+      expect(data['reverse_image']).to eq(google)
+    end
+
+    it 'guarda lo que dio Google en cuanto llega, para que un reintento lo reuse' do
+      stub_reverse_search(google)
+      stub_ai_lookup_openai { raise Collectibles::AiLookupService::RateLimitError, '429' }
+
+      expect { described_class.new(lookup).call }.to raise_error(described_class::RateLimitError)
+      expect(lookup.reload.result).to eq('reverse_image' => google)
+    end
+
     it 'deja a lo más 3 candidatos' do
       answer = ai_lookup_answer
       answer['candidates'] = Array.new(5) do |i|

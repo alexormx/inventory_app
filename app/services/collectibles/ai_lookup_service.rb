@@ -105,14 +105,16 @@ module Collectibles
         photos.map { |jpeg| { type: 'input_image', image_url: "data:image/jpeg;base64,#{Base64.strict_encode64(jpeg)}", detail: 'high' } }
     end
 
-    # Google cobra por llamada, no por resultado útil: el uso se guarda en cuanto
-    # se llamó, antes de OpenAI, para que el tope mensual no se quede corto.
+    # Google cobra por llamada, no por resultado útil: el uso (y lo que dio) se
+    # guarda en cuanto se llamó, antes de OpenAI. Así el tope mensual no se
+    # queda corto y un reintento por 429 reusa la respuesta en vez de pagar otra.
     def reverse_image_search(jpeg)
+      return @lookup.result&.dig('reverse_image') if @lookup.vision_used?
       return nil if AiLookup.vision_monthly_cap_reached?
 
       search = ReverseImageSearch.new(jpeg)
       result = search.call
-      @lookup.update_column(:vision_used, true) if search.called?
+      @lookup.update_columns(vision_used: true, result: { 'reverse_image' => result }) if search.called?
       result
     end
 

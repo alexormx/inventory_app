@@ -137,4 +137,18 @@ RSpec.describe 'Admin identifica un coleccionable con IA', type: :system do
       expect(Collectibles::AiLookup.last.photos.count).to eq(3)
     end
   end
+
+  it 'Enter en las pistas inicia la búsqueda y no da de alta el producto' do
+    stub_ai_lookup_openai(ai_lookup_openai_response(answer))
+    visit admin_collectibles_quick_add_path
+    fill_in 'product[product_name]', with: 'Ya escrito'
+    attach_file 'inventory[piece_images][]', Rails.root.join('spec/fixtures/files/test1.png')
+
+    expect do
+      find_field('Pistas (opcional)').send_keys('Base: Tomica 23', :enter)
+      expect(page).to have_css('[data-collectible-ai-lookup-target="panel"]', text: 'Resultado de la IA', wait: 15)
+    end.not_to change(Product, :count)
+    expect(page).to have_current_path(admin_collectibles_quick_add_path)
+    expect(Collectibles::AiLookup.last.hints).to eq('Base: Tomica 23')
+  end
 end
