@@ -30,6 +30,12 @@ module AiLookupOpenaiHelpers
       },
       'suggested' => { 'category' => 'Autos a escala',
                        'description_es' => 'Réplica a escala 1/62 del Nissan Skyline GT-R R34 de la línea regular de Tomica.' },
+      'candidates' => [
+        { 'product_name' => 'Tomica No. 23 Nissan Skyline GT-R R34', 'brand' => 'Tomica', 'model_code' => 'No. 23',
+          'reason' => 'Caja roja y blanca con el número 23.', 'confidence' => 0.86 },
+        { 'product_name' => 'Tomica Premium 08 Nissan Skyline GT-R V-spec', 'brand' => 'Tomica Premium', 'model_code' => '08',
+          'reason' => 'Mismo auto, línea Premium con rines distintos.', 'confidence' => 0.1 }
+      ],
       'warnings' => []
     }.merge(overrides)
   end

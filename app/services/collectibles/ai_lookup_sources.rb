@@ -1,10 +1,11 @@
 # frozen_string_literal: true
 
 module Collectibles
-  # Sitios en los que confiamos para precios y fechas. La IA sólo busca aquí y,
-  # además, el servidor tira cualquier enlace que no sea de esta lista: un
-  # enlace inventado nunca llega a la pantalla. México y el resto del mundo van
-  # separados porque el precio local y el internacional se leen distinto.
+  # Sitios en los que confiamos para precios. La IA puede buscar en toda la web
+  # para identificar la pieza, pero el servidor tira cualquier anuncio de precio
+  # que no sea de esta lista: un enlace inventado nunca llega a la pantalla.
+  # México y el resto del mundo van separados porque el precio local y el
+  # internacional se leen distinto.
   module AiLookupSources
     MX = %w[mercadolibre.com.mx amazon.com.mx].freeze
     WORLDWIDE = %w[ebay.com amazon.com amazon.co.jp hobbydb.com plazajapan.com hlj.com].freeze

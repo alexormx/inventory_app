@@ -35,9 +35,18 @@ module Collectibles
 
     NULLABLE_STRING = { type: %w[string null] }.freeze
 
+    CANDIDATE = {
+      type: 'object', additionalProperties: false,
+      required: %w[product_name brand model_code reason confidence],
+      properties: {
+        product_name: { type: 'string' }, brand: NULLABLE_STRING, model_code: NULLABLE_STRING,
+        reason: { type: 'string' }, confidence: { type: 'number' }
+      }
+    }.freeze
+
     SCHEMA = {
       type: 'object', additionalProperties: false,
-      required: %w[identification launch_date rarity prices_mx prices_world suggested warnings],
+      required: %w[identification launch_date rarity prices_mx prices_world suggested candidates warnings],
       properties: {
         identification: {
           type: 'object', additionalProperties: false,
@@ -65,6 +74,7 @@ module Collectibles
           type: 'object', additionalProperties: false, required: %w[category description_es],
           properties: { category: NULLABLE_STRING, description_es: NULLABLE_STRING }
         },
+        candidates: { type: 'array', items: CANDIDATE },
         warnings: { type: 'array', items: { type: 'string' } }
       }
     }.freeze
