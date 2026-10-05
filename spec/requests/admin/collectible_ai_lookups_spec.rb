@@ -15,6 +15,21 @@ RSpec.describe 'Admin collectible AI lookups', type: :request do
   before { sign_in admin }
 
   describe 'POST create' do
+    it 'guarda el tipo de cada foto en orden' do
+      post admin_collectible_ai_lookups_path,
+           params: { photos: [png_upload, png_upload('test2.png')], photo_roles: %w[three_quarter base] }
+
+      expect(response).to have_http_status(:created)
+      expect(Collectibles::AiLookup.last.photo_roles).to eq(%w[three_quarter base])
+    end
+
+    it 'rechaza tipos sin la vista 3/4' do
+      post admin_collectible_ai_lookups_path, params: { photos: [png_upload], photo_roles: %w[base] }
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response.parsed_body['error']).to eq('Falta la vista 3/4 elevada.')
+    end
+
     it 'acepta varias fotos y pistas' do
       post admin_collectible_ai_lookups_path, params: { photos: [png_upload, png_upload('test2.png')], hints: '  Base: Tomica 23  ' }
 
@@ -24,11 +39,11 @@ RSpec.describe 'Admin collectible AI lookups', type: :request do
       expect(lookup.hints).to eq('Base: Tomica 23')
     end
 
-    it 'rechaza más de 3 fotos sin gastar' do
-      expect { post admin_collectible_ai_lookups_path, params: { photos: Array.new(4) { png_upload } } }.not_to have_enqueued_job
+    it 'rechaza más de 5 fotos sin gastar' do
+      expect { post admin_collectible_ai_lookups_path, params: { photos: Array.new(6) { png_upload } } }.not_to have_enqueued_job
 
       expect(response).to have_http_status(:unprocessable_entity)
-      expect(response.parsed_body['error']).to include('Máximo 3 fotos')
+      expect(response.parsed_body['error']).to include('Máximo 5 fotos')
     end
 
     it 'rechaza pistas de más de 300 caracteres' do

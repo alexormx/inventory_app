@@ -66,14 +66,14 @@ RSpec.describe Collectibles::AiLookup do
       expect(lookup.as_status_json[:result]).to eq('x' => 1)
     end
   end
-  it 'acepta hasta 3 fotos y rechaza la cuarta con un mensaje claro' do
+  it 'acepta hasta 5 fotos y rechaza la sexta con un mensaje claro' do
     lookup = described_class.new(user: admin)
-    3.times { attach(lookup, filename: 'a.png', content_type: 'image/png') }
+    5.times { attach(lookup, filename: 'a.png', content_type: 'image/png') }
     expect(lookup).to be_valid
 
     attach(lookup, filename: 'd.png', content_type: 'image/png')
     expect(lookup).not_to be_valid
-    expect(lookup.errors.full_messages.join).to include('Máximo 3 fotos')
+    expect(lookup.errors.full_messages.join).to include('Máximo 5 fotos')
   end
 
   it 'rechaza pistas de más de 300 caracteres con un mensaje en español' do
@@ -107,6 +107,45 @@ RSpec.describe Collectibles::AiLookup do
 
       lookup_with_vision(used: true)
       expect(described_class.vision_monthly_cap_reached?).to be(true)
+    end
+  end
+  describe 'tipos de foto' do
+    def lookup_with(roles, count: roles.size)
+      described_class.new(user: admin, photo_roles: roles).tap do |l|
+        count.times { attach(l, filename: 'a.png', content_type: 'image/png') }
+      end
+    end
+
+    it 'acepta tipos válidos que incluyen la vista 3/4' do
+      expect(lookup_with(%w[base three_quarter package])).to be_valid
+    end
+
+    it 'sigue aceptando búsquedas sin tipos (página vieja)' do
+      expect(lookup_with([], count: 2)).to be_valid
+    end
+
+    it 'exige la vista 3/4 cuando hay tipos' do
+      lookup = lookup_with(%w[base side])
+      expect(lookup).not_to be_valid
+      expect(lookup.errors.full_messages).to include('Falta la vista 3/4 elevada.')
+    end
+
+    it 'rechaza tipos desconocidos, repetidos o que no cuadran con las fotos' do
+      [lookup_with(%w[three_quarter selfie]), lookup_with(%w[three_quarter three_quarter]),
+       lookup_with(%w[three_quarter], count: 2)].each do |lookup|
+        expect(lookup).not_to be_valid
+        expect(lookup.errors.full_messages).to include('Los tipos de foto no son válidos.')
+      end
+    end
+
+    it 'empareja cada foto con su tipo en el orden de subida' do
+      lookup = lookup_with(%w[three_quarter base]).tap(&:save!)
+      expect(lookup.reload.labeled_photos.map(&:last)).to eq(%w[three_quarter base])
+    end
+
+    it 'sin tipos, cada foto queda con tipo nil' do
+      lookup = lookup_with([], count: 2).tap(&:save!)
+      expect(lookup.reload.labeled_photos.map(&:last)).to eq([nil, nil])
     end
   end
 end
