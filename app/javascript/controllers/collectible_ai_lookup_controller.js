@@ -14,13 +14,16 @@ const FIELDS = [
 const MAX_WAIT_MS = 4 * 60 * 1000
 
 export default class extends Controller {
-  static targets = ["fileInput", "button", "status", "panel"]
+  static targets = ["fileInput", "button", "status", "panel", "actions"]
   static values = { createUrl: String, interval: { type: Number, default: 3000 } }
 
   disconnect() { this.stopPolling() }
 
+  // La IA es opcional: el botón sólo aparece cuando hay una foto que mandar.
   photoChanged() {
-    if (!this.running) this.buttonTarget.disabled = !this.firstPhoto()
+    const hasPhoto = Boolean(this.firstPhoto())
+    if (this.hasActionsTarget) this.actionsTarget.classList.toggle("d-none", !hasPhoto && !this.running)
+    if (!this.running) this.buttonTarget.disabled = !hasPhoto
   }
 
   firstPhoto() { return this.fileInputTarget.files?.[0] }
