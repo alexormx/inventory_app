@@ -23,7 +23,7 @@ RSpec.describe Collectibles::AiLookupService do
     # Para identificar busca en toda la web; los precios se filtran en el servidor.
     expect(params[:tools]).to eq([{ type: 'web_search' }])
     # Le dice a la IA qué suele ser cada foto, en el orden que pide la pantalla.
-    expect(params[:instructions]).to include('1) vista 3/4 elevada').and include('2) la base')
+    expect(params[:instructions]).to include('Cada foto viene precedida de su tipo')
     expect(params.dig(:text, :format, :type)).to eq('json_schema')
     expect(params.dig(:text, :format, :strict)).to be(true)
     image = params[:input].first[:content].find { |c| c[:type] == 'input_image' }
@@ -164,6 +164,66 @@ RSpec.describe Collectibles::AiLookupService do
   end
 
   describe 'fotos, pistas y búsqueda inversa' do
+    def generated_png(dir, name, color)
+      File.join(dir, name).tap { |path| system('convert', '-size', '40x40', "xc:#{color}", path, exception: true) }
+    end
+
+    def decoded_images(sent)
+      sent.first[:input].first[:content].select { |c| c[:type] == 'input_image' }
+          .map { |c| Base64.strict_decode64(c[:image_url].delete_prefix('data:image/jpeg;base64,')) }
+    end
+
+    it 'antes de cada foto le dice a la IA qué tipo de foto es' do
+      lookup.photos.attach(io: File.open(Rails.root.join('spec/fixtures/files/test2.png')), filename: 'base.png', content_type: 'image/png')
+      lookup.save!
+      lookup.update!(photo_roles: %w[three_quarter base])
+      sent = stub_ai_lookup_openai(ai_lookup_openai_response(ai_lookup_answer))
+      described_class.new(lookup.reload).call
+
+      content = sent.first[:input].first[:content]
+      expect(content.pluck(:type)).to eq(%w[input_text input_text input_image input_text input_image])
+      expect(content[1][:text]).to eq('Foto 1: vista 3/4 elevada de la pieza')
+      expect(content[3][:text]).to start_with('Foto 2: base de la pieza, donde está el texto del casting')
+    end
+
+    it 'sin tipos (página vieja) etiqueta la foto como sin tipo' do
+      sent = stub_ai_lookup_openai(ai_lookup_openai_response(ai_lookup_answer))
+      described_class.new(lookup).call
+      expect(sent.first[:input].first[:content][1][:text]).to eq('Foto 1 (tipo no indicado)')
+    end
+
+    it 'manda a Google la vista 3/4 aunque no sea la primera foto' do
+      Dir.mktmpdir do |dir|
+        three_quarter = Collectibles::AiLookup.new(user: admin, photo_roles: %w[base three_quarter]).tap do |l|
+          l.photos.attach(io: File.open(generated_png(dir, 'base.png', 'blue')), filename: 'base.png', content_type: 'image/png')
+          l.photos.attach(io: File.open(generated_png(dir, 'tres_cuartos.png', 'red')), filename: 'tres_cuartos.png', content_type: 'image/png')
+          l.save!
+        end
+        to_google = nil
+        allow(Collectibles::ReverseImageSearch).to receive(:new) do |jpeg|
+          to_google = jpeg
+          instance_double(Collectibles::ReverseImageSearch, call: nil, called?: false)
+        end
+        sent = stub_ai_lookup_openai(ai_lookup_openai_response(ai_lookup_answer))
+        described_class.new(three_quarter.reload).call
+
+        base_jpeg, three_quarter_jpeg = decoded_images(sent)
+        expect(base_jpeg).not_to eq(three_quarter_jpeg)
+        expect(to_google).to eq(three_quarter_jpeg)
+      end
+    end
+
+    it 'sin tipos manda a Google la primera foto' do
+      to_google = nil
+      allow(Collectibles::ReverseImageSearch).to receive(:new) do |jpeg|
+        to_google = jpeg
+        instance_double(Collectibles::ReverseImageSearch, call: nil, called?: false)
+      end
+      sent = stub_ai_lookup_openai(ai_lookup_openai_response(ai_lookup_answer))
+      described_class.new(lookup).call
+      expect(to_google).to eq(decoded_images(sent).first)
+    end
+
     def user_text(sent)
       sent.first[:input].first[:content].find { |c| c[:type] == 'input_text' }[:text]
     end
