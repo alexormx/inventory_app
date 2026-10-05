@@ -7,9 +7,9 @@ module Collectibles
     queue_as :default
 
     def perform
-      Collectibles::AiLookup.where(created_at: ...7.days.ago)
-                            .joins(:photo_attachment)
-                            .find_each { |lookup| lookup.photo.purge }
+      with_photos = ActiveStorage::Attachment.where(record_type: Collectibles::AiLookup.name, name: 'photos').select(:record_id)
+      Collectibles::AiLookup.where(created_at: ...7.days.ago, id: with_photos)
+                            .find_each { |lookup| lookup.photos.purge }
     end
   end
 end

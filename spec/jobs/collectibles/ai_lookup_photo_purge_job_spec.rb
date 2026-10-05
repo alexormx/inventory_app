@@ -6,7 +6,7 @@ RSpec.describe Collectibles::AiLookupPhotoPurgeJob do
   def lookup_created(at)
     travel_to(at) do
       Collectibles::AiLookup.new(user: create(:user, :admin)).tap do |l|
-        l.photo.attach(io: File.open(Rails.root.join('spec/fixtures/files/test1.png')), filename: 'a.png', content_type: 'image/png')
+        l.photos.attach(io: File.open(Rails.root.join('spec/fixtures/files/test1.png')), filename: 'a.png', content_type: 'image/png')
         l.save!
       end
     end
@@ -18,8 +18,8 @@ RSpec.describe Collectibles::AiLookupPhotoPurgeJob do
 
     described_class.perform_now
 
-    expect(old.reload.photo).not_to be_attached
+    expect(old.reload.photos).not_to be_attached
     expect(Collectibles::AiLookup.exists?(old.id)).to be(true)
-    expect(recent.reload.photo).to be_attached
+    expect(recent.reload.photos).to be_attached
   end
 end

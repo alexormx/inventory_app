@@ -8,9 +8,36 @@ RSpec.describe 'Admin collectible AI lookups', type: :request do
   let(:admin) { create(:user, :admin) }
   let(:png) { Rack::Test::UploadedFile.new(Rails.root.join('spec/fixtures/files/test1.png'), 'image/png') }
 
+  def png_upload(name = 'test1.png')
+    Rack::Test::UploadedFile.new(Rails.root.join("spec/fixtures/files/#{name}"), 'image/png')
+  end
+
   before { sign_in admin }
 
   describe 'POST create' do
+    it 'acepta varias fotos y pistas' do
+      post admin_collectible_ai_lookups_path, params: { photos: [png_upload, png_upload('test2.png')], hints: '  Base: Tomica 23  ' }
+
+      expect(response).to have_http_status(:created)
+      lookup = Collectibles::AiLookup.last
+      expect(lookup.ordered_photos.map { |p| p.filename.to_s }).to eq(%w[test1.png test2.png])
+      expect(lookup.hints).to eq('Base: Tomica 23')
+    end
+
+    it 'rechaza más de 3 fotos sin gastar' do
+      expect { post admin_collectible_ai_lookups_path, params: { photos: Array.new(4) { png_upload } } }.not_to have_enqueued_job
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response.parsed_body['error']).to include('Máximo 3 fotos')
+    end
+
+    it 'rechaza pistas de más de 300 caracteres' do
+      post admin_collectible_ai_lookups_path, params: { photos: [png_upload], hints: 'x' * 301 }
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response.parsed_body['error']).to eq('Las pistas no pueden pasar de 300 caracteres.')
+    end
+
     it 'crea la búsqueda y la encola' do
       expect do
         post admin_collectible_ai_lookups_path, params: { photo: png }
@@ -54,7 +81,7 @@ RSpec.describe 'Admin collectible AI lookups', type: :request do
   describe 'GET show' do
     def create_lookup(user)
       Collectibles::AiLookup.new(user: user).tap do |l|
-        l.photo.attach(io: File.open(Rails.root.join('spec/fixtures/files/test1.png')), filename: 'a.png', content_type: 'image/png')
+        l.photos.attach(io: File.open(Rails.root.join('spec/fixtures/files/test1.png')), filename: 'a.png', content_type: 'image/png')
         l.save!
       end
     end

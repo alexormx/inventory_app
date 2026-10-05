@@ -1,9 +1,10 @@
 import { Controller } from "@hotwired/stimulus"
 
-// Identificación con IA en quick_add. Sube la primera foto elegida, sondea el
-// estado (JSON + intervalo, el patrón que ya funciona en la app) y, al terminar,
-// llena SÓLO los campos vacíos y arma el panel. Todo texto de la IA entra con
-// textContent: nunca innerHTML.
+// Identificación con IA en quick_add. Sube hasta 3 fotos y las pistas, sondea
+// el estado (JSON + intervalo, el patrón que ya funciona en la app) y, al
+// terminar, llena SÓLO los campos vacíos y arma el panel. Si la IA no está
+// segura no llena nada: enseña candidatos para que el admin elija. Todo texto
+// de la IA o de Google entra con textContent: nunca innerHTML.
 const RARITY = { comun: "Común", poco_comun: "Poco común", rara: "Rara", muy_rara: "Muy rara" }
 const FIELDS = [
   ["product[product_name]", (r) => r.identification?.product_name, "Nombre"],
@@ -12,30 +13,37 @@ const FIELDS = [
   ["product[description]", (r) => r.suggested?.description_es, "Descripción"],
 ]
 const MAX_WAIT_MS = 4 * 60 * 1000
+const MAX_PHOTOS = 3
+const LOW_CONFIDENCE = 0.7
 
 export default class extends Controller {
-  static targets = ["fileInput", "button", "status", "panel", "actions"]
+  static targets = ["fileInput", "button", "status", "panel", "actions", "hints"]
   static values = { createUrl: String, interval: { type: Number, default: 3000 } }
 
   disconnect() { this.stopPolling() }
 
   // La IA es opcional: el botón sólo aparece cuando hay una foto que mandar.
   photoChanged() {
-    const hasPhoto = Boolean(this.firstPhoto())
-    if (this.hasActionsTarget) this.actionsTarget.classList.toggle("d-none", !hasPhoto && !this.running)
-    if (!this.running) this.buttonTarget.disabled = !hasPhoto
+    const count = this.fileInputTarget.files?.length || 0
+    if (this.hasActionsTarget) this.actionsTarget.classList.toggle("d-none", count === 0 && !this.running)
+    if (this.running) return
+    this.buttonTarget.disabled = count === 0
+    this.statusTarget.textContent =
+      count > MAX_PHOTOS ? `Se enviarán a la IA las primeras ${MAX_PHOTOS} de ${count} fotos.` : ""
   }
 
-  firstPhoto() { return this.fileInputTarget.files?.[0] }
+  photos() { return Array.from(this.fileInputTarget.files || []).slice(0, MAX_PHOTOS) }
 
   async start() {
-    const photo = this.firstPhoto()
-    if (!photo || this.running) return
-    this.setRunning(true, "Buscando… (~30–60 s)")
+    const photos = this.photos()
+    if (photos.length === 0 || this.running) return
+    this.setRunning(true, "Buscando… (~30–90 s)")
     this.hidePanel()
 
     const body = new FormData()
-    body.append("photo", photo)
+    photos.forEach((photo) => body.append("photos[]", photo))
+    const hints = this.hasHintsTarget ? this.hintsTarget.value.trim() : ""
+    if (hints) body.append("hints", hints)
     try {
       const res = await fetch(this.createUrlValue, {
         method: "POST",
@@ -71,9 +79,10 @@ export default class extends Controller {
 
   finish(result) {
     this.stopPolling()
-    this.setRunning(false, "Listo. Revisa los datos antes de guardar.")
-    const suggestions = this.fillEmptyFields(result)
-    this.renderPanel(result, suggestions)
+    const confident = (result.identification?.confidence || 0) >= LOW_CONFIDENCE
+    this.setRunning(false, confident ? "Listo. Revisa los datos antes de guardar." : "La IA no está segura: elige la pieza correcta.")
+    const suggestions = confident ? this.fillEmptyFields(result) : []
+    this.renderPanel(result, suggestions, confident)
   }
 
   fillEmptyFields(result) {
@@ -88,7 +97,7 @@ export default class extends Controller {
     return pending
   }
 
-  renderPanel(r, suggestions) {
+  renderPanel(r, suggestions, confident) {
     const panel = this.panelTarget
     panel.replaceChildren()
     const header = this.el("div", "card-header bg-info-subtle fw-semibold", "Resultado de la IA")
@@ -98,9 +107,11 @@ export default class extends Controller {
     const id = r.identification || {}
     const conf = Math.round((id.confidence || 0) * 100)
     body.append(this.el("p", "mb-1", `${id.product_name || "Sin identificar"} · confianza ${conf}%`))
-    if (conf < 60) body.append(this.el("div", "alert alert-warning py-1 mb-2", "Confianza baja: verifica el modelo."))
+    if (!confident) body.append(this.candidates(r))
     const details = [id.brand, id.series, id.model_code, id.scale, id.year_or_edition].filter(Boolean).join(" · ")
     if (details) body.append(this.el("p", "text-muted mb-2", details))
+    const guesses = r.reverse_image?.best_guesses || []
+    if (guesses.length) body.append(this.el("p", "text-muted mb-2", `Google sugiere: ${guesses.join(" · ")}`))
 
     const launch = this.el("p", "mb-1", `Lanzamiento: ${r.launch_date?.value || "sin dato"}`)
     if (r.launch_date?.source_url) launch.append(" ", this.link(r.launch_date.source_url, "fuente"))
@@ -115,14 +126,7 @@ export default class extends Controller {
     row.append(this.market("🇲🇽 México", r.prices_mx, "MXN"), this.market("🌎 Mundial", r.prices_world, "USD"))
     body.append(row)
 
-    suggestions.forEach(({ field, value, label }) => {
-      const line = this.el("div", "d-flex align-items-start gap-2 mt-2")
-      const button = this.el("button", "btn btn-sm btn-outline-primary", "Usar")
-      button.type = "button"
-      button.addEventListener("click", () => { field.value = value; line.remove() })
-      line.append(button, this.el("span", "", `${label}: ${value}`))
-      body.append(line)
-    })
+    this.appendSuggestions(body, suggestions)
 
     if ((r.warnings || []).length) {
       const warn = this.el("ul", "text-warning-emphasis mt-2 mb-0")
@@ -130,6 +134,44 @@ export default class extends Controller {
       body.append(warn)
     }
     panel.classList.remove("d-none")
+  }
+
+  // Con confianza baja no se llena nada: el admin elige. La descripción y la
+  // categoría se escribieron para el primer candidato; sólo se usan si es ése.
+  candidates(r) {
+    const box = this.el("div", "alert alert-warning py-2 mb-2")
+    box.append(this.el("div", "fw-semibold mb-1", "No estoy seguro; elige la pieza correcta:"))
+    const list = r.candidates?.length ? r.candidates : [{ ...r.identification, reason: "" }]
+    list.forEach((c, index) => {
+      const line = this.el("div", "d-flex align-items-start gap-2 mb-1")
+      const pick = this.el("button", "btn btn-sm btn-outline-primary", "Es esta")
+      pick.type = "button"
+      pick.addEventListener("click", () => {
+        const chosen = {
+          identification: { product_name: c.product_name, brand: c.brand },
+          suggested: index === 0 ? r.suggested : {},
+        }
+        box.querySelectorAll("button").forEach((b) => { b.disabled = true })
+        this.appendSuggestions(box, this.fillEmptyFields(chosen))
+        this.statusTarget.textContent = "Datos de la pieza elegida aplicados. Revisa antes de guardar."
+      })
+      const label = [c.product_name, c.brand, c.model_code].filter(Boolean).join(" · ")
+      const pct = Math.round((c.confidence || 0) * 100)
+      line.append(pick, this.el("span", "", `${label} (${pct}%)${c.reason ? ` — ${c.reason}` : ""}`))
+      box.append(line)
+    })
+    return box
+  }
+
+  appendSuggestions(container, suggestions) {
+    suggestions.forEach(({ field, value, label }) => {
+      const line = this.el("div", "d-flex align-items-start gap-2 mt-2")
+      const button = this.el("button", "btn btn-sm btn-outline-primary", "Usar")
+      button.type = "button"
+      button.addEventListener("click", () => { field.value = value; line.remove() })
+      line.append(button, this.el("span", "", `${label}: ${value}`))
+      container.append(line)
+    })
   }
 
   market(title, data, currency) {
@@ -166,7 +208,7 @@ export default class extends Controller {
 
   setRunning(running, text) {
     this.running = running
-    this.buttonTarget.disabled = running || !this.firstPhoto()
+    this.buttonTarget.disabled = running || this.photos().length === 0
     this.statusTarget.textContent = text
   }
 

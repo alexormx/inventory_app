@@ -32,6 +32,9 @@ RSpec.describe 'Admin identifica un coleccionable con IA', type: :system do
     expect(headers.first).to include('1. Fotos de la pieza (opcional)')
     expect(headers.index { |h| h.include?('2. Producto') }).to eq(1)
     expect(page).to have_no_button('Identificar con IA')
+    # Guía de qué fotos subir y en qué orden (la primera va a Google).
+    expect(page).to have_content('Vista 3/4 elevada')
+    expect(page).to have_content('La base, donde se lee el texto del casting')
 
     attach_file 'inventory[piece_images][]', Rails.root.join('spec/fixtures/files/test1.png')
     expect(page).to have_button('Identificar con IA', disabled: false)
@@ -92,5 +95,63 @@ RSpec.describe 'Admin identifica un coleccionable con IA', type: :system do
 
     expect(page).to have_content('Respuesta vacía de OpenAI', wait: 15)
     expect(page).to have_button('Reintentar')
+  end
+
+  it 'si la IA no está segura no llena nada y deja elegir entre candidatos' do
+    unsure = ai_lookup_answer.tap { |a| a['identification']['confidence'] = 0.45 }
+    stub_ai_lookup_openai(ai_lookup_openai_response(unsure))
+    allow(Collectibles::ReverseImageSearch).to receive(:new).and_return(
+      instance_double(Collectibles::ReverseImageSearch,
+                      call: { 'best_guesses' => ['tomica skyline gt-r'], 'entities' => [], 'pages' => [] }, called?: true)
+    )
+    visit admin_collectibles_quick_add_path
+    attach_file 'inventory[piece_images][]', [Rails.root.join('spec/fixtures/files/test1.png'), Rails.root.join('spec/fixtures/files/test2.png')]
+    fill_in 'Pistas (opcional)', with: 'Base: Tomica No. 23'
+    click_button 'Identificar con IA'
+
+    panel = '[data-collectible-ai-lookup-target="panel"]'
+    expect(page).to have_css(panel, text: 'No estoy seguro', wait: 15)
+    expect(find_field('product[product_name]').value).to be_blank
+    within(panel) { expect(page).to have_content('Google sugiere: tomica skyline gt-r') }
+
+    lookup = Collectibles::AiLookup.last
+    expect(lookup.photos.count).to eq(2)
+    expect(lookup.hints).to eq('Base: Tomica No. 23')
+
+    within(panel) { all(:button, 'Es esta')[1].click }
+    expect(find_field('product[product_name]').value).to eq('Tomica Premium 08 Nissan Skyline GT-R V-spec')
+    expect(find_field('product[brand]').value).to eq('Tomica Premium')
+    # La descripción se escribió para el primer candidato: no se usa para otro.
+    expect(find_field('product[description]').value).to be_blank
+  end
+
+  it 'avisa que sólo manda las primeras 3 fotos' do
+    stub_ai_lookup_openai(ai_lookup_openai_response(answer))
+    Dir.mktmpdir do |dir|
+      files = Array.new(4) do |i|
+        File.join(dir, "foto#{i}.png").tap { |path| system('convert', '-size', '20x20', 'xc:blue', path, exception: true) }
+      end
+      visit admin_collectibles_quick_add_path
+      attach_file 'inventory[piece_images][]', files
+
+      expect(page).to have_content('Se enviarán a la IA las primeras 3 de 4 fotos.')
+      click_button 'Identificar con IA'
+      expect(page).to have_css('[data-collectible-ai-lookup-target="panel"]', text: 'Resultado de la IA', wait: 15)
+      expect(Collectibles::AiLookup.last.photos.count).to eq(3)
+    end
+  end
+
+  it 'Enter en las pistas inicia la búsqueda y no da de alta el producto' do
+    stub_ai_lookup_openai(ai_lookup_openai_response(answer))
+    visit admin_collectibles_quick_add_path
+    fill_in 'product[product_name]', with: 'Ya escrito'
+    attach_file 'inventory[piece_images][]', Rails.root.join('spec/fixtures/files/test1.png')
+
+    expect do
+      find_field('Pistas (opcional)').send_keys('Base: Tomica 23', :enter)
+      expect(page).to have_css('[data-collectible-ai-lookup-target="panel"]', text: 'Resultado de la IA', wait: 15)
+    end.not_to change(Product, :count)
+    expect(page).to have_current_path(admin_collectibles_quick_add_path)
+    expect(Collectibles::AiLookup.last.hints).to eq('Base: Tomica 23')
   end
 end
