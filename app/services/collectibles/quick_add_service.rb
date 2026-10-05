@@ -49,7 +49,8 @@ module Collectibles
         @product.maximum_discount ||= 0
         @product.minimum_price    ||= @product.selling_price
 
-        @errors.concat(@product.errors.full_messages) unless @product.save
+        @product_created = @product.save
+        @errors.concat(@product.errors.full_messages) unless @product_created
       end
     end
 
@@ -74,14 +75,18 @@ module Collectibles
       @errors.concat(@inventory.errors.full_messages)
     end
 
+    # Las fotos son de la pieza. Si este alta creó el producto, también se
+    # vuelven sus fotos de catálogo, en el mismo orden (la vista 3/4 primero,
+    # que queda como principal). Cada attach crea su propio blob: borrar una
+    # foto de la pieza no le borra la foto al producto. Un producto existente
+    # no se toca.
     def attach_images
-      images = @params.dig(:inventory, :piece_images)
-      return if images.blank?
+      images = Array(@params.dig(:inventory, :piece_images)).compact_blank
+      return if images.empty?
 
       images.each do |image|
-        next if image.blank?
-
         @inventory.piece_images.attach(image)
+        @product.product_images.attach(image) if @product_created
       end
     end
 
