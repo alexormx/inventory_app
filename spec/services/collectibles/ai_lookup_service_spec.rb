@@ -22,6 +22,8 @@ RSpec.describe Collectibles::AiLookupService do
     expect(params[:model]).to eq('gpt-4.1')
     # Para identificar busca en toda la web; los precios se filtran en el servidor.
     expect(params[:tools]).to eq([{ type: 'web_search' }])
+    # Le dice a la IA qué suele ser cada foto, en el orden que pide la pantalla.
+    expect(params[:instructions]).to include('1) vista 3/4 elevada').and include('2) la base')
     expect(params.dig(:text, :format, :type)).to eq('json_schema')
     expect(params.dig(:text, :format, :strict)).to be(true)
     image = params[:input].first[:content].find { |c| c[:type] == 'input_image' }

@@ -34,6 +34,15 @@
           Puedes seleccionar múltiples fotos; son de esta pieza, no del producto.
           Con una foto puedes identificar la pieza con IA y prellenar sus datos, o llenarlos a mano.
         </small>
+        <%# El orden importa: la primera foto es la que se busca en Google (búsqueda inversa). %>
+        <div class="small text-muted mt-2">
+          Para que la IA acierte, elige las fotos en este orden (se usan las primeras 3):
+          <ol class="mb-0 ps-3">
+            <li><strong>Vista 3/4 elevada:</strong> frente y costado de la pieza, vista desde arriba. Es la que se busca en Google.</li>
+            <li><strong>La base, donde se lee el texto del casting</strong> (marca, modelo, año, país).</li>
+            <li><strong>Opcional:</strong> la caja, blíster o etiqueta.</li>
+          </ol>
+        </div>
       </div>
       <div class="d-none" data-collectible-ai-lookup-target="actions">
         <div class="mb-2">

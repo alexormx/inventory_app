@@ -32,6 +32,9 @@ RSpec.describe 'Admin identifica un coleccionable con IA', type: :system do
     expect(headers.first).to include('1. Fotos de la pieza (opcional)')
     expect(headers.index { |h| h.include?('2. Producto') }).to eq(1)
     expect(page).to have_no_button('Identificar con IA')
+    # Guía de qué fotos subir y en qué orden (la primera va a Google).
+    expect(page).to have_content('Vista 3/4 elevada')
+    expect(page).to have_content('La base, donde se lee el texto del casting')
 
     attach_file 'inventory[piece_images][]', Rails.root.join('spec/fixtures/files/test1.png')
     expect(page).to have_button('Identificar con IA', disabled: false)
