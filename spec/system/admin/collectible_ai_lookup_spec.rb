@@ -25,6 +25,18 @@ RSpec.describe 'Admin identifica un coleccionable con IA', type: :system do
     end
   end
 
+  it 'empieza con las fotos y sólo ofrece la IA cuando hay una foto' do
+    visit admin_collectibles_quick_add_path
+
+    headers = all('.card-header').map(&:text)
+    expect(headers.first).to include('1. Fotos de la pieza (opcional)')
+    expect(headers.index { |h| h.include?('2. Producto') }).to eq(1)
+    expect(page).to have_no_button('Identificar con IA')
+
+    attach_file 'inventory[piece_images][]', Rails.root.join('spec/fixtures/files/test1.png')
+    expect(page).to have_button('Identificar con IA', disabled: false)
+  end
+
   it 'llena sólo los campos vacíos y enseña rareza y precios por mercado' do
     stub_ai_lookup_openai(ai_lookup_openai_response(answer))
     visit admin_collectibles_quick_add_path
