@@ -56,4 +56,8 @@ module AiLookupOpenaiHelpers
   end
 end
 
-RSpec.configure { |config| config.include AiLookupOpenaiHelpers }
+RSpec.configure do |config|
+  config.include AiLookupOpenaiHelpers
+  # Aunque la máquina tenga GOOGLE_VISION_API_KEY, ningún spec llama a Google.
+  config.before { allow(Collectibles::ReverseImageSearch).to receive(:api_key).and_return(nil) }
+end
