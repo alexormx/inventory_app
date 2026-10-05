@@ -27,6 +27,8 @@ Rails.application.routes.draw do
     get 'collectibles/quick_add', to: 'collectibles#quick_add', as: :collectibles_quick_add
     post 'collectibles/quick_add', to: 'collectibles#create_quick_add'
     get 'collectibles/search_products', to: 'collectibles#search_products', as: :collectibles_search_products
+    post 'collectibles/ai_lookups', to: 'collectible_ai_lookups#create', as: :collectible_ai_lookups
+    get 'collectibles/ai_lookups/:id', to: 'collectible_ai_lookups#show', as: :collectible_ai_lookup
 
     # Collectibles index/edit (cada inventario coleccionable es una pieza única)
     resources :collectibles, only: %i[index edit update] do

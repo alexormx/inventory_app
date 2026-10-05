@@ -60,6 +60,11 @@ production:
     class: Carts::ExpireInventoryHoldsJob
     schedule: "15 * * * *"
 
+  # Fotos de búsquedas con IA en quick_add: se purgan a los 7 días.
+  collectibles_ai_lookup_photo_purge_daily:
+    class: Collectibles::AiLookupPhotoPurgeJob
+    schedule: "30 4 * * *"
+
 development:
   # No recurring sitemap generation
 

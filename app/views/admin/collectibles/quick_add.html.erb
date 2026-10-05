@@ -16,7 +16,9 @@
   Agrega un producto usado o coleccionable al inventario. Puedes usar un producto existente o crear uno nuevo.
 </p>
 
-<%= form_with url: admin_collectibles_quick_add_path, method: :post, local: true, html: { class: 'needs-validation' }, data: { controller: 'collectible-quick-add' } do |f| %>
+<%= form_with url: admin_collectibles_quick_add_path, method: :post, local: true, html: { class: 'needs-validation' },
+              data: { controller: 'collectible-quick-add collectible-ai-lookup',
+                      collectible_ai_lookup_create_url_value: admin_collectible_ai_lookups_path } do |f| %>
 
   <%# Sección 1: Selección de producto %>
   <div class="card mb-4">
@@ -147,11 +149,22 @@
     <div class="card-body">
       <div class="mb-3">
         <label class="form-label">Subir fotos</label>
-        <%= file_field_tag 'inventory[piece_images][]', multiple: true, accept: 'image/*', class: 'form-control' %>
+        <%= file_field_tag 'inventory[piece_images][]', multiple: true, accept: 'image/*', class: 'form-control',
+                           data: { collectible_ai_lookup_target: 'fileInput', action: 'change->collectible-ai-lookup#photoChanged' } %>
         <small class="text-muted">Puedes seleccionar múltiples fotos. Estas son específicas de esta pieza, no del producto.</small>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <button type="button" class="btn btn-outline-dark" disabled
+                data-collectible-ai-lookup-target="button" data-action="collectible-ai-lookup#start">
+          <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> Identificar con IA
+        </button>
+        <small class="text-muted" data-collectible-ai-lookup-target="status" role="status"></small>
       </div>
     </div>
   </div>
+
+  <%# Resultado de la IA: lo arma collectible_ai_lookup_controller con textContent. %>
+  <div class="card mb-4 d-none border-info" data-collectible-ai-lookup-target="panel" aria-live="polite"></div>
 
   <div class="d-flex gap-2">
     <%= submit_tag 'Agregar Coleccionable', class: 'btn btn-primary btn-lg' %>

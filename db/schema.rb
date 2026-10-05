@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_09_20_160000) do
+ActiveRecord::Schema[8.0].define(version: 2026_10_04_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -106,6 +106,24 @@ ActiveRecord::Schema[8.0].define(version: 2026_09_20_160000) do
     t.datetime "updated_at", null: false
     t.index ["active"], name: "index_category_attribute_templates_on_active"
     t.index ["category"], name: "index_category_attribute_templates_on_category", unique: true
+  end
+
+  create_table "collectible_ai_lookups", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.integer "status", default: 0, null: false
+    t.jsonb "result"
+    t.text "error_message"
+    t.string "ai_model"
+    t.integer "tokens_input"
+    t.integer "tokens_output"
+    t.integer "web_search_calls"
+    t.integer "estimated_cost_cents"
+    t.datetime "started_at"
+    t.datetime "finished_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["created_at"], name: "index_collectible_ai_lookups_on_created_at"
+    t.index ["user_id"], name: "index_collectible_ai_lookups_on_user_id"
   end
 
   create_table "comments", force: :cascade do |t|
@@ -1092,6 +1110,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_09_20_160000) do
   add_foreign_key "cart_inventory_holds", "shopping_carts", on_delete: :cascade
   add_foreign_key "cart_items", "products"
   add_foreign_key "cart_session_imports", "shopping_carts", on_delete: :restrict
+  add_foreign_key "collectible_ai_lookups", "users", on_delete: :cascade
   add_foreign_key "comments", "posts"
   add_foreign_key "comments", "users"
   add_foreign_key "inventories", "inventory_locations"
