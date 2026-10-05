@@ -1,12 +1,12 @@
 # frozen_string_literal: true
 
 module Collectibles
-  # Identifica un coleccionable a partir de hasta 3 fotos (y las pistas del
-  # admin) y busca fecha de lanzamiento, rareza y precios (México y mundial por
-  # separado).
+  # Identifica un coleccionable a partir de hasta 5 fotos (cada una con su tipo)
+  # y las pistas del admin, y busca fecha de lanzamiento, rareza y precios
+  # (México y mundial por separado).
   #
-  # Antes de la IA, Google Cloud Vision hace búsqueda inversa sobre la primera
-  # foto (ReverseImageSearch, con tope mensual) y sus sugerencias se le pasan a
+  # Antes de la IA, Google Cloud Vision hace búsqueda inversa sobre la vista
+  # 3/4 (ReverseImageSearch, con tope mensual) y sus sugerencias se le pasan a
   # la IA como candidatos a confirmar. Luego una sola llamada a la Responses
   # API: fotos + web_search abierto + esquema estricto. Lo que regresa la IA se
   # valida aquí: un anuncio fuera de AiLookupSources se tira y el rango se
@@ -33,7 +33,7 @@ module Collectibles
     INSTRUCTIONS = <<~PROMPT
       Eres experto en coleccionables (autos a escala, Tomica, Hot Wheels, Greenlight, figuras) para la tienda mexicana "Pasatiempos a Escala".
       1. Identifica la pieza usando TODAS las fotos: nombre comercial, marca, serie, código del fabricante, escala y año o edición.
-         Las fotos suelen venir en este orden: 1) vista 3/4 elevada de la pieza, 2) la base con el texto del casting (marca, modelo, año, país), 3) la caja, blíster o etiqueta. Lee con cuidado el texto de la base y de la caja.
+         Cada foto viene precedida de su tipo (vista 3/4, base, lateral, superior, empaque). En la foto de la base lee con cuidado el texto del casting (marca, modelo, año, país); en la del empaque, el texto de la caja o etiqueta.
       2. Si hay pistas del admin, tómalas como ciertas salvo que la foto las contradiga claramente.
       3. Si hay resultados de búsqueda inversa de Google, son candidatos: confírmalos o descártalos; pueden estar mal.
       4. Antes de responder, confirma la identificación con al menos 2 búsquedas web en cualquier sitio (fabricante, hobbyDB, wikis, tiendas). Haz como máximo 6 búsquedas en total.
@@ -62,7 +62,7 @@ module Collectibles
       raise NotConfiguredError, 'OpenAI no está configurado' if OpenAI.configuration.access_token.blank?
 
       photos = processed_photos
-      reverse_image = reverse_image_search(photos.first)
+      reverse_image = reverse_image_search(vision_jpeg(photos))
       response = request(user_content(photos, reverse_image))
       usage = response['usage'] || {}
       searches = Array(response['output']).count { |item| item['type'] == 'web_search_call' }
@@ -103,7 +103,20 @@ module Collectibles
       text << "Búsqueda inversa de Google (candidatos a confirmar, pueden estar mal): #{reverse_image.to_json}" if reverse_image
 
       [{ type: 'input_text', text: text.join("\n\n") }] +
-        photos.map { |jpeg| { type: 'input_image', image_url: "data:image/jpeg;base64,#{Base64.strict_encode64(jpeg)}", detail: 'high' } }
+        photos.each_with_index.flat_map do |(jpeg, role), index|
+          [{ type: 'input_text', text: photo_label(index, role) },
+           { type: 'input_image', image_url: "data:image/jpeg;base64,#{Base64.strict_encode64(jpeg)}", detail: 'high' }]
+        end
+    end
+
+    def photo_label(index, role)
+      label = AiLookup::PHOTO_ROLES[role]
+      label ? "Foto #{index + 1}: #{label}" : "Foto #{index + 1} (tipo no indicado)"
+    end
+
+    # Google reconoce mejor la vista 3/4; búsquedas sin tipos usan la primera foto.
+    def vision_jpeg(photos)
+      (photos.find { |_jpeg, role| role == 'three_quarter' } || photos.first).first
     end
 
     # Google cobra por llamada, no por resultado útil: el uso (y lo que dio) se
@@ -123,7 +136,7 @@ module Collectibles
     # limpia antes de salir del servidor, y nunca se carga el original como base64.
     # 1024 px basta: OpenAI en `high` deja el lado corto en 768 px de todos modos.
     def processed_photos
-      @lookup.ordered_photos.first(MAX_PHOTOS).map { |photo| processed_jpeg(photo) }
+      @lookup.labeled_photos.first(MAX_PHOTOS).map { |photo, role| [processed_jpeg(photo), role] }
     end
 
     def processed_jpeg(photo)

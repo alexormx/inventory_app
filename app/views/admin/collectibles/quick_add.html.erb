@@ -16,7 +16,8 @@
   Agrega un producto usado o coleccionable al inventario. Puedes usar un producto existente o crear uno nuevo.
 </p>
 
-<%= form_with url: admin_collectibles_quick_add_path, method: :post, local: true, html: { class: 'needs-validation' },
+<%# multipart: los campos de foto son file_field_tag, que no lo activan solos; sin esto las fotos nunca llegaban. %>
+<%= form_with url: admin_collectibles_quick_add_path, method: :post, local: true, multipart: true, html: { class: 'needs-validation' },
               data: { controller: 'collectible-quick-add collectible-ai-lookup',
                       collectible_ai_lookup_create_url_value: admin_collectible_ai_lookups_path } do |f| %>
 
@@ -26,23 +27,46 @@
       <i class="fa-solid fa-camera"></i> 1. Fotos de la pieza (opcional)
     </div>
     <div class="card-body">
+      <%# Un recuadro por tipo de foto. Todos los campos se llaman inventory[piece_images][]
+          para que el alta no cambie: el orden en la página es el orden en que se guardan
+          (la vista 3/4 primero, que es la que se busca en Google). %>
+      <% photo_slots = [
+           ['three_quarter', 'Vista 3/4 elevada ★', 'Obligatoria para la IA; se busca en Google'],
+           ['base', 'Base / casting', 'Recomendada: el texto de la base'],
+           ['side', 'Lateral', 'Opcional'],
+           ['top', 'Superior', 'Opcional'],
+           ['package', 'Empaque', 'Opcional: caja, blíster o etiqueta']
+         ] %>
+      <div class="row g-2 mb-3">
+        <% photo_slots.each do |role, title, help| %>
+          <div class="col-6 col-md-4 col-lg">
+            <div class="border rounded p-2 h-100 text-center <%= role == 'three_quarter' ? 'border-warning' : 'border-secondary-subtle' %>"
+                 style="border-width: 2px !important; border-style: dashed !important;"
+                 data-collectible-ai-lookup-target="slot" data-role="<%= role %>">
+              <label for="piece_photo_<%= role %>" class="d-block mb-1" style="cursor: pointer;">
+                <img class="img-fluid rounded mb-1 d-none" alt="Foto: <%= title %>" style="max-height: 110px; object-fit: contain;" data-slot-preview>
+                <span class="d-block py-3 text-muted" data-slot-placeholder><i class="fa-solid fa-camera fa-lg" aria-hidden="true"></i></span>
+                <span class="d-block fw-semibold small"><%= title %></span>
+                <span class="d-block text-muted" style="font-size: .75rem;"><%= help %></span>
+              </label>
+              <%# La 3/4 va en su propio campo: el alta sabe si existe y la guarda primero. %>
+              <%= file_field_tag role == 'three_quarter' ? 'inventory[three_quarter_image]' : 'inventory[piece_images][]',
+                                 accept: 'image/*', id: "piece_photo_#{role}", class: 'd-none',
+                                 data: { action: 'change->collectible-ai-lookup#slotChanged' } %>
+              <button type="button" class="btn btn-link btn-sm text-danger p-0 d-none" data-slot-clear
+                      data-action="collectible-ai-lookup#clearSlot">Quitar</button>
+            </div>
+          </div>
+        <% end %>
+      </div>
       <div class="mb-3">
-        <label class="form-label">Subir fotos</label>
-        <%= file_field_tag 'inventory[piece_images][]', multiple: true, accept: 'image/*', class: 'form-control',
-                           data: { collectible_ai_lookup_target: 'fileInput', action: 'change->collectible-ai-lookup#photoChanged' } %>
+        <label class="form-label small" for="piece_photo_extra">Más fotos de la pieza (no se mandan a la IA)</label>
+        <%= file_field_tag 'inventory[piece_images][]', multiple: true, accept: 'image/*', id: 'piece_photo_extra',
+                           class: 'form-control form-control-sm' %>
         <small class="text-muted">
-          Puedes seleccionar múltiples fotos; son de esta pieza, no del producto.
-          Con una foto puedes identificar la pieza con IA y prellenar sus datos, o llenarlos a mano.
+          Las fotos son de esta pieza; si se crea un producto nuevo, también quedan como sus fotos.
+          Con la vista 3/4 puedes identificar la pieza con IA y prellenar sus datos, o llenarlos a mano.
         </small>
-        <%# El orden importa: la primera foto es la que se busca en Google (búsqueda inversa). %>
-        <div class="small text-muted mt-2">
-          Para que la IA acierte, elige las fotos en este orden (se usan las primeras 3):
-          <ol class="mb-0 ps-3">
-            <li><strong>Vista 3/4 elevada:</strong> frente y costado de la pieza, vista desde arriba. Es la que se busca en Google.</li>
-            <li><strong>La base, donde se lee el texto del casting</strong> (marca, modelo, año, país).</li>
-            <li><strong>Opcional:</strong> la caja, blíster o etiqueta.</li>
-          </ol>
-        </div>
       </div>
       <div class="d-none" data-collectible-ai-lookup-target="actions">
         <div class="mb-2">

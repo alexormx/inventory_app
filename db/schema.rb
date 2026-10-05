@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_10_04_130100) do
+ActiveRecord::Schema[8.0].define(version: 2026_10_04_140000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -124,6 +124,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_04_130100) do
     t.datetime "updated_at", null: false
     t.text "hints"
     t.boolean "vision_used", default: false, null: false
+    t.string "photo_roles", default: [], null: false, array: true
     t.index ["created_at"], name: "index_collectible_ai_lookups_on_created_at"
     t.index ["user_id"], name: "index_collectible_ai_lookups_on_user_id"
   end

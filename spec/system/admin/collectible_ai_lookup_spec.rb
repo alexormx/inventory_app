@@ -25,19 +25,65 @@ RSpec.describe 'Admin identifica un coleccionable con IA', type: :system do
     end
   end
 
-  it 'empieza con las fotos y sólo ofrece la IA cuando hay una foto' do
+  def attach_slot(role, file = 'test1.png')
+    attach_file "piece_photo_#{role}", Rails.root.join('spec/fixtures/files', file), make_visible: true
+  end
+
+  it 'empieza con cinco recuadros de fotos y sólo ofrece la IA con la vista 3/4' do
     visit admin_collectibles_quick_add_path
 
     headers = all('.card-header').map(&:text)
     expect(headers.first).to include('1. Fotos de la pieza (opcional)')
     expect(headers.index { |h| h.include?('2. Producto') }).to eq(1)
+    %w[three_quarter base side top package].each do |role|
+      expect(page).to have_css("[data-collectible-ai-lookup-target='slot'][data-role='#{role}']")
+    end
+    expect(page).to have_content('Vista 3/4 elevada').and have_content('Base / casting').and have_content('Empaque')
+    expect(page).to have_field('piece_photo_extra', type: 'file')
     expect(page).to have_no_button('Identificar con IA')
-    # Guía de qué fotos subir y en qué orden (la primera va a Google).
-    expect(page).to have_content('Vista 3/4 elevada')
-    expect(page).to have_content('La base, donde se lee el texto del casting')
 
-    attach_file 'inventory[piece_images][]', Rails.root.join('spec/fixtures/files/test1.png')
+    attach_slot('base')
+    expect(page).to have_button('Identificar con IA', disabled: true)
+    expect(page).to have_content('Agrega la vista 3/4 elevada para identificar con IA.')
+
+    attach_slot('three_quarter')
     expect(page).to have_button('Identificar con IA', disabled: false)
+    expect(page).to have_no_content('Agrega la vista 3/4 elevada')
+  end
+
+  it 'enseña la miniatura, avisa si falta la base y permite quitar la foto' do
+    visit admin_collectibles_quick_add_path
+    attach_slot('three_quarter')
+
+    slot = find("[data-collectible-ai-lookup-target='slot'][data-role='three_quarter']")
+    expect(slot).to have_css('img[data-slot-preview][src^="blob:"]', visible: :visible)
+    expect(page).to have_content('Agrega la foto de la base para que la IA lea el casting.')
+
+    within(slot) { click_button 'Quitar' }
+    expect(slot).to have_no_css('img[data-slot-preview]', visible: :visible)
+    expect(page).to have_no_button('Identificar con IA')
+    expect(page.evaluate_script("document.getElementById('piece_photo_three_quarter').files.length")).to eq(0)
+  end
+
+  it 'al dar de alta guarda las fotos de los recuadros en orden en la pieza y en el producto nuevo' do
+    Dir.mktmpdir do |dir|
+      paths = { 'tres_cuartos.png' => 'red', 'base.png' => 'blue', 'extra.png' => 'green' }.to_h do |name, color|
+        [name, File.join(dir, name).tap { |p| system('convert', '-size', '30x30', "xc:#{color}", p, exception: true) }]
+      end
+      visit admin_collectibles_quick_add_path
+      fill_in 'product[product_name]', with: 'Pieza con recuadros'
+      fill_in 'product[selling_price]', with: '250'
+      attach_file 'piece_photo_base', paths['base.png'], make_visible: true
+      attach_file 'piece_photo_three_quarter', paths['tres_cuartos.png'], make_visible: true
+      attach_file 'piece_photo_extra', paths['extra.png']
+      click_button 'Agregar Coleccionable'
+
+      expect(page).to have_content('Coleccionable agregado', wait: 15)
+      inventory = Inventory.order(:id).last
+      expect(inventory.piece_images.attachments.sort_by(&:id).map { |a| a.filename.to_s })
+        .to eq(%w[tres_cuartos.png base.png extra.png])
+      expect(inventory.product.primary_product_image.filename.to_s).to eq('tres_cuartos.png')
+    end
   end
 
   it 'llena sólo los campos vacíos y enseña rareza y precios por mercado' do
@@ -45,7 +91,7 @@ RSpec.describe 'Admin identifica un coleccionable con IA', type: :system do
     visit admin_collectibles_quick_add_path
 
     fill_in 'product[brand]', with: 'Mi marca'
-    attach_file 'inventory[piece_images][]', Rails.root.join('spec/fixtures/files/test1.png')
+    attach_slot('three_quarter')
     click_button 'Identificar con IA'
 
     expect(page).to have_css('[data-collectible-ai-lookup-target="panel"]', text: 'Poco común', wait: 15)
@@ -78,7 +124,7 @@ RSpec.describe 'Admin identifica un coleccionable con IA', type: :system do
       ai_lookup_openai_response(answer)
     end
     visit admin_collectibles_quick_add_path
-    attach_file 'inventory[piece_images][]', Rails.root.join('spec/fixtures/files/test1.png')
+    attach_slot('three_quarter')
     click_button 'Identificar con IA'
 
     expect(page).to have_button('Identificar con IA', disabled: true)
@@ -90,7 +136,7 @@ RSpec.describe 'Admin identifica un coleccionable con IA', type: :system do
   it 'enseña el error y permite reintentar' do
     stub_ai_lookup_openai { raise Collectibles::AiLookupService::Error, 'Respuesta vacía de OpenAI' }
     visit admin_collectibles_quick_add_path
-    attach_file 'inventory[piece_images][]', Rails.root.join('spec/fixtures/files/test1.png')
+    attach_slot('three_quarter')
     click_button 'Identificar con IA'
 
     expect(page).to have_content('Respuesta vacía de OpenAI', wait: 15)
@@ -105,7 +151,8 @@ RSpec.describe 'Admin identifica un coleccionable con IA', type: :system do
                       call: { 'best_guesses' => ['tomica skyline gt-r'], 'entities' => [], 'pages' => [] }, called?: true)
     )
     visit admin_collectibles_quick_add_path
-    attach_file 'inventory[piece_images][]', [Rails.root.join('spec/fixtures/files/test1.png'), Rails.root.join('spec/fixtures/files/test2.png')]
+    attach_slot('three_quarter')
+    attach_slot('base', 'test2.png')
     fill_in 'Pistas (opcional)', with: 'Base: Tomica No. 23'
     click_button 'Identificar con IA'
 
@@ -116,6 +163,7 @@ RSpec.describe 'Admin identifica un coleccionable con IA', type: :system do
 
     lookup = Collectibles::AiLookup.last
     expect(lookup.photos.count).to eq(2)
+    expect(lookup.photo_roles).to eq(%w[three_quarter base])
     expect(lookup.hints).to eq('Base: Tomica No. 23')
 
     within(panel) { all(:button, 'Es esta')[1].click }
@@ -125,27 +173,11 @@ RSpec.describe 'Admin identifica un coleccionable con IA', type: :system do
     expect(find_field('product[description]').value).to be_blank
   end
 
-  it 'avisa que sólo manda las primeras 3 fotos' do
-    stub_ai_lookup_openai(ai_lookup_openai_response(answer))
-    Dir.mktmpdir do |dir|
-      files = Array.new(4) do |i|
-        File.join(dir, "foto#{i}.png").tap { |path| system('convert', '-size', '20x20', 'xc:blue', path, exception: true) }
-      end
-      visit admin_collectibles_quick_add_path
-      attach_file 'inventory[piece_images][]', files
-
-      expect(page).to have_content('Se enviarán a la IA las primeras 3 de 4 fotos.')
-      click_button 'Identificar con IA'
-      expect(page).to have_css('[data-collectible-ai-lookup-target="panel"]', text: 'Resultado de la IA', wait: 15)
-      expect(Collectibles::AiLookup.last.photos.count).to eq(3)
-    end
-  end
-
   it 'Enter en las pistas inicia la búsqueda y no da de alta el producto' do
     stub_ai_lookup_openai(ai_lookup_openai_response(answer))
     visit admin_collectibles_quick_add_path
     fill_in 'product[product_name]', with: 'Ya escrito'
-    attach_file 'inventory[piece_images][]', Rails.root.join('spec/fixtures/files/test1.png')
+    attach_slot('three_quarter')
 
     expect do
       find_field('Pistas (opcional)').send_keys('Base: Tomica 23', :enter)

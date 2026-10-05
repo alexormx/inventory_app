@@ -20,7 +20,8 @@ module Admin
                       status: :too_many_requests
       end
 
-      lookup = Collectibles::AiLookup.new(user: current_user, hints: params[:hints].to_s.strip.presence)
+      lookup = Collectibles::AiLookup.new(user: current_user, hints: params[:hints].to_s.strip.presence,
+                                          photo_roles: Array(params[:photo_roles]).map(&:to_s).compact_blank)
       uploaded_photos.each { |file| lookup.photos.attach(file) }
 
       if lookup.save

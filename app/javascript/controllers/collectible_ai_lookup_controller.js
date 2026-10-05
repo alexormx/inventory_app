@@ -1,6 +1,6 @@
 import { Controller } from "@hotwired/stimulus"
 
-// Identificación con IA en quick_add. Sube hasta 3 fotos y las pistas, sondea
+// Identificación con IA en quick_add. Sube las fotos de los recuadros (cada una con su tipo) y las pistas, sondea
 // el estado (JSON + intervalo, el patrón que ya funciona en la app) y, al
 // terminar, llena SÓLO los campos vacíos y arma el panel. Si la IA no está
 // segura no llena nada: enseña candidatos para que el admin elija. Todo texto
@@ -13,35 +13,72 @@ const FIELDS = [
   ["product[description]", (r) => r.suggested?.description_es, "Descripción"],
 ]
 const MAX_WAIT_MS = 4 * 60 * 1000
-const MAX_PHOTOS = 3
+const MAX_PHOTOS = 5
 const LOW_CONFIDENCE = 0.7
 
 export default class extends Controller {
-  static targets = ["fileInput", "button", "status", "panel", "actions", "hints"]
+  static targets = ["slot", "button", "status", "panel", "actions", "hints"]
   static values = { createUrl: String, interval: { type: Number, default: 3000 } }
 
   disconnect() { this.stopPolling() }
 
-  // La IA es opcional: el botón sólo aparece cuando hay una foto que mandar.
-  photoChanged() {
-    const count = this.fileInputTarget.files?.length || 0
-    if (this.hasActionsTarget) this.actionsTarget.classList.toggle("d-none", count === 0 && !this.running)
-    if (this.running) return
-    this.buttonTarget.disabled = count === 0
-    this.statusTarget.textContent =
-      count > MAX_PHOTOS ? `Se enviarán a la IA las primeras ${MAX_PHOTOS} de ${count} fotos.` : ""
+  // Un recuadro por tipo de foto; la IA necesita al menos la vista 3/4.
+  slotChanged(event) {
+    this.renderSlot(event.target.closest("[data-collectible-ai-lookup-target='slot']"))
+    this.refresh()
   }
 
-  photos() { return Array.from(this.fileInputTarget.files || []).slice(0, MAX_PHOTOS) }
+  clearSlot(event) {
+    const slot = event.target.closest("[data-collectible-ai-lookup-target='slot']")
+    slot.querySelector("input[type='file']").value = ""
+    this.renderSlot(slot)
+    this.refresh()
+  }
+
+  renderSlot(slot) {
+    const file = slot.querySelector("input[type='file']").files?.[0]
+    const preview = slot.querySelector("[data-slot-preview]")
+    if (preview.src.startsWith("blob:")) URL.revokeObjectURL(preview.src)
+    if (file) preview.src = URL.createObjectURL(file)
+    else preview.removeAttribute("src")
+    preview.classList.toggle("d-none", !file)
+    slot.querySelector("[data-slot-placeholder]").classList.toggle("d-none", Boolean(file))
+    slot.querySelector("[data-slot-clear]").classList.toggle("d-none", !file)
+  }
+
+  // Fotos de los recuadros en su orden, cada una con su tipo.
+  photos() {
+    return this.slotTargets
+      .map((slot) => ({ role: slot.dataset.role, file: slot.querySelector("input[type='file']").files?.[0] }))
+      .filter((photo) => photo.file)
+      .slice(0, MAX_PHOTOS)
+  }
+
+  hasRole(role) { return this.photos().some((photo) => photo.role === role) }
+
+  refresh() {
+    const any = this.photos().length > 0
+    if (this.hasActionsTarget) this.actionsTarget.classList.toggle("d-none", !any && !this.running)
+    if (this.running) return
+    const ready = this.hasRole("three_quarter")
+    this.buttonTarget.disabled = !ready
+    if (!any) this.statusTarget.textContent = ""
+    else if (!ready) this.statusTarget.textContent = "Agrega la vista 3/4 elevada para identificar con IA."
+    else if (!this.hasRole("base")) this.statusTarget.textContent = "Agrega la foto de la base para que la IA lea el casting."
+    else this.statusTarget.textContent = ""
+  }
 
   async start() {
     const photos = this.photos()
-    if (photos.length === 0 || this.running) return
+    if (!this.hasRole("three_quarter") || this.running) return
     this.setRunning(true, "Buscando… (~30–90 s)")
     this.hidePanel()
 
     const body = new FormData()
-    photos.forEach((photo) => body.append("photos[]", photo))
+    photos.forEach(({ role, file }) => {
+      body.append("photos[]", file)
+      body.append("photo_roles[]", role)
+    })
     const hints = this.hasHintsTarget ? this.hintsTarget.value.trim() : ""
     if (hints) body.append("hints", hints)
     try {
@@ -208,7 +245,7 @@ export default class extends Controller {
 
   setRunning(running, text) {
     this.running = running
-    this.buttonTarget.disabled = running || this.photos().length === 0
+    this.buttonTarget.disabled = running || !this.hasRole("three_quarter")
     this.statusTarget.textContent = text
   }
 
