@@ -24,8 +24,7 @@ module Collectibles
       if @errors.any?
         { success: false, errors: @errors, product: @product, inventory: @inventory }
       else
-        # Después del commit, para que el worker encuentre la pieza y sus fotos.
-        Collectibles::CopyPhotosToProductJob.perform_later(@inventory.id) if @copy_photos_to_product
+        enqueue_follow_up_jobs
         {
           success: true,
           message: "Coleccionable agregado: #{@product.product_name} (#{@inventory.condition_label})",
@@ -102,6 +101,20 @@ module Collectibles
       Collectibles::AiLookup.where(user: @user, status: :done)
                             .find_by(id: @params[:ai_lookup_id])
                             &.update!(product: @product)
+    end
+
+    # Después del commit, para que el worker encuentre la pieza y sus fotos. Un
+    # producto nuevo recibe su borrador de descripción con IA (para revisión,
+    # nunca se publica solo); si hay fotos que copiarle, el borrador lo encola
+    # la copia al terminar, para que la IA las vea.
+    def enqueue_follow_up_jobs
+      return unless @product_created
+
+      if @copy_photos_to_product
+        Collectibles::CopyPhotosToProductJob.perform_later(@inventory.id)
+      else
+        Products::Enrichment::GenerateDraftJob.enqueue_for(@product)
+      end
     end
 
     def update_product_stats

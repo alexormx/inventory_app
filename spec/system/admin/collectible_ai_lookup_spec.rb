@@ -67,6 +67,7 @@ RSpec.describe 'Admin identifica un coleccionable con IA', type: :system do
 
   it 'al dar de alta guarda las fotos de los recuadros en orden en la pieza y en el producto nuevo' do
     Dir.mktmpdir do |dir|
+      allow(Products::Enrichment::GenerateDraftJob).to receive(:enqueue_for)
       paths = { 'tres_cuartos.png' => 'red', 'base.png' => 'blue', 'extra.png' => 'green' }.to_h do |name, color|
         [name, File.join(dir, name).tap { |p| system('convert', '-size', '30x30', "xc:#{color}", p, exception: true) }]
       end
@@ -83,6 +84,7 @@ RSpec.describe 'Admin identifica un coleccionable con IA', type: :system do
       expect(inventory.piece_images.attachments.sort_by(&:id).map { |a| a.filename.to_s })
         .to eq(%w[tres_cuartos.png base.png extra.png])
       expect(inventory.product.primary_product_image.filename.to_s).to eq('tres_cuartos.png')
+      expect(Products::Enrichment::GenerateDraftJob).to have_received(:enqueue_for).with(inventory.product)
     end
   end
 
