@@ -15,9 +15,9 @@ module Collectibles
 
       product = inventory.product
       # Idempotente: en un reintento el producto ya tiene fotos y no se duplican.
-      return if product.product_images.attached?
-
-      inventory.piece_images.attachments.sort_by(&:id).each { |photo| copy(photo, product) }
+      inventory.piece_images.attachments.sort_by(&:id).each { |photo| copy(photo, product) } unless product.product_images.attached?
+      # Con las fotos ya copiadas, la descripción con IA puede verlas.
+      Products::Enrichment::GenerateDraftJob.enqueue_for(product)
     end
 
     private

@@ -10,6 +10,8 @@ module Collectibles
 
     DAILY_LIMIT = 50
     STALE_AFTER = 3.minutes
+    # Por debajo de esto la pantalla no llena nada y pide elegir candidato.
+    CONFIDENT = 0.7
     MAX_PHOTOS = 5
     MAX_PHOTO_BYTES = 15.megabytes
     PHOTO_CONTENT_TYPES = %w[image/jpeg image/png image/webp image/gif].freeze
@@ -27,6 +29,9 @@ module Collectibles
     VISION_MONTHLY_CAP = 1000
 
     belongs_to :user
+    # El producto que se dio de alta con esta identificación (quick_add); su
+    # descripción con IA usa estos datos como confirmados.
+    belongs_to :product, optional: true
     has_many_attached :photos
 
     enum :status, { pending: 0, running: 1, done: 2, failed: 3 }
@@ -51,6 +56,12 @@ module Collectibles
     # Cada foto con su tipo (nil en búsquedas hechas antes de los recuadros).
     def labeled_photos
       ordered_photos.each_with_index.map { |photo, index| [photo, photo_roles[index]] }
+    end
+
+    # Si el worker se cae o OpenAI se cuelga, la página no debe girar para siempre.
+    # La identificación es confiable: sus datos se pueden usar como confirmados.
+    def confident?
+      result.is_a?(Hash) && result.dig('identification', 'confidence').to_f >= CONFIDENT
     end
 
     # Si el worker se cae o OpenAI se cuelga, la página no debe girar para siempre.

@@ -15,6 +15,7 @@ module Collectibles
         find_or_create_product
         create_inventory if @errors.empty?
         attach_images if @errors.empty? && @inventory&.persisted?
+        link_ai_lookup if @errors.empty?
         update_product_stats if @errors.empty?
 
         raise ActiveRecord::Rollback if @errors.any?
@@ -23,8 +24,7 @@ module Collectibles
       if @errors.any?
         { success: false, errors: @errors, product: @product, inventory: @inventory }
       else
-        # Después del commit, para que el worker encuentre la pieza y sus fotos.
-        Collectibles::CopyPhotosToProductJob.perform_later(@inventory.id) if @copy_photos_to_product
+        enqueue_follow_up_jobs
         {
           success: true,
           message: "Coleccionable agregado: #{@product.product_name} (#{@inventory.condition_label})",
@@ -90,6 +90,31 @@ module Collectibles
 
       images.each { |image| @inventory.piece_images.attach(image) }
       @copy_photos_to_product = @product_created && three_quarter.present?
+    end
+
+    # Si el admin identificó la pieza con IA antes de dar de alta un producto
+    # nuevo, la búsqueda queda ligada a él: la descripción con IA la usa como
+    # datos confirmados. Sólo una búsqueda terminada, del mismo admin y con
+    # identificación confiable: si la IA dudó, sus datos podrían ser de otra pieza.
+    def link_ai_lookup
+      return unless @product_created && @params[:ai_lookup_id].present?
+
+      lookup = Collectibles::AiLookup.where(user: @user, status: :done).find_by(id: @params[:ai_lookup_id])
+      lookup.update!(product: @product) if lookup&.confident?
+    end
+
+    # Después del commit, para que el worker encuentre la pieza y sus fotos. Un
+    # producto nuevo recibe su borrador de descripción con IA (para revisión,
+    # nunca se publica solo); si hay fotos que copiarle, el borrador lo encola
+    # la copia al terminar, para que la IA las vea.
+    def enqueue_follow_up_jobs
+      return unless @product_created
+
+      if @copy_photos_to_product
+        Collectibles::CopyPhotosToProductJob.perform_later(@inventory.id)
+      else
+        Products::Enrichment::GenerateDraftJob.enqueue_for(@product)
+      end
     end
 
     def update_product_stats

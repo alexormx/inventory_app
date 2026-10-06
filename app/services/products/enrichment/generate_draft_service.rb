@@ -5,12 +5,17 @@ module Products
     # Orchestrates the full generation flow:
     # 1. Build context from Product
     # 2. Build prompt from context
-    # 3. Call OpenAI API
+    # 3. Call OpenAI (gpt-4.1-mini) with the prompt and up to 3 product photos, strict JSON schema
     # 4. Parse and normalize response
     # 5. Persist results in ProductDescriptionDraft
     class GenerateDraftService
       class GenerationError < StandardError; end
+      # 429: el job reintenta con espera, sin dormir el hilo del worker.
       class RateLimitError < GenerationError; end
+      # Timeout, conexión o 5xx: el job reintenta.
+      class TransientError < GenerationError; end
+      # JSON roto o descripción que no pasa las reglas: el job reintenta una vez.
+      class InvalidResponseError < GenerationError; end
 
       BANNED_SECTION_HEADINGS = [
         "Resumen:",
@@ -20,14 +25,12 @@ module Products
         "Cierre:"
       ].freeze
 
-      DEFAULT_MODEL = "gpt-4o-mini"
+      DEFAULT_MODEL = "gpt-4.1-mini"
+      REQUEST_TIMEOUT = 90
 
-      MAX_RETRIES     = 3
-      BASE_WAIT_SECS  = 5
-
-      # Cost per 1M tokens (USD cents) — gpt-4o-mini pricing as of 2025
-      COST_INPUT_PER_M  = 15   # $0.15 / 1M input tokens  → 15 cents
-      COST_OUTPUT_PER_M = 60   # $0.60 / 1M output tokens → 60 cents
+      # USD por 1M tokens, gpt-4.1-mini, página de precios de OpenAI verificada el 2026-10-05.
+      COST_INPUT_PER_M_USD = 0.40
+      COST_OUTPUT_PER_M_USD = 1.60
 
       def initialize(draft, model: nil)
         @draft = draft
@@ -41,8 +44,10 @@ module Products
         context = Products::Enrichment::BuildContextService.new(@product).call
         prompt  = Products::Enrichment::BuildPromptService.new(context).call
 
-        response = call_openai(prompt)
+        photos   = Products::Enrichment::PhotoSourceService.new(@product).call
+        response = call_openai(prompt, photos.jpegs)
         parsed   = parse_response(response)
+        parsed["warnings"] = Array(parsed["warnings"]) + photos.warnings
 
         template = @product.attribute_template
         normalized_attrs = Products::Enrichment::NormalizeAttributesService.new(parsed["attributes"], template).call
@@ -68,73 +73,71 @@ module Products
         )
 
         @draft
-      rescue RateLimitError => e
-        @draft.update!(
-          status:        :failed,
-          error_message: "#{e.class}: #{e.message}",
-          generated_at:  Time.current
-        )
-        raise # re-raise as-is so job retries with longer waits
+      rescue GenerationError => e
+        mark_failed(e)
+        raise
       rescue StandardError => e
-        @draft.update!(
-          status:        :failed,
-          error_message: "#{e.class}: #{e.message}",
-          generated_at:  Time.current
-        )
+        mark_failed(e)
         raise GenerationError, "Failed to generate draft for product #{@product.id}: #{e.message}"
       end
 
       private
 
-      def call_openai(prompt)
-        client = OpenAI::Client.new
-        retries = 0
+      def mark_failed(error)
+        @draft.update!(status: :failed, error_message: "#{error.class}: #{error.message}", generated_at: Time.current)
+      end
 
-        begin
-          client.chat(
-            parameters: {
-              model:       @model,
-              messages:    [
-                { role: "system", content: prompt[:system] },
-                { role: "user",   content: prompt[:user] }
-              ],
-              temperature:     0.4,
-              response_format: { type: "json_object" },
-              max_tokens:      2000
-            }
-          )
-        rescue Faraday::TooManyRequestsError => e
-          retries += 1
-          if retries <= MAX_RETRIES
-            wait_time = BASE_WAIT_SECS * (2**(retries - 1)) # 5s, 10s, 20s
-            Rails.logger.warn("[Enrichment] OpenAI 429 rate limit for product #{@product.id}, retry #{retries}/#{MAX_RETRIES} in #{wait_time}s")
-            sleep(wait_time)
-            retry
-          end
-          raise RateLimitError, "OpenAI rate limit exceeded after #{MAX_RETRIES} retries: #{e.message}"
+      def call_openai(prompt, jpegs)
+        OpenAI::Client.new(request_timeout: REQUEST_TIMEOUT).chat(
+          parameters: {
+            model:           @model,
+            messages:        [
+              { role: "system", content: prompt[:system] },
+              { role: "user",   content: user_content(prompt[:user], jpegs) }
+            ],
+            temperature:     0.4,
+            response_format: { type: "json_schema",
+                               json_schema: { name: "product_enrichment", strict: true,
+                                              schema: Products::Enrichment::ResponseSchema.for(@product.attribute_template) } },
+            max_tokens:      2000
+          }
+        )
+      rescue Faraday::TooManyRequestsError => e
+        raise RateLimitError, "OpenAI está saturado (429): #{e.message}"
+      rescue Faraday::TimeoutError, Faraday::ConnectionFailed, Faraday::ServerError => e
+        raise TransientError, "OpenAI no respondió: #{e.message}"
+      end
+
+      # Sin fotos el mensaje es sólo texto; con fotos, cada una va etiquetada.
+      def user_content(text, jpegs)
+        return text if jpegs.empty?
+
+        [{ type: "text", text: text }] + jpegs.each_with_index.flat_map do |jpeg, index|
+          [{ type: "text", text: "Foto #{index + 1} del producto" },
+           { type: "image_url", image_url: { url: "data:image/jpeg;base64,#{Base64.strict_encode64(jpeg)}", detail: "high" } }]
         end
       end
 
       def parse_response(response)
         content = response.dig("choices", 0, "message", "content")
-        raise GenerationError, "Empty response from OpenAI" if content.blank?
+        raise InvalidResponseError, "Empty response from OpenAI" if content.blank?
 
         parsed = JSON.parse(content)
 
         unless parsed.is_a?(Hash) && parsed["description_es"].present?
-          raise GenerationError, "Invalid response structure: missing 'description_es'"
+          raise InvalidResponseError, "Invalid response structure: missing 'description_es'"
         end
 
         parsed["description_es"] = sanitize_description(parsed["description_es"])
         scrub_identifiers(parsed)
 
         unless natural_description?(parsed["description_es"])
-          raise GenerationError, "Invalid response structure: 'description_es' must be natural copy without headings or null values"
+          raise InvalidResponseError, "Invalid response structure: 'description_es' must be natural copy without headings or null values"
         end
 
         parsed
       rescue JSON::ParserError => e
-        raise GenerationError, "Failed to parse OpenAI JSON response: #{e.message}"
+        raise InvalidResponseError, "Failed to parse OpenAI JSON response: #{e.message}"
       end
 
       # Aunque el prompt lo prohíbe, la IA a veces copia el SKU o el código de
@@ -181,13 +184,10 @@ module Products
       end
 
       def estimate_cost(usage)
-        input_tokens  = usage["prompt_tokens"] || 0
-        output_tokens = usage["completion_tokens"] || 0
-
-        input_cost  = (input_tokens.to_f / 1_000_000) * COST_INPUT_PER_M
-        output_cost = (output_tokens.to_f / 1_000_000) * COST_OUTPUT_PER_M
-
-        ((input_cost + output_cost) * 100).ceil # cents
+        usd = (usage["prompt_tokens"].to_i / 1_000_000.0 * COST_INPUT_PER_M_USD) +
+              (usage["completion_tokens"].to_i / 1_000_000.0 * COST_OUTPUT_PER_M_USD)
+        # round(6) evita que 1.2 × 100 = 120.00000000000001 suba a 121.
+        (usd * 100).round(6).ceil
       end
     end
   end

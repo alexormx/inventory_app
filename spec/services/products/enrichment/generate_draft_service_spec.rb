@@ -77,8 +77,8 @@ RSpec.describe Products::Enrichment::GenerateDraftService do
       service.call
       draft.reload
       expect(draft.ai_provider).to eq("openai")
-      expect(draft.ai_model).to eq("gpt-4o-mini")
-      expect(draft.prompt_version).to eq("v7")
+      expect(draft.ai_model).to eq("gpt-4.1-mini")
+      expect(draft.prompt_version).to eq("v8")
       expect(draft.tokens_input).to eq(500)
       expect(draft.tokens_output).to eq(300)
       expect(draft.generated_at).to be_present
@@ -103,11 +103,11 @@ RSpec.describe Products::Enrichment::GenerateDraftService do
       expect(draft.confidence_score).to eq(0.85)
     end
 
-    it "estimates cost" do
+    it "estimates the real cost in cents with gpt-4.1-mini prices" do
+      openai_response["usage"] = { "prompt_tokens" => 1_000_000, "completion_tokens" => 500_000 }
       service.call
-      draft.reload
-      expect(draft.estimated_cost_cents).to be_present
-      expect(draft.estimated_cost_cents).to be >= 0
+      # 1M × $0.40 + 0.5M × $1.60 = $1.20 → 120 centavos
+      expect(draft.reload.estimated_cost_cents).to eq(120)
     end
 
     it "stores source snapshot" do
@@ -117,16 +117,27 @@ RSpec.describe Products::Enrichment::GenerateDraftService do
       expect(draft.source_snapshot["product_id"]).to eq(product.id)
     end
 
-    it "calls OpenAI with correct parameters" do
+    it "calls OpenAI with gpt-4.1-mini and a strict schema built from the template" do
       service.call
-      expect(openai_client).to have_received(:chat).with(
-        parameters: hash_including(
-          model: "gpt-4o-mini",
-          temperature: 0.4,
-          response_format: { type: "json_object" },
-          max_tokens: 2000
-        )
-      )
+      expect(openai_client).to have_received(:chat) do |parameters:|
+        expect(parameters[:model]).to eq("gpt-4.1-mini")
+        format = parameters[:response_format]
+        expect(format[:type]).to eq("json_schema")
+        expect(format.dig(:json_schema, :strict)).to be(true)
+        attributes = format.dig(:json_schema, :schema, :properties, :attributes)
+        expect(attributes[:required]).to eq(template.attribute_keys)
+        expect(attributes[:additionalProperties]).to be(false)
+      end
+    end
+
+    it "manda las fotos del producto como imágenes" do
+      service.call
+      expect(openai_client).to have_received(:chat) do |parameters:|
+        content = parameters[:messages].last[:content]
+        images = content.select { |part| part[:type] == "image_url" }
+        expect(images).not_to be_empty
+        expect(images.first.dig(:image_url, :url)).to start_with("data:image/jpeg;base64,")
+      end
     end
   end
 
@@ -337,8 +348,8 @@ RSpec.describe Products::Enrichment::GenerateDraftService do
         allow(openai_client).to receive(:chat).and_raise(Faraday::TimeoutError.new("timeout"))
       end
 
-      it "marks draft as failed and re-raises as GenerationError" do
-        expect { service.call }.to raise_error(Products::Enrichment::GenerateDraftService::GenerationError)
+      it "marks draft as failed and raises TransientError" do
+        expect { service.call }.to raise_error(Products::Enrichment::GenerateDraftService::TransientError)
         draft.reload
         expect(draft.status).to eq("failed")
         expect(draft.error_message).to include("timeout")
@@ -347,47 +358,40 @@ RSpec.describe Products::Enrichment::GenerateDraftService do
 
     context "when OpenAI returns 429 rate limit" do
       before do
-        stub_const("Products::Enrichment::GenerateDraftService::MAX_RETRIES", 1)
-        stub_const("Products::Enrichment::GenerateDraftService::BASE_WAIT_SECS", 0)
-        allow(openai_client).to receive(:chat).and_raise(
-          Faraday::TooManyRequestsError.new(status: 429)
-        )
+        allow(openai_client).to receive(:chat).and_raise(Faraday::TooManyRequestsError.new(status: 429))
       end
 
-      it "raises RateLimitError after exhausting retries" do
+      it "raises RateLimitError right away without sleeping the worker" do
+        expect(service).not_to receive(:sleep)
         expect { service.call }.to raise_error(Products::Enrichment::GenerateDraftService::RateLimitError)
-        draft.reload
-        expect(draft.status).to eq("failed")
-        expect(draft.error_message).to include("rate limit")
-      end
-
-      it "retries before failing" do
-        expect { service.call }.to raise_error(Products::Enrichment::GenerateDraftService::RateLimitError)
-        # 1 initial + 1 retry = 2 calls
-        expect(openai_client).to have_received(:chat).twice
+        expect(openai_client).to have_received(:chat).once
+        expect(draft.reload.status).to eq("failed")
       end
     end
+  end
 
-    context "when OpenAI 429 resolves on retry" do
-      before do
-        stub_const("Products::Enrichment::GenerateDraftService::BASE_WAIT_SECS", 0)
-        call_count = 0
-        allow(openai_client).to receive(:chat) do
-          call_count += 1
-          if call_count == 1
-            raise Faraday::TooManyRequestsError.new(status: 429)
-          else
-            openai_response
-          end
-        end
-      end
+  describe "clasificación de errores" do
+    it "una respuesta que no es JSON es InvalidResponseError" do
+      openai_response["choices"][0]["message"]["content"] = "{roto"
+      expect { service.call }.to raise_error(Products::Enrichment::GenerateDraftService::InvalidResponseError)
+    end
 
-      it "succeeds after transient 429" do
-        service.call
-        draft.reload
-        expect(draft.status).to eq("draft_generated")
-        expect(openai_client).to have_received(:chat).twice
-      end
+    it "un error inesperado es GenerationError genérico (no se reintenta)" do
+      allow(openai_client).to receive(:chat).and_raise(NoMethodError, "boom")
+      expect { service.call }.to raise_error(Products::Enrichment::GenerateDraftService::GenerationError) { |e|
+        expect(e).not_to be_a(Products::Enrichment::GenerateDraftService::InvalidResponseError)
+        expect(e).not_to be_a(Products::Enrichment::GenerateDraftService::TransientError)
+      }
+    end
+  end
+
+  describe "fotos ilegibles" do
+    it "genera igual y lo avisa" do
+      product.product_images.purge
+      product.product_images.attach(io: StringIO.new("no soy imagen"), filename: "falsa.png", content_type: "image/png")
+      service.call
+      expect(draft.reload.status).to eq("draft_generated")
+      expect(draft.warnings.join).to include("falsa.png")
     end
   end
 end

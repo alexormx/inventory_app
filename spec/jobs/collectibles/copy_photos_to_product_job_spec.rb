@@ -49,4 +49,11 @@ RSpec.describe Collectibles::CopyPhotosToProductJob do
   it 'no hace nada si la pieza ya no existe' do
     expect { described_class.perform_now(0) }.not_to raise_error
   end
+
+  it 'al terminar de copiar encola el borrador de descripción, una sola vez' do
+    attach_piece('tres_cuartos.png', 'red')
+    expect do
+      2.times { described_class.perform_now(inventory.id) }
+    end.to have_enqueued_job(Products::Enrichment::GenerateDraftJob).exactly(:once)
+  end
 end

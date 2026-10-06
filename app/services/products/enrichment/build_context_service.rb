@@ -25,6 +25,7 @@ module Products
           launch_date:       @product.launch_date&.iso8601,
           discontinued:      @product.discontinued?,
           supplier_context:  build_supplier_context,
+          ai_lookup:         build_ai_lookup_context,
           template:          build_template_context
         }
       end
@@ -49,6 +50,22 @@ module Products
           schema:      template.attributes_schema,
           keys:        template.attribute_keys,
           required:    template.required_keys
+        }
+      end
+
+      # La identificación de quick_add ligada a este producto (la más reciente
+      # que terminó). Sólo identificación, lanzamiento y rareza: los precios y
+      # las URLs no le sirven a la descripción.
+      def build_ai_lookup_context
+        result = @product.collectible_ai_lookups.done.order(created_at: :desc).first&.result
+        return nil unless result.is_a?(Hash)
+
+        identification = result['identification'].is_a?(Hash) ? result['identification'] : {}
+        {
+          identification: identification.slice(*%w[product_name brand series model_code scale year_or_edition]).compact_blank,
+          launch_date: result.dig('launch_date', 'value'),
+          rarity_level: result.dig('rarity', 'level'),
+          rarity_reasons: Array(result.dig('rarity', 'reasons'))
         }
       end
 

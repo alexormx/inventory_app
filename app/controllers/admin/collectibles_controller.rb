@@ -145,6 +145,7 @@ module Admin
       params.permit(
         :use_existing_product,
         :existing_product_id,
+        :ai_lookup_id,
         product: %i[product_name product_sku category brand selling_price description weight width height depth],
         inventory: [:item_condition, :purchase_cost, :selling_price, :purchase_date, :notes, :inventory_location_id,
                     :three_quarter_image, { piece_images: [] }]

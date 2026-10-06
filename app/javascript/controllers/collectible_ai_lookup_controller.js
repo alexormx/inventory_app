@@ -17,7 +17,7 @@ const MAX_PHOTOS = 5
 const LOW_CONFIDENCE = 0.7
 
 export default class extends Controller {
-  static targets = ["slot", "button", "status", "panel", "actions", "hints"]
+  static targets = ["slot", "button", "status", "panel", "actions", "hints", "lookupId"]
   static values = { createUrl: String, interval: { type: Number, default: 3000 } }
 
   disconnect() { this.stopPolling() }
@@ -73,6 +73,7 @@ export default class extends Controller {
     if (!this.hasRole("three_quarter") || this.running) return
     this.setRunning(true, "Buscando… (~30–90 s)")
     this.hidePanel()
+    if (this.hasLookupIdTarget) this.lookupIdTarget.value = ""
 
     const body = new FormData()
     photos.forEach(({ role, file }) => {
@@ -103,7 +104,7 @@ export default class extends Controller {
       try {
         const res = await fetch(url, { headers: { Accept: "application/json" } })
         const state = await res.json()
-        if (state.status === "done") this.finish(state.result)
+        if (state.status === "done") this.finish(state.result, state.id)
         else if (state.status === "failed") this.showError(state.error || "La búsqueda falló.")
       } catch (_e) { /* un tropiezo de red no termina la búsqueda; el tope de tiempo sí */ }
     }, this.intervalValue)
@@ -114,9 +115,12 @@ export default class extends Controller {
     this.timer = null
   }
 
-  finish(result) {
+  finish(result, lookupId) {
     this.stopPolling()
     const confident = (result.identification?.confidence || 0) >= LOW_CONFIDENCE
+    // Sólo una identificación confiable viaja con el alta: si la IA dudó, sus
+    // datos (fecha, rareza) pueden ser de otro candidato.
+    if (this.hasLookupIdTarget) this.lookupIdTarget.value = confident ? (lookupId ?? "") : ""
     this.setRunning(false, confident ? "Listo. Revisa los datos antes de guardar." : "La IA no está segura: elige la pieza correcta.")
     const suggestions = confident ? this.fillEmptyFields(result) : []
     this.renderPanel(result, suggestions, confident)

@@ -67,6 +67,7 @@ RSpec.describe 'Admin identifica un coleccionable con IA', type: :system do
 
   it 'al dar de alta guarda las fotos de los recuadros en orden en la pieza y en el producto nuevo' do
     Dir.mktmpdir do |dir|
+      allow(Products::Enrichment::GenerateDraftJob).to receive(:enqueue_for)
       paths = { 'tres_cuartos.png' => 'red', 'base.png' => 'blue', 'extra.png' => 'green' }.to_h do |name, color|
         [name, File.join(dir, name).tap { |p| system('convert', '-size', '30x30', "xc:#{color}", p, exception: true) }]
       end
@@ -83,6 +84,7 @@ RSpec.describe 'Admin identifica un coleccionable con IA', type: :system do
       expect(inventory.piece_images.attachments.sort_by(&:id).map { |a| a.filename.to_s })
         .to eq(%w[tres_cuartos.png base.png extra.png])
       expect(inventory.product.primary_product_image.filename.to_s).to eq('tres_cuartos.png')
+      expect(Products::Enrichment::GenerateDraftJob).to have_received(:enqueue_for).with(inventory.product)
     end
   end
 
@@ -95,6 +97,7 @@ RSpec.describe 'Admin identifica un coleccionable con IA', type: :system do
     click_button 'Identificar con IA'
 
     expect(page).to have_css('[data-collectible-ai-lookup-target="panel"]', text: 'Poco común', wait: 15)
+    expect(find('#ai_lookup_id', visible: false).value).to eq(Collectibles::AiLookup.last.id.to_s)
     expect(find_field('product[product_name]').value).to eq('Tomica No. 23 Nissan Skyline GT-R R34')
     expect(find_field('product[category]').value).to eq('Autos a escala')
     expect(find_field('product[description]').value).to include('escala 1/62')
@@ -160,6 +163,8 @@ RSpec.describe 'Admin identifica un coleccionable con IA', type: :system do
     expect(page).to have_css(panel, text: 'No estoy seguro', wait: 15)
     expect(find_field('product[product_name]').value).to be_blank
     within(panel) { expect(page).to have_content('Google sugiere: tomica skyline gt-r') }
+    # Si la IA dudó, la búsqueda no viaja con el alta: sus datos no se usan como confirmados.
+    expect(find('#ai_lookup_id', visible: false).value).to be_blank
 
     lookup = Collectibles::AiLookup.last
     expect(lookup.photos.count).to eq(2)
@@ -171,6 +176,7 @@ RSpec.describe 'Admin identifica un coleccionable con IA', type: :system do
     expect(find_field('product[brand]').value).to eq('Tomica Premium')
     # La descripción se escribió para el primer candidato: no se usa para otro.
     expect(find_field('product[description]').value).to be_blank
+    expect(find('#ai_lookup_id', visible: false).value).to be_blank
   end
 
   it 'Enter en las pistas inicia la búsqueda y no da de alta el producto' do

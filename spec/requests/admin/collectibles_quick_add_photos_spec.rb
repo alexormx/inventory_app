@@ -39,7 +39,7 @@ RSpec.describe 'Admin quick_add guarda las fotos', type: :request do
   end
 
   it 'con vista 3/4, el producto nuevo recibe copias sin metadatos, en el mismo orden' do
-    perform_enqueued_jobs do
+    perform_enqueued_jobs(only: Collectibles::CopyPhotosToProductJob) do
       # Un recuadro vacío llega como "" y se ignora.
       quick_add(new_product_params, three_quarter: upload('tres_cuartos.png', 'red'),
                                     others: ['', upload('base.png', 'blue'), upload('extra.png', 'green')])
