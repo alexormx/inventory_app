@@ -36,8 +36,8 @@ RSpec.describe Products::Enrichment::BuildPromptService do
     expect(result).to include(:system, :user, :version)
   end
 
-  it "uses prompt version v7" do
-    expect(result[:version]).to eq("v7")
+  it "uses prompt version v8" do
+    expect(result[:version]).to eq("v8")
   end
 
   it "no le manda a la IA identificadores internos" do
@@ -205,6 +205,37 @@ RSpec.describe Products::Enrichment::BuildPromptService do
 
     it "omits supplier catalog section" do
       expect(result[:user]).not_to include("DATOS DEL CATÁLOGO DEL PROVEEDOR")
+    end
+  end
+
+  describe "v8" do
+    it "prohíbe inventar origen, nacionalidad o historia y pide describir sólo lo visible" do
+      system = result[:system]
+      expect(system).to include("nacionalidad")
+      expect(system).to include("visible con certeza en las fotos")
+    end
+
+    it "incluye los datos confirmados por la identificación con IA" do
+      context[:ai_lookup] = { identification: { "brand" => "Tomica", "model_code" => "No. 23", "scale" => "1/62" },
+                              launch_date: "2019-06", rarity_level: "poco_comun", rarity_reasons: ["Descontinuado"] }
+      user = result[:user]
+      expect(user).to include("DATOS CONFIRMADOS POR LA IDENTIFICACIÓN CON IA")
+      expect(user).to include("- Código del fabricante: No. 23")
+      expect(user).to include("- Fecha de lanzamiento: 2019-06")
+      expect(user).to include("- Rareza: poco común (Descontinuado)")
+    end
+
+    it "omite las dimensiones en cero" do
+      context[:dimensions] = { weight_gr: 0.0, length_cm: 16.0, width_cm: 0.0, height_cm: 0.0 }
+      user = result[:user]
+      expect(user).to include("Largo: 16.0cm")
+      expect(user).not_to include("Peso")
+      expect(user).not_to include("0.0g")
+    end
+
+    it "sin dimensiones no manda la sección" do
+      context[:dimensions] = { weight_gr: 0.0, length_cm: 0.0, width_cm: 0.0, height_cm: 0.0 }
+      expect(result[:user]).not_to include("DIMENSIONES DEL EMPAQUE")
     end
   end
 end

@@ -5,11 +5,17 @@ module Products
     # Builds the OpenAI prompt (system + user) from a product context hash.
     # Returns a Hash with :system and :user keys.
     class BuildPromptService
-      PROMPT_VERSION = "v7"
+      PROMPT_VERSION = "v8"
 
       # Códigos, precios y URLs del proveedor no se le mandan a la IA: no ayudan
       # a describir la pieza y no deben terminar en el texto de la tienda.
       INTERNAL_KEY = /sku|jan|ean|upc|barcode|c[oó]digo|\bcode\b|url|price|precio/i
+      AI_LOOKUP_LABELS = {
+        "product_name" => "Pieza identificada", "brand" => "Marca", "series" => "Serie",
+        "model_code" => "Código del fabricante", "scale" => "Escala", "year_or_edition" => "Año o edición"
+      }.freeze
+      RARITY_LABELS = { "comun" => "común", "poco_comun" => "poco común", "rara" => "rara", "muy_rara" => "muy rara" }.freeze
+      DIMENSION_LABELS = { weight_gr: %w[Peso g], length_cm: %w[Largo cm], width_cm: %w[Ancho cm], height_cm: %w[Alto cm] }.freeze
 
       SYSTEM_PROMPT = <<~SYSTEM.freeze
         Eres un experto en productos coleccionables y autos a escala (diecast). Tu tarea es generar descripciones de producto y atributos técnicos para una tienda en línea mexicana llamada "Pasatiempos a Escala".
@@ -35,6 +41,9 @@ module Products
         18. Responde EXCLUSIVAMENTE con JSON válido, sin texto adicional.
         19. NO menciones en `description_es` dimensiones o medidas del empaque (largo, ancho, alto en cm/mm/pulgadas) ni peso (g/kg); esos datos viven sólo en `attributes`. La escala, el color y el material SÍ pueden mencionarse cuando estén disponibles.
         20. NUNCA incluyas SKU, códigos de proveedor, códigos de barras, precios ni URLs en `description_es`, `highlights` ni `seo_keywords`: son datos internos o cambian, y no le sirven al comprador.
+        21. Si se incluyen fotos, describe sólo lo que sea visible con certeza en las fotos (color, decoración, rines, empaque). Si una foto contradice los datos, no elijas: avisa en `warnings`.
+        22. NUNCA afirmes origen, nacionalidad, historia, "evolución" o récords de un vehículo o de una marca si no vienen en los datos. El país del fabricante del modelo a escala no es el del auto real (un Lamborghini de Tomica sigue siendo un auto italiano).
+        23. Los DATOS CONFIRMADOS POR LA IDENTIFICACIÓN CON IA vienen de una búsqueda en sitios confiables: úsalos como ciertos.
       SYSTEM
 
       def initialize(context)
@@ -67,11 +76,14 @@ module Products
           end
         end
 
-        if @context[:dimensions].present?
-          dims = @context[:dimensions]
+        # Sólo las medidas que existen: "Peso: 0.0g" confundía a la IA.
+        dims = (@context[:dimensions] || {}).select { |key, value| DIMENSION_LABELS.key?(key) && value.to_f.positive? }
+        if dims.any?
           parts << "\nDIMENSIONES DEL EMPAQUE:"
-          parts << "  - Peso: #{dims[:weight_gr]}g"
-          parts << "  - Largo: #{dims[:length_cm]}cm x Ancho: #{dims[:width_cm]}cm x Alto: #{dims[:height_cm]}cm"
+          dims.each do |key, value|
+            label, unit = DIMENSION_LABELS.fetch(key)
+            parts << "  - #{label}: #{value}#{unit}"
+          end
         end
 
         if @context[:description].present?
@@ -79,6 +91,7 @@ module Products
           parts << @context[:description]
         end
 
+        parts << build_ai_lookup_section
         parts << build_supplier_catalog_section
 
         parts << <<~STRUCTURE
@@ -103,6 +116,20 @@ module Products
         parts << build_json_schema
 
         parts.compact.join("\n")
+      end
+
+      def build_ai_lookup_section
+        lookup = @context[:ai_lookup]
+        return nil if lookup.blank?
+
+        lines = ["\nDATOS CONFIRMADOS POR LA IDENTIFICACIÓN CON IA (búsqueda en sitios confiables):"]
+        lookup[:identification].to_h.each { |key, value| lines << "- #{AI_LOOKUP_LABELS.fetch(key, key)}: #{value}" }
+        lines << "- Fecha de lanzamiento: #{lookup[:launch_date]}" if lookup[:launch_date].present?
+        if lookup[:rarity_level].present?
+          reasons = Array(lookup[:rarity_reasons]).join("; ")
+          lines << "- Rareza: #{RARITY_LABELS.fetch(lookup[:rarity_level], lookup[:rarity_level])}#{" (#{reasons})" if reasons.present?}"
+        end
+        lines.join("\n")
       end
 
       def build_supplier_catalog_section

@@ -74,4 +74,42 @@ RSpec.describe Products::Enrichment::BuildContextService do
       expect(supplier_context[:sources].map { |source| source[:source] }).to contain_exactly("hlj", "tomica_fandom")
     end
   end
+
+  describe "identificación de quick_add" do
+    def lookup_for(prod, status:, result:)
+      Collectibles::AiLookup.new(user: create(:user, :admin)).tap do |l|
+        l.photos.attach(io: File.open(Rails.root.join("spec/fixtures/files/test1.png")), filename: "a.png", content_type: "image/png")
+        l.save!
+        l.update!(status: status, product: prod, result: result)
+      end
+    end
+
+    let(:lookup_result) do
+      {
+        "identification" => { "product_name" => "Tomica No. 23 Skyline", "brand" => "Tomica", "series" => "Regular",
+                              "model_code" => "No. 23", "scale" => "1/62", "year_or_edition" => "2019", "confidence" => 0.9, "notes" => "x" },
+        "launch_date" => { "value" => "2019-06", "source_url" => "https://www.hobbydb.com/x" },
+        "rarity" => { "level" => "poco_comun", "reasons" => ["Descontinuado"] },
+        "prices_mx" => { "min" => 1, "max" => 2, "listings" => [] }
+      }
+    end
+
+    it "incluye identificación, lanzamiento y rareza de la búsqueda terminada, sin precios ni URLs" do
+      lookup_for(product, status: :done, result: lookup_result)
+      ai = described_class.new(product.reload).call[:ai_lookup]
+
+      expect(ai[:identification]).to eq("product_name" => "Tomica No. 23 Skyline", "brand" => "Tomica", "series" => "Regular",
+                                         "model_code" => "No. 23", "scale" => "1/62", "year_or_edition" => "2019")
+      expect(ai[:launch_date]).to eq("2019-06")
+      expect(ai[:rarity_level]).to eq("poco_comun")
+      expect(ai[:rarity_reasons]).to eq(["Descontinuado"])
+      expect(ai.to_s).not_to include("hobbydb")
+      expect(ai.to_s).not_to include("listings")
+    end
+
+    it "ignora búsquedas que no terminaron" do
+      lookup_for(product, status: :failed, result: lookup_result)
+      expect(described_class.new(product.reload).call[:ai_lookup]).to be_nil
+    end
+  end
 end
