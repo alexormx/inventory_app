@@ -11,11 +11,11 @@ RSpec.describe 'Admin quick_add liga la identificación con IA', type: :request 
 
   before { sign_in admin }
 
-  def lookup_for(user, status: :done)
+  def lookup_for(user, status: :done, confidence: 0.9)
     Collectibles::AiLookup.new(user: user).tap do |l|
       l.photos.attach(io: File.open(Rails.root.join('spec/fixtures/files/test1.png')), filename: 'a.png', content_type: 'image/png')
       l.save!
-      l.update!(status: status, result: { 'identification' => { 'brand' => 'Tomica' } })
+      l.update!(status: status, result: { 'identification' => { 'brand' => 'Tomica', 'confidence' => confidence } })
     end
   end
 
@@ -31,6 +31,12 @@ RSpec.describe 'Admin quick_add liga la identificación con IA', type: :request 
     lookup = lookup_for(admin)
     quick_add(ai_lookup_id: lookup.id)
     expect(lookup.reload.product).to eq(Product.order(:id).last)
+  end
+
+  it 'no liga una identificación dudosa (confianza menor a 70%)' do
+    lookup = lookup_for(admin, confidence: 0.45)
+    quick_add(ai_lookup_id: lookup.id)
+    expect(lookup.reload.product).to be_nil
   end
 
   it 'ignora la búsqueda de otro admin' do

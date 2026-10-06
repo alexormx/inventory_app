@@ -163,6 +163,8 @@ RSpec.describe 'Admin identifica un coleccionable con IA', type: :system do
     expect(page).to have_css(panel, text: 'No estoy seguro', wait: 15)
     expect(find_field('product[product_name]').value).to be_blank
     within(panel) { expect(page).to have_content('Google sugiere: tomica skyline gt-r') }
+    # Si la IA dudó, la búsqueda no viaja con el alta: sus datos no se usan como confirmados.
+    expect(find('#ai_lookup_id', visible: false).value).to be_blank
 
     lookup = Collectibles::AiLookup.last
     expect(lookup.photos.count).to eq(2)
@@ -174,6 +176,7 @@ RSpec.describe 'Admin identifica un coleccionable con IA', type: :system do
     expect(find_field('product[brand]').value).to eq('Tomica Premium')
     # La descripción se escribió para el primer candidato: no se usa para otro.
     expect(find_field('product[description]').value).to be_blank
+    expect(find('#ai_lookup_id', visible: false).value).to be_blank
   end
 
   it 'Enter en las pistas inicia la búsqueda y no da de alta el producto' do

@@ -94,13 +94,13 @@ module Collectibles
 
     # Si el admin identificó la pieza con IA antes de dar de alta un producto
     # nuevo, la búsqueda queda ligada a él: la descripción con IA la usa como
-    # datos confirmados. Sólo una búsqueda terminada y del mismo admin.
+    # datos confirmados. Sólo una búsqueda terminada, del mismo admin y con
+    # identificación confiable: si la IA dudó, sus datos podrían ser de otra pieza.
     def link_ai_lookup
       return unless @product_created && @params[:ai_lookup_id].present?
 
-      Collectibles::AiLookup.where(user: @user, status: :done)
-                            .find_by(id: @params[:ai_lookup_id])
-                            &.update!(product: @product)
+      lookup = Collectibles::AiLookup.where(user: @user, status: :done).find_by(id: @params[:ai_lookup_id])
+      lookup.update!(product: @product) if lookup&.confident?
     end
 
     # Después del commit, para que el worker encuentre la pieza y sus fotos. Un

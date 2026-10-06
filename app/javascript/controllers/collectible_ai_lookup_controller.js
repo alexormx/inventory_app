@@ -117,8 +117,10 @@ export default class extends Controller {
 
   finish(result, lookupId) {
     this.stopPolling()
-    if (this.hasLookupIdTarget) this.lookupIdTarget.value = lookupId ?? ""
     const confident = (result.identification?.confidence || 0) >= LOW_CONFIDENCE
+    // Sólo una identificación confiable viaja con el alta: si la IA dudó, sus
+    // datos (fecha, rareza) pueden ser de otro candidato.
+    if (this.hasLookupIdTarget) this.lookupIdTarget.value = confident ? (lookupId ?? "") : ""
     this.setRunning(false, confident ? "Listo. Revisa los datos antes de guardar." : "La IA no está segura: elige la pieza correcta.")
     const suggestions = confident ? this.fillEmptyFields(result) : []
     this.renderPanel(result, suggestions, confident)
