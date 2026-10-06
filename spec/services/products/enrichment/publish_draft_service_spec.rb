@@ -90,6 +90,19 @@ RSpec.describe Products::Enrichment::PublishDraftService do
     end
   end
 
+  describe "identificadores internos" do
+    it "no publica un SKU aunque el admin lo haya dejado en el borrador" do
+      draft.update!(draft_content: "Modelo a escala 1:64 de Tomica, hecho en metal die-cast. SKU #{product.product_sku}.",
+                    structured_output: { "highlights" => ["Escala 1:64", "SKU #{product.product_sku}"],
+                                         "seo_keywords" => ["diecast", product.product_sku] })
+      service.call
+      product.reload
+      expect(product.description).not_to include(product.product_sku)
+      expect(product.highlights).to eq(["Escala 1:64"])
+      expect(product.seo_keywords).to eq(["diecast"])
+    end
+  end
+
   describe "validation errors" do
     it "raises error if draft is not publishable" do
       draft.update!(status: :queued)

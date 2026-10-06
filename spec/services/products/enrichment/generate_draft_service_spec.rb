@@ -78,7 +78,7 @@ RSpec.describe Products::Enrichment::GenerateDraftService do
       draft.reload
       expect(draft.ai_provider).to eq("openai")
       expect(draft.ai_model).to eq("gpt-4o-mini")
-      expect(draft.prompt_version).to eq("v6")
+      expect(draft.prompt_version).to eq("v7")
       expect(draft.tokens_input).to eq(500)
       expect(draft.tokens_output).to eq(300)
       expect(draft.generated_at).to be_present
@@ -160,6 +160,30 @@ RSpec.describe Products::Enrichment::GenerateDraftService do
       draft.reload
       expect(draft.status).to eq("draft_generated")
       expect(draft.draft_content).to include("escala 1:64")
+    end
+  end
+
+  describe "identificadores internos en la respuesta" do
+    let(:product) do
+      create(:product, skip_seed_inventory: true, category: "diecast", product_sku: "PAS-TOM-0042",
+                       supplier_product_code: "TKT-98765", barcode: "4904810742241")
+    end
+
+    before do
+      content = JSON.parse(openai_response.dig("choices", 0, "message", "content"))
+      content["description_es"] += "\n\nSu código de proveedor es TKT-98765."
+      content["highlights"] = ["Modelo numerado #067", "SKU PAS-TOM-0042", "Código de barras 4904810742241"]
+      content["seo_keywords"] = ["tomica", "4904810742241"]
+      openai_response["choices"][0]["message"]["content"] = content.to_json
+    end
+
+    it "los quita de la descripción, las características y las palabras clave, y lo avisa" do
+      service.call
+      draft.reload
+      expect(draft.draft_content).not_to include("TKT-98765")
+      expect(draft.structured_output["highlights"]).to eq(["Modelo numerado #067"])
+      expect(draft.structured_output["seo_keywords"]).to eq(["tomica"])
+      expect(draft.warnings.join).to include("identificadores internos")
     end
   end
 

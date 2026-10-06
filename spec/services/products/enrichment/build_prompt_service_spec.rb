@@ -36,8 +36,18 @@ RSpec.describe Products::Enrichment::BuildPromptService do
     expect(result).to include(:system, :user, :version)
   end
 
-  it "uses prompt version v6" do
-    expect(result[:version]).to eq("v6")
+  it "uses prompt version v7" do
+    expect(result[:version]).to eq("v7")
+  end
+
+  it "no le manda a la IA identificadores internos" do
+    user = result[:user]
+    %w[TST-001 TOM-067 4904810123456].each { |code| expect(user).not_to include(code) }
+    expect(user).not_to include("SKU:")
+  end
+
+  it "prohíbe identificadores, precios y URLs en el texto generado" do
+    expect(result[:system]).to include("NUNCA incluyas SKU, códigos de proveedor, códigos de barras, precios ni URLs")
   end
 
   it "includes system prompt with Spanish instructions" do
@@ -67,9 +77,10 @@ RSpec.describe Products::Enrichment::BuildPromptService do
   it "includes product data in user prompt" do
     user = result[:user]
     expect(user).to include("067 Toyota Hilux")
-    expect(user).to include("TST-001")
     expect(user).to include("Tomica")
-    expect(user).to include("199.99")
+    # Ni el SKU ni el precio van al prompt: no deben terminar en el texto de la tienda.
+    expect(user).not_to include("TST-001")
+    expect(user).not_to include("199.99")
   end
 
   it "includes current attributes" do
@@ -166,6 +177,19 @@ RSpec.describe Products::Enrichment::BuildPromptService do
     it "includes supplier description" do
       expect(result[:user]).to include("DESCRIPCIÓN DEL PROVEEDOR")
       expect(result[:user]).to include("Toyota Hilux pickup truck")
+    end
+
+    it "no manda código de barras, URL ni precio del proveedor, ni detalles que son códigos" do
+      context[:supplier_context][:catalog_item][:details_payload] = { "scale" => "1/64", "jan_code" => "4904810999999",
+                                                                      "Item Code" => "TKT-1", "price" => "1320" }
+      user = result[:user]
+      expect(user).not_to include("4904810123456")
+      expect(user).not_to include("https://example.com/product")
+      expect(user).not_to include("Precio proveedor")
+      expect(user).not_to include("4904810999999")
+      expect(user).not_to include("TKT-1")
+      expect(user).not_to include("1320")
+      expect(user).to include("scale: 1/64")
     end
 
     it "includes supplier technical details" do
