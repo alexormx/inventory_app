@@ -15,6 +15,7 @@ module Collectibles
         find_or_create_product
         create_inventory if @errors.empty?
         attach_images if @errors.empty? && @inventory&.persisted?
+        link_ai_lookup if @errors.empty?
         update_product_stats if @errors.empty?
 
         raise ActiveRecord::Rollback if @errors.any?
@@ -90,6 +91,17 @@ module Collectibles
 
       images.each { |image| @inventory.piece_images.attach(image) }
       @copy_photos_to_product = @product_created && three_quarter.present?
+    end
+
+    # Si el admin identificó la pieza con IA antes de dar de alta un producto
+    # nuevo, la búsqueda queda ligada a él: la descripción con IA la usa como
+    # datos confirmados. Sólo una búsqueda terminada y del mismo admin.
+    def link_ai_lookup
+      return unless @product_created && @params[:ai_lookup_id].present?
+
+      Collectibles::AiLookup.where(user: @user, status: :done)
+                            .find_by(id: @params[:ai_lookup_id])
+                            &.update!(product: @product)
     end
 
     def update_product_stats

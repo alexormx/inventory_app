@@ -11,6 +11,7 @@ class Product < ApplicationRecord
   belongs_to :last_supplier, class_name: 'User', optional: true
 
   has_many :inventories, class_name: 'Inventory', inverse_of: :product, dependent: :nullify
+  has_many :collectible_ai_lookups, class_name: 'Collectibles::AiLookup', dependent: :nullify
   has_many :canceled_order_items, dependent: :restrict_with_error
   has_many :purchase_order_items
   has_many :purchase_orders, through: :purchase_order_items

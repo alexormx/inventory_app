@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_10_04_140000) do
+ActiveRecord::Schema[8.0].define(version: 2026_10_05_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -125,7 +125,9 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_04_140000) do
     t.text "hints"
     t.boolean "vision_used", default: false, null: false
     t.string "photo_roles", default: [], null: false, array: true
+    t.bigint "product_id"
     t.index ["created_at"], name: "index_collectible_ai_lookups_on_created_at"
+    t.index ["product_id"], name: "index_collectible_ai_lookups_on_product_id"
     t.index ["user_id"], name: "index_collectible_ai_lookups_on_user_id"
   end
 
@@ -1113,6 +1115,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_04_140000) do
   add_foreign_key "cart_inventory_holds", "shopping_carts", on_delete: :cascade
   add_foreign_key "cart_items", "products"
   add_foreign_key "cart_session_imports", "shopping_carts", on_delete: :restrict
+  add_foreign_key "collectible_ai_lookups", "products", on_delete: :nullify
   add_foreign_key "collectible_ai_lookups", "users", on_delete: :cascade
   add_foreign_key "comments", "posts"
   add_foreign_key "comments", "users"

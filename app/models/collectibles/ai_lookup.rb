@@ -27,6 +27,9 @@ module Collectibles
     VISION_MONTHLY_CAP = 1000
 
     belongs_to :user
+    # El producto que se dio de alta con esta identificación (quick_add); su
+    # descripción con IA usa estos datos como confirmados.
+    belongs_to :product, optional: true
     has_many_attached :photos
 
     enum :status, { pending: 0, running: 1, done: 2, failed: 3 }

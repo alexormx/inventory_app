@@ -95,6 +95,7 @@ RSpec.describe 'Admin identifica un coleccionable con IA', type: :system do
     click_button 'Identificar con IA'
 
     expect(page).to have_css('[data-collectible-ai-lookup-target="panel"]', text: 'Poco común', wait: 15)
+    expect(find('#ai_lookup_id', visible: false).value).to eq(Collectibles::AiLookup.last.id.to_s)
     expect(find_field('product[product_name]').value).to eq('Tomica No. 23 Nissan Skyline GT-R R34')
     expect(find_field('product[category]').value).to eq('Autos a escala')
     expect(find_field('product[description]').value).to include('escala 1/62')

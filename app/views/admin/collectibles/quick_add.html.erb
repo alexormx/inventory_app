@@ -90,6 +90,8 @@
 
   <%# Resultado de la IA: lo arma collectible_ai_lookup_controller con textContent. %>
   <div class="card mb-4 d-none border-info" data-collectible-ai-lookup-target="panel" aria-live="polite"></div>
+  <%# La búsqueda con IA que se usó; el alta la liga al producto nuevo. %>
+  <%= hidden_field_tag :ai_lookup_id, nil, id: 'ai_lookup_id', data: { collectible_ai_lookup_target: 'lookupId' } %>
 
   <%# Sección 2: Selección de producto %>
   <div class="card mb-4">
