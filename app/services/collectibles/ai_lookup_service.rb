@@ -19,7 +19,7 @@ module Collectibles
 
     MODEL = 'gpt-4.1'
     REQUEST_TIMEOUT = 90
-    IMAGE_MAX_EDGE = 1024
+    IMAGE_MAX_EDGE = Images::AiReadyJpeg::MAX_EDGE
     MAX_LISTINGS = 5
     MAX_PHOTOS = AiLookup::MAX_PHOTOS
     MAX_CANDIDATES = 3
@@ -140,22 +140,9 @@ module Collectibles
     end
 
     def processed_jpeg(photo)
-      photo.blob.open do |file|
-        # `.strip` se pasa tal cual a ImageMagick como -strip (quita EXIF/GPS y comentarios).
-        resized = ImageProcessing::MiniMagick.source(file.path)
-                                             .resize_to_limit(IMAGE_MAX_EDGE, IMAGE_MAX_EDGE)
-                                             .strip
-                                             .convert('jpg')
-                                             .saver(quality: 85)
-                                             .call
-        begin
-          File.binread(resized.path)
-        ensure
-          resized.close!
-        end
-      end
-    rescue MiniMagick::Error, ImageProcessing::Error => e
-      raise Error, "La foto #{photo.filename} no es una imagen válida: #{e.message.lines.first.to_s.strip}"
+      Images::AiReadyJpeg.call(photo)
+    rescue Images::AiReadyJpeg::InvalidImage => e
+      raise Error, "La foto #{photo.filename} no es una imagen válida: #{e.message}"
     end
 
     def parse(response)
