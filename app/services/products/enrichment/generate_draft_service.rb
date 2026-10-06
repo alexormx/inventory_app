@@ -126,6 +126,7 @@ module Products
         end
 
         parsed["description_es"] = sanitize_description(parsed["description_es"])
+        scrub_identifiers(parsed)
 
         unless natural_description?(parsed["description_es"])
           raise GenerationError, "Invalid response structure: 'description_es' must be natural copy without headings or null values"
@@ -134,6 +135,19 @@ module Products
         parsed
       rescue JSON::ParserError => e
         raise GenerationError, "Failed to parse OpenAI JSON response: #{e.message}"
+      end
+
+      # Aunque el prompt lo prohíbe, la IA a veces copia el SKU o el código de
+      # barras como característica; aquí se quitan antes de guardar el borrador.
+      def scrub_identifiers(parsed)
+        scrubber = Products::Enrichment::ScrubIdentifiersService.new(@product)
+        parsed["description_es"] = scrubber.clean_text(parsed["description_es"])
+        parsed["highlights"] = scrubber.clean_list(parsed["highlights"])
+        parsed["seo_keywords"] = scrubber.clean_list(parsed["seo_keywords"])
+        return unless scrubber.removed?
+
+        parsed["warnings"] = Array(parsed["warnings"]) +
+                             ["Se quitaron identificadores internos (SKU, códigos de proveedor o de barras) del texto generado."]
       end
 
       def sanitize_description(description)

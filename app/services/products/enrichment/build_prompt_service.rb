@@ -5,7 +5,11 @@ module Products
     # Builds the OpenAI prompt (system + user) from a product context hash.
     # Returns a Hash with :system and :user keys.
     class BuildPromptService
-      PROMPT_VERSION = "v6"
+      PROMPT_VERSION = "v7"
+
+      # Códigos, precios y URLs del proveedor no se le mandan a la IA: no ayudan
+      # a describir la pieza y no deben terminar en el texto de la tienda.
+      INTERNAL_KEY = /sku|jan|ean|upc|barcode|c[oó]digo|\bcode\b|url|price|precio/i
 
       SYSTEM_PROMPT = <<~SYSTEM.freeze
         Eres un experto en productos coleccionables y autos a escala (diecast). Tu tarea es generar descripciones de producto y atributos técnicos para una tienda en línea mexicana llamada "Pasatiempos a Escala".
@@ -18,7 +22,7 @@ module Products
         5. NO uses listas, viñetas ni etiquetas visibles dentro de `description_es`.
         6. El tono debe ser simple, profesional y factual. Describe el producto con claridad y evita el lenguaje publicitario vacío.
         7. PROHIBIDO usar frases exageradas o de relleno como "impresionante", "joya", "magnífico", "espectacular", "pieza de conversación", "no dejes pasar" o "imperdible". Prefiere detalles concretos sobre marketing genérico.
-        8. Usa ÚNICAMENTE datos disponibles del producto (nombre, marca, línea o colección, escala, color, material, código de barras, SKU, categoría y atributos personalizados). NUNCA inventes datos.
+        8. Usa ÚNICAMENTE datos disponibles del producto (nombre, marca, línea o colección, escala, color, material, categoría y atributos personalizados). NUNCA inventes datos.
         9. Menciona la relevancia para coleccionistas sólo cuando sea razonable y se base en los datos del producto (marca, modelo de auto real, serie). No la fuerces.
         10. Menciona sólo datos confirmados dentro de la descripción. Si un dato no es confiable o no está disponible, omítelo del texto.
         11. Genera TODOS los atributos solicitados basándote en el nombre del producto, marca, y datos disponibles.
@@ -30,6 +34,7 @@ module Products
         17. Incluye warnings como array de strings señalando cualquier dato del que no estés seguro.
         18. Responde EXCLUSIVAMENTE con JSON válido, sin texto adicional.
         19. NO menciones en `description_es` dimensiones o medidas del empaque (largo, ancho, alto en cm/mm/pulgadas) ni peso (g/kg); esos datos viven sólo en `attributes`. La escala, el color y el material SÍ pueden mencionarse cuando estén disponibles.
+        20. NUNCA incluyas SKU, códigos de proveedor, códigos de barras, precios ni URLs en `description_es`, `highlights` ni `seo_keywords`: son datos internos o cambian, y no le sirven al comprador.
       SYSTEM
 
       def initialize(context)
@@ -51,12 +56,8 @@ module Products
         parts << "Genera la descripción y atributos para el siguiente producto:\n"
         parts << "DATOS DEL PRODUCTO:"
         parts << "- Nombre: #{@context[:product_name]}"
-        parts << "- SKU: #{@context[:product_sku]}"
         parts << "- Marca: #{@context[:brand]}"
         parts << "- Categoría: #{@context[:category]}"
-        parts << "- Precio de venta: $#{@context[:selling_price]} MXN"
-        parts << "- Código de barras: #{@context[:barcode]}" if @context[:barcode].present?
-        parts << "- Código proveedor: #{@context[:supplier_code]}" if @context[:supplier_code].present?
         parts << "- Fecha lanzamiento: #{@context[:launch_date]}" if @context[:launch_date].present?
 
         if @context[:custom_attributes].present? && @context[:custom_attributes].any?
@@ -117,10 +118,7 @@ module Products
         lines << "- Serie/Colección: #{item[:canonical_series]}" if item[:canonical_series].present?
         lines << "- Tipo de artículo: #{item[:canonical_item_type]}" if item[:canonical_item_type].present?
         lines << "- Fecha de lanzamiento: #{item[:canonical_release_date]}" if item[:canonical_release_date].present?
-        lines << "- Precio proveedor: #{item[:canonical_price]} #{item[:currency]}" if item[:canonical_price].present?
         lines << "- Estado: #{item[:canonical_status]}" if item[:canonical_status].present?
-        lines << "- Código de barras: #{item[:barcode]}" if item[:barcode].present?
-        lines << "- URL fuente: #{item[:source_url]}" if item[:source_url].present?
 
         if item[:description_raw].present?
           lines << "\nDESCRIPCIÓN DEL PROVEEDOR (referencia, adaptar al estilo de la tienda):"
@@ -130,7 +128,7 @@ module Products
         if item[:details_payload].present? && item[:details_payload].is_a?(Hash) && item[:details_payload].any?
           lines << "\nDETALLES TÉCNICOS DEL PROVEEDOR:"
           item[:details_payload].each do |key, value|
-            lines << "  - #{key}: #{value}" if value.present?
+            lines << "  - #{key}: #{value}" if value.present? && !internal_key?(key)
           end
         end
 
@@ -140,12 +138,16 @@ module Products
             next unless src[:normalized_payload].present? && src[:normalized_payload].is_a?(Hash)
             lines << "\nFUENTE ADICIONAL (#{src[:source]}):"
             src[:normalized_payload].each do |key, value|
-              lines << "  - #{key}: #{value}" if value.present?
+              lines << "  - #{key}: #{value}" if value.present? && !internal_key?(key)
             end
           end
         end
 
         lines.join("\n")
+      end
+
+      def internal_key?(key)
+        key.to_s.match?(INTERNAL_KEY)
       end
 
       def build_template_instructions

@@ -27,11 +27,16 @@ module Products
           custom_attrs = (@draft.draft_attributes.presence || product.custom_attributes || {}).dup
           extracted_scale = custom_attrs.delete('escala').presence
 
+          # Último filtro: un borrador editado a mano tampoco publica SKU ni códigos.
+          scrubber = Products::Enrichment::ScrubIdentifiersService.new(product)
+          description = scrubber.clean_text(@draft.draft_content)
+          raise PublishError, "Draft content is blank after removing internal identifiers" if description.blank?
+
           product_updates = {
-            description:       @draft.draft_content,
+            description:       description,
             custom_attributes: custom_attrs,
-            highlights:        structured["highlights"].presence || product.highlights,
-            seo_keywords:      structured["seo_keywords"].presence || product.seo_keywords
+            highlights:        scrubber.clean_list(structured["highlights"]).presence || product.highlights,
+            seo_keywords:      scrubber.clean_list(structured["seo_keywords"]).presence || product.seo_keywords
           }
           product_updates[:scale] = extracted_scale if extracted_scale.present?
 
