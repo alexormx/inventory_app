@@ -2,12 +2,19 @@
 
 module Products
   module Enrichment
-    # Esquema estricto (Structured Outputs) de la respuesta. Los atributos son
-    # las llaves de la plantilla de la categoría (texto o null, todas presentes,
-    # ninguna extra); sin plantilla, `attributes` es un objeto vacío.
+    # Esquema estricto (Structured Outputs) de la respuesta. Con plantilla, los
+    # atributos son sus llaves (texto o null, todas presentes, ninguna extra).
+    # Sin plantilla son una lista de pares clave–valor que la IA propone: un
+    # objeto vacío en modo estricto hacía que el modelo escribiera tabuladores
+    # sin fin hasta el límite de tokens (producción, 2026-10-06).
     module ResponseSchema
       NULLABLE_STRING = { type: %w[string null] }.freeze
       STRING_LIST = { type: 'array', items: { type: 'string' } }.freeze
+      ATTRIBUTE_PAIRS = {
+        type: 'array',
+        items: { type: 'object', additionalProperties: false, required: %w[key value],
+                 properties: { key: { type: 'string' }, value: NULLABLE_STRING } }
+      }.freeze
 
       module_function
 
@@ -20,13 +27,18 @@ module Products
             product_name: { type: 'string' },
             description_es: { type: 'string' },
             highlights: STRING_LIST,
-            attributes: { type: 'object', additionalProperties: false, required: keys,
-                          properties: keys.index_with { NULLABLE_STRING } },
+            attributes: attributes_for(keys),
             seo_keywords: STRING_LIST,
             warnings: STRING_LIST,
             confidence_score: { type: 'number' }
           }
         }
+      end
+
+      def attributes_for(keys)
+        return ATTRIBUTE_PAIRS if keys.empty?
+
+        { type: 'object', additionalProperties: false, required: keys, properties: keys.index_with { NULLABLE_STRING } }
       end
     end
   end
