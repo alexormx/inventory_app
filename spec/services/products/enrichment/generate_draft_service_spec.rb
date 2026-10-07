@@ -370,6 +370,21 @@ RSpec.describe Products::Enrichment::GenerateDraftService do
     end
   end
 
+  describe "producto sin plantilla de categoría" do
+    let(:product) { create(:product, skip_seed_inventory: true, category: "Cars & Bikes") }
+
+    before do
+      content = JSON.parse(openai_response.dig("choices", 0, "message", "content"))
+      content["attributes"] = [{ "key" => "color", "value" => "Rojo" }, { "key" => "escala", "value" => nil }]
+      openai_response["choices"][0]["message"]["content"] = content.to_json
+    end
+
+    it "convierte la lista de pares en los atributos de siempre" do
+      service.call
+      expect(draft.reload.draft_attributes).to eq("color" => "Rojo", "escala" => nil)
+    end
+  end
+
   describe "clasificación de errores" do
     it "una respuesta que no es JSON es InvalidResponseError" do
       openai_response["choices"][0]["message"]["content"] = "{roto"

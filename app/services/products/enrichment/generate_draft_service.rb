@@ -50,7 +50,7 @@ module Products
         parsed["warnings"] = Array(parsed["warnings"]) + photos.warnings
 
         template = @product.attribute_template
-        normalized_attrs = Products::Enrichment::NormalizeAttributesService.new(parsed["attributes"], template).call
+        normalized_attrs = Products::Enrichment::NormalizeAttributesService.new(attributes_hash(parsed["attributes"]), template).call
 
         usage = response.dig("usage") || {}
 
@@ -82,6 +82,13 @@ module Products
       end
 
       private
+
+      # Sin plantilla la IA devuelve pares clave–valor (ver ResponseSchema).
+      def attributes_hash(attributes)
+        return attributes unless attributes.is_a?(Array)
+
+        attributes.select { |pair| pair.is_a?(Hash) && pair["key"].present? }.to_h { |pair| [pair["key"], pair["value"]] }
+      end
 
       def mark_failed(error)
         @draft.update!(status: :failed, error_message: "#{error.class}: #{error.message}", generated_at: Time.current)
