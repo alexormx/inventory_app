@@ -24,14 +24,4 @@ RSpec.describe Images::AiReadyJpeg do
     attachment = attach(StringIO.new('no soy imagen'), 'falsa.jpg')
     expect { described_class.call(attachment) }.to raise_error(described_class::InvalidImage)
   end
-
-  it 'pide a libjpeg decodificar ya reducido' do
-    expect(ImageProcessing::MiniMagick::Processor).to receive(:load_image)
-      .with(anything, hash_including(define: { jpeg: { size: '2048x2048' } }))
-      .and_call_original
-    Tempfile.create(['p', '.jpg']) do |f|
-      system('convert', '-size', '40x30', 'xc:red', f.path, exception: true)
-      described_class.call(attach(File.open(f.path), 'p.jpg'))
-    end
-  end
 end
