@@ -39,4 +39,15 @@ RSpec.describe Products::Enrichment::PhotoSourceService do
   it 'sin fotos regresa vacío' do
     expect(described_class.new(product).call.jpegs).to eq([])
   end
+
+  it 'una foto que falta en el almacenamiento es aviso, no error' do
+    product.product_images.attach(io: File.open(png('red').path), filename: 'perdida.png', content_type: 'image/png')
+    product.product_images.attach(io: File.open(png('blue').path), filename: 'buena.png', content_type: 'image/png')
+    lost = product.product_images.attachments.find { |a| a.filename.to_s == 'perdida.png' }
+    lost.blob.service.delete(lost.blob.key)
+
+    result = described_class.new(product.reload).call
+    expect(result.jpegs.size).to eq(1)
+    expect(result.warnings.join).to include('perdida.png')
+  end
 end

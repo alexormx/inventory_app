@@ -39,6 +39,23 @@ RSpec.describe Products::Enrichment::GenerateDraftJob do
     expect(service).to have_received(:call).once
   end
 
+  describe "reintentos viejos" do
+    it "no genera si ya hay un borrador más nuevo del producto (se regeneró a mano)" do
+      draft.update!(status: :failed)
+      create(:product_description_draft, product: product, status: :queued)
+      allow(service).to receive(:call)
+      described_class.perform_now(draft.id)
+      expect(service).not_to have_received(:call)
+    end
+
+    it "no genera un borrador rechazado" do
+      draft.update!(status: :rejected)
+      allow(service).to receive(:call)
+      described_class.perform_now(draft.id)
+      expect(service).not_to have_received(:call)
+    end
+  end
+
   describe ".enqueue_for" do
     it "crea un borrador en cola y lo encola" do
       expect { described_class.enqueue_for(product) }.to have_enqueued_job(described_class)

@@ -46,6 +46,7 @@ module Products
 
         photos   = Products::Enrichment::PhotoSourceService.new(@product).call
         response = call_openai(prompt, photos.jpegs)
+        @usage   = response["usage"] # para registrar el costo aunque la respuesta no sirva
         parsed   = parse_response(response)
         parsed["warnings"] = Array(parsed["warnings"]) + photos.warnings
 
@@ -90,8 +91,15 @@ module Products
         attributes.select { |pair| pair.is_a?(Hash) && pair["key"].present? }.to_h { |pair| [pair["key"], pair["value"]] }
       end
 
+      # Si OpenAI ya respondió, la llamada se cobró aunque la respuesta no sirva:
+      # se registra su costo para que el total no se quede corto.
       def mark_failed(error)
-        @draft.update!(status: :failed, error_message: "#{error.class}: #{error.message}", generated_at: Time.current)
+        attrs = { status: :failed, error_message: "#{error.class}: #{error.message}", generated_at: Time.current }
+        if @usage.is_a?(Hash)
+          attrs.merge!(tokens_input: @usage["prompt_tokens"], tokens_output: @usage["completion_tokens"],
+                       estimated_cost_cents: estimate_cost(@usage))
+        end
+        @draft.update!(attrs)
       end
 
       def call_openai(prompt, jpegs)
