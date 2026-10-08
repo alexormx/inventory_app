@@ -400,6 +400,17 @@ RSpec.describe Products::Enrichment::GenerateDraftService do
     end
   end
 
+  describe "costo de un intento fallido" do
+    it "registra tokens y costo aunque la respuesta no sirva (OpenAI sí la cobró)" do
+      openai_response["choices"][0]["message"]["content"] = "{roto"
+      openai_response["usage"] = { "prompt_tokens" => 1_000_000, "completion_tokens" => 500_000 }
+      expect { service.call }.to raise_error(Products::Enrichment::GenerateDraftService::InvalidResponseError)
+      draft.reload
+      expect(draft.status).to eq("failed")
+      expect([draft.tokens_input, draft.tokens_output, draft.estimated_cost_cents]).to eq([1_000_000, 500_000, 120])
+    end
+  end
+
   describe "fotos ilegibles" do
     it "genera igual y lo avisa" do
       product.product_images.purge

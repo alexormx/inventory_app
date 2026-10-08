@@ -25,7 +25,10 @@ module Products
 
       def perform(draft_id)
         draft = ProductDescriptionDraft.find(draft_id)
-        return if draft.draft_generated? || draft.published?
+        return if draft.draft_generated? || draft.published? || draft.rejected?
+        # Un reintento viejo (p. ej. tras un 429) no compite con un borrador que
+        # el admin ya regeneró: se pagarían dos.
+        return if ProductDescriptionDraft.where(product_id: draft.product_id).exists?(['id > ?', draft.id])
 
         Products::Enrichment::GenerateDraftService.new(draft).call
       end

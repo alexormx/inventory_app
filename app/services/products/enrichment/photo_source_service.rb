@@ -18,7 +18,7 @@ module Products
         warnings = []
         attachments.first(MAX_PHOTOS).each do |attachment|
           jpegs << Images::AiReadyJpeg.call(attachment)
-        rescue Images::AiReadyJpeg::InvalidImage
+        rescue Images::AiReadyJpeg::InvalidImage, ActiveStorage::FileNotFoundError
           warnings << "No se pudo leer la foto #{attachment.filename}; se generó sin ella."
         end
         Result.new(jpegs: jpegs, warnings: warnings)
