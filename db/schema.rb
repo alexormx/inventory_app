@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_10_05_120000) do
+ActiveRecord::Schema[8.0].define(version: 2026_10_11_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -766,6 +766,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_05_120000) do
     t.bigint "merged_into_cart_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.text "checkout_notes"
     t.index ["anonymous_token_digest"], name: "index_shopping_carts_on_anon_token_digest", unique: true, where: "(anonymous_token_digest IS NOT NULL)"
     t.index ["last_activity_at"], name: "index_shopping_carts_on_last_activity_when_active", where: "((status)::text = 'active'::text)"
     t.index ["merged_into_cart_id"], name: "index_shopping_carts_on_merged_into_cart_id"
@@ -774,7 +775,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_05_120000) do
     t.index ["user_id"], name: "index_shopping_carts_on_user_id"
     t.index ["user_id"], name: "index_shopping_carts_on_user_id_when_active", unique: true, where: "(((status)::text = 'active'::text) AND (user_id IS NOT NULL))"
     t.check_constraint "merged_into_cart_id IS NULL OR merged_into_cart_id <> id", name: "shopping_carts_no_self_merge"
-    t.check_constraint "status::text = 'active'::text AND sale_order_id IS NULL AND converted_at IS NULL AND closed_at IS NULL AND merged_into_cart_id IS NULL OR status::text = 'converted'::text AND sale_order_id IS NOT NULL AND converted_at IS NOT NULL AND closed_at IS NOT NULL AND anonymous_token_digest IS NULL OR status::text = 'merged'::text AND merged_into_cart_id IS NOT NULL AND closed_at IS NOT NULL AND anonymous_token_digest IS NULL OR status::text = 'cleared'::text AND closed_at IS NOT NULL AND anonymous_token_digest IS NULL", name: "shopping_carts_lifecycle_invariants"
+    t.check_constraint "status::text = 'active'::text AND sale_order_id IS NULL AND converted_at IS NULL AND closed_at IS NULL AND merged_into_cart_id IS NULL OR status::text = 'converted'::text AND sale_order_id IS NOT NULL AND converted_at IS NOT NULL AND closed_at IS NOT NULL AND anonymous_token_digest IS NULL OR status::text = 'merged'::text AND merged_into_cart_id IS NOT NULL AND closed_at IS NOT NULL AND anonymous_token_digest IS NULL OR status::text = 'cleared'::text AND closed_at IS NOT NULL AND anonymous_token_digest IS NULL OR status::text = 'expired'::text AND closed_at IS NOT NULL AND anonymous_token_digest IS NULL", name: "shopping_carts_lifecycle_invariants"
   end
 
   create_table "site_settings", force: :cascade do |t|
