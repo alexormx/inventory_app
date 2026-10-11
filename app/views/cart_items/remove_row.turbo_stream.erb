@@ -27,7 +27,7 @@
   <% else %>
     <%= turbo_stream.remove 'summary-tax-row' %>
   <% end %>
-  <%= turbo_stream.update 'summary-shipping', 'A calcular' %>
+  <%= turbo_stream.update 'summary-shipping', cart_shipping_label(@cart) %>
   <%= turbo_stream.update 'summary-grand-total', number_to_currency(@cart.subtotal + @cart.tax_amount) %>
 
   <%= turbo_stream.update 'cart-pending-summary' do %>

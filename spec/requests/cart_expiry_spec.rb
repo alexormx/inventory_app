@@ -69,4 +69,63 @@ RSpec.describe 'Vencimiento del carrito', type: :request do
       end
     end
   end
+
+  describe 'hallazgos de la revisión' do
+    it 'un invitado que inicia sesión y sigue usando su carrito no recibe un aviso falso a las 4 h' do
+      start = Time.current
+      travel_to(start) { post cart_items_path, params: { product_id: product.id } }
+      user = create(:user)
+      travel_to(start + 5.minutes) do
+        sign_in user
+        get cart_path
+      end
+      travel_to(start + 3.hours) { patch cart_item_path(product.id), params: { product_id: product.id, quantity: 2 } }
+      travel_to(start + 4.hours + 5.minutes) do
+        get cart_path
+        expect(response.body).not_to include(notice)
+        expect(ShoppingCarts::ActiveCartResolver.find(user)).to be_present
+      end
+    end
+
+    it 'avisa una vez aunque el job ya haya vencido el carrito, también en el checkout' do
+      user = create(:user)
+      sign_in user
+      post cart_items_path, params: { product_id: product.id }
+      ShoppingCarts::ActiveCartResolver.find(user).update_columns(last_activity_at: 5.hours.ago)
+      Carts::ExpireIdleCartsJob.perform_now
+
+      get checkout_step1_path
+      expect(response).to redirect_to(cart_path)
+      expect(flash[:warning]).to eq(notice)
+      follow_redirect!
+      expect(response.body).to include(notice) # en la página a la que se redirige
+      get cart_path
+      expect(response.body).not_to include(notice) # y ya no después
+    end
+  end
+
+  describe 'línea de envío' do
+    before do
+      ShippingMethod.delete_all
+      create(:shipping_method, code: 'envio_estandar', base_cost: 60, active: true)
+      sign_in create(:user)
+      post cart_items_path, params: { product_id: product.id }
+    end
+
+    it 'el cambio de cantidad (JSON) devuelve el texto de envío actualizado' do
+      allow(Shipping::Calculator).to receive(:free_shipping?).and_return(false)
+      patch cart_item_path(product.id), params: { product_id: product.id, quantity: 2 }, as: :json
+      expect(response.parsed_body['shipping_label']).to eq('desde $60')
+    end
+
+    it 'quitar un producto actualiza el texto de envío en lugar de "A calcular"' do
+      allow(Shipping::Calculator).to receive(:free_shipping?).and_return(false)
+      # Un segundo producto para que el carrito no quede vacío y siga el resumen.
+      post cart_items_path, params: { product_id: create(:product, selling_price: 100, minimum_price: 100).id }
+      delete cart_item_path(product.id), params: { product_id: product.id },
+                                         headers: { 'Accept' => 'text/vnd.turbo-stream.html', 'Referer' => 'http://www.example.com/cart' }
+      expect(response.body).to include('summary-shipping').and include('desde $60')
+      expect(response.body).not_to include('A calcular')
+    end
+  end
 end

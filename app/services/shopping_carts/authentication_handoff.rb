@@ -36,6 +36,8 @@ module ShoppingCarts
       )
       @session[:cart] = result.session_cart if result.hydrate?
       @session[MARKER_KEY] = result.session_marker if result.mark?
+      # Importado: desde ahora manda el reloj del carrito durable.
+      @session.delete(SessionCartExpiry::TOUCH_KEY) if result.mark?
       log(result)
       result
     rescue StandardError => e

@@ -144,6 +144,7 @@ class CartItemsController < ApplicationController
           tax_amount: helpers.number_to_currency(@cart.tax_amount),
           subtotal_with_tax: helpers.number_to_currency(@cart.subtotal + @cart.tax_amount),
           tax_enabled: @cart.tax_enabled?,
+          shipping_label: helpers.cart_shipping_label(@cart),
           total_items: @cart.item_count,
           item_immediate: item_split[:immediate].to_i,
           item_in_transit: item_split[:in_transit_qty].to_i,
