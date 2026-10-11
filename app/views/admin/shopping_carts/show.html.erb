@@ -1,0 +1,62 @@
+<% content_for :title, "Carrito ##{@cart.id}" %>
+<nav aria-label="breadcrumb" class="mb-2">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><%= link_to 'Carritos', admin_shopping_carts_path(status: 'all') %></li>
+    <li class="breadcrumb-item active">#<%= @cart.id %></li>
+  </ol>
+</nav>
+<h1 class="h4 mb-3">Carrito #<%= @cart.id %> <%= cart_status_badge(@cart.status) %></h1>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-6">
+    <div class="card h-100"><div class="card-body small">
+      <div class="fw-semibold mb-2">Cliente</div>
+      <%= cart_customer(@cart) %>
+      <% if @cart.sale_order_id %>
+        <div class="mt-2">Orden: <%= link_to @cart.sale_order_id, admin_sale_order_path(@cart.sale_order_id) %></div>
+      <% end %>
+      <% if @cart.checkout_notes.present? %>
+        <div class="mt-2"><span class="fw-semibold">Notas del checkout:</span> <%= @cart.checkout_notes %></div>
+      <% end %>
+    </div></div>
+  </div>
+  <div class="col-md-6">
+    <div class="card h-100"><div class="card-body small">
+      <div class="fw-semibold mb-2">Línea de tiempo</div>
+      <ul class="list-unstyled mb-0">
+        <li>Creado: <%= cart_datetime(@cart.created_at) %></li>
+        <li>Última actividad: <%= cart_datetime(@cart.last_activity_at) %>
+          <% if @cart.status == 'active' %><span class="text-muted">(<%= cart_expires_in(@cart) %>)</span><% end %></li>
+        <% if @cart.converted_at %><li>Convertido en orden: <%= cart_datetime(@cart.converted_at) %></li><% end %>
+        <% if @cart.closed_at %><li><%= @cart.status == 'expired' ? 'Vencido' : 'Cerrado' %>: <%= cart_datetime(@cart.closed_at) %></li><% end %>
+      </ul>
+    </div></div>
+  </div>
+</div>
+
+<% total = 0 %>
+<div class="table-responsive">
+  <table class="table table-sm align-middle">
+    <thead><tr>
+      <th>Producto</th><th>Condición</th><th class="text-end">Cantidad</th><th class="text-end">Precio actual</th>
+      <th class="text-end">Importe</th><th class="text-end">Piezas apartadas</th>
+    </tr></thead>
+    <tbody>
+      <% @cart.shopping_cart_items.sort_by(&:id).each do |item| %>
+        <% price = item.product&.customer_price_for_condition(item.condition) %>
+        <% amount = price ? price * item.quantity : nil %>
+        <% total += amount.to_d %>
+        <tr>
+          <td><%= item.product ? link_to(item.product.product_name, admin_product_path(item.product)) : item.product_name_snapshot %></td>
+          <td><%= Inventory::CONDITION_LABELS.fetch(item.condition.to_s, item.condition.to_s.humanize) %></td>
+          <td class="text-end"><%= item.quantity %></td>
+          <td class="text-end"><%= price ? number_to_currency(price) : '—' %></td>
+          <td class="text-end"><%= amount ? number_to_currency(amount) : '—' %></td>
+          <td class="text-end"><%= @held_inventory_ids[item.id].to_i %></td>
+        </tr>
+      <% end %>
+    </tbody>
+    <tfoot><tr><th colspan="4" class="text-end">Total a precio actual</th><th class="text-end"><%= number_to_currency(total) %></th><th></th></tr></tfoot>
+  </table>
+</div>
+<p class="small text-muted">El carrito no guarda precios: aquí se muestran los precios actuales. Los precios cobrados de un carrito convertido están en su orden.</p>
