@@ -6,7 +6,10 @@
 # model holds the lifecycle invariants only; writes go through
 # ShoppingCarts::ActiveCartMutation, SessionReconciler and ConvertCart.
 class ShoppingCart < ApplicationRecord
-  STATUSES = %w[active converted merged cleared].freeze
+  STATUSES = %w[active converted merged cleared expired].freeze
+  # Un carrito con líneas y sin cambios durante este tiempo vence (ver
+  # ShoppingCarts::ExpireCart). Coincide con la vigencia de los apartados.
+  IDLE_TTL = 4.hours
 
   belongs_to :user, optional: true
   belongs_to :sale_order, optional: true
@@ -21,6 +24,7 @@ class ShoppingCart < ApplicationRecord
   validate :converted_cart_requirements
   validate :merged_cart_requirements
   validate :cleared_cart_requirements
+  validate :expired_cart_requirements
   validate :merged_into_cart_not_self
   validate :terminal_cart_has_no_anonymous_token
 
@@ -54,6 +58,12 @@ class ShoppingCart < ApplicationRecord
     return unless status == 'cleared'
 
     errors.add(:closed_at, "can't be blank for a cleared cart") if closed_at.blank?
+  end
+
+  def expired_cart_requirements
+    return unless status == 'expired'
+
+    errors.add(:closed_at, "can't be blank for an expired cart") if closed_at.blank?
   end
 
   def merged_into_cart_not_self

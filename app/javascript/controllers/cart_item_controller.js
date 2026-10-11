@@ -105,6 +105,7 @@ export default class extends Controller {
       this.lineTotalTarget.replaceChildren(...children)
     }
     this.updateText('cart-total', data.cart_total)
+    if (data.shipping_label) this.updateText('summary-shipping', data.shipping_label)
     this.updateText('summary-subtotal', data.subtotal)
     this.updateText('summary-tax', data.tax_amount)
     this.updateText('summary-grand-total', data.subtotal_with_tax || data.subtotal)

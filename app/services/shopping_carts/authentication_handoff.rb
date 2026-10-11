@@ -25,6 +25,9 @@ module ShoppingCarts
     end
 
     def call
+      # Un carrito de visitante que ya venció (4 h sin cambios) no se importa.
+      SessionCartExpiry.clear!(@session, notify: true) if SessionCartExpiry.stale?(@session)
+
       result = SessionReconciler.call(
         user: @user,
         session_cart: @session[:cart],
@@ -33,6 +36,8 @@ module ShoppingCarts
       )
       @session[:cart] = result.session_cart if result.hydrate?
       @session[MARKER_KEY] = result.session_marker if result.mark?
+      # Importado: desde ahora manda el reloj del carrito durable.
+      @session.delete(SessionCartExpiry::TOUCH_KEY) if result.mark?
       log(result)
       result
     rescue StandardError => e

@@ -27,7 +27,15 @@ module ShoppingCarts
       end
 
       def cart
-        @cart ||= Cart.new(@session)
+        @cart ||= begin
+          expire_if_stale!
+          Cart.new(@session)
+        end
+      end
+
+      def expired?
+        cart
+        @expired == true
       end
 
       def persistent_cart
@@ -38,6 +46,7 @@ module ShoppingCarts
         return :limit_exceeded unless cart.can_add?(product.id, condition: condition, quantity: quantity)
 
         cart.add_product(product.id, quantity, condition: condition)
+        SessionCartExpiry.touch!(@session)
         :ok
       end
 
@@ -45,12 +54,25 @@ module ShoppingCarts
         return :limit_exceeded if quantity > cart.max_allowed(condition)
 
         cart.update(product.id, quantity, condition: condition)
+        SessionCartExpiry.touch!(@session)
         :ok
       end
 
       def remove(product, condition: nil)
         cart.remove(product.id, condition: condition)
+        SessionCartExpiry.touch!(@session)
         :ok
+      end
+
+      private
+
+      def expire_if_stale!
+        if SessionCartExpiry.stale?(@session)
+          SessionCartExpiry.clear!(@session)
+          @expired = true
+        else
+          SessionCartExpiry.stamp_if_missing!(@session)
+        end
       end
     end
 
@@ -78,7 +100,21 @@ module ShoppingCarts
       def persistent_cart
         return @persistent_cart if defined?(@persistent_cart)
 
-        @persistent_cart = ActiveCartResolver.find(@user)
+        cart = ActiveCartResolver.find(@user)
+        if cart && ExpireCart.stale?(cart) && ExpireCart.call(cart)
+          forget_expired_cart!
+          cart = nil
+        elsif cart.nil? && projection_points_to_expired_cart?
+          # El job lo venció antes de que el cliente volviera: se avisa una vez.
+          forget_expired_cart!
+        end
+        @persistent_cart = cart
+      end
+
+      def expired?
+        cart
+        @expired = true if SessionCartExpiry.take_notice!(@session)
+        @expired == true
       end
 
       def add(product, condition, quantity: 1)
@@ -99,11 +135,32 @@ module ShoppingCarts
         @projection ||= persistent_cart ? SessionHydrator.call(persistent_cart) : {}
       end
 
+      # Proyección vacía y sesión ligada: el inicio de sesión nunca vuelve a
+      # importar las líneas del carrito vencido, y el aviso sale una sola vez.
+      def forget_expired_cart!
+        @expired = true
+        SessionProjection.write(@session, nil, {})
+      end
+
+      def projection_points_to_expired_cart?
+        marker = @session[AuthenticationHandoff::MARKER_KEY]
+        cart_id = marker.is_a?(Hash) && marker['cart_id']
+        cart_id.present? && ShoppingCart.exists?(id: cart_id, user_id: @user.id, status: 'expired')
+      end
+
       def session_bound?
         @session[AuthenticationHandoff::MARKER_KEY].is_a?(Hash)
       end
 
       def bind_session!
+        if session_bound?
+          # Ya ligada al carrito durable: su reloj es last_activity_at, no la
+          # marca del visitante (si no, avisaría un vencimiento falso).
+          @session.delete(SessionCartExpiry::TOUCH_KEY)
+        elsif SessionCartExpiry.stale?(@session)
+          SessionCartExpiry.clear!(@session)
+          @expired = true
+        end
         return SessionProjection.write(@session, persistent_cart, projection) if session_bound?
         return SessionProjection.write(@session, persistent_cart, projection) if @session[:cart].blank?
 

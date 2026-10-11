@@ -80,7 +80,8 @@
             <h6 class="mb-0"><i class="fa fa-comment me-2"></i>Notas adicionales (opcional)</h6>
           </div>
           <div class="card-body">
-            <%= text_area_tag :notes, nil, rows: 2, class: "form-control", placeholder: "Instrucciones especiales, comentarios sobre tu pedido..." %>
+            <%= label_tag :notes, 'Notas del pedido (opcional)', class: 'form-label small text-muted' %>
+<%= text_area_tag :notes, @checkout_notes, rows: 2, maxlength: CheckoutSessionHelper::MAX_NOTES, class: "form-control", placeholder: "Instrucciones especiales, comentarios sobre tu pedido..." %>
           </div>
         </div>
 

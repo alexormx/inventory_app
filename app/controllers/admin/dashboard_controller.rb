@@ -414,6 +414,18 @@ module Admin
     def load_alerts
       @alerts = []
 
+      # Órdenes que requieren atención manual (sin pagar >30 días, pagadas de más, inconsistentes).
+      order_alerts = SaleOrders::Alerts.counts.values.sum
+      if order_alerts.positive?
+        @alerts << {
+          type: 'warning',
+          icon: 'fa-triangle-exclamation',
+          message: "#{order_alerts} órdenes requieren atención",
+          link: admin_order_alerts_path,
+          link_text: 'Ver alertas'
+        }
+      end
+
       # Stock crítico
       if @critical_stock_count.to_i.positive?
         @alerts << {

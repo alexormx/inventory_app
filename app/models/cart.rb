@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
 class Cart
-  SHIPPING_FLAT = 99
-
   delegate :free_shipping_enabled?, :free_shipping_threshold, to: Shipping::Calculator
 
   # Límites por tipo de condición
@@ -131,21 +129,8 @@ class Cart
     (subtotal.to_d * tax_rate).round(2, BigDecimal::ROUND_HALF_UP)
   end
 
-  # Shipping cost - solo se calcula si hay items en el carrito
-  # En el carrito mostramos el estimado; el costo real depende del método de envío en checkout
-  def shipping_cost
-    return 0 if empty?
-    return 0 if free_shipping_eligible?
-
-    SHIPPING_FLAT
-  end
-
   def free_shipping_eligible?
     Shipping::Calculator.free_shipping?(subtotal)
-  end
-
-  def grand_total
-    subtotal + tax_amount + shipping_cost
   end
 
   def tax_enabled?

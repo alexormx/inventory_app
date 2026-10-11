@@ -47,7 +47,7 @@
                 <% if @cart.tax_enabled? %>
                   <li class="d-flex justify-content-between" id="summary-tax-row"><span>Impuestos (<%= @cart.tax_rate_percent %>%)</span><span id="summary-tax"><%= number_to_currency(@cart.tax_amount) %></span></li>
                 <% end %>
-                <li class="d-flex justify-content-between text-muted"><span>Envío</span><span id="summary-shipping" class="small">A calcular</span></li>
+                                <li class="d-flex justify-content-between text-muted"><span>Envío</span><span id="summary-shipping" class="small"><%= cart_shipping_label(@cart) %></span></li>
                 <% if @cart.free_shipping_enabled? %>
                   <% if @cart.free_shipping_eligible? %>
                     <li class="small text-success"><i class="fa fa-check-circle me-1"></i>¡Envío gratis!</li>

@@ -37,5 +37,10 @@ FactoryBot.define do
       status { 'cleared' }
       closed_at { Time.current }
     end
+
+    trait :expired do
+      status { 'expired' }
+      closed_at { Time.current }
+    end
   end
 end

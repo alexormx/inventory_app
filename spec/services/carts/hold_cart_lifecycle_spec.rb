@@ -165,4 +165,17 @@ RSpec.describe 'Cart hold lifecycle through ActiveCartMutation' do
       expect(CartInventoryHold.count).to eq(0)
     end
   end
+
+  describe 'renovación con la actividad del carrito' do
+    it 'cualquier cambio renueva los apartados de todo el carrito por 4 horas' do
+      stock(count: 1)
+      stock(for_product: other, count: 1)
+      ShoppingCarts::ActiveCartMutation.add(user: user, product: product, condition: 'brand_new')
+      CartInventoryHold.for_cart(cart_for).update_all(expires_at: 30.minutes.from_now)
+
+      ShoppingCarts::ActiveCartMutation.add(user: user, product: other, condition: 'brand_new')
+
+      expect(CartInventoryHold.for_cart(cart_for).pluck(:expires_at)).to all(be > 3.hours.from_now)
+    end
+  end
 end

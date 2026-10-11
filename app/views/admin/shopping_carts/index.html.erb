@@ -1,0 +1,57 @@
+<% content_for :title, 'Carritos' %>
+<h1 class="h3 mb-1"><i class="fa-solid fa-cart-shopping"></i> Carritos</h1>
+<p class="text-muted mb-3">Historial de carritos de clientes con sesión. Sólo lectura. Los carritos de invitados viven en su navegador y aparecen aquí cuando inician sesión.</p>
+
+<% tabs = [['active', 'Activos', @counts['active'].to_i], ['converted', 'Convertidos en orden', @counts['converted'].to_i],
+           ['expired', 'Vencidos', @counts['expired'].to_i], ['other', 'Otros', @counts['merged'].to_i + @counts['cleared'].to_i],
+           ['all', 'Todos', @counts.values.sum]] %>
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+  <ul class="nav nav-pills">
+    <% tabs.each do |key, label, count| %>
+      <li class="nav-item">
+        <%= link_to "#{label} (#{count})", admin_shopping_carts_path(status: key, q: @query.presence),
+                    class: "nav-link #{'active' if @status == key}" %>
+      </li>
+    <% end %>
+  </ul>
+  <%= form_with url: admin_shopping_carts_path, method: :get, class: 'd-flex gap-2' do %>
+    <%= hidden_field_tag :status, @status %>
+    <%= search_field_tag :q, @query, class: 'form-control form-control-sm', placeholder: 'Correo o nombre del cliente' %>
+    <%= submit_tag 'Buscar', class: 'btn btn-sm btn-outline-secondary', name: nil %>
+  <% end %>
+</div>
+
+<% if @carts.empty? %>
+  <p class="text-muted">No hay carritos en esta vista.</p>
+<% else %>
+  <div class="table-responsive">
+    <table class="table table-sm table-hover align-middle">
+      <thead><tr>
+        <th>#</th><th>Cliente</th><th>Estado</th><th class="text-end">Productos</th><th class="text-end">Unidades</th>
+        <th class="text-end">Valor (precio actual)</th><th class="text-end">Apartadas</th>
+        <th>Creado</th><th>Última actividad</th><th>Cerrado</th><th>Orden</th>
+      </tr></thead>
+      <tbody>
+        <% @carts.each do |cart| %>
+          <tr>
+            <td><%= link_to "##{cart.id}", admin_shopping_cart_path(cart) %></td>
+            <td><%= cart_customer(cart) %></td>
+            <td>
+              <%= cart_status_badge(cart.status) %>
+              <% if cart.status == 'active' %><div class="small text-muted"><%= cart_expires_in(cart) %></div><% end %>
+            </td>
+            <td class="text-end"><%= cart.lines_count %></td>
+            <td class="text-end"><%= cart.units_count %></td>
+            <td class="text-end"><%= number_to_currency(cart.estimated_value) %></td>
+            <td class="text-end"><%= cart.active_holds %></td>
+            <td class="small"><%= cart_datetime(cart.created_at) %></td>
+            <td class="small"><%= cart_datetime(cart.last_activity_at) %></td>
+            <td class="small"><%= cart_datetime(cart.closed_at) %></td>
+            <td><%= cart.sale_order_id ? link_to(cart.sale_order_id, admin_sale_order_path(cart.sale_order_id)) : '—' %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+  <%= paginate @carts %>
+<% end %>

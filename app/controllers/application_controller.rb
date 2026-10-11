@@ -8,6 +8,7 @@ class ApplicationController < ActionController::Base
   before_action :track_visitor
   before_action :ensure_confirmed_user!
   before_action :set_locale
+  before_action :notify_expired_cart, if: :storefront_request?
   helper Admin::SortHelper if defined?(Admin::SortHelper)
   helper_method :current_cart
 
@@ -22,6 +23,18 @@ class ApplicationController < ActionController::Base
 
   def current_cart
     storefront_cart.cart
+  end
+
+  # Avisa una sola vez, en la página que el cliente esté viendo, que su carrito
+  # venció (ShoppingCarts::ExpireCart / SessionCartExpiry).
+  def notify_expired_cart
+    flash.now[:warning] = ShoppingCarts::SessionCartExpiry::NOTICE if storefront_cart.expired?
+  end
+
+  def storefront_request?
+    (request.format.html? || request.format.turbo_stream?) &&
+      !controller_path.start_with?('admin/', 'api/') &&
+      !devise_controller?
   end
 
   # The durable cart whose own inventory holds should stay visible to it.
