@@ -134,6 +134,8 @@ module ShoppingCarts
 
         items = cart.shopping_cart_items.to_a.index_by { |item| [item.product_reference, item.condition] }
         quantity = yield(cart, items)
+        # Cada cambio reinicia las 4 h del carrito y de todos sus apartados.
+        CartInventoryHold.renew_for_cart!(cart)
         cart.update!(last_activity_at: Time.current)
 
         Result.new(status: :ok, cart: cart, quantity: quantity, session_cart: SessionHydrator.call(cart))

@@ -38,6 +38,15 @@ class CartInventoryHold < ApplicationRecord
   scope :for_cart, ->(cart) { where(shopping_cart_id: cart) }
   scope :for_cart_item, ->(item) { where(shopping_cart_item_id: item) }
 
+  # Renueva por HOLD_DURATION todos los apartados vigentes del carrito, con el
+  # reloj de la base: el carrito y sus apartados vencen juntos (ShoppingCart::IDLE_TTL).
+  def self.renew_for_cart!(cart)
+    active.for_cart(cart).update_all(
+      ["expires_at = clock_timestamp() + (? * INTERVAL '1 second'), updated_at = clock_timestamp()",
+       HOLD_DURATION.to_i]
+    )
+  end
+
   def active?
     expires_at.present? && expires_at > Time.current
   end
