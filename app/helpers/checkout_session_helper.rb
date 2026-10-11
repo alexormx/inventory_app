@@ -5,9 +5,11 @@ module CheckoutSessionHelper
   SESSION_KEYS = {
     cart: 'cart',
     checkout_token: 'checkout_token',
-    checkout_notes: 'checkout_notes',
     shipping_info: 'shipping_info'
   }.freeze
+
+  # Tope de las notas del pedido (ver #set_checkout_notes).
+  MAX_NOTES = 1000
 
   # Obtener información de envío normalizada
   def checkout_shipping_info
@@ -43,21 +45,21 @@ module CheckoutSessionHelper
     token
   end
 
-  # Obtener notas de checkout
+  # Las notas viven en el carrito durable, no en la cookie de sesión (4 KB):
+  # unas notas largas rompían el checkout con CookieOverflow. El checkout
+  # siempre exige sesión iniciada, así que el carrito durable existe.
   def checkout_notes
-    session[SESSION_KEYS[:checkout_notes]]
+    storefront_cart.persistent_cart&.checkout_notes
   end
 
-  # Establecer notas de checkout
   def set_checkout_notes(notes)
-    session[SESSION_KEYS[:checkout_notes]] = notes
+    storefront_cart.persistent_cart&.update_column(:checkout_notes, notes.to_s.strip.first(MAX_NOTES).presence)
   end
 
   # Limpiar toda la sesión de checkout
   def clear_checkout_session!
     session[SESSION_KEYS[:cart]] = {}
     session[SESSION_KEYS[:checkout_token]] = nil
-    session.delete(SESSION_KEYS[:checkout_notes])
     session.delete(SESSION_KEYS[:shipping_info])
   end
 

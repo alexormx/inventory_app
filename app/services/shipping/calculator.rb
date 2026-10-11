@@ -34,6 +34,11 @@ module Shipping
         configured_threshold.round(2, BigDecimal::ROUND_HALF_UP)
       end
 
+      # La tarifa activa más barata, para el "envío desde" del carrito.
+      def cheapest_active_rate
+        ShippingMethod.active.where.not(base_cost: nil).minimum(:base_cost)&.to_d
+      end
+
       def free_shipping?(subtotal)
         free_shipping_enabled? && subtotal.to_d >= free_shipping_threshold
       end

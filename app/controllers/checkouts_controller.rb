@@ -10,6 +10,7 @@ class CheckoutsController < ApplicationController
 
   def step1
     @cart_items = @cart.items
+    @checkout_notes = checkout_notes
   end
 
   def step1_submit
