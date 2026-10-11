@@ -23,6 +23,7 @@ Rails.application.routes.draw do
 
   # Admin namespace
   namespace :admin do
+    get 'order_alerts', to: 'order_alerts#index', as: :order_alerts
     # Quick Add Collectible (producto usado + inventario en un paso)
     get 'collectibles/quick_add', to: 'collectibles#quick_add', as: :collectibles_quick_add
     post 'collectibles/quick_add', to: 'collectibles#create_quick_add'

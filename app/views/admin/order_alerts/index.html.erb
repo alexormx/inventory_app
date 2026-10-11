@@ -1,0 +1,51 @@
+<% content_for :title, 'Alertas de órdenes' %>
+<h1 class="h3 mb-1"><i class="fa-solid fa-triangle-exclamation text-warning"></i> Alertas de órdenes</h1>
+<p class="text-muted mb-4">Órdenes que requieren tu atención. Nada aquí se cambia solo: abre cada orden para cobrarla, cancelarla o corregirla.</p>
+
+<% sections = [
+     [:stale_pending, "Sin pagar con más de #{SaleOrders::Alerts::STALE_PENDING_AFTER.in_days.to_i} días", @stale_pending,
+      'Pending: cobra, cancela o mantenla como apartado. Sus unidades siguen retenidas.'],
+     [:overpaid, 'Pagos mayores al total', @overpaid, 'El pago completado supera el total de la orden.'],
+     [:inconsistent, 'Estados inconsistentes', @inconsistent, 'Pending con unidades ya marcadas como vendidas.']
+   ] %>
+<% sections.each do |key, title, rows, help| %>
+  <div class="card mb-4" id="alertas-<%= key %>">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <strong><%= title %></strong>
+      <span class="badge <%= rows.size.positive? ? 'bg-warning text-dark' : 'bg-success' %>"><%= rows.size %></span>
+    </div>
+    <div class="card-body p-0">
+      <p class="small text-muted px-3 pt-2 mb-2"><%= help %></p>
+      <% if rows.empty? %>
+        <p class="px-3 pb-3 mb-0 text-success">Nada pendiente.</p>
+      <% else %>
+        <div class="table-responsive">
+          <table class="table table-sm table-hover mb-0 align-middle">
+            <thead><tr>
+              <th>Orden</th><th>Cliente</th><th>Fecha</th><th class="text-end">Días</th><th>Estado</th>
+              <th class="text-end">Total</th><th class="text-end">Pagado</th><th class="text-end">Saldo</th>
+              <th class="text-end">Unidades</th><th>Notas</th>
+            </tr></thead>
+            <tbody>
+              <% rows.each do |o| %>
+                <% paid = o.paid_amount.to_d %>
+                <tr>
+                  <td><%= link_to o.id, admin_sale_order_path(o) %></td>
+                  <td><%= o.user&.name.presence || o.user&.email %></td>
+                  <td><%= o.created_at.to_date.strftime('%d/%m/%Y') %></td>
+                  <td class="text-end"><%= (Date.current - o.created_at.to_date).to_i %></td>
+                  <td><%= o.status %></td>
+                  <td class="text-end"><%= number_to_currency(o.total_order_value) %></td>
+                  <td class="text-end"><%= number_to_currency(paid) %></td>
+                  <td class="text-end <%= 'text-danger' if paid > o.total_order_value.to_d %>"><%= number_to_currency(o.total_order_value.to_d - paid) %></td>
+                  <td class="text-end"><%= o.held_units %></td>
+                  <td class="small text-muted"><%= truncate(o.notes.to_s, length: 60) %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      <% end %>
+    </div>
+  </div>
+<% end %>
