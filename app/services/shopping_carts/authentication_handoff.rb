@@ -25,6 +25,9 @@ module ShoppingCarts
     end
 
     def call
+      # Un carrito de visitante que ya venció (4 h sin cambios) no se importa.
+      SessionCartExpiry.clear!(@session, notify: true) if SessionCartExpiry.stale?(@session)
+
       result = SessionReconciler.call(
         user: @user,
         session_cart: @session[:cart],

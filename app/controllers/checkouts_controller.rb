@@ -199,6 +199,9 @@ class CheckoutsController < ApplicationController
 
   def set_cart
     @cart = current_cart
+    return unless storefront_cart.expired?
+
+    redirect_to cart_path, flash: { warning: ShoppingCarts::SessionCartExpiry::NOTICE }
   end
 
   def ensure_cart_not_empty

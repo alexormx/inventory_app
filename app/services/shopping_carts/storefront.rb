@@ -27,7 +27,15 @@ module ShoppingCarts
       end
 
       def cart
-        @cart ||= Cart.new(@session)
+        @cart ||= begin
+          expire_if_stale!
+          Cart.new(@session)
+        end
+      end
+
+      def expired?
+        cart
+        @expired == true
       end
 
       def persistent_cart
@@ -38,6 +46,7 @@ module ShoppingCarts
         return :limit_exceeded unless cart.can_add?(product.id, condition: condition, quantity: quantity)
 
         cart.add_product(product.id, quantity, condition: condition)
+        SessionCartExpiry.touch!(@session)
         :ok
       end
 
@@ -45,12 +54,25 @@ module ShoppingCarts
         return :limit_exceeded if quantity > cart.max_allowed(condition)
 
         cart.update(product.id, quantity, condition: condition)
+        SessionCartExpiry.touch!(@session)
         :ok
       end
 
       def remove(product, condition: nil)
         cart.remove(product.id, condition: condition)
+        SessionCartExpiry.touch!(@session)
         :ok
+      end
+
+      private
+
+      def expire_if_stale!
+        if SessionCartExpiry.stale?(@session)
+          SessionCartExpiry.clear!(@session)
+          @expired = true
+        else
+          SessionCartExpiry.stamp_if_missing!(@session)
+        end
       end
     end
 
@@ -78,7 +100,21 @@ module ShoppingCarts
       def persistent_cart
         return @persistent_cart if defined?(@persistent_cart)
 
-        @persistent_cart = ActiveCartResolver.find(@user)
+        cart = ActiveCartResolver.find(@user)
+        if cart && ExpireCart.stale?(cart) && ExpireCart.call(cart)
+          @expired = true
+          # Proyección vacía y sesión ligada: el inicio de sesión nunca vuelve
+          # a importar las líneas del carrito vencido.
+          SessionProjection.write(@session, nil, {})
+          cart = nil
+        end
+        @persistent_cart = cart
+      end
+
+      def expired?
+        cart
+        @expired = true if SessionCartExpiry.take_notice!(@session)
+        @expired == true
       end
 
       def add(product, condition, quantity: 1)
@@ -104,6 +140,10 @@ module ShoppingCarts
       end
 
       def bind_session!
+        if SessionCartExpiry.stale?(@session)
+          SessionCartExpiry.clear!(@session)
+          @expired = true
+        end
         return SessionProjection.write(@session, persistent_cart, projection) if session_bound?
         return SessionProjection.write(@session, persistent_cart, projection) if @session[:cart].blank?
 
