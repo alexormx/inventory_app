@@ -7,7 +7,7 @@
     - delta: Numeric opcional (ratio -1..1); colorea verde/rojo
     - delta_unit: 'pp' opcional; el delta es una diferencia de puntos porcentuales, no un cambio relativo
     - variant: String (Bootstrap card variant e.g. text-bg-success-subtle)
-    - spark_id: String opcional (id para sparkline)
+    - spark_data: Array opcional con la serie de los últimos 12 meses (mini-gráfica)
     - tooltip: String opcional (texto de ayuda)
     - health: String opcional ('good', 'warning', 'danger') para indicador de salud
 %>
@@ -47,8 +47,8 @@
           <div class="kpi-delta small text-muted">vs LY: —</div>
         <% end %>
       </div>
-      <% if local_assigns[:spark_id].present? %>
-        <div class="kpi-sparkline" id="<%= local_assigns[:spark_id] %>" data-controller="chart" data-chart-type="spark" data-chart-data='<%= raw(@chart_sales_trend[:revenue].map(&:to_f).to_json) if defined?(@chart_sales_trend) %>'></div>
+      <% if local_assigns[:spark_data].present? %>
+        <div class="kpi-sparkline" title="Últimos 12 meses" data-controller="chart" data-chart-type="spark" data-chart-data="<%= local_assigns[:spark_data].map(&:to_f).to_json %>"></div>
       <% end %>
     </div>
   </div>
