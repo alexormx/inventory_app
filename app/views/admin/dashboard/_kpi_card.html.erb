@@ -17,7 +17,7 @@
                   else ''
                   end %>
 <div class="card admin-kpi-card <%= variant.presence || 'text-bg-light' %> h-100 <%= health_class %>"
-     <%= "data-bs-toggle=tooltip data-bs-placement=top title=#{local_assigns[:tooltip].inspect}" if local_assigns[:tooltip].present? %>>
+     <% if local_assigns[:tooltip].present? %>data-bs-toggle="tooltip" data-bs-placement="top" title="<%= local_assigns[:tooltip] %>"<% end %>>
   <div class="card-body">
     <div class="d-flex justify-content-between align-items-start gap-2">
       <div>

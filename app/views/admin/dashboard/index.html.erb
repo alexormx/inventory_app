@@ -181,7 +181,7 @@
       <%= render 'kpi_stat', title: 'Valor Inventario', value: fmt_currency(@inventory_total_value), tooltip: "Valor del inventario disponible. Rotación: #{@inventory_turnover_ytd.nil? ? '—' : number_with_precision(@inventory_turnover_ytd, precision: 2, delimiter: ',')}", health: @inventory_turnover_ytd.to_f >= 2 ? 'good' : (@inventory_turnover_ytd.to_f >= 1 ? 'warning' : 'danger') %>
     </div>
     <div class="col-6 col-md-4 col-xl">
-      <%= render 'kpi_stat', title: 'Órdenes Venta YTD', value: number_with_delimiter(@orders_count_ytd), tooltip: 'Cantidad de Sale Orders no canceladas dentro del periodo seleccionado.', health: @kpi_deltas&.dig(:orders).to_f >= 0 ? 'good' : 'warning' %>
+      <%= render 'kpi_stat', title: 'Órdenes Venta YTD', value: number_with_delimiter(@orders_count_ytd), tooltip: 'Órdenes confirmadas o posteriores dentro del periodo; no cuenta pendientes, canceladas ni devueltas.', health: @kpi_deltas&.dig(:orders).to_f >= 0 ? 'good' : 'warning' %>
     </div>
     <div class="col-6 col-md-4 col-xl">
       <%= render 'kpi_stat', title: 'Ticket Promedio', value: fmt_currency(@avg_ticket_ytd), tooltip: 'Valor promedio por orden de venta.', health: @avg_ticket_ytd.to_f >= 500 ? 'good' : (@avg_ticket_ytd.to_f >= 200 ? nil : 'warning') %>
@@ -610,7 +610,7 @@
                 <div class="tab-content">
                   <% %w[ytd ly all].each do |period| %>
                     <div class="tab-pane fade <%= period == 'ytd' ? 'show active' : '' %>" id="tp-sellers-<%= period %>" role="tabpanel" data-tabs-target="panel">
-                      <turbo-frame id="frame-sellers-<%= period %>" src="<%= admin_dashboard_sellers_path(period: period) %>">
+                      <turbo-frame id="frame-sellers-<%= period %>" loading="lazy" src="<%= admin_dashboard_sellers_path(period: period) %>">
                         <div class="table-responsive p-2 px-3">
                           <table class="table table-sm mb-0">
                             <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Unidades</th><th class="text-end">Ingresos</th></tr></thead>
@@ -634,7 +634,7 @@
                 <div class="tab-content">
                   <% %w[ytd ly all].each do |period| %>
                     <div class="tab-pane fade <%= period == 'ytd' ? 'show active' : '' %>" id="tp-profit-<%= period %>" role="tabpanel" data-tabs-target="panel">
-                      <turbo-frame id="frame-profit-<%= period %>" src="<%= admin_dashboard_profitable_path(period: period) %>">
+                      <turbo-frame id="frame-profit-<%= period %>" loading="lazy" src="<%= admin_dashboard_profitable_path(period: period) %>">
                         <div class="table-responsive p-2 px-3">
                           <table class="table table-sm mb-0">
                             <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Ingresos</th><th class="text-end">COGS</th><th class="text-end">Utilidad</th></tr></thead>
@@ -682,7 +682,7 @@
                   <div class="tab-content">
                     <% %w[value qty].each_with_index do |metric, midx| %>
                       <div class="tab-pane fade <%= midx == 0 ? 'show active' : '' %>" id="ti-<%= scope %>-<%= metric %>" role="tabpanel" data-tabs-target="panel">
-                        <turbo-frame id="frame-inventory-<%= scope %>-<%= metric %>" src="<%= admin_dashboard_inventory_top_path(scope: scope, metric: metric) %>">
+                        <turbo-frame id="frame-inventory-<%= scope %>-<%= metric %>" loading="lazy" src="<%= admin_dashboard_inventory_top_path(scope: scope, metric: metric) %>">
                           <div class="table-responsive p-2 px-3">
                             <table class="table table-sm mb-0">
                               <%= table_skeleton_rows(cols: metric == 'value' ? 3 : 4, rows: 3) %>
@@ -731,7 +731,7 @@
                   <div class="tab-content">
                     <% { 'rev' => 'rev', 'prof' => 'profit' }.each_with_index do |(tab_key, metric), midx| %>
                       <div class="tab-pane fade <%= midx == 0 ? 'show active' : '' %>" id="tc-<%= period %>-<%= tab_key %>" role="tabpanel" data-tabs-target="panel">
-                        <turbo-frame id="frame-cats-<%= period %>-<%= metric %>" src="<%= admin_dashboard_categories_rank_path(period: period, metric: metric) %>">
+                        <turbo-frame id="frame-cats-<%= period %>-<%= metric %>" loading="lazy" src="<%= admin_dashboard_categories_rank_path(period: period, metric: metric) %>">
                           <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0">
                             <%= table_skeleton_rows(cols: 3, rows: 3) %>
                           </table></div>
@@ -776,7 +776,7 @@
                   <div class="tab-content">
                     <% { 'sales' => 'sales', 'res' => 'reserved', 'comb' => 'combined' }.each_with_index do |(tab_key, metric), midx| %>
                       <div class="tab-pane fade <%= midx == 0 ? 'show active' : '' %>" id="tcu-<%= period %>-<%= tab_key %>" role="tabpanel" data-tabs-target="panel">
-                        <turbo-frame id="frame-cust-<%= period %>-<%= metric %>" src="<%= admin_dashboard_customers_rank_path(period: period, metric: metric) %>">
+                        <turbo-frame id="frame-cust-<%= period %>-<%= metric %>" loading="lazy" src="<%= admin_dashboard_customers_rank_path(period: period, metric: metric) %>">
                           <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0">
                             <%= table_skeleton_rows(cols: 3, rows: 3) %>
                           </table></div>
