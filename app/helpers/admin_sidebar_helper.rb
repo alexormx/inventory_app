@@ -12,11 +12,17 @@ module AdminSidebarHelper
   #   icon:  - Clase FontAwesome (puede incluir el prefijo fa- o solo el nombre).
   #   section: - true => conserva el contexto visual en subrutas, sin afirmar
   #             que el enlace padre sea la página actual.
-  def admin_sidebar_link(label, path, icon:, section: false)
+  #   also:    - rutas secundarias (y sus subrutas) que pertenecen a esta
+  #             sección aunque vivan fuera de su prefijo.
+  #   except:  - subrutas que tienen su propio enlace hermano en el menú.
+  def admin_sidebar_link(label, path, icon:, section: false, also: [], except: [])
     current = normalize_sidebar_path(request.path)
     target = normalize_sidebar_path(path)
     current_page = current == target
-    section_active = section && !current_page && current.start_with?("#{target}/")
+    section_active = !current_page && (
+      (section && current.start_with?("#{target}/") && except.none? { |p| sidebar_path_covers?(p, current) }) ||
+      also.any? { |p| sidebar_path_covers?(p, current) }
+    )
 
     classes = %w[nav-link text-white d-flex align-items-center]
     classes << 'active' if current_page
@@ -32,6 +38,11 @@ module AdminSidebarHelper
   end
 
   private
+
+  def sidebar_path_covers?(path, current)
+    path = normalize_sidebar_path(path)
+    current == path || current.start_with?("#{path}/")
+  end
 
   def normalize_sidebar_path(path)
     normalized = path.to_s.split('?', 2).first.to_s.chomp('/')
