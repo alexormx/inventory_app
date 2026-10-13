@@ -94,6 +94,7 @@
 
   <%# Resumen de pagos: Total / Pagado / Resta %>
   <% paid = @order.total_paid.to_d %>
+  <% order_canceled = @order.status.in?(SaleOrder::NON_ACTIVE_TOTAL_STATUSES) %>
   <% balance_due = (grand_total - paid).round(2) %>
   <% is_paid = balance_due <= 0 %>
   <div class="card mt-2 border-0 shadow-sm">
@@ -107,8 +108,12 @@
         <dd class="col-5 text-end fw-bold text-success"><%= number_to_currency(paid) %></dd>
 
         <dt class="col-7 border-top pt-1 mt-1">Resta por pagar:</dt>
-        <dd class="col-5 text-end border-top pt-1 mt-1 fw-bold <%= is_paid ? 'text-success' : 'text-danger' %>">
-          <%= is_paid ? sanitize('<i class="fa-solid fa-check me-1" aria-hidden="true"></i>Pagado') : number_to_currency(balance_due) %>
+        <dd class="col-5 text-end border-top pt-1 mt-1 fw-bold <%= order_canceled ? 'text-muted' : (is_paid ? 'text-success' : 'text-danger') %>">
+          <% if order_canceled %>
+            Orden cancelada
+          <% else %>
+            <%= is_paid ? sanitize('<i class="fa-solid fa-check me-1" aria-hidden="true"></i>Pagado') : number_to_currency(balance_due) %>
+          <% end %>
         </dd>
       </dl>
 
