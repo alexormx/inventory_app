@@ -24,9 +24,15 @@ production:
     class: Suppliers::Hlj::TomicaStatusSyncJob
     schedule: "40 5 * * *"
 
-  suppliers_hlj_weekly_discovery:
-    class: Suppliers::Hlj::WeeklyDiscoveryJob
+  # Sólo Tomica y autos. El sync sin filtros recorría todo HLJ (~35 000
+  # páginas), se cortaba a la hora y dejaba el worker en R14 cada lunes.
+  suppliers_hlj_tomica_weekly_sync:
+    class: Suppliers::Hlj::TomicaWeeklySyncJob
     schedule: "0 6 * * 1"
+
+  suppliers_hlj_cars_recent_additions_weekly:
+    class: Suppliers::Hlj::CarsRecentAdditionsJob
+    schedule: "30 6 * * 1"
 
   # Backfill de TakaraTomyMall en pausa. El endpoint acepta la conexión TCP y
   # el handshake TLS, pero no devuelve ningún byte hasta que salta

@@ -29,7 +29,8 @@ RSpec.describe "Recurring schedule" do
       "suppliers_hlj_status_sync_daily",
       "suppliers_hlj_tomica_recent_additions_daily",
       "suppliers_hlj_tomica_recent_arrivals_daily",
-      "suppliers_hlj_weekly_discovery",
+      "suppliers_hlj_tomica_weekly_sync",
+      "suppliers_hlj_cars_recent_additions_weekly",
       "suppliers_tomica_fandom_weekly_backfill",
       "visitor_logs_retention_daily",
       "whatsapp_requests_cleanup_drafts_daily"
