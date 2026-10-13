@@ -462,6 +462,15 @@ aside#sidebar .nav-link.section-active i {
 
 aside#sidebar hr { border-color: var(--sidebar-divider); }
 
+/* Contador de pendientes junto al enlace */
+aside#sidebar .sidebar-badge {
+  background-color: #f59e0b;
+  color: #111827;
+  font-size: 0.65rem;
+  font-weight: 700;
+  min-width: 1.35rem;
+}
+
 aside#sidebar .sidebar-section-title {
   color: var(--sidebar-muted);
   font-size: 0.7rem;
@@ -609,6 +618,18 @@ aside#sidebar .sidebar-toggle-btn:focus-visible,
   .sidebar-collapsed aside#sidebar .nav-link[aria-current="page"] {
     border-left-width: 0;
     padding-left: 0;
+  }
+  /* Sólo iconos: el contador se reduce a un punto en la esquina */
+  .sidebar-collapsed aside#sidebar .nav-link { position: relative; }
+  .sidebar-collapsed aside#sidebar .sidebar-badge {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 8px;
+    height: 8px;
+    min-width: 0;
+    padding: 0;
+    font-size: 0;
   }
   .sidebar-collapsed aside#sidebar .sidebar-footer { padding: 4px 0 !important; }
   .sidebar-collapsed aside#sidebar .sidebar-user-link {
