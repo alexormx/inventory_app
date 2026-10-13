@@ -6,6 +6,10 @@ module Admin
   class DashboardController < ApplicationController
     before_action :authenticate_user!
     before_action :authorize_admin!
+    # Los rankings reciben el periodo del filtro para que su pestaña "periodo"
+    # muestre lo mismo que los KPI.
+    before_action :setup_date_filters, only: %i[sellers profitable categories_rank customers_rank]
+    helper_method :ranking_period_params
     layout 'admin'
 
     # SQL constants for revenue and COGS calculations (shared across controller)
@@ -124,6 +128,11 @@ module Admin
       @start_date, @end_date = compute_date_range(@range_key, params[:start_date], params[:end_date])
       @exclude_canceled = ActiveModel::Type::Boolean.new.cast(params.fetch(:exclude_canceled, true))
       @period_badge_label = build_period_badge_label
+      @period_label = build_period_label
+    end
+
+    def ranking_period_params
+      { range: @range_key, start_date: @start_date.to_date.iso8601, end_date: @end_date.to_date.iso8601 }
     end
 
     def compute_date_range(range_key, start_param, end_param)
@@ -167,6 +176,8 @@ module Admin
         so_scope.where(order_date: ly_start..ly_start.end_of_year)
       when 'all'
         so_scope
+      when 'range'
+        so_scope.where(order_date: @start_date..@end_date)
       else
         so_scope.where(order_date: now.beginning_of_year..now.end_of_day)
       end
@@ -250,8 +261,13 @@ module Admin
       @critical_stock_count = nil
     end
 
+    # Anualizada: los umbrales de salud (>= 2 bueno, >= 1 atención) son
+    # anuales, y sin escalar un periodo de 30 días siempre salía en rojo.
     def load_inventory_turnover
-      @inventory_turnover_ytd = @inventory_total_value.positive? ? (@cogs_ytd / @inventory_total_value) : nil
+      return @inventory_turnover_ytd = nil unless @inventory_total_value.positive?
+
+      period_days = (@end_date.to_date - @start_date.to_date).to_i + 1
+      @inventory_turnover_ytd = (@cogs_ytd / @inventory_total_value) * (365.to_d / period_days)
     end
 
     def load_balance_summaries
@@ -318,6 +334,15 @@ module Admin
         "Personalizado #{format_badge_date(@start_date)}–#{format_badge_date(@end_date)}"
       else
         "YTD #{@now.year}"
+      end
+    end
+
+    def build_period_label
+      case @range_key
+      when 'last_30' then 'Últimos 30 días'
+      when 'last_90' then 'Últimos 90 días'
+      when 'custom' then 'Personalizado'
+      else "YTD #{@now.year}"
       end
     end
 
