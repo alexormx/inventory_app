@@ -134,7 +134,7 @@
         value: fmt_currency(@sales_ytd),
         ly: fmt_currency(@sales_prev),
         delta: @kpi_deltas&.dig(:sales),
-        spark_id: "sparkline-revenue",
+        spark_data: @chart_sales_trend&.dig(:revenue),
         variant: "text-bg-success-subtle",
         tooltip: "Ventas netas del periodo (ya descontado el descuento de orden) vs mismo periodo del año anterior. Bruto: #{fmt_currency(@gross_sales_ytd)} · Descuentos: #{fmt_currency(@order_discount_ytd)}",
         health: @kpi_deltas&.dig(:sales).to_f >= 0 ? 'good' : 'warning'
@@ -146,6 +146,7 @@
         value: fmt_currency(@profit_ytd),
         ly: fmt_currency(@profit_prev),
         delta: @kpi_deltas&.dig(:profit),
+        spark_data: @chart_sales_trend&.dig(:profit),
         variant: "text-bg-primary-subtle",
         tooltip: "Ganancia = Ventas - COGS.",
         health: @kpi_deltas&.dig(:profit).to_f >= 0 ? 'good' : 'danger'
@@ -158,6 +159,7 @@
         ly: number_to_percentage(@margin_prev * 100, precision: 1),
         delta: @kpi_deltas&.dig(:margin_pp),
         delta_unit: 'pp',
+        spark_data: monthly_margin_series(@chart_sales_trend),
         variant: "text-bg-warning-subtle",
         tooltip: "Porcentaje de utilidad sobre ventas. Meta > 30%.",
         health: @margin_ytd >= 0.30 ? 'good' : (@margin_ytd >= 0.20 ? 'warning' : 'danger')
@@ -169,6 +171,7 @@
         value: fmt_currency(@cashflow_ytd),
         ly: fmt_currency(@cashflow_prev),
         delta: @kpi_deltas&.dig(:cashflow),
+        spark_data: @chart_cashflow&.dig(:net),
         variant: "text-bg-secondary-subtle",
         tooltip: "Ingresos cobrados menos salidas pagadas.",
         health: @cashflow_ytd.to_f >= 0 ? 'good' : 'danger'
@@ -200,12 +203,6 @@
 
   <div class="row g-3 mb-4">
     <div class="col-6 col-md-4 col-xl">
-      <%= render 'kpi_stat', title: 'Inversión Total', value: fmt_currency(@purchases_total_mxn), tooltip: 'Total invertido en compras desde el inicio.' %>
-    </div>
-    <div class="col-6 col-md-4 col-xl">
-      <%= render 'kpi_stat', title: 'Ventas Históricas', value: fmt_currency(@sales_total_mxn), tooltip: 'Total de ventas acumuladas históricas.' %>
-    </div>
-    <div class="col-6 col-md-4 col-xl">
       <%= render 'kpi_stat', title: 'Clientes Recurrentes', value: fmt_percentage_ratio(@recurring_customers_ratio, precision: 1), help: "#{fmt_number(@recurring_customers_ytd)} de #{fmt_number(@active_customers_ytd)} clientes activos", tooltip: 'Clientes activos del periodo que acumulan más de una compra histórica.', health: @recurring_customers_ratio.to_f >= 0.3 ? 'good' : (@recurring_customers_ratio.to_f >= 0.15 ? 'warning' : nil) %>
     </div>
     <div class="col-6 col-md-4 col-xl">
@@ -229,35 +226,54 @@
     </div>
   </div>
 
-  <div class="d-flex align-items-center gap-2 mb-2 small text-muted">
-    <i class="fa-solid fa-scale-balanced"></i>
-    <span>Balance neto = ingresos cobrados menos egresos de compras.</span>
-  </div>
+  <!-- ========== 6a · ACUMULADOS Y BALANCES (colapsable) ========== -->
+  <div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center dashboard-collapsible-header" data-bs-toggle="collapse" data-bs-target="#totals-section" aria-expanded="false">
+      <span><i class="fa-solid fa-landmark"></i> Acumulados y balances</span>
+      <span class="text-muted small"><i class="fa-solid fa-chevron-down"></i> Clic para expandir</span>
+    </div>
+    <div class="collapse" id="totals-section">
+      <div class="card-body">
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <%= render 'kpi_stat', title: 'Inversión Total', value: fmt_currency(@purchases_total_mxn), tooltip: 'Total invertido en compras desde el inicio.' %>
+          </div>
+          <div class="col-md-6">
+            <%= render 'kpi_stat', title: 'Ventas Históricas', value: fmt_currency(@sales_total_mxn), tooltip: 'Total de ventas acumuladas históricas.' %>
+          </div>
+        </div>
+        <div class="d-flex align-items-center gap-2 mb-2 small text-muted">
+          <i class="fa-solid fa-scale-balanced"></i>
+          <span>Balance neto = ingresos cobrados menos egresos de compras.</span>
+        </div>
 
-  <div class="row g-3 mb-4">
-    <div class="col-md-4">
-      <%= render 'kpi_stat',
-        title: 'Balance Mes Actual',
-        value: fmt_currency(@net_balance_month_mxn),
-        help: "Ingresos: #{fmt_currency(@collected_income_month_mxn)} · Egresos: #{fmt_currency(@purchases_month_mxn)}",
-        tooltip: 'Cobros completados del mes actual menos compras registradas en el mismo mes.',
-        health: @net_balance_month_mxn.to_f >= 0 ? 'good' : 'danger' %>
-    </div>
-    <div class="col-md-4">
-      <%= render 'kpi_stat',
-        title: 'Balance Año Actual',
-        value: fmt_currency(@net_balance_year_mxn),
-        help: "Ingresos: #{fmt_currency(@collected_income_year_mxn)} · Egresos: #{fmt_currency(@purchases_year_mxn)}",
-        tooltip: 'Cobros completados del año actual menos compras registradas este año.',
-        health: @net_balance_year_mxn.to_f >= 0 ? 'good' : 'danger' %>
-    </div>
-    <div class="col-md-4">
-      <%= render 'kpi_stat',
-        title: 'Balance Histórico',
-        value: fmt_currency(@historical_net_total_mxn),
-        help: "Ingresos: #{fmt_currency(@collected_income_total_mxn)} · Egresos: #{fmt_currency(@purchases_total_mxn)}",
-        tooltip: 'Cobros completados acumulados menos compras históricas. Es un indicador operativo y no sustituye una contabilidad formal.',
-        health: @historical_net_total_mxn.to_f >= 0 ? 'good' : 'danger' %>
+        <div class="row g-3">
+          <div class="col-md-4">
+            <%= render 'kpi_stat',
+              title: 'Balance Mes Actual',
+              value: fmt_currency(@net_balance_month_mxn),
+              help: "Ingresos: #{fmt_currency(@collected_income_month_mxn)} · Egresos: #{fmt_currency(@purchases_month_mxn)}",
+              tooltip: 'Cobros completados del mes actual menos compras registradas en el mismo mes.',
+              health: @net_balance_month_mxn.to_f >= 0 ? 'good' : 'danger' %>
+          </div>
+          <div class="col-md-4">
+            <%= render 'kpi_stat',
+              title: 'Balance Año Actual',
+              value: fmt_currency(@net_balance_year_mxn),
+              help: "Ingresos: #{fmt_currency(@collected_income_year_mxn)} · Egresos: #{fmt_currency(@purchases_year_mxn)}",
+              tooltip: 'Cobros completados del año actual menos compras registradas este año.',
+              health: @net_balance_year_mxn.to_f >= 0 ? 'good' : 'danger' %>
+          </div>
+          <div class="col-md-4">
+            <%= render 'kpi_stat',
+              title: 'Balance Histórico',
+              value: fmt_currency(@historical_net_total_mxn),
+              help: "Ingresos: #{fmt_currency(@collected_income_total_mxn)} · Egresos: #{fmt_currency(@purchases_total_mxn)}",
+              tooltip: 'Cobros completados acumulados menos compras históricas. Es un indicador operativo y no sustituye una contabilidad formal.',
+              health: @historical_net_total_mxn.to_f >= 0 ? 'good' : 'danger' %>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -341,90 +357,6 @@
     </div>
   </div>
 
-  <!-- ========== 8 · COMPARATIVA vs AÑO ANTERIOR ========== -->
-  <div class="card mb-4">
-    <div class="card-header py-2">
-      <span class="fw-semibold"><i class="fa-solid fa-scale-balanced"></i> Comparativa vs mismo periodo del año anterior</span>
-    </div>
-    <div class="card-body py-3">
-      <div class="row g-3">
-        <!-- Ventas -->
-        <div class="col-md-4">
-          <div class="d-flex justify-content-between align-items-center mb-1">
-            <span class="small text-muted">Ventas</span>
-            <span class="small fw-semibold <%= @kpi_deltas&.dig(:sales).to_f >= 0 ? 'text-success' : 'text-danger' %>">
-              <% if @kpi_deltas&.dig(:sales) %>
-                <i class="fa-solid fa-arrow-<%= @kpi_deltas&.dig(:sales).to_f >= 0 ? 'up' : 'down' %>"></i>
-                <%= number_to_percentage(@kpi_deltas&.dig(:sales).to_f * 100, precision: 1) %>
-              <% else %>—<% end %>
-            </span>
-          </div>
-          <div class="progress dashboard-progress dashboard-progress-lg">
-            <% sales_pct_ytd = @sales_prev.to_f.positive? ? [(@sales_ytd.to_f / [@sales_prev.to_f * 1.5, @sales_ytd.to_f].max) * 100, 100].min : 50 %>
-            <div class="progress-bar bg-success dashboard-progress-bar dashboard-progress-bar-<%= sales_pct_ytd.round.clamp(0, 100) %>" role="progressbar" aria-valuenow="<%= sales_pct_ytd.round.clamp(0, 100) %>" aria-valuemin="0" aria-valuemax="100">
-              <span class="small">Actual: <%= fmt_currency(@sales_ytd) %></span>
-            </div>
-          </div>
-          <div class="progress dashboard-progress dashboard-progress-sm mt-1">
-            <% sales_pct_ly = @sales_prev.to_f.positive? ? [(@sales_prev.to_f / [@sales_prev.to_f * 1.5, @sales_ytd.to_f].max) * 100, 100].min : 50 %>
-            <div class="progress-bar bg-secondary dashboard-progress-bar dashboard-progress-bar-<%= sales_pct_ly.round.clamp(0, 100) %>" role="progressbar" aria-valuenow="<%= sales_pct_ly.round.clamp(0, 100) %>" aria-valuemin="0" aria-valuemax="100">
-              <span class="small">LY: <%= fmt_currency(@sales_prev) %></span>
-            </div>
-          </div>
-        </div>
-        <!-- Utilidad -->
-        <div class="col-md-4">
-          <div class="d-flex justify-content-between align-items-center mb-1">
-            <span class="small text-muted">Utilidad Bruta</span>
-            <span class="small fw-semibold <%= @kpi_deltas&.dig(:profit).to_f >= 0 ? 'text-success' : 'text-danger' %>">
-              <% if @kpi_deltas&.dig(:profit) %>
-                <i class="fa-solid fa-arrow-<%= @kpi_deltas&.dig(:profit).to_f >= 0 ? 'up' : 'down' %>"></i>
-                <%= number_to_percentage(@kpi_deltas&.dig(:profit).to_f * 100, precision: 1) %>
-              <% else %>—<% end %>
-            </span>
-          </div>
-          <div class="progress dashboard-progress dashboard-progress-lg">
-            <% profit_pct_ytd = @profit_prev.to_f.positive? ? [(@profit_ytd.to_f / [@profit_prev.to_f * 1.5, @profit_ytd.to_f].max) * 100, 100].min : 50 %>
-            <div class="progress-bar bg-primary dashboard-progress-bar dashboard-progress-bar-<%= profit_pct_ytd.round.clamp(0, 100) %>" role="progressbar" aria-valuenow="<%= profit_pct_ytd.round.clamp(0, 100) %>" aria-valuemin="0" aria-valuemax="100">
-              <span class="small">Actual: <%= fmt_currency(@profit_ytd) %></span>
-            </div>
-          </div>
-          <div class="progress dashboard-progress dashboard-progress-sm mt-1">
-            <% profit_pct_ly = @profit_prev.to_f.positive? ? [(@profit_prev.to_f / [@profit_prev.to_f * 1.5, @profit_ytd.to_f].max) * 100, 100].min : 50 %>
-            <div class="progress-bar bg-secondary dashboard-progress-bar dashboard-progress-bar-<%= profit_pct_ly.round.clamp(0, 100) %>" role="progressbar" aria-valuenow="<%= profit_pct_ly.round.clamp(0, 100) %>" aria-valuemin="0" aria-valuemax="100">
-              <span class="small">LY: <%= fmt_currency(@profit_prev) %></span>
-            </div>
-          </div>
-        </div>
-        <!-- Órdenes -->
-        <div class="col-md-4">
-          <div class="d-flex justify-content-between align-items-center mb-1">
-            <span class="small text-muted">Órdenes de Venta</span>
-            <span class="small fw-semibold <%= @kpi_deltas&.dig(:orders).to_f >= 0 ? 'text-success' : 'text-danger' %>">
-              <% if @kpi_deltas&.dig(:orders) %>
-                <i class="fa-solid fa-arrow-<%= @kpi_deltas&.dig(:orders).to_f >= 0 ? 'up' : 'down' %>"></i>
-                <%= number_to_percentage(@kpi_deltas&.dig(:orders).to_f * 100, precision: 1) %>
-              <% else %>—<% end %>
-            </span>
-          </div>
-          <div class="progress dashboard-progress dashboard-progress-lg">
-            <% orders_max = [@orders_count_ytd.to_f, @orders_prev.to_f].max %>
-            <% orders_pct_ytd = orders_max.positive? ? (@orders_count_ytd.to_f / orders_max) * 100 : 50 %>
-            <div class="progress-bar bg-info dashboard-progress-bar dashboard-progress-bar-<%= orders_pct_ytd.round.clamp(0, 100) %>" role="progressbar" aria-valuenow="<%= orders_pct_ytd.round.clamp(0, 100) %>" aria-valuemin="0" aria-valuemax="100">
-              <span class="small">Actual: <%= number_with_delimiter(@orders_count_ytd) %></span>
-            </div>
-          </div>
-          <div class="progress dashboard-progress dashboard-progress-sm mt-1">
-            <% orders_pct_ly = orders_max.positive? ? (@orders_prev.to_f / orders_max) * 100 : 50 %>
-            <div class="progress-bar bg-secondary dashboard-progress-bar dashboard-progress-bar-<%= orders_pct_ly.round.clamp(0, 100) %>" role="progressbar" aria-valuenow="<%= orders_pct_ly.round.clamp(0, 100) %>" aria-valuemin="0" aria-valuemax="100">
-              <span class="small">LY: <%= number_with_delimiter(@orders_prev) %></span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <!-- ========== 9 · GRÁFICOS FINANCIEROS ========== -->
   <div class="row g-3 mb-4">
     <!-- Flujo de Caja 12 meses -->
@@ -499,77 +431,85 @@
     </div>
   </div>
 
-  <!-- ========== 10 · GRÁFICOS ANALÍTICOS ========== -->
-  <div class="row g-3 mb-4">
-    <!-- Ventas por Categoría (stacked) -->
-    <div class="col-lg-6">
-      <div class="card h-100">
-        <div class="card-header py-2">
-          <span class="fw-semibold"><i class="fa-solid fa-chart-column"></i> Ventas Mensuales por Categoría</span>
-        </div>
-        <div class="card-body">
-          <% cat = @chart_monthly_by_category || {} %>
-          <% cat_series = (cat[:series] || []) %>
-          <% has_cat_data = cat_series.any? { |s| (s[:data] || []).any? { |v| v.to_f != 0 } } %>
-          <% if has_cat_data %>
-            <div
-              data-controller="chart"
-              data-chart-type="stacked"
-              data-chart-x="<%= (cat[:months] || []).to_json %>"
-              data-chart-series="<%= cat_series.map { |s| s.merge(type: 'bar') }.to_json %>"
-              class="dashboard-chart dashboard-chart-lg"
-            ></div>
-          <% else %>
-            <div class="text-muted text-center py-4">Sin datos de ventas por categoría.</div>
-          <% end %>
-        </div>
-      </div>
+  <!-- ========== 10 · GRÁFICOS ANALÍTICOS (colapsable) ========== -->
+  <div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center dashboard-collapsible-header" data-bs-toggle="collapse" data-bs-target="#analytics-section" aria-expanded="false">
+      <span><i class="fa-solid fa-chart-column"></i> Categorías y marcas</span>
+      <span class="text-muted small"><i class="fa-solid fa-chevron-down"></i> Clic para expandir</span>
     </div>
-
-    <!-- Rentabilidad por Marca + Categoría -->
-    <div class="col-lg-6">
-      <div class="row g-3">
-        <div class="col-12">
-          <div class="card">
-            <div class="card-header py-2">
-              <span class="fw-semibold"><i class="fa-solid fa-city"></i> Rentabilidad por Marca</span>
-            </div>
-            <div class="card-body">
-              <% brand = @chart_brand_profit || {} %>
-              <% brand_data = (brand[:profit] || []).map(&:to_f) %>
-              <% if brand_data.any? { |v| v != 0 } %>
-                <div
-                  data-controller="chart"
-                  data-chart-type="bar"
-                  data-chart-x="<%= (brand[:brands] || []).to_json %>"
-                  data-chart-series="<%= [{ name: 'Utilidad', data: brand_data }].to_json %>"
-                  class="dashboard-chart dashboard-chart-xs"
-                ></div>
-              <% else %>
-                <div class="text-muted text-center py-3 small">Sin datos.</div>
-              <% end %>
-            </div>
+  </div>
+  <div class="collapse" id="analytics-section">
+    <div class="row g-3 mb-4">
+      <!-- Ventas por Categoría (stacked) -->
+      <div class="col-lg-6">
+        <div class="card h-100">
+          <div class="card-header py-2">
+            <span class="fw-semibold"><i class="fa-solid fa-chart-column"></i> Ventas Mensuales por Categoría</span>
+          </div>
+          <div class="card-body">
+            <% cat = @chart_monthly_by_category || {} %>
+            <% cat_series = (cat[:series] || []) %>
+            <% has_cat_data = cat_series.any? { |s| (s[:data] || []).any? { |v| v.to_f != 0 } } %>
+            <% if has_cat_data %>
+              <div
+                data-controller="chart"
+                data-chart-type="stacked"
+                data-chart-x="<%= (cat[:months] || []).to_json %>"
+                data-chart-series="<%= cat_series.map { |s| s.merge(type: 'bar') }.to_json %>"
+                class="dashboard-chart dashboard-chart-lg"
+              ></div>
+            <% else %>
+              <div class="text-muted text-center py-4">Sin datos de ventas por categoría.</div>
+            <% end %>
           </div>
         </div>
-        <div class="col-12">
-          <div class="card">
-            <div class="card-header py-2">
-              <span class="fw-semibold"><i class="fa-solid fa-tags"></i> Rentabilidad por Categoría</span>
+      </div>
+
+      <!-- Rentabilidad por Marca + Categoría -->
+      <div class="col-lg-6">
+        <div class="row g-3">
+          <div class="col-12">
+            <div class="card">
+              <div class="card-header py-2">
+                <span class="fw-semibold"><i class="fa-solid fa-city"></i> Rentabilidad por Marca</span>
+              </div>
+              <div class="card-body">
+                <% brand = @chart_brand_profit || {} %>
+                <% brand_data = (brand[:profit] || []).map(&:to_f) %>
+                <% if brand_data.any? { |v| v != 0 } %>
+                  <div
+                    data-controller="chart"
+                    data-chart-type="bar"
+                    data-chart-x="<%= (brand[:brands] || []).to_json %>"
+                    data-chart-series="<%= [{ name: 'Utilidad', data: brand_data }].to_json %>"
+                    class="dashboard-chart dashboard-chart-xs"
+                  ></div>
+                <% else %>
+                  <div class="text-muted text-center py-3 small">Sin datos.</div>
+                <% end %>
+              </div>
             </div>
-            <div class="card-body">
-              <% cat_profit = @chart_category_profit || {} %>
-              <% cat_profit_data = (cat_profit[:profit] || []).map(&:to_f) %>
-              <% if cat_profit_data.any? { |v| v != 0 } %>
-                <div
-                  data-controller="chart"
-                  data-chart-type="bar"
-                  data-chart-x="<%= (cat_profit[:categories] || []).to_json %>"
-                  data-chart-series="<%= [{ name: 'Utilidad', data: cat_profit_data }].to_json %>"
-                  class="dashboard-chart dashboard-chart-xs"
-                ></div>
-              <% else %>
-                <div class="text-muted text-center py-3 small">Sin datos.</div>
-              <% end %>
+          </div>
+          <div class="col-12">
+            <div class="card">
+              <div class="card-header py-2">
+                <span class="fw-semibold"><i class="fa-solid fa-tags"></i> Rentabilidad por Categoría</span>
+              </div>
+              <div class="card-body">
+                <% cat_profit = @chart_category_profit || {} %>
+                <% cat_profit_data = (cat_profit[:profit] || []).map(&:to_f) %>
+                <% if cat_profit_data.any? { |v| v != 0 } %>
+                  <div
+                    data-controller="chart"
+                    data-chart-type="bar"
+                    data-chart-x="<%= (cat_profit[:categories] || []).to_json %>"
+                    data-chart-series="<%= [{ name: 'Utilidad', data: cat_profit_data }].to_json %>"
+                    class="dashboard-chart dashboard-chart-xs"
+                  ></div>
+                <% else %>
+                  <div class="text-muted text-center py-3 small">Sin datos.</div>
+                <% end %>
+              </div>
             </div>
           </div>
         </div>

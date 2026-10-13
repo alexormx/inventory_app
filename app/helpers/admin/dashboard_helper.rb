@@ -40,6 +40,15 @@ module Admin
       number_to_percentage((ratio.to_f * 100.0), precision: precision)
     end
 
+    # Margen bruto (%) mes a mes para la mini-gráfica; 0 en meses sin ventas.
+    def monthly_margin_series(trend)
+      return [] if trend.blank?
+
+      trend[:revenue].zip(trend[:profit]).map do |revenue, profit|
+        revenue.to_f.positive? ? (profit.to_f / revenue * 100).round(1) : 0
+      end
+    end
+
     # Badge para deltas (positivo/negativo)
     def kpi_delta_badge(delta)
       return content_tag(:span, '—', class: 'badge bg-secondary-subtle text-muted') if delta.nil?
