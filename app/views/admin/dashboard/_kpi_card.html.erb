@@ -5,6 +5,7 @@
     - value: String (valor principal ya formateado)
     - ly: String opcional (texto LY u otro comparativo)
     - delta: Numeric opcional (ratio -1..1); colorea verde/rojo
+    - delta_unit: 'pp' opcional; el delta es una diferencia de puntos porcentuales, no un cambio relativo
     - variant: String (Bootstrap card variant e.g. text-bg-success-subtle)
     - spark_id: String opcional (id para sparkline)
     - tooltip: String opcional (texto de ayuda)
@@ -17,7 +18,7 @@
                   else ''
                   end %>
 <div class="card admin-kpi-card <%= variant.presence || 'text-bg-light' %> h-100 <%= health_class %>"
-     <%= "data-bs-toggle=tooltip data-bs-placement=top title=#{local_assigns[:tooltip].inspect}" if local_assigns[:tooltip].present? %>>
+     <% if local_assigns[:tooltip].present? %>data-bs-toggle="tooltip" data-bs-placement="top" title="<%= local_assigns[:tooltip] %>"<% end %>>
   <div class="card-body">
     <div class="d-flex justify-content-between align-items-start gap-2">
       <div>
@@ -36,7 +37,11 @@
         <% if defined?(delta) && !delta.nil? %>
           <div class="kpi-delta small <%= delta.to_f >= 0 ? 'text-success' : 'text-danger' %>">
             <i class="fa-solid <%= delta.to_f >= 0 ? 'fa-arrow-up' : 'fa-arrow-down' %>"></i>
-            vs LY: <%= number_to_percentage(delta.to_f * 100, precision: 1) %>
+            <% if local_assigns[:delta_unit] == 'pp' %>
+              vs LY: <%= format('%+.1f', delta.to_f * 100) %> pp
+            <% else %>
+              vs LY: <%= number_to_percentage(delta.to_f * 100, precision: 1) %>
+            <% end %>
           </div>
         <% else %>
           <div class="kpi-delta small text-muted">vs LY: —</div>

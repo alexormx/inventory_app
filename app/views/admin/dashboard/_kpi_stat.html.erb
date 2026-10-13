@@ -7,7 +7,7 @@
                   else ''
                   end %>
 <div class="card admin-kpi-stat h-100 <%= health_class %>"
-     <%= "data-bs-toggle=tooltip data-bs-placement=top title=#{local_assigns[:tooltip].inspect}" if local_assigns[:tooltip].present? %>>
+     <% if local_assigns[:tooltip].present? %>data-bs-toggle="tooltip" data-bs-placement="top" title="<%= local_assigns[:tooltip] %>"<% end %>>
   <div class="card-body py-2">
     <div class="kpi-label small text-muted d-flex align-items-center gap-1">
       <%= title %>

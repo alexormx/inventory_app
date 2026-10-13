@@ -6,6 +6,10 @@ module Admin
   class DashboardController < ApplicationController
     before_action :authenticate_user!
     before_action :authorize_admin!
+    # Los rankings reciben el periodo del filtro para que su pestaña "periodo"
+    # muestre lo mismo que los KPI.
+    before_action :setup_date_filters, only: %i[sellers profitable categories_rank customers_rank]
+    helper_method :ranking_period_params
     layout 'admin'
 
     # SQL constants for revenue and COGS calculations (shared across controller)
@@ -22,15 +26,8 @@ module Admin
       load_kpis
       load_comparisons
       load_alerts_and_activity
-      load_top_products
-      load_top_users
       load_status_counts
-      load_monthly_yearly_tables
       load_chart_data
-      load_top_sellers_and_profitable
-      load_top_inventory
-      load_top_categories
-      load_top_customers_reserved
       load_worst_products
       load_geo_sales
     end
@@ -131,6 +128,11 @@ module Admin
       @start_date, @end_date = compute_date_range(@range_key, params[:start_date], params[:end_date])
       @exclude_canceled = ActiveModel::Type::Boolean.new.cast(params.fetch(:exclude_canceled, true))
       @period_badge_label = build_period_badge_label
+      @period_label = build_period_label
+    end
+
+    def ranking_period_params
+      { range: @range_key, start_date: @start_date.to_date.iso8601, end_date: @end_date.to_date.iso8601 }
     end
 
     def compute_date_range(range_key, start_param, end_param)
@@ -156,6 +158,9 @@ module Admin
       @range = @start_date..@end_date
       @so_ytd = @so_scope.where(order_date: @range)
       @so_ytd_paid = @so_ytd.where(status: PAID_STATUSES)
+      # Pending y Returned no son venta realizada (ver SaleOrder::ACTIVE_SALE_STATUSES):
+      # los KPI de venta usan este scope para cuadrar con los rankings.
+      @so_sales = @so_scope.where(status: PAID_STATUSES)
       @po_ytd = @po_scope.where(order_date: @range)
       # Sin filtro de estado: la tasa de cancelación necesita las canceladas en
       # el denominador y en el numerador.
@@ -171,6 +176,8 @@ module Admin
         so_scope.where(order_date: ly_start..ly_start.end_of_year)
       when 'all'
         so_scope
+      when 'range'
+        so_scope.where(order_date: @start_date..@end_date)
       else
         so_scope.where(order_date: now.beginning_of_year..now.end_of_day)
       end
@@ -178,33 +185,25 @@ module Admin
 
     # === KPI Loading ===
     def load_kpis
-      @total_products = begin
-        Product.active.count
-      rescue StandardError
-        Product.count
-      end
-      @total_users = User.count
-
-      @gross_sales_ytd = Dashboard::Metrics.revenue_total(@so_ytd)
-      @order_discount_ytd = Dashboard::Metrics.order_discount_total(@so_ytd)
+      @gross_sales_ytd = Dashboard::Metrics.revenue_total(@so_ytd_paid)
+      @order_discount_ytd = Dashboard::Metrics.order_discount_total(@so_ytd_paid)
       @sales_ytd = @gross_sales_ytd - @order_discount_ytd
       @purchases_ytd = purchase_total_for(@po_ytd) + manual_purchase_total_for(@range)
 
-      @cash_in_ytd = completed_income_total_for(@now.beginning_of_year.to_date..@now.end_of_day)
+      @cash_in_ytd = completed_income_total_for(@range)
       @cash_out_ytd = @purchases_ytd
       @cashflow_ytd = @cash_in_ytd - @cash_out_ytd
 
-      @cogs_ytd = Dashboard::Metrics.cogs_total(@so_ytd)
+      @cogs_ytd = Dashboard::Metrics.cogs_total(@so_ytd_paid)
       @profit_ytd = @sales_ytd - @cogs_ytd
       @margin_ytd = @sales_ytd.positive? ? (@profit_ytd / @sales_ytd) : 0.to_d
 
-      @orders_count_ytd = @so_ytd.count
+      @orders_count_ytd = @so_ytd_paid.count
       @po_count_ytd = @po_ytd.count
-      @active_customers_ytd = @so_ytd.select(:user_id).distinct.count
+      @active_customers_ytd = @so_ytd_paid.select(:user_id).distinct.count
       @inventory_total_value = Product.sum(:current_inventory_value).to_d
 
-      @po_items_qty_ytd = PurchaseOrderItem.joins(:purchase_order).merge(@po_ytd).sum(:quantity).to_i + manual_purchase_qty_for(@range)
-      @so_items_qty_ytd = SaleOrderItem.joins(:sale_order).merge(@so_ytd).sum(:quantity).to_i
+      @so_items_qty_ytd = SaleOrderItem.joins(:sale_order).merge(@so_ytd_paid).sum(:quantity).to_i
 
       @purchases_total_mxn = purchase_total_for(@po_scope) + manual_purchase_total_for
 
@@ -246,8 +245,8 @@ module Admin
     end
 
     def load_customer_metrics
-      active_user_ids = @so_ytd.where.not(user_id: nil).distinct.pluck(:user_id)
-      historical_order_counts = @so_scope.where(user_id: active_user_ids).group(:user_id).count
+      active_user_ids = @so_ytd_paid.where.not(user_id: nil).distinct.pluck(:user_id)
+      historical_order_counts = @so_sales.where(user_id: active_user_ids).group(:user_id).count
 
       @new_customers_ytd = active_user_ids.count { |user_id| historical_order_counts[user_id].to_i <= 1 }
       @recurring_customers_ytd = active_user_ids.count { |user_id| historical_order_counts[user_id].to_i > 1 }
@@ -262,8 +261,13 @@ module Admin
       @critical_stock_count = nil
     end
 
+    # Anualizada: los umbrales de salud (>= 2 bueno, >= 1 atención) son
+    # anuales, y sin escalar un periodo de 30 días siempre salía en rojo.
     def load_inventory_turnover
-      @inventory_turnover_ytd = @inventory_total_value.positive? ? (@cogs_ytd / @inventory_total_value) : nil
+      return @inventory_turnover_ytd = nil unless @inventory_total_value.positive?
+
+      period_days = (@end_date.to_date - @start_date.to_date).to_i + 1
+      @inventory_turnover_ytd = (@cogs_ytd / @inventory_total_value) * (365.to_d / period_days)
     end
 
     def load_balance_summaries
@@ -281,20 +285,16 @@ module Admin
 
     def load_all_time_totals
       rev_sql_arel = Arel.sql(REV_SQL)
-      @sales_total_mxn = SaleOrderItem.joins(:sale_order).merge(@so_scope).sum(rev_sql_arel).to_d
+      @sales_total_mxn = SaleOrderItem.joins(:sale_order).merge(@so_sales).sum(rev_sql_arel).to_d
       @collected_income_total_mxn = completed_income_total_for
       @historical_net_total_mxn = @collected_income_total_mxn - @purchases_total_mxn
-      @so_total_all_time = @so_scope.count
-      @po_total_all_time = @po_scope.count
-      @po_items_qty_all_time = PurchaseOrderItem.joins(:purchase_order).merge(@po_scope).sum(:quantity).to_i + manual_purchase_qty_for
-      @so_items_qty_all_time = SaleOrderItem.joins(:sale_order).merge(@so_scope).sum(:quantity).to_i
     end
 
     # === Year-over-Year Comparisons ===
     def load_comparisons
       range_prev_start = @start_date.prev_year
       range_prev_end = @end_date.prev_year
-      so_prev_range = @so_scope.where(order_date: range_prev_start..range_prev_end)
+      so_prev_range = @so_sales.where(order_date: range_prev_start..range_prev_end)
       po_prev_range = @po_scope.where(order_date: range_prev_start..range_prev_end)
 
       @sales_prev = Dashboard::Metrics.net_revenue_total(so_prev_range)
@@ -324,22 +324,6 @@ module Admin
       prev.to_d.positive? ? ((curr.to_d - prev.to_d) / prev.to_d) : nil
     end
 
-    def revenue_total_for(scope)
-      Dashboard::Metrics.revenue_total(scope)
-    end
-
-    def cogs_total_for(scope)
-      Dashboard::Metrics.cogs_total(scope)
-    end
-
-    def grouped_revenue_by(scope, group_expr)
-      Dashboard::Metrics.grouped_revenue(scope, group_expr)
-    end
-
-    def grouped_cogs_by(scope, group_expr)
-      Dashboard::Metrics.grouped_cogs(scope, group_expr)
-    end
-
     def build_period_badge_label
       case @range_key
       when 'last_30'
@@ -350,6 +334,15 @@ module Admin
         "Personalizado #{format_badge_date(@start_date)}–#{format_badge_date(@end_date)}"
       else
         "YTD #{@now.year}"
+      end
+    end
+
+    def build_period_label
+      case @range_key
+      when 'last_30' then 'Últimos 30 días'
+      when 'last_90' then 'Últimos 90 días'
+      when 'custom' then 'Personalizado'
+      else "YTD #{@now.year}"
       end
     end
 
@@ -389,19 +382,8 @@ module Admin
       scope.sum(:purchase_cost).to_d
     end
 
-    def manual_purchase_qty_for(date_range = nil)
-      scope = manual_purchase_scope
-      scope = scope.where(created_at: date_range) if date_range
-      scope.count.to_i
-    end
-
     def manual_purchase_grouped_by_month(date_range)
       expr = month_group_expr('inventories', 'created_at')
-      manual_purchase_scope.where(created_at: date_range).group(Arel.sql(expr)).sum(:purchase_cost)
-    end
-
-    def manual_purchase_grouped_by_year(date_range)
-      expr = year_group_expr('inventories', 'created_at')
       manual_purchase_scope.where(created_at: date_range).group(Arel.sql(expr)).sum(:purchase_cost)
     end
 
@@ -488,43 +470,12 @@ module Admin
       @last_sale = SaleOrder.where.not(status: 'Canceled').order(created_at: :desc).first
 
       # Última compra recibida
-      @last_purchase_received = PurchaseOrder.where(status: 'Received').order(updated_at: :desc).first
-
-      # Última compra creada
-      @last_purchase_created = PurchaseOrder.order(created_at: :desc).first
+      @last_purchase_received = PurchaseOrder.where(status: 'Delivered').order(updated_at: :desc).first
 
       # Próximo envío (orden confirmada más antigua)
       @next_shipment = SaleOrder.where(status: 'Confirmed').order(order_date: :asc).first
     rescue StandardError => e
       Rails.logger.error "Dashboard activity error: #{e.message}"
-    end
-
-    # === Top Products Loading ===
-    def load_top_products
-      @top_products_all = build_top_products(@so_scope.where(status: PAID_STATUSES))
-
-      last20_ids = @so_scope.order(order_date: :desc, created_at: :desc).limit(20).pluck(:id)
-      @top_products_last20 = last20_ids.any? ? build_top_products_from_ids(last20_ids, 5) : []
-    end
-
-    def build_top_products(scope)
-      SaleOrderItem.joins(:sale_order, :product)
-                   .merge(scope)
-                   .group('products.id', 'products.product_name', 'products.brand', 'products.category')
-                   .select("products.id, products.product_name, products.brand, products.category, SUM(#{UNITS_SQL}) AS units, SUM(#{REV_SQL}) AS revenue")
-                   .order('units DESC')
-                   .limit(10)
-                   .map { |r| format_product_row(r) }
-    end
-
-    def build_top_products_from_ids(ids, limit)
-      SaleOrderItem.joins(:product)
-                   .where(sale_order_id: ids)
-                   .group('products.id', 'products.product_name')
-                   .select("products.id, products.product_name, SUM(#{UNITS_SQL}) AS units, SUM(#{REV_SQL}) AS revenue")
-                   .order('units DESC')
-                   .limit(limit)
-                   .map { |r| { product_id: r.id, name: r.product_name, units: r.attributes['units'].to_i, revenue: r.attributes['revenue'].to_d } }
     end
 
     def format_product_row(r)
@@ -538,91 +489,20 @@ module Admin
       }
     end
 
-    # === Top Users Loading ===
-    def load_top_users
-      result = rankings_builder.top_users_bundle
-      @top_users_all = result[:top_users_all]
-      @top_users_range = result[:top_users_range]
-      @top_users_last_year = result[:top_users_last_year]
-      @top_users_ytd_vs_prev = result[:top_users_ytd_vs_prev]
-      @top_orders_ytd = result[:top_orders_ytd]
-    end
-
     # === Status Counts ===
     def load_status_counts
       @so_status_counts = @so_scope.group(:status).count
       @po_status_counts = @po_scope.group(:status).count
-      @so_total_ytd = @sales_ytd
-      @po_total_ytd = @purchases_ytd
-      @so_avg_ticket_ytd = @so_ytd.average(:total_order_value)&.to_d || 0.to_d
-      @po_avg_ticket_ytd = @po_ytd.average(:total_cost_mxn)&.to_d || @po_ytd.average(:total_order_cost)&.to_d || 0.to_d
 
       # Pie chart data for order status donut charts
-      so_colors = { 'Draft' => '#94a3b8', 'Reserved' => '#f59e0b', 'Confirmed' => '#3b82f6',
-                    'Preparing' => '#8b5cf6', 'Shipped' => '#06b6d4', 'Delivered' => '#10b981',
-                    'Canceled' => '#ef4444' }
+      so_colors = { 'Pending' => '#94a3b8', 'Confirmed' => '#3b82f6', 'Preparing' => '#8b5cf6',
+                    'In Transit' => '#06b6d4', 'Delivered' => '#10b981', 'Canceled' => '#ef4444',
+                    'Returned' => '#f59e0b' }
       @so_status_pie = @so_status_counts.map { |s, c| { name: s, value: c, itemStyle: { color: so_colors[s] || '#64748b' } } }
 
-      po_colors = { 'Draft' => '#94a3b8', 'Confirmed' => '#3b82f6', 'In Transit' => '#f59e0b',
-                    'Received' => '#10b981', 'Canceled' => '#ef4444' }
+      po_colors = { 'Pending' => '#94a3b8', 'In Transit' => '#f59e0b', 'Delivered' => '#10b981',
+                    'Canceled' => '#ef4444' }
       @po_status_pie = @po_status_counts.map { |s, c| { name: s, value: c, itemStyle: { color: po_colors[s] || '#64748b' } } }
-    end
-
-    # === Monthly/Yearly Tables ===
-    def load_monthly_yearly_tables
-      load_monthly_current_year
-      load_annual_stats
-    end
-
-    def load_monthly_current_year
-      so_month_key = month_group_expr('sale_orders', 'order_date')
-      po_month_key = month_group_expr('purchase_orders', 'order_date')
-      sales_monthly = grouped_revenue_by(@so_ytd, so_month_key)
-      cogs_monthly = grouped_cogs_by(@so_ytd, so_month_key)
-      purchases_monthly = @po_ytd.group(Arel.sql(po_month_key)).sum(:total_cost_mxn)
-      manual_monthly = manual_purchase_grouped_by_month(@range)
-
-      sales_m_map = sales_monthly.transform_keys { |k| extract_month_index(k) }
-      cogs_m_map = cogs_monthly.transform_keys { |k| extract_month_index(k) }
-      purchases_m_map = purchases_monthly.transform_keys { |k| extract_month_index(k) }
-      manual_m_map = manual_monthly.transform_keys { |k| extract_month_index(k) }
-
-      @monthly_current_year = (1..12).map do |m|
-        sales = (sales_m_map[m] || 0).to_d
-        cogs = (cogs_m_map[m] || 0).to_d
-        buys = (purchases_m_map[m] || 0).to_d + (manual_m_map[m] || 0).to_d
-        profit = sales - cogs
-        margin = sales.positive? ? (profit / sales) : 0.to_d
-        { month: Date::MONTHNAMES[m], sales: sales, purchases: buys, cogs: cogs, profit: profit, margin: margin }
-      end
-    end
-
-    def load_annual_stats
-      years = ((@now.year - 4)..@now.year).to_a
-      year_range = (@now.beginning_of_year - 4.years)..@now.end_of_year
-      so_5y = @so_scope.where(order_date: year_range)
-      po_5y = @po_scope.where(order_date: year_range)
-
-      so_year_key = year_group_expr('sale_orders', 'order_date')
-      po_year_key = year_group_expr('purchase_orders', 'order_date')
-      sales_yearly = grouped_revenue_by(so_5y, so_year_key)
-      cogs_yearly = grouped_cogs_by(so_5y, so_year_key)
-      purchases_yearly = po_5y.group(Arel.sql(po_year_key)).sum(:total_cost_mxn)
-      manual_yearly = manual_purchase_grouped_by_year(year_range)
-
-      sales_y_map = sales_yearly.transform_keys { |k| extract_year_index(k) }
-      cogs_y_map = cogs_yearly.transform_keys { |k| extract_year_index(k) }
-      purchases_y_map = purchases_yearly.transform_keys { |k| extract_year_index(k) }
-      manual_y_map = manual_yearly.transform_keys { |k| extract_year_index(k) }
-
-      @annual_stats = years.map do |y|
-        sales = (sales_y_map[y] || 0).to_d
-        cogs = (cogs_y_map[y] || 0).to_d
-        buys = (purchases_y_map[y] || 0).to_d + (manual_y_map[y] || 0).to_d
-        profit = sales - cogs
-        margin = sales.positive? ? (profit / sales) : 0.to_d
-        { year: y, sales: sales, purchases: buys, cogs: cogs, profit: profit, margin: margin }
-      end
     end
 
     # === Chart Data ===
@@ -634,11 +514,11 @@ module Admin
       cogs_sql_arel = Arel.sql(COGS_SQL)
 
       trend_rev = SaleOrderItem.joins(:sale_order)
-                               .merge(@so_scope.where(order_date: trend_range))
+                               .merge(@so_sales.where(order_date: trend_range))
                                .group(Arel.sql(month_key_expr))
                                .sum(rev_sql_arel)
       trend_cogs = SaleOrderItem.joins(:sale_order, :product)
-                                .merge(@so_scope.where(order_date: trend_range))
+                                .merge(@so_sales.where(order_date: trend_range))
                                 .group(Arel.sql(month_key_expr))
                                 .sum(cogs_sql_arel)
 
@@ -758,25 +638,6 @@ module Admin
       @chart_category_profit = result[:category_profit]
     end
 
-    # === Top Sellers and Profitable (for index page tabs) ===
-    def load_top_sellers_and_profitable
-      # Sin fallback a un scope más amplio: recaer en órdenes pendientes o
-      # devueltas presentaba como ventas lo que aún no se cobra, y con
-      # exclude_canceled=false incluso las canceladas entraban al ranking.
-      @top_sellers_ytd = build_sellers_data(@so_ytd_paid)
-
-      ly_start = @now.beginning_of_year - 1.year
-      so_last_year_paid = @so_scope.where(order_date: ly_start..ly_start.end_of_year, status: PAID_STATUSES)
-      @top_sellers_last_year = build_sellers_data(so_last_year_paid)
-
-      @top_products_profit_ytd = build_profitable_products(@so_ytd_paid, @range)
-      @top_products_profit_last_year = build_profitable_products(
-        @so_scope.where(order_date: ly_start..ly_start.end_of_year, status: PAID_STATUSES),
-        ly_start..ly_start.end_of_year
-      )
-      @top_products_profit_all_time = build_profitable_products(@so_scope.where(status: PAID_STATUSES), nil)
-    end
-
     def build_sellers_data(scope)
       SaleOrderItem.joins(:sale_order, :product)
                    .merge(scope)
@@ -807,87 +668,6 @@ module Admin
                    end
     end
 
-    def build_profitable_products(scope, date_range)
-      sales_rows = SaleOrderItem.joins(:sale_order, :product)
-                                .merge(scope)
-                                .group('products.id', 'products.product_name', 'products.brand', 'products.category')
-                                .select("products.id AS product_id, products.product_name, products.brand, products.category, SUM(#{REV_SQL}) AS sales_total")
-
-      waste_scope = Inventory.joins(:product).where(status: %i[marketing damaged lost scrap])
-      waste_scope = waste_scope.where(status_changed_at: date_range) if date_range
-      waste_rows = waste_scope.group('products.id').select('products.id AS product_id, SUM(inventories.purchase_cost) AS waste_total')
-      waste_map = waste_rows.index_by { |r| r.attributes['product_id'].to_i }
-
-      cogs_rows_inv = Inventory.joins(:product, :sale_order)
-                               .merge(scope)
-                               .where(status: :sold)
-                               .group('products.id')
-                               .select('products.id AS product_id, SUM(inventories.purchase_cost) AS cogs_total')
-
-      cogs_rows = if cogs_rows_inv.any?
-                    cogs_rows_inv
-                  else
-                    SaleOrderItem.joins(:sale_order, :product)
-                                 .merge(scope)
-                                 .group('products.id')
-                                 .select("products.id AS product_id, SUM(#{COGS_SQL}) AS cogs_total")
-                  end
-
-      sales_map = sales_rows.index_by { |r| r.attributes['product_id'].to_i }
-      cogs_map = cogs_rows.index_by { |r| r.attributes['product_id'].to_i }
-      all_ids = (sales_map.keys + cogs_map.keys + waste_map.keys).uniq
-
-      all_ids.map do |pid|
-        srow = sales_map[pid]
-        sales = srow&.attributes&.dig('sales_total').to_d
-        cogs = cogs_map[pid]&.attributes&.dig('cogs_total').to_d
-        waste = waste_map[pid]&.attributes&.dig('waste_total').to_d
-        {
-          product_id: pid,
-          name: srow&.product_name,
-          brand: srow&.brand,
-          category: srow&.category.presence || 'Uncategorized',
-          revenue: sales,
-          cogs: cogs,
-          profit: sales - cogs - waste
-        }
-      end.sort_by { |h| -h[:profit] }.first(10)
-    end
-
-    # === Top Inventory ===
-    def load_top_inventory
-      inv_statuses = %i[available in_transit]
-      reserved_statuses = %i[reserved pre_reserved pre_sold]
-      all_statuses = inv_statuses + reserved_statuses
-
-      @top_inventory_by_value_inventory, @top_inventory_by_quantity_inventory = build_inventory_sets(inv_statuses)
-      @top_inventory_by_value_reserved, @top_inventory_by_quantity_reserved = build_inventory_sets(reserved_statuses)
-      @top_inventory_by_value_all, @top_inventory_by_quantity_all = build_inventory_sets(all_statuses)
-
-      @top_inventory_by_value = @top_inventory_by_value_all
-      @top_inventory_by_quantity = @top_inventory_by_quantity_all
-    end
-
-    def build_inventory_sets(statuses)
-      base = Inventory.joins(:product)
-                      .where(status: statuses)
-                      .group('products.id', 'products.product_name', 'products.brand', 'products.category')
-
-      by_value = base.select('products.id, products.product_name, products.brand, products.category, SUM(inventories.purchase_cost) AS inventory_value')
-                     .order('inventory_value DESC')
-                     .limit(10)
-                     .map { |r| format_inventory_row(r) }
-
-      by_qty = base.select('products.id, products.product_name, products.brand, products.category, COUNT(inventories.id) AS units_count, SUM(inventories.purchase_cost) AS inventory_value')
-                   .order('units_count DESC')
-                   .limit(10)
-                   .map do |r|
-        format_inventory_row(r, include_qty: true)
-      end
-
-      [by_value, by_qty]
-    end
-
     def build_inventory_data(statuses, metric)
       base = Inventory.joins(:product)
                       .where(status: statuses)
@@ -916,65 +696,8 @@ module Admin
       row
     end
 
-    # === Top Categories ===
-    def load_top_categories
-      result = rankings_builder.top_categories_bundle
-      @top_categories_ytd = result[:top_categories_ytd]
-      @top_categories_profit_ytd = result[:top_categories_profit_ytd]
-      @top_categories_last_year = result[:top_categories_last_year]
-      @top_categories_profit_last_year = result[:top_categories_profit_last_year]
-      @top_categories_all_time = result[:top_categories_all_time]
-      @top_categories_profit_all_time = result[:top_categories_profit_all_time]
-    end
-
     def build_categories_data(scope, metric)
       Dashboard::Metrics.category_rows(scope, metric: metric, limit: 10)
-    end
-
-    # === Top Customers Reserved ===
-    def load_top_customers_reserved
-      reserved_statuses = %i[reserved pre_reserved pre_sold]
-      ly_start = @now.beginning_of_year - 1.year
-      so_last_year = @so_scope.where(order_date: ly_start..ly_start.end_of_year)
-
-      @top_users_reserved_ytd = build_reserved_users(@so_ytd, reserved_statuses)
-      @top_users_reserved_last_year = build_reserved_users(so_last_year, reserved_statuses)
-      @top_users_reserved_all = build_reserved_users(@so_scope, reserved_statuses)
-
-      @top_users_sales_reserved_ytd = combine_sales_reserved(@top_users_range, @top_users_reserved_ytd)
-      @top_users_sales_reserved_last_year = combine_sales_reserved(@top_users_last_year, @top_users_reserved_last_year)
-      @top_users_sales_reserved_all = combine_sales_reserved(@top_users_all, @top_users_reserved_all)
-    end
-
-    def build_reserved_users(scope, statuses)
-      Inventory.joins(sale_order: :user)
-               .merge(scope)
-               .where(status: statuses)
-               .group('users.id', 'users.name')
-               .select('users.id, users.name, COUNT(inventories.id) AS units_reserved, SUM(inventories.purchase_cost) AS reserved_value')
-               .order('reserved_value DESC')
-               .limit(10)
-               .map do |r|
-        { user_id: r.id, name: r.name.presence || r.id, units_reserved: r.attributes['units_reserved'].to_i,
-          reserved_value: r.attributes['reserved_value'].to_d }
-      end
-    end
-
-    def combine_sales_reserved(sales_rows, reserved_rows)
-      s_map = (sales_rows || []).index_by { |r| r[:user_id] }
-      r_map = (reserved_rows || []).index_by { |r| r[:user_id] }
-
-      (s_map.keys + r_map.keys).uniq.map do |uid|
-        s = s_map[uid]
-        r = r_map[uid]
-        name = s&.dig(:name).presence || r&.dig(:name).presence || uid
-        orders = s ? s[:orders_count].to_i : 0
-        revenue = s ? s[:revenue].to_d : 0.to_d
-        units_reserved = r ? r[:units_reserved].to_i : 0
-        reserved_value = r ? r[:reserved_value].to_d : 0.to_d
-        total = revenue + reserved_value
-        { user_id: uid, name: name, orders_count: orders, revenue: revenue, units_reserved: units_reserved, reserved_value: reserved_value, total: total }
-      end.sort_by { |h| -h[:total] }.first(10)
     end
 
     def build_customers_data(scope, metric)
@@ -1049,25 +772,6 @@ module Admin
     def month_group_expr(table, column)
       col = "#{table}.#{column}"
       db_adapter.include?('sqlite') ? "strftime('%Y-%m-01', #{col})" : "DATE_TRUNC('month', #{col})"
-    end
-
-    def year_group_expr(table, column)
-      col = "#{table}.#{column}"
-      db_adapter.include?('sqlite') ? "strftime('%Y', #{col})" : "DATE_TRUNC('year', #{col})"
-    end
-
-    def extract_month_index(key)
-      return key.month if key.respond_to?(:month)
-
-      Date.parse(key).month if key.is_a?(String)
-    rescue ArgumentError
-      nil
-    end
-
-    def extract_year_index(key)
-      return key.year if key.respond_to?(:year)
-
-      key.to_s[0, 4].to_i if key.is_a?(String)
     end
 
     def normalize_month_key(key)

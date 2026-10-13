@@ -130,7 +130,7 @@
   <div class="row g-3 mb-3">
     <div class="col-md-6 col-xl-3">
       <%= render "kpi_card",
-        title: "Ingresos YTD",
+        title: "Ingresos · #{@period_label}",
         value: fmt_currency(@sales_ytd),
         ly: fmt_currency(@sales_prev),
         delta: @kpi_deltas&.dig(:sales),
@@ -142,7 +142,7 @@
     </div>
     <div class="col-md-6 col-xl-3">
       <%= render "kpi_card",
-        title: "Utilidad Bruta YTD",
+        title: "Utilidad Bruta · #{@period_label}",
         value: fmt_currency(@profit_ytd),
         ly: fmt_currency(@profit_prev),
         delta: @kpi_deltas&.dig(:profit),
@@ -153,10 +153,11 @@
     </div>
     <div class="col-md-6 col-xl-3">
       <%= render "kpi_card",
-        title: "Margen Bruto YTD",
+        title: "Margen Bruto · #{@period_label}",
         value: number_to_percentage(@margin_ytd * 100, precision: 1),
         ly: number_to_percentage(@margin_prev * 100, precision: 1),
         delta: @kpi_deltas&.dig(:margin_pp),
+        delta_unit: 'pp',
         variant: "text-bg-warning-subtle",
         tooltip: "Porcentaje de utilidad sobre ventas. Meta > 30%.",
         health: @margin_ytd >= 0.30 ? 'good' : (@margin_ytd >= 0.20 ? 'warning' : 'danger')
@@ -164,7 +165,7 @@
     </div>
     <div class="col-md-6 col-xl-3">
       <%= render "kpi_card",
-        title: "Flujo de Caja YTD",
+        title: "Flujo de Caja · #{@period_label}",
         value: fmt_currency(@cashflow_ytd),
         ly: fmt_currency(@cashflow_prev),
         delta: @kpi_deltas&.dig(:cashflow),
@@ -178,16 +179,16 @@
   <!-- ========== 6 · KPIs SECUNDARIOS ========== -->
   <div class="row g-3 mb-3">
     <div class="col-6 col-md-4 col-xl">
-      <%= render 'kpi_stat', title: 'Valor Inventario', value: fmt_currency(@inventory_total_value), tooltip: "Valor del inventario disponible. Rotación: #{@inventory_turnover_ytd.nil? ? '—' : number_with_precision(@inventory_turnover_ytd, precision: 2, delimiter: ',')}", health: @inventory_turnover_ytd.to_f >= 2 ? 'good' : (@inventory_turnover_ytd.to_f >= 1 ? 'warning' : 'danger') %>
+      <%= render 'kpi_stat', title: 'Valor Inventario', value: fmt_currency(@inventory_total_value), tooltip: "Valor del inventario disponible. Rotación anualizada: #{@inventory_turnover_ytd.nil? ? '—' : number_with_precision(@inventory_turnover_ytd, precision: 2, delimiter: ',')}", health: @inventory_turnover_ytd.to_f >= 2 ? 'good' : (@inventory_turnover_ytd.to_f >= 1 ? 'warning' : 'danger') %>
     </div>
     <div class="col-6 col-md-4 col-xl">
-      <%= render 'kpi_stat', title: 'Órdenes Venta YTD', value: number_with_delimiter(@orders_count_ytd), tooltip: 'Cantidad de Sale Orders no canceladas dentro del periodo seleccionado.', health: @kpi_deltas&.dig(:orders).to_f >= 0 ? 'good' : 'warning' %>
+      <%= render 'kpi_stat', title: "Órdenes Venta · #{@period_label}", value: number_with_delimiter(@orders_count_ytd), tooltip: 'Órdenes confirmadas o posteriores dentro del periodo; no cuenta pendientes, canceladas ni devueltas.', health: @kpi_deltas&.dig(:orders).to_f >= 0 ? 'good' : 'warning' %>
     </div>
     <div class="col-6 col-md-4 col-xl">
       <%= render 'kpi_stat', title: 'Ticket Promedio', value: fmt_currency(@avg_ticket_ytd), tooltip: 'Valor promedio por orden de venta.', health: @avg_ticket_ytd.to_f >= 500 ? 'good' : (@avg_ticket_ytd.to_f >= 200 ? nil : 'warning') %>
     </div>
     <div class="col-6 col-md-4 col-xl">
-      <%= render 'kpi_stat', title: 'Clientes Activos', value: fmt_number(@active_customers_ytd), tooltip: 'Clientes con al menos una orden YTD.', health: @kpi_deltas&.dig(:customers).to_f >= 0 ? 'good' : 'warning' %>
+      <%= render 'kpi_stat', title: 'Clientes Activos', value: fmt_number(@active_customers_ytd), tooltip: 'Clientes con al menos una orden en el periodo.', health: @kpi_deltas&.dig(:customers).to_f >= 0 ? 'good' : 'warning' %>
     </div>
     <div class="col-6 col-md-4 col-xl">
       <%= render 'kpi_stat', title: 'Conversión', value: fmt_percentage_ratio(@conversion_rate_ytd, precision: 2), help: "#{fmt_number(@visits_total)} visitas en el periodo", tooltip: 'Órdenes entre visitas, ambas dentro del periodo seleccionado. Las visitas se atribuyen por su última fecha registrada, así que es una aproximación.', health: @conversion_rate_ytd.to_f >= 0.03 ? 'good' : (@conversion_rate_ytd.to_f >= 0.01 ? 'warning' : 'danger') %>
@@ -208,7 +209,7 @@
       <%= render 'kpi_stat', title: 'Clientes Recurrentes', value: fmt_percentage_ratio(@recurring_customers_ratio, precision: 1), help: "#{fmt_number(@recurring_customers_ytd)} de #{fmt_number(@active_customers_ytd)} clientes activos", tooltip: 'Clientes activos del periodo que acumulan más de una compra histórica.', health: @recurring_customers_ratio.to_f >= 0.3 ? 'good' : (@recurring_customers_ratio.to_f >= 0.15 ? 'warning' : nil) %>
     </div>
     <div class="col-6 col-md-4 col-xl">
-      <%= render 'kpi_stat', title: 'Órdenes Compra YTD', value: number_with_delimiter(@po_count_ytd), tooltip: 'Purchase Orders creadas este año.', health: @kpi_deltas&.dig(:po_count).to_f >= 0 ? 'good' : nil %>
+      <%= render 'kpi_stat', title: "Órdenes Compra · #{@period_label}", value: number_with_delimiter(@po_count_ytd), tooltip: 'Órdenes de compra del periodo.', health: @kpi_deltas&.dig(:po_count).to_f >= 0 ? 'good' : nil %>
     </div>
     <div class="col-6 col-md-4 col-xl">
       <%= render 'kpi_stat',
@@ -340,10 +341,10 @@
     </div>
   </div>
 
-  <!-- ========== 8 · COMPARATIVA YTD vs AÑO ANTERIOR ========== -->
+  <!-- ========== 8 · COMPARATIVA vs AÑO ANTERIOR ========== -->
   <div class="card mb-4">
     <div class="card-header py-2">
-      <span class="fw-semibold"><i class="fa-solid fa-scale-balanced"></i> Comparativa YTD vs Año Anterior</span>
+      <span class="fw-semibold"><i class="fa-solid fa-scale-balanced"></i> Comparativa vs mismo periodo del año anterior</span>
     </div>
     <div class="card-body py-3">
       <div class="row g-3">
@@ -361,7 +362,7 @@
           <div class="progress dashboard-progress dashboard-progress-lg">
             <% sales_pct_ytd = @sales_prev.to_f.positive? ? [(@sales_ytd.to_f / [@sales_prev.to_f * 1.5, @sales_ytd.to_f].max) * 100, 100].min : 50 %>
             <div class="progress-bar bg-success dashboard-progress-bar dashboard-progress-bar-<%= sales_pct_ytd.round.clamp(0, 100) %>" role="progressbar" aria-valuenow="<%= sales_pct_ytd.round.clamp(0, 100) %>" aria-valuemin="0" aria-valuemax="100">
-              <span class="small">YTD: <%= fmt_currency(@sales_ytd) %></span>
+              <span class="small">Actual: <%= fmt_currency(@sales_ytd) %></span>
             </div>
           </div>
           <div class="progress dashboard-progress dashboard-progress-sm mt-1">
@@ -385,7 +386,7 @@
           <div class="progress dashboard-progress dashboard-progress-lg">
             <% profit_pct_ytd = @profit_prev.to_f.positive? ? [(@profit_ytd.to_f / [@profit_prev.to_f * 1.5, @profit_ytd.to_f].max) * 100, 100].min : 50 %>
             <div class="progress-bar bg-primary dashboard-progress-bar dashboard-progress-bar-<%= profit_pct_ytd.round.clamp(0, 100) %>" role="progressbar" aria-valuenow="<%= profit_pct_ytd.round.clamp(0, 100) %>" aria-valuemin="0" aria-valuemax="100">
-              <span class="small">YTD: <%= fmt_currency(@profit_ytd) %></span>
+              <span class="small">Actual: <%= fmt_currency(@profit_ytd) %></span>
             </div>
           </div>
           <div class="progress dashboard-progress dashboard-progress-sm mt-1">
@@ -410,7 +411,7 @@
             <% orders_max = [@orders_count_ytd.to_f, @orders_prev.to_f].max %>
             <% orders_pct_ytd = orders_max.positive? ? (@orders_count_ytd.to_f / orders_max) * 100 : 50 %>
             <div class="progress-bar bg-info dashboard-progress-bar dashboard-progress-bar-<%= orders_pct_ytd.round.clamp(0, 100) %>" role="progressbar" aria-valuenow="<%= orders_pct_ytd.round.clamp(0, 100) %>" aria-valuemin="0" aria-valuemax="100">
-              <span class="small">YTD: <%= number_with_delimiter(@orders_count_ytd) %></span>
+              <span class="small">Actual: <%= number_with_delimiter(@orders_count_ytd) %></span>
             </div>
           </div>
           <div class="progress dashboard-progress dashboard-progress-sm mt-1">
@@ -603,14 +604,14 @@
             <div class="tab-pane fade show active" id="tp-sellers" role="tabpanel" data-tabs-target="panel">
               <div data-controller="tabs">
                 <ul class="nav nav-tabs nav-tabs-sm px-3 pt-3 d-none d-md-flex" role="tablist">
-                  <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-sellers-ytd" type="button" role="tab" aria-selected="true">YTD</button></li>
+                  <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-sellers-range" type="button" role="tab" aria-selected="true"><%= @period_label %></button></li>
                   <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-sellers-ly" type="button" role="tab">LY</button></li>
                   <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-sellers-all" type="button" role="tab">All</button></li>
                 </ul>
                 <div class="tab-content">
-                  <% %w[ytd ly all].each do |period| %>
-                    <div class="tab-pane fade <%= period == 'ytd' ? 'show active' : '' %>" id="tp-sellers-<%= period %>" role="tabpanel" data-tabs-target="panel">
-                      <turbo-frame id="frame-sellers-<%= period %>" src="<%= admin_dashboard_sellers_path(period: period) %>">
+                  <% %w[range ly all].each do |period| %>
+                    <div class="tab-pane fade <%= period == 'range' ? 'show active' : '' %>" id="tp-sellers-<%= period %>" role="tabpanel" data-tabs-target="panel">
+                      <turbo-frame id="frame-sellers-<%= period %>" loading="lazy" src="<%= admin_dashboard_sellers_path(period: period, **ranking_period_params) %>">
                         <div class="table-responsive p-2 px-3">
                           <table class="table table-sm mb-0">
                             <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Unidades</th><th class="text-end">Ingresos</th></tr></thead>
@@ -627,14 +628,14 @@
             <div class="tab-pane fade" id="tp-profit" role="tabpanel" data-tabs-target="panel">
               <div data-controller="tabs">
                 <ul class="nav nav-tabs nav-tabs-sm px-3 pt-3 d-none d-md-flex" role="tablist">
-                  <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-profit-ytd" type="button" role="tab" aria-selected="true">YTD</button></li>
+                  <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-profit-range" type="button" role="tab" aria-selected="true"><%= @period_label %></button></li>
                   <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-profit-ly" type="button" role="tab">LY</button></li>
                   <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tp-profit-all" type="button" role="tab">All</button></li>
                 </ul>
                 <div class="tab-content">
-                  <% %w[ytd ly all].each do |period| %>
-                    <div class="tab-pane fade <%= period == 'ytd' ? 'show active' : '' %>" id="tp-profit-<%= period %>" role="tabpanel" data-tabs-target="panel">
-                      <turbo-frame id="frame-profit-<%= period %>" src="<%= admin_dashboard_profitable_path(period: period) %>">
+                  <% %w[range ly all].each do |period| %>
+                    <div class="tab-pane fade <%= period == 'range' ? 'show active' : '' %>" id="tp-profit-<%= period %>" role="tabpanel" data-tabs-target="panel">
+                      <turbo-frame id="frame-profit-<%= period %>" loading="lazy" src="<%= admin_dashboard_profitable_path(period: period, **ranking_period_params) %>">
                         <div class="table-responsive p-2 px-3">
                           <table class="table table-sm mb-0">
                             <thead><tr><th>Rank</th><th>Producto</th><th class="text-end">Ingresos</th><th class="text-end">COGS</th><th class="text-end">Utilidad</th></tr></thead>
@@ -682,7 +683,7 @@
                   <div class="tab-content">
                     <% %w[value qty].each_with_index do |metric, midx| %>
                       <div class="tab-pane fade <%= midx == 0 ? 'show active' : '' %>" id="ti-<%= scope %>-<%= metric %>" role="tabpanel" data-tabs-target="panel">
-                        <turbo-frame id="frame-inventory-<%= scope %>-<%= metric %>" src="<%= admin_dashboard_inventory_top_path(scope: scope, metric: metric) %>">
+                        <turbo-frame id="frame-inventory-<%= scope %>-<%= metric %>" loading="lazy" src="<%= admin_dashboard_inventory_top_path(scope: scope, metric: metric) %>">
                           <div class="table-responsive p-2 px-3">
                             <table class="table table-sm mb-0">
                               <%= table_skeleton_rows(cols: metric == 'value' ? 3 : 4, rows: 3) %>
@@ -709,19 +710,19 @@
         <div class="card-header d-flex justify-content-between align-items-center">
           <span><i class="fa-solid fa-layer-group"></i> Top Categorías</span>
           <ul class="nav nav-tabs nav-tabs-sm card-header-tabs d-none d-md-flex" role="tablist">
-            <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tc-ytd" type="button" role="tab" aria-selected="true">YTD</button></li>
+            <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tc-range" type="button" role="tab" aria-selected="true"><%= @period_label %></button></li>
             <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tc-ly" type="button" role="tab">LY</button></li>
             <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tc-all" type="button" role="tab">All</button></li>
           </ul>
           <select class="form-select form-select-sm d-md-none w-auto" data-action="change->tabs#select">
-            <option value="#tc-ytd" selected>YTD</option>
+            <option value="#tc-range" selected><%= @period_label %></option>
             <option value="#tc-ly">LY</option>
             <option value="#tc-all">All</option>
           </select>
         </div>
         <div class="card-body p-0">
           <div class="tab-content">
-            <% %w[ytd ly all].each_with_index do |period, pidx| %>
+            <% %w[range ly all].each_with_index do |period, pidx| %>
               <div class="tab-pane fade <%= pidx == 0 ? 'show active' : '' %>" id="tc-<%= period %>" role="tabpanel" data-tabs-target="panel">
                 <div data-controller="tabs">
                   <ul class="nav nav-tabs nav-tabs-sm px-3 pt-3 d-none d-md-flex" role="tablist">
@@ -731,7 +732,7 @@
                   <div class="tab-content">
                     <% { 'rev' => 'rev', 'prof' => 'profit' }.each_with_index do |(tab_key, metric), midx| %>
                       <div class="tab-pane fade <%= midx == 0 ? 'show active' : '' %>" id="tc-<%= period %>-<%= tab_key %>" role="tabpanel" data-tabs-target="panel">
-                        <turbo-frame id="frame-cats-<%= period %>-<%= metric %>" src="<%= admin_dashboard_categories_rank_path(period: period, metric: metric) %>">
+                        <turbo-frame id="frame-cats-<%= period %>-<%= metric %>" loading="lazy" src="<%= admin_dashboard_categories_rank_path(period: period, metric: metric, **ranking_period_params) %>">
                           <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0">
                             <%= table_skeleton_rows(cols: 3, rows: 3) %>
                           </table></div>
@@ -753,19 +754,19 @@
         <div class="card-header d-flex justify-content-between align-items-center">
           <span><i class="fa-solid fa-user-group"></i> Top Clientes</span>
           <ul class="nav nav-tabs nav-tabs-sm card-header-tabs d-none d-md-flex" role="tablist">
-            <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tcu-ytd" type="button" role="tab" aria-selected="true">YTD</button></li>
+            <li class="nav-item"><button class="nav-link active" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tcu-range" type="button" role="tab" aria-selected="true"><%= @period_label %></button></li>
             <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tcu-ly" type="button" role="tab">LY</button></li>
             <li class="nav-item"><button class="nav-link" data-action="click->tabs#activate" data-tabs-target="tab" data-target="#tcu-all" type="button" role="tab">All</button></li>
           </ul>
           <select class="form-select form-select-sm d-md-none w-auto" data-action="change->tabs#select">
-            <option value="#tcu-ytd" selected>YTD</option>
+            <option value="#tcu-range" selected><%= @period_label %></option>
             <option value="#tcu-ly">LY</option>
             <option value="#tcu-all">All</option>
           </select>
         </div>
         <div class="card-body p-0">
           <div class="tab-content">
-            <% %w[ytd ly all].each_with_index do |period, pidx| %>
+            <% %w[range ly all].each_with_index do |period, pidx| %>
               <div class="tab-pane fade <%= pidx == 0 ? 'show active' : '' %>" id="tcu-<%= period %>" role="tabpanel" data-tabs-target="panel">
                 <div data-controller="tabs">
                   <ul class="nav nav-tabs nav-tabs-sm px-3 pt-3 d-none d-md-flex" role="tablist">
@@ -776,7 +777,7 @@
                   <div class="tab-content">
                     <% { 'sales' => 'sales', 'res' => 'reserved', 'comb' => 'combined' }.each_with_index do |(tab_key, metric), midx| %>
                       <div class="tab-pane fade <%= midx == 0 ? 'show active' : '' %>" id="tcu-<%= period %>-<%= tab_key %>" role="tabpanel" data-tabs-target="panel">
-                        <turbo-frame id="frame-cust-<%= period %>-<%= metric %>" src="<%= admin_dashboard_customers_rank_path(period: period, metric: metric) %>">
+                        <turbo-frame id="frame-cust-<%= period %>-<%= metric %>" loading="lazy" src="<%= admin_dashboard_customers_rank_path(period: period, metric: metric, **ranking_period_params) %>">
                           <div class="table-responsive p-2 px-3"><table class="table table-sm mb-0">
                             <%= table_skeleton_rows(cols: 3, rows: 3) %>
                           </table></div>
