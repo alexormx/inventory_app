@@ -33,6 +33,7 @@
   <%# Navegación principal %>
   <nav class="sidebar-nav flex-grow-1 py-1" aria-label="Navegación administrativa">
     <ul class="nav flex-column">
+      <% badges = admin_sidebar_badges %>
 
       <li class="sidebar-section-title px-3 pt-2 pb-1">Resumen</li>
 
@@ -43,84 +44,95 @@
       <li class="sidebar-section-title px-3 pt-3 pb-1">Ventas</li>
 
       <li class="nav-item px-2">
-        <%= admin_sidebar_link 'Órdenes de Venta', admin_sale_orders_path, icon: 'receipt', section: true %>
+        <%= admin_sidebar_link 'Órdenes de venta', admin_sale_orders_path, icon: 'receipt', section: true %>
       </li>
       <li class="nav-item px-2">
-        <%= admin_sidebar_link 'Alertas de órdenes', admin_order_alerts_path, icon: 'triangle-exclamation', section: true %>
+        <%= admin_sidebar_link 'Alertas de órdenes', admin_order_alerts_path, icon: 'triangle-exclamation', section: true,
+                               badge: badges[:order_alerts] %>
       </li>
       <li class="nav-item px-2">
         <%= admin_sidebar_link 'Carritos', admin_shopping_carts_path, icon: 'cart-shopping', section: true %>
       </li>
       <li class="nav-item px-2">
         <%= admin_sidebar_link 'Preórdenes', admin_preorders_path, icon: 'calendar-check', section: true,
-                               also: [admin_preorders_audit_path] %>
+                               also: [admin_preorders_audit_path], badge: badges[:preorders] %>
       </li>
       <li class="nav-item px-2">
-        <%= admin_sidebar_link 'Pedidos WhatsApp', admin_whatsapp_requests_path, icon: 'comment-dots', section: true %>
+        <%= admin_sidebar_link 'Pedidos WhatsApp', admin_whatsapp_requests_path, icon: 'comment-dots', section: true,
+                               badge: badges[:whatsapp] %>
       </li>
       <li class="nav-item px-2 mb-1">
-        <%= admin_sidebar_link 'Cuentas por Cobrar', admin_receivables_path, icon: 'hand-holding-dollar' %>
+        <%= admin_sidebar_link 'Cuentas por cobrar', admin_receivables_path, icon: 'hand-holding-dollar' %>
       </li>
 
       <li class="sidebar-section-title px-3 pt-3 pb-1">Compras</li>
 
       <li class="nav-item px-2">
-        <%= admin_sidebar_link 'Órdenes de Compra', admin_purchase_orders_path, icon: 'truck-loading', section: true %>
-      </li>
-      <li class="nav-item px-2">
-        <%= admin_sidebar_link 'Descubrir Nuevos Productos', discovery_admin_supplier_catalog_items_path, icon: 'magnifying-glass',
-                               also: [discovery_progress_admin_supplier_catalog_items_path] %>
+        <%= admin_sidebar_link 'Órdenes de compra', admin_purchase_orders_path, icon: 'truck-loading', section: true %>
       </li>
       <li class="nav-item px-2 mb-1">
-        <%= admin_sidebar_link 'Actualizar Catálogo Proveedor', admin_supplier_catalog_items_path, icon: 'arrows-rotate', section: true,
-                               also: [admin_supplier_catalog_review_path],
-                               except: [discovery_admin_supplier_catalog_items_path, discovery_progress_admin_supplier_catalog_items_path] %>
+        <%= admin_sidebar_link 'Catálogo del proveedor', admin_supplier_catalog_items_path, icon: 'arrows-rotate', section: true,
+                               also: [admin_supplier_catalog_review_path] %>
       </li>
+      <% if admin_sidebar_open?(admin_supplier_catalog_items_path, admin_supplier_catalog_review_path) %>
+        <li class="nav-item px-2 ps-4 mb-1">
+          <%= admin_sidebar_link 'Descubrir nuevos productos', discovery_admin_supplier_catalog_items_path, icon: 'magnifying-glass',
+                                 also: [discovery_progress_admin_supplier_catalog_items_path] %>
+        </li>
+      <% end %>
 
       <li class="sidebar-section-title px-3 pt-3 pb-1">Catálogo</li>
 
       <li class="nav-item px-2">
-        <%= admin_sidebar_link 'Productos', admin_products_path, icon: 'box-open', section: true %>
+        <%= admin_sidebar_link 'Productos', admin_products_path, icon: 'box-open', section: true,
+                               also: [admin_catalog_review_path] %>
       </li>
-      <li class="nav-item px-2 ps-4">
-        <%= admin_sidebar_link 'Vinculación Catálogo', catalog_status_admin_products_path, icon: 'link', section: true %>
-      </li>
-      <li class="nav-item px-2 ps-4">
-        <%= admin_sidebar_link 'Revisión Catálogo', admin_catalog_review_path, icon: 'clipboard-check', section: true %>
-      </li>
+      <% if admin_sidebar_open?(admin_products_path, admin_catalog_review_path) %>
+        <li class="nav-item px-2 ps-4">
+          <%= admin_sidebar_link 'Vinculación catálogo', catalog_status_admin_products_path, icon: 'link', section: true %>
+        </li>
+        <li class="nav-item px-2 ps-4">
+          <%= admin_sidebar_link 'Revisión catálogo', admin_catalog_review_path, icon: 'clipboard-check', section: true %>
+        </li>
+      <% end %>
       <li class="nav-item px-2">
         <%= admin_sidebar_link 'Coleccionables', admin_collectibles_path, icon: 'gem', section: true %>
       </li>
-      <li class="nav-item px-2 ps-4">
-        <%= admin_sidebar_link 'Agregar Coleccionable', admin_collectibles_quick_add_path, icon: 'plus', section: true %>
-      </li>
+      <% if admin_sidebar_open?(admin_collectibles_path) %>
+        <li class="nav-item px-2 ps-4">
+          <%= admin_sidebar_link 'Agregar coleccionable', admin_collectibles_quick_add_path, icon: 'plus', section: true %>
+        </li>
+      <% end %>
       <li class="nav-item px-2 mb-1">
         <%= admin_sidebar_link 'Enriquecimiento IA', admin_product_enrichment_index_path, icon: 'wand-magic-sparkles', section: true,
                                also: [admin_category_attribute_templates_path] %>
       </li>
       <% if Rails.env.development? %>
         <li class="nav-item px-2 mb-1">
-          <%= admin_sidebar_link 'Generar Catálogo PDF', admin_catalog_pdf_path, icon: 'file-pdf' %>
+          <%= admin_sidebar_link 'Generar catálogo PDF', admin_catalog_pdf_path, icon: 'file-pdf' %>
         </li>
       <% end %>
 
       <li class="sidebar-section-title px-3 pt-3 pb-1">Inventario</li>
 
       <li class="nav-item px-2">
-        <%= admin_sidebar_link 'Inventario', admin_inventory_path, icon: 'boxes-stacked', section: true %>
+        <%= admin_sidebar_link 'Inventario', admin_inventory_path, icon: 'boxes-stacked', section: true,
+                               also: [admin_inventory_verifications_path] %>
       </li>
-      <li class="nav-item px-2 ps-4">
-        <%= admin_sidebar_link 'Sin Ubicación', admin_inventory_unlocated_path, icon: 'location-crosshairs', section: true %>
-      </li>
-      <li class="nav-item px-2 ps-4">
-        <%= admin_sidebar_link 'Explorar Ubicaciones', admin_inventory_location_explorer_path, icon: 'compass', section: true %>
-      </li>
-      <li class="nav-item px-2 ps-4">
-        <%= admin_sidebar_link 'Verificación física', admin_inventory_verifications_path, icon: 'list-check', section: true %>
-      </li>
-      <li class="nav-item px-2 ps-4">
-        <%= admin_sidebar_link 'Transferir', admin_inventory_transfer_path, icon: 'right-left', section: true %>
-      </li>
+      <% if admin_sidebar_open?(admin_inventory_path, admin_inventory_verifications_path) %>
+        <li class="nav-item px-2 ps-4">
+          <%= admin_sidebar_link 'Sin ubicación', admin_inventory_unlocated_path, icon: 'location-crosshairs', section: true %>
+        </li>
+        <li class="nav-item px-2 ps-4">
+          <%= admin_sidebar_link 'Explorar ubicaciones', admin_inventory_location_explorer_path, icon: 'compass', section: true %>
+        </li>
+        <li class="nav-item px-2 ps-4">
+          <%= admin_sidebar_link 'Verificación física', admin_inventory_verifications_path, icon: 'list-check', section: true %>
+        </li>
+        <li class="nav-item px-2 ps-4">
+          <%= admin_sidebar_link 'Transferir', admin_inventory_transfer_path, icon: 'right-left', section: true %>
+        </li>
+      <% end %>
       <li class="nav-item px-2">
         <%= admin_sidebar_link 'Ajustes', admin_inventory_adjustments_path, icon: 'scale-balanced', section: true %>
       </li>
@@ -129,22 +141,19 @@
                                also: [admin_location_types_path] %>
       </li>
 
-      <li class="sidebar-section-title px-3 pt-3 pb-1">Clientes</li>
+      <li class="sidebar-section-title px-3 pt-3 pb-1">Clientes y contenido</li>
 
-      <li class="nav-item px-2 mb-1">
+      <li class="nav-item px-2">
         <%= admin_sidebar_link 'Usuarios', admin_users_path, icon: 'users', section: true %>
       </li>
-
-      <li class="sidebar-section-title px-3 pt-3 pb-1">Contenido</li>
-
       <li class="nav-item px-2">
         <%= admin_sidebar_link 'Blog', admin_posts_path, icon: 'newspaper', section: true %>
       </li>
       <li class="nav-item px-2">
-        <%= admin_sidebar_link 'Reseñas', admin_reviews_path, icon: 'comments' %>
+        <%= admin_sidebar_link 'Reseñas', admin_reviews_path, icon: 'comments', badge: badges[:reviews] %>
       </li>
       <li class="nav-item px-2 mb-1">
-        <%= admin_sidebar_link 'Comentarios', admin_comments_path, icon: 'message' %>
+        <%= admin_sidebar_link 'Comentarios', admin_comments_path, icon: 'message', badge: badges[:comments] %>
       </li>
 
       <li class="sidebar-section-title px-3 pt-3 pb-1">Análisis</li>
@@ -153,18 +162,15 @@
         <%= admin_sidebar_link 'Reportes', admin_reports_path, icon: 'chart-pie', section: true %>
       </li>
       <li class="nav-item px-2 mb-1">
-        <%= admin_sidebar_link 'Registro de Visitas', admin_visitor_logs_path, icon: 'chart-line' %>
+        <%= admin_sidebar_link 'Registro de visitas', admin_visitor_logs_path, icon: 'chart-line' %>
       </li>
 
       <li class="sidebar-section-title px-3 pt-3 pb-1">Sistema</li>
 
       <li class="nav-item px-2">
         <%= admin_sidebar_link 'Configuración', admin_settings_path, icon: 'gears', section: true,
-                               also: [admin_payment_methods_path, admin_shipping_methods_path,
+                               also: [admin_payment_methods_path, admin_shipping_methods_path, admin_system_variables_path,
                                       admin_inventory_audit_path, admin_inventory_events_path] %>
-      </li>
-      <li class="nav-item px-2">
-        <%= admin_sidebar_link 'Variables del Sistema', admin_system_variables_path, icon: 'database' %>
       </li>
     </ul>
   </nav>
@@ -181,7 +187,7 @@
         </div>
         <div class="sidebar-label overflow-hidden">
           <div class="text-white small fw-medium text-truncate"><%= sidebar_user_label %></div>
-          <div class="text-secondary small text-truncate"><%= current_user.role&.capitalize %></div>
+          <div class="text-secondary small text-truncate"><%= admin_role_label(current_user.role) %></div>
         </div>
       <% end %>
     <% end %>
