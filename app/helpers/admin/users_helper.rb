@@ -59,7 +59,7 @@ module Admin
     end
 
     def sale_order_pending_amount(order)
-      [order.balance, 0].max
+      [order.balance_due, 0].max
     end
   end
 end

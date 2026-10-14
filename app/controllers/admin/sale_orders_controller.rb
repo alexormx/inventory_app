@@ -287,7 +287,7 @@ module Admin
     def build_base_scope
       items_sql   = '(SELECT COALESCE(SUM(quantity),0) FROM sale_order_items soi WHERE soi.sale_order_id = sale_orders.id) AS items_count'
       paid_sql    = "(SELECT COALESCE(SUM(amount),0) FROM payments p WHERE p.sale_order_id = sale_orders.id AND p.status = 'Completed') AS total_paid_value"
-      balance_sql = "(sale_orders.total_order_value - (SELECT COALESCE(SUM(amount),0) FROM payments p2 WHERE p2.sale_order_id = sale_orders.id AND p2.status = 'Completed')) AS balance_due_value"
+      balance_sql = "#{SaleOrder::BALANCE_DUE_SQL} AS balance_due_value"
 
       SaleOrder.joins(:user).includes(:user)
                .select('sale_orders.*', items_sql, paid_sql, balance_sql)
@@ -316,10 +316,7 @@ module Admin
     def apply_filters(scope)
       scope = scope.where(status: @status_filter) if @status_filter.present? && @status_filter != 'all'
 
-      if @due_filter
-        balance_expr = "sale_orders.total_order_value - (SELECT COALESCE(SUM(amount),0) FROM payments p2 WHERE p2.sale_order_id = sale_orders.id AND p2.status = 'Completed')"
-        scope = scope.where(Arel.sql("#{balance_expr} > 0"))
-      end
+      scope = scope.where(Arel.sql("#{SaleOrder::BALANCE_DUE_SQL} > 0")) if @due_filter
 
       scope = apply_search(scope) if @q.present?
       scope

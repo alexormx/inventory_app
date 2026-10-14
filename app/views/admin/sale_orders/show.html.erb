@@ -2,8 +2,10 @@
   # Calcular métricas
   items_count = @sale_order.sale_order_items.sum(:quantity)
   products_count = @sale_order.sale_order_items.count
-  balance = @sale_order.total_order_value - @sale_order.total_paid
-  is_fully_paid = balance <= 0
+  balance = @sale_order.balance_due
+  # Una cancelada no se cobra: ni adeudo ni "Pagada".
+  is_canceled = @sale_order.status.in?(SaleOrder::NON_ACTIVE_TOTAL_STATUSES)
+  is_fully_paid = !is_canceled && balance <= 0
 
   # Credit info
   credit_allowed = (@sale_order.user&.respond_to?(:credit_enabled) && @sale_order.user.credit_enabled) || @sale_order.credit_override
@@ -173,7 +175,9 @@
         <div class="card border-0 shadow-sm h-100 <%= 'border-danger border-2' if is_overdue %>">
           <div class="card-body text-center py-3">
             <div class="text-muted small text-uppercase">Saldo</div>
-            <% if is_fully_paid %>
+            <% if is_canceled %>
+              <div class="h4 mb-0 text-muted">Sin adeudo</div>
+            <% elsif is_fully_paid %>
               <div class="h4 mb-0 text-success"><i class="fa-solid fa-circle-check"></i> Pagada</div>
             <% else %>
               <div class="h4 mb-0 text-danger"><%= number_to_currency(balance, unit: '$', precision: 2) %></div>
@@ -294,8 +298,12 @@
         </div>
         <div class="col border-start">
           <div class="small text-muted">Adeudo</div>
-          <div class="h5 mb-0 <%= is_fully_paid ? 'text-success' : 'text-danger' %>">
-            <%= is_fully_paid ? sanitize('<i class="fa-solid fa-check me-1" aria-hidden="true"></i>$0.00') : number_to_currency(balance, unit: '$', precision: 2) %>
+          <div class="h5 mb-0 <%= is_canceled ? 'text-muted' : (is_fully_paid ? 'text-success' : 'text-danger') %>">
+            <% if is_canceled %>
+              Sin adeudo
+            <% else %>
+              <%= is_fully_paid ? sanitize('<i class="fa-solid fa-check me-1" aria-hidden="true"></i>$0.00') : number_to_currency(balance, unit: '$', precision: 2) %>
+            <% end %>
           </div>
         </div>
       </div>

@@ -144,6 +144,13 @@ class SaleOrder < ApplicationRecord
   # excluye es su aportación a los agregados financieros vivos.
   NON_ACTIVE_TOTAL_STATUSES = ['Canceled'].freeze
 
+  # Saldo que el cliente realmente debe: el de BALANCE_SQL, salvo en órdenes
+  # canceladas, que no se cobran aunque su total siga registrado.
+  BALANCE_DUE_SQL = <<~SQL.squish
+    (CASE WHEN sale_orders.status IN (#{NON_ACTIVE_TOTAL_STATUSES.map { |st| "'#{st}'" }.join(', ')}) THEN 0
+          ELSE #{BALANCE_SQL} END)
+  SQL
+
   # Órdenes que sí suman a ventas y adeudo del cliente.
   scope :active_for_totals, -> { where.not(status: NON_ACTIVE_TOTAL_STATUSES) }
 
@@ -170,6 +177,12 @@ class SaleOrder < ApplicationRecord
     else
       (total_order_value || 0).to_d - payments.where(status: 'Completed').sum(:amount).to_d
     end
+  end
+
+  # Lo que el cliente debe de esta orden; cero si está cancelada. Usar éste y
+  # no `balance` para mostrar o filtrar adeudo.
+  def balance_due
+    NON_ACTIVE_TOTAL_STATUSES.include?(status) ? 0.to_d : balance
   end
 
   # Snapshot de totales calculados dinámicamente (sin mutar atributos)
