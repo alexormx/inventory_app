@@ -7,11 +7,18 @@ module SaleOrders
     STALE_PENDING_AFTER = 30.days
     TOLERANCE = 0.01
 
+    # SQL fijo y valores por parámetro enlazado (?): nada se interpola en las
+    # condiciones, así el escáner de seguridad puede verificarlas.
+    PAID_SQL = 'COALESCE((SELECT SUM(p.amount) FROM payments p ' \
+               "WHERE p.sale_order_id = sale_orders.id AND p.status = 'Completed'), 0)"
+    OVERPAID_CONDITION = "#{PAID_SQL} > sale_orders.total_order_value + ?".freeze
+    OVERPAID_ORDER = Arel.sql("#{PAID_SQL} - sale_orders.total_order_value DESC")
+    SOLD_UNITS_CONDITION = 'EXISTS (SELECT 1 FROM inventories i WHERE i.sale_order_id = sale_orders.id AND i.status = ?)'
+
     module_function
 
     def paid_sql
-      'COALESCE((SELECT SUM(p.amount) FROM payments p ' \
-        "WHERE p.sale_order_id = sale_orders.id AND p.status = 'Completed'), 0)"
+      PAID_SQL
     end
 
     def held_sql
@@ -29,25 +36,27 @@ module SaleOrders
     end
 
     def overpaid
-      with_figures(SaleOrder.where.not(status: 'Canceled').where("#{paid_sql} > sale_orders.total_order_value + #{TOLERANCE}"))
-        .order(Arel.sql("#{paid_sql} - sale_orders.total_order_value DESC"))
+      with_figures(overpaid_scope).order(OVERPAID_ORDER)
     end
 
     def inconsistent
-      sold = Inventory.statuses.fetch('sold')
-      with_figures(SaleOrder.where(status: 'Pending')
-                            .where("EXISTS (SELECT 1 FROM inventories i WHERE i.sale_order_id = sale_orders.id AND i.status = #{sold})"))
-        .order(:created_at)
+      with_figures(inconsistent_scope).order(:created_at)
     end
 
     def counts
       {
         stale_pending: SaleOrder.where(status: 'Pending').where(created_at: ...STALE_PENDING_AFTER.ago).count,
-        overpaid: SaleOrder.where.not(status: 'Canceled').where("#{paid_sql} > sale_orders.total_order_value + #{TOLERANCE}").count,
-        inconsistent: SaleOrder.where(status: 'Pending')
-                               .where("EXISTS (SELECT 1 FROM inventories i WHERE i.sale_order_id = sale_orders.id AND i.status = #{Inventory.statuses.fetch('sold')})")
-                               .count
+        overpaid: overpaid_scope.count,
+        inconsistent: inconsistent_scope.count
       }
+    end
+
+    def overpaid_scope
+      SaleOrder.where.not(status: 'Canceled').where(OVERPAID_CONDITION, TOLERANCE)
+    end
+
+    def inconsistent_scope
+      SaleOrder.where(status: 'Pending').where(SOLD_UNITS_CONDITION, Inventory.statuses.fetch('sold'))
     end
   end
 end
