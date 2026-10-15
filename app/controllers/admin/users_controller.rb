@@ -70,7 +70,7 @@ module Admin
           ), 0)
           FROM sale_orders so3
           WHERE so3.user_id = users.id
-            AND so3.status <> 'Canceled'
+            AND so3.status NOT IN ('Canceled', 'Returned')
         )
       SQL
 

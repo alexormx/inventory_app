@@ -144,10 +144,14 @@ class SaleOrder < ApplicationRecord
   # excluye es su aportación a los agregados financieros vivos.
   NON_ACTIVE_TOTAL_STATUSES = ['Canceled'].freeze
 
+  # Estados que no generan adeudo: la cancelada no se cobra y la devuelta ya
+  # regresó la mercancía. Su total sigue registrado, pero no es deuda.
+  NO_DEBT_STATUSES = %w[Canceled Returned].freeze
+
   # Saldo que el cliente realmente debe: el de BALANCE_SQL, salvo en órdenes
-  # canceladas, que no se cobran aunque su total siga registrado.
+  # con estado de NO_DEBT_STATUSES.
   BALANCE_DUE_SQL = <<~SQL.squish
-    (CASE WHEN sale_orders.status IN (#{NON_ACTIVE_TOTAL_STATUSES.map { |st| "'#{st}'" }.join(', ')}) THEN 0
+    (CASE WHEN sale_orders.status IN (#{NO_DEBT_STATUSES.map { |st| "'#{st}'" }.join(', ')}) THEN 0
           ELSE #{BALANCE_SQL} END)
   SQL
 
@@ -155,10 +159,10 @@ class SaleOrder < ApplicationRecord
   scope :active_for_totals, -> { where.not(status: NON_ACTIVE_TOTAL_STATUSES) }
 
   # Filtra órdenes con balance > 0 (cuentas por cobrar abiertas).
-  # Las canceladas quedan fuera: su saldo ya no es cobrable aunque
+  # Canceladas y devueltas quedan fuera: su saldo ya no es cobrable aunque
   # total_order_value siga registrado y no haya pagos que lo compensen.
   scope :open_receivables, lambda {
-    active_for_totals.where(Arel.sql("#{BALANCE_SQL} > 0"))
+    where.not(status: NO_DEBT_STATUSES).where(Arel.sql("#{BALANCE_SQL} > 0"))
   }
 
   # Ordena por due_date con NULLS LAST y luego por created_at DESC, portable entre motores
@@ -179,10 +183,10 @@ class SaleOrder < ApplicationRecord
     end
   end
 
-  # Lo que el cliente debe de esta orden; cero si está cancelada. Usar éste y
-  # no `balance` para mostrar o filtrar adeudo.
+  # Lo que el cliente debe de esta orden; cero si está cancelada o devuelta.
+  # Usar éste y no `balance` para mostrar o filtrar adeudo.
   def balance_due
-    NON_ACTIVE_TOTAL_STATUSES.include?(status) ? 0.to_d : balance
+    NO_DEBT_STATUSES.include?(status) ? 0.to_d : balance
   end
 
   # Snapshot de totales calculados dinámicamente (sin mutar atributos)

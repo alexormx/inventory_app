@@ -3,8 +3,8 @@
   items_count = @sale_order.sale_order_items.sum(:quantity)
   products_count = @sale_order.sale_order_items.count
   balance = @sale_order.balance_due
-  # Una cancelada no se cobra: ni adeudo ni "Pagada".
-  is_canceled = @sale_order.status.in?(SaleOrder::NON_ACTIVE_TOTAL_STATUSES)
+  # Una cancelada o devuelta no se cobra: ni adeudo ni "Pagada".
+  is_canceled = @sale_order.status.in?(SaleOrder::NO_DEBT_STATUSES)
   is_fully_paid = !is_canceled && balance <= 0
 
   # Credit info

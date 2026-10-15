@@ -249,7 +249,7 @@
 
             <%# Adeudo %>
             <td class="text-end">
-              <% if so.status.in?(SaleOrder::NON_ACTIVE_TOTAL_STATUSES) %>
+              <% if so.status.in?(SaleOrder::NO_DEBT_STATUSES) %>
                 <span class="badge bg-secondary-subtle text-secondary">Sin adeudo</span>
               <% elsif has_balance %>
                 <span class="badge bg-danger">
