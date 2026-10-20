@@ -151,6 +151,15 @@ RSpec.describe 'Admin location batch Turbo targets', type: :request do
       expect(response.body).to include('Skyline GT-R')
     end
 
+    # El selector adelanta la misma cifra que el resumen: si no se repinta, el
+    # estante sigue anunciando lo que tenía antes de asignar.
+    it 'repinta el selector de ubicación con el conteo nuevo' do
+      post admin_location_assignment_batch_confirm_path, headers: turbo_headers
+
+      expect(response.body).to include('selected-location-panel')
+      expect(response.body).to include('(6 piezas)')
+    end
+
     it 'deja el estante seleccionado y el lote vacío' do
       post admin_location_assignment_batch_confirm_path
 

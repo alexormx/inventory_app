@@ -281,7 +281,7 @@ module Admin
     def unlocated
       @q = params[:q].to_s.strip
       @batch = Admin::LocationAssignmentBatch.for(current_user)
-      @location_options = assignable_location_options
+      @location_options = Inventories::AssignableLocationOptions.call
       @batch_lines = @batch.detailed_lines
 
       overview = Inventories::UnlocatedOverview.new(term: @q)
@@ -546,16 +546,6 @@ module Admin
     end
 
     private
-
-    # Hojas activas en UNA consulta. Recorrer InventoryLocation.active llamando
-    # a leaf? hace una consulta por ubicación (N+1); esto excluye de golpe a
-    # cualquiera que sea padre de otra.
-    def assignable_location_options
-      parent_ids = InventoryLocation.where.not(parent_id: nil).select(:parent_id)
-      InventoryLocation.active.where.not(id: parent_ids).order(:path_cache, :name).map do |location|
-        ["#{location.path_cache.presence || location.name} (#{location.code})", location.id]
-      end
-    end
 
     def inventory_params
       params.expect(inventory: %i[status status_changed_at])

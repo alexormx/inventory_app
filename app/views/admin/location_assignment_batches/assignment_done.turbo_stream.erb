@@ -1,4 +1,4 @@
-<%# La asignación entró: cambian exactamente cuatro zonas.
+<%# La asignación entró: cambian exactamente cinco zonas.
 
     - el estante ya tiene la mercancía, así que su resumen se vuelve a consultar
       contra la base (nunca se suma el lote en el cliente)
@@ -6,14 +6,20 @@
     - los resultados de la búsqueda bajan su "Asignable": esas piezas ya están
       ubicadas y no se pueden volver a ubicar
     - los totales superiores reflejan cuántas piezas y productos siguen pendientes
+    - el selector de ubicación, porque cada opción lleva las piezas guardadas y
+      la del estante actual acaba de crecer
 
-    La ubicación elegida y el término buscado no se tocan: el operador sigue
-    parado en el mismo estante y normalmente va a seguir con la misma búsqueda. %>
+    La ubicación elegida y el término buscado no cambian: el selector se repinta
+    con el mismo estante seleccionado y la búsqueda no se toca. %>
 <%= turbo_stream.replace 'unlocated-overview-totals' do %>
   <%= render 'admin/inventory/unlocated_overview_totals',
              total_assignable: @total_assignable,
              total_products: @total_products,
              total_in_transit: @total_in_transit %>
+<% end %>
+<%= turbo_stream.replace 'selected-location-panel' do %>
+  <%= render 'admin/inventory/selected_location_panel',
+             batch: @batch, location_options: @location_options, q: @q %>
 <% end %>
 <%= turbo_stream.replace 'location-current-inventory' do %>
   <%= render 'admin/inventory/location_current_inventory', location_inventory: @location_inventory %>
