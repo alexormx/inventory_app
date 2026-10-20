@@ -178,3 +178,15 @@ jobs:
             ${{ github.workspace }}/tmp/capybara
             ${{ github.workspace }}/tmp/screenshots
           if-no-files-found: ignore
+
+      # DIAGNOSTICO TEMPORAL - rama desechable. Evidencia POSTERIOR al fallo,
+      # del lado del servidor: distingue la entrega nula conocida (cero
+      # peticiones a /users/sign_out) de un rojo cualquiera, sin inspeccionar
+      # nada en el navegador antes del click.
+      - name: Keep Rails test log for zero-delivery classification
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: rails-test-log
+          path: ${{ github.workspace }}/log/test.log
+          if-no-files-found: ignore
