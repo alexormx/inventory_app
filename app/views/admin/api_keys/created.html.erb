@@ -1,0 +1,27 @@
+<h2 class="mb-3 d-flex align-items-center gap-2">
+  <i class="fa-solid fa-key"></i> Clave creada: <%= @api_key.name %>
+</h2>
+
+<div class="card" style="max-width: 760px;">
+  <div class="card-body">
+    <div class="alert alert-warning">
+      <i class="fa-solid fa-triangle-exclamation me-1"></i>
+      Cópiala ahora: <strong>no se volverá a mostrar</strong>. Si la pierdes, revócala y crea otra.
+    </div>
+
+    <div class="input-group mb-3">
+      <input type="text" class="form-control font-monospace" value="<%= @token %>" readonly onclick="this.select()">
+      <button type="button" class="btn btn-outline-primary"
+              data-controller="copy" data-copy-text-value="<%= @token %>" data-copy-label-value="¡Copiada!"
+              data-action="copy#copy">
+        <i class="fa-regular fa-copy me-1"></i> Copiar
+      </button>
+    </div>
+
+    <p class="text-muted small mb-3">
+      En KataFrame: conector «API propia (REST)», encabezado <code>Authorization</code>, esquema <code>Bearer</code>.
+    </p>
+
+    <%= link_to 'Volver a las claves', admin_api_keys_path, class: 'btn btn-primary' %>
+  </div>
+</div>

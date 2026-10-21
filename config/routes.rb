@@ -315,6 +315,11 @@ Rails.application.routes.draw do
     # System variables explorer
     resources :system_variables, only: %i[index create update]
 
+    # Claves de API para integraciones (KataFrame)
+    resources :api_keys, only: %i[index new create] do
+      member { patch :revoke }
+    end
+
     # General user management (admin-facing) con tabs
     resources :users, only: %i[index show new create edit update destroy] do
       collection do

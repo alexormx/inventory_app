@@ -1,0 +1,42 @@
+<h2 class="mb-3 d-flex align-items-center gap-2">
+  <i class="fa-solid fa-key"></i> Nueva clave de API
+</h2>
+
+<div class="card" style="max-width: 640px;">
+  <div class="card-body">
+    <% if @api_key.errors.any? %>
+      <div class="alert alert-danger">
+        <ul class="mb-0">
+          <% @api_key.errors.full_messages.each do |message| %>
+            <li><%= message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <%= form_with model: @api_key, url: admin_api_keys_path do |f| %>
+      <div class="mb-3">
+        <%= f.label :name, 'Nombre', class: 'form-label' %>
+        <%= f.text_field :name, class: 'form-control', required: true, placeholder: 'Ej: KataFrame – laptop' %>
+        <div class="form-text">Para reconocerla después (qué app y en qué equipo).</div>
+      </div>
+
+      <div class="mb-3">
+        <span class="form-label d-block">Permisos</span>
+        <%= hidden_field_tag 'api_key[scopes][]', '' %>
+        <% ApiKey::SCOPES.each do |scope| %>
+          <div class="form-check">
+            <%= check_box_tag 'api_key[scopes][]', scope, @api_key.scopes.include?(scope),
+                              id: "scope_#{scope.parameterize}", class: 'form-check-input' %>
+            <label class="form-check-label" for="scope_<%= scope.parameterize %>"><%= scope_label(scope) %></label>
+          </div>
+        <% end %>
+      </div>
+
+      <div class="d-flex gap-2">
+        <%= f.submit 'Crear clave', class: 'btn btn-primary' %>
+        <%= link_to 'Cancelar', admin_api_keys_path, class: 'btn btn-outline-secondary' %>
+      </div>
+    <% end %>
+  </div>
+</div>
