@@ -43,7 +43,11 @@ Revocar la desactiva al instante sin afectar a otras claves ni al token legado.
 - **Crear / editar**: campos escribibles `product_name, brand, category, series,
   scale, selling_price, description, barcode, launch_date, status,
   whatsapp_code, length_cm, width_cm, height_cm, weight_gr, custom_attributes`.
+  `code` se acepta como sinónimo de `whatsapp_code` (es el nombre con que se lee).
+  Un `status` o código vacío se ignora (no despublica ni regenera el código).
   Las existencias, costos y datos de proveedor no se pueden cambiar.
+  - El precio mínimo de un producto creado por la API es su precio de venta y
+    lo acompaña cuando baja; un mínimo fijado en el admin se respeta.
   - Productos nuevos reciben un SKU interno `KF…` (corregible en el admin).
   - `custom_attributes` se combina con lo existente; una llave vacía se borra.
   - Publicar (`status: active`) solo si hay existencias publicables, preventa o

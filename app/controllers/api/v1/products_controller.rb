@@ -94,9 +94,11 @@ module Api
         end
       end
 
-      # Con clave: products:write si trae campos, photos:write si trae fotos.
+      # Con clave: photos:write si trae fotos; products:write para todo lo demás
+      # (campos, crear, o un PATCH vacío, que igual guarda). Solo-fotos no la pide.
       def require_write_scopes!
-        require_scope!('products:write') if write_attrs.present? || action_name == 'create'
+        photos_only = action_name == 'update' && write_attrs.blank? && write_photos.any?
+        require_scope!('products:write') unless photos_only
         require_scope!('photos:write') if !performed? && write_photos.any?
       end
 
@@ -107,7 +109,7 @@ module Api
       end
 
       def write_attrs
-        @write_attrs ||= write_product_params.permit(*Api::ProductWriter::WRITABLE, custom_attributes: {}).to_h
+        @write_attrs ||= write_product_params.permit(*Api::ProductWriter::WRITABLE, :code, custom_attributes: {}).to_h
       end
 
       def write_photos

@@ -49,6 +49,8 @@ RSpec.describe 'Admin::ApiKeys', type: :request do
       token = response.body[/pk_[1-9A-HJ-NP-Za-km-z]{40}/]
       expect(token).to be_present
       expect(response.body).to include('no se volverá a mostrar')
+      expect(response.headers['Cache-Control']).to include('no-store')
+      expect(response.body).to include('<meta name="turbo-cache-control" content="no-cache">')
       expect(ApiKey.authenticate(token)).to eq(ApiKey.last)
 
       get admin_api_keys_path

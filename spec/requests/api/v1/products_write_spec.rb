@@ -87,6 +87,19 @@ RSpec.describe 'API v1 products (write)', type: :request do
       expect(json).to eq('error' => 'Forbidden: missing scope products:write')
     end
 
+    it 'forbids a read-only key from saving through an empty PATCH' do
+      product = existing
+      patch "/api/v1/products/#{product.id}", headers: auth(key('products:read'))
+      expect(response).to have_http_status(:forbidden)
+    end
+
+    it 'accepts code in the payload as KataFrame reads it' do
+      product = existing
+      patch "/api/v1/products/#{product.id}", params: { product: { code: 'ZZ98' } }, headers: auth(key)
+      expect(response).to have_http_status(:ok)
+      expect(json['code']).to eq('ZZ98')
+    end
+
     it 'answers 200 without changes for an empty body' do
       product = existing
       patch "/api/v1/products/#{product.id}", headers: auth(key)

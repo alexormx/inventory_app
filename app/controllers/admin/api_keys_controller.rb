@@ -27,6 +27,8 @@ module Admin
       @api_key, @token = ApiKey.generate!(name: api_key_params[:name],
                                           scopes: Array(api_key_params[:scopes]).compact_blank,
                                           created_by: current_user)
+      # El token no debe quedar en la caché del navegador ni en la de Turbo
+      response.headers['Cache-Control'] = 'no-store'
       render :created, status: :created
     rescue ActiveRecord::RecordInvalid => e
       @api_key = e.record

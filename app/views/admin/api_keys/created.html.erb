@@ -1,3 +1,7 @@
+<% content_for :head do %>
+  <meta name="turbo-cache-control" content="no-cache">
+<% end %>
+
 <h2 class="mb-3 d-flex align-items-center gap-2">
   <i class="fa-solid fa-key"></i> Clave creada: <%= @api_key.name %>
 </h2>

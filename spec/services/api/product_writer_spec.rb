@@ -121,4 +121,41 @@ RSpec.describe Api::ProductWriter do
       expect(product.auto_paused).to be(false)
     end
   end
+
+  describe 'review fixes' do
+    it 'lets a product created by the API lower its price later' do
+      product = write(attrs: kataframe_attrs).product
+      result = write(product: product.reload, attrs: { selling_price: '150' })
+      expect(result).to be_success
+      expect(product.reload.selling_price).to eq(150)
+      expect(product.minimum_price).to eq(150)
+    end
+
+    it 'keeps an admin-set minimum price when lowering the selling price' do
+      product = existing(selling_price: 300, minimum_price: 200)
+      result = write(product: product, attrs: { selling_price: '150' })
+      expect(result).not_to be_success
+      expect(product.reload.minimum_price).to eq(200)
+    end
+
+    it 'ignores a blank status instead of unpublishing' do
+      product = existing(status: 'active', preorder_available: true)
+      result = write(product: product, attrs: { status: '' })
+      expect(result).to be_success
+      expect(product.reload.status).to eq('active')
+    end
+
+    it 'ignores a blank whatsapp_code instead of replacing it' do
+      product = existing
+      code = product.whatsapp_code
+      write(product: product, attrs: { whatsapp_code: '' })
+      expect(product.reload.whatsapp_code).to eq(code)
+    end
+
+    it 'accepts code as the write name of whatsapp_code' do
+      product = existing
+      write(product: product, attrs: { code: 'zz99' })
+      expect(product.reload.whatsapp_code).to eq('ZZ99')
+    end
+  end
 end

@@ -22,9 +22,17 @@ module Api
       end
     end
 
+    # Campos que un "" (KataFrame manda así un campo borrado) no debe tocar:
+    # status vacío se normaliza a draft (despublicaría) y whatsapp_code vacío
+    # regeneraría el código público.
+    IGNORE_BLANK = %i[status whatsapp_code].freeze
+
     def initialize(product:, attrs:, photos:)
       @product = product
       @attrs = attrs.to_h.symbolize_keys
+      # KataFrame escribe con el mismo nombre con que lee: `code`
+      @attrs[:whatsapp_code] = @attrs.delete(:code) if @attrs.key?(:code) && !@attrs.key?(:whatsapp_code)
+      IGNORE_BLANK.each { |key| @attrs.delete(key) if @attrs.key?(key) && @attrs[key].blank? }
       @photos = Array(photos).compact_blank
     end
 
@@ -58,7 +66,9 @@ module Api
 
     # => errores de asignación (sin guardar)
     def assign
+      previous_price = @product.selling_price
       @product.assign_attributes(@attrs.slice(*WRITABLE))
+      follow_price_with_api_minimum(previous_price)
       merge_custom_attributes if @attrs.key?(:custom_attributes)
       @product.product_sku = @product.generate_api_sku if @product.new_record? && @product.product_sku.blank?
       # Sin precio mínimo explícito, no se permite descuento por debajo del precio de venta
@@ -67,6 +77,15 @@ module Api
     rescue ArgumentError => e
       # enum :status con un valor desconocido
       [e.message]
+    end
+
+    # El mínimo que pone la API al crear es el propio precio de venta; si sigue
+    # así, acompaña al precio cuando baja. Un mínimo fijado en el admin se respeta.
+    def follow_price_with_api_minimum(previous_price)
+      return if @product.new_record? || !@product.selling_price_changed?
+      return unless @product.minimum_price.present? && @product.minimum_price == previous_price
+
+      @product.minimum_price = @product.selling_price if @product.minimum_price > @product.selling_price.to_d
     end
 
     # Solo al PASAR a active: editar un producto ya activo no re-evalúa la regla
