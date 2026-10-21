@@ -41,7 +41,7 @@ module Admin
     private
 
     def api_key_params
-      params.require(:api_key).permit(:name, scopes: [])
+      params.expect(api_key: [:name, { scopes: [] }])
     end
 
     def scope_label(scope)
