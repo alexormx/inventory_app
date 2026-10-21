@@ -5,6 +5,7 @@ module Api
     class PaymentsController < ApplicationController
       skip_before_action :verify_authenticity_token
       before_action :authenticate_with_token!
+      before_action :reject_api_keys!
 
       # POST /api/v1/sales_orders/:sales_order_id/payments
       def create

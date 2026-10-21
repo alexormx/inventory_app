@@ -5,6 +5,7 @@ module Api
     class SaleOrderItemsController < ApplicationController
       skip_before_action :verify_authenticity_token
       before_action :authenticate_with_token!
+      before_action :reject_api_keys!
       around_action :disable_bullet_for_write, only: %i[create batch]
 
       # POST /api/v1/sale_order_items

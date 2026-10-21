@@ -10,6 +10,7 @@ module Api
 
       skip_before_action :verify_authenticity_token
       before_action :authenticate_with_token!
+      before_action -> { require_scope!('products:read') }
 
       # Hace stream del JSON ítem por ítem en vez de armar todo el arreglo y
       # serializarlo de una sola vez. Junto con `find_each` (lotes), el pico de
