@@ -684,6 +684,22 @@ class Product < ApplicationRecord
     publishable_stock? || preorder_available || backorder_allowed
   end
 
+  # Publica si es elegible (regla del admin y de la API). => true si quedó :active
+  def publish_if_eligible!
+    return false unless eligible_for_publication?
+
+    update(status: 'active', auto_paused: false)
+  end
+
+  # SKU interno para productos creados por la API (KataFrame no conoce el del
+  # proveedor). Mismo patrón que Collectibles::QuickAddService#generate_sku más
+  # un sufijo aleatorio para que dos altas en el mismo segundo no choquen. El
+  # admin lo puede corregir después para conciliar con el proveedor.
+  def generate_api_sku
+    category_code = category.to_s.first(3).upcase.presence || 'XXX'
+    "KF#{category_code}#{Time.current.strftime('%y%m%d%H%M%S')}#{SecureRandom.alphanumeric(3).upcase}"
+  end
+
   # Pausa automática: si el producto está :active y ya no es elegible para
   # publicación, lo marca inactive + auto_paused (entra a la cola de revisión).
   # NO auto-reactiva: el admin aprueba la reactivación uno a uno.

@@ -445,10 +445,7 @@ module Admin
     # preventa/backorder). Devuelve true si lo publicó, false si lo bloqueó.
     # Limpia auto_paused porque ya pasó la revisión del admin.
     def publish_if_eligible(product)
-      return false unless product.eligible_for_publication?
-
-      product.update(status: 'active', auto_paused: false)
-      true
+      product.publish_if_eligible!
     end
 
     # Cuenta las piezas publicables (libres con ubicación o en tránsito) por

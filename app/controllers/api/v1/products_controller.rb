@@ -6,8 +6,9 @@ module Api
       include CustomAttributesParam
       skip_before_action :verify_authenticity_token
       before_action :authenticate_with_token!
-      before_action :fix_custom_attributes_param, only: %i[create]
+      before_action :fix_custom_attributes_param, only: %i[create update]
       before_action -> { require_scope!('products:read') }, only: %i[index show]
+      before_action :require_write_scopes!, only: %i[create update], unless: :legacy_token?
 
       PER_PAGE = 100
 
@@ -38,6 +39,30 @@ module Api
       end
 
       def create
+        return legacy_create if legacy_token?
+
+        write(Product.new, success_status: :created)
+      end
+
+      # Solo cambia lo que viene; las fotos se agregan al final.
+      def update
+        product = Product.find_by(id: params[:id])
+        return render json: { error: 'Not found' }, status: :not_found unless product
+
+        write(product, success_status: :ok)
+      end
+
+      def exists
+        ws_code = params[:whatsapp_code].to_s.strip.upcase
+        exists = Product.exists?(whatsapp_code: ws_code)
+        render json: { exists: exists }, status: :ok
+      end
+
+      private
+
+      # Contrato original de create para el token legado (scripts existentes):
+      # mismos parámetros (incluye product_sku/supplier_product_code) y respuesta.
+      def legacy_create
         @product = Product.new(product_params.except(:product_images))
 
         if @product.save
@@ -60,13 +85,34 @@ module Api
         end
       end
 
-      def exists
-        ws_code = params[:whatsapp_code].to_s.strip.upcase
-        exists = Product.exists?(whatsapp_code: ws_code)
-        render json: { exists: exists }, status: :ok
+      def write(product, success_status:)
+        result = Api::ProductWriter.new(product: product, attrs: write_attrs, photos: write_photos).call
+        if result.success?
+          render_product(result.product.reload, status: success_status)
+        else
+          render json: { errors: result.errors }, status: :unprocessable_entity
+        end
       end
 
-      private
+      # Con clave: products:write si trae campos, photos:write si trae fotos.
+      def require_write_scopes!
+        require_scope!('products:write') if write_attrs.present? || action_name == 'create'
+        require_scope!('photos:write') if !performed? && write_photos.any?
+      end
+
+      # `params.fetch` (no `expect`): una petición solo con fotos, o vacía, es válida.
+      def write_product_params
+        raw = params.fetch(:product, {})
+        raw.is_a?(ActionController::Parameters) ? raw : ActionController::Parameters.new
+      end
+
+      def write_attrs
+        @write_attrs ||= write_product_params.permit(*Api::ProductWriter::WRITABLE, custom_attributes: {}).to_h
+      end
+
+      def write_photos
+        @write_photos ||= Array(write_product_params[:product_images]).select { |file| file.respond_to?(:original_filename) }
+      end
 
       def render_product(product, status: :ok)
         stock = ProductSerializer.stock_by_product([product.id]).fetch(product.id, 0)
