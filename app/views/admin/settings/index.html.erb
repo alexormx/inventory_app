@@ -37,6 +37,15 @@
 		<% end %>
 	</div>
 	<div class="col-md-6 col-lg-3 mb-3">
+		<%= link_to admin_api_keys_path, class: "card text-decoration-none h-100 border-warning" do %>
+			<div class="card-body text-center">
+				<i class="fa-solid fa-key fa-2x text-warning mb-2"></i>
+				<h6 class="card-title mb-1">Claves de API</h6>
+				<p class="card-text small text-muted mb-0"><%= ApiKey.active.count %> activas</p>
+			</div>
+		<% end %>
+	</div>
+	<div class="col-md-6 col-lg-3 mb-3">
 		<%= link_to admin_inventory_audit_path, class: "card text-decoration-none h-100 border-warning" do %>
 			<div class="card-body text-center">
 				<i class="fa-solid fa-warehouse fa-2x text-warning mb-2"></i>

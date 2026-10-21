@@ -20,6 +20,11 @@ RSpec.describe 'Admin::ApiKeys', type: :request do
   context 'as an admin' do
     before { login_as(admin, scope: :user) }
 
+    it 'is reachable from the settings page' do
+      get admin_settings_path
+      expect(response.body).to include(admin_api_keys_path, 'Claves de API')
+    end
+
     it 'lists keys with prefix, scopes and never-used state' do
       key = create(:api_key, name: 'KataFrame laptop', token_prefix: 'pk_AbCdEfGh', scopes: ['products:read'])
       get admin_api_keys_path
