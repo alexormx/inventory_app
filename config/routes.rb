@@ -445,8 +445,9 @@ Rails.application.routes.draw do
 
   namespace :api do
     namespace :v1 do
-      resources :products, only: [:create]
+      # `exists` va antes de `resources` para que no lo capture products#show
       get 'products/exists', to: 'products#exists'
+      resources :products, only: %i[index show create update]
       get 'catalog', to: 'catalog#index'
       resources :users, only: [:create]
       get 'users/exists', to: 'users#exists'

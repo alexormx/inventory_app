@@ -7,6 +7,35 @@ module Api
       skip_before_action :verify_authenticity_token
       before_action :authenticate_with_token!
       before_action :fix_custom_attributes_param, only: %i[create]
+      before_action -> { require_scope!('products:read') }, only: %i[index show]
+
+      PER_PAGE = 100
+
+      # Todos los productos (borradores, inactivos y agotados incluidos: se
+      # fotografían antes de publicar). KataFrame sigue `next` hasta que falta.
+      def index
+        scope = Product.order(:id)
+        if params[:updated_since].present?
+          since = parse_time(params[:updated_since])
+          return render json: { errors: ['updated_since no es una fecha ISO 8601 válida'] }, status: :unprocessable_entity unless since
+
+          scope = scope.where(updated_at: since..)
+        end
+
+        page = scope.with_attached_product_images.page(params[:page]).per(self.class::PER_PAGE)
+        products = page.to_a
+        stock = ProductSerializer.stock_by_product(products.map(&:id))
+        body = { items: products.map { |product| serialize(product, stock.fetch(product.id, 0)) } }
+        body[:next] = url_for(request.query_parameters.merge(page: page.next_page, only_path: false)) if products.any? && page.next_page
+        render json: body
+      end
+
+      def show
+        product = Product.find_by(id: params[:id])
+        return render json: { error: 'Not found' }, status: :not_found unless product
+
+        render_product(product)
+      end
 
       def create
         @product = Product.new(product_params.except(:product_images))
@@ -38,6 +67,21 @@ module Api
       end
 
       private
+
+      def render_product(product, status: :ok)
+        stock = ProductSerializer.stock_by_product([product.id]).fetch(product.id, 0)
+        render json: serialize(product, stock), status: status
+      end
+
+      def serialize(product, stock)
+        ProductSerializer.new(product, url_builder: self, stock_available: stock).as_json
+      end
+
+      def parse_time(value)
+        Time.iso8601(value.to_s)
+      rescue ArgumentError
+        nil
+      end
 
       def fix_custom_attributes_param
         return if params[:product].blank?
