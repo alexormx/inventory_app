@@ -30,3 +30,13 @@ Resumen: Para estabilizar los ejemplos de API generados con rswag (escrituras so
 - Mantener `:rswag` como metadata en nuevos specs swagger.
 - Alinear los esquemas OpenAPI con las respuestas reales de los controladores.
 - En endpoints de escritura intensiva, considerar desactivar Bullet vía `around_action` en el controlador (ya aplicado en `SaleOrderItemsController`).
+
+## Archivo OpenAPI (2026-10-21)
+
+- Las specs de `spec/requests/api/v1/swagger/` documentan la API en OpenAPI 3.
+  El archivo generado `swagger/v1/swagger.yaml` **se versiona**: lo sirven
+  `/api-docs` (Swagger UI, solo admins) y la guía del admin (`/admin/api_guide`).
+- Al cambiar una de esas specs, regenerar y commitear:
+  `RAILS_ENV=test bin/rails rswag:specs:swaggerize PATTERN='spec/requests/api/v1/swagger/*_spec.rb'`
+- Cada operación que acepta claves de API declara `x-permisos`; sin él, la guía
+  la muestra como «Solo token de administrador».

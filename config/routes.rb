@@ -319,6 +319,7 @@ Rails.application.routes.draw do
     resources :api_keys, only: %i[index new create] do
       member { patch :revoke }
     end
+    get 'api_guide', to: 'api_guide#show', as: :api_guide
 
     # General user management (admin-facing) con tabs
     resources :users, only: %i[index show new create edit update destroy] do

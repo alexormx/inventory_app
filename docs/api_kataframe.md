@@ -3,9 +3,13 @@
 KataFrame usa su conector **«API propia (REST)»**. El inventario expone
 `/api/v1/products` con claves de API que se crean en el admin.
 
+La misma guía está en el admin (**Configuración › Claves de API › Guía de la API**)
+con la tabla de endpoints, y la referencia completa en OpenAPI 3 en `/api-docs`
+(Swagger UI, solo administradores). Ambas leen `swagger/v1/swagger.yaml`.
+
 ## 1. Crear la clave
 
-Admin → **Sistema › Claves de API** → *Nueva clave*.
+Admin → **Configuración › Claves de API** → *Nueva clave*.
 
 - Nombre: algo que identifique app y equipo («KataFrame – laptop»).
 - Permisos:

@@ -20,32 +20,39 @@ RSpec.configure do |config|
     'v1/swagger.yaml' => {
       openapi: '3.0.1',
       info: {
-        title: 'Inventory Management API V1',
+        title: 'API del inventario (Pasatiempos)',
         version: 'v1',
-        description: 'API for managing inventory, products, orders, and more. This API provides programmatic  access to create and manage products, users, purchase orders, sale orders, and order line items.',
-        contact: {
-          name: 'API Support',
-          email: 'support@inventoryapp.com'
-        }
+        description: <<~MD
+          API REST para integraciones como KataFrame.
+
+          **Autenticación:** encabezado `Authorization: Bearer <clave>`. Las claves (`pk_…`) se crean en
+          Admin › Configuración › Claves de API y llevan permisos: `products:read`, `products:write`,
+          `photos:write`. El permiso que pide cada operación está en `x-permisos`.
+
+          Las operaciones marcadas «Solo token de administrador» (órdenes, pagos, usuarios) responden
+          `403` a cualquier clave; solo las acepta el token personal del administrador.
+
+          **Errores:** `401` clave inválida o revocada · `403` falta un permiso · `404` no existe ·
+          `422` validación (`{"errors": [...]}`).
+        MD
       },
       paths: {},
       servers: [
         {
-          url: 'http://localhost:3000',
-          description: 'Development server'
+          url: 'https://pasatiempos.com.mx',
+          description: 'Producción'
         },
         {
-          url: 'https://your-production-domain.com',
-          description: 'Production server'
+          url: 'http://localhost:3000',
+          description: 'Desarrollo'
         }
       ],
       components: {
         securitySchemes: {
           api_token: {
-            type: :apiKey,
-            name: 'Authorization',
-            in: :header,
-            description: 'API token for authentication. Format: "Bearer YOUR_API_TOKEN"'
+            type: :http,
+            scheme: :bearer,
+            description: 'Clave de API (`pk_…`) o token del administrador'
           }
         },
         schemas: {
@@ -60,16 +67,69 @@ RSpec.configure do |config|
               }
             }
           },
+          Errors: {
+            type: :object,
+            properties: { errors: { type: :array, items: { type: :string } } },
+            required: ['errors']
+          },
+          SingleError: {
+            type: :object,
+            properties: { error: { type: :string, example: 'Not found' } },
+            required: ['error']
+          },
+          # Lo que devuelve Api::V1::ProductSerializer: sin SKU ni datos de proveedor
           Product: {
             type: :object,
             properties: {
-              id: { type: :integer, example: 1 },
-              product_sku: { type: :string, example: 'SKU-001' },
-              product_name: { type: :string, example: 'Product Name' },
-              brand: { type: :string, example: 'Brand Name' },
-              category: { type: :string, example: 'Category' },
-              selling_price: { type: :number, format: :float, example: 99.99 },
-              status: { type: :string, enum: ['draft', 'active', 'inactive'], example: 'active' }
+              id: { type: :integer, example: 1532 },
+              code: { type: :string, nullable: true, description: 'Código público (whatsapp_code)', example: 'AB12' },
+              product_name: { type: :string, example: 'Nissan Skyline GT-R' },
+              brand: { type: :string, example: 'Tomica' },
+              category: { type: :string, example: 'diecast' },
+              series: { type: :string, nullable: true },
+              scale: { type: :string, nullable: true, example: '1:64' },
+              selling_price: { type: :string, description: 'Decimal como texto', example: '199.0' },
+              description: { type: :string, nullable: true },
+              status: { type: :string, enum: %w[draft active inactive], example: 'active' },
+              barcode: { type: :string, nullable: true },
+              launch_date: { type: :string, format: :date, nullable: true },
+              stock_available: { type: :integer, description: 'Piezas que un cliente puede comprar ahora', example: 3 },
+              length_cm: { type: :string, nullable: true },
+              width_cm: { type: :string, nullable: true },
+              height_cm: { type: :string, nullable: true },
+              weight_gr: { type: :string, nullable: true },
+              custom_attributes: { type: :object, additionalProperties: true },
+              image_urls: { type: :array, items: { type: :string, format: :uri },
+                            description: 'Fotos originales; la principal primero' },
+              updated_at: { type: :string, format: 'date-time' }
+            },
+            required: %w[id product_name status selling_price stock_available image_urls updated_at]
+          },
+          ProductInput: {
+            type: :object,
+            description: 'Solo cambia lo que se manda. `status` o `code` vacíos se ignoran.',
+            properties: {
+              product_name: { type: :string },
+              brand: { type: :string },
+              category: { type: :string },
+              series: { type: :string },
+              scale: { type: :string },
+              selling_price: { type: :number },
+              description: { type: :string },
+              barcode: { type: :string },
+              launch_date: { type: :string, format: :date },
+              status: { type: :string, enum: %w[draft active inactive],
+                        description: '`active` publica: requiere existencias publicables, preventa o backorder (si no, 422)' },
+              code: { type: :string, description: 'Sinónimo de whatsapp_code' },
+              length_cm: { type: :number },
+              width_cm: { type: :number },
+              height_cm: { type: :number },
+              weight_gr: { type: :number },
+              custom_attributes: { type: :object, additionalProperties: true,
+                                   description: 'Se combina con lo existente; una llave vacía se borra' },
+              product_images: { type: :array, items: { type: :string, format: :binary },
+                                description: 'Solo multipart (`product[product_images][]`): se agregan al final. ' \
+                                             'Máx. 10 por petición, 15 MB c/u, JPG/PNG/WebP' }
             }
           },
           User: {

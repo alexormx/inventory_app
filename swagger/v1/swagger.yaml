@@ -1,0 +1,817 @@
+---
+openapi: 3.0.1
+info:
+  title: API del inventario (Pasatiempos)
+  version: v1
+  description: |
+    API REST para integraciones como KataFrame.
+
+    **Autenticación:** encabezado `Authorization: Bearer <clave>`. Las claves (`pk_…`) se crean en
+    Admin › Configuración › Claves de API y llevan permisos: `products:read`, `products:write`,
+    `photos:write`. El permiso que pide cada operación está en `x-permisos`.
+
+    Las operaciones marcadas «Solo token de administrador» (órdenes, pagos, usuarios) responden
+    `403` a cualquier clave; solo las acepta el token personal del administrador.
+
+    **Errores:** `401` clave inválida o revocada · `403` falta un permiso · `404` no existe ·
+    `422` validación (`{"errors": [...]}`).
+paths:
+  "/api/v1/catalog":
+    get:
+      summary: Catálogo para PDF
+      tags:
+      - Catálogo
+      description: Productos ofertables con ubicación confirmada, en stream, para
+        el generador de catálogos en PDF. `image_url` es la foto principal reducida
+        a 600×600.
+      security:
+      - api_token: []
+      x-permisos:
+      - products:read
+      responses:
+        '200':
+          description: ítems del catálogo
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        code:
+                          type: string
+                        name:
+                          type: string
+                        brand:
+                          type: string
+                        series:
+                          type: string
+                        scale:
+                          type: string
+                          nullable: true
+                        price:
+                          type: string
+                        event:
+                          type: string
+                          nullable: true
+                        event_label:
+                          type: string
+                          nullable: true
+                        launch_date:
+                          type: string
+                          format: date-time
+                          nullable: true
+                        product_url:
+                          type: string
+                          format: uri
+                        unique_piece:
+                          type: boolean
+                        image_url:
+                          type: string
+                          format: uri
+                          nullable: true
+                required:
+                - items
+  "/api/v1/products":
+    get:
+      summary: Listar productos
+      tags:
+      - Productos
+      description: Todos los productos (borradores, inactivos y agotados incluidos),
+        100 por página en orden de id. Seguir `next` hasta que no venga.
+      security:
+      - api_token: []
+      x-permisos:
+      - products:read
+      parameters:
+      - name: page
+        in: query
+        required: false
+        description: Página (desde 1)
+        schema:
+          type: integer
+      - name: updated_since
+        in: query
+        format: date-time
+        required: false
+        description: Solo productos cambiados desde esta fecha ISO 8601
+        schema:
+          type: string
+      responses:
+        '200':
+          description: una página de productos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      "$ref": "#/components/schemas/Product"
+                  next:
+                    type: string
+                    format: uri
+                    description: Siguiente página; falta en la última
+                required:
+                - items
+        '401':
+          description: clave inválida o revocada
+        '403':
+          description: la clave no tiene products:read
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/SingleError"
+        '422':
+          description: updated_since no es ISO 8601
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Errors"
+    post:
+      summary: Crear producto
+      tags:
+      - Productos
+      description: |-
+        Crea un producto con SKU interno `KF…` generado. Precio mínimo = precio de venta. Con fotos, enviar multipart (`product[...]`, `product[product_images][]`) y tener `photos:write`. Todo o nada: si algo falla no se crea nada.
+
+        El token del administrador conserva el contrato anterior (acepta `product_sku` y responde `{message, id, image_urls}`).
+      security:
+      - api_token: []
+      x-permisos:
+      - products:write
+      - photos:write (si trae fotos)
+      parameters: []
+      responses:
+        '201':
+          description: producto creado
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Product"
+        '403':
+          description: la clave no tiene products:write
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/SingleError"
+        '422':
+          description: validación o no se puede publicar
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Errors"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                product:
+                  "$ref": "#/components/schemas/ProductInput"
+              required:
+              - product
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                product:
+                  "$ref": "#/components/schemas/ProductInput"
+              required:
+              - product
+        required: true
+  "/api/v1/products/{id}":
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+    get:
+      summary: Ver producto
+      tags:
+      - Productos
+      security:
+      - api_token: []
+      x-permisos:
+      - products:read
+      responses:
+        '200':
+          description: el producto
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Product"
+        '404':
+          description: no existe
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/SingleError"
+    patch:
+      summary: Editar producto / agregar fotos
+      tags:
+      - Productos
+      description: 'Solo cambia los campos enviados. Las fotos se agregan al final
+        (la principal no cambia). Una petición solo con fotos necesita únicamente
+        `photos:write`. Pasar a `status: active` publica con la misma regla que el
+        admin.'
+      security:
+      - api_token: []
+      x-permisos:
+      - products:write (campos)
+      - photos:write (fotos)
+      parameters: []
+      responses:
+        '200':
+          description: producto actualizado
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Product"
+        '422':
+          description: no se puede publicar
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Errors"
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                product:
+                  "$ref": "#/components/schemas/ProductInput"
+          application/json:
+            schema:
+              type: object
+              properties:
+                product:
+                  "$ref": "#/components/schemas/ProductInput"
+  "/api/v1/products/exists":
+    get:
+      summary: Verificar código
+      tags:
+      - Productos
+      description: "¿Existe un producto con este código público (whatsapp_code)?"
+      security:
+      - api_token: []
+      x-permisos:
+      - cualquier clave válida
+      parameters:
+      - name: whatsapp_code
+        in: query
+        required: true
+        example: AB12
+        schema:
+          type: string
+      responses:
+        '200':
+          description: resultado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  exists:
+                    type: boolean
+                required:
+                - exists
+  "/api/v1/purchase_order_items":
+    post:
+      summary: Create a purchase order item
+      tags:
+      - Purchase Order Items
+      description: Creates a single line item for a purchase order
+      security:
+      - api_token: []
+      parameters: []
+      responses:
+        '201':
+          description: item created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  id:
+                    type: integer
+                    example: 1
+        '422':
+          description: invalid request
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                purchase_order_item:
+                  type: object
+                  properties:
+                    purchase_order_id:
+                      type: string
+                      description: Purchase Order ID
+                      example: PO-202511-001
+                    product_sku:
+                      type: string
+                      description: Product SKU (alternative to product_id)
+                      example: SKU-001
+                    product_id:
+                      type: integer
+                      description: Product ID (alternative to product_sku)
+                      example: 1
+                    quantity:
+                      type: integer
+                      description: Quantity
+                      example: 10
+                    unit_cost:
+                      type: number
+                      format: float
+                      description: Unit cost
+                      example: 50.0
+                    unit_compose_cost_in_mxn:
+                      type: number
+                      format: float
+                      description: Composed unit cost in MXN
+                      example: 55.0
+                  required:
+                  - purchase_order_id
+                  - quantity
+                  - unit_cost
+              required:
+              - purchase_order_item
+  "/api/v1/purchase_order_items/batch":
+    post:
+      summary: Bulk create purchase order items
+      tags:
+      - Purchase Order Items
+      description: Creates multiple line items for a purchase order with automatic
+        cost distribution
+      security:
+      - api_token: []
+      parameters: []
+      responses:
+        '201':
+          description: items created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  created:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                          example: 1
+                        product_sku:
+                          type: string
+                          example: SKU-001
+                  errors:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        product_sku:
+                          type: string
+                          example: SKU-999
+                        error:
+                          type: string
+                          example: Product not found
+        '422':
+          description: invalid request
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                purchase_order_id:
+                  type: string
+                  description: Purchase Order ID
+                  example: PO-202511-001
+                items:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      product_sku:
+                        type: string
+                        description: Product SKU
+                        example: SKU-001
+                      quantity:
+                        type: integer
+                        description: Quantity
+                        example: 10
+                      unit_cost:
+                        type: number
+                        format: float
+                        description: Unit cost
+                        example: 50.0
+                      unit_compose_cost_in_mxn:
+                        type: number
+                        format: float
+                        description: Composed unit cost in MXN
+                        example: 55.0
+                    required:
+                    - product_sku
+                    - quantity
+                    - unit_cost
+              required:
+              - purchase_order_id
+              - items
+  "/api/v1/sale_order_items":
+    post:
+      summary: Create a sale order item
+      tags:
+      - Sale Order Items
+      description: Creates a single line item for a sale order and reserves inventory
+      security:
+      - api_token: []
+      parameters: []
+      responses:
+        '201':
+          description: item created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  id:
+                    type: integer
+                    example: 1
+        '422':
+          description: invalid request
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sale_order_item:
+                  type: object
+                  properties:
+                    sale_order_id:
+                      type: string
+                      description: Sale Order ID
+                      example: SO-202511-001
+                    product_sku:
+                      type: string
+                      description: Product SKU (alternative to product_id)
+                      example: SKU-001
+                    product_id:
+                      type: integer
+                      description: Product ID (alternative to product_sku)
+                      example: 1
+                    quantity:
+                      type: integer
+                      description: Quantity
+                      example: 5
+                    unit_final_price:
+                      type: number
+                      format: float
+                      description: Final unit price after discount
+                      example: 95.0
+                  required:
+                  - sale_order_id
+                  - quantity
+                  - unit_final_price
+              required:
+              - sale_order_item
+  "/api/v1/sale_order_items/batch":
+    post:
+      summary: Bulk create sale order items
+      tags:
+      - Sale Order Items
+      description: Creates multiple line items for a sale order and reserves inventory
+        for each
+      security:
+      - api_token: []
+      parameters: []
+      responses:
+        '201':
+          description: items created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  created:
+                    type: array
+                    items:
+                      type: integer
+                  errors:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        product_sku:
+                          type: string
+                          example: SKU-999
+                        error:
+                          type: string
+                          example: Product not found
+        '422':
+          description: invalid request
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sale_order_id:
+                  type: string
+                  description: Sale Order ID
+                  example: SO-202511-001
+                items:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      product_sku:
+                        type: string
+                        description: Product SKU
+                        example: SKU-001
+                      quantity:
+                        type: integer
+                        description: Quantity
+                        example: 5
+                      unit_final_price:
+                        type: number
+                        format: float
+                        description: Final unit price
+                        example: 95.0
+                    required:
+                    - product_sku
+                    - quantity
+                    - unit_final_price
+              required:
+              - sale_order_id
+              - items
+servers:
+- url: https://pasatiempos.com.mx
+  description: Producción
+- url: http://localhost:3000
+  description: Desarrollo
+components:
+  securitySchemes:
+    api_token:
+      type: http
+      scheme: bearer
+      description: Clave de API (`pk_…`) o token del administrador
+  schemas:
+    Error:
+      type: object
+      properties:
+        status:
+          type: string
+          example: error
+        message:
+          type: string
+          example: Resource not found
+        errors:
+          type: array
+          items:
+            type: string
+    Errors:
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            type: string
+      required:
+      - errors
+    SingleError:
+      type: object
+      properties:
+        error:
+          type: string
+          example: Not found
+      required:
+      - error
+    Product:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1532
+        code:
+          type: string
+          nullable: true
+          description: Código público (whatsapp_code)
+          example: AB12
+        product_name:
+          type: string
+          example: Nissan Skyline GT-R
+        brand:
+          type: string
+          example: Tomica
+        category:
+          type: string
+          example: diecast
+        series:
+          type: string
+          nullable: true
+        scale:
+          type: string
+          nullable: true
+          example: 1:64
+        selling_price:
+          type: string
+          description: Decimal como texto
+          example: '199.0'
+        description:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum:
+          - draft
+          - active
+          - inactive
+          example: active
+        barcode:
+          type: string
+          nullable: true
+        launch_date:
+          type: string
+          format: date
+          nullable: true
+        stock_available:
+          type: integer
+          description: Piezas que un cliente puede comprar ahora
+          example: 3
+        length_cm:
+          type: string
+          nullable: true
+        width_cm:
+          type: string
+          nullable: true
+        height_cm:
+          type: string
+          nullable: true
+        weight_gr:
+          type: string
+          nullable: true
+        custom_attributes:
+          type: object
+          additionalProperties: true
+        image_urls:
+          type: array
+          items:
+            type: string
+            format: uri
+          description: Fotos originales; la principal primero
+        updated_at:
+          type: string
+          format: date-time
+      required:
+      - id
+      - product_name
+      - status
+      - selling_price
+      - stock_available
+      - image_urls
+      - updated_at
+    ProductInput:
+      type: object
+      description: Solo cambia lo que se manda. `status` o `code` vacíos se ignoran.
+      properties:
+        product_name:
+          type: string
+        brand:
+          type: string
+        category:
+          type: string
+        series:
+          type: string
+        scale:
+          type: string
+        selling_price:
+          type: number
+        description:
+          type: string
+        barcode:
+          type: string
+        launch_date:
+          type: string
+          format: date
+        status:
+          type: string
+          enum:
+          - draft
+          - active
+          - inactive
+          description: "`active` publica: requiere existencias publicables, preventa
+            o backorder (si no, 422)"
+        code:
+          type: string
+          description: Sinónimo de whatsapp_code
+        length_cm:
+          type: number
+        width_cm:
+          type: number
+        height_cm:
+          type: number
+        weight_gr:
+          type: number
+        custom_attributes:
+          type: object
+          additionalProperties: true
+          description: Se combina con lo existente; una llave vacía se borra
+        product_images:
+          type: array
+          items:
+            type: string
+            format: binary
+          description: 'Solo multipart (`product[product_images][]`): se agregan al
+            final. Máx. 10 por petición, 15 MB c/u, JPG/PNG/WebP'
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        name:
+          type: string
+          example: John Doe
+        role:
+          type: string
+          enum:
+          - customer
+          - admin
+          example: customer
+    PurchaseOrder:
+      type: object
+      properties:
+        id:
+          type: string
+          example: PO-202511-001
+        order_date:
+          type: string
+          format: date
+          example: '2025-11-30'
+        total_order_cost:
+          type: number
+          format: float
+          example: 1500.5
+        status:
+          type: string
+          example: Pending
+    SaleOrder:
+      type: object
+      properties:
+        id:
+          type: string
+          example: SO-202511-001
+        order_date:
+          type: string
+          format: date
+          example: '2025-11-30'
+        total_order_value:
+          type: number
+          format: float
+          example: 2500.75
+        status:
+          type: string
+          example: Pending

@@ -1,0 +1,124 @@
+<h2 class="mb-3 d-flex align-items-center gap-2">
+  <i class="fa-solid fa-book"></i> Guía de la API
+</h2>
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+  <p class="text-muted mb-0">Cómo conectar otras apps (como KataFrame) al inventario y qué puede hacer cada clave.</p>
+  <div class="d-flex gap-2">
+    <%= link_to admin_api_keys_path, class: "btn btn-outline-secondary" do %>
+      <i class="fa-solid fa-key me-1"></i> Claves de API
+    <% end %>
+    <%= link_to "/api-docs", class: "btn btn-primary", target: "_blank", rel: "noopener" do %>
+      <i class="fa-solid fa-flask me-1"></i> Referencia interactiva
+    <% end %>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-body">
+        <h5 class="card-title">1. Crea una clave</h5>
+        <p>En <%= link_to "Claves de API", admin_api_keys_path %> → <em>Nueva clave</em>. Ponle un nombre que identifique la app y el equipo («KataFrame – laptop») y elige sus permisos:</p>
+        <ul class="mb-3">
+          <% @scope_labels.each do |scope, label| %>
+            <li><strong><%= label %></strong> <code><%= scope %></code></li>
+          <% end %>
+        </ul>
+        <p class="mb-0 small text-muted">La clave (<code>pk_…</code>) se muestra <strong>una sola vez</strong>. Si se pierde, revócala y crea otra. Revocar la desactiva al instante sin afectar a las demás.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-body">
+        <h5 class="card-title">2. Configura KataFrame</h5>
+        <p class="small text-muted">Conector «API propia (REST)»:</p>
+        <table class="table table-sm mb-0">
+          <tbody>
+            <tr><th class="fw-normal text-muted">Dirección</th><td><code><%= request.base_url %></code></td></tr>
+            <tr><th class="fw-normal text-muted">Encabezado / esquema</th><td><code>Authorization</code> / <code>Bearer</code></td></tr>
+            <tr><th class="fw-normal text-muted">Token</th><td>la clave <code>pk_…</code></td></tr>
+            <tr><th class="fw-normal text-muted">Lista (GET)</th><td><code>/api/v1/products</code></td></tr>
+            <tr><th class="fw-normal text-muted">Dónde viene la lista</th><td><code>items</code> (seguir <code>next</code>)</td></tr>
+            <tr><th class="fw-normal text-muted">Crear (POST)</th><td><code>/api/v1/products</code></td></tr>
+            <tr><th class="fw-normal text-muted">Cambiar (PATCH)</th><td><code>/api/v1/products/{id}</code></td></tr>
+            <tr><th class="fw-normal text-muted">Envoltorio</th><td><code>product</code></td></tr>
+            <tr><th class="fw-normal text-muted">Id</th><td><code>id</code></td></tr>
+            <tr><th class="fw-normal text-muted">Campo de fotos</th><td><code>product[product_images][]</code></td></tr>
+            <tr><th class="fw-normal text-muted">Direcciones de las fotos</th><td><code>image_urls</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12">
+    <div class="card">
+      <div class="card-body">
+        <h5 class="card-title">3. Reglas al crear y editar</h5>
+        <ul class="mb-0">
+          <li>Solo cambia lo que se manda. <code>code</code> es sinónimo de <code>whatsapp_code</code>; un <code>status</code> o <code>code</code> vacío se ignora.</li>
+          <li>Productos nuevos reciben un SKU interno <code>KF…</code>; su precio mínimo es el precio de venta (lo acompaña al bajar). Un mínimo fijado en el admin se respeta.</li>
+          <li><code>custom_attributes</code> se combina con lo existente; una llave vacía se borra.</li>
+          <li>Publicar (<code>status: active</code>) usa la regla del admin: existencias publicables, preventa o backorder; si no, <code>422</code>.</li>
+          <li>Fotos: se agregan al final y la principal no cambia. Máximo 10 por petición, 15 MB cada una, JPG/PNG/WebP, en tamaño original.</li>
+          <li>Nunca se exponen SKU, código de proveedor, costos ni proveedores. Las existencias no se cambian por la API.</li>
+          <li>Errores: <code>401</code> clave inválida o revocada · <code>403</code> falta un permiso · <code>404</code> no existe · <code>422</code> validación (<code>{"errors": [...]}</code>).</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Endpoints</h5>
+        <small class="text-muted">Formato OpenAPI 3 · <%= link_to "descargar", "/api-docs/v1/swagger.yaml" %></small>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover mb-0 align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>Método</th>
+                <th>Ruta</th>
+                <th>Qué hace</th>
+                <th>Permiso</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% if @endpoints.any? %>
+                <% @endpoints.each do |endpoint| %>
+                  <tr>
+                    <td><span class="badge bg-secondary font-monospace"><%= endpoint.verb %></span></td>
+                    <td><code><%= endpoint.path %></code></td>
+                    <td><%= endpoint.summary %></td>
+                    <td>
+                      <% if endpoint.permisos.any? %>
+                        <% endpoint.permisos.each do |permiso| %>
+                          <span class="badge bg-light text-dark border"><%= permiso %></span>
+                        <% end %>
+                      <% else %>
+                        <span class="text-muted small">Solo token de administrador</span>
+                      <% end %>
+                    </td>
+                  </tr>
+                <% end %>
+              <% else %>
+                <tr>
+                  <td colspan="4" class="text-center text-muted py-4">No se encontró <code>swagger/v1/swagger.yaml</code>. Genéralo con <code>bin/rails rswag:specs:swaggerize</code>.</td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card-footer bg-white small text-muted">
+        Órdenes, pagos y usuarios solo aceptan el token del administrador: cualquier clave recibe <code>403</code>.
+        En la <%= link_to "referencia interactiva", "/api-docs", target: "_blank", rel: "noopener" %> puedes ver cada campo y probar las llamadas con una clave (botón <em>Authorize</em>).
+      </div>
+    </div>
+  </div>
+</div>
