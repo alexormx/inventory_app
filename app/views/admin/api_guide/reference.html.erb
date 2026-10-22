@@ -1,0 +1,24 @@
+<h2 class="mb-3 d-flex align-items-center gap-2">
+  <i class="fa-solid fa-flask"></i> Referencia de la API
+</h2>
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+  <p class="text-muted mb-0">
+    Cada endpoint con sus campos y respuestas. Para probar: <em>Authorize</em> → pega una clave <code>pk_…</code> →
+    abre un endpoint → <em>Try it out</em>. Las llamadas son reales sobre este servidor.
+  </p>
+  <div class="d-flex gap-2">
+    <%= link_to admin_api_guide_path, class: "btn btn-outline-secondary" do %>
+      <i class="fa-solid fa-book me-1"></i> Guía
+    <% end %>
+    <%= link_to admin_api_guide_openapi_path, class: "btn btn-outline-secondary", download: "openapi.json" do %>
+      <i class="fa-solid fa-download me-1"></i> OpenAPI
+    <% end %>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body bg-white" data-controller="swagger-ui" data-swagger-ui-url-value="<%= admin_api_guide_openapi_path %>">
+    <p class="text-muted text-center py-5 mb-0"><i class="fa-solid fa-spinner fa-spin me-1"></i> Cargando referencia…</p>
+  </div>
+</div>

@@ -2,8 +2,9 @@
 
 module Admin
   # Guía de la API para el admin: cómo conectar KataFrame y la tabla de
-  # endpoints, leída del mismo OpenAPI que sirve /api-docs (swagger/v1/swagger.yaml,
-  # generado con `bin/rails rswag:specs:swaggerize`), para que no se desfase.
+  # endpoints y la referencia interactiva (Swagger UI), todo leído del mismo
+  # OpenAPI (swagger/v1/swagger.yaml, generado con `bin/rails rswag:specs:swaggerize`),
+  # para que no se desfase.
   class ApiGuideController < ApplicationController
     before_action :authenticate_user!
     before_action :authorize_admin!
@@ -17,11 +18,22 @@ module Admin
       @scope_labels = ApiKeysController::SCOPE_LABELS
     end
 
+    def reference; end
+
+    # El OpenAPI apuntando al host actual, para que «Try it out» llame a este
+    # mismo servidor (producción, local o el dominio herokuapp).
+    def openapi
+      render json: openapi_doc.merge('servers' => [{ 'url' => request.base_url }])
+    end
+
     private
 
+    def openapi_doc
+      YAML.safe_load_file(OPENAPI_PATH)
+    end
+
     def endpoints
-      doc = YAML.safe_load_file(OPENAPI_PATH)
-      doc.fetch('paths', {}).flat_map do |path, operations|
+      openapi_doc.fetch('paths', {}).flat_map do |path, operations|
         operations.slice(*VERBS).map do |verb, op|
           Endpoint.new(verb: verb.upcase, path: path, summary: op['summary'],
                        tag: Array(op['tags']).first, permisos: Array(op['x-permisos']))

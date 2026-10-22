@@ -29,7 +29,7 @@ RSpec.describe 'SEO routing hardening', type: :request do
   end
 
   it 'protects api docs behind authentication' do
-    get '/api-docs'
+    get '/admin/api_guide/reference'
 
     expect(response).to have_http_status(:found)
     expect(response.location).to end_with('/users/sign_in')

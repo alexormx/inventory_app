@@ -2,7 +2,7 @@
 
 require 'rails_helper'
 
-# /api-docs y la guía del admin leen swagger/v1/swagger.yaml del repo: se
+# La guía del admin y su referencia interactiva leen swagger/v1/swagger.yaml del repo: se
 # regenera con `bin/rails rswag:specs:swaggerize` y se versiona.
 RSpec.describe 'OpenAPI file' do
   let(:doc) { YAML.safe_load_file(Rails.root.join('swagger/v1/swagger.yaml')) }

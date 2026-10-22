@@ -8,7 +8,7 @@
     <%= link_to admin_api_keys_path, class: "btn btn-outline-secondary" do %>
       <i class="fa-solid fa-key me-1"></i> Claves de API
     <% end %>
-    <%= link_to "/api-docs", class: "btn btn-primary", target: "_blank", rel: "noopener" do %>
+    <%= link_to admin_api_guide_reference_path, class: "btn btn-primary" do %>
       <i class="fa-solid fa-flask me-1"></i> Referencia interactiva
     <% end %>
   </div>
@@ -75,7 +75,7 @@
     <div class="card">
       <div class="card-header bg-white d-flex justify-content-between align-items-center">
         <h5 class="mb-0">Endpoints</h5>
-        <small class="text-muted">Formato OpenAPI 3 · <%= link_to "descargar", "/api-docs/v1/swagger.yaml" %></small>
+        <small class="text-muted">Formato OpenAPI 3 · <%= link_to "descargar", admin_api_guide_openapi_path, download: "openapi.json" %></small>
       </div>
       <div class="card-body p-0">
         <div class="table-responsive">
@@ -117,7 +117,7 @@
       </div>
       <div class="card-footer bg-white small text-muted">
         Órdenes, pagos y usuarios solo aceptan el token del administrador: cualquier clave recibe <code>403</code>.
-        En la <%= link_to "referencia interactiva", "/api-docs", target: "_blank", rel: "noopener" %> puedes ver cada campo y probar las llamadas con una clave (botón <em>Authorize</em>).
+        En la <%= link_to "referencia interactiva", admin_api_guide_reference_path %> puedes ver cada campo y probar las llamadas con una clave (botón <em>Authorize</em>).
       </div>
     </div>
   </div>

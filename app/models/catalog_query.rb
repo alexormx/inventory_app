@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+# OpenStruct es stdlib pero no se carga solo; antes llegaba de rebote vía rswag-ui
+require 'ostruct'
+
 # Canonical contract for the public catalog query string.
 #
 # HTML forms use the conventional bracketed names for arrays (for example,

@@ -69,10 +69,6 @@ gem 'kaminari'
 # ✅ Additional Gems for geolocalization
 gem 'geocoder'
 
-# ✅ API Documentation
-gem 'rswag-api'
-gem 'rswag-ui'
-
 # (Removed XLSX export gems; CSV remains via stdlib)
 
 # 🔹 **Development & Testing Group**

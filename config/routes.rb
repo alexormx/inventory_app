@@ -16,10 +16,8 @@ Rails.application.routes.draw do
   # Devise authentication for all users
   devise_for :users
 
-  authenticate :user, lambda { |user| user.admin? } do
-    mount Rswag::Ui::Engine => '/api-docs'
-    mount Rswag::Api::Engine => '/api-docs'
-  end
+  # La referencia de la API vive en el admin; marcadores viejos de /api-docs
+  get '/api-docs(/*rest)', to: redirect('/admin/api_guide/reference')
 
   # Admin namespace
   namespace :admin do
@@ -320,6 +318,8 @@ Rails.application.routes.draw do
       member { patch :revoke }
     end
     get 'api_guide', to: 'api_guide#show', as: :api_guide
+    get 'api_guide/reference', to: 'api_guide#reference', as: :api_guide_reference
+    get 'api_guide/openapi', to: 'api_guide#openapi', as: :api_guide_openapi, defaults: { format: :json }
 
     # General user management (admin-facing) con tabs
     resources :users, only: %i[index show new create edit update destroy] do

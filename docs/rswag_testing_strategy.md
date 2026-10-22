@@ -35,7 +35,9 @@ Resumen: Para estabilizar los ejemplos de API generados con rswag (escrituras so
 
 - Las specs de `spec/requests/api/v1/swagger/` documentan la API en OpenAPI 3.
   El archivo generado `swagger/v1/swagger.yaml` **se versiona**: lo sirven
-  `/api-docs` (Swagger UI, solo admins) y la guía del admin (`/admin/api_guide`).
+  la guía del admin (`/admin/api_guide`) y su referencia interactiva (Swagger UI
+  desde cdnjs, `/admin/api_guide/reference`). Ya no se montan rswag-api/rswag-ui;
+  `/api-docs` redirige a la referencia.
 - Al cambiar una de esas specs, regenerar y commitear:
   `RAILS_ENV=test bin/rails rswag:specs:swaggerize PATTERN='spec/requests/api/v1/swagger/*_spec.rb'`
 - Cada operación que acepta claves de API declara `x-permisos`; sin él, la guía
