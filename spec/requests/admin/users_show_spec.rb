@@ -119,6 +119,51 @@ RSpec.describe 'Admin user details', type: :request do
       expect(rows["##{paid.id}"].at_css('td:last-child').text).to include('$150')
     end
 
+    describe 'products sold to the customer' do
+      let(:skyline) { create(:product, product_name: 'Nissan Skyline GT-R', whatsapp_code: 'SK01', skip_seed_inventory: true) }
+      let(:supra) { create(:product, product_name: 'Toyota Supra', whatsapp_code: 'SU01', skip_seed_inventory: true) }
+      let(:returned) { create(:product, product_name: 'Honda NSX', skip_seed_inventory: true) }
+
+      def products_sold_rows
+        Nokogiri::HTML(response.body).css('#products-sold tbody tr').map { |row| row.css('td').map { |td| td.text.squish } }
+      end
+
+      before do
+        first = create(:sale_order, user: customer)
+        second = create(:sale_order, user: customer)
+        latest = create(:sale_order, user: customer)
+        canceled = create(:sale_order, user: customer)
+        create(:sale_order_item, sale_order: first, product: skyline, quantity: 2, unit_final_price: 100)
+        create(:sale_order_item, sale_order: second, product: skyline, quantity: 1, unit_final_price: 120)
+        create(:sale_order_item, sale_order: latest, product: supra, quantity: 1, unit_final_price: 300)
+        create(:sale_order_item, sale_order: canceled, product: returned, quantity: 1, unit_final_price: 500)
+        first.update_columns(created_at: 1.month.ago)
+        second.update_columns(created_at: 1.day.ago)
+        canceled.update_columns(status: 'Canceled')
+        create(:sale_order_item, product: supra, quantity: 5) # de otro cliente
+        sign_in admin
+      end
+
+      it 'lists every product sold, once each, with quantity, orders and amount, newest first' do
+        get admin_user_path(customer)
+
+        rows = products_sold_rows
+        expect(rows.map(&:first)).to eq(['Toyota Supra SU01', 'Nissan Skyline GT-R SK01'])
+        expect(rows.map { |row| row[1..3] }).to eq([%w[1 1 $300], %w[3 2 $320]])
+      end
+
+      it 'leaves canceled orders out' do
+        get admin_user_path(customer)
+        expect(products_sold_rows.flatten.join).not_to include('Honda NSX')
+      end
+
+      it 'links each product to its admin page and never shows the supplier SKU' do
+        get admin_user_path(customer)
+        expect(response.body).to include(admin_product_path(skyline))
+        expect(Nokogiri::HTML(response.body).at_css('#products-sold').text).not_to include(skyline.product_sku)
+      end
+    end
+
     it 'does not run a separate payments query per recent sale order' do
       create_list(:sale_order, 3, user: customer).each do |order|
         create(:payment, sale_order: order, amount: 10, status: 'Completed')

@@ -11,6 +11,7 @@
   <%# Columna derecha - Órdenes, pagos y envíos recientes %>
   <div class="col-lg-8">
     <%= render 'orders' %>
+    <%= render 'products_sold' if @user.role == 'customer' && @products_sold.any? %>
     <%= render 'payments' %>
     <%= render 'shipments' %>
   </div>

@@ -217,6 +217,18 @@ module Admin
                                .order(created_at: :desc).limit(5)
       @recent_purchases = PurchaseOrder.where(user_id: @user.id).order(created_at: :desc).limit(5)
 
+      # Todo lo que se le ha vendido, una fila por producto, agregado en SQL
+      # (sin cargar órdenes). Las canceladas no cuentan.
+      @products_sold = SaleOrderItem.joins(:sale_order, :product)
+                                    .merge(user_sale_orders.active_for_totals)
+                                    .group('products.id', 'products.product_name', 'products.whatsapp_code', 'products.slug')
+                                    .select('products.id AS product_id', 'products.product_name', 'products.whatsapp_code', 'products.slug',
+                                            'SUM(sale_order_items.quantity) AS units',
+                                            'COUNT(DISTINCT sale_order_items.sale_order_id) AS orders_count',
+                                            "SUM(#{SaleOrderItem::LINE_REVENUE_SQL}) AS revenue",
+                                            'MAX(sale_orders.created_at) AS last_sold_at')
+                                    .order('last_sold_at DESC', 'products.product_name').to_a
+
       # Pagos y envíos recientes del cliente (a través de sus órdenes), con la
       # orden precargada para los enlaces "Ver orden" sin consulta por fila.
       @recent_payments = Payment.where(sale_order_id: user_sale_orders.select(:id))
