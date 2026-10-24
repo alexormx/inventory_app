@@ -6,10 +6,15 @@ module Api
     # Lista BLANCA: nunca agregar product_sku, supplier_product_code, costos,
     # utilidades ni proveedores — los identificadores de proveedor no salen.
     class ProductSerializer
-      def initialize(product, url_builder:, stock_available:)
+      # Estatus de piezas que ya salieron de la tienda: no suman al `total`.
+      GONE_STATUSES = %w[sold pre_sold lost scrap].freeze
+
+      def initialize(product, url_builder:, stock_available:, inventory: {}, publishable: false)
         @product = product
         @url_builder = url_builder
         @stock_available = stock_available
+        @inventory = inventory
+        @publishable = publishable
       end
 
       def as_json(*)
@@ -28,6 +33,10 @@ module Api
           barcode: p.barcode,
           launch_date: p.launch_date,
           stock_available: @stock_available,
+          publishable: @publishable,
+          inventory: inventory,
+          badge: badge,
+          tags: tags,
           length_cm: p.length_cm,
           width_cm: p.width_cm,
           height_cm: p.height_cm,
@@ -43,7 +52,37 @@ module Api
         Inventory.customer_available_now.where(product_id: product_ids).group(:product_id).count
       end
 
+      # Los que cumplen la regla del admin para publicar (Product#eligible_for_publication?).
+      def self.publishable_ids(product_ids)
+        Product.eligible_for_publication.where(id: product_ids).pluck(:id).to_set
+      end
+
+      # Piezas por estatus, por producto, en una consulta: { id => { 'available' => 2, ... } }.
+      def self.inventory_by_product(product_ids)
+        Inventory.where(product_id: product_ids).group(:product_id, :status).count
+                 .each_with_object(Hash.new { |h, k| h[k] = {} }) do |((product_id, status), count), acc|
+          acc[product_id][status.to_s] = count
+        end
+      end
+
       private
+
+      # Todos los estatus siempre presentes (0 si no hay piezas), más `total`:
+      # lo que la tienda tiene o está por recibir (sin vendidas, perdidas ni merma).
+      def inventory
+        counts = Inventory.statuses.keys.index_with { |status| @inventory.fetch(status, 0) }
+        { total: counts.except(*GONE_STATUSES).values.sum, **counts.symbolize_keys }
+      end
+
+      # La misma insignia que muestra la tienda ("Nuevo en catálogo", ...) o nil.
+      def badge
+        type = @product.catalog_event
+        type && ProductsHelper::CATALOG_EVENT_PRESENTATION.dig(type, :label)
+      end
+
+      def tags
+        Array(@product.seo_keywords).filter_map { |keyword| keyword.to_s.strip.presence }
+      end
 
       def custom_attributes
         value = @product.custom_attributes

@@ -25,9 +25,12 @@ RSpec.describe 'API V1 Products', type: :request, rswag: true do
       parameter name: :page, in: :query, type: :integer, required: false, description: 'Página (desde 1)'
       parameter name: :updated_since, in: :query, type: :string, format: 'date-time', required: false,
                 description: 'Solo productos cambiados desde esta fecha ISO 8601'
+      parameter name: :publishable, in: :query, type: :string, enum: %w[true false], required: false,
+                description: 'true: solo los que se pueden publicar (stock vendible, preventa o sobre pedido); false: el resto'
 
       let(:page) { nil }
       let(:updated_since) { nil }
+      let(:publishable) { nil }
 
       response '200', 'una página de productos' do
         schema type: :object,

@@ -9,7 +9,7 @@ RSpec.describe 'API v1 products (read)', type: :request do
 
   let(:expected_keys) do
     %w[id code product_name brand category series scale selling_price description status
-                     barcode launch_date stock_available length_cm width_cm height_cm weight_gr
+                     barcode launch_date stock_available publishable inventory badge tags length_cm width_cm height_cm weight_gr
                      custom_attributes image_urls updated_at]
   end
 
@@ -76,6 +76,110 @@ RSpec.describe 'API v1 products (read)', type: :request do
 
       get "/api/v1/products/#{record.id}", headers: headers
       expect(json['stock_available']).to eq(2)
+    end
+
+    it 'breaks the inventory down by status, with a total of pieces still in the store' do
+      record = product
+      location = create(:inventory_location)
+      2.times { Inventory.create!(product: record, purchase_cost: 10, status: :available, inventory_location: location) }
+      Inventory.create!(product: record, purchase_cost: 10, status: :in_transit)
+      Inventory.create!(product: record, purchase_cost: 10, status: :damaged)
+      Inventory.create!(product: record, purchase_cost: 10, status: :sold)
+      Inventory.where(product: record, status: :available).first.update_columns(status: Inventory.statuses[:reserved])
+
+      get "/api/v1/products/#{record.id}", headers: headers
+
+      inventory = json['inventory']
+      expect(inventory.keys).to match_array(%w[total] + Inventory.statuses.keys)
+      expect(inventory).to include('available' => 1, 'reserved' => 1, 'in_transit' => 1, 'damaged' => 1,
+                                   'sold' => 1, 'lost' => 0, 'pre_reserved' => 0)
+      expect(inventory['total']).to eq(4) # vendidas no cuentan
+    end
+
+    it 'reports the inventory per product in the listing' do
+      with_stock = product
+      empty = product
+      Inventory.create!(product: with_stock, purchase_cost: 10, status: :in_transit)
+
+      get '/api/v1/products', headers: headers
+
+      by_id = json['items'].to_h { |item| [item['id'], item['inventory']] }
+      expect(by_id[with_stock.id]).to include('in_transit' => 1, 'total' => 1)
+      expect(by_id[empty.id]).to include('total' => 0, 'available' => 0)
+    end
+
+    it 'sends the storefront badge as text, or null when none applies' do
+      fresh = product
+      fresh.update_columns(first_published_at: 1.day.ago)
+      plain = product
+      plain.update_columns(first_published_at: 1.year.ago, republished_at: nil, restocked_at: nil)
+
+      get '/api/v1/products', headers: headers
+
+      badges = json['items'].to_h { |item| [item['id'], item['badge']] }
+      expect(badges[fresh.id]).to eq('Nuevo en catálogo')
+      expect(badges[plain.id]).to be_nil
+    end
+
+    it 'sends the SEO keywords as tags, without blanks' do
+      record = product
+      record.update_columns(seo_keywords: ['tomica', ' skyline ', '', nil])
+
+      get "/api/v1/products/#{record.id}", headers: headers
+      expect(json['tags']).to eq(%w[tomica skyline])
+    end
+
+    describe 'publishability' do
+      let!(:with_stock) { product.tap { |p| Inventory.create!(product: p, purchase_cost: 10, status: :in_transit) } }
+      let!(:on_preorder) { product(preorder_available: true) }
+      let!(:unlocated) { product.tap { |p| Inventory.create!(product: p, purchase_cost: 10, status: :available) } }
+      let!(:bare) { product(status: 'draft') }
+
+      def ids_in_response
+        json['items'].map { |item| item['id'] }
+      end
+
+      it 'flags each product with the same rule the admin uses to publish' do
+        get '/api/v1/products', headers: headers
+
+        flags = json['items'].to_h { |item| [item['id'], item['publishable']] }
+        expect(flags).to eq(with_stock.id => true, on_preorder.id => true, unlocated.id => false, bare.id => false)
+        [with_stock, on_preorder, unlocated, bare].each do |record|
+          expect(flags[record.id]).to eq(record.reload.eligible_for_publication?)
+        end
+      end
+
+      it 'lists only publishable products with ?publishable=true' do
+        get '/api/v1/products', params: { publishable: 'true' }, headers: headers
+        expect(ids_in_response).to contain_exactly(with_stock.id, on_preorder.id)
+      end
+
+      it 'lists only unpublishable products with ?publishable=false' do
+        get '/api/v1/products', params: { publishable: 'false' }, headers: headers
+        expect(ids_in_response).to contain_exactly(unlocated.id, bare.id)
+      end
+
+      it 'combines with updated_since' do
+        with_stock.update_columns(updated_at: 1.week.ago)
+        get '/api/v1/products', params: { publishable: 'true', updated_since: 1.day.ago.iso8601 }, headers: headers
+        expect(ids_in_response).to contain_exactly(on_preorder.id)
+      end
+
+      it 'ignores an empty value' do
+        get '/api/v1/products', params: { publishable: '' }, headers: headers
+        expect(ids_in_response).to contain_exactly(with_stock.id, on_preorder.id, unlocated.id, bare.id)
+      end
+
+      it 'rejects any other value' do
+        get '/api/v1/products', params: { publishable: 'yes' }, headers: headers
+        expect(response).to have_http_status(:unprocessable_entity)
+      end
+
+      it 'keeps the filter on the next link' do
+        stub_const('Api::V1::ProductsController::PER_PAGE', 1)
+        get '/api/v1/products', params: { publishable: 'true' }, headers: headers
+        expect(json['next']).to include('publishable=true')
+      end
     end
 
     it 'paginates with an absolute next link until the last page' do

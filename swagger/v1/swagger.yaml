@@ -100,6 +100,16 @@ paths:
         description: Solo productos cambiados desde esta fecha ISO 8601
         schema:
           type: string
+      - name: publishable
+        in: query
+        enum:
+        - 'true'
+        - 'false'
+        required: false
+        description: "true: solo los que se pueden publicar (stock vendible, preventa
+          o sobre pedido); false: el resto:\n * `true` \n * `false` \n "
+        schema:
+          type: string
       responses:
         '200':
           description: una página de productos
@@ -677,6 +687,78 @@ components:
           type: integer
           description: Piezas que un cliente puede comprar ahora
           example: 3
+        publishable:
+          type: boolean
+          description: 'Cumple la regla del admin para publicar: stock vendible, preventa
+            o sobre pedido'
+        inventory:
+          type: object
+          description: Piezas por estatus. `total` = todas menos sold, pre_sold, lost
+            y scrap
+          properties:
+            total:
+              type: integer
+              example: 5
+            available:
+              type: integer
+              description: Disponibles (con o sin ubicación)
+            reserved:
+              type: integer
+              description: Apartadas para un pedido
+            in_transit:
+              type: integer
+              description: En camino (compradas, sin llegar)
+            sold:
+              type: integer
+              description: Vendidas
+            damaged:
+              type: integer
+              description: Dañadas
+            lost:
+              type: integer
+              description: Perdidas
+            returned:
+              type: integer
+              description: Devueltas
+            scrap:
+              type: integer
+              description: Merma
+            pre_reserved:
+              type: integer
+              description: Pre apartadas (preventa)
+            pre_sold:
+              type: integer
+              description: Pre vendidas (preventa)
+            marketing:
+              type: integer
+              description: Para marketing
+          required:
+          - total
+          - available
+          - reserved
+          - in_transit
+          - sold
+          - damaged
+          - lost
+          - returned
+          - scrap
+          - pre_reserved
+          - pre_sold
+          - marketing
+        badge:
+          type: string
+          nullable: true
+          example: Nuevo en catálogo
+          description: 'Insignia de la tienda: Nuevo en catálogo, De vuelta en catálogo
+            o Recién resurtido'
+        tags:
+          type: array
+          items:
+            type: string
+          description: Etiquetas (palabras clave SEO)
+          example:
+          - tomica
+          - skyline
         length_cm:
           type: string
           nullable: true

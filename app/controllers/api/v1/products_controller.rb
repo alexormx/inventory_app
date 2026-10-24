@@ -14,6 +14,7 @@ module Api
 
       # Todos los productos (borradores, inactivos y agotados incluidos: se
       # fotografían antes de publicar). KataFrame sigue `next` hasta que falta.
+      # `?publishable=true|false` filtra con la regla del admin para publicar.
       def index
         scope = Product.order(:id)
         if params[:updated_since].present?
@@ -22,11 +23,19 @@ module Api
 
           scope = scope.where(updated_at: since..)
         end
+        if params[:publishable].present?
+          unless %w[true false].include?(params[:publishable])
+            return render json: { errors: ['publishable debe ser true o false'] }, status: :unprocessable_entity
+          end
+
+          # Subconsulta por id: el scope trae OR internos que no deben mezclarse con updated_since.
+          publishable_ids = Product.eligible_for_publication.select(:id)
+          scope = params[:publishable] == 'true' ? scope.where(id: publishable_ids) : scope.where.not(id: publishable_ids)
+        end
 
         page = scope.with_attached_product_images.page(params[:page]).per(self.class::PER_PAGE)
         products = page.to_a
-        stock = ProductSerializer.stock_by_product(products.map(&:id))
-        body = { items: products.map { |product| serialize(product, stock.fetch(product.id, 0)) } }
+        body = { items: serialize_all(products) }
         body[:next] = url_for(request.query_parameters.merge(page: page.next_page, only_path: false)) if products.any? && page.next_page
         render json: body
       end
@@ -117,12 +126,20 @@ module Api
       end
 
       def render_product(product, status: :ok)
-        stock = ProductSerializer.stock_by_product([product.id]).fetch(product.id, 0)
-        render json: serialize(product, stock), status: status
+        render json: serialize_all([product]).first, status: status
       end
 
-      def serialize(product, stock)
-        ProductSerializer.new(product, url_builder: self, stock_available: stock).as_json
+      # Existencias, inventario y publicabilidad de todos en tres consultas, no por producto.
+      def serialize_all(products)
+        ids = products.map(&:id)
+        stock = ProductSerializer.stock_by_product(ids)
+        inventory = ProductSerializer.inventory_by_product(ids)
+        publishable = ProductSerializer.publishable_ids(ids)
+        products.map do |product|
+          ProductSerializer.new(product, url_builder: self, stock_available: stock.fetch(product.id, 0),
+                                         inventory: inventory.fetch(product.id, {}),
+                                         publishable: publishable.include?(product.id)).as_json
+        end
       end
 
       def parse_time(value)

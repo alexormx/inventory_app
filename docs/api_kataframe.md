@@ -39,11 +39,28 @@ Revocar la desactiva al instante sin afectar a otras claves ni al token legado.
 ## 3. Qué hace cada operación
 
 - **Listar**: todos los productos (borradores, inactivos y agotados incluidos),
-  100 por página, siguiendo `next`. Filtro opcional `?updated_since=<ISO 8601>`.
+  100 por página, siguiendo `next`. Filtros opcionales `?updated_since=<ISO 8601>`
+  y `?publishable=true|false`.
 - **Campos**: `id, code, product_name, brand, category, series, scale,
   selling_price, description, status, barcode, launch_date, stock_available,
-  length_cm, width_cm, height_cm, weight_gr, custom_attributes, image_urls,
+  publishable, inventory, badge, tags, length_cm, width_cm, height_cm, weight_gr, custom_attributes, image_urls,
   updated_at`. Nunca se exponen SKU ni código de proveedor, costos ni proveedores.
+- **Inventario**: `stock_available` son las piezas que un cliente puede comprar
+  ahora (disponibles, libres y con ubicación). `inventory` desglosa todas las
+  piezas por estatus (`available, reserved, in_transit, sold, damaged, lost,
+  returned, scrap, pre_reserved, pre_sold, marketing`, 0 si no hay) y `total`
+  suma las que la tienda tiene o está por recibir (todas menos `sold`,
+  `pre_sold`, `lost` y `scrap`).
+- **Publicable**: `publishable` es `true` si el producto cumple la misma regla
+  que usa el admin para publicar: tiene al menos una pieza vendible (disponible
+  con ubicación, o en camino) o acepta preventa o pedidos sobre stock.
+  `?publishable=true` lista solo esos; sin el filtro llegan todos (los
+  borradores se siguen pudiendo fotografiar).
+- **Insignia y etiquetas**: `badge` es la misma insignia que muestra la tienda
+  (`Nuevo en catálogo`, `De vuelta en catálogo` o `Recién resurtido`) o `null`;
+  `tags` son las palabras clave SEO del producto.
+- **Peso**: `weight_gr` viene en gramos (dividir entre 1000 para kg). Como SKU
+  usar `code`.
 - **Crear / editar**: campos escribibles `product_name, brand, category, series,
   scale, selling_price, description, barcode, launch_date, status,
   whatsapp_code, length_cm, width_cm, height_cm, weight_gr, custom_attributes`.
