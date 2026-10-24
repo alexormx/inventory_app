@@ -34,6 +34,13 @@ RSpec.describe 'Admin::ApiGuide', type: :request do
       expect(response.body).to include('product[product_images][]', 'image_urls', 'Bearer', admin_api_guide_reference_path)
     end
 
+    it 'maps the product fields KataFrame reads, including inventory and publishability' do
+      get admin_api_guide_path
+      expect(response.body).to include('stock_available', 'publishable', '?publishable=true', 'inventory',
+                                       'badge', 'tags', 'weight_gr', 'updated_since')
+      expect(response.body).not_to include('product_sku', 'supplier_product_code')
+    end
+
     it 'lists the endpoints from the OpenAPI file with the permission each needs' do
       get admin_api_guide_path
       expect(response.body).to include('/api/v1/products/{id}', 'PATCH', 'products:write')

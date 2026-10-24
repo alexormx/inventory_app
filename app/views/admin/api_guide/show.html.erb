@@ -57,7 +57,52 @@
   <div class="col-12">
     <div class="card">
       <div class="card-body">
-        <h5 class="card-title">3. Reglas al crear y editar</h5>
+        <h5 class="card-title">3. Qué trae cada producto</h5>
+        <p>La lista trae <strong>todos</strong> los productos, incluidos borradores sin existencias, para poder fotografiarlos antes de publicar. Filtros opcionales:</p>
+        <ul>
+          <li><code>?publishable=true</code> solo los que se pueden publicar · <code>?publishable=false</code> el resto.</li>
+          <li><code>?updated_since=2026-10-01T00:00:00Z</code> solo los que cambiaron desde esa fecha. Se pueden combinar.</li>
+        </ul>
+        <div class="row g-4">
+          <div class="col-lg-6">
+            <p class="small text-muted mb-1">Campos base de KataFrame:</p>
+            <table class="table table-sm mb-0">
+              <tbody>
+                <tr><th class="fw-normal text-muted">Título</th><td><code>product_name</code></td></tr>
+                <tr><th class="fw-normal text-muted">Descripción</th><td><code>description</code></td></tr>
+                <tr><th class="fw-normal text-muted">Marca</th><td><code>brand</code></td></tr>
+                <tr><th class="fw-normal text-muted">Tipo de producto</th><td><code>category</code></td></tr>
+                <tr><th class="fw-normal text-muted">Etiquetas</th><td><code>tags</code> (palabras clave SEO)</td></tr>
+                <tr><th class="fw-normal text-muted">SKU</th><td><code>code</code> (el código público, no el del proveedor)</td></tr>
+                <tr><th class="fw-normal text-muted">Precio</th><td><code>selling_price</code></td></tr>
+                <tr><th class="fw-normal text-muted">Precio antes</th><td class="text-muted">no existe en la tienda</td></tr>
+                <tr><th class="fw-normal text-muted">Existencias</th><td><code>stock_available</code></td></tr>
+                <tr><th class="fw-normal text-muted">Código de barras</th><td><code>barcode</code></td></tr>
+                <tr><th class="fw-normal text-muted">Peso (kg)</th><td><code>weight_gr</code> en <strong>gramos</strong>: dividir entre 1000</td></tr>
+                <tr><th class="fw-normal text-muted">Estado</th><td><code>status</code> (<code>draft</code>, <code>active</code>, <code>inactive</code>)</td></tr>
+                <tr><th class="fw-normal text-muted">Insignia</th><td><code>badge</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="col-lg-6">
+            <p class="small text-muted mb-1">Existencias y publicación:</p>
+            <ul class="mb-0">
+              <li><code>stock_available</code>: piezas que un cliente puede comprar ahora (disponibles, libres y con ubicación).</li>
+              <li><code>publishable</code>: <code>true</code> si cumple la regla del admin para publicar (piezas vendibles, preventa o sobre pedido). Publicable no es lo mismo que publicado: eso lo dice <code>status</code>.</li>
+              <li><code>inventory</code>: piezas por estatus (<code>available</code>, <code>reserved</code>, <code>in_transit</code>, <code>pre_reserved</code>, <code>sold</code>, <code>damaged</code>, …; 0 si no hay). <code>total</code> suma lo que la tienda tiene o está por recibir: todo menos <code>sold</code>, <code>pre_sold</code>, <code>lost</code> y <code>scrap</code>. Su <code>available</code> incluye piezas sin ubicación, por eso puede ser mayor que <code>stock_available</code>.</li>
+              <li><code>badge</code>: la insignia de la tienda («Nuevo en catálogo», «De vuelta en catálogo», «Recién resurtido») o <code>null</code>.</li>
+              <li><code>tags</code>: palabras clave SEO del producto; <code>[]</code> si no tiene.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12">
+    <div class="card">
+      <div class="card-body">
+        <h5 class="card-title">4. Reglas al crear y editar</h5>
         <ul class="mb-0">
           <li>Solo cambia lo que se manda. <code>code</code> es sinónimo de <code>whatsapp_code</code>; un <code>status</code> o <code>code</code> vacío se ignora.</li>
           <li>Productos nuevos reciben un SKU interno <code>KF…</code>; su precio mínimo es el precio de venta (lo acompaña al bajar). Un mínimo fijado en el admin se respeta.</li>
