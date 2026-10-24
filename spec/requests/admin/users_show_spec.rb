@@ -152,6 +152,15 @@ RSpec.describe 'Admin user details', type: :request do
         expect(rows.map { |row| row[1..3] }).to eq([%w[1 1 $300], %w[3 2 $320]])
       end
 
+      it 'shows each product thumbnail, loading the images once for the whole list' do
+        queries = capture_admin_user_show_queries { get admin_user_path(customer) }
+
+        rows = Nokogiri::HTML(response.body).css('#products-sold tbody tr')
+        expect(rows).to all(satisfy { |row| row.at_css('img[loading="lazy"]') || row.at_css('.fa-image') })
+        expect(rows.count { |row| row.at_css('img') }).to eq([skyline, supra].count { |p| p.product_images.attached? })
+        expect(queries.grep(/FROM "active_storage_attachments"/).size).to be <= 2
+      end
+
       it 'leaves canceled orders out' do
         get admin_user_path(customer)
         expect(products_sold_rows.flatten.join).not_to include('Honda NSX')

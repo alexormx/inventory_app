@@ -19,10 +19,16 @@
           <% @products_sold.each do |row| %>
             <tr>
               <td class="ps-3">
-                <%= link_to row.product_name, admin_product_path(row.slug.presence || row.product_id), class: "text-decoration-none fw-medium" %>
-                <% if row.whatsapp_code.present? %>
-                  <span class="badge bg-light text-dark border font-monospace ms-1"><%= row.whatsapp_code %></span>
-                <% end %>
+                <div class="d-flex align-items-center gap-2">
+                  <% product = @products_sold_by_id[row.product_id] %>
+                  <%= render 'admin/shared/product_thumb', product: product, size: 40 if product %>
+                  <div>
+                    <%= link_to row.product_name, admin_product_path(row.slug.presence || row.product_id), class: "text-decoration-none fw-medium" %>
+                    <% if row.whatsapp_code.present? %>
+                      <span class="badge bg-light text-dark border font-monospace ms-1"><%= row.whatsapp_code %></span>
+                    <% end %>
+                  </div>
+                </div>
               </td>
               <td class="text-end"><%= row.units %></td>
               <td class="text-end"><%= row.orders_count %></td>

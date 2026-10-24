@@ -228,6 +228,9 @@ module Admin
                                             "SUM(#{SaleOrderItem::LINE_REVENUE_SQL}) AS revenue",
                                             'MAX(sale_orders.created_at) AS last_sold_at')
                                     .order('last_sold_at DESC', 'products.product_name').to_a
+      # Productos con sus fotos precargadas para la miniatura, en una consulta.
+      @products_sold_by_id = Product.where(id: @products_sold.map(&:product_id))
+                                    .with_attached_product_images.index_by(&:id)
 
       # Pagos y envíos recientes del cliente (a través de sus órdenes), con la
       # orden precargada para los enlaces "Ver orden" sin consulta por fila.
