@@ -1,0 +1,68 @@
+<%= form_with model: source, scope: :lookup_source,
+              url: source.persisted? ? admin_collectible_lookup_source_path(source) : admin_collectible_lookup_sources_path,
+              method: source.persisted? ? :patch : :post, local: true do |f| %>
+
+  <% if source.errors.any? %>
+    <div class="alert alert-danger mb-3">
+      <ul class="mb-0">
+        <% source.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-6">
+          <%= f.label :name, "Nombre", class: "form-label" %>
+          <%= f.text_field :name, class: "form-control", required: true, maxlength: Collectibles::LookupSource::NAME_MAX,
+                                  placeholder: "ej. eBay (vendidos)" %>
+        </div>
+        <div class="col-md-6">
+          <%= f.label :domain, "Dominio", class: "form-label" %>
+          <%= f.text_field :domain, class: "form-control", required: true, placeholder: "ej. ebay.com" %>
+          <small class="text-muted">Incluye sus subdominios (ebay.com acepta www.ebay.com). Puedes pegar una URL: se queda el dominio.</small>
+        </div>
+        <div class="col-md-6">
+          <%= f.label :purpose, "Para qué", class: "form-label" %>
+          <%= f.select :purpose, Collectibles::LookupSource::PURPOSE_LABELS.invert, {}, class: "form-select" %>
+        </div>
+        <div class="col-md-6">
+          <%= f.label :category, "Categoría (opcional)", class: "form-label" %>
+          <%= f.text_field :category, class: "form-control", list: "lookup_source_categories", placeholder: "Todas" %>
+          <datalist id="lookup_source_categories">
+            <% Product.distinct.where.not(category: [nil, '']).order(:category).pluck(:category).map(&:downcase).uniq.each do |category| %>
+              <option value="<%= category %>"></option>
+            <% end %>
+          </datalist>
+          <small class="text-muted">Sólo para las piezas de esa categoría. Vacía: para todas.</small>
+        </div>
+        <div class="col-12">
+          <%= f.label :search_url, "Búsqueda a mano (opcional)", class: "form-label" %>
+          <%= f.text_field :search_url, class: "form-control", maxlength: Collectibles::LookupSource::URL_MAX,
+                                        placeholder: "https://www.ebay.com/sch/i.html?_nkw={q}&LH_Sold=1" %>
+          <small class="text-muted">La URL de búsqueda del sitio con <code>{q}</code> donde va el nombre de la pieza. Sale como enlace en el resultado de la IA.</small>
+        </div>
+        <div class="col-12">
+          <%= f.label :notes, "Nota para la IA (opcional)", class: "form-label" %>
+          <%= f.text_field :notes, class: "form-control", maxlength: Collectibles::LookupSource::NOTES_MAX,
+                                   placeholder: "ej. Prefiere anuncios vendidos: son el precio real." %>
+        </div>
+        <div class="col-md-3">
+          <%= f.label :position, "Orden", class: "form-label" %>
+          <%= f.number_field :position, class: "form-control", min: 0 %>
+        </div>
+        <div class="col-md-3">
+          <div class="form-check mt-4 pt-2">
+            <%= f.check_box :active, class: "form-check-input" %>
+            <%= f.label :active, "Activo", class: "form-check-label" %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%= f.submit source.persisted? ? "Guardar cambios" : "Agregar sitio", class: "btn btn-primary" %>
+<% end %>

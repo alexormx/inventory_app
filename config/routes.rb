@@ -29,6 +29,13 @@ Rails.application.routes.draw do
     get 'collectibles/search_products', to: 'collectibles#search_products', as: :collectibles_search_products
     post 'collectibles/ai_lookups', to: 'collectible_ai_lookups#create', as: :collectible_ai_lookups
     get 'collectibles/ai_lookups/:id', to: 'collectible_ai_lookups#show', as: :collectible_ai_lookup
+    # Guías de la búsqueda con IA (sitios y tipos de cambio)
+    resources :collectible_lookup_sources, path: 'collectibles/lookup_sources', except: [:show] do
+      collection do
+        post :install_defaults
+        patch :rates
+      end
+    end
 
     # Collectibles index/edit (cada inventario coleccionable es una pieza única)
     resources :collectibles, only: %i[index edit update] do

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_10_20_120000) do
+ActiveRecord::Schema[8.0].define(version: 2026_10_25_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -143,6 +143,20 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_20_120000) do
     t.index ["created_at"], name: "index_collectible_ai_lookups_on_created_at"
     t.index ["product_id"], name: "index_collectible_ai_lookups_on_product_id"
     t.index ["user_id"], name: "index_collectible_ai_lookups_on_user_id"
+  end
+
+  create_table "collectible_lookup_sources", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "domain", null: false
+    t.integer "purpose", default: 0, null: false
+    t.string "category"
+    t.string "search_url"
+    t.text "notes"
+    t.boolean "active", default: true, null: false
+    t.integer "position", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["purpose", "active"], name: "index_collectible_lookup_sources_on_purpose_and_active"
   end
 
   create_table "comments", force: :cascade do |t|

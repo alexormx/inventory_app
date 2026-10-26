@@ -23,6 +23,18 @@ RSpec.describe Collectibles::AiLookupSources do
     end
   end
 
+  it 'usa los dominios de las guías guardadas en lugar de los sugeridos' do
+    Collectibles::LookupSource.create!(name: 'Mandarake', domain: 'mandarake.co.jp', purpose: 'prices_world')
+    expect(described_class.allowed?('https://order.mandarake.co.jp/x', :world)).to be(true)
+    expect(described_class.allowed?('https://www.ebay.com/itm/1', :world)).to be(false)
+  end
+
+  it '.page_key ignora esquema, www, parámetros, ancla y diagonal final' do
+    expect(described_class.page_key('https://www.ebay.com/itm/1/?hash=x#fotos')).to eq('ebay.com/itm/1')
+    expect(described_class.page_key('http://ebay.com/itm/1')).to eq('ebay.com/itm/1')
+    expect(described_class.page_key('javascript:alert(1)')).to be_nil
+  end
+
   it '.allowed_anywhere? acepta cualquiera de los dos mercados' do
     expect(described_class.allowed_anywhere?('https://hlj.com/product/x')).to be(true)
     expect(described_class.allowed_anywhere?('https://example.com')).to be(false)

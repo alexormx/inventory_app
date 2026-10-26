@@ -8,9 +8,11 @@ module Collectibles
   # Antes de la IA, Google Cloud Vision hace búsqueda inversa sobre la vista
   # 3/4 (ReverseImageSearch, con tope mensual) y sus sugerencias se le pasan a
   # la IA como candidatos a confirmar. Luego una sola llamada a la Responses
-  # API: fotos + web_search abierto + esquema estricto. Lo que regresa la IA se
-  # valida aquí: un anuncio fuera de AiLookupSources se tira y el rango se
-  # recalcula con lo que queda.
+  # API: fotos + web_search abierto + esquema estricto, con las guías de
+  # búsqueda (LookupSource) en las instrucciones. Lo que regresa la IA se
+  # valida aquí: un anuncio fuera de las guías de precios, o que la búsqueda
+  # no visitó, se tira; el precio se convierte con los tipos de cambio del
+  # admin y el rango se recalcula con lo que queda (vendidos y en venta aparte).
   # No sabe nada de HTTP ni de la pantalla; AiLookupJob guarda el resultado.
   class AiLookupService
     class Error < StandardError; end
@@ -24,6 +26,8 @@ module Collectibles
     MAX_PHOTOS = AiLookup::MAX_PHOTOS
     MAX_CANDIDATES = 3
     YEN = /[¥￥円]|JPY/
+    UNCONFIRMED_WARNING = 'OpenAI no devolvió las páginas que visitó: los anuncios no se pudieron confirmar; ' \
+                          'ábrelos antes de usarlos.'
     # USD, página de precios de OpenAI verificada el 2026-10-04 (gpt-4.1; en
     # modelos no razonadores los tokens del contenido buscado no se cobran).
     COST_INPUT_PER_M_USD = 2.00
@@ -36,11 +40,12 @@ module Collectibles
          Cada foto viene precedida de su tipo (vista 3/4, base, lateral, superior, empaque). En la foto de la base lee con cuidado el texto del casting (marca, modelo, año, país); en la del empaque, el texto de la caja o etiqueta.
       2. Si hay pistas del admin, tómalas como ciertas salvo que la foto las contradiga claramente.
       3. Si hay resultados de búsqueda inversa de Google, son candidatos: confírmalos o descártalos; pueden estar mal.
-      4. Antes de responder, confirma la identificación con al menos 2 búsquedas web en cualquier sitio (fabricante, hobbyDB, wikis, tiendas). Haz como máximo 6 búsquedas en total.
+      4. Antes de responder, confirma la identificación con al menos 2 búsquedas web. Empieza por las guías para identificar de abajo; si no alcanzan, usa cualquier otro sitio (fabricante, wikis, tiendas). Haz como máximo 6 búsquedas en total.
       5. Busca su fecha de lanzamiento, qué tan rara es y precios reales.
-      6. prices_mx: sólo anuncios de mercadolibre.com.mx y amazon.com.mx, precio en MXN.
-         prices_world: sólo ebay.com, amazon.com, amazon.co.jp, hobbydb.com, plazajapan.com y hlj.com; convierte cada precio a USD en `price` y pon el precio tal como aparece (con su moneda) en `price_original`.
-      7. Cada anuncio debe ser de la misma pieza y llevar su URL real. Marca `sold` = true sólo si es una venta concluida.
+      6. prices_mx: sólo anuncios de los sitios de «Precios en México» de abajo, precio en MXN.
+         prices_world: sólo anuncios de los sitios de «Precios en el mundo» de abajo; convierte cada precio a USD en `price`.
+         En los dos pon el precio tal como aparece en la página (con su moneda) en `price_original`.
+      7. Cada anuncio debe ser de la misma pieza y llevar la URL exacta de la página que visitaste. Marca `sold` = true sólo si es una venta concluida. `date`: fecha del anuncio o de la venta (YYYY-MM-DD) si aparece; si no, null.
       8. Si no encuentras datos confiables para un mercado, ese mercado es null. Nunca inventes precios, fechas ni URLs.
       9. launch_date.value en formato YYYY-MM-DD, YYYY-MM o YYYY según lo que sepas con certeza; null si no lo sabes. source_url: la página donde lo confirmaste.
       10. rarity.level: comun, poco_comun, rara o muy_rara, con razones concretas (tiraje, edición limitada, descontinuado, variante).
@@ -52,6 +57,22 @@ module Collectibles
     USER_TEXT = 'Identifica este coleccionable y dame fecha de lanzamiento, rareza y precios en México y en el mundo.'
 
     Result = Struct.new(:data, :tokens_input, :tokens_output, :web_search_calls, :cost_cents, keyword_init: true)
+
+    GUIDE_TITLES = {
+      'reference' => 'Guías para identificar, fecha y rareza (puedes usar otros sitios)',
+      'prices_mx' => 'Precios en México (sólo estos sitios)',
+      'prices_world' => 'Precios en el mundo (sólo estos sitios)'
+    }.freeze
+
+    # Las instrucciones fijas más las guías de búsqueda del admin.
+    def self.instructions(sources = LookupSource.in_use)
+      guides = GUIDE_TITLES.map do |purpose, title|
+        lines = sources.select { |source| source.purpose == purpose }.map(&:prompt_line)
+        lines = ["- (ninguno: deja #{purpose} en null)"] if lines.empty? && purpose != 'reference'
+        lines.empty? ? nil : "#{title}:\n#{lines.join("\n")}"
+      end
+      [INSTRUCTIONS, *guides.compact].join("\n")
+    end
 
     def initialize(lookup, client: nil)
       @lookup = lookup
@@ -68,7 +89,7 @@ module Collectibles
       searches = Array(response['output']).count { |item| item['type'] == 'web_search_call' }
 
       Result.new(
-        data: sanitize(parse(response)).merge('reverse_image' => reverse_image),
+        data: sanitize(parse(response), consulted_pages(response)).merge('reverse_image' => reverse_image),
         tokens_input: usage['input_tokens'].to_i,
         tokens_output: usage['output_tokens'].to_i,
         web_search_calls: searches,
@@ -87,11 +108,14 @@ module Collectibles
     def request(content)
       client.responses.create(parameters: {
                                 model: MODEL,
-                                instructions: INSTRUCTIONS,
+                                instructions: self.class.instructions,
                                 input: [{ role: 'user', content: content }],
                                 # Búsqueda abierta para identificar; los precios se
                                 # filtran después contra AiLookupSources.
                                 tools: [{ type: 'web_search' }],
+                                # Las páginas que la búsqueda visitó de verdad: un
+                                # anuncio que no esté ahí es un enlace inventado.
+                                include: ['web_search_call.action.sources'],
                                 text: { format: { type: 'json_schema', name: 'collectible_lookup',
                                                   schema: AiLookupSchema::SCHEMA, strict: true } }
                               })
@@ -163,12 +187,32 @@ module Collectibles
       raise Error, "Respuesta inválida de OpenAI: #{e.message}"
     end
 
-    def sanitize(data)
+    # Las páginas que la búsqueda consultó (fuentes de cada búsqueda y citas del
+    # mensaje), como AiLookupSources.page_key.
+    def consulted_pages(response)
+      urls = Array(response['output']).flat_map do |item|
+        case item['type']
+        when 'web_search_call'
+          sources = item['action'].is_a?(Hash) ? Array(item['action']['sources']) : []
+          sources.map { |source| source.is_a?(Hash) ? source['url'] : source }
+        when 'message'
+          Array(item['content']).flat_map { |c| Array(c['annotations']) }
+                                .select { |a| a.is_a?(Hash) && a['type'] == 'url_citation' }
+                                .pluck('url')
+        else []
+        end
+      end
+      urls.filter_map { |url| AiLookupSources.page_key(url) }.to_set
+    end
+
+    def sanitize(data, consulted)
       data = data.deep_dup
       data['warnings'] = Array(data['warnings'])
-      drop_unconverted_yen(data)
-      data['prices_mx'] = sanitize_market(data['prices_mx'], :mx, 'MXN')
-      data['prices_world'] = sanitize_market(data['prices_world'], :world, 'USD')
+      checks = Hash.new(0)
+      rates = PriceConversion.rates
+      data['prices_mx'] = sanitize_market(data['prices_mx'], :mx, consulted, rates, checks)
+      data['prices_world'] = sanitize_market(data['prices_world'], :world, consulted, rates, checks)
+      data['warnings'].concat(check_warnings(checks, consulted))
 
       data['candidates'] = Array(data['candidates']).select { |c| c.is_a?(Hash) }.first(MAX_CANDIDATES)
 
@@ -182,35 +226,69 @@ module Collectibles
     # HLJ y Amazon JP publican en yenes; si la IA copia ¥1,320 como `price: 1320`
     # el rango diría USD $1,320. Un precio ya convertido es ~1/150 del monto en
     # yenes, así que cualquiera que llegue a la mitad del original no se convirtió.
-    def drop_unconverted_yen(data)
-      market = data['prices_world']
-      return unless market.is_a?(Hash) && market['listings'].is_a?(Array)
-
-      kept = market['listings'].reject { |listing| unconverted_yen?(listing) }
-      return if kept.size == market['listings'].size
-
-      market['listings'] = kept
-      data['warnings'] << 'Se descartaron precios en yenes que no venían convertidos a USD.'
-    end
-
+    # Sólo aplica cuando el precio es el de la IA (sin tipo de cambio del yen).
     def unconverted_yen?(listing)
-      return false unless listing.is_a?(Hash) && listing['price'].is_a?(Numeric) && listing['price_original'].to_s.match?(YEN)
+      return false unless listing['price'].is_a?(Numeric) && listing['price_original'].to_s.match?(YEN)
 
-      amount = listing['price_original'].to_s.delete(',')[/\d+(?:\.\d+)?/].to_f
+      amount = PriceConversion.amount_of(listing['price_original'].to_s).to_f
       amount.positive? && listing['price'] >= amount * 0.5
     end
 
-    def sanitize_market(market, key, currency)
+    # Cada anuncio, en orden: del sitio y mercado correctos, no repetido, con el
+    # precio convertido aquí (si se puede) y visitado por la búsqueda. `checks`
+    # cuenta lo que se tiró, para avisarlo una sola vez.
+    def sanitize_market(market, key, consulted, rates, checks)
       return nil unless market.is_a?(Hash)
 
-      listings = Array(market['listings']).select do |listing|
-        listing.is_a?(Hash) && AiLookupSources.allowed?(listing['url'], key) &&
-          listing['price'].is_a?(Numeric) && listing['price'].positive?
+      domains = AiLookupSources.domains(key)
+      seen = Set.new
+      listings = Array(market['listings']).filter_map do |listing|
+        next unless listing.is_a?(Hash) && AiLookupSources.allowed?(listing['url'], key, within: domains)
+
+        page = AiLookupSources.page_key(listing['url'])
+        next unless seen.add?(page)
+
+        price, converted_by, currency = PriceConversion.convert(listing, key, rates)
+        drop = if converted_by == 'ia' && unconverted_yen?(listing) then :yen
+               elsif !(price.is_a?(Numeric) && price.positive?) then :no_price
+               elsif consulted.any? && consulted.exclude?(page) then :unvisited
+               end
+        if drop
+          checks[drop] += 1
+          next
+        end
+
+        verified = consulted.include?(page)
+        checks[:unverified] += 1 unless verified
+        listing.merge('price' => price.to_f, 'currency_original' => currency, 'converted_by' => converted_by,
+                      'verified' => verified)
       end.first(MAX_LISTINGS)
       return nil if listings.empty?
 
       prices = listings.pluck('price')
-      { 'min' => prices.min, 'max' => prices.max, 'currency' => currency, 'listings' => listings }
+      { 'min' => prices.min, 'max' => prices.max, 'currency' => PriceConversion::MARKET_CURRENCY[key],
+        'sold' => price_range(listings.select { |l| l['sold'] == true }),
+        'asking' => price_range(listings.reject { |l| l['sold'] == true }),
+        'listings' => listings }
+    end
+
+    # Lo vendido es el precio real; lo que está en venta, lo que piden.
+    def price_range(listings)
+      return nil if listings.empty?
+
+      prices = listings.pluck('price')
+      { 'min' => prices.min, 'max' => prices.max, 'count' => prices.size }
+    end
+
+    def check_warnings(checks, consulted)
+      warnings = []
+      warnings << 'Se descartaron precios en yenes que no venían convertidos a USD.' if checks[:yen].positive?
+      if checks[:unvisited].positive?
+        warnings << "Se descartaron #{checks[:unvisited]} anuncio(s) que la búsqueda no visitó " \
+                    '(enlaces posiblemente inventados).'
+      end
+      warnings << UNCONFIRMED_WARNING if consulted.empty? && checks[:unverified].positive?
+      warnings
     end
 
     def cost_cents(input_tokens, output_tokens, searches)

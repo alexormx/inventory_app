@@ -73,8 +73,18 @@ module Collectibles
       if stale?
         { id: id, status: 'failed', result: nil, error: 'La búsqueda tardó demasiado. Intenta de nuevo.' }
       else
-        { id: id, status: status, result: done? ? result : nil, error: failed? ? error_message : nil }
+        { id: id, status: status, result: done? ? result : nil, error: failed? ? error_message : nil,
+          search_links: done? ? search_links : [] }
       end
+    end
+
+    # Para revisar a mano: la pieza identificada en los sitios de las guías de
+    # búsqueda (se arman al consultar, así un cambio en las guías ya sale).
+    def search_links
+      return [] unless result.is_a?(Hash)
+
+      LookupSource.search_links(result.dig('identification', 'product_name'),
+                                category: result.dig('suggested', 'category'))
     end
 
     private

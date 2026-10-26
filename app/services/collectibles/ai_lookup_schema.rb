@@ -6,13 +6,15 @@ module Collectibles
   module AiLookupSchema
     LISTING = {
       type: 'object', additionalProperties: false,
-      required: %w[title price price_original url sold],
+      required: %w[title price price_original url sold date],
       properties: {
         title: { type: 'string' },
         price: { type: 'number' },
         price_original: { type: 'string' },
         url: { type: 'string' },
-        sold: { type: 'boolean' }
+        sold: { type: 'boolean' },
+        # Fecha del anuncio o de la venta (YYYY-MM-DD), si la página la dice.
+        date: { type: %w[string null] }
       }
     }.freeze
 

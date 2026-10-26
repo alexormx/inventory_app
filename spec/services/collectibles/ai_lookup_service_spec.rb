@@ -26,6 +26,8 @@ RSpec.describe Collectibles::AiLookupService do
     expect(params[:instructions]).to include('Cada foto viene precedida de su tipo')
     expect(params.dig(:text, :format, :type)).to eq('json_schema')
     expect(params.dig(:text, :format, :strict)).to be(true)
+    # Pide las páginas que visitó, para tirar los enlaces inventados.
+    expect(params[:include]).to eq(['web_search_call.action.sources'])
     image = params[:input].first[:content].find { |c| c[:type] == 'input_image' }
     expect(image[:image_url]).to start_with('data:image/jpeg;base64,')
   end
@@ -93,6 +95,122 @@ RSpec.describe Collectibles::AiLookupService do
     end
     stub_ai_lookup_openai(ai_lookup_openai_response(answer))
     expect(described_class.new(lookup).call.data['prices_world']['listings'].size).to eq(5)
+  end
+
+  describe 'guías de búsqueda' do
+    it 'sin guías guardadas, las instrucciones llevan los sitios sugeridos' do
+      sent = stub_ai_lookup_openai(ai_lookup_openai_response(ai_lookup_answer))
+      described_class.new(lookup).call
+
+      instructions = sent.first[:instructions]
+      expect(instructions).to include('Precios en México (sólo estos sitios):')
+      expect(instructions).to include('- Mercado Libre (mercadolibre.com.mx)')
+      expect(instructions).to include('auctions.yahoo.co.jp')
+    end
+
+    it 'usa las guías del admin: nombre, categoría y nota; sin sitios de un mercado lo deja en null' do
+      Collectibles::LookupSource.create!(name: 'Mandarake', domain: 'mandarake.co.jp', purpose: 'prices_world',
+                                         category: 'Autos a escala', notes: 'En yenes.')
+      instructions = described_class.instructions
+
+      expect(instructions).to include('- Mandarake (mandarake.co.jp; sólo autos a escala): En yenes.')
+      expect(instructions).to include('(ninguno: deja prices_mx en null)')
+      expect(instructions).not_to include('ebay.com')
+    end
+
+    it 'sólo acepta precios de los sitios activos de cada mercado' do
+      Collectibles::LookupSource.create!(name: 'HLJ', domain: 'hlj.com', purpose: 'prices_world')
+      Collectibles::LookupSource.create!(name: 'ML', domain: 'mercadolibre.com.mx', purpose: 'prices_mx', active: false)
+      stub_ai_lookup_openai(ai_lookup_openai_response(ai_lookup_answer))
+      data = described_class.new(lookup).call.data
+
+      expect(data['prices_mx']).to be_nil
+      expect(data['prices_world']['listings'].pluck('url')).to eq(['https://www.hlj.com/tomica-23'])
+    end
+  end
+
+  describe 'anuncios verificados' do
+    it 'tira los anuncios que la búsqueda no visitó y lo avisa' do
+      response = ai_lookup_openai_response(ai_lookup_answer, sources: ['https://articulo.mercadolibre.com.mx/MLM-1?pos=2',
+                                                                       'https://hlj.com/tomica-23/'])
+      stub_ai_lookup_openai(response)
+      data = described_class.new(lookup).call.data
+
+      expect(data['prices_mx']['listings'].pluck('url')).to eq(['https://articulo.mercadolibre.com.mx/MLM-1'])
+      expect(data['prices_mx']['listings'].first['verified']).to be(true)
+      expect(data['prices_world']['listings'].size).to eq(1)
+      expect(data['warnings'].join).to include('1 anuncio(s) que la búsqueda no visitó')
+    end
+
+    it 'acepta las citas del mensaje como páginas visitadas' do
+      response = ai_lookup_openai_response(ai_lookup_answer)
+      response['output'].last['content'].first['annotations'] = [
+        { 'type' => 'url_citation', 'url' => 'https://www.amazon.com.mx/dp/B01' }
+      ]
+      stub_ai_lookup_openai(response)
+      data = described_class.new(lookup).call.data
+
+      expect(data['prices_mx']['listings'].pluck('url')).to eq(['https://www.amazon.com.mx/dp/B01'])
+      expect(data['prices_world']).to be_nil
+    end
+
+    it 'si OpenAI no dice qué visitó, deja los anuncios marcados sin confirmar y lo avisa' do
+      stub_ai_lookup_openai(ai_lookup_openai_response(ai_lookup_answer))
+      data = described_class.new(lookup).call.data
+
+      expect(data['prices_mx']['listings'].pluck('verified')).to eq([false, false])
+      expect(data['warnings'].join).to include('no se pudieron confirmar')
+    end
+
+    it 'quita el mismo anuncio repetido con otros parámetros' do
+      answer = ai_lookup_answer
+      answer['prices_mx']['listings'] << answer['prices_mx']['listings'].first.merge('url' => 'https://articulo.mercadolibre.com.mx/MLM-1#fotos')
+      stub_ai_lookup_openai(ai_lookup_openai_response(answer))
+      expect(described_class.new(lookup).call.data['prices_mx']['listings'].size).to eq(2)
+    end
+  end
+
+  describe 'rangos y conversión' do
+    it 'separa lo vendido de lo que está en venta' do
+      stub_ai_lookup_openai(ai_lookup_openai_response(ai_lookup_answer))
+      market = described_class.new(lookup).call.data['prices_mx']
+
+      expect(market['sold']).to eq('min' => 420.0, 'max' => 420.0, 'count' => 1)
+      expect(market['asking']).to eq('min' => 349.0, 'max' => 349.0, 'count' => 1)
+    end
+
+    it 'convierte en el servidor con los tipos de cambio del admin' do
+      SystemVariable.set('TIPO_CAMBIO_USD', '18')
+      SystemVariable.set('TIPO_CAMBIO_JPY', '0.12')
+      stub_ai_lookup_openai(ai_lookup_openai_response(ai_lookup_answer))
+      listing = described_class.new(lookup).call.data.dig('prices_world', 'listings', 0)
+
+      # ¥1,320 × 0.12 MXN/¥ ÷ 18 MXN/USD = 8.80 USD (la IA había dicho 8.9)
+      expect(listing.slice('price', 'converted_by', 'currency_original'))
+        .to eq('price' => 8.8, 'converted_by' => 'servidor', 'currency_original' => 'JPY')
+    end
+
+    it 'con el tipo de cambio del yen, un precio que la IA dejó en yenes ya no se tira' do
+      SystemVariable.set('TIPO_CAMBIO_USD', '18')
+      SystemVariable.set('TIPO_CAMBIO_JPY', '0.12')
+      answer = ai_lookup_answer
+      answer['prices_world']['listings'] = [{ 'title' => 'Sin convertir', 'price' => 1320.0, 'price_original' => '¥1,320',
+                                              'url' => 'https://www.amazon.co.jp/dp/X', 'sold' => true, 'date' => nil }]
+      stub_ai_lookup_openai(ai_lookup_openai_response(answer))
+      data = described_class.new(lookup).call.data
+
+      expect(data.dig('prices_world', 'listings', 0, 'price')).to eq(8.8)
+      expect(data['warnings'].join).not_to include('yenes')
+    end
+
+    it 'el precio en la moneda del mercado se toma de la página, no de la IA' do
+      answer = ai_lookup_answer
+      answer['prices_mx']['listings'].first['price'] = 999.0
+      stub_ai_lookup_openai(ai_lookup_openai_response(answer))
+      listing = described_class.new(lookup).call.data.dig('prices_mx', 'listings', 0)
+
+      expect(listing.slice('price', 'converted_by')).to eq('price' => 349.0, 'converted_by' => 'original')
+    end
   end
 
   it 'conserva la fuente de la fecha de cualquier sitio http(s), sin aviso' do

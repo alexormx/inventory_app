@@ -40,9 +40,16 @@ module AiLookupOpenaiHelpers
     }.merge(overrides)
   end
 
-  def ai_lookup_openai_response(answer, searches: 3, input_tokens: 4000, output_tokens: 1200)
+  # `sources`: las URLs que la búsqueda "visitó" (van en la primera búsqueda,
+  # como las regresa `include: ['web_search_call.action.sources']`).
+  def ai_lookup_openai_response(answer, searches: 3, input_tokens: 4000, output_tokens: 1200, sources: nil)
+    calls = Array.new(searches) { { 'type' => 'web_search_call', 'status' => 'completed' } }
+    if sources
+      calls[0] = calls.fetch(0, { 'type' => 'web_search_call', 'status' => 'completed' })
+                      .merge('action' => { 'type' => 'search', 'sources' => sources.map { |url| { 'type' => 'url', 'url' => url } } })
+    end
     {
-      'output' => Array.new(searches) { { 'type' => 'web_search_call', 'status' => 'completed' } } + [
+      'output' => calls + [
         { 'type' => 'message', 'content' => [{ 'type' => 'output_text', 'text' => answer.to_json, 'annotations' => [] }] }
       ],
       'usage' => { 'input_tokens' => input_tokens, 'output_tokens' => output_tokens }

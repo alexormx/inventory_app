@@ -104,7 +104,7 @@ export default class extends Controller {
       try {
         const res = await fetch(url, { headers: { Accept: "application/json" } })
         const state = await res.json()
-        if (state.status === "done") this.finish(state.result, state.id)
+        if (state.status === "done") this.finish(state.result, state.id, state.search_links || [])
         else if (state.status === "failed") this.showError(state.error || "La búsqueda falló.")
       } catch (_e) { /* un tropiezo de red no termina la búsqueda; el tope de tiempo sí */ }
     }, this.intervalValue)
@@ -115,7 +115,7 @@ export default class extends Controller {
     this.timer = null
   }
 
-  finish(result, lookupId) {
+  finish(result, lookupId, searchLinks = []) {
     this.stopPolling()
     const confident = (result.identification?.confidence || 0) >= LOW_CONFIDENCE
     // Sólo una identificación confiable viaja con el alta: si la IA dudó, sus
@@ -123,7 +123,7 @@ export default class extends Controller {
     if (this.hasLookupIdTarget) this.lookupIdTarget.value = confident ? (lookupId ?? "") : ""
     this.setRunning(false, confident ? "Listo. Revisa los datos antes de guardar." : "La IA no está segura: elige la pieza correcta.")
     const suggestions = confident ? this.fillEmptyFields(result) : []
-    this.renderPanel(result, suggestions, confident)
+    this.renderPanel(result, suggestions, confident, searchLinks)
   }
 
   fillEmptyFields(result) {
@@ -138,7 +138,7 @@ export default class extends Controller {
     return pending
   }
 
-  renderPanel(r, suggestions, confident) {
+  renderPanel(r, suggestions, confident, searchLinks = []) {
     const panel = this.panelTarget
     panel.replaceChildren()
     const header = this.el("div", "card-header bg-info-subtle fw-semibold", "Resultado de la IA")
@@ -166,6 +166,7 @@ export default class extends Controller {
     const row = this.el("div", "row g-3")
     row.append(this.market("🇲🇽 México", r.prices_mx, "MXN"), this.market("🌎 Mundial", r.prices_world, "USD"))
     body.append(row)
+    if (searchLinks.length) body.append(this.searchLinks(searchLinks))
 
     this.appendSuggestions(body, suggestions)
 
@@ -222,15 +223,43 @@ export default class extends Controller {
       col.append(this.el("div", "text-muted", "Sin datos en sitios confiables"))
       return col
     }
-    col.append(this.el("div", "mb-1", `${currency} ${this.money(data.min)} – ${this.money(data.max)}`))
-    const list = this.el("ul", "list-unstyled mb-0")
+    // Búsquedas viejas sólo traen min/max de todo junto.
+    if (data.sold || data.asking) {
+      if (data.sold) col.append(this.range("Vendido", data.sold, currency, "fw-semibold"))
+      if (data.asking) col.append(this.range("En venta", data.asking, currency, "text-muted"))
+    } else {
+      col.append(this.el("div", "mb-1", `${currency} ${this.money(data.min)} – ${this.money(data.max)}`))
+    }
+    const list = this.el("ul", "list-unstyled mb-0 mt-1")
     data.listings.forEach((l) => {
       const item = this.el("li", "mb-1")
-      item.append(this.link(l.url, l.title), ` · ${l.price_original} · ${l.sold ? "vendido" : "en venta"}`)
+      const details = [this.money(l.price), l.price_original, l.sold ? "vendido" : "en venta", l.date].filter(Boolean)
+      if (l.converted_by === "ia") details.push("conversión de la IA")
+      item.append(this.link(l.url, l.title), ` · ${details.join(" · ")}`)
+      if (l.verified === false) item.append(" ", this.el("span", "badge text-bg-warning", "sin confirmar"))
       list.append(item)
     })
     col.append(list)
     return col
+  }
+
+  range(label, range, currency, className) {
+    const amount = range.min === range.max ? this.money(range.min) : `${this.money(range.min)} – ${this.money(range.max)}`
+    return this.el("div", className, `${label}: ${currency} ${amount} (${range.count})`)
+  }
+
+  // Los sitios de las guías con la pieza ya buscada, para revisar a mano.
+  searchLinks(links) {
+    const box = this.el("div", "mt-3")
+    box.append(this.el("div", "fw-semibold mb-1", "Buscar a mano"))
+    const line = this.el("div", "d-flex flex-wrap gap-2")
+    links.forEach((l) => {
+      const a = this.link(l.url, l.name)
+      a.className = "btn btn-sm btn-outline-secondary"
+      line.append(a)
+    })
+    box.append(line)
+    return box
   }
 
   showError(message) {

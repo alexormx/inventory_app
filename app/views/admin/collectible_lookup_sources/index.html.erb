@@ -1,0 +1,122 @@
+<div class="admin-page-header d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+  <div>
+    <p class="admin-page-eyebrow mb-1">Coleccionables › Búsqueda con IA</p>
+    <h2 class="mb-0 d-flex align-items-center gap-2"><i class="fa-solid fa-compass"></i> Guías de búsqueda</h2>
+  </div>
+  <div class="d-flex gap-2">
+    <%= link_to admin_collectibles_quick_add_path, class: "btn btn-outline-secondary btn-sm" do %>
+      <i class="fa-solid fa-arrow-left me-1"></i> Agregar coleccionable
+    <% end %>
+    <% if @configured %>
+      <%= link_to new_admin_collectible_lookup_source_path, class: "btn btn-primary btn-sm" do %>
+        <i class="fa-solid fa-plus me-1"></i> Nuevo sitio
+      <% end %>
+    <% end %>
+  </div>
+</div>
+
+<p class="text-muted small mb-4">
+  La IA identifica la pieza empezando por los sitios de <strong>identificar</strong> (puede usar otros si no alcanzan).
+  Los precios sólo se aceptan de los sitios de <strong>precios</strong>: cualquier anuncio de otro sitio, o que la búsqueda
+  no haya visitado, se descarta. Los sitios con <strong>búsqueda a mano</strong> salen en el resultado como enlaces para revisar tú mismo.
+  Una categoría limita el sitio a esas piezas; sin categoría vale para todas.
+</p>
+
+<% unless @configured %>
+  <div class="alert alert-info d-flex flex-wrap align-items-center justify-content-between gap-2 mb-4">
+    <span><i class="fa-solid fa-circle-info me-1"></i> Estás usando los sitios sugeridos. Guárdalos para poder editarlos, quitarlos o agregar otros.</span>
+    <%= button_to "Guardar los sitios sugeridos", install_defaults_admin_collectible_lookup_sources_path, class: "btn btn-sm btn-primary" %>
+  </div>
+<% end %>
+
+<% Collectibles::LookupSource::PURPOSE_LABELS.each do |purpose, label| %>
+  <% sources = @sources.select { |s| s.purpose == purpose } %>
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+      <h6 class="mb-0"><%= label %></h6>
+      <% if @configured %>
+        <%= link_to new_admin_collectible_lookup_source_path(purpose: purpose), class: "btn btn-outline-primary btn-sm" do %>
+          <i class="fa-solid fa-plus me-1"></i> Agregar
+        <% end %>
+      <% end %>
+    </div>
+    <% if sources.any? %>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+          <thead>
+            <tr>
+              <th>Sitio</th>
+              <th>Dominio</th>
+              <th>Categoría</th>
+              <th>Nota para la IA</th>
+              <th>Búsqueda a mano</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% sources.each do |source| %>
+              <tr class="<%= 'text-muted' unless source.active? %>">
+                <td>
+                  <%= source.name %>
+                  <% unless source.active? %><span class="badge bg-secondary ms-1">Inactivo</span><% end %>
+                </td>
+                <td><code><%= source.domain %></code></td>
+                <td><%= source.category || 'Todas' %></td>
+                <td class="small"><%= source.notes %></td>
+                <td>
+                  <% if source.search_url.present? %>
+                    <%= link_to "Probar", source.search_url_for("Tomica Skyline GT-R"), target: "_blank", rel: "noopener noreferrer", class: "small" %>
+                  <% else %>
+                    <span class="text-muted small">—</span>
+                  <% end %>
+                </td>
+                <td class="text-end text-nowrap">
+                  <% if source.persisted? %>
+                    <%= link_to edit_admin_collectible_lookup_source_path(source), class: "btn btn-outline-primary btn-sm", aria: { label: "Editar #{source.name}" } do %>
+                      <i class="fa-solid fa-pen-to-square"></i>
+                    <% end %>
+                    <%= button_to admin_collectible_lookup_source_path(source), method: :delete, form_class: "d-inline",
+                        class: "btn btn-outline-danger btn-sm", aria: { label: "Eliminar #{source.name}" },
+                        data: { turbo_confirm: "¿Eliminar «#{source.name}» de las guías?" } do %>
+                      <i class="fa-solid fa-trash"></i>
+                    <% end %>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% else %>
+      <div class="card-body text-muted small">
+        <%= purpose == 'reference' ? 'Sin guías: la IA busca en cualquier sitio.' : 'Sin sitios: no se mostrarán precios de este mercado.' %>
+      </div>
+    <% end %>
+  </div>
+<% end %>
+
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-header bg-white">
+    <h6 class="mb-0">Tipos de cambio</h6>
+  </div>
+  <div class="card-body">
+    <p class="text-muted small">
+      Pesos mexicanos por 1 unidad de cada moneda. Con ellos el servidor convierte cada precio tal como lo publica la tienda
+      (en México a MXN y en el mundo a USD). Si una moneda queda vacía, se usa la conversión de la IA.
+      Para pasar precios a USD hace falta el del dólar.
+    </p>
+    <%= form_with url: rates_admin_collectible_lookup_sources_path, method: :patch, local: true do %>
+      <div class="row g-3 align-items-end">
+        <% @rates.each do |currency, value| %>
+          <div class="col-6 col-md-3">
+            <%= label_tag "rates_#{currency}", "MXN por 1 #{currency}", class: "form-label" %>
+            <%= text_field_tag "rates[#{currency}]", value, id: "rates_#{currency}", class: "form-control", inputmode: "decimal" %>
+          </div>
+        <% end %>
+        <div class="col-12">
+          <%= submit_tag "Guardar tipos de cambio", class: "btn btn-primary btn-sm" %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>

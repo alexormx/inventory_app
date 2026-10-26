@@ -65,6 +65,16 @@ RSpec.describe Collectibles::AiLookup do
       lookup.update!(status: :done)
       expect(lookup.as_status_json[:result]).to eq('x' => 1)
     end
+
+    it 'al terminar trae los enlaces para buscar a mano la pieza identificada' do
+      lookup.update!(status: :running, result: { 'identification' => { 'product_name' => 'Tomica 23' } })
+      expect(lookup.as_status_json[:search_links]).to eq([])
+
+      lookup.update!(status: :done)
+      links = lookup.as_status_json[:search_links]
+      expect(links.pluck('name')).to include('eBay (vendidos)', 'Mercado Libre')
+      expect(links.find { |l| l['name'] == 'Mercado Libre' }['url']).to eq('https://listado.mercadolibre.com.mx/Tomica%2023')
+    end
   end
   it 'acepta hasta 5 fotos y rechaza la sexta con un mensaje claro' do
     lookup = described_class.new(user: admin)
