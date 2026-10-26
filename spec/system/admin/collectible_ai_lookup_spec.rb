@@ -105,8 +105,10 @@ RSpec.describe 'Admin identifica un coleccionable con IA', type: :system do
     expect(find_field('product[brand]').value).to eq('Mi marca')
     within('[data-collectible-ai-lookup-target="panel"]') do
       expect(page).to have_button('Usar', count: 1)
-      expect(page).to have_content('MXN $349 – $420')
-      expect(page).to have_content('USD $8.90 – $8.90')
+      # Lo vendido (precio real) y lo que está en venta, por separado
+      expect(page).to have_content('Vendido: MXN $420 (1)')
+      expect(page).to have_content('En venta: MXN $349 (1)')
+      expect(page).to have_content('En venta: USD $8.90 (1)')
       expect(page).to have_content('¥1,320')
       expect(page).to have_content('<img src=x onerror="window.pwned=1">Tomica #23')
       expect(page).to have_link(href: 'https://articulo.mercadolibre.com.mx/MLM-1')
