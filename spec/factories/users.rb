@@ -4,6 +4,7 @@ FactoryBot.define do
   sequence(:email) { |n| "user#{n}-#{SecureRandom.hex(3)}@example.com" }
     password { "password123" }
     password_confirmation { "password123" }
+    name { "Cliente Prueba" }
     role { "customer" }
     discount_rate { 0.0 } # ensuring not nil
 

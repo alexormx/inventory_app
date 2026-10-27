@@ -75,6 +75,19 @@
           </div>
         </div>
 
+        <% if current_user.name.blank? %>
+          <div class="card mb-4">
+            <div class="card-header bg-light">
+              <h6 class="mb-0"><i class="fa fa-user me-2"></i>¿A nombre de quién es el pedido?</h6>
+            </div>
+            <div class="card-body">
+              <%= label_tag :customer_name, 'Nombre completo', class: 'form-label small text-muted' %>
+              <%= text_field_tag :customer_name, params[:customer_name], required: true, maxlength: 255,
+                                 autocomplete: 'name', class: 'form-control' %>
+            </div>
+          </div>
+        <% end %>
+
         <div class="card mb-4">
           <div class="card-header bg-light">
             <h6 class="mb-0"><i class="fa fa-comment me-2"></i>Notas adicionales (opcional)</h6>
