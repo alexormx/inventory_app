@@ -1,7 +1,7 @@
 ¡Gracias por tu pedido!
 =====================================
 
-Hola <%= @user.email %>,
+Hola <%= @user.name.presence || @user.email %>,
 
 Tu pedido ha sido recibido y registrado.
 

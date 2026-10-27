@@ -16,7 +16,10 @@ class PurchaseOrderItem < ApplicationRecord
   # mismo producto. Tomarlo aquí las serializa en vez de enfrentarlas.
   before_save :lock_product_for_supply_change, if: :will_save_change_to_quantity?
   before_update :ensure_free_units_for_quantity_reduction, if: :will_reduce_quantity?
-  before_destroy :ensure_enough_free_inventory_to_remove
+  # Al borrar la orden completa, PurchaseOrder ya validó y limpió sus piezas;
+  # estas guardas son para quitar UNA línea de una orden que sigue viva.
+  before_destroy :ensure_enough_free_inventory_to_remove, unless: :destroyed_by_association
+  before_destroy :retire_inventory_of_removed_line, unless: :destroyed_by_association
   after_save :sync_inventory_records, if: :saved_change_to_quantity?
   after_commit :update_product_stats
   after_commit :recalculate_parent_order_totals
@@ -46,6 +49,15 @@ class PurchaseOrderItem < ApplicationRecord
 
     errors.add(:base, 'Cannot remove line: not enough free inventory to remove.')
     throw :abort
+  end
+
+  # Quitar la línea es cancelar esa parte de la compra: sus piezas libres
+  # dejan de ser oferta igual que al reducir la cantidad (a :scrap, con su
+  # evento), en vez de quedarse in_transit sin línea que las respalde.
+  def retire_inventory_of_removed_line
+    Product.lock.find(product_id)
+    line_pieces = free_inventory_scope.where(purchase_order_item_id: [id, nil])
+    retire_excess_inventory(line_pieces, line_pieces.count, reason: 'purchase_order_item_removed')
   end
 
   def free_inventory_scope

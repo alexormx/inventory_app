@@ -62,7 +62,10 @@ RSpec.describe Checkout::CreateOrder, 'P0 invariants', type: :service do
     expect(order.shipping_cost).to eq(99.to_d)
     expect(order.total_order_value).to eq(215.to_d)
     expect(order.payments.sole.amount).to eq(215.to_d)
-    expect(line.unit_cost).to eq(40.to_d)
+    # unit_cost es el precio unitario de la línea (el admin lo muestra y edita
+    # como tal); el costo de compra vive en unit_acquisition_cost.
+    expect(line.unit_cost).to eq(100.to_d)
+    expect(line.unit_acquisition_cost).to eq(40.to_d)
     expect(line.unit_selling_price).to eq(100.to_d)
     expect(line.unit_final_price).to eq(100.to_d)
     expect(line.total_line_cost).to eq(100.to_d)

@@ -30,28 +30,47 @@ module InventoryReconciliation
 
     private
 
+    # Huérfana: pieza viva (no retirada) cuya línea de compra ya no existe.
+    # Una pieza de cliente nunca se toca. La que tiene historial se retira a
+    # :scrap en vez de borrarse (InventoryEvent/InventoryAssignmentLog tienen
+    # llave foránea hacia ella). Cada pieza va en su propio savepoint: en
+    # PostgreSQL un error aborta la transacción entera, y antes una sola pieza
+    # con historial dejaba la corrida completa en 0.
     def destroy_orphans
       orphan_scope = ::Inventory.where.not(purchase_order_id: nil)
+                                .where.not(status: :scrap)
+                                .where(sale_order_id: nil)
+                                .where.not(status: InventorySyncable::COMMITTED_INVENTORY_STATUSES)
                                 .where('purchase_order_item_id IS NULL OR NOT EXISTS (SELECT 1 FROM purchase_order_items poi WHERE poi.id = inventories.purchase_order_item_id)')
       count = 0
       orphan_scope.limit(@limit).find_each do |inv|
         count += 1
         next if @dry_run
 
-        begin
-          inv_id = inv.id
-          inv.destroy!
-          begin
-            ::InventoryEvent.create!(inventory_id: inv_id, product_id: inv.product_id, event_type: 'reconciliation_orphan_destroyed',
-                                     metadata: { purchase_order_id: inv.purchase_order_id })
-          rescue StandardError
-            nil
-          end
-        rescue StandardError => e
-          @logger.error "[ReconcilePurchaseOrderLinksService#destroy_orphans] inv=#{inv.id} #{e.class}: #{e.message}"
+        ::ActiveRecord::Base.transaction(requires_new: true) do
+          ::Product.lock.find(inv.product_id)
+          history?(inv) ? retire_orphan!(inv) : inv.destroy!
         end
+      rescue StandardError => e
+        count -= 1
+        @logger.error "[ReconcilePurchaseOrderLinksService#destroy_orphans] inv=#{inv.id} #{e.class}: #{e.message}"
       end
       count
+    end
+
+    def history?(inv)
+      ::InventoryEvent.exists?(inventory_id: inv.id) || ::InventoryAssignmentLog.exists?(inventory_id: inv.id)
+    end
+
+    def retire_orphan!(inv)
+      previous_status = inv.status
+      inv.defer_preorder_reconciliation = true
+      inv.update!(status: :scrap, status_changed_at: Time.current)
+      ::InventoryEvent.create!(inventory: inv, product_id: inv.product_id, event_type: 'status_change',
+                               metadata: { 'reason' => 'reconciliation_orphan_retired',
+                                           'previous_status' => previous_status, 'new_status' => 'scrap',
+                                           'purchase_order_id' => inv.purchase_order_id,
+                                           'purchase_order_item_id' => inv.purchase_order_item_id })
     end
 
     def create_missing

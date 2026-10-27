@@ -10,7 +10,11 @@ module Admin
       dry  = params[:dry_run] == '1'
       service = ::InventoryReconciliation::ReconcilePurchaseOrderLinksService.new(dry_run: dry, mode: mode)
       result = service.call
-      flash[:notice] = "Reconciliación (mode=#{mode}, dry_run=#{dry}) => huérfanos: #{result.destroyed_orphans}, creados: #{result.created_missing}"
+      if result.errors.any?
+        flash[:alert] = "La reconciliación falló y no aplicó cambios: #{result.errors.join(', ')}"
+      else
+        flash[:notice] = "Reconciliación (mode=#{mode}, dry_run=#{dry}) => huérfanos: #{result.destroyed_orphans}, creados: #{result.created_missing}"
+      end
     rescue StandardError => e
       flash[:alert] = "Error en reconciliación: #{e.message}"
     ensure

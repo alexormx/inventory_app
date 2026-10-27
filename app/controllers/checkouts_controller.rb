@@ -7,6 +7,8 @@ class CheckoutsController < ApplicationController
   before_action :authenticate_user!
   before_action :set_cart, except: [:thank_you]
   before_action :ensure_cart_not_empty, except: %i[thank_you complete]
+  # Sin nombre la orden llega al admin (y al correo) sólo con un email.
+  before_action :require_customer_name, except: %i[step1 step1_submit thank_you]
 
   def step1
     @cart_items = @cart.items
@@ -15,6 +17,17 @@ class CheckoutsController < ApplicationController
 
   def step1_submit
     set_checkout_notes(params[:notes])
+
+    if current_user.name.blank?
+      name = params[:customer_name].to_s.squish
+      if name.blank? || !current_user.update(name: name)
+        @cart_items = @cart.items
+        @checkout_notes = checkout_notes
+        flash.now[:alert] = 'Escribe tu nombre completo para continuar con el pedido.'
+        render :step1, status: :unprocessable_entity and return
+      end
+    end
+
     redirect_to checkout_step2_path
   end
 
@@ -203,6 +216,12 @@ class CheckoutsController < ApplicationController
     return unless storefront_cart.expired?
 
     redirect_to cart_path, flash: { warning: ShoppingCarts::SessionCartExpiry::NOTICE }
+  end
+
+  def require_customer_name
+    return if current_user.name.present?
+
+    redirect_to checkout_step1_path, alert: 'Escribe tu nombre completo para continuar con el pedido.'
   end
 
   def ensure_cart_not_empty

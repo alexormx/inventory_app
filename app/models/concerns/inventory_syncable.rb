@@ -94,7 +94,7 @@ module InventorySyncable
   # Sólo se retiran piezas genuinamente libres; las comprometidas quedan fuera
   # del alcance y la guarda de PurchaseOrderItem ya impide pedir más de las que
   # hay libres.
-  def retire_excess_inventory(live_items, count)
+  def retire_excess_inventory(live_items, count, reason: 'purchase_order_quantity_reduced')
     retirable = live_items.where(status: %i[in_transit available], sale_order_id: nil)
                           .order(status_changed_at: :desc, id: :desc)
                           .lock
@@ -105,17 +105,17 @@ module InventorySyncable
       previous_status = item.status
       item.defer_preorder_reconciliation = true
       item.update!(status: :scrap, status_changed_at: Time.current)
-      log_retirement_event(item, previous_status)
+      log_retirement_event(item, previous_status, reason)
     end
   end
 
-  def log_retirement_event(item, previous_status)
+  def log_retirement_event(item, previous_status, reason)
     InventoryEvent.create!(
       inventory: item,
       product_id: item.product_id,
       event_type: 'status_change',
       metadata: {
-        'reason' => 'purchase_order_quantity_reduced',
+        'reason' => reason,
         'previous_status' => previous_status,
         'new_status' => item.status,
         'purchase_order_id' => item.purchase_order_id,

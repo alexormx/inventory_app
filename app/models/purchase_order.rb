@@ -36,7 +36,8 @@ class PurchaseOrder < ApplicationRecord
   after_update :update_inventory_status_based_on_order_status
   after_update_commit :enqueue_publication_reconciliation_after_receipt,
                       if: :received_from_in_transit?
-  before_destroy :ensure_inventories_safe_or_cleanup
+  # prepend: debe decidir antes de que dependent: :destroy toque las líneas.
+  before_destroy :ensure_inventories_safe_or_cleanup, prepend: true
 
   def may_be_deleted?
     %w[Delivered Closed].exclude?(status)
@@ -222,20 +223,30 @@ class PurchaseOrder < ApplicationRecord
   end
   private :received_from_in_transit?, :enqueue_publication_reconciliation_after_receipt
 
-  # Block if any locked; otherwise delete only free and allow destroy
+  # Borrar una compra sólo es seguro si nunca pasó nada con sus piezas. Una
+  # pieza comprometida pertenece a un cliente; una retirada o con historial
+  # tiene un rastro de auditoría (InventoryEvent, InventoryAssignmentLog) que
+  # no se destruye. En esos casos la salida es Cancelar, que las manda a :scrap
+  # y conserva el rastro.
   def ensure_inventories_safe_or_cleanup
-    # ⬇️ plain relation, no association cache
-    scope  = Inventory.where(purchase_order_id: id)
+    scope = Inventory.where(purchase_order_id: id)
+    Product.where(id: scope.select(:product_id)).lock.order(:id).load
 
-    locked = scope.where(status: %i[reserved sold])
-                  .or(scope.where.not(sale_order_id: nil))
-
-    if locked.exists?
-      errors.add(:base,
-                 "Cannot delete this purchase order: #{locked.count} inventory item(s) are reserved/sold or linked to a sale.")
-      return false
+    committed = scope.where(status: InventorySyncable::COMMITTED_INVENTORY_STATUSES).or(scope.where.not(sale_order_id: nil))
+    if committed.exists?
+      errors.add(:base, "No se puede eliminar: #{committed.count} pieza(s) están apartadas o vendidas a un cliente.")
+      throw :abort
     end
 
-    scope.where(status: %i[available in_transit], sale_order_id: nil).delete_all
+    free = scope.where(status: %i[available in_transit])
+    with_history = free.where(id: InventoryEvent.select(:inventory_id))
+                       .or(free.where(id: InventoryAssignmentLog.select(:inventory_id)))
+    if scope.where.not(id: free).exists? || with_history.exists?
+      errors.add(:base, 'No se puede eliminar: algunas piezas ya tienen historial (retiradas, ubicadas o con ' \
+                        'costos distribuidos). Cancela la orden para retirarlas conservando el historial.')
+      throw :abort
+    end
+
+    free.delete_all
   end
 end
