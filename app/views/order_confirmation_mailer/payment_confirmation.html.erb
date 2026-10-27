@@ -1,0 +1,24 @@
+<div class="order-email-container">
+      <div class="order-email-header">
+        <h1>¡Recibimos tu pago!</h1>
+      </div>
+
+      <div class="order-email-content">
+        <p>Hola <%= @user.name.presence || @user.email %>,</p>
+        <p>Confirmamos el pago de tu pedido <strong>#<%= @sale_order.id %></strong>. Ya lo estamos preparando.</p>
+
+        <div class="order-email-summary">
+          <h2>Pedido #<%= @sale_order.id %></h2>
+          <p><strong>Total pagado:</strong> <%= number_to_currency(@sale_order.total_paid, unit: "$") %></p>
+          <p><strong>Estado:</strong> Confirmado</p>
+        </div>
+
+        <p>Te notificaremos cuando tu pedido sea enviado.</p>
+        <p>Si tienes alguna pregunta, no dudes en contactarnos indicando el número de pedido.</p>
+      </div>
+
+      <div class="order-email-footer">
+        <p>Pasatiempos - Tu tienda de confianza</p>
+        <p>Este es un correo automático, por favor no respondas a este mensaje.</p>
+      </div>
+</div>

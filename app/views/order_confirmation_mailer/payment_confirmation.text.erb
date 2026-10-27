@@ -1,0 +1,18 @@
+¡Recibimos tu pago!
+=====================================
+
+Hola <%= @user.name.presence || @user.email %>,
+
+Confirmamos el pago de tu pedido #<%= @sale_order.id %>. Ya lo estamos preparando.
+
+PEDIDO #<%= @sale_order.id %>
+-------------------------------------
+Total pagado: <%= number_to_currency(@sale_order.total_paid, unit: "$") %>
+Estado: Confirmado
+
+Te notificaremos cuando tu pedido sea enviado.
+Si tienes alguna pregunta, no dudes en contactarnos indicando el número de pedido.
+
+=====================================
+Pasatiempos - Tu tienda de confianza
+Este es un correo automático, por favor no respondas a este mensaje.

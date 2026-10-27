@@ -133,7 +133,9 @@ RSpec.describe OrderConfirmationMailer, type: :mailer do
         expect(mail.text_part.body.encoded).to include(sale_order.notes)
       end
 
-      it 'includes user email' do
+      it 'greets by email when the customer has no name' do
+        user.update!(name: nil)
+
         expect(mail.html_part.body.encoded).to include(user.email)
         expect(mail.text_part.body.encoded).to include(user.email)
       end
@@ -221,6 +223,34 @@ RSpec.describe OrderConfirmationMailer, type: :mailer do
         expect { minimal_mail.text_part.body.decoded }.not_to raise_error
         expect(minimal_mail.html_part.body.decoded).not_to include('PLACEHOLDER')
         expect(minimal_mail.text_part.body.decoded).not_to include('PLACEHOLDER')
+      end
+    end
+
+    it 'greets the customer by name' do
+      user.update!(name: 'Ana López')
+
+      expect(mail.text_part.body.decoded).to include('Hola Ana López,')
+      expect(mail.html_part.body.decoded).to include('Hola Ana López,')
+    end
+  end
+
+  describe '#payment_confirmation' do
+    let(:user) { create(:user, email: 'customer@example.com', name: 'Ana López') }
+    let(:sale_order) do
+      create(:sale_order, user: user, subtotal: 100.0, total_order_value: 116.0, status: 'Confirmed')
+    end
+    let(:mail) do
+      create(:payment, sale_order: sale_order, amount: 116.0, payment_method: 'transferencia_bancaria',
+                       status: 'Completed')
+      OrderConfirmationMailer.payment_confirmation(sale_order)
+    end
+
+    it 'tells the customer the payment was received' do
+      aggregate_failures do
+        expect(mail.subject).to eq("Recibimos tu pago - Pedido ##{sale_order.id} - Pasatiempos")
+        expect(mail.to).to eq(['customer@example.com'])
+        expect(mail.text_part.body.decoded).to include('Hola Ana López,', "##{sale_order.id}", '$116.00')
+        expect(mail.html_part.body.decoded).to include('Hola Ana López,', "##{sale_order.id}", '$116.00')
       end
     end
   end

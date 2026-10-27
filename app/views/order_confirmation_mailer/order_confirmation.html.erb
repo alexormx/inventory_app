@@ -4,7 +4,7 @@
       </div>
 
       <div class="order-email-content">
-        <p>Hola <%= @user.email %>,</p>
+        <p>Hola <%= @user.name.presence || @user.email %>,</p>
         <p>Tu pedido ha sido recibido y registrado.</p>
 
         <div class="order-email-summary">

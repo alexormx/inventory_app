@@ -13,4 +13,14 @@ class OrderConfirmationMailer < ApplicationMailer
       subject: "Confirmación de Pedido ##{@sale_order.id} - Pasatiempos"
     )
   end
+
+  def payment_confirmation(sale_order)
+    @sale_order = sale_order
+    @user = sale_order.user
+
+    mail(
+      to: @user.email,
+      subject: "Recibimos tu pago - Pedido ##{@sale_order.id} - Pasatiempos"
+    )
+  end
 end

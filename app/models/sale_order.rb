@@ -82,6 +82,10 @@ class SaleOrder < ApplicationRecord
 
   # Actualizar UI (status badge) por Turbo cuando cambie el estado
   after_commit :broadcast_status_change, if: -> { previous_changes.key?('status') }
+  # Pending -> Confirmed con la orden saldada es el momento en que el pago
+  # queda reconocido. Sólo para órdenes de la tienda (las únicas con
+  # idempotency_key): el checkout ya le avisó al cliente al crear la orden.
+  after_update_commit :enqueue_payment_confirmation, if: :payment_just_confirmed?
 
   # Las estadísticas de venta del producto dependen del estado de la orden, no
   # sólo de sus líneas. Sin esto, pasar de Pending a Confirmed dejaba las cifras
@@ -112,6 +116,17 @@ class SaleOrder < ApplicationRecord
   def total_weight_gr
     sale_order_items.sum { |i| i.weight_gr.to_d }
   end
+
+  def payment_just_confirmed?
+    previous_changes['status'] == %w[Pending Confirmed] && idempotency_key.present? && fully_paid?
+  end
+
+  def enqueue_payment_confirmation
+    OrderConfirmationMailer.payment_confirmation(self).deliver_later
+  rescue StandardError => e
+    Rails.logger.error("[SaleOrder] Could not enqueue payment confirmation for order #{id} (#{e.class})")
+  end
+  private :payment_just_confirmed?, :enqueue_payment_confirmation
 
   def update_status_if_fully_paid!
     # Promueve Pending -> Confirmed si está totalmente pagada.
