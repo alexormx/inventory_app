@@ -19,17 +19,24 @@ module InventoryServices
     # active holds this call may touch; every other cart's hold is invisible.
     # Allocators that own nothing (PreorderAllocator, admin paths) pass none
     # and therefore see no held unit at all.
+    #
+    # committed: the line is demand that already waited in the preorder queue,
+    # so it draws from Inventory.committable (received stock counts even before
+    # it has a location). Everyone else keeps the storefront rule.
     def self.call(sale_order_item, strict: true, dry_run: false,
-                  held_inventory_ids: [], holding_cart_id: nil)
+                  held_inventory_ids: [], holding_cart_id: nil, committed: false)
       new(sale_order_item, strict: strict, dry_run: dry_run,
                            held_inventory_ids: held_inventory_ids,
-                           holding_cart_id: holding_cart_id).call
+                           holding_cart_id: holding_cart_id,
+                           committed: committed).call
     end
 
-    def initialize(sale_order_item, strict:, dry_run:, held_inventory_ids: [], holding_cart_id: nil)
+    def initialize(sale_order_item, strict:, dry_run:, held_inventory_ids: [], holding_cart_id: nil,
+                   committed: false)
       @sale_order_item = sale_order_item
       @strict = strict
       @dry_run = dry_run
+      @committed = committed
       @holding_cart_id = holding_cart_id
       # Ownership must be provable, not asserted: without the owning cart there
       # is nothing to verify the ids against, so they are ignored entirely.
@@ -111,9 +118,8 @@ module InventoryServices
     end
 
     def locked_free_rows(line, needed, owned_ids: [])
-      available_status = Inventory.statuses.fetch('available')
-      scope = Inventory.customer_sellable
-                       .where(product_id: line.product_id, item_condition: line.item_condition)
+      supply = @committed ? Inventory.committable : Inventory.customer_sellable
+      scope = supply.where(product_id: line.product_id, item_condition: line.item_condition)
       # Already selected above; do not take them twice.
       scope = scope.where.not(id: owned_ids) if owned_ids.any?
       # Every other active hold makes a unit someone else's. With no proven
@@ -121,15 +127,22 @@ module InventoryServices
       scope.where.not(id: CartInventoryHold.active
                                            .where.not(inventory_id: owned_ids)
                                            .select(:inventory_id))
-           .order(
-             Arel.sql("CASE WHEN status = #{available_status} THEN 0 ELSE 1 END"),
-             :created_at,
-             :id
-           )
+           .order(Arel.sql(supply_preference_sql), :created_at, :id)
            .lock
            .limit(needed)
            .to_a
            .then { |rows| reject_newly_held(rows, owned_ids) }
+    end
+
+    # Received stock before inbound. Committed demand additionally takes the
+    # unlocated arrivals first: they are what it was waiting for, and leaving
+    # the located units free keeps them on sale in the storefront.
+    def supply_preference_sql
+      available = Inventory.statuses.fetch('available')
+      return "CASE WHEN status = #{available} THEN 0 ELSE 1 END" unless @committed
+
+      "CASE WHEN status = #{available} AND inventory_location_id IS NULL THEN 0 " \
+        "WHEN status = #{available} THEN 1 ELSE 2 END"
     end
 
     # The hold exclusion above rides inside the same statement as the

@@ -186,28 +186,19 @@ module Admin
     end
 
     def confirm_receipt
-      product_ids = []
       received = @purchase_order.with_lock do
         next false unless @purchase_order.status == 'In Transit'
 
-        product_ids = Inventory.where(purchase_order_id: @purchase_order.id)
-                               .distinct
-                               .pluck(:product_id)
         # PurchaseOrder owns the canonical receipt transition. Its callback locks
-        # products in id order, then promotes in_transit/pre_reserved rows in this
-        # same transaction. Keeping the controller out of Inventory prevents an
-        # observable half-receipt (assignable rows while the PO is still in transit).
+        # products in id order, promotes in_transit/pre_reserved rows and assigns
+        # the received units to waiting preorders in this same transaction.
+        # Keeping the controller out of Inventory prevents an observable
+        # half-receipt (assignable rows while the PO is still in transit).
         @purchase_order.update!(status: 'Delivered')
         true
       end
 
       if received
-        # Asignar inventario recibido a preorders pendientes
-        if product_ids.present?
-          Rails.logger.info "[PurchaseOrders] Allocating received inventory to preorders for #{product_ids.count} products"
-          Preorders::PreorderAllocator.batch_allocate(product_ids)
-        end
-
         flash[:notice] = 'Recepción confirmada. Inventario actualizado.'
       else
         flash[:alert] = "Solo se pueden confirmar órdenes 'In Transit'."

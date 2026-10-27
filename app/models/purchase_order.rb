@@ -155,7 +155,7 @@ class PurchaseOrder < ApplicationRecord
     case status
     when 'Delivered'
       product_ids = scope.distinct.pluck(:product_id)
-      Product.where(id: product_ids).lock.order(:id).load
+      locked_products = Product.where(id: product_ids).lock.order(:id).to_a
       # Conteo de disponibles ANTES de recibir para detectar resurtidos reales
       # (0 -> positivo). Cuando la recepción pasa por confirm_receipt las piezas
       # ya están available aquí, así que was_zero será falso y la detección real
@@ -183,6 +183,10 @@ class PurchaseOrder < ApplicationRecord
         status_changed_at: Time.current,
         updated_at: Time.current
       )
+      # update_all no corre callbacks: la preventa en espera se atiende aquí,
+      # por cualquier camino que lleve a 'Delivered', y antes de detectar el
+      # resurtido para que lo apartado no cuente como stock nuevo.
+      locked_products.each { |product| Preorders::PreorderAllocator.new(product).call }
       Products::RestockDetector.call(product_ids, prev_available_counts: prev_available) if product_ids.present?
     when 'Pending', 'In Transit'
       product_ids = scope.distinct.pluck(:product_id)

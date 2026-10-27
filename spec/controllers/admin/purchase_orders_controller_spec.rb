@@ -303,14 +303,15 @@ RSpec.describe Admin::PurchaseOrdersController, type: :controller do
     context 'when allocation fails' do
       let!(:inventory) { create(:inventory, product: product, purchase_order: purchase_order, status: :in_transit) }
 
-      it 'still marks inventory as available even if allocation fails' do
-        allow(Preorders::PreorderAllocator).to receive(:batch_allocate).and_raise(StandardError.new("Allocation failed"))
+      it 'rolls back the whole receipt when allocation fails' do
+        allow(Preorders::PreorderAllocator).to receive(:new).and_raise(StandardError.new("Allocation failed"))
 
         expect { patch :confirm_receipt, params: { id: purchase_order.id } }.to raise_error(StandardError)
 
-        # El inventory debe estar disponible (update_all se ejecutó antes del allocate)
-        expect(inventory.reload.status).to eq('available')
-        expect(purchase_order.reload.status).to eq('Delivered')
+        # La asignación es parte de la recepción: no puede quedar stock recibido
+        # sin que la preventa en espera haya tenido su turno.
+        expect(inventory.reload.status).to eq('in_transit')
+        expect(purchase_order.reload.status).to eq('In Transit')
       end
     end
 

@@ -43,6 +43,7 @@ module Admin
     def create
       @sale_order = SaleOrder.new(sale_order_params)
       if @sale_order.save
+        SaleOrders::QueueShortageAsPreorders.call(@sale_order)
         @sale_order.update_status_if_fully_paid!
         redirect_to admin_sale_order_path(@sale_order), notice: 'Orden de venta creada.'
       else
@@ -63,6 +64,7 @@ module Admin
       end
 
       if @sale_order.update(sale_order_params)
+        SaleOrders::QueueShortageAsPreorders.call(@sale_order)
         @sale_order.update_status_if_fully_paid!
         redirect_to admin_sale_order_path(@sale_order), notice: 'Orden de venta actualizada.'
       else
