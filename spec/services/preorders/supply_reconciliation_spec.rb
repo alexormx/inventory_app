@@ -99,6 +99,38 @@ RSpec.describe 'Preorder supply reconciliation', type: :service do
     end
   end
 
+  it 'assigns received but unlocated stock to committed demand without publishing the rest' do
+    _order, line, reservation = preorder_commitment(quantity: 3, reserved_at: 2.days.ago)
+    unlocated_stock(5)
+
+    Preorders::PreorderAllocator.new(product).call
+
+    aggregate_failures do
+      expect(reservation.reload).to be_assigned
+      expect(line.reload.preorder_quantity).to eq(0)
+      expect(line.inventory_units.where(status: :reserved, inventory_location_id: nil).count).to eq(3)
+      expect(Inventory.where(product: product, status: :available, sale_order_id: nil).count).to eq(2)
+      expect(Inventory.customer_sellable.where(product: product)).to be_empty
+    end
+  end
+
+  it 'gives committed demand the unlocated arrivals before stock that is already public' do
+    _order, line, _reservation = preorder_commitment(quantity: 2, reserved_at: 2.days.ago)
+    unlocated = unlocated_stock(2)
+    # update_columns: crearlas ubicadas dispararía la conciliación antes de
+    # que el asignador pueda elegir entre las dos ofertas.
+    located = create_list(:inventory, 2, product: product, status: :damaged)
+    Inventory.where(id: located).update_all(status: Inventory.statuses[:available],
+                                            inventory_location_id: location.id)
+
+    Preorders::PreorderAllocator.new(product).call
+
+    aggregate_failures do
+      expect(line.reload.inventory_units).to match_array(unlocated)
+      expect(Inventory.customer_on_hand.where(product: product)).to match_array(located)
+    end
+  end
+
   it 'leaves the exact pending remainder when located supply is smaller than demand' do
     _order, line, _reservation = preorder_commitment(quantity: 5, reserved_at: 2.days.ago)
     unlocated_stock(2)

@@ -276,6 +276,25 @@ RSpec.describe PurchaseOrder, type: :model do
     expect(Inventory.where(purchase_order_id: po.id)).to be_empty
   end
 
+  it "assigns delivered inventory to a pending preorder on any transition to Delivered" do
+    product = create(:product, skip_seed_inventory: true, preorder_available: true)
+    po = create(:purchase_order, user: supplier, status: "Pending")
+    create(:purchase_order_item, purchase_order: po, product: product, quantity: 2, unit_cost: 100)
+    so = create(:sale_order)
+    line = create(:sale_order_item, sale_order: so, product: product, quantity: 1, preorder_quantity: 1,
+                                    unit_final_price: 150)
+    reservation = create(:preorder_reservation, product: product, user: so.user, sale_order: so,
+                                                sale_order_item: line, quantity: 1)
+
+    po.update!(status: "Delivered")
+
+    aggregate_failures do
+      expect(reservation.reload).to be_assigned
+      expect(line.reload.inventory_units.where(status: :reserved, inventory_location_id: nil).count).to eq(1)
+      expect(Inventory.where(purchase_order_id: po.id, status: :available, sale_order_id: nil).count).to eq(1)
+    end
+  end
+
   it "allocates delivered inventory only after location assignment and then blocks PO destroy" do
     product = create(:product, skip_seed_inventory: true)
     po  = create(:purchase_order, user: supplier, order_date: Date.today, expected_delivery_date: Date.today, status: "Pending")

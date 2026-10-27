@@ -109,6 +109,11 @@ class Inventory < ApplicationRecord
         in_transit: statuses[:in_transit]
       )
   }
+  # Oferta para demanda YA comprometida (preventas en espera). A diferencia de
+  # #customer_sellable no exige ubicación: la ubicación protege a la tienda de
+  # vender lo que no se encuentra, pero un pedido existente debe quedarse con
+  # su pieza en cuanto se recibe, aunque nadie la haya puesto en un estante.
+  scope :committable, -> { where(sale_order_id: nil, status: %i[available in_transit]) }
   scope :for_condition, ->(condition) { where(item_condition: condition) }
   scope :assignable, -> { customer_sellable }
   scope :free,     -> { where(sale_order_id: nil, status: %w[available in_transit]) }

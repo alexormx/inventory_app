@@ -61,10 +61,7 @@ module Admin
         next unless product
 
         begin
-          before = Inventory.where(product_id: pid, status: %i[pre_reserved pre_sold]).count
-          Preorders::PreorderAllocator.new(product).call
-          after = Inventory.where(product_id: pid, status: %i[pre_reserved pre_sold]).count
-          delta = [after - before, 0].max
+          delta = Preorders::PreorderAllocator.new(product).call.to_i
           total_assigned += delta
           breakdown << "#{product.product_sku || pid}: #{delta}"
           processed += 1

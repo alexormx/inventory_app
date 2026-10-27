@@ -3,7 +3,7 @@
 module Preorders
   class PreorderAllocator
     # Si newly_available_units no se pasa, intentará asignar todas las piezas
-    # libres (available + in_transit).
+    # libres (available, ubicadas o no, + in_transit).
     #
     # Toda asignación respeta DOS topes a la vez:
     #
@@ -87,19 +87,17 @@ module Preorders
 
     private
 
-    # Presupuesto de oferta POR CONDICIÓN. La semántica de oferta de preventa
-    # no cambia -- sigue siendo customer_sellable (disponible ahora O en
-    # tránsito, ver Inventory#customer_sellable) -- lo único que se corrige es
-    # que ya no se agrega entre condiciones: una pieza mint no puede autorizar
-    # ni satisfacer demanda brand_new.
-    #
-    # Es la MISMA relación que antes, sólo agrupada; no añade una consulta
-    # extra ni toca el orden de bloqueos.
+    # Presupuesto de oferta POR CONDICIÓN, sobre Inventory.committable: libre
+    # recibido (con o sin ubicación) o en tránsito. La preventa es demanda ya
+    # comprometida, así que una pieza recibida se le asigna aunque todavía no
+    # tenga estante; la tienda sigue sin ver piezas sin ubicar. Tampoco se
+    # agrega entre condiciones: una pieza mint no puede autorizar ni satisfacer
+    # demanda brand_new.
     def supply_by_condition
       # A unit a cart actively holds is spoken for: the allocator has no cart,
       # so every active hold is excluded. Expired holds are ignored and the
       # unit becomes allocatable again with no cleanup required.
-      Inventories::Availability.claimable(Inventory.customer_sellable)
+      Inventories::Availability.claimable(Inventory.committable)
                                .where(product_id: @product.id)
                                .group(:item_condition)
                                .count
@@ -132,7 +130,7 @@ module Preorders
 
         assigned_before = locked_line.inventory_units.count
         locked_line.update!(preorder_quantity: locked_line.preorder_quantity.to_i - target)
-        result = InventoryServices::ReserveSaleOrderItem.call(locked_line, strict: false)
+        result = InventoryServices::ReserveSaleOrderItem.call(locked_line, strict: false, committed: true)
         assigned = [[result.total_assigned - assigned_before, 0].max, target].min
 
         unassigned = target - assigned
