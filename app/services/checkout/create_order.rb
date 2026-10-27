@@ -162,7 +162,7 @@ module Checkout
           soi = sale_order.sale_order_items.create!(
             product: product,
             quantity: qty,
-            unit_cost: product.average_purchase_cost.to_d,
+            unit_cost: item_price.to_d,
             unit_selling_price: item_price.to_d,
             unit_final_price: item_price.to_d,
             total_line_cost: item_price.to_d * qty,
