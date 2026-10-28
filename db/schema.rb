@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_10_25_120000) do
+ActiveRecord::Schema[8.0].define(version: 2026_10_27_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -171,6 +171,21 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_25_120000) do
     t.index ["post_id"], name: "index_comments_on_post_id"
     t.index ["status"], name: "index_comments_on_status"
     t.index ["user_id"], name: "index_comments_on_user_id"
+  end
+
+  create_table "favorites", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "product_id", null: false
+    t.string "source", default: "heart", null: false
+    t.datetime "removed_at"
+    t.string "removal_reason"
+    t.string "sale_order_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["product_id", "removed_at"], name: "index_favorites_on_product_id_and_removed_at"
+    t.index ["product_id"], name: "index_favorites_on_product_id"
+    t.index ["user_id", "product_id"], name: "index_favorites_open_per_user_product", unique: true, where: "(removed_at IS NULL)"
+    t.index ["user_id"], name: "index_favorites_on_user_id"
   end
 
   create_table "inventories", force: :cascade do |t|
@@ -1149,6 +1164,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_25_120000) do
   add_foreign_key "collectible_ai_lookups", "users", on_delete: :cascade
   add_foreign_key "comments", "posts"
   add_foreign_key "comments", "users"
+  add_foreign_key "favorites", "products", on_delete: :cascade
+  add_foreign_key "favorites", "users", on_delete: :cascade
   add_foreign_key "inventories", "inventory_locations"
   add_foreign_key "inventories", "products"
   add_foreign_key "inventories", "purchase_orders"

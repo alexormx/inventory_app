@@ -43,6 +43,7 @@ RSpec.describe 'admin/partials/_sidebar.html.erb', type: :view do
     '/admin/preorders_audit' => ['Preórdenes'],
     '/admin/category_attribute_templates/new' => ['Enriquecimiento IA'],
     '/admin/catalog_review' => ['Productos', 'Revisión catálogo'],
+    '/admin/favorites' => ['Productos', 'Favoritos de clientes'],
     '/admin/inventory_verifications/7' => ['Inventario', 'Verificación física']
   }.each do |path, labels|
     it "highlights #{labels.join(' + ')} on #{path}" do

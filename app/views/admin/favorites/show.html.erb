@@ -1,0 +1,49 @@
+<div class="mb-3">
+  <%= link_to admin_favorites_path, class: 'small text-decoration-none' do %>
+    <i class="fas fa-arrow-left me-1" aria-hidden="true"></i>Favoritos de clientes
+  <% end %>
+</div>
+<h1 class="h4 mb-1"><%= @product.product_name %></h1>
+<p class="text-muted small mb-4"><%= @product.product_sku %> · <%= link_to 'Ver producto en admin', admin_product_path(@product) %></p>
+
+<h2 class="h6">Lo tienen guardado (<%= @open_favorites.size %>)</h2>
+<% if @open_favorites.any? %>
+  <table class="table table-sm align-middle mb-4">
+    <thead class="table-light">
+      <tr><th>Cliente</th><th>Correo</th><th>Origen</th><th>Guardado</th></tr>
+    </thead>
+    <tbody>
+      <% @open_favorites.each do |favorite| %>
+        <tr>
+          <td><%= favorite.user.name.presence || '—' %></td>
+          <td><%= favorite.user.email %></td>
+          <td><%= favorite.source == 'abandoned_cart' ? 'Carrito abandonado' : 'Corazón' %></td>
+          <td><%= l(favorite.created_at, format: :short) %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <p class="text-muted mb-4">Nadie lo tiene guardado ahora.</p>
+<% end %>
+
+<h2 class="h6">Lo guardaron y lo compraron (<%= @purchased_favorites.size %>)</h2>
+<% if @purchased_favorites.any? %>
+  <table class="table table-sm align-middle">
+    <thead class="table-light">
+      <tr><th>Cliente</th><th>Pedido</th><th>Guardado</th><th>Comprado</th></tr>
+    </thead>
+    <tbody>
+      <% @purchased_favorites.each do |favorite| %>
+        <tr>
+          <td><%= favorite.user.name.presence || favorite.user.email %></td>
+          <td><%= link_to favorite.sale_order_id, admin_sale_order_path(favorite.sale_order_id) if favorite.sale_order_id %></td>
+          <td><%= l(favorite.created_at, format: :short) %></td>
+          <td><%= l(favorite.removed_at, format: :short) %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <p class="text-muted">Todavía nadie lo ha comprado después de guardarlo.</p>
+<% end %>

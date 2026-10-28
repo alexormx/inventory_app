@@ -3257,3 +3257,46 @@ turbo-frame[busy]:not(#products_grid)::after {
     overscroll-behavior: contain;
   }
 }
+
+// ── Favoritos (corazón) ────────────────────────────────────────────────
+// En la tarjeta flota sobre la esquina de la foto; en la página del
+// producto es un botón "Guardar" de ancho completo.
+.favorite-heart-slot--card {
+  position: absolute;
+  top: .4rem;
+  right: .4rem;
+  z-index: 3;
+}
+
+.favorite-heart--card {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .92);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, .18);
+  color: #dc3545;
+  font-size: 1.05rem;
+  text-decoration: none;
+  transition: transform .12s ease;
+
+  &:hover,
+  &:focus-visible { transform: scale(1.1); color: #b02a37; }
+}
+
+.favorite-heart-slot--full form,
+.favorite-heart-slot--full .favorite-heart--full { width: 100%; }
+
+.favorite-heart--full.is-saved {
+  background: rgba(220, 53, 69, .08);
+}
+
+.favorites-thumb img {
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+}

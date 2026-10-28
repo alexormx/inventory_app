@@ -50,6 +50,32 @@ RSpec.describe ShoppingCarts::ExpireCart do
     expect(ShoppingCarts::ActiveCartResolver.find(user)).to be_nil
   end
 
+  it 'manda los productos del carrito vencido a los favoritos del cliente' do
+    cart = cart_with_line(idle_for: 5.hours)
+
+    described_class.call(cart)
+
+    favorite = Favorite.open.find_by!(user: user, product: product)
+    expect(favorite.source).to eq('abandoned_cart')
+  end
+
+  it 'no duplica un producto que el cliente ya tenía en favoritos' do
+    Favorite.save_for(user, product)
+    cart = cart_with_line(idle_for: 5.hours)
+
+    described_class.call(cart)
+
+    expect(Favorite.open.where(user: user, product: product).sole.source).to eq('heart')
+  end
+
+  it 'no crea favoritos cuando el carrito no venció' do
+    cart = cart_with_line(idle_for: 3.hours)
+
+    described_class.call(cart)
+
+    expect(Favorite.count).to eq(0)
+  end
+
   it 'no lo vence si recibió actividad antes de tomar el candado' do
     cart = cart_with_line(idle_for: 5.hours)
     stale_copy = ShoppingCart.find(cart.id)

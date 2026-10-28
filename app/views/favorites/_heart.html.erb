@@ -1,0 +1,28 @@
+<%# Corazón de favoritos. variant: :card (ícono sobre la foto) o :full (botón
+    "Guardar" en la página del producto). saved se pasa explícito en las
+    respuestas turbo_stream; si no, se lee de la lista del cliente. %>
+<% variant = local_assigns.fetch(:variant, :card) %>
+<% saved = local_assigns.key?(:saved) ? saved : favorited?(product) %>
+<% label = saved ? 'Quitar de favoritos' : 'Guardar en favoritos' %>
+<% css = variant == :full ? "btn btn-outline-danger w-100 favorite-heart favorite-heart--full" : "favorite-heart favorite-heart--card" %>
+<% icon = saved ? 'fa-solid fa-heart' : 'fa-regular fa-heart' %>
+<div id="<%= "favorite_heart_#{product.id}" %>" class="favorite-heart-slot favorite-heart-slot--<%= variant %>">
+  <% if !user_signed_in? %>
+    <%= link_to favorites_path(add: product.id), class: css, title: 'Inicia sesión para guardar en favoritos',
+                aria: { label: "Guardar #{product.product_name} en favoritos" }, data: { turbo_frame: '_top' } do %>
+      <i class="<%= icon %>" aria-hidden="true"></i><% if variant == :full %> Guardar<% end %>
+    <% end %>
+  <% elsif saved %>
+    <%= button_to favorite_path(product.id, variant: variant), method: :delete, class: "#{css} is-saved", title: label,
+                  aria: { label: "#{label}: #{product.product_name}", pressed: true },
+                  form: { class: 'd-inline', data: { turbo_stream: true } } do %>
+      <i class="<%= icon %>" aria-hidden="true"></i><% if variant == :full %> Guardado<% end %>
+    <% end %>
+  <% else %>
+    <%= button_to favorites_path, params: { product_id: product.id, variant: variant }, method: :post, class: css, title: label,
+                  aria: { label: "#{label}: #{product.product_name}", pressed: false },
+                  form: { class: 'd-inline', data: { turbo_stream: true } } do %>
+      <i class="<%= icon %>" aria-hidden="true"></i><% if variant == :full %> Guardar<% end %>
+    <% end %>
+  <% end %>
+</div>

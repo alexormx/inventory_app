@@ -85,14 +85,17 @@
 
       <li class="nav-item px-2">
         <%= admin_sidebar_link 'Productos', admin_products_path, icon: 'box-open', section: true,
-                               also: [admin_catalog_review_path] %>
+                               also: [admin_catalog_review_path, admin_favorites_path] %>
       </li>
-      <% if admin_sidebar_open?(admin_products_path, admin_catalog_review_path) %>
+      <% if admin_sidebar_open?(admin_products_path, admin_catalog_review_path, admin_favorites_path) %>
         <li class="nav-item px-2 ps-4">
           <%= admin_sidebar_link 'Vinculación catálogo', catalog_status_admin_products_path, icon: 'link', section: true %>
         </li>
         <li class="nav-item px-2 ps-4">
           <%= admin_sidebar_link 'Revisión catálogo', admin_catalog_review_path, icon: 'clipboard-check', section: true %>
+        </li>
+        <li class="nav-item px-2 ps-4">
+          <%= admin_sidebar_link 'Favoritos de clientes', admin_favorites_path, icon: 'heart', section: true %>
         </li>
       <% end %>
       <li class="nav-item px-2">

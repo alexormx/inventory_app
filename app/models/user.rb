@@ -16,6 +16,7 @@ class User < ApplicationRecord
   has_many :shopping_carts, dependent: :restrict_with_error
   has_many :shipping_addresses, dependent: :destroy
   has_many :reviews, dependent: :destroy
+  has_many :favorites, dependent: :delete_all
   has_many :comments, dependent: :destroy
   has_one :location_assignment_draft, dependent: :destroy
 

@@ -22,6 +22,7 @@ class Product < ApplicationRecord
   has_one :supplier_catalog_item, dependent: :nullify
   has_one :product_catalog_review, dependent: :destroy
   has_many :reviews, dependent: :destroy
+  has_many :favorites, dependent: :delete_all
 
   # Aggregate helpers for approved reviews — used by both the product
   # page summary and the AggregateRating JSON-LD schema. Cached in

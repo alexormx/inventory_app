@@ -1,0 +1,54 @@
+<h1 class="h4 mb-1">Mis favoritos</h1>
+<p class="text-muted small mb-4">Lo que guardaste para comprar después. Al comprar un producto sale de aquí.</p>
+
+<% if @favorites.any? %>
+  <div class="list-group favorites-list">
+    <% @favorites.each do |favorite| %>
+      <% product = favorite.product %>
+      <% available = product.active? && @available_now[product.id].positive? %>
+      <div id="<%= "favorite_row_#{product.id}" %>" class="list-group-item d-flex align-items-center gap-3 py-3">
+        <%= link_to product_path(product), class: 'favorites-thumb flex-shrink-0' do %>
+          <% if product.product_images.attached? %>
+            <%= responsive_attachment_image product.primary_product_image, alt: product.product_name,
+                  widths: [80, 160], sizes: '80px', css_class: 'rounded', square: true, loading: 'lazy' %>
+          <% else %>
+            <%= image_tag 'placeholder.png', class: 'rounded', alt: '' %>
+          <% end %>
+        <% end %>
+        <div class="flex-grow-1 min-w-0">
+          <%= link_to product.product_name, product_path(product), class: 'fw-semibold text-dark text-decoration-none d-block text-truncate' %>
+          <div class="text-danger fw-bold"><%= number_to_currency(product.selling_price) %></div>
+          <div class="small">
+            <% if !product.active? %>
+              <span class="badge bg-secondary">No disponible</span>
+            <% else %>
+              <%= stock_badge(product) %>
+            <% end %>
+            <% if favorite.source == 'abandoned_cart' %>
+              <span class="text-muted ms-1"><i class="fas fa-cart-arrow-down me-1" aria-hidden="true"></i>Lo dejaste en tu carrito</span>
+            <% end %>
+          </div>
+        </div>
+        <div class="d-flex align-items-center gap-2 flex-shrink-0">
+          <% if available %>
+            <%= button_to cart_items_path, params: { product_id: product.id, condition: 'brand_new' }, method: :post,
+                          class: 'btn btn-danger btn-sm', title: 'Agregar al carrito' do %>
+              <i class="fas fa-cart-plus" aria-hidden="true"></i><span class="d-none d-sm-inline ms-1">Agregar</span>
+            <% end %>
+          <% elsif product.active? %>
+            <%= link_to product_path(product), class: 'btn btn-outline-secondary btn-sm' do %>
+              <span class="d-none d-sm-inline">Ver producto</span><i class="fas fa-chevron-right d-sm-none" aria-hidden="true"></i>
+            <% end %>
+          <% end %>
+          <%= render 'favorites/heart', product: product, saved: true %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+<% else %>
+  <div class="text-center py-5 text-muted">
+    <i class="fa-regular fa-heart fa-3x mb-3" aria-hidden="true"></i>
+    <p class="mb-3">Aún no tienes favoritos. Toca el corazón de un producto para guardarlo aquí.</p>
+    <%= link_to 'Ver catálogo', catalog_path, class: 'btn btn-danger' %>
+  </div>
+<% end %>

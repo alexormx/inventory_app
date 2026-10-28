@@ -111,6 +111,14 @@
             <ul class="dropdown-menu dropdown-menu-end" id="account-menu" aria-labelledby="account">
               <li><%= link_to "Mi Perfil", profile_path, class: "dropdown-item" %></li>
               <li><%= link_to "Mis Pedidos", orders_path, class: "dropdown-item" %></li>
+              <li>
+                <%= link_to favorites_path, class: "dropdown-item d-flex justify-content-between align-items-center" do %>
+                  Mis favoritos
+                  <% if favorite_product_ids.any? %>
+                    <span class="badge rounded-pill bg-danger-subtle text-danger ms-2"><%= favorite_product_ids.size %></span>
+                  <% end %>
+                <% end %>
+              </li>
               <li><hr class="dropdown-divider"></li>
               <li>
                 <%= button_to "Cerrar sesión", destroy_user_session_path,
