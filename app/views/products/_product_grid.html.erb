@@ -63,6 +63,9 @@
       <div class="col product-card-wrapper" data-product-id="<%= product.id %>" role="listitem">
         <article class="card h-100 border-0 shadow-sm d-flex flex-column catalog-item position-relative hover-lift">
           <% if product.active? %>
+            <%= render 'favorites/heart', product: product %>
+          <% end %>
+          <% if product.active? %>
             <%= link_to product_path(product), class: "catalog-card-media d-block #{'catalog-card-media--empty' unless has_image}", aria: { label: "Ver detalles de #{product.product_name}" }, data: { turbo_frame: "_top" } do %>
               <% if has_image %>
                 <%= responsive_attachment_image product.primary_product_image,

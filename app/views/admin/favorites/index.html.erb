@@ -1,0 +1,76 @@
+<h1 class="h4 mb-1">Favoritos de clientes</h1>
+<p class="text-muted small mb-3">Productos que los clientes tienen guardados, del más guardado al menos. Úsalo para decidir qué volver a pedir.</p>
+
+<div class="row g-3 mb-3">
+  <div class="col-auto"><span class="badge text-bg-danger">Favoritos activos: <%= @open_total %></span></div>
+  <div class="col-auto"><span class="badge text-bg-secondary">Clientes con favoritos: <%= @customers_total %></span></div>
+</div>
+
+<div class="card mb-3">
+  <div class="card-body">
+    <%= form_with url: admin_favorites_path, method: :get, local: true, class: 'row g-2 align-items-end' do %>
+      <div class="col-md-3">
+        <label class="form-label" for="days">Guardados en</label>
+        <select name="days" id="days" class="form-select form-select-sm">
+          <option value="">Todo el tiempo</option>
+          <% Admin::FavoritesController::PERIODS.each do |value, label| %>
+            <option value="<%= value %>" <%= 'selected' if @days == value %>><%= label %></option>
+          <% end %>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <div class="form-check mt-4">
+          <input class="form-check-input" type="checkbox" name="without_stock" value="1" id="without_stock" <%= 'checked' if @without_stock %>>
+          <label class="form-check-label" for="without_stock">Solo sin stock disponible</label>
+        </div>
+      </div>
+      <div class="col-md-3 d-flex gap-2">
+        <button class="btn btn-sm btn-primary" type="submit">Filtrar</button>
+        <%= link_to 'Limpiar', admin_favorites_path, class: 'btn btn-sm btn-outline-secondary' %>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<% if @rows.any? %>
+  <div class="table-responsive">
+    <table class="table table-sm table-striped align-middle">
+      <thead class="table-light">
+        <tr>
+          <th>#</th>
+          <th>Producto</th>
+          <th class="text-end" title="Clientes que lo tienen guardado ahora">Guardado por</th>
+          <th class="text-end" title="De esos, cuántos llegaron de un carrito abandonado">De carrito</th>
+          <th class="text-end" title="Clientes que lo guardaron y después lo compraron">Lo compraron</th>
+          <th class="text-end">Disponible</th>
+          <th class="text-end">En tránsito</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @rows.each_with_index do |row, index| %>
+          <% product = @products[row.product_id] %>
+          <% on_hand = @on_hand[product.id].to_i %>
+          <% in_transit = @in_transit[product.id].to_i %>
+          <tr>
+            <td class="text-muted"><%= index + 1 %></td>
+            <td>
+              <div class="fw-semibold"><%= product.product_name %></div>
+              <div class="small text-muted"><%= product.product_sku %><%= " · #{product.brand}" if product.brand.present? %></div>
+            </td>
+            <td class="text-end fw-bold"><%= row.open_count %></td>
+            <td class="text-end"><%= row.abandoned_count %></td>
+            <td class="text-end" data-purchased="<%= row.purchased_count %>"><%= row.purchased_count %></td>
+            <td class="text-end">
+              <span class="badge <%= on_hand.zero? ? 'text-bg-danger' : 'text-bg-success' %>"><%= on_hand %></span>
+            </td>
+            <td class="text-end"><%= in_transit %></td>
+            <td class="text-end"><%= link_to 'Ver clientes', admin_favorite_path(product.id), class: 'btn btn-sm btn-outline-secondary' %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% else %>
+  <p class="text-muted">No hay productos guardados con estos filtros.</p>
+<% end %>

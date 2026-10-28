@@ -348,6 +348,7 @@ Rails.application.routes.draw do
 
     # Preventas y 'sobre pedido'
     get 'preorders', to: 'preorders#index', as: :preorders
+    resources :favorites, only: %i[index show]
     post 'preorders/assign_now', to: 'preorders#assign_now', as: :preorders_assign_now
     delete 'preorders/:id', to: 'preorders#destroy', as: :preorder
     post   'preorders/:id/cancel', to: 'preorders#cancel', as: :preorder_cancel
@@ -405,6 +406,9 @@ Rails.application.routes.draw do
   # Shopping Cart routes
   resources :cart_items, only: %i[create update destroy]
   get '/cart', to: 'carts#show', as: :cart
+
+  # Lista de deseos (sólo con sesión). :id es el id del producto.
+  resources :favorites, only: %i[index create destroy], path: 'favoritos'
 
   # WhatsApp List (preorden alternativa por WhatsApp)
   get '/whatsapp-list', to: 'whatsapp_lists#show', as: :whatsapp_list

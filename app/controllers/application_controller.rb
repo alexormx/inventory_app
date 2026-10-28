@@ -43,11 +43,13 @@ class ApplicationController < ActionController::Base
     storefront_cart.persistent_cart
   end
 
+  # Un cliente vuelve a la página protegida que intentaba abrir (p. ej. guardar
+  # un favorito sin sesión); el admin siempre entra a su panel.
   def after_sign_in_path_for(resource)
     if resource.admin?
       admin_dashboard_path
     else
-      root_path
+      stored_location_for(resource) || root_path
     end
   end
 

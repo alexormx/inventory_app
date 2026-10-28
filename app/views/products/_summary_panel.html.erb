@@ -139,6 +139,8 @@
         </div>
       <% end %>
 
+      <%= render 'favorites/heart', product: product, variant: :full %>
+
       <div class="small text-muted d-flex flex-column gap-1">
         <span><i class="fa fa-shield-alt me-1"></i> Métodos de Pago Seguro</span>
       </div>
@@ -155,6 +157,7 @@
           </p>
         </div>
       </div>
+      <%= render 'favorites/heart', product: product, variant: :full %>
     <% end %>
   </div>
 </div>

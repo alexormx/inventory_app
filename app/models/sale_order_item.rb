@@ -40,6 +40,8 @@ class SaleOrderItem < ApplicationRecord
 
   before_validation :capture_acquisition_cost, on: :create
   before_validation :shrink_pending_to_fit, if: :will_reduce_quantity?
+  # Comprar un producto lo saca de la lista de deseos del cliente.
+  after_create :close_favorites_as_purchased
   # Guards de seguridad
   before_update :ensure_free_to_reduce, if: :will_reduce_quantity?
   before_destroy :ensure_no_sold_and_release_reserved
@@ -230,6 +232,12 @@ class SaleOrderItem < ApplicationRecord
   rescue StandardError => e
     Rails.logger.error "[SOI#cleanup_preorders_and_preassignments] #{e.class}: #{e.message}"
     raise
+  end
+
+  # Comprar un producto lo saca de la lista de deseos del cliente, sea pedido
+  # en línea o capturado por el admin.
+  def close_favorites_as_purchased
+    Favorite.mark_purchased(user_id: sale_order.user_id, product_id: product_id, sale_order_id: sale_order_id)
   end
 
   def allocate_preorders_after_release
