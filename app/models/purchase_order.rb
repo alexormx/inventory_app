@@ -238,6 +238,8 @@ class PurchaseOrder < ApplicationRecord
       throw :abort
     end
 
+    return destroy_canceled_inventories(scope) if status_in_database == 'Canceled'
+
     free = scope.where(status: %i[available in_transit])
     with_history = free.where(id: InventoryEvent.select(:inventory_id))
                        .or(free.where(id: InventoryAssignmentLog.select(:inventory_id)))
@@ -249,4 +251,20 @@ class PurchaseOrder < ApplicationRecord
 
     free.delete_all
   end
+
+  # Una compra cancelada es una compra que no sucedió: el admin decide borrarla
+  # por completo, piezas e historial incluidos. Sólo un ajuste de inventario la
+  # detiene, porque ese ajuste es un movimiento real que quedaría colgando.
+  def destroy_canceled_inventories(scope)
+    if InventoryAdjustmentEntry.exists?(inventory_id: scope.select(:id))
+      errors.add(:base, 'No se puede eliminar: algunas piezas forman parte de un ajuste de inventario.')
+      throw :abort
+    end
+
+    InventoryEvent.where(inventory_id: scope.select(:id)).delete_all
+    InventoryAssignmentLog.where(inventory_id: scope.select(:id)).delete_all
+    ActiveStorage::Attachment.where(record_type: 'Inventory', record_id: scope.select(:id)).find_each(&:purge_later)
+    scope.delete_all
+  end
+  private :ensure_inventories_safe_or_cleanup, :destroy_canceled_inventories
 end

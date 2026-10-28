@@ -39,6 +39,39 @@ RSpec.describe PurchaseOrder, 'destroy', type: :model do
     expect(purchase_order.destroy).to be(false)
     expect(pieces.count).to eq(3)
   end
+
+  context 'when the order was canceled' do
+    before do
+      line.update!(quantity: 2)
+      InventoryEvent.create!(inventory: pieces.first, product_id: product.id, event_type: 'status_change', metadata: {})
+      purchase_order.update!(status: 'Canceled')
+    end
+
+    it 'removes the order with its retired pieces and their history' do
+      piece_ids = pieces.pluck(:id)
+
+      expect(purchase_order.destroy).to be_truthy
+
+      expect(PurchaseOrder.where(id: purchase_order.id)).to be_empty
+      expect(Inventory.where(id: piece_ids)).to be_empty
+      expect(InventoryEvent.where(inventory_id: piece_ids)).to be_empty
+    end
+
+    it 'still refuses while a piece is committed to a customer' do
+      order = create(:sale_order)
+      pieces.first.update_columns(status: Inventory.statuses[:pre_reserved], sale_order_id: order.id)
+
+      expect(purchase_order.destroy).to be(false)
+      expect(PurchaseOrder.where(id: purchase_order.id)).to exist
+    end
+
+    it 'refuses when a piece is part of an inventory adjustment' do
+      create(:inventory_adjustment_entry, inventory: pieces.first, action: 'marked_scrap')
+
+      expect(purchase_order.destroy).to be(false)
+      expect(purchase_order.errors[:base].join).to include('ajuste')
+    end
+  end
 end
 
 RSpec.describe PurchaseOrderItem, 'destroy', type: :model do
