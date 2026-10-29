@@ -36,6 +36,22 @@ RSpec.describe 'Favorites', type: :request do
       expect(Favorite.open.where(user: user, product: product)).to exist
     end
 
+    it 'shows a favorites icon with its count next to the cart' do
+      Favorite.save_for(user, product)
+
+      get favorites_path
+
+      link = Nokogiri::HTML(response.body).at_css('a#favorites-nav-link')
+      expect(link['href']).to eq(favorites_path)
+      expect(link.at_css('#favorites-count').text.strip).to eq('1')
+    end
+
+    it 'updates the icon count when saving without reloading' do
+      post favorites_path, params: { product_id: product.id }, as: :turbo_stream
+
+      expect(response.body).to include('target="favorites-count"')
+    end
+
     it 'removes a product from the list' do
       Favorite.save_for(user, product)
 

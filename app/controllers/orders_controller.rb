@@ -6,25 +6,28 @@ class OrdersController < ApplicationController
   layout 'customer'
 
   def index
-    @orders = current_user.sale_orders.order(created_at: :desc)
+    @orders = current_user.sale_orders.includes(:payments).order(created_at: :desc)
+    @item_counts = SaleOrderItem.where(sale_order_id: @orders.map(&:id)).group(:sale_order_id).sum(:quantity)
   end
 
+  # Una sola vista de pedido (la antigua "compacta"); /summary se conserva
+  # para que los enlaces viejos sigan funcionando.
   def show
-    @order = current_user.sale_orders
-                         .includes(sale_order_items: %i[inventory_units product])
-                         .find(params[:id])
+    @order = find_order
   end
 
   def summary
     @order = find_order
-    # layout ya forzado a 'customer'
-    render :summary
+    render :show
   end
 
   private
 
   def find_order
-    current_user.sale_orders.find(params[:id])
+    current_user.sale_orders
+                .includes(:payments, :shipment, :order_shipping_address,
+                          sale_order_items: [:inventory_units, { product: { product_images_attachments: :blob } }])
+                .find(params[:id])
   end
 
   # Nota: No se restringe a admins; pueden ver sus propios pedidos en vista cliente.

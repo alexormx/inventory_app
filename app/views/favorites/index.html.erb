@@ -1,3 +1,8 @@
+<% content_for :title do %>Mis favoritos - Pasatiempos a Escala<% end %>
+
+<div class="account-page container py-4">
+  <%= render 'customers/partials/account_nav' %>
+
 <h1 class="h4 mb-1">Mis favoritos</h1>
 <p class="text-muted small mb-4">Lo que guardaste para comprar después. Al comprar un producto sale de aquí.</p>
 
@@ -40,7 +45,7 @@
               <span class="d-none d-sm-inline">Ver producto</span><i class="fas fa-chevron-right d-sm-none" aria-hidden="true"></i>
             <% end %>
           <% end %>
-          <%= render 'favorites/heart', product: product, saved: true %>
+          <%= render 'favorites/heart', product: product, saved: true, variant: :inline %>
         </div>
       </div>
     <% end %>
@@ -52,3 +57,4 @@
     <%= link_to 'Ver catálogo', catalog_path, class: 'btn btn-danger' %>
   </div>
 <% end %>
+</div>
