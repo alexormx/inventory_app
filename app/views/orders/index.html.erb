@@ -1,33 +1,48 @@
-<h1 class="h4 mb-4">Mis Pedidos</h1>
+<% content_for :title do %>Mis pedidos - Pasatiempos a Escala<% end %>
 
-<% if @orders.any? %>
-  <table class="table table-sm table-hover align-middle">
-    <thead class="table-light">
-      <tr>
-        <th scope="col">#</th>
-        <th scope="col">Fecha</th>
-        <th scope="col">Estado</th>
-        <th scope="col" class="text-end">Total</th>
-        <th scope="col" class="text-end">Acciones</th>
-      </tr>
-    </thead>
-    <tbody>
+<div class="account-page container py-4">
+  <%= render 'customers/partials/account_nav' %>
+
+  <h1 class="h4 mb-3">Mis pedidos</h1>
+
+  <% if @orders.any? %>
+    <div class="list-group shadow-sm orders-list">
       <% @orders.each do |order| %>
-        <tr>
-          <td><%= order.id %></td>
-          <td><%= l(order.order_date, format: :short) %></td>
-          <td>
-            <span class="badge <%= status_badge_class(order.status) %>"><%= order.status %></span>
-          </td>
-          <td class="text-end"><%= number_to_currency(order.total_order_value, unit: "$") %></td>
-          <td class="text-end">
-            <%= link_to 'Ver', order_path(order), class: 'btn btn-sm btn-outline-secondary me-1' %>
-            <%= link_to 'Compacto', summary_order_path(order), class: 'btn btn-sm btn-outline-primary' %>
-          </td>
-        </tr>
+        <% paid = order.payments.select { |p| p.status == 'Completed' }.sum(&:amount).to_d %>
+        <% balance_due = (order.total_order_value.to_d - paid).round(2) %>
+        <% owes = balance_due.positive? && !order.status.in?(SaleOrder::NO_DEBT_STATUSES) %>
+        <% pieces = @item_counts[order.id].to_i %>
+        <%= link_to order_path(order), class: 'list-group-item list-group-item-action py-3', data: { order_id: order.id } do %>
+          <div class="d-flex justify-content-between align-items-start gap-2">
+            <div class="min-w-0">
+              <div class="fw-semibold text-body">Pedido <%= order.id %></div>
+              <div class="small text-muted">
+                <%= l(order.order_date, format: :long) %> · <%= pieces %> <%= pieces == 1 ? 'pieza' : 'piezas' %>
+              </div>
+            </div>
+            <span class="badge <%= status_badge_class(order.status) %>"><%= customer_order_status_label(order.status) %></span>
+          </div>
+          <div class="d-flex justify-content-between align-items-end mt-2">
+            <span class="small">
+              <% if owes %>
+                <span class="text-danger fw-semibold">Por pagar <%= number_to_currency(balance_due) %></span>
+              <% elsif order.status.in?(SaleOrder::NO_DEBT_STATUSES) %>
+                <span class="text-muted">Sin saldo</span>
+              <% else %>
+                <span class="text-success"><i class="fa-solid fa-check me-1" aria-hidden="true"></i>Pagado</span>
+              <% end %>
+            </span>
+            <span class="fw-bold text-body"><%= number_to_currency(order.total_order_value) %>
+              <i class="fas fa-chevron-right ms-2 text-muted small" aria-hidden="true"></i></span>
+          </div>
+        <% end %>
       <% end %>
-    </tbody>
-  </table>
-<% else %>
-  <p>No tienes pedidos aún.</p>
-<% end %>
+    </div>
+  <% else %>
+    <div class="text-center text-muted py-5">
+      <i class="fas fa-box-open fa-3x mb-3" aria-hidden="true"></i>
+      <p class="mb-3">Aún no tienes pedidos.</p>
+      <%= link_to 'Ver catálogo', catalog_path, class: 'btn btn-danger' %>
+    </div>
+  <% end %>
+</div>

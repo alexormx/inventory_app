@@ -7,6 +7,8 @@ class FavoritesController < ApplicationController
   before_action :authenticate_user!
   layout 'customer'
 
+  HEART_VARIANTS = %w[full card inline].freeze
+
   def index
     return save_pending_and_return if params[:add].present?
 
@@ -47,6 +49,7 @@ class FavoritesController < ApplicationController
                                         partial: 'favorites/heart',
                                         locals: { product: product, saved: saved, variant: heart_variant })]
         streams << turbo_stream.remove("favorite_row_#{product.id}") unless saved
+        streams << turbo_stream.replace('favorites-count', partial: 'favorites/nav_count')
         render turbo_stream: streams
       end
       format.html { redirect_back fallback_location: favorites_path }
@@ -54,8 +57,8 @@ class FavoritesController < ApplicationController
   end
 
   # El corazón de la página del producto es un botón con texto; el de las
-  # tarjetas, sólo el ícono.
+  # tarjetas flota sobre la foto y el de la lista va en línea.
   def heart_variant
-    params[:variant] == 'full' ? :full : :card
+    HEART_VARIANTS.include?(params[:variant]) ? params[:variant].to_sym : :card
   end
 end

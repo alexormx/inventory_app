@@ -1,4 +1,4 @@
-<%# Resumen compacto de pedido para enviar totales al cliente %>
+<%# Resumen compacto que el admin abre desde la orden de venta (Admin::SaleOrdersController#summary) para enviar totales al cliente. El cliente ve orders/show. %>
 <div class="compact-summary-wrapper order-wrapper mx-auto">
   <h1 class="h5 mb-3">Resumen de Pedido <%= @order.id %></h1>
   <div class="mb-1 small text-muted">Cliente: <strong><%= @order.user&.name || '—' %></strong></div>

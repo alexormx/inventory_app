@@ -16,7 +16,7 @@ RSpec.describe 'Customer profile navigation', type: :system do
 
     expect(page).to have_css("#account[data-dropdown-enhanced='1']")
     find('#account').click
-    click_link 'Mi Perfil'
+    click_link 'Mi perfil'
 
     expect(page).to have_current_path(profile_path)
     expect(page).to have_content('Ana Cliente')

@@ -1,6 +1,8 @@
 <% content_for :title do %>Mi Perfil - Pasatiempos a Escala<% end %>
 
-<div class="container py-4">
+<div class="account-page container py-4">
+  <%= render 'customers/partials/account_nav' %>
+
   <div class="row">
     <!-- Sidebar con información del usuario -->
     <div class="col-lg-4 mb-4">
@@ -118,7 +120,7 @@
                       <td><%= l(order.created_at.to_date, format: :short) %></td>
                       <td>
                         <span class="badge <%= status_badge_class(order.status) %>">
-                          <%= t("sale_order.status.#{order.status}", default: order.status.humanize) %>
+                          <%= customer_order_status_label(order.status) %>
                         </span>
                       </td>
                       <td class="text-end"><%= number_to_currency(order.total_order_value) %></td>
@@ -181,7 +183,7 @@
   .user-avatar-large {
     width: 100px;
     height: 100px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #dc3545 0%, #a71d2a 100%);
     border-radius: 50%;
     display: flex;
     align-items: center;

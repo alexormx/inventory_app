@@ -1,69 +1,164 @@
-<h1 class="h4 mb-4">Pedido <%= @order.id %></h1>
+<% content_for :title do %>Pedido <%= @order.id %> - Pasatiempos a Escala<% end %>
 
-<div class="mb-3">
-  <strong>Estado:</strong>
-  <span class="badge <%= status_badge_class(@order.status) %>"><%= @order.status %></span>
-</div>
-<div class="mb-3">
-  <strong>Fecha:</strong> <%= l(@order.order_date, format: :long) %>
-</div>
-<div class="mb-3">
-  <strong>Total:</strong> <%= number_to_currency(@order.total_order_value, unit: "$") %>
-</div>
+<div class="account-page container py-4">
+  <%= render 'customers/partials/account_nav' %>
 
-<h5 class="mt-4">Artículos</h5>
-<table class="table table-sm table-bordered align-middle">
-  <thead class="table-light">
-    <tr>
-      <th>Producto</th>
-      <th>Cantidad</th>
-      <th>Pendiente</th>
-      <th class="order-unit-price d-none d-sm-table-cell text-end">Precio unitario</th>
-      <th class="text-end">Total</th>
-    </tr>
-  </thead>
-  <tbody>
-    <% @order.sale_order_items.each do |item| %>
-      <% in_transit_quantity = item.inventory_units.count(&:pre_reserved?) %>
-      <% awaiting_inventory = item.pending? || in_transit_quantity.positive? %>
-      <tr>
-        <td>
-          <%= item.product&.product_name || '—' %>
-          <span class="order-mobile-unit-price d-sm-none small text-muted d-block">
-            <%= number_to_currency(item.unit_final_price, unit: "$") %> c/u
-          </span>
-        </td>
-        <td>
-          <%= item.quantity %>
-          <% if awaiting_inventory %>
-            <span class="badge text-bg-warning ms-1">Pendiente</span>
-          <% end %>
-        </td>
-        <td>
-          <% if awaiting_inventory %>
-            <% parts = [] %>
-            <% if in_transit_quantity.positive? %>
-              <% parts << "En tránsito: #{in_transit_quantity} (pendiente de llegada)" %>
-            <% end %>
-            <% if item.preorder_quantity.to_i > 0 %>
-              <% parts << "Preventa: #{item.preorder_quantity}" %>
-            <% end %>
-            <% if item.backordered_quantity.to_i > 0 %>
-              <% parts << "Sobre pedido: #{item.backordered_quantity}" %>
-            <% end %>
-            <span class="small text-muted"><%= parts.join(' · ') %></span>
-          <% else %>
-            <span class="text-muted">—</span>
-          <% end %>
-        </td>
-        <td class="order-unit-price d-none d-sm-table-cell text-end"><%= number_to_currency(item.unit_final_price, unit: "$") %></td>
-        <td class="text-end"><%= number_to_currency(item.total_line_cost, unit: "$") %></td>
-      </tr>
-    <% end %>
-  </tbody>
-</table>
+  <div class="order-detail mx-auto">
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+      <div>
+        <h1 class="h4 mb-1">Pedido <%= @order.id %></h1>
+        <div class="small text-muted"><i class="far fa-calendar me-1" aria-hidden="true"></i><%= l(@order.order_date, format: :long) %></div>
+      </div>
+      <span class="badge fs-6 <%= status_badge_class(@order.status) %>"><%= customer_order_status_label(@order.status) %></span>
+    </div>
 
-<div class="mt-3 d-flex gap-2">
-  <%= link_to 'Regresar', orders_path, class: 'btn btn-outline-secondary' %>
-  <%= link_to 'Ver resumen compacto', summary_order_path(@order), class: 'btn btn-primary' %>
+    <%# Productos %>
+    <div class="card border-0 shadow-sm mb-3">
+      <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0 order-items-table">
+          <thead class="table-light">
+            <tr>
+              <th scope="col" class="text-center">Cant.</th>
+              <th scope="col">Producto</th>
+              <th scope="col" class="order-unit-price d-none d-sm-table-cell text-end">Precio unitario</th>
+              <th scope="col" class="text-end">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @order.sale_order_items.each do |item| %>
+              <% product = item.product %>
+              <% in_transit_quantity = item.inventory_units.count(&:pre_reserved?) %>
+              <% pending_parts = [] %>
+              <% pending_parts << "En tránsito: #{in_transit_quantity} (pendiente de llegada)" if in_transit_quantity.positive? %>
+              <% pending_parts << "Preventa: #{item.preorder_quantity}" if item.preorder_quantity.to_i.positive? %>
+              <% pending_parts << "Sobre pedido: #{item.backordered_quantity}" if item.backordered_quantity.to_i.positive? %>
+              <tr>
+                <td class="text-center fw-semibold"><%= item.quantity %></td>
+                <td>
+                  <div class="d-flex align-items-center gap-2">
+                    <% if product&.product_images&.attached? %>
+                      <%= image_tag product.primary_product_image.variant(resize_to_fill: [44, 44]), class: 'rounded border bg-white flex-shrink-0', alt: '', width: 44, height: 44 %>
+                    <% else %>
+                      <div class="order-thumb-placeholder rounded border bg-light flex-shrink-0" aria-hidden="true"></div>
+                    <% end %>
+                    <div class="min-w-0">
+                      <% if product %>
+                        <%= link_to product.product_name, product_path(product), class: 'fw-semibold text-dark text-decoration-none d-block' %>
+                      <% else %>
+                        <span class="fw-semibold d-block">Producto eliminado</span>
+                      <% end %>
+                      <span class="order-mobile-unit-price d-sm-none small text-muted d-block">
+                        <%= number_to_currency(item.unit_final_price) %> c/u
+                      </span>
+                      <% if pending_parts.any? %>
+                        <span class="badge text-bg-warning me-1">Pendiente</span>
+                        <span class="small text-muted"><%= pending_parts.join(' · ') %></span>
+                      <% end %>
+                    </div>
+                  </div>
+                </td>
+                <td class="order-unit-price d-none d-sm-table-cell text-end"><%= number_to_currency(item.unit_final_price) %></td>
+                <td class="text-end"><%= number_to_currency(item.total_line_cost) %></td>
+              </tr>
+            <% end %>
+          </tbody>
+          <% shipping = (@order.shipping_cost || 0).to_d %>
+          <% discount = (@order.discount || 0).to_d %>
+          <% tax = (@order.total_tax || 0).to_d %>
+          <% grand_total = @order.total_order_value.to_d %>
+          <tfoot class="order-totals">
+            <tr>
+              <td colspan="2" class="text-end">Subtotal</td>
+              <td class="d-none d-sm-table-cell"></td>
+              <td class="text-end"><%= number_to_currency(@order.subtotal) %></td>
+            </tr>
+            <% if discount.positive? %>
+              <tr>
+                <td colspan="2" class="text-end">Descuento</td>
+                <td class="d-none d-sm-table-cell"></td>
+                <td class="text-end">−<%= number_to_currency(discount) %></td>
+              </tr>
+            <% end %>
+            <% if tax.positive? %>
+              <tr>
+                <td colspan="2" class="text-end">Impuestos</td>
+                <td class="d-none d-sm-table-cell"></td>
+                <td class="text-end"><%= number_to_currency(tax) %></td>
+              </tr>
+            <% end %>
+            <% if shipping.positive? %>
+              <tr>
+                <td colspan="2" class="text-end">Envío</td>
+                <td class="d-none d-sm-table-cell"></td>
+                <td class="text-end"><%= number_to_currency(shipping) %></td>
+              </tr>
+            <% end %>
+            <tr class="fw-bold">
+              <td colspan="2" class="text-end">Total</td>
+              <td class="d-none d-sm-table-cell"></td>
+              <td class="text-end"><%= number_to_currency(grand_total) %></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+
+    <%# Envío %>
+    <% shipping_snapshot = @order.order_shipping_address %>
+    <div class="alert alert-light border small py-2 mb-3">
+      <i class="fa fa-truck me-1" aria-hidden="true"></i>Método: <strong><%= shipping_snapshot&.shipping_method_name || @order.shipment&.carrier || 'No registrado' %></strong>
+      <% if @order.shipment.present? %>
+        · Envío por <strong><%= @order.shipment.carrier %></strong>
+      <% else %>
+        · Aún no enviado.
+      <% end %>
+    </div>
+
+    <%# Pago %>
+    <% completed_payments = @order.payments.select { |p| p.status == 'Completed' }.sort_by { |p| p.paid_at || p.created_at } %>
+    <% paid = completed_payments.sum(&:amount).to_d %>
+    <% order_canceled = @order.status.in?(SaleOrder::NO_DEBT_STATUSES) %>
+    <% balance_due = (grand_total - paid).round(2) %>
+    <% is_paid = balance_due <= 0 %>
+    <div class="card border-0 shadow-sm">
+      <div class="card-body py-3">
+        <h2 class="h6 mb-2 fw-semibold"><i class="fa fa-money-bill-wave me-1 text-success" aria-hidden="true"></i>Estado de pago</h2>
+        <dl class="row mb-0 small">
+          <dt class="col-7">Total del pedido:</dt>
+          <dd class="col-5 text-end fw-bold"><%= number_to_currency(grand_total) %></dd>
+
+          <dt class="col-7 text-muted">Pagado:</dt>
+          <dd class="col-5 text-end fw-bold text-success"><%= number_to_currency(paid) %></dd>
+
+          <dt class="col-7 border-top pt-1 mt-1">Resta por pagar:</dt>
+          <dd class="col-5 text-end border-top pt-1 mt-1 fw-bold <%= order_canceled ? 'text-muted' : (is_paid ? 'text-success' : 'text-danger') %>">
+            <% if order_canceled %>
+              <%= @order.status == 'Returned' ? 'Orden devuelta' : 'Orden cancelada' %>
+            <% else %>
+              <%= is_paid ? sanitize('<i class="fa-solid fa-check me-1" aria-hidden="true"></i>Pagado') : number_to_currency(balance_due) %>
+            <% end %>
+          </dd>
+        </dl>
+
+        <% if completed_payments.any? %>
+          <hr class="my-2">
+          <h3 class="h6 mb-1 small fw-semibold text-muted">Detalle de pagos</h3>
+          <ul class="list-unstyled small mb-0">
+            <% completed_payments.each do |p| %>
+              <li class="d-flex justify-content-between">
+                <span><i class="fa fa-check-circle text-success me-1" aria-hidden="true"></i><%= p.payment_method.to_s.humanize %><%= " (#{l(p.paid_at, format: :short)})" if p.paid_at %></span>
+                <strong><%= number_to_currency(p.amount) %></strong>
+              </li>
+            <% end %>
+          </ul>
+        <% end %>
+      </div>
+    </div>
+
+    <div class="mt-3">
+      <%= link_to orders_path, class: 'btn btn-outline-secondary btn-sm' do %>
+        <i class="fas fa-arrow-left me-1" aria-hidden="true"></i>Volver a mis pedidos
+      <% end %>
+    </div>
+  </div>
 </div>

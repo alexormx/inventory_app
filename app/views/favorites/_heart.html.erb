@@ -1,6 +1,7 @@
-<%# Corazón de favoritos. variant: :card (ícono sobre la foto) o :full (botón
-    "Guardar" en la página del producto). saved se pasa explícito en las
-    respuestas turbo_stream; si no, se lee de la lista del cliente. %>
+<%# Corazón de favoritos. variant: :card (ícono sobre la foto), :inline (ícono
+    en la fila de Mis favoritos) o :full (botón "Guardar" en la página del
+    producto). saved se pasa explícito en las respuestas turbo_stream; si no,
+    se lee de la lista del cliente. %>
 <% variant = local_assigns.fetch(:variant, :card) %>
 <% saved = local_assigns.key?(:saved) ? saved : favorited?(product) %>
 <% label = saved ? 'Quitar de favoritos' : 'Guardar en favoritos' %>
