@@ -131,17 +131,6 @@
             </ul>
           </li>
 
-          <!-- Favorites Button -->
-          <li class="nav-item">
-            <%= link_to favorites_path, id: 'favorites-nav-link',
-                  class: "nav-item-link position-relative d-flex align-items-center #{'active' if controller_path == 'favorites'}",
-                  'aria-current': (controller_path == 'favorites') ? 'page' : nil,
-                  'aria-label': 'Mis favoritos' do %>
-              <i class="fas fa-heart" aria-hidden="true"></i> <span class="link-text">Favoritos</span>
-              <%= render 'favorites/nav_count' %>
-            <% end %>
-          </li>
-
           <!-- Cart Button -->
           <li class="nav-item cart-preview-nav-item">
       <% cart_count = cart_item_count %>
@@ -157,6 +146,17 @@
             <% end %>
             <% unless controller_path == 'carts' && action_name == 'show' %>
               <%= render 'customers/partials/cart_preview' %>
+            <% end %>
+          </li>
+
+          <!-- Favorites Button -->
+          <li class="nav-item">
+            <%= link_to favorites_path, id: 'favorites-nav-link',
+                  class: "nav-item-link position-relative d-flex align-items-center #{'active' if controller_path == 'favorites'}",
+                  'aria-current': (controller_path == 'favorites') ? 'page' : nil,
+                  'aria-label': 'Mis favoritos' do %>
+              <i class="fas fa-heart" aria-hidden="true"></i> <span class="link-text">Favoritos</span>
+              <%= render 'favorites/nav_count' %>
             <% end %>
           </li>
 

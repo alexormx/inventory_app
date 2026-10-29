@@ -213,7 +213,7 @@ RSpec.describe 'Dropdown enhancement lifecycle', :js, type: :system do
 
     expect(page).to have_css("#account[data-dropdown-enhanced='1']", visible: true)
     find('#account').click
-    click_link 'Mi Perfil'
+    click_link 'Mi perfil'
     expect(page).to have_current_path(profile_path)
 
     page.go_back
