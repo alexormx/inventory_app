@@ -1,6 +1,9 @@
 # frozen_string_literal: true
 
 class HomeController < ApplicationController
+  # Debajo de esto un contador de la portada se oculta.
+  MIN_PUBLIC_STAT = 50
+
   layout 'customer'
 
   def index

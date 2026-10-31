@@ -10,7 +10,7 @@
       <div class="card mb-4">
         <div class="card-header bg-light d-flex justify-content-between align-items-center">
           <h6 class="mb-0"><i class="fa fa-map-marker-alt me-2"></i>Dirección de envío</h6>
-          <%= link_to shipping_addresses_path(return_to: 'checkout_step2'), class: 'btn btn-sm btn-outline-primary' do %>
+          <%= link_to shipping_addresses_path(return_to: 'checkout_step2'), class: 'btn btn-sm btn-outline-primary text-nowrap flex-shrink-0' do %>
             <i class="fa fa-plus me-1"></i> Nueva dirección
           <% end %>
         </div>
@@ -104,7 +104,7 @@
       </div>
 
       <!-- Botones de navegación -->
-      <div class="d-flex justify-content-between align-items-center">
+      <div class="d-flex flex-column-reverse flex-sm-row justify-content-between align-items-stretch align-items-sm-center gap-2">
         <%= link_to checkout_step1_path, class: 'btn btn-outline-secondary' do %>
           <i class="fa fa-arrow-left me-1"></i> Volver
         <% end %>

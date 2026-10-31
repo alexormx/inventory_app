@@ -36,7 +36,7 @@
 </style>
 
 <!-- ✨ HERO SECTION -->
-<section class="hero-section position-relative d-flex align-items-center text-white" style="min-height: 60vh; overflow: hidden;">
+<section class="hero-section position-relative d-flex align-items-center text-white" style="min-height: 48vh; overflow: hidden;">
   <%
     hero_base = 'collection_shelf'
     hero_widths = [480, 768, 960, 1440]
@@ -82,61 +82,101 @@
   </picture>
   <div class="hero-overlay" aria-hidden="true"></div>
   <div class="container position-relative text-center" style="z-index: 2;">
-    <h1 class="display-3 fw-bold mb-3" style="text-shadow: 0 2px 18px rgba(0,0,0,0.8), 0 1px 3px rgba(0,0,0,0.6);"><%= t('home.index.heading_html').html_safe %></h1>
+    <h1 class="display-4 fw-bold mb-3" style="text-shadow: 0 2px 18px rgba(0,0,0,0.8), 0 1px 3px rgba(0,0,0,0.6);"><%= t('home.index.heading_html').html_safe %></h1>
     <p class="fs-5 fw-semibold mb-4" style="max-width: 800px; margin: 0 auto; text-shadow: 0 1px 8px rgba(0,0,0,0.6);"><%= t('home.index.subheading_html').html_safe %></p>
-    <p class="lead mb-5 fs-5" style="max-width: 700px; margin: 0 auto; text-shadow: 0 1px 8px rgba(0,0,0,0.6);"><%= t('home.index.lead') %></p>
+    <p class="lead mb-4 fs-5" style="max-width: 700px; margin: 0 auto; text-shadow: 0 1px 8px rgba(0,0,0,0.6);"><%= t('home.index.lead') %></p>
     <div class="d-flex flex-column flex-sm-row justify-content-center gap-3">
       <% if user_signed_in? %>
         <%= link_to catalog_path, class: "btn btn-light btn-lg px-5 py-3 shadow-sm" do %>
           <i class="fas fa-store me-2"></i><%= t('home.index.explore_cta') %>
         <% end %>
       <% else %>
-        <%= link_to new_user_registration_path, class: "btn btn-light btn-lg px-5 py-3 shadow-sm" do %>
-          <i class="fas fa-user-plus me-2"></i><%= t('home.index.register_cta') %>
+        <%= link_to catalog_path, class: "btn btn-light btn-lg px-5 py-3 shadow-sm" do %>
+          <i class="fas fa-store me-2"></i><%= t('home.index.explore_cta') %>
         <% end %>
-        <%= link_to new_user_session_path, class: "btn btn-outline-light btn-lg px-5 py-3" do %>
-          <i class="fas fa-sign-in-alt me-2"></i><%= t('home.index.login_cta') %>
+        <%= link_to new_user_registration_path, class: "btn btn-outline-light btn-lg px-5 py-3" do %>
+          <i class="fas fa-user-plus me-2"></i><%= t('home.index.register_cta') %>
         <% end %>
       <% end %>
     </div>
   </div>
 </section>
 
-<!-- 📊 ESTADÍSTICAS -->
-<section class="stats-section py-4 bg-dark text-white">
+<!-- 🌟 PRODUCTOS DESTACADOS -->
+<% featured_products = @products.select { |p| p.current_on_hand > 0 }.first(8) %>
+<% if featured_products.present? %>
+<section class="featured-products pt-4 pb-5">
   <div class="container">
-    <div class="row text-center justify-content-center">
-      <div class="col-4 col-md-3">
-        <div class="stat-item">
-          <i class="fas fa-box-open mb-2" style="font-size: 1.5rem; color: #c92a2a;"></i>
-          <div class="fs-2 fw-bold" style="color: #c92a2a;"><%= number_with_delimiter(@stats[:products]) %>+</div>
-          <div class="small text-uppercase" style="letter-spacing: 1px; color: var(--public-muted);">Productos</div>
+    <div class="text-center mb-4">
+      <h2 class="display-6 fw-bold mb-2">Recién llegados</h2>
+      <p class="text-muted">Lo más nuevo de la colección, con piezas en existencia</p>
+    </div>
+    <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-4 mb-4">
+      <% featured_products.each do |product| %>
+        <div class="col">
+          <div class="card h-100 border-0 shadow-sm hover-lift">
+            <%= link_to product_path(product), class: "text-decoration-none" do %>
+              <% if product.product_images&.attached? %>
+                <%= responsive_attachment_image product.primary_product_image,
+                      alt: product.product_name,
+                      widths: [200, 240, 300, 400],
+                      sizes: "(min-width: 992px) 17vw, (min-width: 768px) 24vw, 33vw",
+                      css_class: "card-img-top p-3 home-featured-img",
+                      loading: "lazy" %>
+              <% else %>
+                <div class="card-img-top bg-secondary d-flex align-items-center justify-content-center text-white" style="height: 200px;">
+                  <i class="fas fa-image fa-3x opacity-50"></i>
+                </div>
+              <% end %>
+              <div class="card-body text-center">
+                <h3 class="card-title text-dark mb-1 fw-semibold line-clamp-2" style="font-size: 0.9rem;"><%= product.product_name %></h3>
+                <div class="text-danger fw-bold"><%= number_to_currency(product.selling_price) %></div>
+              </div>
+            <% end %>
+          </div>
         </div>
-      </div>
-      <div class="col-4 col-md-3">
-        <div class="stat-item">
-          <i class="fas fa-users mb-2" style="font-size: 1.5rem; color: #c92a2a;"></i>
-          <div class="fs-2 fw-bold" style="color: #c92a2a;"><%= number_with_delimiter(@stats[:customers]) %>+</div>
-          <div class="small text-uppercase" style="letter-spacing: 1px; color: var(--public-muted);">Clientes Felices</div>
-        </div>
-      </div>
-      <div class="col-4 col-md-3">
-        <div class="stat-item">
-          <i class="fas fa-award mb-2" style="font-size: 1.5rem; color: #c92a2a;"></i>
-          <div class="fs-2 fw-bold" style="color: #c92a2a;"><%= @stats[:years] %>+</div>
-          <div class="small text-uppercase" style="letter-spacing: 1px; color: var(--public-muted);">Años de Experiencia</div>
-        </div>
-      </div>
+      <% end %>
+    </div>
+    <div class="text-center">
+      <%= link_to catalog_path, class: "btn btn-danger btn-lg px-5" do %>
+        Ver catálogo completo <i class="fas fa-arrow-right ms-2"></i>
+      <% end %>
     </div>
   </div>
 </section>
+<% end %>
+
+<!-- 📊 ESTADÍSTICAS -->
+<%# Solo cifras que presumen: un "1+ clientes felices" resta en lugar de sumar. %>
+<% stat_items = [
+     [@stats[:products], 'fa-box-open', 'Productos', HomeController::MIN_PUBLIC_STAT],
+     [@stats[:customers], 'fa-users', 'Clientes felices', HomeController::MIN_PUBLIC_STAT],
+     [@stats[:years], 'fa-award', 'Años de experiencia', 2]
+   ].select { |value, *, min| value.to_i >= min } %>
+<% if stat_items.any? %>
+<section class="stats-section py-4 bg-dark text-white">
+  <div class="container">
+    <div class="row text-center justify-content-center">
+      <% stat_items.each do |value, icon, label, _min| %>
+        <div class="col-4 col-md-3">
+          <div class="stat-item">
+            <i class="fas <%= icon %> mb-2" style="font-size: 1.5rem; color: #c92a2a;"></i>
+            <div class="fs-2 fw-bold" style="color: #c92a2a;"><%= number_with_delimiter(value) %>+</div>
+            <div class="small text-uppercase" style="letter-spacing: 1px; color: var(--public-muted);"><%= label %></div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</section>
+<% end %>
 
 <!-- 🏷️ CATEGORÍAS DESTACADAS -->
 <% if @featured_categories.present? %>
 <section class="categories-section py-5 bg-light">
   <div class="container">
     <div class="text-center mb-4">
-      <h2 class="display-6 fw-bold mb-2">Explora por Categoría</h2>
+      <h2 class="display-6 fw-bold mb-2">Explora por categoría</h2>
       <p class="text-muted">Encuentra exactamente lo que buscas</p>
     </div>
     <div class="row row-cols-2 row-cols-md-3 row-cols-lg-6 g-3">
@@ -172,49 +212,6 @@
 </section>
 <% end %>
 
-<!-- 🌟 PRODUCTOS DESTACADOS -->
-<% featured_products = @products.select { |p| p.current_on_hand > 0 }.first(8) %>
-<% if featured_products.present? %>
-<section class="featured-products py-5">
-  <div class="container">
-    <div class="text-center mb-5">
-      <h2 class="display-5 fw-bold mb-3">Productos Destacados</h2>
-      <p class="lead text-muted">Descubre las últimas novedades de nuestra colección</p>
-    </div>
-    <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-4 mb-4">
-      <% featured_products.each do |product| %>
-        <div class="col">
-          <div class="card h-100 border-0 shadow-sm hover-lift">
-            <%= link_to product_path(product), class: "text-decoration-none" do %>
-              <% if product.product_images&.attached? %>
-                <%= responsive_attachment_image product.primary_product_image,
-                      alt: product.product_name,
-                      widths: [200, 240, 300, 400],
-                      sizes: "(min-width: 992px) 17vw, (min-width: 768px) 24vw, 33vw",
-                      css_class: "card-img-top p-3 home-featured-img",
-                      loading: "lazy" %>
-              <% else %>
-                <div class="card-img-top bg-secondary d-flex align-items-center justify-content-center text-white" style="height: 200px;">
-                  <i class="fas fa-image fa-3x opacity-50"></i>
-                </div>
-              <% end %>
-              <div class="card-body text-center">
-                <h3 class="card-title text-dark mb-0 fw-semibold" style="font-size: 0.9rem;"><%= product.product_name %></h3>
-              </div>
-            <% end %>
-          </div>
-        </div>
-      <% end %>
-    </div>
-    <div class="text-center">
-      <%= link_to catalog_path, class: "btn btn-danger btn-lg px-5" do %>
-        Ver Catálogo Completo <i class="fas fa-arrow-right ms-2"></i>
-      <% end %>
-    </div>
-  </div>
-</section>
-<% end %>
-
 <!-- ✅ TRUST BADGES -->
 <section class="trust-section py-5 bg-light">
   <div class="container">
@@ -222,21 +219,21 @@
       <div class="col">
         <div class="trust-badge">
           <i class="fas fa-truck fa-2x text-danger mb-3"></i>
-          <h3 class="fw-bold mb-1 fs-6">Envío Seguro</h3>
+          <h3 class="fw-bold mb-1 fs-6">Envío seguro</h3>
           <p class="small text-muted mb-0">Empaque profesional</p>
         </div>
       </div>
       <div class="col">
         <div class="trust-badge">
           <i class="fas fa-shield-alt fa-2x text-danger mb-3"></i>
-          <h3 class="fw-bold mb-1 fs-6">Pago Protegido</h3>
+          <h3 class="fw-bold mb-1 fs-6">Pago protegido</h3>
           <p class="small text-muted mb-0">Transacciones seguras</p>
         </div>
       </div>
       <div class="col">
         <div class="trust-badge">
           <i class="fas fa-certificate fa-2x text-danger mb-3"></i>
-          <h3 class="fw-bold mb-1 fs-6">100% Original</h3>
+          <h3 class="fw-bold mb-1 fs-6">100% original</h3>
           <p class="small text-muted mb-0">Garantía de autenticidad</p>
         </div>
       </div>
@@ -311,7 +308,7 @@
   <div class="container">
     <div class="row justify-content-center">
       <div class="col-lg-8 text-center">
-        <h2 class="display-6 fw-bold mb-3">¡Mantente Actualizado!</h2>
+        <h2 class="display-6 fw-bold mb-3">¡Mantente al día!</h2>
         <p class="lead mb-4">Recibe las últimas novedades, ofertas exclusivas y lanzamientos directamente en tu correo.</p>
         <%= form_with model: NewsletterSubscriber.new, url: newsletter_subscribers_path, class: "row g-3 justify-content-center" do |f| %>
           <div class="col-12 col-md-7">

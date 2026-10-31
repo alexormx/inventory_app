@@ -16,7 +16,7 @@
       <% end %>
       <%# Identidad del producto junto al título. El resto de specs
           (categoría, escala, empaque, código de barras) vive en la card
-          "Información del Producto" más abajo para no duplicar. %>
+          "Información del producto" más abajo para no duplicar. %>
       <div class="text-muted small d-flex flex-wrap gap-3">
         <span>Marca: <strong><%= product.brand %></strong></span>
         <% if product.series.present? %>
@@ -142,7 +142,7 @@
       <%= render 'favorites/heart', product: product, variant: :full %>
 
       <div class="small text-muted d-flex flex-column gap-1">
-        <span><i class="fa fa-shield-alt me-1"></i> Métodos de Pago Seguro</span>
+        <span><i class="fa fa-shield-alt me-1" aria-hidden="true"></i> Pago seguro</span>
       </div>
     <% else %>
       <%# Mismo precio público que muestra la tarjeta del catálogo; comprar sí requiere sesión. %>

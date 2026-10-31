@@ -6,7 +6,7 @@
 <% show_shipping = local_assigns.fetch(:show_shipping, false) %>
 <% shipping_method_name = local_assigns.fetch(:shipping_method_name, nil) %>
 
-<div class="card shadow-sm sticky-top" style="top: 20px;">
+<div class="card shadow-sm sticky-lg-top" style="top: 20px;">
   <div class="card-header bg-light">
     <h6 class="mb-0 d-flex align-items-center gap-2">
       <i class="fa fa-shopping-bag"></i>
@@ -31,8 +31,8 @@
               </div>
             <% end %>
             <div class="flex-grow-1 small">
-              <div class="fw-medium text-truncate" style="max-width: 150px;" title="<%= product.product_name %>">
-                <%= truncate(product.product_name, length: 30) %>
+              <div class="fw-medium line-clamp-2" title="<%= product.product_name %>">
+                <%= product.product_name %>
                 <% if collectible %>
                   <i class="fas fa-gem text-warning" title="<%= item[:label] %>"></i>
                 <% end %>
