@@ -3401,3 +3401,8 @@ body:not(.admin-shell) {
     border-color: $brand-accent;
   }
 }
+
+/* "Escribir reseña": el summary se ve como botón, sin el triángulo nativo. */
+.review-form-toggle > summary { list-style: none; }
+.review-form-toggle > summary::-webkit-details-marker { display: none; }
+.review-form-toggle[open] > summary { display: none; }

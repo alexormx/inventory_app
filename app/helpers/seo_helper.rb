@@ -105,7 +105,7 @@ module SeoHelper
           },
           'author' => {
             '@type' => 'Person',
-            'name' => (review.user.name.presence || review.user.email.split('@').first)
+            'name' => review.user.name.presence || 'Cliente'
           },
           'datePublished' => (review.approved_at || review.created_at).strftime('%Y-%m-%d'),
           'reviewBody' => review.body
