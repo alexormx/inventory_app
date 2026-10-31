@@ -134,9 +134,12 @@
           <div class="card-body">
             <h2 class="h5 fw-semibold mb-3"><i class="fas fa-list-alt text-primary me-2"></i>Detalles del producto</h2>
             <div class="row row-cols-1 row-cols-sm-2 g-3 small">
+              <%# Etiqueta de la plantilla de la categoría ("Suspensión", "Fecha de
+                  lanzamiento"); humanize solo como respaldo. %>
+              <% attribute_template = @product.attribute_template %>
               <% @product.parsed_custom_attributes.each do |key, value| %>
                 <div class="col d-flex">
-                  <div class="w-50 text-muted text-capitalize fw-semibold"><%= key.to_s.humanize %></div>
+                  <div class="w-50 text-muted fw-semibold"><%= attribute_template&.schema_for(key)&.dig('label').presence || key.to_s.humanize %></div>
                   <div class="flex-grow-1"><%= value == true ? "Sí" : (value == false ? "No" : value) %></div>
                 </div>
               <% end %>

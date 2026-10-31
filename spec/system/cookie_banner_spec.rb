@@ -15,6 +15,20 @@ RSpec.describe 'Cookie banner', :js, type: :system do
     expect(page).to have_css('#cookie-banner', visible: true)
   end
 
+  it 'does not dim the page or block scrolling while visible' do
+    expect(page).to have_css('#cookie-banner', visible: true)
+    expect(page).to have_no_css('#cookie-overlay', visible: :all)
+    expect(page.evaluate_script('document.body.classList.contains("no-scroll")')).to be(false)
+  end
+
+  it 'hides after rejection for the rest of the session' do
+    click_button 'Rechazar'
+    expect(page).to have_no_css('#cookie-banner', visible: :all)
+
+    refresh
+    expect(page).to have_no_css('#cookie-banner', visible: :all)
+  end
+
   it 'hides after acceptance' do
     click_button 'Aceptar'
 

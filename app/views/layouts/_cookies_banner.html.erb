@@ -1,17 +1,20 @@
+<%# Aviso no bloqueante: antes un overlay oscurecía toda la página y
+    bloqueaba el scroll hasta aceptar, justo en la primera impresión. %>
 <% if ENV.fetch("COOKIE_BANNER_ENABLED", "true") == "true" %>
   <div id="cookie-banner"
        class="cookie-banner bg-dark text-white p-3 fixed-bottom d-none"
        data-cookies-accepted="<%= current_user&.cookies_accepted? %>"
        data-logged-in="<%= user_signed_in? %>">
-    <div class="container d-flex justify-content-between align-items-center">
+    <div class="container d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2">
       <div>
         <%= ENV.fetch("COOKIE_BANNER_TEXT", "Este sitio utiliza cookies y tecnologías similares para ofrecerte una mejor experiencia.") %>
       </div>
-      <button id="accept-cookies" class="btn btn-light btn-sm">
-        <%= ENV.fetch("COOKIE_BANNER_BUTTON_TEXT", "Aceptar") %>
-      </button>
+      <div class="d-flex gap-2 flex-shrink-0">
+        <button id="reject-cookies" class="btn btn-outline-light btn-sm">Rechazar</button>
+        <button id="accept-cookies" class="btn btn-light btn-sm">
+          <%= ENV.fetch("COOKIE_BANNER_BUTTON_TEXT", "Aceptar") %>
+        </button>
+      </div>
     </div>
   </div>
-
-  <div id="cookie-overlay" class="cookie-overlay"></div>
 <% end %>
