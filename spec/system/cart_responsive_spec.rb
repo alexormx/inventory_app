@@ -386,7 +386,7 @@ RSpec.describe 'Responsive shopping cart', :js, type: :system do
     choose_cart_confirmation('Eliminar producto')
     expect(page).to have_css('#cart-empty-state', text: 'Tu carrito está vacío')
     expect(page).to have_css('#cart-empty-cta:focus')
-    expect(find('#cart-count', visible: :all)).to have_text('0')
+    expect(page).to have_css('#cart-count.d-none', text: '0', visible: :hidden)
     expect(cart_status_text).to eq('Carrito vacío.')
   end
 

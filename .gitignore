@@ -50,3 +50,6 @@ dump.rdb
 /.vscode/
 
 /config/credentials/*.key
+
+# graphify knowledge graph (local tooling)
+/graphify-out/

@@ -1,3 +1,3 @@
 <%# Contador del ícono de favoritos en la barra; se reemplaza por turbo_stream al guardar o quitar. %>
 <% count = favorite_product_ids.size %>
-<span id="favorites-count" class="badge bg-danger rounded-pill position-absolute top-0 start-100 translate-middle <%= 'd-none' if count.zero? %>"><%= count %></span>
+<span id="favorites-count" class="badge nav-count-badge bg-danger rounded-pill position-absolute top-0 start-100 translate-middle <%= 'd-none' if count.zero? %>"><%= count %></span>

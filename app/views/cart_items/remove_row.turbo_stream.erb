@@ -1,5 +1,5 @@
 <%# Elimina una fila individual y actualiza totales y badge %>
-<%= turbo_stream.update 'cart-count', @cart.item_count %>
+<%= turbo_stream.replace 'cart-count', partial: 'customers/partials/cart_count', locals: { count: @cart.item_count } %>
 <%= turbo_stream.update 'cart-status', @cart.empty? ? 'Carrito vacío.' : "Producto eliminado. Total del carrito: #{number_to_currency(@cart.total)}." %>
 
 <% if @cart.empty? %>

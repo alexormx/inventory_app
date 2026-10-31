@@ -46,6 +46,22 @@ RSpec.describe 'Favorites', type: :request do
       expect(link.at_css('#favorites-count').text.strip).to eq('1')
     end
 
+    it 'uses the same counter badge style as the cart' do
+      get favorites_path
+
+      doc = Nokogiri::HTML(response.body)
+      expect(doc.at_css('#cart-count')['class']).to include('nav-count-badge')
+      expect(doc.at_css('#favorites-count')['class']).to include('nav-count-badge')
+    end
+
+    it 'hides the cart counter while the cart is empty, like favorites' do
+      get favorites_path
+
+      doc = Nokogiri::HTML(response.body)
+      expect(doc.at_css('#cart-count')['class'].split).to include('d-none')
+      expect(doc.at_css('#favorites-count')['class'].split).to include('d-none')
+    end
+
     it 'updates the icon count when saving without reloading' do
       post favorites_path, params: { product_id: product.id }, as: :turbo_stream
 

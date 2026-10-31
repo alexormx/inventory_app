@@ -21,7 +21,7 @@ RSpec.describe 'CartItems', type: :request do
       expect(response.media_type).to eq(Mime[:turbo_stream].to_s)
       expect(response.body).to include('action="append" target="flash-stack"')
       expect(response.body).to include(product.product_name)
-      expect(response.body).to include('action="update" target="cart-count"')
+      expect(response.body).to include('action="replace" target="cart-count"')
       expect(session[:cart].dig(product.id.to_s, 'brand_new')).to eq(1)
     end
 
@@ -142,7 +142,7 @@ RSpec.describe 'CartItems', type: :request do
 
       expect(response).to have_http_status(:ok)
       expect(response.body).to include('action="update" target="cart-total"')
-      expect(response.body).to include('action="update" target="cart-count"')
+      expect(response.body).to include('action="replace" target="cart-count"')
       expect(response.body).to include('action="update" target="cart-status"')
       expect(response.body).to include('Producto eliminado. Total del carrito:')
       expect(response.body).to include('action="update" target="cart-pending-summary"')

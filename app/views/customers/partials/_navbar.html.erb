@@ -140,9 +140,7 @@
                 'aria-current': (['cart_items','carts'].include?(controller_path)) ? 'page' : nil,
                 'aria-label': "Ver carrito de compras (#{cart_count} artículos)" do %>
               <i class="fas fa-shopping-cart" aria-hidden="true"></i> <span class="link-text">Carrito</span>
-                <span id="cart-count" class="badge bg-danger rounded-pill position-absolute top-0 start-100 translate-middle">
-                <%= cart_count %>
-              </span>
+              <%= render 'customers/partials/cart_count', count: cart_count %>
             <% end %>
             <% unless controller_path == 'carts' && action_name == 'show' %>
               <%= render 'customers/partials/cart_preview' %>
@@ -187,7 +185,7 @@
               <i class="fab fa-whatsapp" aria-hidden="true"></i>
               <span class="link-text">Lista WA</span>
               <% if wa_count.positive? %>
-                <span id="wa-list-count" class="badge bg-success rounded-pill position-absolute top-0 start-100 translate-middle"><%= wa_count %></span>
+                <span id="wa-list-count" class="badge nav-count-badge bg-success rounded-pill position-absolute top-0 start-100 translate-middle"><%= wa_count %></span>
               <% end %>
             <% end %>
           </li>
