@@ -150,8 +150,15 @@
       <li class="sidebar-section-title px-3 pt-3 pb-1">Clientes y contenido</li>
 
       <li class="nav-item px-2">
-        <%= admin_sidebar_link 'Usuarios', admin_users_path, icon: 'users', section: true %>
+        <%= admin_sidebar_link 'Usuarios', admin_users_path, icon: 'users', section: true,
+                               also: [admin_unverified_accounts_path], badge: badges[:unverified_accounts] %>
       </li>
+      <% if admin_sidebar_open?(admin_users_path, admin_unverified_accounts_path) %>
+        <li class="nav-item px-2 ps-4">
+          <%= admin_sidebar_link 'Cuentas sin verificar', admin_unverified_accounts_path, icon: 'envelope-circle-check', section: true,
+                                 badge: badges[:unverified_accounts] %>
+        </li>
+      <% end %>
       <li class="nav-item px-2">
         <%= admin_sidebar_link 'Blog', admin_posts_path, icon: 'newspaper', section: true %>
       </li>

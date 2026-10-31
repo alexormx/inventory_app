@@ -20,6 +20,12 @@
         <% if @balance_due.to_f > 0 %>
           <span class="badge bg-danger"><i class="fa-solid fa-triangle-exclamation me-1"></i>Con Adeudo</span>
         <% end %>
+        <% if @user.unverified_self_registered? %>
+          <%= link_to admin_unverified_accounts_path, class: "badge #{@user.unverified_needs_review? ? 'text-bg-warning' : 'text-bg-secondary'} text-decoration-none",
+                      title: 'Se registró en la tienda y no ha confirmado su correo' do %>
+            <i class="fa-solid fa-envelope me-1"></i><%= @user.unverified_needs_review? ? 'Sin verificar · En revisión' : 'Sin verificar' %>
+          <% end %>
+        <% end %>
         <% if @user.created_at > 14.days.ago %>
           <span class="badge bg-success"><i class="fa-solid fa-sparkles me-1"></i>Nuevo</span>
         <% end %>
