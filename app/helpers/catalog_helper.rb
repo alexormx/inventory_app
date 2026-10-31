@@ -17,7 +17,7 @@ module CatalogHelper
     parts << brands.to_sentence if brands.any?
     parts << series.to_sentence if series.any?
 
-    parts << 'En Stock' if filter_state.in_stock_only
+    parts << 'En stock' if filter_state.in_stock_only
     parts << 'En tránsito' if filter_state.in_transit_only
     parts << 'Sobre pedido' if filter_state.to_order_only
 

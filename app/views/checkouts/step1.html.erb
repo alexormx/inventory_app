@@ -1,9 +1,11 @@
 <%= render 'checkouts/progress_bar', current_step: 1 %>
 
-<div class="row">
+<%# Los productos se ven en el resumen (primero en móvil); este paso solo
+    pide el nombre, si falta, y las notas del pedido. %>
+<div class="row gy-4">
   <div class="col-lg-8">
     <div class="d-flex justify-content-between align-items-center mb-3">
-      <h4 class="mb-0">Confirma tus productos</h4>
+      <h4 class="mb-0">Datos del pedido</h4>
       <%= link_to cart_path, class: 'btn btn-sm btn-outline-secondary' do %>
         <i class="fa fa-pencil me-1"></i> Editar carrito
       <% end %>
@@ -16,65 +18,6 @@
       </div>
     <% else %>
       <%= form_with url: checkout_step1_path, method: :post, local: true do %>
-        <div class="card mb-4">
-          <div class="card-body p-0">
-            <div class="table-responsive">
-              <table class="table table-hover align-middle mb-0">
-                <thead class="table-light">
-                  <tr>
-                    <th class="ps-3">Producto</th>
-                    <th class="text-center" style="width: 100px;">Cantidad</th>
-                    <th class="text-end" style="width: 120px;">Precio</th>
-                    <th class="text-end pe-3" style="width: 120px;">Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <% @cart.items.each do |item| %>
-                    <% product = item[:product] %>
-                    <% quantity = item[:quantity] %>
-                    <% item_price = item[:price] %>
-                    <% collectible = item[:collectible] %>
-                    <tr>
-                      <td class="ps-3">
-                        <div class="d-flex align-items-center gap-3">
-                          <% if product.product_images.attached? %>
-                            <%= image_tag product.primary_product_image.variant(resize_to_limit: [60, 60]), class: "rounded border", style: "width: 60px; height: 60px; object-fit: cover;" %>
-                          <% else %>
-                            <div class="bg-light rounded border d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
-                              <i class="fa fa-image text-muted"></i>
-                            </div>
-                          <% end %>
-                          <div>
-                            <div class="fw-medium">
-                              <%= product.product_name %>
-                              <% if collectible %>
-                                <span class="badge bg-warning-subtle text-warning" title="Pieza coleccionable única">
-                                  <i class="fas fa-gem me-1"></i><%= item[:label] %>
-                                </span>
-                              <% end %>
-                            </div>
-                            <% if product.whatsapp_code.present? %>
-                              <small class="text-muted">Código: <%= product.whatsapp_code %></small>
-                            <% end %>
-                            <% if product.brand.present? %>
-                              <br><small class="text-muted"><%= product.brand %></small>
-                            <% end %>
-                          </div>
-                        </div>
-                      </td>
-                      <td class="text-center">
-                        <span class="badge bg-secondary fs-6"><%= quantity %></span>
-                      </td>
-                      <td class="text-end"><%= number_to_currency(item_price) %></td>
-                      <td class="text-end pe-3 fw-medium"><%= number_to_currency(item_price * quantity) %></td>
-                    </tr>
-                  <% end %>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
         <% if current_user.name.blank? %>
           <div class="card mb-4">
             <div class="card-header bg-light">
@@ -98,7 +41,7 @@
           </div>
         </div>
 
-        <div class="d-flex justify-content-between align-items-center">
+        <div class="d-flex flex-column-reverse flex-sm-row justify-content-between align-items-stretch align-items-sm-center gap-2">
           <%= link_to cart_path, class: 'btn btn-outline-secondary' do %>
             <i class="fa fa-arrow-left me-1"></i> Volver al carrito
           <% end %>
@@ -108,7 +51,7 @@
     <% end %>
   </div>
 
-  <div class="col-lg-4 mt-4 mt-lg-0">
+  <div class="col-lg-4 order-first order-lg-last">
     <%= render 'checkouts/cart_summary', cart: @cart %>
   </div>
 </div>

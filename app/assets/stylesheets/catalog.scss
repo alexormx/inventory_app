@@ -929,8 +929,8 @@ button.catalog-wa-code.is-copied {
 }
 
 #catalog .catalog-header {
-  margin-bottom: 1.25rem !important;
-  padding: 1.6rem;
+  margin-bottom: 1rem !important;
+  padding: 1.15rem 1.4rem;
   background:
     linear-gradient(135deg, rgba(255,255,255,.96), rgba(248,250,252,.9)),
     radial-gradient(circle at 92% 20%, rgba(17, 24, 39, 0.06), transparent 16rem);
@@ -941,7 +941,9 @@ button.catalog-wa-code.is-copied {
 
 #catalog .catalog-title {
   color: var(--catalog-ink);
-  font-size: clamp(2rem, calc(1.2rem + 2vw), 3.25rem);
+  /* Antes llegaba a 3.25rem y partía el título en dos líneas: los
+     productos empezaban a ~650px del borde superior. */
+  font-size: clamp(1.5rem, calc(1rem + 1.2vw), 2.25rem);
   font-weight: 750 !important;
   letter-spacing: 0;
   line-height: 1.04;
@@ -1409,7 +1411,7 @@ button.catalog-wa-code.is-copied {
   }
 
   #catalog .catalog-title {
-    font-size: 2rem;
+    font-size: 1.6rem;
   }
 
   #catalog .catalog-header-actions,
@@ -1437,7 +1439,7 @@ button.catalog-wa-code.is-copied {
   }
 
   #catalog .catalog-title {
-    font-size: 1.75rem;
+    font-size: 1.45rem;
   }
 
   #catalog .catalog-card-media {
@@ -1511,7 +1513,9 @@ button.catalog-wa-code.is-copied {
   min-height: 1.2rem;
 }
 
-/* Progressive density 2 → 3 → 4 → 5 → 6 cols.
+/* Progressive density 2 → 3 → 4 (lg y xl) → 5 (xxl) → 6 (≥1600).
+   En xl con 5 columnas los nombres se cortaban a "Tomica Premium…", y para
+   un coleccionista el nombre (modelo y versión) es lo importante.
    These explicit widths (higher specificity than Bootstrap .row-cols-*)
    are the single source of truth for column count; keep the row-cols
    classes in the markup synchronized for clarity. */
@@ -1527,19 +1531,16 @@ button.catalog-wa-code.is-copied {
   }
 }
 
-@media (min-width: 1200px) {
+@media (min-width: 1400px) {
   #catalog #product-grid-content > .product-card-wrapper {
     width: 20%;
   }
 }
 
-@media (min-width: 1400px) {
+@media (min-width: 1600px) {
   #catalog #product-grid-content > .product-card-wrapper {
     width: 16.6667%;
   }
-}
-
-@media (min-width: 1600px) {
   #catalog #product-grid-content {
     --catalog-card-gap: 1.5rem;
   }
@@ -1762,6 +1763,15 @@ button.catalog-wa-code.is-copied {
 
   /* Availability chips: tighter */
   #catalog .catalog-availability-chips { margin-bottom: .55rem !important; gap: .35rem !important; }
+  /* Una sola fila que se desliza de lado, en vez de partirse en dos. */
+  #catalog .catalog-availability-chips {
+    flex-wrap: nowrap !important;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  #catalog .catalog-availability-chips::-webkit-scrollbar { display: none; }
+  #catalog .catalog-availability-chips > * { flex: 0 0 auto; white-space: nowrap; }
   .availability-chip { padding: .35rem .65rem; font-size: .75rem; }
 }
 

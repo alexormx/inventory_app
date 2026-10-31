@@ -23,8 +23,13 @@
   <!-- Breadcrumbs -->
   <nav aria-label="breadcrumb" class="mb-3">
     <ol class="breadcrumb mb-0">
-      <% product_breadcrumbs(@product).each_with_index do |crumb, index| %>
-        <li class="breadcrumb-item <%= 'active' if crumb[:url].nil? %>" <%= 'aria-current="page"'.html_safe if crumb[:url].nil? %>>
+      <%# En móvil solo "Inicio › <último enlace>": la ruta completa ocupaba 3-4
+          líneas y el nombre del producto ya es el título de abajo. %>
+      <% crumbs = product_breadcrumbs(@product) %>
+      <% last_link = crumbs.rindex { |c| c[:url] } %>
+      <% crumbs.each_with_index do |crumb, index| %>
+        <% mobile_hidden = index.positive? && index != last_link %>
+        <li class="breadcrumb-item <%= 'active' if crumb[:url].nil? %> <%= 'd-none d-md-block' if mobile_hidden %>" <%= 'aria-current="page"'.html_safe if crumb[:url].nil? %>>
           <% if crumb[:url] %>
             <%= link_to crumb[:name], crumb[:url], class: "text-decoration-none" %>
           <% else %>
@@ -45,15 +50,10 @@
     </div>
     <div class="col-lg-6 col-xl-5 offset-xl-1">
       <%= render 'products/summary_panel', product: @product %>
-    </div>
-  </div>
-
-  <div class="row mt-5 g-4">
-    <div class="col-lg-8">
       <!-- Información básica siempre visible -->
-      <div class="card border-0 shadow-sm mb-4" id="info-basica">
+      <div class="card border-0 shadow-sm mt-4" id="info-basica">
         <div class="card-body">
-          <h2 class="h5 fw-semibold mb-3"><i class="fas fa-info-circle text-primary me-2"></i>Información del Producto</h2>
+          <h2 class="h5 fw-semibold mb-3"><i class="fas fa-info-circle text-primary me-2"></i>Información del producto</h2>
           <div class="row g-3">
             <div class="col-sm-6">
               <div class="d-flex align-items-center">
@@ -64,26 +64,6 @@
                 </div>
               </div>
             </div>
-            <div class="col-sm-6">
-              <div class="d-flex align-items-center">
-                <i class="fas fa-copyright text-muted me-2"></i>
-                <div>
-                  <small class="text-muted d-block">Marca</small>
-                  <strong><%= @product.brand %></strong>
-                </div>
-              </div>
-            </div>
-            <% if @product.series.present? %>
-            <div class="col-sm-6">
-              <div class="d-flex align-items-center">
-                <i class="fas fa-layer-group text-muted me-2"></i>
-                <div>
-                  <small class="text-muted d-block">Serie</small>
-                  <strong><%= @product.series %></strong>
-                </div>
-              </div>
-            </div>
-            <% end %>
             <% if @product.package_type.present? %>
             <div class="col-sm-6">
               <div class="d-flex align-items-center">
@@ -111,7 +91,7 @@
               <div class="d-flex align-items-center">
                 <i class="fas fa-qrcode text-muted me-2"></i>
                 <div>
-                  <small class="text-muted d-block">Código de Barras</small>
+                  <small class="text-muted d-block">Código de barras</small>
                   <strong><%= @product.barcode %></strong>
                 </div>
               </div>
@@ -120,26 +100,24 @@
           </div>
         </div>
       </div>
+    </div>
+  </div>
 
-      <div class="card border-0 shadow-sm" id="descripcion" data-product-description>
-        <div class="card-body">
-          <h2 class="h5 fw-semibold mb-3"><i class="fas fa-align-left text-primary me-2"></i>Descripción</h2>
-          <% if @product.description.present? %>
+  <div class="row mt-4 g-4">
+    <div class="col-lg-8">
+      <% if @product.description.present? %>
+        <div class="card border-0 shadow-sm mb-4" id="descripcion" data-product-description>
+          <div class="card-body">
+            <h2 class="h5 fw-semibold mb-3"><i class="fas fa-align-left text-primary me-2"></i>Descripción</h2>
             <p class="text-muted mb-0" style="white-space: pre-line;"><%= @product.description %></p>
-          <% else %>
-            <div class="alert alert-light border mb-0 text-center py-4">
-              <i class="fas fa-info-circle text-muted fa-2x mb-2"></i>
-              <p class="text-muted mb-0">Este producto aún no tiene una descripción detallada.</p>
-              <p class="text-muted small mb-0">Estamos trabajando para agregarlo pronto.</p>
-            </div>
-          <% end %>
+          </div>
         </div>
-      </div>
+      <% end %>
 
       <% if @product.highlights.is_a?(Array) && @product.highlights.any? %>
-        <div class="card border-0 shadow-sm mt-4" id="destacados">
+        <div class="card border-0 shadow-sm mb-4" id="destacados">
           <div class="card-body">
-            <h2 class="h5 fw-semibold mb-3"><i class="fas fa-star text-warning me-2"></i>Puntos Destacados</h2>
+            <h2 class="h5 fw-semibold mb-3"><i class="fas fa-star text-warning me-2"></i>Puntos destacados</h2>
             <ul class="mb-0 ps-3">
               <% @product.highlights.each do |highlight| %>
                 <li class="mb-1"><%= highlight %></li>
@@ -151,10 +129,10 @@
 
       <%= render 'reviews_section', product: @product %>
 
-      <div class="card border-0 shadow-sm mt-4" id="detalles">
-        <div class="card-body">
-          <h2 class="h5 fw-semibold mb-3"><i class="fas fa-list-alt text-primary me-2"></i>Detalles del Producto</h2>
-          <% if @product.custom_attributes.present? && @product.parsed_custom_attributes.any? %>
+      <% if @product.custom_attributes.present? && @product.parsed_custom_attributes.any? %>
+        <div class="card border-0 shadow-sm mt-4" id="detalles">
+          <div class="card-body">
+            <h2 class="h5 fw-semibold mb-3"><i class="fas fa-list-alt text-primary me-2"></i>Detalles del producto</h2>
             <div class="row row-cols-1 row-cols-sm-2 g-3 small">
               <% @product.parsed_custom_attributes.each do |key, value| %>
                 <div class="col d-flex">
@@ -163,14 +141,9 @@
                 </div>
               <% end %>
             </div>
-          <% else %>
-            <div class="alert alert-light border mb-0 text-center py-3">
-              <i class="fas fa-box-open text-muted fa-lg mb-2"></i>
-              <p class="text-muted small mb-0">No hay atributos adicionales disponibles para este producto.</p>
-            </div>
-          <% end %>
+          </div>
         </div>
-      </div>
+      <% end %>
     </div>
     <div class="col-lg-4">
       <%# Productos relacionados %>

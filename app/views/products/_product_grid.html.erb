@@ -18,7 +18,7 @@
         <span class="catalog-results-context text-muted small">
           <i class="fas fa-filter me-1" aria-hidden="true"></i>
           <% if @q.present? %>
-            coinciden con "<strong class="text-dark"><%= @q %></strong>"
+            coinciden con “<strong class="text-dark"><%= @q.to_s.strip %></strong>”
           <% else %>
             coinciden con tus filtros
           <% end %>
@@ -47,14 +47,14 @@
   <%# Chips de filtros activos (clear-all vive en el resumen de arriba) %>
   <%= render 'filter_chips', hide_clear_all: true %>
 
-  <%# Densidad progresiva: 2 (mobile) → 3 (md) → 4 (lg) → 5 (xl) → 6 (xxl).
+  <%# Densidad progresiva: 2 (mobile) → 3 (md) → 4 (lg, xl) → 5 (xxl) → 6 (≥1600).
       OJO: el conteo real de columnas lo gobiernan los anchos explícitos
       en catalog.scss ("Spacious Cards", .product-card-wrapper); estas
       clases row-cols se mantienen sincronizadas con esos anchos explícitos.
       El gutter/escala mobile vienen del bloque
       @media (max-width: 575.98px). %>
   <% in_transit_counts = defined?(@in_transit_counts) && @in_transit_counts ? @in_transit_counts : {} %>
-  <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 row-cols-xxl-6 g-2 g-md-3" id="product-grid-content" role="list">
+  <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 row-cols-xxl-5 g-2 g-md-3" id="product-grid-content" role="list">
     <% @products.each_with_index do |product, card_index| %>
       <% on_hand_cached = @on_hand_counts[product.id] || 0 %>
       <% in_transit_cached = in_transit_counts.fetch(product.id, 0) %>
