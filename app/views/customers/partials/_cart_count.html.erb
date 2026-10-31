@@ -1,0 +1,2 @@
+<%# Contador del ícono del carrito; mismo formato que el de favoritos y oculto en 0. Se reemplaza por turbo_stream al cambiar el carrito. %>
+<span id="cart-count" class="badge nav-count-badge bg-danger rounded-pill position-absolute top-0 start-100 translate-middle <%= 'd-none' if count.to_i.zero? %>"><%= count %></span>

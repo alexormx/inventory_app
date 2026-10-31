@@ -110,6 +110,7 @@ export default class extends Controller {
     this.updateText('summary-tax', data.tax_amount)
     this.updateText('summary-grand-total', data.subtotal_with_tax || data.subtotal)
     this.updateText('cart-count', data.total_items)
+    document.getElementById('cart-count')?.classList.toggle('d-none', Number(data.total_items) === 0)
     this.updateText('cart-item-count', data.total_items)
 
     const summaryTaxRow = document.getElementById('summary-tax-row')

@@ -18,7 +18,7 @@
 <% end %>
 
 <!-- Update the cart counting with turbo -->
-<%= turbo_stream.update "cart-count", cart_item_count %>
+<%= turbo_stream.replace 'cart-count', partial: 'customers/partials/cart_count', locals: { count: cart_item_count } %>
 
 <!-- Reemplazar mini preview del carrito -->
 <%= turbo_stream.replace "cart-preview-body" do %>

@@ -1653,7 +1653,7 @@ body:not(.admin-shell) { padding-top: var(--nav-height, 76px); }
 .site-navbar.direction-shrink .user-avatar { width:24px; height:24px; font-size:.65rem; letter-spacing:.3px; }
 
 /* Ajustar badge sobre enlaces minimalistas */
-.site-navbar .nav-item-link #cart-count { transform:translate(-35%, -35%); box-shadow:0 0 0 2px #fff; }
+.site-navbar .nav-item-link .nav-count-badge { transform:translate(-35%, -35%); box-shadow:0 0 0 2px #fff; }
 
 /* Overlay de búsqueda global */
 .search-overlay[hidden] { display:none !important; }
@@ -1768,7 +1768,7 @@ body:not(.admin-shell) { padding-top: var(--nav-height, 76px); }
 body.overlay-open { overflow:hidden; }
 
 /* Cart badge refinements */
-#cart-count { min-width:1.15rem; height:1.15rem; padding:0 0.25rem; font-size:.65rem; line-height:1.15rem; }
+.nav-count-badge { min-width:1.15rem; height:1.15rem; padding:0 0.25rem; font-size:.65rem; line-height:1.15rem; }
 
 /* Improve collapse spacing on mobile */
 @media (max-width: 991.98px) { /* Bootstrap lg breakpoint */
