@@ -289,4 +289,17 @@ RSpec.describe 'Catalog browsing', type: :request do
       )
     end
   end
+
+  it 'deshabilita y marca con (0) las categorías sin resultados para la búsqueda actual' do
+    create(:product, product_name: 'Nissan Skyline GT-R', category: 'Autos', brand: 'Tomica')
+    create(:product, product_name: 'Isuzu Elf', category: 'Camiones', brand: 'Tomica')
+
+    get catalog_path(q: 'skyline')
+
+    camiones = document.at_css('input[name="categories[]"][value="Camiones"]')
+    autos = document.at_css('input[name="categories[]"][value="Autos"]')
+    expect(camiones['disabled']).to be_present
+    expect(camiones.parent.text).to include('(0)')
+    expect(autos['disabled']).to be_nil
+  end
 end

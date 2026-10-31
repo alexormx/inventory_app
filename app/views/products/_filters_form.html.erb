@@ -9,7 +9,8 @@
 <% brands_open     = should_expand.call(active: filter_state.selected_brands.any?,     item_count: @all_brands.to_a.size) %>
 <% series_open     = should_expand.call(active: filter_state.selected_series.any?,     item_count: @all_series.to_a.size) %>
 <%# Disable an option when it would return zero results under the current
-    filters (count == 0) and isn't already selected — avoids dead-end clicks. %>
+    filters (count == 0) and isn't already selected — avoids dead-end clicks.
+    group(...).count omits zero-count values, so a missing key means 0. %>
 <% zero_disabled = ->(count, selected) { !count.nil? && count.to_i.zero? && !selected } %>
 
 <%= form_with url: catalog_path, method: :get, data: {
@@ -57,7 +58,7 @@
       <% end %>
       <div class="filter-scroll" data-filter-list-target="list">
         <% @all_categories.each do |c| %>
-          <% c_count = (defined?(@facet_counts) && @facet_counts[:categories]) ? @facet_counts[:categories][c] : nil %>
+          <% c_count = (defined?(@facet_counts) && @facet_counts[:categories]) ? @facet_counts[:categories].fetch(c, 0) : nil %>
           <% c_selected = filter_state.selected_categories.include?(c) %>
           <div class="form-check" data-filter-list-target="item" data-label="<%= c.to_s.downcase %>">
             <%= check_box_tag "categories[]", c, c_selected, id: "cat#{suffix}-#{c.parameterize}", class: "form-check-input", disabled: zero_disabled.call(c_count, c_selected) %>
@@ -92,7 +93,7 @@
       <% end %>
       <div class="filter-scroll" data-filter-list-target="list">
         <% @all_brands.each do |b| %>
-          <% b_count = (defined?(@facet_counts) && @facet_counts[:brands]) ? @facet_counts[:brands][b] : nil %>
+          <% b_count = (defined?(@facet_counts) && @facet_counts[:brands]) ? @facet_counts[:brands].fetch(b, 0) : nil %>
           <% b_selected = filter_state.selected_brands.include?(b) %>
           <div class="form-check" data-filter-list-target="item" data-label="<%= b.to_s.downcase %>">
             <%= check_box_tag "brands[]", b, b_selected, id: "brand#{suffix}-#{b.parameterize}", class: "form-check-input", disabled: zero_disabled.call(b_count, b_selected) %>
@@ -127,7 +128,7 @@
       <% end %>
       <div class="filter-scroll" data-filter-list-target="list">
         <% @all_series.each do |series| %>
-          <% s_count = (defined?(@facet_counts) && @facet_counts[:series]) ? @facet_counts[:series][series] : nil %>
+          <% s_count = (defined?(@facet_counts) && @facet_counts[:series]) ? @facet_counts[:series].fetch(series, 0) : nil %>
           <% s_selected = filter_state.selected_series.include?(series) %>
           <div class="form-check" data-filter-list-target="item" data-label="<%= series.to_s.downcase %>">
             <%= check_box_tag "series[]", series, s_selected, id: "series#{suffix}-#{series.parameterize}", class: "form-check-input", disabled: zero_disabled.call(s_count, s_selected) %>

@@ -7,7 +7,7 @@
 <p style="text-align: center;"><%= t('.instruction') %></p>
 
 <p style="text-align: center;">
-  <a href="#" class="btn">
+  <a href="<%= unlock_url(@resource, unlock_token: @token) %>" class="btn">
     <%= t('.action') %>
   </a>
 </p>
