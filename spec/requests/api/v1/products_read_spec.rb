@@ -117,7 +117,7 @@ RSpec.describe 'API v1 products (read)', type: :request do
       get '/api/v1/products', headers: headers
 
       badges = json['items'].to_h { |item| [item['id'], item['badge']] }
-      expect(badges[fresh.id]).to eq('Nuevo en catálogo')
+      expect(badges[fresh.id]).to eq('Recién llegado')
       expect(badges[plain.id]).to be_nil
     end
 

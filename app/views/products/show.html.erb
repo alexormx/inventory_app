@@ -201,14 +201,12 @@
                       </h6>
                     <% end %>
                     <div class="d-flex align-items-center gap-2">
-                      <% if user_signed_in? %>
-                        <span class="text-danger fw-bold small"><%= number_to_currency(related.selling_price) %></span>
-                      <% end %>
+                      <span class="text-danger fw-bold small"><%= number_to_currency(related.selling_price) %></span>
                       <% on_hand = @related_on_hand[related.id] || 0 %>
                       <% if on_hand > 0 %>
                         <span class="badge bg-success-subtle text-success extra-small">En stock</span>
                       <% elsif related.backorder_allowed? %>
-                        <span class="badge bg-warning-subtle text-warning extra-small">Backorder</span>
+                        <span class="badge bg-warning-subtle text-warning extra-small">Sobre pedido</span>
                       <% end %>
                     </div>
                   </div>

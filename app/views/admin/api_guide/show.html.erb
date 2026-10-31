@@ -90,7 +90,7 @@
               <li><code>stock_available</code>: piezas que un cliente puede comprar ahora (disponibles, libres y con ubicación).</li>
               <li><code>publishable</code>: <code>true</code> si cumple la regla del admin para publicar (piezas vendibles, preventa o sobre pedido). Publicable no es lo mismo que publicado: eso lo dice <code>status</code>.</li>
               <li><code>inventory</code>: piezas por estatus (<code>available</code>, <code>reserved</code>, <code>in_transit</code>, <code>pre_reserved</code>, <code>sold</code>, <code>damaged</code>, …; 0 si no hay). <code>total</code> suma lo que la tienda tiene o está por recibir: todo menos <code>sold</code>, <code>pre_sold</code>, <code>lost</code> y <code>scrap</code>. Su <code>available</code> incluye piezas sin ubicación, por eso puede ser mayor que <code>stock_available</code>.</li>
-              <li><code>badge</code>: la insignia de la tienda («Nuevo en catálogo», «De vuelta en catálogo», «Recién resurtido») o <code>null</code>.</li>
+              <li><code>badge</code>: la insignia de la tienda («Recién llegado», «De vuelta en catálogo», «Recién resurtido») o <code>null</code>.</li>
               <li><code>tags</code>: palabras clave SEO del producto; <code>[]</code> si no tiene.</li>
             </ul>
           </div>

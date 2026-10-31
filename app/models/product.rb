@@ -133,7 +133,7 @@ class Product < ApplicationRecord
     where(id: Inventory.where(status: :in_transit).select(:product_id))
   }
 
-  # Publicados por primera vez dentro de la ventana (badge "Nuevo en catálogo").
+  # Publicados por primera vez dentro de la ventana (badge "Recién llegado").
   scope :new_in_catalog, ->(since) { where('first_published_at >= ?', since) }
   # Reactivados tras haber estado inactivos (badge "De vuelta en catálogo").
   scope :recently_republished, ->(since) { where('republished_at >= ?', since) }

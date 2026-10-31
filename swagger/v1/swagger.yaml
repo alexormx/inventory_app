@@ -748,8 +748,8 @@ components:
         badge:
           type: string
           nullable: true
-          example: Nuevo en catálogo
-          description: 'Insignia de la tienda: Nuevo en catálogo, De vuelta en catálogo
+          example: Recién llegado
+          description: 'Insignia de la tienda: Recién llegado, De vuelta en catálogo
             o Recién resurtido'
         tags:
           type: array

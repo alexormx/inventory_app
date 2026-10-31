@@ -1,13 +1,13 @@
 <%# Secciones de "Mi cuenta"; se muestra arriba de cada página de la cuenta. %>
 <% sections = [
-     ['Mi perfil', profile_path, 'fa-user', 'profiles'],
-     ['Mis pedidos', orders_path, 'fa-box', 'orders'],
-     ['Favoritos', favorites_path, 'fa-heart', 'favorites']
+     ['Mi perfil', profile_path, 'fa-user', %w[profiles shipping_addresses users/registrations]],
+     ['Mis pedidos', orders_path, 'fa-box', %w[orders]],
+     ['Favoritos', favorites_path, 'fa-heart', %w[favorites]]
    ] %>
 <nav class="account-nav mb-4" aria-label="Secciones de mi cuenta">
   <ul class="nav nav-pills flex-nowrap gap-1">
-    <% sections.each do |label, path, icon, controller| %>
-      <% current = controller_path == controller %>
+    <% sections.each do |label, path, icon, controllers| %>
+      <% current = controllers.include?(controller_path) %>
       <li class="nav-item">
         <%= link_to path, class: "nav-link #{'active' if current}", 'aria-current': (current ? 'page' : nil) do %>
           <i class="fas <%= icon %> me-1" aria-hidden="true"></i><%= label %>

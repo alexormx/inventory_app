@@ -22,7 +22,7 @@ RSpec.describe 'Customer profile navigation', type: :system do
     expect(page).to have_content('Ana Cliente')
     expect(page).to have_content('Ana Destinataria')
     expect(page).to have_content('Calle Roble 123')
-    expect(page).to have_content('Configuración de Cuenta')
+    expect(page).to have_content('Configuración de la cuenta')
     expect(page).to have_no_content('PRIVATE-ADMIN-NOTE')
     expect(page).to have_no_link('Admin')
 

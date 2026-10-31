@@ -90,6 +90,10 @@ body:not(.app-ready) .btn[data-defer-until-ready] {
 .product-desc {
   min-height: 3.6em; /* aprox 3 líneas */
 }
+// Rojo de la marca; mismo valor que --ui-accent / --ui-accent-dark.
+$brand-accent: #c92a3a;
+$brand-accent-dark: #a61e2d;
+
 // Bootstrap 5.3.3, trimmed: omit components with no markup anywhere in the app
 // (accordion, toasts, popover, carousel) to shrink the render-blocking
 // application.css. Mirrors the gem's _bootstrap.scss import order minus those.
@@ -263,9 +267,24 @@ dialog .modal-footer, .modal.show .modal-footer { padding: .75rem 1.25rem 1rem; 
   }
 }
 
-.link-registration {
+/* Enlaces de las pantallas de acceso (login, registro, contraseña) */
+.auth-links {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .4rem;
+  margin-top: .75rem;
+  font-size: .9rem;
+}
+.auth-link {
+  color: var(--ui-accent);
+  text-decoration: none;
   text-align: center;
-  margin-top: 10px;
+}
+.auth-link:hover,
+.auth-link:focus-visible {
+  color: var(--ui-accent-dark);
+  text-decoration: underline;
 }
 
 .form-signin {
@@ -3328,3 +3347,45 @@ turbo-frame[busy]:not(#products_grid)::after {
 
 .account-page .min-w-0 { min-width: 0; }
 .favorites-thumb img { display: block; background: #f8f9fa; }
+
+/* Tienda: el "primary" de Bootstrap es el rojo de la marca, no el azul por
+   defecto (badges, totales, tarjetas seleccionadas en el checkout, enlaces,
+   minicarrito). Se limita fuera del admin, que tiene su propia paleta. */
+body:not(.admin-shell) {
+  --bs-primary: #{$brand-accent};
+  --bs-primary-rgb: #{red($brand-accent)}, #{green($brand-accent)}, #{blue($brand-accent)};
+  --bs-primary-text-emphasis: #{$brand-accent-dark};
+  --bs-primary-bg-subtle: #{tint-color($brand-accent, 88%)};
+  --bs-primary-border-subtle: #{tint-color($brand-accent, 65%)};
+  --bs-link-color: #{$brand-accent};
+  --bs-link-color-rgb: #{red($brand-accent)}, #{green($brand-accent)}, #{blue($brand-accent)};
+  --bs-link-hover-color: #{$brand-accent-dark};
+  --bs-link-hover-color-rgb: #{red($brand-accent-dark)}, #{green($brand-accent-dark)}, #{blue($brand-accent-dark)};
+
+  .btn-primary {
+    --bs-btn-bg: #{$brand-accent};
+    --bs-btn-border-color: #{$brand-accent};
+    --bs-btn-hover-bg: #{$brand-accent-dark};
+    --bs-btn-hover-border-color: #{$brand-accent-dark};
+    --bs-btn-active-bg: #{$brand-accent-dark};
+    --bs-btn-active-border-color: #{$brand-accent-dark};
+    --bs-btn-disabled-bg: #{$brand-accent};
+    --bs-btn-disabled-border-color: #{$brand-accent};
+    --bs-btn-focus-shadow-rgb: #{red($brand-accent)}, #{green($brand-accent)}, #{blue($brand-accent)};
+  }
+  .btn-outline-primary {
+    --bs-btn-color: #{$brand-accent};
+    --bs-btn-border-color: #{$brand-accent};
+    --bs-btn-hover-bg: #{$brand-accent};
+    --bs-btn-hover-border-color: #{$brand-accent};
+    --bs-btn-active-bg: #{$brand-accent-dark};
+    --bs-btn-active-border-color: #{$brand-accent-dark};
+    --bs-btn-disabled-color: #{$brand-accent};
+    --bs-btn-disabled-border-color: #{$brand-accent};
+    --bs-btn-focus-shadow-rgb: #{red($brand-accent)}, #{green($brand-accent)}, #{blue($brand-accent)};
+  }
+  .form-check-input:checked {
+    background-color: $brand-accent;
+    border-color: $brand-accent;
+  }
+}

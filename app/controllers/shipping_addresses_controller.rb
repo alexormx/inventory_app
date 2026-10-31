@@ -7,11 +7,11 @@ class ShippingAddressesController < ApplicationController
 
   def index
     @addresses = current_user.shipping_addresses.ordered
-    @address = ShippingAddress.new
+    @address = blank_address
   end
 
   def new
-    @address = ShippingAddress.new
+    @address = blank_address
   end
 
   def edit; end
@@ -62,6 +62,12 @@ class ShippingAddressesController < ApplicationController
   end
 
   private
+
+  # Sin la etiqueta por defecto de la columna ("Principal"), que se confunde
+  # con el distintivo de dirección principal; el placeholder sugiere Casa / Oficina.
+  def blank_address
+    ShippingAddress.new(label: nil)
+  end
 
   def set_address
     @address = current_user.shipping_addresses.find(params[:id])

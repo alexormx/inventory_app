@@ -57,7 +57,7 @@
                 <button class="btn btn-sm btn-outline-secondary cart-mini-increase <%= 'disabled' if disabled_inc %>" name="quantity" value="<%= qty + 1 %>" aria-label="Aumentar cantidad de <%= product.product_name %>" <%= 'disabled' if disabled_inc %>>+</button>
               <% end %>
             <% end %>
-            <span>· <%= number_to_currency(item_price * qty) %></span>
+            <span class="ms-auto fw-semibold text-body text-nowrap"><%= number_to_currency(item_price * qty) %></span>
           </div>
         </div>
         <div class="cart-preview-item-actions d-flex flex-column align-items-end gap-1">
