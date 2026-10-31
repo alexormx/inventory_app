@@ -1870,3 +1870,18 @@ button.catalog-wa-code.is-copied {
   #catalog .catalog-card-actions .btn-danger,
   #catalog .catalog-card-actions .btn-outline-danger { font-weight: 700; }
 }
+
+/* La imagen llena la tarjeta. Entre el padding del contenedor, el width:92%
+   y el padding de 8px de .product-image (custom.scss), las fotos ocupaban
+   ~75% del ancho; las de fondo oscuro (Tomytec) se veían como rectángulos
+   pequeños. La variante ya viene cuadrada y con margen propio. */
+#catalog #product-grid-content .catalog-card-media {
+  padding: .3rem;
+}
+
+#catalog #product-grid-content .product-image {
+  background-color: transparent;
+  max-width: none;
+  padding: 0;
+  width: 100%;
+}

@@ -1259,16 +1259,6 @@ input[type="number"] {
   }
 }
 
-.cookie-overlay {
-  position: fixed;
-  top: 0; left: 0;
-  width: 100%;
-  height: 100vh;
-  background-color: rgba(0,0,0,0.3);
-  z-index: 9998;
-  display: none;
-}
-
 .cookie-banner {
   z-index: 9999;
   font-size: 0.9rem;
@@ -1983,7 +1973,7 @@ main.page-main.is-entering { opacity:1; }
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .hero-section {
-    min-height: 50vh !important;
+    min-height: 40vh !important;
   }
 
   .hero-section h1 {
@@ -2090,7 +2080,7 @@ body:not(.admin-shell) .dropdown-menu {
 }
 
 body:not(.admin-shell) .hero-section {
-  min-height: 68vh !important;
+  min-height: 46vh !important;
   overflow: hidden;
   background-blend-mode: luminosity, normal;
   border-radius: 0 0 34px 34px;
@@ -2119,7 +2109,9 @@ body:not(.admin-shell) .hero-section::after {
 
 body:not(.admin-shell) .hero-section h1 {
   color: #fff !important;
-  font-size: clamp(2.75rem, calc(1.7rem + 4vw), 5.6rem);
+  /* Antes hasta 5.6rem: el hero llenaba la primera pantalla y no asomaba
+     ningún producto. */
+  font-size: clamp(2rem, calc(1.3rem + 2.6vw), 3.6rem);
   font-weight: 800 !important;
   letter-spacing: 0;
   text-shadow: 0 2px 18px rgba(0,0,0,.85), 0 1px 3px rgba(0,0,0,.7) !important;
@@ -3406,3 +3398,28 @@ body:not(.admin-shell) {
 .review-form-toggle > summary { list-style: none; }
 .review-form-toggle > summary::-webkit-details-marker { display: none; }
 .review-form-toggle[open] > summary { display: none; }
+
+/* Producto en móvil: la galería ocupaba toda la primera pantalla y, con 5
+   fotos, las miniaturas en dos filas empujaban precio y compra fuera de vista.
+   Imagen más baja y miniaturas en una sola fila deslizable. */
+@media (max-width: 575.98px) {
+  body:not(.admin-shell) .product-show .product-gallery .gallery-viewport {
+    padding: .5rem;
+  }
+  body:not(.admin-shell) .product-show .gallery-slide img {
+    max-height: 250px;
+  }
+  body:not(.admin-shell) .product-show .gallery-thumbs {
+    flex-wrap: nowrap !important;
+    overflow-x: auto;
+    scrollbar-width: none;
+    margin-top: .5rem !important;
+    padding-bottom: 2px;
+  }
+  body:not(.admin-shell) .product-show .gallery-thumbs::-webkit-scrollbar { display: none; }
+  body:not(.admin-shell) .product-show .gallery-thumbs .thumb-btn { flex: 0 0 auto; }
+  body:not(.admin-shell) .product-show .gallery-thumbs .thumbnail-image {
+    width: 52px;
+    height: 52px;
+  }
+}

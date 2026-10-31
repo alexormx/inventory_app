@@ -1,8 +1,7 @@
 document.addEventListener("turbo:load", () => {
   const banner = document.getElementById("cookie-banner");
-  const overlay = document.getElementById("cookie-overlay");
 
-  if (!banner || !overlay) return;
+  if (!banner) return;
 
   const localStatus = localStorage.getItem("cookiesAccepted");
   const sessionStatus = sessionStorage.getItem("cookiesAccepted");
@@ -10,8 +9,6 @@ document.addEventListener("turbo:load", () => {
 
   function hideBanner() {
     banner.remove();
-    overlay.remove();
-    document.body.classList.remove("no-scroll");
   }
 
   // ✅ Si aceptó o rechazó en algún medio: no mostrar banner
@@ -20,10 +17,8 @@ document.addEventListener("turbo:load", () => {
     return;
   }
 
-  // ❌ Aún no ha aceptado → mostrar banner y bloquear scroll
+  // Aún no decide → mostrar el aviso sin bloquear la página
   banner.classList.remove("d-none");
-  overlay.style.display = "block";
-  document.body.classList.add("no-scroll");
 
   document.getElementById("accept-cookies")?.addEventListener("click", () => {
     // ✅ Guardar en storage
