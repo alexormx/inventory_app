@@ -30,8 +30,8 @@ module ProductsHelper
   # cuál evento aplica vive en Product#catalog_event (fuente única, compartida con
   # el catálogo PDF/imagen); aquí solo mapeamos el símbolo a etiqueta/estilo.
   CATALOG_EVENT_PRESENTATION = {
-    new:        { label: 'Nuevo en catálogo', icon: 'fa-wand-magic-sparkles', css: 'badge-new',
-                  title: 'Nuevo en catálogo · publicado recientemente por primera vez' },
+    new:        { label: 'Recién llegado', icon: 'fa-wand-magic-sparkles', css: 'badge-new',
+                  title: 'Recién llegado · publicado recientemente por primera vez' },
     reappeared: { label: 'De vuelta en catálogo', icon: 'fa-rotate-left', css: 'badge-reappeared',
                   title: 'De vuelta en catálogo · vuelve a estar disponible tras una pausa' },
     restocked:  { label: 'Recién resurtido', icon: 'fa-boxes-stacked', css: 'badge-restocked',
@@ -39,7 +39,7 @@ module ProductsHelper
   }.freeze
 
   # Resuelve el distintivo comercial de mayor prioridad para un producto.
-  # Prioridad: Nuevo en catálogo > De vuelta en catálogo > Recién resurtido.
+  # Prioridad: Recién llegado > De vuelta en catálogo > Recién resurtido.
   # Devuelve un Hash con :type, :label, :icon, :css, :title o nil si no aplica.
   def catalog_event_for(product, now: Time.current)
     type = product.catalog_event(now: now)

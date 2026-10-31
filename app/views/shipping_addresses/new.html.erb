@@ -1,0 +1,18 @@
+<% content_for :title do %>Nueva dirección - Pasatiempos a Escala<% end %>
+
+<div class="account-page container py-4">
+  <%= render 'customers/partials/account_nav' %>
+
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="card shadow-sm">
+        <div class="card-header bg-light">
+          <h1 class="h5 mb-0"><i class="fa-solid fa-location-dot me-2" aria-hidden="true"></i>Nueva dirección</h1>
+        </div>
+        <div class="card-body">
+          <%= render 'form', address: @address %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

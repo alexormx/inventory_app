@@ -33,6 +33,18 @@ class User < ApplicationRecord
 
   before_destroy :check_dependencies
 
+  # Cuentas que el cliente eliminó (Users::AnonymizeAccount): se conservan por
+  # sus pedidos, sin datos personales y sin poder iniciar sesión.
+  ANONYMIZED_EMAIL_DOMAIN = 'cuentas-eliminadas.invalid'
+
+  def anonymized?
+    email.to_s.end_with?("@#{ANONYMIZED_EMAIL_DOMAIN}")
+  end
+
+  def active_for_authentication?
+    super && !anonymized?
+  end
+
   # Roles
   def admin?
     role == 'admin'

@@ -93,10 +93,10 @@ es-MX:
     failure:
       already_authenticated: Ya has iniciado sesión.
       inactive: Tu cuenta aún no ha sido activada.
-      invalid: "%{authentication_keys} o password inválido(s)"
+      invalid: "%{authentication_keys} o contraseña incorrectos."
       last_attempt: Tienes un intento más antes de que tu cuenta sea bloqueada.
       locked: Tu cuenta está bloqueada.
-      not_found_in_database: "%{authentication_keys} o password inválido(s)"
+      not_found_in_database: "%{authentication_keys} o contraseña incorrectos."
       timeout: Tu sesión expiró. Por favor, inicia sesión nuevamente para continuar.
       unauthenticated: Tienes que iniciar sesión o registrarte para poder continuar.
       unconfirmed: Tienes que confirmar tu cuenta para poder continuar.
@@ -135,30 +135,30 @@ es-MX:
     passwords:
       edit:
         change_my_password: Cambiar mi contraseña
-        change_your_password: Cambie su contraseña
-        confirm_new_password: Confirme la nueva contraseña
+        change_your_password: Cambia tu contraseña
+        confirm_new_password: Confirma la nueva contraseña
         new_password: Contraseña nueva
       new:
-        forgot_your_password: "¿Ha olvidado su contraseña?"
-        send_me_reset_password_instructions: Enviarme instrucciones para restablecer la contraseña
+        forgot_your_password: "¿Olvidaste tu contraseña?"
+        send_me_reset_password_instructions: Enviar instrucciones
       no_token: No puedes acceder a esta página si no es a través de un enlace para restablecer tu contraseña. Si has llegado hasta aquí desde el correo para restablecer tu contraseña, por favor asegúrate de que la URL introducida está completa.
       send_instructions: En unos minutos recibirás un correo con instrucciones sobre cómo restablecer tu contraseña.
       send_paranoid_instructions: Si tu correo existe en nuestra base de datos, recibirás en tu bandeja de entrada un correo con instrucciones sobre cómo restablecer tu contraseña.
       updated: Tu contraseña ha sido cambiada exitosamente. Ya puedes iniciar sesión.
       updated_not_active: Tu contraseña ha sido cambiada.
     registrations:
-      destroyed: "¡Adiós! Tu cuenta ha sido cancelada exitosamente. Esperamos verte pronto."
+      destroyed: "Tu cuenta ha sido eliminada. ¡Esperamos verte pronto!"
       edit:
-        are_you_sure: "¿Está usted seguro?"
+        are_you_sure: "Esta acción no se puede deshacer. ¿Quieres eliminar tu cuenta?"
         cancel_my_account: Eliminar mi cuenta
         currently_waiting_confirmation_for_email: 'Actualmente esperando la confirmación de: %{email}'
-        leave_blank_if_you_don_t_want_to_change_it: dejar en blanco si no desea cambiarlo
-        title: Editar %{resource}
-        unhappy: No se encuentra feliz
-        update: Actualizar
-        we_need_your_current_password_to_confirm_your_changes: necesitamos su contraseña actual para confirmar los cambios
+        leave_blank_if_you_don_t_want_to_change_it: déjala en blanco si no quieres cambiarla
+        title: Correo y contraseña
+        unhappy: "Si ya no quieres tu cuenta, puedes eliminarla: borramos tu nombre, correo, teléfono, direcciones guardadas, favoritos y reseñas. Tus pedidos, con la dirección de envío de cada uno, se conservan para fines contables. Esta acción no se puede deshacer."
+        update: Guardar cambios
+        we_need_your_current_password_to_confirm_your_changes: la necesitamos para confirmar los cambios
       new:
-        sign_up: Registrarse
+        sign_up: Crear cuenta
       signed_up: Bienvenido. Tu cuenta ha sido creada.
       signed_up_but_inactive: Tu cuenta ha sido creada exitosamente. Sin embargo, no puedes iniciar sesión ya que tu cuenta aún no está activada.
       signed_up_but_locked: Tu cuenta ha sido creada correctamente. Sin embargo, no es posible iniciar la sesión porque que tu cuenta se encuentra bloqueada.
@@ -175,12 +175,12 @@ es-MX:
     shared:
       links:
         back: Regresar
-        didn_t_receive_confirmation_instructions: "¿No ha recibido las instrucciones de confirmación?"
-        didn_t_receive_unlock_instructions: "¿No ha recibido instrucciones para desbloquear su cuenta?"
-        forgot_your_password: "¿Ha olvidado su contraseña?"
+        didn_t_receive_confirmation_instructions: "¿No te llegó el correo de confirmación?"
+        didn_t_receive_unlock_instructions: "¿No te llegaron las instrucciones para desbloquear tu cuenta?"
+        forgot_your_password: "¿Olvidaste tu contraseña?"
         sign_in: Iniciar sesión
         sign_in_with_provider: Iniciar sesión con %{provider}
-        sign_up: Registrarse
+        sign_up: Crear cuenta
       minimum_password_length:
         one: "(Mínimo %{count} carácter)"
         other: "(Mínimo %{count} caracteres)"

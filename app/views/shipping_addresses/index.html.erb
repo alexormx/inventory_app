@@ -1,80 +1,50 @@
-<h1 class="mb-3"><i class="fa-solid fa-location-dot me-2" aria-hidden="true"></i>Mis direcciones</h1>
-<div class="row">
-  <div class="col-md-6">
-    <h5 class="mb-2">Guardadas</h5>
-    <% if @addresses.any? %>
-      <ul class="list-group mb-4">
-        <% @addresses.each do |addr| %>
-          <li class="list-group-item d-flex justify-content-between align-items-start">
-            <div>
-              <strong><%= addr.label %></strong>
-              <% if addr.default? %><span class="badge bg-success ms-1">Default</span><% end %><br>
-              <small><%= addr.full_name %></small><br>
-              <small class="text-muted"><%= addr.to_one_line %></small>
-            </div>
-            <div class="ms-2 d-flex flex-column gap-1 align-items-end">
-              <%= link_to 'Editar', edit_shipping_address_path(addr), class: 'btn btn-sm btn-outline-secondary' %>
-              <% unless addr.default? %>
-                <%= button_to 'Default', make_default_shipping_address_path(addr), method: :patch, class: 'btn btn-sm btn-outline-primary' %>
-              <% end %>
-              <%= button_to 'Eliminar', shipping_address_path(addr), method: :delete,
-                            data: { controller: 'confirm', action: 'click->confirm#ask', confirm_title: 'Eliminar dirección', confirm_message: 'Esta dirección dejará de estar disponible para futuras compras. ¿Deseas continuar?', confirm_confirm_label: 'Eliminar dirección' },
-                            class: 'btn btn-sm btn-outline-danger' %>
-            </div>
-          </li>
-        <% end %>
-      </ul>
-    <% else %>
-      <p class="text-muted">No tienes direcciones guardadas.</p>
-    <% end %>
-  </div>
-  <div class="col-md-6">
-    <h5 class="mb-2">Agregar nueva</h5>
-    <%= form_with model: @address, local: true do |f| %>
-      <% if params[:return_to].present? %>
-        <%= hidden_field_tag :return_to, params[:return_to] %>
+<% content_for :title do %>Mis direcciones - Pasatiempos a Escala<% end %>
+
+<div class="account-page container py-4">
+  <%= render 'customers/partials/account_nav' %>
+
+  <h1 class="h4 mb-3">Mis direcciones</h1>
+
+  <div class="row g-4">
+    <div class="col-md-6">
+      <h2 class="h6 text-muted mb-2">Guardadas</h2>
+      <% if @addresses.any? %>
+        <ul class="list-group shadow-sm">
+          <% @addresses.each do |addr| %>
+            <li class="list-group-item py-3">
+              <div class="d-flex justify-content-between align-items-start gap-2">
+                <div class="min-w-0">
+                  <strong><%= addr.label %></strong>
+                  <% if addr.default? %><span class="badge bg-success ms-1">Principal</span><% end %>
+                  <div class="small"><%= addr.full_name %></div>
+                  <div class="small text-muted"><%= addr.to_one_line %></div>
+                </div>
+                <%= link_to 'Editar', edit_shipping_address_path(addr), class: 'btn btn-sm btn-outline-secondary flex-shrink-0' %>
+              </div>
+              <div class="d-flex gap-2 mt-2">
+                <% unless addr.default? %>
+                  <%= button_to 'Hacer principal', make_default_shipping_address_path(addr), method: :patch, class: 'btn btn-sm btn-outline-primary' %>
+                <% end %>
+                <%= button_to 'Eliminar', shipping_address_path(addr), method: :delete,
+                              data: { controller: 'confirm', action: 'click->confirm#ask', confirm_title: 'Eliminar dirección', confirm_message: 'Esta dirección dejará de estar disponible para futuras compras. ¿Deseas continuar?', confirm_confirm_label: 'Eliminar dirección' },
+                              class: 'btn btn-sm btn-outline-danger' %>
+              </div>
+            </li>
+          <% end %>
+        </ul>
+      <% else %>
+        <p class="text-muted">Aún no tienes direcciones guardadas.</p>
       <% end %>
-      <div class="row g-2">
-        <div class="col-6">
-          <%= f.label :label, 'Etiqueta' %>
-          <%= f.text_field :label, class: 'form-control', placeholder: 'Casa / Oficina' %>
+    </div>
+    <div class="col-md-6">
+      <div class="card shadow-sm">
+        <div class="card-header bg-light">
+          <h2 class="h6 mb-0"><i class="fa-solid fa-plus me-2" aria-hidden="true"></i>Agregar dirección</h2>
         </div>
-        <div class="col-6">
-          <%= f.label :full_name, 'Nombre' %>
-          <%= f.text_field :full_name, class: 'form-control', required: true %>
-        </div>
-        <div class="col-12">
-          <%= f.label :line1, 'Dirección (línea 1)' %>
-          <%= f.text_field :line1, class: 'form-control', required: true %>
-        </div>
-        <div class="col-12">
-          <%= f.label :line2, 'Dirección (línea 2)' %>
-          <%= f.text_field :line2, class: 'form-control' %>
-        </div>
-        <div class="col-6">
-          <%= f.label :city, 'Ciudad' %>
-          <%= f.text_field :city, class: 'form-control', required: true %>
-        </div>
-        <div class="col-6">
-          <%= f.label :state, 'Estado' %>
-          <%= f.text_field :state, class: 'form-control' %>
-        </div>
-        <div class="col-6">
-          <%= f.label :postal_code, 'CP' %>
-          <%= f.text_field :postal_code, class: 'form-control', required: true %>
-        </div>
-        <div class="col-6">
-          <%= f.label :country, 'País' %>
-          <%= f.text_field :country, class: 'form-control', value: 'MX', required: true %>
-        </div>
-        <div class="col-12 form-check mt-1">
-          <%= f.check_box :default, class: 'form-check-input', id: 'addr_default' %>
-          <%= f.label :default, 'Establecer como predeterminada', class: 'form-check-label' %>
-        </div>
-        <div class="col-12 text-end">
-          <%= f.submit 'Guardar', class: 'btn btn-primary' %>
+        <div class="card-body">
+          <%= render 'form', address: @address %>
         </div>
       </div>
-    <% end %>
+    </div>
   </div>
 </div>

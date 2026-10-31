@@ -27,7 +27,7 @@ RSpec.describe "User login/logout", type: :system do
 
     visit profile_path
     expect(page).to have_current_path(profile_path)
-    expect(page).to have_content("Configuración de Cuenta")
+    expect(page).to have_content("Configuración de la cuenta")
   end
 
   # ⚠️ EN CUARENTENA — no bloquea el merge. Ver
@@ -59,7 +59,7 @@ RSpec.describe "User login/logout", type: :system do
 
     visit profile_path
     expect(page).to have_current_path(profile_path)
-    expect(page).to have_content("Configuración de Cuenta")
+    expect(page).to have_content("Configuración de la cuenta")
 
     click_button "Cerrar sesión"
 
@@ -74,7 +74,7 @@ RSpec.describe "User login/logout", type: :system do
     fill_in "user[password]", with: "wrongpassword"
     click_button "Iniciar sesión"
 
-    expect(page).to have_content("Correo electrónico o password inválido(s)")
+    expect(page).to have_content("Correo electrónico o contraseña incorrectos.")
   end
 
   # ✅ Login fails with empty fields
@@ -83,7 +83,7 @@ RSpec.describe "User login/logout", type: :system do
     accept_cookies_if_present
     click_button "Iniciar sesión"
   
-    expect(page).to have_content("Correo electrónico o password inválido(s)")
+    expect(page).to have_content("Correo electrónico o contraseña incorrectos.")
   end
 
   # ✅ Redirect logged-in users away from login page

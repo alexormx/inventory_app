@@ -14,7 +14,7 @@ Rails.application.routes.draw do
   resource :profile, only: %i[show edit update]
 
   # Devise authentication for all users
-  devise_for :users
+  devise_for :users, controllers: { registrations: 'users/registrations' }
 
   # La referencia de la API vive en el admin; marcadores viejos de /api-docs
   get '/api-docs(/*rest)', to: redirect('/admin/api_guide/reference')

@@ -210,7 +210,7 @@ RSpec.describe ProductsHelper, type: :helper do
     it 'renders a badge span with the event label' do
       product = Product.new(first_published_at: 1.day.ago)
       html = helper.catalog_event_badge(product)
-      expect(html).to include('Nuevo en catálogo')
+      expect(html).to include('Recién llegado')
       expect(html).to include('badge-new')
     end
   end

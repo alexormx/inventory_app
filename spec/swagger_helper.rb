@@ -114,8 +114,8 @@ RSpec.configure do |config|
                 },
                 required: %w[total available reserved in_transit sold damaged lost returned scrap pre_reserved pre_sold marketing]
               },
-              badge: { type: :string, nullable: true, example: 'Nuevo en catálogo',
-                       description: 'Insignia de la tienda: Nuevo en catálogo, De vuelta en catálogo o Recién resurtido' },
+              badge: { type: :string, nullable: true, example: 'Recién llegado',
+                       description: 'Insignia de la tienda: Recién llegado, De vuelta en catálogo o Recién resurtido' },
               tags: { type: :array, items: { type: :string }, description: 'Etiquetas (palabras clave SEO)',
                       example: %w[tomica skyline] },
               length_cm: { type: :string, nullable: true },

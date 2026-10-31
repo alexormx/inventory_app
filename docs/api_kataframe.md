@@ -57,7 +57,7 @@ Revocar la desactiva al instante sin afectar a otras claves ni al token legado.
   `?publishable=true` lista solo esos; sin el filtro llegan todos (los
   borradores se siguen pudiendo fotografiar).
 - **Insignia y etiquetas**: `badge` es la misma insignia que muestra la tienda
-  (`Nuevo en catálogo`, `De vuelta en catálogo` o `Recién resurtido`) o `null`;
+  (`Recién llegado`, `De vuelta en catálogo` o `Recién resurtido`) o `null`;
   `tags` son las palabras clave SEO del producto.
 - **Peso**: `weight_gr` viene en gramos (dividir entre 1000 para kg). Como SKU
   usar `code`.

@@ -74,7 +74,7 @@ module Api
         { total: counts.except(*GONE_STATUSES).values.sum, **counts.symbolize_keys }
       end
 
-      # La misma insignia que muestra la tienda ("Nuevo en catálogo", ...) o nil.
+      # La misma insignia que muestra la tienda ("Recién llegado", ...) o nil.
       def badge
         type = @product.catalog_event
         type && ProductsHelper::CATALOG_EVENT_PRESENTATION.dig(type, :label)

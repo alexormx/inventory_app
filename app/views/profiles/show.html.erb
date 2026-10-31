@@ -1,4 +1,4 @@
-<% content_for :title do %>Mi Perfil - Pasatiempos a Escala<% end %>
+<% content_for :title do %>Mi perfil - Pasatiempos a Escala<% end %>
 
 <div class="account-page container py-4">
   <%= render 'customers/partials/account_nav' %>
@@ -15,7 +15,7 @@
           <p class="text-muted mb-3"><%= @user.email %></p>
 
           <%= link_to edit_profile_path, class: "btn btn-outline-primary btn-sm" do %>
-            <i class="fas fa-edit me-1"></i> Editar Perfil
+            <i class="fas fa-edit me-1"></i> Editar perfil
           <% end %>
         </div>
       </div>
@@ -23,7 +23,7 @@
       <!-- Información de cuenta -->
       <div class="card shadow-sm mt-3">
         <div class="card-header bg-light">
-          <h6 class="mb-0"><i class="fas fa-user-circle me-2"></i>Información de Cuenta</h6>
+          <h6 class="mb-0"><i class="fas fa-user-circle me-2"></i>Información de la cuenta</h6>
         </div>
         <div class="card-body">
           <ul class="list-unstyled mb-0">
@@ -53,7 +53,10 @@
       <!-- Direcciones de envío -->
       <div class="card shadow-sm mb-4">
         <div class="card-header bg-light d-flex justify-content-between align-items-center">
-          <h5 class="mb-0"><i class="fas fa-map-marker-alt me-2"></i>Direcciones de Envío</h5>
+          <h5 class="mb-0"><i class="fas fa-map-marker-alt me-2"></i>Direcciones de envío</h5>
+          <%= link_to shipping_addresses_path, class: "btn btn-sm btn-outline-primary text-nowrap flex-shrink-0" do %>
+            Ver todas <i class="fas fa-arrow-right ms-1"></i>
+          <% end %>
         </div>
         <div class="card-body">
           <% if @shipping_addresses.any? %>
@@ -65,7 +68,7 @@
                       <h6 class="card-title">
                         <%= address.full_name %>
                         <% if address.default? %>
-                          <span class="badge bg-primary ms-2">Principal</span>
+                          <span class="badge bg-success ms-2">Principal</span>
                         <% end %>
                       </h6>
                       <p class="card-text small text-muted mb-1">
@@ -94,40 +97,28 @@
       <!-- Pedidos recientes -->
       <div class="card shadow-sm">
         <div class="card-header bg-light d-flex justify-content-between align-items-center">
-          <h5 class="mb-0"><i class="fas fa-box me-2"></i>Pedidos Recientes</h5>
-          <%= link_to orders_path, class: "btn btn-sm btn-outline-primary" do %>
+          <h5 class="mb-0"><i class="fas fa-box me-2"></i>Pedidos recientes</h5>
+          <%= link_to orders_path, class: "btn btn-sm btn-outline-primary text-nowrap flex-shrink-0" do %>
             Ver todos <i class="fas fa-arrow-right ms-1"></i>
           <% end %>
         </div>
         <div class="card-body">
           <% if @recent_orders.any? %>
-            <div class="table-responsive">
-              <table class="table table-hover mb-0">
-                <thead class="table-light">
-                  <tr>
-                    <th>Orden</th>
-                    <th>Fecha</th>
-                    <th>Estado</th>
-                    <th class="text-end">Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <% @recent_orders.each do |order| %>
-                    <tr>
-                      <td>
-                        <%= link_to order.id, order_path(order), class: "text-decoration-none fw-bold" %>
-                      </td>
-                      <td><%= l(order.created_at.to_date, format: :short) %></td>
-                      <td>
-                        <span class="badge <%= status_badge_class(order.status) %>">
-                          <%= customer_order_status_label(order.status) %>
-                        </span>
-                      </td>
-                      <td class="text-end"><%= number_to_currency(order.total_order_value) %></td>
-                    </tr>
-                  <% end %>
-                </tbody>
-              </table>
+            <div class="list-group list-group-flush orders-list">
+              <% @recent_orders.each do |order| %>
+                <%= link_to order_path(order), class: "list-group-item list-group-item-action px-0 py-2" do %>
+                  <div class="d-flex justify-content-between align-items-center gap-2">
+                    <div class="min-w-0">
+                      <div class="fw-semibold text-body text-truncate">Pedido <%= order.id %></div>
+                      <div class="small text-muted"><%= l(order.order_date, format: :long) %></div>
+                    </div>
+                    <div class="text-end flex-shrink-0">
+                      <span class="badge <%= status_badge_class(order.status) %>"><%= customer_order_status_label(order.status) %></span>
+                      <div class="fw-bold text-body small mt-1"><%= number_to_currency(order.total_order_value) %></div>
+                    </div>
+                  </div>
+                <% end %>
+              <% end %>
             </div>
           <% else %>
             <div class="text-center text-muted py-4">
@@ -142,18 +133,18 @@
       <!-- Acciones de cuenta -->
       <div class="card shadow-sm mt-4">
         <div class="card-header bg-light">
-          <h5 class="mb-0"><i class="fas fa-cog me-2"></i>Configuración de Cuenta</h5>
+          <h5 class="mb-0"><i class="fas fa-cog me-2"></i>Configuración de la cuenta</h5>
         </div>
         <div class="card-body">
           <div class="row">
             <div class="col-md-6 mb-3 mb-md-0">
               <%= link_to edit_user_registration_path, class: "btn btn-outline-secondary w-100" do %>
-                <i class="fas fa-key me-2"></i>Cambiar Contraseña
+                <i class="fas fa-key me-2"></i>Correo y contraseña
               <% end %>
             </div>
             <div class="col-md-6">
               <%= link_to edit_profile_path, class: "btn btn-outline-primary w-100" do %>
-                <i class="fas fa-user-edit me-2"></i>Editar Información
+                <i class="fas fa-user-edit me-2"></i>Editar información
               <% end %>
             </div>
           </div>

@@ -336,10 +336,10 @@
 		<% badge_new_days = SiteSetting.get('badge_new_days', 30).to_i %>
 		<% badge_republished_days = SiteSetting.get('badge_republished_days', 15).to_i %>
 		<% badge_restocked_days = SiteSetting.get('badge_restocked_days', 15).to_i %>
-		<p class="small text-muted mb-3">Días que cada distintivo permanece visible tras su evento. Prioridad cuando coinciden: <strong>Nuevo en catálogo</strong> &gt; <strong>De vuelta en catálogo</strong> &gt; <strong>Recién resurtido</strong> (se muestra solo el de mayor prioridad).</p>
+		<p class="small text-muted mb-3">Días que cada distintivo permanece visible tras su evento. Prioridad cuando coinciden: <strong>Recién llegado</strong> &gt; <strong>De vuelta en catálogo</strong> &gt; <strong>Recién resurtido</strong> (se muestra solo el de mayor prioridad).</p>
 		<%= form_with url: admin_settings_path, method: :post, data: { turbo: false }, class: 'row gy-2 gx-3 align-items-end' do %>
 			<div class="col-md-4">
-				<label class="form-label"><i class="fas fa-wand-magic-sparkles me-1 text-primary"></i>Nuevo en catálogo (días)</label>
+				<label class="form-label"><i class="fas fa-wand-magic-sparkles me-1 text-primary"></i>Recién llegado (días)</label>
 				<input type="number" min="1" name="badge_new_days" class="form-control form-control-sm" value="<%= badge_new_days %>">
 			</div>
 			<div class="col-md-4">

@@ -145,12 +145,17 @@
         <span><i class="fa fa-shield-alt me-1"></i> Métodos de Pago Seguro</span>
       </div>
     <% else %>
+      <%# Mismo precio público que muestra la tarjeta del catálogo; comprar sí requiere sesión. %>
+      <div class="price-zone d-flex align-items-end gap-3 flex-wrap">
+        <span class="display-price h3 text-danger fw-bold mb-0"><%= number_to_currency(product.selling_price) %></span>
+        <%= stock_badge(product) %>
+      </div>
+      <p class="small text-muted mb-0"><i class="fas fa-circle-info me-1" aria-hidden="true"></i>Sujeto al tipo de cambio del día de la compra.</p>
       <div class="alert alert-light border mb-0">
         <div class="text-center">
-          <i class="fas fa-lock fa-2x text-muted mb-2"></i>
-          <p class="mb-2">Inicia sesión para ver el precio y comprar este producto</p>
+          <p class="mb-2">Inicia sesión para comprar este producto</p>
           <%= link_to new_user_session_path, class: "btn btn-danger w-100" do %>
-            <i class="fas fa-sign-in-alt me-1"></i>Iniciar Sesión
+            <i class="fas fa-sign-in-alt me-1"></i>Iniciar sesión
           <% end %>
           <p class="small text-muted mt-2 mb-0">
             ¿No tienes cuenta? <%= link_to "Regístrate aquí", new_user_registration_path, class: "text-danger" %>

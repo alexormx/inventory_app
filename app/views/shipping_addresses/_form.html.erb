@@ -1,0 +1,65 @@
+<%# Formulario de dirección compartido por "Mis direcciones" (alta) y la edición. %>
+<%= form_with model: address, local: true do |f| %>
+  <% if params[:return_to].present? %>
+    <%= hidden_field_tag :return_to, params[:return_to] %>
+  <% end %>
+  <% if address.errors.any? %>
+    <div class="alert alert-danger small">
+      <ul class="mb-0 ps-3">
+        <% address.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+  <div class="row g-2">
+    <div class="col-6">
+      <%= f.label :label, 'Etiqueta', class: 'form-label' %>
+      <%= f.text_field :label, class: 'form-control', placeholder: 'Casa / Oficina', required: true %>
+    </div>
+    <div class="col-6">
+      <%= f.label :full_name, 'Nombre de quien recibe', class: 'form-label' %>
+      <%= f.text_field :full_name, class: 'form-control', required: true, autocomplete: 'name' %>
+    </div>
+    <div class="col-12">
+      <%= f.label :line1, 'Calle y número', class: 'form-label' %>
+      <%= f.text_field :line1, class: 'form-control', required: true, autocomplete: 'address-line1' %>
+    </div>
+    <div class="col-12">
+      <%= f.label :line2, 'Colonia, interior o referencias', class: 'form-label' %>
+      <%= f.text_field :line2, class: 'form-control', autocomplete: 'address-line2' %>
+    </div>
+    <div class="col-6">
+      <%= f.label :city, 'Ciudad o municipio', class: 'form-label' %>
+      <%= f.text_field :city, class: 'form-control', required: true, autocomplete: 'address-level2' %>
+    </div>
+    <div class="col-6">
+      <%= f.label :state, 'Estado', class: 'form-label' %>
+      <%= f.select :state, address_state_options(address.state), { include_blank: 'Selecciona…' },
+                   class: 'form-select', autocomplete: 'address-level1' %>
+    </div>
+    <div class="col-6">
+      <%= f.label :postal_code, 'Código postal', class: 'form-label' %>
+      <%= f.text_field :postal_code, class: 'form-control', required: true, inputmode: 'numeric', autocomplete: 'postal-code' %>
+    </div>
+    <div class="col-6">
+      <%= f.label :country, 'País', class: 'form-label' %>
+      <%= f.select :country, address_country_options(address.country), {}, class: 'form-select', autocomplete: 'country' %>
+    </div>
+    <div class="col-12 mt-2">
+      <div class="form-check">
+        <%= f.check_box :default, class: 'form-check-input', id: 'addr_default' %>
+        <%= f.label :default, 'Usar como dirección principal', class: 'form-check-label', for: 'addr_default' %>
+      </div>
+    </div>
+    <div class="col-12 d-flex justify-content-between gap-2 mt-3">
+      <% if address.persisted? %>
+        <%= link_to 'Cancelar', shipping_addresses_path, class: 'btn btn-outline-secondary' %>
+        <%= f.submit 'Guardar cambios', class: 'btn btn-primary' %>
+      <% else %>
+        <span></span>
+        <%= f.submit 'Guardar dirección', class: 'btn btn-primary' %>
+      <% end %>
+    </div>
+  </div>
+<% end %>
