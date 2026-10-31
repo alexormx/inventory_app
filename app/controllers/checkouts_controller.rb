@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class CheckoutsController < ApplicationController
+  include MercadoPagoRedirect
+
   include CheckoutSessionHelper
 
   layout 'customer'
@@ -145,7 +147,7 @@ class CheckoutsController < ApplicationController
 
     # Validar método de pago usando PaymentMethod de la base de datos
     payment_method = params[:payment_method]
-    payment_method_record = PaymentMethod.active.checkout_compatible.find_by(code: payment_method)
+    payment_method_record = PaymentMethod.for_checkout.find_by(code: payment_method)
     unless payment_method_record
       flash[:alert] = 'Método de pago inválido.'
       redirect_to(checkout_step3_path) and return
@@ -174,7 +176,13 @@ class CheckoutsController < ApplicationController
         clear_checkout_session!
 
         flash[:notice] = "¡Gracias! Tu pedido ##{result.sale_order.id} fue creado exitosamente."
-        redirect_to checkout_thank_you_path(order_id: result.sale_order.id)
+        # Con Mercado Pago el pedido ya existe (inventario apartado) y el
+        # cliente sale a pagar; si no paga, puede reintentar desde su pedido.
+        if payment_method == 'mercado_pago' && result.sale_order.payments.mercado_pago.exists?
+          redirect_to_mercado_pago(result.sale_order)
+        else
+          redirect_to checkout_thank_you_path(order_id: result.sale_order.id)
+        end
       else
         # Mostrar errores de validación de la orden
         flash[:alert] = "No se pudo crear tu pedido: #{result.errors.join(', ')}"

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_10_31_120000) do
+ActiveRecord::Schema[8.0].define(version: 2026_10_31_130000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -431,6 +431,12 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_31_120000) do
     t.datetime "updated_at", null: false
     t.string "sale_order_id", null: false
     t.integer "payment_method"
+    t.string "provider_preference_id"
+    t.string "provider_payment_id"
+    t.string "provider_status"
+    t.string "provider_status_detail"
+    t.string "provider_payment_type"
+    t.index ["provider_payment_id"], name: "index_payments_on_provider_payment_id", unique: true, where: "(provider_payment_id IS NOT NULL)"
     t.index ["sale_order_id"], name: "index_payments_on_sale_order_id"
   end
 

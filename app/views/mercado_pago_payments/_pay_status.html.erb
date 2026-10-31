@@ -1,0 +1,22 @@
+<%# Estado y botón de pago de Mercado Pago de un pedido (gracias / mis pedidos).
+    Local: order. No muestra nada si el pedido no se paga con Mercado Pago. %>
+<% mp_payment = order.payments.select(&:mercado_pago?).max_by(&:created_at) %>
+<% if mp_payment && mp_payment.status == 'Pending' %>
+  <div class="mt-2 small" data-mercado-pago-status="<%= mp_payment.provider_status.presence || 'none' %>">
+    <% case mp_payment.provider_status %>
+    <% when *MercadoPago::PROVIDER_STATUSES_PENDING %>
+      <p class="text-muted mb-2">
+        <i class="fa fa-clock me-1"></i>Tu pago está en proceso. Si elegiste OXXO o SPEI, se confirma cuando lo realices; te avisaremos por correo.
+      </p>
+    <% when 'rejected', 'cancelled' %>
+      <p class="text-danger mb-2"><i class="fa fa-circle-exclamation me-1"></i>El último intento de pago no se completó. Puedes intentarlo de nuevo.</p>
+    <% when 'amount_mismatch' %>
+      <p class="text-danger mb-2"><i class="fa fa-circle-exclamation me-1"></i>Estamos revisando tu pago; te contactaremos.</p>
+    <% end %>
+    <% if MercadoPago.configured? && mp_payment.provider_status != 'amount_mismatch' && !MercadoPago::PROVIDER_STATUSES_PENDING.include?(mp_payment.provider_status) %>
+      <%= button_to mercado_pago_pay_path(order_id: order.id), class: 'btn btn-primary btn-sm', form: { data: { turbo: false } } do %>
+        <i class="fa fa-lock me-1"></i>Pagar con Mercado Pago
+      <% end %>
+    <% end %>
+  </div>
+<% end %>

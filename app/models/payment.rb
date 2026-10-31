@@ -3,7 +3,7 @@
 class Payment < ApplicationRecord
   belongs_to :sale_order, primary_key: 'id'
 
-  enum :payment_method, { tarjeta_de_credito: 0, efectivo: 1, transferencia_bancaria: 2 }
+  enum :payment_method, { tarjeta_de_credito: 0, efectivo: 1, transferencia_bancaria: 2, mercado_pago: 3 }
 
   validates :amount, presence: true, numericality: { greater_than: 0 }
   validates :payment_method, presence: true, inclusion: { in: payment_methods.keys }
