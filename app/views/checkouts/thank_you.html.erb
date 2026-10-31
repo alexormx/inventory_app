@@ -62,6 +62,7 @@
                   <span class="badge bg-<%= payment_completed ? 'success' : 'warning' %>">
                     <%= payment_completed ? 'Pagado' : 'Pendiente' %>
                   </span>
+                  <%= render 'mercado_pago_payments/pay_status', order: @order %>
 
                   <%# Las instrucciones bancarias son configuración mutable y no
                       forman parte del snapshot histórico del pedido. %>

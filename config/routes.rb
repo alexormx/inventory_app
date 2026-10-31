@@ -444,6 +444,11 @@ Rails.application.routes.draw do
 
   get '/checkout/thank_you', to: 'checkouts#thank_you', as: :checkout_thank_you
 
+  # Mercado Pago Checkout Pro
+  post '/checkout/mercado_pago/:order_id/pay', to: 'mercado_pago_payments#pay', as: :mercado_pago_pay
+  get '/checkout/mercado_pago/return', to: 'mercado_pago_payments#back', as: :mercado_pago_return
+  post '/webhooks/mercado_pago', to: 'webhooks/mercado_pago#create', as: :webhooks_mercado_pago
+
   # Customer orders
   resources :orders, only: %i[index show] do
     member do

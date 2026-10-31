@@ -140,6 +140,8 @@
           </dd>
         </dl>
 
+        <%= render 'mercado_pago_payments/pay_status', order: @order unless order_canceled || is_paid %>
+
         <% if completed_payments.any? %>
           <hr class="my-2">
           <h3 class="h6 mb-1 small fw-semibold text-muted">Detalle de pagos</h3>

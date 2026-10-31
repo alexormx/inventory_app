@@ -1,0 +1,34 @@
+# Mercado Pago — Checkout Pro
+
+El cliente elige "Mercado Pago" en el paso 3, se crea el pedido (inventario
+apartado, pago `Pending`) y se le redirige a Mercado Pago. Al pagar regresa a
+`/checkout/mercado_pago/return`; el webhook confirma el pago aunque no regrese.
+
+## Configuración (la hace una persona, nunca un agente)
+
+1. Panel de desarrolladores de Mercado Pago → crear aplicación (Checkout Pro).
+2. Cargar credenciales en Heroku **sin imprimirlas**:
+   - `MERCADOPAGO_ACCESS_TOKEN` (de prueba primero, luego producción)
+   - `MERCADOPAGO_WEBHOOK_SECRET` (Webhooks → clave secreta)
+3. Webhooks → URL `https://pasatiempos.com.mx/webhooks/mercado_pago`, evento **Pagos**.
+   (Cada preferencia también manda `notification_url` con esa misma ruta.)
+4. Admin → Configuración → Métodos de pago → activar "Mercado Pago".
+   Sin `MERCADOPAGO_ACCESS_TOKEN` no aparece en el checkout aunque esté activo.
+
+## Cómo se decide que un pago está cobrado
+
+Solo `MercadoPago::SyncPayment`, consultando `GET /v1/payments/:id` en la API:
+nunca el `status` de la URL de regreso ni el cuerpo del webhook.
+
+| Estado en Mercado Pago | `payments.status` |
+|---|---|
+| `approved` (monto y MXN coinciden) | `Completed` → pedido `Confirmed` |
+| `approved` con monto distinto | sigue `Pending`, `provider_status = amount_mismatch` |
+| `pending`, `in_process` (OXXO/SPEI) | `Pending` |
+| `rejected`, `cancelled` | `Pending` (el cliente puede reintentar) |
+| `refunded`, `charged_back` | `Refunded` |
+
+## Pendiente (siguientes PRs)
+
+- Vencimiento del apartado de inventario para pagos OXXO/SPEI no realizados.
+- Datos de Mercado Pago y reembolsos en el admin del pedido.

@@ -47,7 +47,7 @@
     </div>
 
     <!-- Método de pago -->
-    <%= form_with url: checkout_complete_path, method: :post, local: true, html: { id: 'checkout-complete-form' } do %>
+    <%= form_with url: checkout_complete_path, method: :post, local: true, data: { turbo: false }, html: { id: 'checkout-complete-form' } do %>
       <%= hidden_field_tag :checkout_token, checkout_token %>
 
       <div class="card mb-4">
@@ -55,7 +55,7 @@
           <h6 class="mb-0"><i class="fa fa-credit-card me-2"></i>Método de pago</h6>
         </div>
         <div class="card-body">
-          <% payment_methods = PaymentMethod.active.checkout_compatible.ordered %>
+          <% payment_methods = PaymentMethod.for_checkout.ordered %>
 
           <% if payment_methods.any? %>
             <div class="d-flex flex-column gap-2"
