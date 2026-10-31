@@ -37,6 +37,27 @@ class User < ApplicationRecord
   # sus pedidos, sin datos personales y sin poder iniciar sesión.
   ANONYMIZED_EMAIL_DOMAIN = 'cuentas-eliminadas.invalid'
 
+  # Cuentas del registro público que no han confirmado su correo. Después de
+  # UNVERIFIED_REVIEW_AFTER pasan a revisión en el panel (Usuarios → Cuentas
+  # sin verificar). Las creadas por admin o API se confirman al crearse.
+  UNVERIFIED_REVIEW_AFTER = 48.hours
+
+  scope :unverified_self_registered, lambda {
+    where(role: 'customer', self_registered: true, confirmed_at: nil)
+      .where('email IS NULL OR email NOT LIKE ?', "%@#{ANONYMIZED_EMAIL_DOMAIN}")
+  }
+  scope :unverified_needing_review, lambda {
+    unverified_self_registered.where(created_at: ...UNVERIFIED_REVIEW_AFTER.ago)
+  }
+
+  def unverified_self_registered?
+    self_registered? && confirmed_at.nil? && role == 'customer' && !anonymized?
+  end
+
+  def unverified_needs_review?
+    unverified_self_registered? && created_at <= UNVERIFIED_REVIEW_AFTER.ago
+  end
+
   def anonymized?
     email.to_s.end_with?("@#{ANONYMIZED_EMAIL_DOMAIN}")
   end

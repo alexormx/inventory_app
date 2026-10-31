@@ -349,6 +349,13 @@ Rails.application.routes.draw do
     # Preventas y 'sobre pedido'
     get 'preorders', to: 'preorders#index', as: :preorders
     resources :favorites, only: %i[index show]
+    # Cuentas del registro público sin confirmar su correo
+    resources :unverified_accounts, only: :index do
+      member do
+        post :resend_confirmation
+        post :confirm
+      end
+    end
     post 'preorders/assign_now', to: 'preorders#assign_now', as: :preorders_assign_now
     delete 'preorders/:id', to: 'preorders#destroy', as: :preorder
     post   'preorders/:id/cancel', to: 'preorders#cancel', as: :preorder_cancel

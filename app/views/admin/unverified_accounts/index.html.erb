@@ -1,0 +1,63 @@
+<% content_for :title, 'Cuentas sin verificar' %>
+
+<h1 class="h4 mb-1">Cuentas sin verificar</h1>
+<p class="text-muted small mb-3">
+  Clientes que se registraron en la tienda y aún no confirman su correo; no pueden iniciar sesión hasta hacerlo.
+  Después de <%= (User::UNVERIFIED_REVIEW_AFTER / 1.hour).to_i %> horas pasan a <strong>En revisión</strong>.
+  Las cuentas creadas desde el admin o la API no aparecen aquí.
+</p>
+
+<div class="row g-2 mb-3">
+  <div class="col-auto"><span class="badge text-bg-warning">En revisión: <%= @review_count %></span></div>
+  <div class="col-auto"><span class="badge text-bg-secondary">Esperando confirmación: <%= @waiting_count %></span></div>
+</div>
+
+<% if @users.any? %>
+  <div class="table-responsive">
+    <table class="table table-sm table-striped align-middle">
+      <thead class="table-light">
+        <tr>
+          <th>Cliente</th>
+          <th>Estado</th>
+          <th>Registrada</th>
+          <th>Último correo enviado</th>
+          <th class="text-end" title="Productos que tiene guardados en favoritos">Favoritos</th>
+          <th>Última visita</th>
+          <th class="text-end">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @users.each do |user| %>
+          <tr id="<%= dom_id(user) %>">
+            <td>
+              <div class="fw-semibold"><%= user.name.presence || 'Sin nombre' %></div>
+              <div class="small text-muted"><%= user.email %><%= " · #{user.phone}" if user.phone.present? %></div>
+            </td>
+            <td>
+              <% if user.unverified_needs_review? %>
+                <span class="badge text-bg-warning">En revisión</span>
+              <% else %>
+                <span class="badge text-bg-secondary">Esperando confirmación</span>
+              <% end %>
+            </td>
+            <td class="small" title="<%= user.created_at.strftime('%d/%m/%Y %H:%M') %>">hace <%= time_ago_in_words(user.created_at) %></td>
+            <td class="small"><%= user.confirmation_sent_at ? "hace #{time_ago_in_words(user.confirmation_sent_at)}" : '—' %></td>
+            <td class="text-end"><%= @favorites[user.id].to_i %></td>
+            <td class="small"><%= (visit = @last_visits[user.id]) ? "hace #{time_ago_in_words(visit)}" : 'Nunca' %></td>
+            <td class="text-end text-nowrap">
+              <%= button_to 'Reenviar correo', resend_confirmation_admin_unverified_account_path(user),
+                            class: 'btn btn-sm btn-outline-primary', form_class: 'd-inline' %>
+              <%= button_to 'Verificar', confirm_admin_unverified_account_path(user),
+                            class: 'btn btn-sm btn-outline-success', form_class: 'd-inline',
+                            form: { data: { turbo_confirm: "¿Marcar como verificada la cuenta de #{user.email}? Podrá iniciar sesión sin confirmar su correo." } } %>
+              <%= link_to 'Ver perfil', admin_user_path(user), class: 'btn btn-sm btn-outline-secondary' %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+  <%= paginate @users %>
+<% else %>
+  <p class="text-muted">No hay cuentas pendientes de verificar.</p>
+<% end %>

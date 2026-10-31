@@ -58,7 +58,8 @@ module AdminSidebarHelper
         whatsapp: WhatsappRequest.sent.count,
         preorders: PreorderReservation.pending.count,
         reviews: Review.pending.count,
-        comments: Comment.pending.count
+        comments: Comment.pending.count,
+        unverified_accounts: User.unverified_needing_review.count
       }
     end
   end
