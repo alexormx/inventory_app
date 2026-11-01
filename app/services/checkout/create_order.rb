@@ -212,6 +212,10 @@ module Checkout
         # Recalcular totales ahora que ya tenemos líneas y snapshot
         sale_order.recalculate_totals!(persist: true)
 
+        # El envío elegido queda registrado desde ya, con el costo cobrado, para
+        # que el admin lo vea y lo edite como cualquier otro envío.
+        sale_order.create_shipment!(sale_order.initial_shipment_attributes)
+
         if sale_order.total_order_value.to_d.positive?
           sale_order.payments.create!(
             amount: sale_order.total_order_value,

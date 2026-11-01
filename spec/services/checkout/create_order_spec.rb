@@ -55,6 +55,23 @@ RSpec.describe Checkout::CreateOrder, type: :service do
       expect(so.payments.count).to eq(1)
       expect(so.total_order_value.to_f).to be > 0
     end
+
+    it 'registra el envío elegido con el costo cobrado, sin cambiar el total' do
+      2.times { Inventory.create!(product: product, status: :available, purchase_cost: 10.0) }
+
+      result = described_class.new(
+        user: user, cart: build_cart(product, 2), shipping_address_id: address.id,
+        shipping_method: 'standard', payment_method: 'transferencia_bancaria', notes: '', idempotency_key: nil
+      ).call
+
+      so = result.sale_order.reload
+      shipment = so.shipment
+      expect(shipment).to be_present
+      expect(shipment).to be_pending
+      expect(shipment.carrier).to eq(shipping_method.name)
+      expect(shipment.shipping_cost).to eq(so.shipping_cost)
+      expect(so.payments.first.amount).to eq(so.total_order_value)
+    end
   end
 
   context 'stock insuficiente sin preorder/backorder' do

@@ -82,17 +82,17 @@ RSpec.describe 'Admin sale orders: blank deletion and requested shipping', type:
       expect(Shipment.where(sale_order_id: order.id).count).to eq(1)
     end
 
-    it 'pre-fills the carrier of a new shipment' do
+    it 'pre-fills the carrier and the charged cost of a new shipment' do
       get new_admin_sale_order_shipment_path(order)
 
-      expect(response.body).to include('value="Envío Local (CDMX)"')
+      expect(response.body).to include('value="Envío Local (CDMX)"', 'value="149.0"')
     end
 
     it 'marks store pickup as personal delivery' do
       order.order_shipping_address.update!(shipping_method: 'recoger_tienda',
                                            raw_address_json: { 'shipping_method_name' => 'Recoger en Tienda' })
 
-      expect(order.reload.requested_shipment_attributes).to eq(carrier: 'Recoger en Tienda', delivery_type: :personal)
+      expect(order.reload.requested_shipment_attributes).to include(carrier: 'Recoger en Tienda', delivery_type: :personal)
     end
   end
 end

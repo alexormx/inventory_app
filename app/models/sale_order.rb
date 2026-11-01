@@ -113,11 +113,18 @@ class SaleOrder < ApplicationRecord
     snapshot = order_shipping_address
     return {} unless snapshot
 
-    # Sin shipping_cost: Shipment lo copia a la orden y recalcula totales al
-    # guardarse; el costo cobrado ya vive en sale_orders.shipping_cost.
-    attrs = { carrier: snapshot.shipping_method_name }
+    # Con el costo que ya se cobró: al guardarse, Shipment lo copia a la orden
+    # y recalcula; como es el mismo valor el total no cambia, y desde el envío
+    # se puede corregir después.
+    attrs = { carrier: snapshot.shipping_method_name, shipping_cost: shipping_cost.to_d }
     attrs[:delivery_type] = :personal if PICKUP_SHIPPING_CODES.include?(snapshot.shipping_method)
     attrs
+  end
+
+  # Envío pendiente inicial: el del checkout de la tienda, o "Por asignar".
+  def initial_shipment_attributes
+    { carrier: 'Por asignar', estimated_delivery: (order_date || Time.zone.today) + 7, status: :pending }
+      .merge(requested_shipment_attributes)
   end
 
   def total_paid
