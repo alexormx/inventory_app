@@ -51,7 +51,9 @@ module MercadoPago
           currency_id: 'MXN',
           unit_price: payment.amount.to_d.round(2).to_f
         }],
-        payer: { email: user.email, name: user.name.to_s }.compact_blank,
+        # En modo prueba no se manda el correo real: Mercado Pago rechaza el
+        # pago si una de las partes es real y la otra de prueba.
+        payer: (MercadoPago.test_mode? ? nil : { email: user.email, name: user.name.to_s }.compact_blank),
         external_reference: @sale_order.id.to_s,
         metadata: { sale_order_id: @sale_order.id, payment_id: payment.id },
         back_urls: @urls.slice(:success, :pending, :failure),

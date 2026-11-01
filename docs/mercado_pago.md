@@ -15,6 +15,17 @@ apartado, pago `Pending`) y se le redirige a Mercado Pago. Al pagar regresa a
 4. Admin → Configuración → Métodos de pago → activar "Mercado Pago".
    Sin `MERCADOPAGO_ACCESS_TOKEN` no aparece en el checkout aunque esté activo.
 
+## Modo prueba
+
+- Con credenciales `TEST-...` (o `MERCADOPAGO_TEST_MODE=true`, útil con las de
+  un usuario vendedor de prueba) Mercado Pago **solo lo ven los admins** y no se
+  manda el correo real del cliente.
+- Todo pago con `live_mode: false` es de prueba: nunca pasa a `Completed`, y si
+  se aprueba el pedido se **cancela solo** (libera inventario, sale de los
+  reportes) con la nota "Pedido de prueba". En el admin lleva la etiqueta *Prueba*.
+- Al pasar a producción: cargar el Access Token de producción y quitar
+  `MERCADOPAGO_TEST_MODE` si se usó.
+
 ## Cómo se decide que un pago está cobrado
 
 Solo `MercadoPago::SyncPayment`, consultando `GET /v1/payments/:id` en la API:

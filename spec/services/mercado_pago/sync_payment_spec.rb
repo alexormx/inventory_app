@@ -7,10 +7,10 @@ RSpec.describe MercadoPago::SyncPayment do
   let!(:payment) { create(:payment, sale_order: order, amount: 350, payment_method: 'mercado_pago', status: 'Pending') }
   let(:client) { instance_double(MercadoPago::Client) }
 
-  def api_payment(id, status:, amount: 350, currency: 'MXN', ref: order.id.to_s)
+  def api_payment(id, status:, amount: 350, currency: 'MXN', ref: order.id.to_s, live_mode: true)
     allow(client).to receive(:payment).with(id).and_return(
       'id' => id.to_i, 'status' => status, 'status_detail' => "detail_#{status}", 'payment_type_id' => 'credit_card',
-      'transaction_amount' => amount, 'currency_id' => currency, 'external_reference' => ref
+      'transaction_amount' => amount, 'currency_id' => currency, 'external_reference' => ref, 'live_mode' => live_mode
     )
   end
 
@@ -80,5 +80,39 @@ RSpec.describe MercadoPago::SyncPayment do
 
     expect(sync('777').ignored_reason).to be_present
     expect(payment.reload.status).to eq('Pending')
+  end
+
+  describe 'test payments (live_mode: false)' do
+    it 'never counts an approved test payment as income and cancels the order to release it' do
+      api_payment('900', status: 'approved', live_mode: false)
+
+      result = sync('900')
+
+      expect(result).to be_test_payment
+      expect(payment.reload).to have_attributes(status: 'Pending', provider_status: 'approved', provider_live_mode: false)
+      expect(order.reload.status).to eq('Canceled')
+      expect(order.notes).to include('Pedido de prueba')
+    end
+
+    it 'releases the reserved inventory of a test order' do
+      product = create(:product, skip_seed_inventory: true)
+      item = create(:sale_order_item, sale_order: order, product: product, quantity: 1)
+      unit = create(:inventory, product: product, status: :reserved, sale_order: order, sale_order_item: item)
+      api_payment('901', status: 'approved', live_mode: false)
+
+      sync('901')
+
+      expect(unit.reload.status).to eq('available')
+      expect(unit.sale_order_id).to be_nil
+    end
+
+    it 'leaves a rejected or pending test payment open for more tests' do
+      api_payment('902', status: 'rejected', live_mode: false)
+
+      sync('902')
+
+      expect(order.reload.status).to eq('Pending')
+      expect(payment.reload.provider_live_mode).to be(false)
+    end
   end
 end

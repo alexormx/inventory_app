@@ -9,12 +9,18 @@ class PaymentMethod < ApplicationRecord
   scope :checkout_compatible, -> { where(code: legacy_enum_mapping.keys) }
 
   # Lo que se ofrece en el checkout. Mercado Pago solo aparece si, además de
-  # estar activo, hay credenciales configuradas: activarlo sin token dejaría
-  # al cliente con un pedido que no puede pagar.
-  def self.for_checkout
+  # estar activo, hay credenciales configuradas (sin token el cliente quedaría
+  # con un pedido que no puede pagar) y, en modo prueba, solo para admins.
+  def self.for_checkout(user: nil)
     scope = active.checkout_compatible
-    scope = scope.where.not(code: 'mercado_pago') unless MercadoPago.configured?
+    scope = scope.where.not(code: 'mercado_pago') unless mercado_pago_offered_to?(user)
     scope
+  end
+
+  def self.mercado_pago_offered_to?(user)
+    return false unless MercadoPago.configured?
+
+    !MercadoPago.test_mode? || user&.admin? == true
   end
 
   before_validation :normalize_code

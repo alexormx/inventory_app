@@ -1,7 +1,11 @@
 <%# Estado y botón de pago de Mercado Pago de un pedido (gracias / mis pedidos).
     Local: order. No muestra nada si el pedido no se paga con Mercado Pago. %>
 <% mp_payment = order.payments.select(&:mercado_pago?).max_by(&:created_at) %>
-<% if mp_payment && mp_payment.status == 'Pending' %>
+<% if mp_payment && mp_payment.provider_live_mode == false %>
+  <p class="mt-2 small text-muted mb-0" data-mercado-pago-status="test">
+    <i class="fa fa-flask me-1"></i>Pago de prueba de Mercado Pago<%= ': el pedido se canceló y no cuenta como venta' if order.status == 'Canceled' %>.
+  </p>
+<% elsif mp_payment && mp_payment.status == 'Pending' && !order.status.in?(SaleOrder::NO_DEBT_STATUSES) %>
   <div class="mt-2 small" data-mercado-pago-status="<%= mp_payment.provider_status.presence || 'none' %>">
     <% case mp_payment.provider_status %>
     <% when *MercadoPago::PROVIDER_STATUSES_PENDING %>

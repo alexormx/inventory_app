@@ -45,4 +45,15 @@ RSpec.describe MercadoPago::CreatePreference do
 
     expect(result.error).to include('No pudimos abrir Mercado Pago')
   end
+
+  it 'does not send the real customer email while using test credentials' do
+    create(:payment, sale_order: order, amount: 412.5, payment_method: 'mercado_pago', status: 'Pending')
+    allow(MercadoPago).to receive(:test_mode?).and_return(true)
+    sent = nil
+    allow(client).to receive(:create_preference) { |body, **| (sent = body) && { 'id' => 'p', 'init_point' => 'u' } }
+
+    described_class.call(sale_order: order, urls: urls, client: client)
+
+    expect(sent).not_to have_key(:payer)
+  end
 end

@@ -22,8 +22,13 @@ class MercadoPagoPaymentsController < ApplicationController
     order = current_user.sale_orders.find_by(id: params[:external_reference].to_s)
     return redirect_to(orders_path, alert: 'No encontramos el pedido de este pago.') unless order
 
-    provider_status = sync(params[:payment_id]) || params[:status].to_s
-    redirect_to checkout_thank_you_path(order_id: order.id), **flash_for(provider_status)
+    result = sync(params[:payment_id])
+    flash_options = if result&.test_payment? && result.provider_status == 'approved'
+                      { notice: 'Pago de prueba aprobado. El pedido se canceló automáticamente y no cuenta como venta.' }
+                    else
+                      flash_for(result&.provider_status || params[:status].to_s)
+                    end
+    redirect_to checkout_thank_you_path(order_id: order.id), **flash_options
   end
 
   private
@@ -31,7 +36,7 @@ class MercadoPagoPaymentsController < ApplicationController
   def sync(provider_payment_id)
     return if provider_payment_id.blank? || provider_payment_id == 'null'
 
-    MercadoPago::SyncPayment.call(provider_payment_id: provider_payment_id).provider_status
+    MercadoPago::SyncPayment.call(provider_payment_id: provider_payment_id)
   rescue MercadoPago::Error => e
     Rails.logger.error("[MercadoPagoPayments#return] #{e.message}")
     nil
