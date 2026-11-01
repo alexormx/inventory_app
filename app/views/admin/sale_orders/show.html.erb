@@ -36,6 +36,11 @@
       <% elsif is_overdue %>
         <span class="badge bg-danger"><i class="fa-solid fa-triangle-exclamation me-1"></i>Vencida <%= days_overdue %>d</span>
       <% end %>
+      <% if @sale_order.payments.any? { |p| p.mercado_pago? && p.provider_live_mode == false } %>
+        <span class="badge text-bg-info" title="Pagado con una cuenta o tarjeta de prueba de Mercado Pago; no cuenta como venta">
+          <i class="fa-solid fa-flask me-1"></i>Prueba
+        </span>
+      <% end %>
     </h2>
     <div class="d-flex gap-2 flex-wrap">
       <%= link_to admin_sale_orders_path, class: "btn btn-outline-secondary btn-sm" do %>

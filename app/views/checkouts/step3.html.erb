@@ -55,7 +55,7 @@
           <h6 class="mb-0"><i class="fa fa-credit-card me-2"></i>Método de pago</h6>
         </div>
         <div class="card-body">
-          <% payment_methods = PaymentMethod.for_checkout.ordered %>
+          <% payment_methods = PaymentMethod.for_checkout(user: current_user).ordered %>
 
           <% if payment_methods.any? %>
             <div class="d-flex flex-column gap-2"

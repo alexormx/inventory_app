@@ -111,4 +111,52 @@ RSpec.describe 'Mercado Pago Checkout Pro', type: :request do
       expect(response).to have_http_status(:ok)
     end
   end
+
+  describe 'test mode' do
+    let(:product) { create(:product, selling_price: 100.00) }
+    let!(:shipping_method) { create(:shipping_method, :standard) }
+
+    before do
+      create(:payment_method, name: 'Mercado Pago', code: 'mercado_pago', account_number: nil, instructions: nil)
+      allow(MercadoPago).to receive_messages(configured?: true, test_mode?: true)
+    end
+
+    def reach_step3(buyer)
+      sign_in buyer
+      address = create(:shipping_address, user: buyer, default: true)
+      post cart_items_path, params: { product_id: product.id, quantity: 1 }
+      post checkout_step2_path, params: { selected_address_id: address.id, shipping_method: shipping_method.code }
+      get checkout_step3_path
+    end
+
+    it 'offers Mercado Pago only to admins' do
+      reach_step3(user)
+      expect(response.body).not_to include('value="mercado_pago"')
+
+      sign_out user
+      reach_step3(create(:user, :admin))
+      expect(response.body).to include('value="mercado_pago"')
+    end
+
+    it 'rejects a forged mercado_pago choice from a customer' do
+      reach_step3(user)
+
+      post checkout_complete_path, params: { payment_method: 'mercado_pago', checkout_token: session[:checkout_token], accept_pending: '1' }
+
+      expect(user.sale_orders).to be_empty
+      expect(flash[:alert]).to include('Método de pago inválido')
+    end
+
+    it 'tells the tester the approved test payment was not counted' do
+      order = create(:sale_order, user: user)
+      create(:payment, sale_order: order, amount: 100, payment_method: 'mercado_pago', status: 'Pending')
+      sign_in user
+      allow(MercadoPago::SyncPayment).to receive(:call)
+        .and_return(MercadoPago::SyncPayment::Result.new(provider_status: 'approved', test_payment: true))
+
+      get mercado_pago_return_path, params: { payment_id: '5', external_reference: order.id }
+
+      expect(flash[:notice]).to include('Pago de prueba aprobado')
+    end
+  end
 end

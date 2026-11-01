@@ -147,7 +147,7 @@ class CheckoutsController < ApplicationController
 
     # Validar método de pago usando PaymentMethod de la base de datos
     payment_method = params[:payment_method]
-    payment_method_record = PaymentMethod.for_checkout.find_by(code: payment_method)
+    payment_method_record = PaymentMethod.for_checkout(user: current_user).find_by(code: payment_method)
     unless payment_method_record
       flash[:alert] = 'Método de pago inválido.'
       redirect_to(checkout_step3_path) and return
