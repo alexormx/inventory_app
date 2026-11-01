@@ -71,6 +71,27 @@
           Cancelación requiere revisión de pago/devolución
         </span>
       <% end %>
+      <%# Solo pedidos en blanco: sin productos, inventario ni dinero recibido. %>
+      <% delete_blockers = SaleOrders::DestroyBlankOrder.blocking_reasons(@sale_order) %>
+      <% if delete_blockers.empty? %>
+        <%= button_to admin_sale_order_path(@sale_order),
+                      method: :delete,
+                      class: 'btn btn-danger btn-sm',
+                      data: {
+                        controller: 'confirm',
+                        action: 'click->confirm#ask',
+                        confirm_title: 'Eliminar orden en blanco',
+                        confirm_message: 'Esta orden no tiene productos ni dinero recibido. Se eliminará definitivamente junto con su envío sin despachar y su carrito de la tienda; el historial de inventario se conserva. ¿Deseas continuar?',
+                        confirm_confirm_label: 'Eliminar orden'
+                      } do %>
+          <i class="fa-solid fa-trash"></i> Eliminar
+        <% end %>
+      <% elsif @sale_order.sale_order_items.none? %>
+        <span class="btn btn-outline-secondary btn-sm disabled" aria-disabled="true"
+              title="No se puede eliminar: <%= delete_blockers.to_sentence %>">
+          <i class="fa-solid fa-trash"></i> No se puede eliminar: <%= delete_blockers.to_sentence %>
+        </span>
+      <% end %>
     </div>
   </div>
 
@@ -339,6 +360,27 @@
   <turbo-frame id="payments_table">
     <%= render "admin/payments/payment_table", payments: @sale_order.payments %>
   </turbo-frame>
+
+  <%# Envío que eligió el cliente en la tienda (snapshot del checkout) %>
+  <% if (requested = @sale_order.order_shipping_address) %>
+    <div class="card border-0 shadow-sm mb-3" id="requested-shipping">
+      <div class="card-body py-3">
+        <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+          <div>
+            <div class="small text-muted text-uppercase fw-semibold mb-1">Envío elegido por el cliente</div>
+            <div class="fw-bold"><i class="fa-solid fa-truck text-primary me-1"></i><%= requested.shipping_method_name %></div>
+            <div class="small text-muted mt-1">
+              <%= requested.full_name %> · <%= [requested.line1, requested.line2.presence, requested.city, requested.state, requested.postal_code].compact.join(', ') %>
+            </div>
+          </div>
+          <div class="text-end">
+            <div class="small text-muted">Costo cobrado</div>
+            <div class="fw-bold"><%= number_to_currency(@sale_order.shipping_cost) %></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% end %>
 
   <%# Sección de envío %>
   <turbo-frame id="shipment_modal"></turbo-frame>

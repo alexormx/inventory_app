@@ -8,7 +8,7 @@ module Admin
     before_action :set_shipment, only: %i[edit update destroy]
 
     def new
-      @shipment = @sale_order.build_shipment
+      @shipment = @sale_order.build_shipment(@sale_order.requested_shipment_attributes)
       render partial: 'admin/shipments/form', locals: { shipment: @shipment, sale_order: @sale_order }
     end
 

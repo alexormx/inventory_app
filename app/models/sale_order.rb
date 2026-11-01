@@ -100,6 +100,26 @@ class SaleOrder < ApplicationRecord
   # after_commit: si la transición se revierte, las cifras no se tocan.
   after_commit :refresh_product_sales_stats, on: %i[create update], if: :sales_activity_changed?
 
+  # Envío que el cliente eligió en el checkout (snapshot en
+  # order_shipping_addresses). Sirve de valor inicial del Shipment del admin:
+  # antes se creaba con "Por asignar" y parecía que no se había guardado.
+  PICKUP_SHIPPING_CODES = %w[recoger_tienda].freeze
+
+  def requested_shipping_method_name
+    order_shipping_address&.shipping_method_name
+  end
+
+  def requested_shipment_attributes
+    snapshot = order_shipping_address
+    return {} unless snapshot
+
+    # Sin shipping_cost: Shipment lo copia a la orden y recalcula totales al
+    # guardarse; el costo cobrado ya vive en sale_orders.shipping_cost.
+    attrs = { carrier: snapshot.shipping_method_name }
+    attrs[:delivery_type] = :personal if PICKUP_SHIPPING_CODES.include?(snapshot.shipping_method)
+    attrs
+  end
+
   def total_paid
     payments.where(status: 'Completed').sum(:amount)
   end
