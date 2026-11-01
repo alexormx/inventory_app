@@ -12,6 +12,11 @@
       <p class="text-muted mb-2">
         <i class="fa fa-clock me-1"></i>Tu pago está en proceso. Si elegiste OXXO o SPEI, se confirma cuando lo realices; te avisaremos por correo.
       </p>
+      <% if mp_payment.provider_ticket_url.present? %>
+        <%= link_to mp_payment.provider_ticket_url, class: 'btn btn-outline-primary btn-sm mb-2', target: '_blank', rel: 'noopener' do %>
+          <i class="fa fa-receipt me-1"></i>Ver ficha de pago
+        <% end %>
+      <% end %>
     <% when 'rejected', 'cancelled' %>
       <p class="text-danger mb-2"><i class="fa fa-circle-exclamation me-1"></i>El último intento de pago no se completó. Puedes intentarlo de nuevo.</p>
     <% when 'amount_mismatch' %>

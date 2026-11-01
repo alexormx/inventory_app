@@ -1,0 +1,10 @@
+Tu ficha de pago - Pedido #<%= @sale_order.id %>
+
+Hola <%= @user.name.presence || 'cliente' %>, ya está lista la ficha para pagar tu pedido #<%= @sale_order.id %>.
+
+Monto a pagar: <%= number_to_currency(@payment.amount, unit: "$") %>
+Ficha (referencia, código de barras e instrucciones para OXXO o SPEI):
+<%= @payment.provider_ticket_url %>
+
+Tu pedido queda apartado mientras realizas el pago. Cuando Mercado Pago lo confirme te enviaremos otro correo.
+Ver mi pedido: <%= order_url(@sale_order) %>

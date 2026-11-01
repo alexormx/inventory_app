@@ -60,7 +60,10 @@
 <body>
   <div class="email-container">
     <div style="text-align: center; margin-bottom: 20px;">
-      <%= image_tag "https://pasatiempos.com.mx/logo.png", alt: "Logo", style: "max-width: 100px; height: auto; width: 100%;" %>
+      <%# Tamaño fijo con atributos: Outlook y otros clientes ignoran max-width
+          y mostraban el PNG de 390px a tamaño completo. %>
+      <%= image_tag "https://pasatiempos.com.mx/logo.png", alt: Rails.configuration.app_name, width: 64, height: 64,
+                    style: "display: inline-block; width: 64px; height: 64px; max-width: 64px; border: 0;" %>
       <h2><%= Rails.configuration.app_name.upcase %></h2>
     </div>
 

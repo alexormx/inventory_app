@@ -58,14 +58,25 @@ Método: <%= @shipping_address.shipping_method.humanize %>
 <% if @payment %>
 PAGO:
 -------------------------------------
-Método: <%= @payment.payment_method.humanize %>
+Método: <%= @payment_method_record&.name || @payment.payment_method.humanize %>
 Monto registrado: <%= number_to_currency(@payment.amount, unit: "$") %>
 <% case @payment.status %>
 <% when 'Completed' %>
 Tu pago está registrado como completado. Prepararemos el pedido para su envío.
 <% when 'Pending' %>
-<% if @payment.payment_method == 'transferencia_bancaria' %>
-Tu transferencia está pendiente. Usa únicamente los datos de pago que confirmaste al finalizar la compra e incluye el número de pedido <%= @sale_order.id %> como referencia.
+<% if @payment.payment_method == 'mercado_pago' %>
+Completa tu pago con Mercado Pago. Si elegiste OXXO o SPEI, te enviaremos la ficha con la referencia en otro correo en cuanto se genere.
+Ver mi pedido y pagar: <%= order_url(@sale_order) %>
+<% elsif @payment_method_record&.account_number.present? %>
+Realiza tu pago con estos datos e incluye el número de pedido <%= @sale_order.id %> como referencia:
+<% if @payment_method_record.bank_name.present? %>Banco: <%= @payment_method_record.bank_name %>
+<% end %><%= @payment_method_record.clabe_or_card_label %>: <%= @payment_method_record.account_number %>
+<% if @payment_method_record.account_holder.present? %>Beneficiario: <%= @payment_method_record.account_holder %>
+<% end %>Monto: <%= number_to_currency(@payment.amount, unit: "$") %>
+<% if @payment_method_record.instructions.present? %><%= @payment_method_record.instructions %>
+<% end %>
+<% elsif @payment.payment_method == 'transferencia_bancaria' %>
+Tu transferencia está pendiente. Contáctanos para recibir los datos de pago e incluye el número de pedido <%= @sale_order.id %> como referencia.
 <% else %>
 Tu pago está pendiente. Sigue las instrucciones confirmadas al finalizar la compra o contáctanos indicando el número de pedido <%= @sale_order.id %>.
 <% end %>

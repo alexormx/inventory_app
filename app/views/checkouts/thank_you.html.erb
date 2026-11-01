@@ -141,12 +141,35 @@
           <div class="card-body">
             <ol class="mb-0">
               <% payment = @order.payments.last %>
-              <% if payment && payment.status != 'Completed' %>
+              <% if payment&.mercado_pago? && payment.status != 'Completed' %>
                 <li class="mb-2">
-                  <strong>Realiza tu pago</strong> usando los datos proporcionados arriba.
+                  <strong>Completa tu pago en Mercado Pago.</strong> Si elegiste OXXO o SPEI, paga con la ficha que te enviamos por correo.
                 </li>
                 <li class="mb-2">
-                  <strong>Envía tu comprobante</strong> por WhatsApp o correo para agilizar la confirmación.
+                  <strong>No necesitas enviar comprobante:</strong> Mercado Pago nos avisa en cuanto se acredita y tu pedido se confirma solo.
+                </li>
+              <% elsif payment && payment.status != 'Completed' %>
+                <% method_record = PaymentMethod.find_by(code: payment.payment_method) %>
+                <li class="mb-2">
+                  <strong>Realiza tu pago</strong> por <%= number_to_currency(payment.amount) %>
+                  <% if method_record&.account_number.present? %>
+                    con estos datos e incluye el número de pedido <strong><%= @order.id %></strong> como referencia:
+                    <div class="mt-2 p-2 bg-light rounded small">
+                      <% if method_record.bank_name.present? %><div>Banco: <strong><%= method_record.bank_name %></strong></div><% end %>
+                      <div><%= method_record.clabe_or_card_label %>: <code class="user-select-all"><%= method_record.account_number %></code></div>
+                      <% if method_record.account_holder.present? %><div>Beneficiario: <strong><%= method_record.account_holder %></strong></div><% end %>
+                      <% if method_record.instructions.present? %><div class="text-muted mt-1"><%= method_record.instructions %></div><% end %>
+                    </div>
+                  <% else %>
+                    y contáctanos si necesitas los datos de pago.
+                  <% end %>
+                </li>
+                <li class="mb-2">
+                  <% wa_text = ERB::Util.url_encode("Hola, envío el comprobante de pago del pedido #{@order.id}") %>
+                  <strong>Envía tu comprobante</strong> por
+                  <a href="https://wa.me/<%= Rails.configuration.whatsapp_number %>?text=<%= wa_text %>" target="_blank" rel="noopener">WhatsApp (<%= Rails.configuration.whatsapp_number %>)</a>
+                  o al correo <a href="mailto:soporte@pasatiempos.com.mx?subject=<%= ERB::Util.url_encode("Comprobante pedido #{@order.id}") %>">soporte@pasatiempos.com.mx</a>
+                  para agilizar la confirmación.
                 </li>
               <% end %>
               <li class="mb-2">

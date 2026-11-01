@@ -30,12 +30,18 @@ module MercadoPago
       payment = sale_order.payments.mercado_pago.order(:created_at).last
       return ignored('el pedido no tiene pago de Mercado Pago', data) unless payment
 
-      test_payment = data['live_mode'] == false
+      # live_mode no basta: con credenciales de un usuario vendedor de prueba
+      # Mercado Pago responde live_mode: true. En modo prueba todo es prueba.
+      test_payment = data['live_mode'] == false || MercadoPago.test_mode?
+      new_ticket = false
       Payment.transaction do
         payment.lock!
+        had_ticket = payment.provider_ticket_url.present?
         test_payment ? apply_test(payment, data) : apply(payment, data)
+        new_ticket = !had_ticket && payment.provider_ticket_url.present? && payment.status == 'Pending'
       end
       cancel_test_order(sale_order) if test_payment && data['status'] == 'approved'
+      send_ticket_email(sale_order) if new_ticket
       Result.new(payment: payment, provider_status: data['status'], test_payment: test_payment)
     end
 
@@ -78,9 +84,16 @@ module MercadoPago
     # pero el Payment nunca pasa a Completed, así que no es ingreso ni confirma
     # el pedido. Esto aplica aunque la tienda use credenciales de producción.
     def apply_test(payment, data)
-      return if payment.status == 'Completed'
+      attrs = provider_attrs(data).merge(provider_live_mode: false)
+      if payment.status == 'Completed'
+        # Solo se corrige el cobro de prueba que se registró como real (antes
+        # de detectar usuarios de prueba); nunca otro cobro distinto.
+        return unless payment.provider_payment_id == @provider_payment_id
 
-      payment.update!(provider_attrs(data).merge(provider_live_mode: false))
+        attrs[:status] = 'Pending'
+        attrs[:paid_at] = nil
+      end
+      payment.update!(attrs)
     end
 
     def provider_attrs(data)
@@ -88,8 +101,16 @@ module MercadoPago
         provider_payment_id: @provider_payment_id,
         provider_status: data['status'].to_s,
         provider_status_detail: data['status_detail'],
-        provider_payment_type: data['payment_type_id']
-      }
+        provider_payment_type: data['payment_type_id'],
+        provider_ticket_url: data.dig('transaction_details', 'external_resource_url').presence
+      }.compact
+    end
+
+    # Ficha de OXXO/SPEI recién generada: se manda por correo con el enlace.
+    def send_ticket_email(sale_order)
+      OrderConfirmationMailer.mercado_pago_ticket(sale_order).deliver_later
+    rescue StandardError => e
+      Rails.logger.error("[MercadoPago::SyncPayment] no se pudo encolar la ficha del pedido #{sale_order.id} (#{e.class})")
     end
 
     # El flujo de prueba terminó: se cancela el pedido para liberar el

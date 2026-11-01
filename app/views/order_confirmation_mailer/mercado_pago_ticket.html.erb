@@ -1,0 +1,15 @@
+<div class="order-email-container">
+  <div class="order-email-content">
+    <h1>Tu ficha de pago</h1>
+    <p>Hola <%= @user.name.presence || 'cliente' %>, ya está lista la ficha para pagar tu pedido <strong>#<%= @sale_order.id %></strong>.</p>
+
+    <div class="order-email-summary">
+      <p><strong>Monto a pagar:</strong> <%= number_to_currency(@payment.amount, unit: "$") %></p>
+      <p>Ábrela para ver la referencia o el código de barras y las instrucciones para pagar en OXXO o por SPEI.</p>
+      <p style="text-align: center;"><a class="btn" href="<%= @payment.provider_ticket_url %>" style="color: #fff;">Ver ficha de pago</a></p>
+    </div>
+
+    <p>Tu pedido queda apartado mientras realizas el pago. Cuando Mercado Pago lo confirme te enviaremos otro correo.</p>
+    <p><a href="<%= order_url(@sale_order) %>">Ver mi pedido</a></p>
+  </div>
+</div>

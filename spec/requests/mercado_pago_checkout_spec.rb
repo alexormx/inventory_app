@@ -105,6 +105,14 @@ RSpec.describe 'Mercado Pago Checkout Pro', type: :request do
       expect(response).to have_http_status(:unauthorized)
     end
 
+    it 'acknowledges unsigned legacy IPN payment notices without processing them' do
+      expect do
+        post webhooks_mercado_pago_path(topic: 'payment', id: '123')
+      end.not_to have_enqueued_job(MercadoPago::SyncPaymentJob)
+
+      expect(response).to have_http_status(:ok)
+    end
+
     it 'acknowledges other topics so Mercado Pago does not retry them' do
       post webhooks_mercado_pago_path(topic: 'merchant_order', id: '5')
 
@@ -157,6 +165,31 @@ RSpec.describe 'Mercado Pago Checkout Pro', type: :request do
       get mercado_pago_return_path, params: { payment_id: '5', external_reference: order.id }
 
       expect(flash[:notice]).to include('Pago de prueba aprobado')
+    end
+  end
+
+  describe 'thank-you next steps' do
+    before { sign_in user }
+
+    it 'tells Mercado Pago customers no receipt is needed' do
+      order = create(:sale_order, user: user)
+      create(:payment, sale_order: order, amount: 100, payment_method: 'mercado_pago', status: 'Pending')
+
+      get checkout_thank_you_path(order_id: order.id)
+
+      expect(response.body).to include('No necesitas enviar comprobante')
+      expect(response.body).not_to include('Envía tu comprobante')
+    end
+
+    it 'gives transfer customers the bank details and where to send the receipt' do
+      create(:payment_method, :transferencia_bancaria)
+      order = create(:sale_order, user: user)
+      create(:payment, sale_order: order, amount: 100, payment_method: 'transferencia_bancaria', status: 'Pending')
+
+      get checkout_thank_you_path(order_id: order.id)
+
+      expect(response.body).to include('012345678901234567', "https://wa.me/#{Rails.configuration.whatsapp_number}",
+                                        'soporte@pasatiempos.com.mx')
     end
   end
 end

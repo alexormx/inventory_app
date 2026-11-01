@@ -20,7 +20,9 @@ apartado, pago `Pending`) y se le redirige a Mercado Pago. Al pagar regresa a
 - Con credenciales `TEST-...` (o `MERCADOPAGO_TEST_MODE=true`, útil con las de
   un usuario vendedor de prueba) Mercado Pago **solo lo ven los admins** y no se
   manda el correo real del cliente.
-- Todo pago con `live_mode: false` es de prueba: nunca pasa a `Completed`, y si
+- Con credenciales de un **usuario vendedor de prueba** Mercado Pago responde
+  `live_mode: true`; por eso, con `MERCADOPAGO_TEST_MODE=true`, **todo** pago se
+  trata como de prueba. Fuera de modo prueba, todo pago con `live_mode: false` es de prueba: nunca pasa a `Completed`, y si
   se aprueba el pedido se **cancela solo** (libera inventario, sale de los
   reportes) con la nota "Pedido de prueba". En el admin lleva la etiqueta *Prueba*.
 - Al pasar a producción: cargar el Access Token de producción y quitar
@@ -38,6 +40,24 @@ nunca el `status` de la URL de regreso ni el cuerpo del webhook.
 | `pending`, `in_process` (OXXO/SPEI) | `Pending` |
 | `rejected`, `cancelled` | `Pending` (el cliente puede reintentar) |
 | `refunded`, `charged_back` | `Refunded` |
+
+## Avisos (webhooks)
+
+- Solo se procesan los Webhooks firmados (`?data.id=…&type=payment`). Sin
+  `MERCADOPAGO_WEBHOOK_SECRET` todos se rechazan con 401 y los pagos de
+  OXXO/SPEI nunca se confirmarían.
+- Los avisos IPN viejos (`?id=…&topic=…`) no traen firma: se responden 200 sin procesar.
+
+## OXXO / SPEI
+
+El pago queda `pending` con la ficha en `transaction_details.external_resource_url`.
+Se guarda en `payments.provider_ticket_url`, se manda por correo una vez
+(`OrderConfirmationMailer#mercado_pago_ticket`) y se muestra el botón
+"Ver ficha de pago". Al pagarse llega el webhook `approved` y el pedido se confirma.
+
+## Re-sincronizar un pago
+
+    heroku run rake 'mercado_pago:resync[PAYMENT_ID]'
 
 ## Pendiente (siguientes PRs)
 
