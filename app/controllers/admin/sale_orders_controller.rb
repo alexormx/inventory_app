@@ -90,9 +90,16 @@ module Admin
       render :edit, status: :unprocessable_entity
     end
 
+    # Solo pedidos en blanco (SaleOrders::DestroyBlankOrder). Los que tienen
+    # productos, inventario o pagos se cancelan para conservar el historial.
     def destroy
-      redirect_to admin_sale_order_path(@sale_order),
-                  alert: 'La eliminación está deshabilitada. Usa Cancelar para liberar inventario.'
+      result = SaleOrders::DestroyBlankOrder.call(@sale_order)
+      if result.success?
+        redirect_to admin_sale_orders_path, notice: "Orden #{@sale_order.id} eliminada."
+      else
+        redirect_to admin_sale_order_path(@sale_order),
+                    alert: "No se puede eliminar: #{result.reasons.to_sentence}. Usa Cancelar para conservar el historial."
+      end
     end
 
     def cancel
@@ -133,9 +140,8 @@ module Admin
       if @sale_order.shipment.blank?
         order_base = @sale_order.order_date || Time.zone.today
         @sale_order.create_shipment!(
-          carrier: 'Por asignar',
-          estimated_delivery: order_base + 7,
-          status: :pending
+          { carrier: 'Por asignar', estimated_delivery: order_base + 7, status: :pending }
+            .merge(@sale_order.requested_shipment_attributes)
         )
         @sale_order.reload
       end
