@@ -64,43 +64,58 @@
                  data-selectable-cards-active-class-value="is-selected">
               <% payment_methods.each_with_index do |pm, idx| %>
                 <% brand = payment_method_brand(pm) %>
-                <label class="pm-option pm-option--<%= brand.key %> rounded p-3 <%= 'is-selected' if idx == 0 %>" style="cursor: pointer;">
-                  <div class="d-flex align-items-start">
-                    <input type="radio" name="payment_method" value="<%= pm.code %>" class="form-check-input me-3 mt-2" required <%= 'checked' if idx == 0 %>>
-                    <div class="flex-grow-1 min-w-0">
-                      <div class="d-flex align-items-center gap-2">
-                        <span class="pm-option__mark" aria-hidden="true"><i class="<%= brand.icon %>"></i></span>
-                        <div class="min-w-0">
-                          <strong class="pm-option__name d-block"><%= pm.name %></strong>
-                          <% if brand.tagline %><span class="small text-muted"><%= brand.tagline %></span><% end %>
-                        </div>
-                      </div>
-                      <% if pm.account_number.present? || pm.instructions.present? %>
-                        <div class="pm-option__details mt-2 p-2 rounded small">
-                          <% if pm.bank_name.present? && pm.account_holder.present? %>
-                            <div class="text-muted mb-1">
-                              <i class="fa fa-university me-1"></i><%= pm.bank_name %> • <%= pm.account_holder %>
-                            </div>
-                          <% end %>
-                          <% if pm.account_number.present? %>
-                            <div class="d-flex align-items-center gap-2">
-                              <span class="text-muted"><%= pm.clabe_or_card_label %>:</span>
-                              <code class="bg-white px-2 py-1 rounded border user-select-all"><%= pm.account_number %></code>
-                              <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-1" title="Copiar"
+                <% digits = pm.account_number.to_s.gsub(/\D/, '') %>
+                <%# Las indicaciones que solo repiten banco/cuenta ya se ven abajo con su etiqueta. %>
+                <% note = pm.instructions.presence unless digits.present? && pm.instructions.to_s.gsub(/\D/, '').include?(digits) %>
+                <label class="pm-option pm-option--<%= brand.key %> rounded <%= 'is-selected' if idx == 0 %>">
+                  <span class="pm-option__head">
+                    <input type="radio" name="payment_method" value="<%= pm.code %>" class="form-check-input flex-shrink-0" required <%= 'checked' if idx == 0 %>>
+                    <span class="pm-option__mark" aria-hidden="true"><i class="<%= brand.icon %>"></i></span>
+                    <strong class="pm-option__name"><%= pm.name %></strong>
+                    <i class="fa-solid fa-chevron-down pm-option__chevron ms-auto" aria-hidden="true"></i>
+                  </span>
+
+                  <%# Solo se despliega la opción elegida (CSS: .is-selected / :checked). %>
+                  <span class="pm-option__details">
+                    <% if brand.tagline %><span class="pm-option__tagline"><%= brand.tagline %></span><% end %>
+
+                    <% if pm.code == 'mercado_pago' %>
+                      <span class="pm-option__note">
+                        <i class="fa-solid fa-arrow-up-right-from-square me-1" aria-hidden="true"></i>
+                        Al finalizar te llevaremos a Mercado Pago para completar el pago de forma segura.
+                      </span>
+                    <% end %>
+
+                    <% if pm.bank_name.present? || pm.account_holder.present? || pm.account_number.present? %>
+                      <span class="pm-detail-list">
+                        <% if pm.bank_name.present? %>
+                          <span class="pm-detail"><span class="pm-detail__label">Banco</span><span class="pm-detail__value"><%= pm.bank_name %></span></span>
+                        <% end %>
+                        <% if pm.account_holder.present? %>
+                          <span class="pm-detail"><span class="pm-detail__label">Beneficiario</span><span class="pm-detail__value"><%= pm.account_holder %></span></span>
+                        <% end %>
+                        <% if pm.account_number.present? %>
+                          <span class="pm-detail pm-detail--number">
+                            <span class="pm-detail__label"><%= pm.clabe_or_card_label %></span>
+                            <span class="pm-detail__value d-flex align-items-center flex-wrap gap-2">
+                              <span class="pm-number user-select-all"><%= pm.account_number %></span>
+                              <button type="button" class="btn btn-sm pm-copy"
                                       data-controller="copy"
-                                      data-copy-text-value="<%= pm.account_number %>"
-                                      data-action="copy#copy">
-                                <i class="fa fa-copy"></i>
+                                      data-copy-text-value="<%= digits.presence || pm.account_number %>"
+                                      data-action="copy#copy"
+                                      aria-label="Copiar <%= pm.clabe_or_card_label %>">
+                                <i class="fa-regular fa-copy me-1" aria-hidden="true"></i>Copiar
                               </button>
-                            </div>
-                          <% end %>
-                          <% if pm.instructions.present? %>
-                            <div class="text-muted mt-1"><i class="fa fa-info-circle me-1"></i><%= pm.instructions %></div>
-                          <% end %>
-                        </div>
-                      <% end %>
-                    </div>
-                  </div>
+                            </span>
+                          </span>
+                        <% end %>
+                      </span>
+                    <% end %>
+
+                    <% if note %>
+                      <span class="pm-option__note"><i class="fa-solid fa-circle-info me-1" aria-hidden="true"></i><%= note %></span>
+                    <% end %>
+                  </span>
                 </label>
               <% end %>
             </div>

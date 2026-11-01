@@ -62,7 +62,10 @@ class PaymentMethod < ApplicationRecord
     return 'Número' if account_number.blank?
 
     digits_only = account_number.gsub(/\D/, '')
-    digits_only.length == 18 ? 'CLABE' : 'Tarjeta/Cuenta'
+    return 'CLABE' if digits_only.length == 18
+    return 'Número de tarjeta' if digits_only.length == 16
+
+    'Cuenta'
   end
 
   private
