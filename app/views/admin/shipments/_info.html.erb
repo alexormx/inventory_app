@@ -1,34 +1,51 @@
-<!-- admin/shipments/_info.html.erb -->
-<% if sale_order.shipment.present? %>
-  <% is_personal = sale_order.shipment.respond_to?(:delivery_personal?) && sale_order.shipment.delivery_personal? %>
-  <div class="card mb-3">
-    <div class="card-body">
-      <h5 class="card-title">
+<%# Única sección de envío del pedido. Un pedido tiene a lo más un Shipment
+    (has_one; Admin::ShipmentsController#create rechaza un segundo). Lo que el
+    cliente eligió en la tienda (order_shipping_addresses) no es otro envío:
+    se muestra aquí como referencia y como valor inicial del Shipment. %>
+<% shipment = sale_order.shipment %>
+<% requested = sale_order.order_shipping_address %>
+<div class="card border-0 shadow-sm mb-3" id="shipment-section">
+  <div class="card-body">
+    <% if shipment.present? %>
+      <% is_personal = shipment.delivery_personal? %>
+      <h5 class="card-title d-flex align-items-center gap-2 flex-wrap">
         <% if is_personal %>
-          <i class="fa-solid fa-handshake me-1" aria-hidden="true"></i>Entrega Personal
-          <span class="badge bg-success ms-1">En mano</span>
+          <i class="fa-solid fa-handshake" aria-hidden="true"></i>Entrega personal
+          <span class="badge bg-success">En mano</span>
         <% else %>
-          <i class="fa-solid fa-truck me-1" aria-hidden="true"></i>Información del envío
+          <i class="fa-solid fa-truck" aria-hidden="true"></i>Envío
         <% end %>
+        <span class="badge text-bg-secondary"><%= { 'pending' => 'Pendiente', 'shipped' => 'Enviado', 'delivered' => 'Entregado', 'canceled' => 'Cancelado', 'returned' => 'Devuelto' }.fetch(shipment.status.to_s, shipment.status.to_s.humanize) %></span>
       </h5>
-      <div class="row">
-        <div class="col-md-4"><strong>Carrier:</strong> <%= sale_order.shipment.carrier %></div>
+      <div class="row g-2 small">
+        <div class="col-md-4"><strong>Paquetería:</strong> <%= shipment.carrier %></div>
         <% unless is_personal %>
-          <div class="col-md-4"><strong>Tracking #:</strong> <%= sale_order.shipment.tracking_number.presence || "—" %></div>
+          <div class="col-md-4"><strong>Guía:</strong> <%= shipment.tracking_number.presence || '—' %></div>
         <% end %>
-        <div class="col-md-4"><strong>Status:</strong> <%= sale_order.shipment.status&.humanize || "—" %></div>
-        <div class="col-md-4"><strong>Estimated Delivery:</strong> <%= sale_order.shipment.estimated_delivery %></div>
-        <div class="col-md-4"><strong>Actual Delivery:</strong> <%= sale_order.shipment.actual_delivery || "—" %></div>
-        <% unless is_personal %>
-          <div class="col-md-4"><strong>Shipping Cost:</strong> <%= number_to_currency(sale_order.shipment.shipping_cost || 0, unit: 'MXN ') %></div>
+        <div class="col-md-4"><strong>Entrega estimada:</strong> <%= shipment.estimated_delivery&.strftime('%d/%m/%Y') || '—' %></div>
+        <div class="col-md-4"><strong>Entregado:</strong> <%= shipment.actual_delivery&.strftime('%d/%m/%Y') || '—' %></div>
+        <%# En $0 no se muestra: el costo cobrado al cliente vive en el pedido
+            (línea "Solicitado por el cliente") y confundía verlo junto a $0. %>
+        <% if !is_personal && shipment.shipping_cost.to_d.positive? %>
+          <div class="col-md-4"><strong>Costo de envío:</strong> <%= number_to_currency(shipment.shipping_cost) %></div>
         <% end %>
       </div>
-    </div>
+    <% else %>
+      <h5 class="card-title"><i class="fa-solid fa-truck me-1" aria-hidden="true"></i>Envío</h5>
+      <p class="text-muted small mb-0">
+        Aún no se registra el envío<%= requested ? '. Al agregarlo se llena con lo que eligió el cliente.' : '.' %>
+      </p>
+    <% end %>
+
+    <% if requested %>
+      <div class="border-top mt-3 pt-2 small text-muted" id="requested-shipping">
+        <i class="fa-solid fa-store me-1" aria-hidden="true"></i>
+        Solicitado por el cliente en la tienda: <strong class="text-body"><%= requested.shipping_method_name %></strong>
+        · costo cobrado <strong class="text-body"><%= number_to_currency(sale_order.shipping_cost) %></strong>
+        <div class="mt-1">
+          <%= requested.full_name %> · <%= [requested.line1, requested.line2.presence, requested.city, requested.state, requested.postal_code].compact.join(', ') %>
+        </div>
+      </div>
+    <% end %>
   </div>
-<% else %>
-  <div class="card mb-3">
-    <div class="card-body">
-      <p class="text-muted">No shipment assigned.</p>
-    </div>
-  </div>
-<% end %>
+</div>

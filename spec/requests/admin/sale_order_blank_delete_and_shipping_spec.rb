@@ -52,10 +52,34 @@ RSpec.describe 'Admin sale orders: blank deletion and requested shipping', type:
                                       raw_address_json: { 'shipping_method_name' => 'Envío Local (CDMX)' })
     end
 
-    it 'is shown on the order page' do
+    it 'is shown inside the single shipment section before a shipment is registered' do
       get admin_sale_order_path(order)
 
-      expect(response.body).to include('Envío elegido por el cliente', 'Envío Local (CDMX)', '$149.00')
+      section = Nokogiri::HTML(response.body).at_css('#shipment-section')
+      expect(section.text).to include('Aún no se registra el envío', 'Solicitado por el cliente en la tienda',
+                                      'Envío Local (CDMX)', '$149.00')
+      expect(response.body).to include('Agregar envío')
+    end
+
+    it 'keeps one editable shipment section, with the customer request as reference' do
+      create(:shipment, sale_order: order, carrier: 'Estafeta', tracking_number: 'G123')
+
+      get admin_sale_order_path(order)
+
+      doc = Nokogiri::HTML(response.body)
+      expect(doc.css('#shipment-section').size).to eq(1)
+      expect(doc.at_css('#shipment-section').text).to include('Estafeta', 'G123', 'Solicitado por el cliente en la tienda')
+      expect(response.body).to include('Editar envío', 'Eliminar envío')
+      expect(response.body).not_to include('Agregar envío')
+    end
+
+    it 'refuses a second shipment for the same order' do
+      create(:shipment, sale_order: order)
+
+      post admin_sale_order_shipments_path(order),
+           params: { shipment: { carrier: 'DHL', estimated_delivery: Date.current } }
+
+      expect(Shipment.where(sale_order_id: order.id).count).to eq(1)
     end
 
     it 'pre-fills the carrier of a new shipment' do
