@@ -3427,12 +3427,14 @@ body:not(.admin-shell) {
 }
 
 // ── Métodos de pago con la identidad de cada marca (checkout paso 3) ──
-// El color sale de --pm-brand; la tarjeta elegida se tiñe con ese color en
-// vez del rojo genérico de la tienda.
+// Cerradas muestran solo icono + nombre; la elegida se despliega con los
+// datos de la operación (banco, beneficiario, CLABE/tarjeta para copiar).
+// El color sale de --pm-brand.
 body:not(.admin-shell) .pm-option {
   --pm-brand: var(--ui-accent, #c62828);
   --pm-brand-ink: #fff;
   display: block;
+  cursor: pointer;
   border: 1px solid var(--color-border, #dee2e6);
   border-left: 4px solid var(--pm-brand);
   background: var(--color-surface, #fff);
@@ -3440,11 +3442,14 @@ body:not(.admin-shell) .pm-option {
 
   &:hover { border-color: var(--pm-brand); }
 
-  &.is-selected {
-    border-color: var(--pm-brand);
-    box-shadow: 0 0 0 1px var(--pm-brand);
-    background: color-mix(in srgb, var(--pm-brand) 7%, var(--color-surface, #fff));
+  .pm-option__head {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    padding: .85rem 1rem;
   }
+
+  .form-check-input { margin: 0; }
 
   .form-check-input:checked {
     background-color: var(--pm-brand);
@@ -3469,10 +3474,98 @@ body:not(.admin-shell) .pm-option {
     font-size: 1rem;
   }
 
-  .pm-option__name { color: var(--color-text, inherit); }
+  .pm-option__name {
+    color: var(--color-text, inherit);
+    font-size: 1.02rem;
+  }
+
+  .pm-option__chevron {
+    color: var(--color-text-muted, #6c757d);
+    transition: transform .2s ease;
+  }
 
   .pm-option__details {
-    background: color-mix(in srgb, var(--pm-brand) 5%, var(--color-bg, #f8f9fa));
+    display: none;
+    padding: 0 1rem 1rem calc(1rem + 1em + .75rem); // alineado con el icono
+  }
+
+  .pm-option__tagline {
+    display: block;
+    color: var(--color-text-muted, #6c757d);
+    font-size: .875rem;
+    margin-bottom: .6rem;
+  }
+
+  .pm-detail-list {
+    display: grid;
+    gap: .55rem;
+    padding: .85rem 1rem;
+    border-radius: .6rem;
+    background: color-mix(in srgb, var(--pm-brand) 6%, var(--color-surface, #fff));
+    border: 1px solid color-mix(in srgb, var(--pm-brand) 22%, transparent);
+  }
+
+  .pm-detail {
+    display: grid;
+    grid-template-columns: 9.5rem 1fr;
+    align-items: center;
+    gap: .25rem 1rem;
+  }
+
+  .pm-detail__label {
+    color: var(--color-text-muted, #6c757d);
+    font-size: .8rem;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+  }
+
+  .pm-detail__value {
+    color: var(--color-text, inherit);
+    font-weight: 600;
+    min-width: 0;
+  }
+
+  .pm-number {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 1.15rem;
+    letter-spacing: .06em;
+    color: var(--color-text, inherit);
+    word-break: break-all;
+  }
+
+  .pm-copy {
+    border: 1px solid var(--pm-brand);
+    color: var(--pm-brand);
+    background: transparent;
+    padding: .15rem .6rem;
+    font-weight: 600;
+
+    &:hover, &:focus-visible {
+      background: var(--pm-brand);
+      color: var(--pm-brand-ink);
+    }
+  }
+
+  .pm-option__note {
+    display: block;
+    margin-top: .65rem;
+    color: var(--color-text-muted, #6c757d);
+    font-size: .875rem;
+  }
+
+  // Elegida: se tiñe con su color y despliega los datos.
+  &.is-selected,
+  &:has(.form-check-input:checked) {
+    border-color: var(--pm-brand);
+    box-shadow: 0 0 0 1px var(--pm-brand);
+
+    .pm-option__details { display: block; }
+    .pm-option__chevron { transform: rotate(180deg); color: var(--pm-brand); }
+  }
+
+  @media (max-width: 575.98px) {
+    .pm-option__details { padding-left: 1rem; }
+    .pm-detail { grid-template-columns: 1fr; }
   }
 }
 

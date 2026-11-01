@@ -53,14 +53,19 @@ RSpec.describe 'Checkout full flow', :js, type: :system do
   it 'buys from step 1 to the thank-you page and registers the shipment' do
     visit checkout_step1_path
     click_button 'Continuar con envío →'
+    expect(page).to have_current_path(checkout_step2_path)
 
     find('label', text: 'Oficina').click
     expect(outline_of('Oficina')).to eq('none')
     click_button 'Continuar con el pago'
+    expect(page).to have_css('.pm-options')
 
     find('label', text: 'Pago en efectivo').click
     expect(outline_of('Pago en efectivo')).to eq('none')
-    click_button 'Finalizar compra'
+    # Envío por el formulario: el botón se deshabilita y la página navega en el
+    # mismo clic, y el Chrome del CI a veces pierde el nodo a media acción
+    # ("Node ... does not belong to the document") aunque la compra sí ocurre.
+    page.execute_script("document.getElementById('checkout-complete-form').requestSubmit()")
 
     expect(page).to have_content('¡Gracias por tu compra!')
     order = user.sale_orders.last
@@ -89,9 +94,14 @@ RSpec.describe 'Checkout full flow', :js, type: :system do
     before { visit catalog_path }
 
     it 'does not open when the pointer only passes over the cart link' do
-      # Un solo trazo rápido, como al ir hacia "Favoritos" o "Mi cuenta".
-      page.driver.browser.action(duration: 0).move_to(link.native).pause(duration: 0.05).move_by(0, 300).perform
-      sleep 0.5
+      # Entra y sale en 50 ms, como al ir de largo hacia "Favoritos". Eventos
+      # sintéticos: la velocidad real del mouse de Selenium varía por máquina.
+      page.execute_script(<<~JS)
+        const link = document.querySelector('.site-navbar a[data-nav-link="cart"]');
+        link.dispatchEvent(new PointerEvent('pointerenter', { pointerType: 'mouse' }));
+        setTimeout(() => link.dispatchEvent(new PointerEvent('pointerleave', { pointerType: 'mouse' })), 50);
+      JS
+      sleep 0.6
 
       expect(preview_shown?).to be(false)
     end
