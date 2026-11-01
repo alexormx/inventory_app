@@ -634,8 +634,9 @@ class Product < ApplicationRecord
   # Desglose de cantidades inmediata vs pendiente según flags.
   # immediate consume on_hand (available); in_transit_qty consume inventario en tránsito;
   # pending cae a preorder/backorder según flags del producto.
-  def split_immediate_and_pending(requested_qty, condition: 'brand_new')
-    splitter = InventoryServices::AvailabilitySplitter.new(self, requested_qty, condition: condition)
+  def split_immediate_and_pending(requested_qty, condition: 'brand_new', on_hand: nil, in_transit: nil)
+    splitter = InventoryServices::AvailabilitySplitter.new(self, requested_qty, condition: condition,
+                                                                                on_hand: on_hand, in_transit: in_transit)
     r = splitter.call
     {
       requested: r.requested,

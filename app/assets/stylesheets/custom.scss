@@ -2696,9 +2696,11 @@ body:not(.admin-shell) .checkout-progress-wrapper a:focus-visible .progress-circ
   outline-offset: 2px;
 }
 
-/* Tarjetas seleccionables del checkout: foco accesible */
-body:not(.admin-shell) [data-controller~="selectable-cards"] label:focus-within,
-body:not(.admin-shell) [data-controller~="checkout-shipping"] label:focus-within {
+/* Tarjetas seleccionables del checkout: foco accesible SOLO con teclado.
+   Con :focus-within el radio recién clicado dejaba un contorno rojo a 2px del
+   borde rojo de "seleccionada": se veía un doble recuadro. */
+body:not(.admin-shell) [data-controller~="selectable-cards"] label:has(input:focus-visible),
+body:not(.admin-shell) [data-controller~="checkout-shipping"] label:has(input:focus-visible) {
   outline: 2px solid var(--ui-accent);
   outline-offset: 2px;
 }
@@ -3422,4 +3424,64 @@ body:not(.admin-shell) {
     width: 52px;
     height: 52px;
   }
+}
+
+// ── Métodos de pago con la identidad de cada marca (checkout paso 3) ──
+// El color sale de --pm-brand; la tarjeta elegida se tiñe con ese color en
+// vez del rojo genérico de la tienda.
+body:not(.admin-shell) .pm-option {
+  --pm-brand: var(--ui-accent, #c62828);
+  --pm-brand-ink: #fff;
+  display: block;
+  border: 1px solid var(--color-border, #dee2e6);
+  border-left: 4px solid var(--pm-brand);
+  background: var(--color-surface, #fff);
+  transition: border-color .15s ease, background-color .15s ease, box-shadow .15s ease;
+
+  &:hover { border-color: var(--pm-brand); }
+
+  &.is-selected {
+    border-color: var(--pm-brand);
+    box-shadow: 0 0 0 1px var(--pm-brand);
+    background: color-mix(in srgb, var(--pm-brand) 7%, var(--color-surface, #fff));
+  }
+
+  .form-check-input:checked {
+    background-color: var(--pm-brand);
+    border-color: var(--pm-brand);
+  }
+
+  .form-check-input:focus {
+    border-color: var(--pm-brand);
+    box-shadow: 0 0 0 .2rem color-mix(in srgb, var(--pm-brand) 25%, transparent);
+  }
+
+  .pm-option__mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: .6rem;
+    background: var(--pm-brand);
+    color: var(--pm-brand-ink);
+    font-size: 1rem;
+  }
+
+  .pm-option__name { color: var(--color-text, inherit); }
+
+  .pm-option__details {
+    background: color-mix(in srgb, var(--pm-brand) 5%, var(--color-bg, #f8f9fa));
+  }
+}
+
+// Colores de marca: BBVA azul, Mercado Pago celeste, Spin by OXXO morado
+// con el amarillo de OXXO.
+body:not(.admin-shell) .pm-option--bbva { --pm-brand: #004481; }
+body:not(.admin-shell) .pm-option--mercado-pago { --pm-brand: #009ee3; }
+body:not(.admin-shell) .pm-option--spin {
+  --pm-brand: #5c2d91;
+
+  .pm-option__mark { box-shadow: inset 0 -3px 0 #ffc72c; }
 }

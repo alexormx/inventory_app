@@ -194,7 +194,8 @@ class Cart
   def build_items
     result = []
     # Una consulta para todos los productos del carrito en vez de una por línea.
-    products = Product.where(id: @session[:cart].keys).index_by(&:id)
+    # Con imágenes precargadas: el mini carrito se pinta en cada página.
+    products = Product.with_attached_product_images.where(id: @session[:cart].keys).index_by(&:id)
     @session[:cart].each do |product_id, conditions|
       product = products[product_id.to_s.to_i]
       next unless product

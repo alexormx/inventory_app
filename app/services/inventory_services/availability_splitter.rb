@@ -11,17 +11,21 @@ module InventoryServices
       keyword_init: true
     )
 
-    def initialize(product, requested_qty, condition: 'brand_new')
+    # on_hand / in_transit: conteos ya calculados (p. ej. en lote para el mini
+    # carrito); si no vienen se consultan.
+    def initialize(product, requested_qty, condition: 'brand_new', on_hand: nil, in_transit: nil)
       @product = product
       @requested = requested_qty.to_i
       @condition = condition.to_s
+      @on_hand = on_hand
+      @in_transit = in_transit
     end
 
     def call
       return empty if @requested <= 0 || @product.nil?
 
-      on_hand = @product.respond_to?(:current_on_hand) ? @product.current_on_hand(condition: @condition).to_i : 0
-      in_transit = @product.respond_to?(:in_transit_count) ? @product.in_transit_count(condition: @condition).to_i : 0
+      on_hand = @on_hand&.to_i || (@product.respond_to?(:current_on_hand) ? @product.current_on_hand(condition: @condition).to_i : 0)
+      in_transit = @in_transit&.to_i || (@product.respond_to?(:in_transit_count) ? @product.in_transit_count(condition: @condition).to_i : 0)
 
       immediate = [@requested, on_hand].min
       remaining = @requested - immediate

@@ -8,6 +8,10 @@
   const VIEWPORT_MARGIN = 8
   const MINIMUM_PANEL_HEIGHT = 320
   const AUTOHIDE_DELAY = 1500
+  // Pasar el mouse por encima rumbo a otro botón del menú no debe abrirlo:
+  // sólo se abre si el puntero se queda sobre "Carrito" este tiempo.
+  const HOVER_INTENT_DELAY = 250
+  let intentTimer = null
   let currentLink = null
   let linkListenersInstalled = false
   let hideTimer = null
@@ -87,6 +91,7 @@
 
       panel.classList.add('show')
       updatePreviewGeometry()
+      document.dispatchEvent(new CustomEvent('cart-preview:shown'))
       requestAnimationFrame(updateScrollState)
     })
   }
@@ -98,6 +103,7 @@
 
   function hideImmediate({ restoreFocus = false, immediate = false } = {}) {
     const panel = currentPanel()
+    window.clearTimeout(intentTimer)
     window.clearTimeout(hideTimer)
     window.clearTimeout(concealTimer)
     window.cancelAnimationFrame(showFrame)
@@ -132,6 +138,15 @@
     }, AUTOHIDE_DELAY)
   }
 
+  // Última forma de interacción: el foco sólo abre el panel si viene del
+  // teclado (Tab). Al volver a la pestaña, tras un clic o por foco
+  // programático el navegador re-enfoca el enlace y el panel salía solo.
+  let keyboardModality = false
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Tab' || event.key.startsWith('Arrow')) keyboardModality = true
+  }, true)
+  document.addEventListener('pointerdown', () => { keyboardModality = false }, true)
+
   function unbindCurrentLink() {
     if (!currentLink?._cartPrevHandlers) return
 
@@ -149,18 +164,33 @@
     if (currentLink && currentLink !== link) unbindCurrentLink()
 
     const handlers = {
-      mouseenter: () => {
-        show()
+      // Sólo mouse real: en pantallas táctiles el toque también dispara
+      // "enter" y abría el panel justo antes de navegar al carrito.
+      pointerenter: (event) => {
+        if (event.pointerType !== 'mouse') return
+
         window.clearTimeout(hideTimer)
+        window.clearTimeout(intentTimer)
+        intentTimer = window.setTimeout(show, HOVER_INTENT_DELAY)
       },
+      // Sólo foco de teclado: al volver a la pestaña o tras un clic el
+      // navegador re-enfoca el enlace y el panel aparecía "de la nada".
       focus: () => {
-        if (restoringFocus) return
+        if (restoringFocus || !keyboardModality) return
 
         show()
         window.clearTimeout(hideTimer)
       },
-      mouseleave: scheduleHide,
-      blur: scheduleHide
+      pointerleave: (event) => {
+        if (event.pointerType !== 'mouse') return
+
+        window.clearTimeout(intentTimer)
+        if (currentPanel()?.classList.contains('show')) scheduleHide()
+      },
+      blur: () => {
+        window.clearTimeout(intentTimer)
+        if (currentPanel()?.classList.contains('show')) scheduleHide()
+      }
     }
     Object.entries(handlers).forEach(([eventName, handler]) => link.addEventListener(eventName, handler))
     link._cartPrevHandlers = handlers
