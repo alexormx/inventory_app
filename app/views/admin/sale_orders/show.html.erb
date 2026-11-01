@@ -66,8 +66,9 @@
           Cancelación requiere revisión de pago/devolución
         </span>
       <% end %>
-      <%# Solo pedidos en blanco: sin productos, inventario, pagos ni historial. %>
-      <% if SaleOrders::DestroyBlankOrder.blocking_reasons(@sale_order).empty? %>
+      <%# Solo pedidos en blanco: sin productos, inventario ni dinero recibido. %>
+      <% delete_blockers = SaleOrders::DestroyBlankOrder.blocking_reasons(@sale_order) %>
+      <% if delete_blockers.empty? %>
         <%= button_to admin_sale_order_path(@sale_order),
                       method: :delete,
                       class: 'btn btn-danger btn-sm',
@@ -75,11 +76,16 @@
                         controller: 'confirm',
                         action: 'click->confirm#ask',
                         confirm_title: 'Eliminar orden en blanco',
-                        confirm_message: 'Esta orden no tiene productos, inventario ni pagos. Se eliminará definitivamente. ¿Deseas continuar?',
+                        confirm_message: 'Esta orden no tiene productos ni dinero recibido. Se eliminará definitivamente junto con su envío sin despachar y su carrito de la tienda; el historial de inventario se conserva. ¿Deseas continuar?',
                         confirm_confirm_label: 'Eliminar orden'
                       } do %>
           <i class="fa-solid fa-trash"></i> Eliminar
         <% end %>
+      <% elsif @sale_order.sale_order_items.none? %>
+        <span class="btn btn-outline-secondary btn-sm disabled" aria-disabled="true"
+              title="No se puede eliminar: <%= delete_blockers.to_sentence %>">
+          <i class="fa-solid fa-trash"></i> No se puede eliminar: <%= delete_blockers.to_sentence %>
+        </span>
       <% end %>
     </div>
   </div>

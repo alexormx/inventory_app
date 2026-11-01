@@ -1,17 +1,23 @@
 # frozen_string_literal: true
 
 module SaleOrders
-  # Borra un pedido EN BLANCO: sin productos, sin piezas de inventario y sin
-  # nada que lo referencie (pagos recibidos, envío, preventas, carrito
-  # convertido, solicitudes de WhatsApp ni historial de asignación).
+  # Borra un pedido EN BLANCO: hoy no tiene productos ni piezas de inventario,
+  # no se recibió dinero, no se despachó y no tiene preventas activas.
   #
-  # Cualquier pedido con contenido se sigue manejando con Cancelar, que
-  # conserva el historial; borrar solo limpia registros vacíos.
+  # Lo que solo es rastro del pedido no lo bloquea:
+  # - se borran: pagos sin cobrar, envío no despachado, snapshot de dirección,
+  #   líneas canceladas y el carrito de la tienda que se convirtió en él;
+  # - se desligan (quedan sin pedido): solicitud de WhatsApp, favoritos,
+  #   preventas canceladas y bitácora de asignación de inventario;
+  # - se conservan intactos: los InventoryEvent (historial de cada pieza).
+  #
+  # Un pedido con contenido se sigue manejando con Cancelar.
   class DestroyBlankOrder
     # Confirmed incluido: un pedido con total $0 se confirma solo (0 >= 0 en
     # fully_paid?), así quedan los pedidos en blanco creados desde el admin.
     DELETABLE_STATUSES = %w[Pending Confirmed Canceled].freeze
     RECEIVED_PAYMENT_STATUSES = %w[Completed Refunded].freeze
+    UNSHIPPED_SHIPMENT_STATUSES = %w[pending canceled].freeze
 
     Result = Struct.new(:destroyed, :reasons, keyword_init: true) do
       def success? = destroyed == true
@@ -32,10 +38,9 @@ module SaleOrders
         reasons = blocking_reasons
         return Result.new(destroyed: false, reasons: reasons) if reasons.any?
 
-        # Pagos pendientes/fallidos de un pedido vacío no representan dinero.
-        Payment.where(sale_order_id: @sale_order.id).delete_all
+        clean_up_traces!
         @sale_order.order_shipping_address&.destroy!
-        @sale_order.destroy!
+        @sale_order.reload.destroy!
       end
       Result.new(destroyed: true, reasons: [])
     end
@@ -45,24 +50,48 @@ module SaleOrders
       reasons = []
       reasons << 'solo se pueden borrar pedidos pendientes, confirmados o cancelados' unless DELETABLE_STATUSES.include?(@sale_order.status)
       reasons << 'tiene productos' if @sale_order.sale_order_items.exists?
-      reasons << 'tuvo productos antes de cancelarse' if CanceledOrderItem.exists?(sale_order_id: id)
       reasons << 'tiene piezas de inventario asignadas' if Inventory.exists?(sale_order_id: id)
-      reasons << 'tiene pagos recibidos o reembolsados' if @sale_order.payments.exists?(status: RECEIVED_PAYMENT_STATUSES)
-      reasons << 'tiene un envío registrado' if Shipment.exists?(sale_order_id: id)
-      reasons << 'tiene preventas ligadas' if PreorderReservation.exists?(sale_order_id: id)
-      reasons << 'viene de un carrito de la tienda' if ShoppingCart.exists?(sale_order_id: id)
-      reasons << 'está ligado a una solicitud de WhatsApp' if WhatsappRequest.exists?(sale_order_id: id)
-      reasons << 'tiene favoritos marcados como comprados con este pedido' if Favorite.exists?(sale_order_id: id)
-      reasons << 'tiene historial de inventario' if inventory_history?(id)
+      reasons << 'tiene pagos recibidos o reembolsados' if Payment.exists?(sale_order_id: id, status: RECEIVED_PAYMENT_STATUSES)
+      reasons << 'el envío ya se despachó' if Shipment.where(sale_order_id: id).where.not(status: UNSHIPPED_SHIPMENT_STATUSES).exists?
+      reasons << 'tiene preventas activas' if PreorderReservation.where(sale_order_id: id).where.not(status: :cancelled).exists?
       reasons
     end
 
     private
 
-    def inventory_history?(id)
-      InventoryAssignmentLog.exists?(sale_order_id: id) ||
-        InventoryEvent.exists?(previous_sale_order_id: id) ||
-        InventoryEvent.exists?(new_sale_order_id: id)
+    def clean_up_traces!
+      id = @sale_order.id
+      Payment.where(sale_order_id: id).delete_all
+      Shipment.where(sale_order_id: id).delete_all
+      CanceledOrderItem.where(sale_order_id: id).delete_all
+
+      PreorderReservation.where(sale_order_id: id).update_all(sale_order_id: nil, updated_at: Time.current)
+      WhatsappRequest.where(sale_order_id: id).update_all(sale_order_id: nil, updated_at: Time.current)
+      Favorite.where(sale_order_id: id).update_all(sale_order_id: nil, updated_at: Time.current)
+      InventoryAssignmentLog.where(sale_order_id: id).update_all(sale_order_id: nil)
+
+      destroy_converted_carts!(id)
+    end
+
+    # El carrito de la tienda que se convirtió en este pedido. Su estado
+    # 'converted' exige sale_order_id (check constraint), así que no se puede
+    # desligar: se borra con sus líneas (las retenciones caen en cascada).
+    def destroy_converted_carts!(id)
+      cart_ids = ShoppingCart.where(sale_order_id: id).ids
+      return if cart_ids.empty?
+
+      # Carritos anónimos que se fusionaron en éste al iniciar sesión: apuntan
+      # a él (merged_into_cart_id) y ya están cerrados; caen con él.
+      frontier = cart_ids
+      while (merged = ShoppingCart.where(merged_into_cart_id: frontier).where.not(id: cart_ids).ids).any?
+        cart_ids += merged
+        frontier = merged
+      end
+
+      CartSessionImport.where(shopping_cart_id: cart_ids).delete_all
+      ShoppingCartItem.where(shopping_cart_id: cart_ids).delete_all
+      # Primero los fusionados (hijos) y al final los convertidos (padres).
+      cart_ids.reverse_each { |cart_id| ShoppingCart.where(id: cart_id).delete_all }
     end
   end
 end

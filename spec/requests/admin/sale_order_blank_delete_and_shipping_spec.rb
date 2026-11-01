@@ -20,6 +20,15 @@ RSpec.describe 'Admin sale orders: blank deletion and requested shipping', type:
       expect(SaleOrder.exists?(order.id)).to be(false)
     end
 
+    it 'explains why an empty order cannot be deleted' do
+      order = create(:sale_order, total_order_value: 0, subtotal: 0)
+      create(:shipment, sale_order: order, status: :shipped)
+
+      get admin_sale_order_path(order)
+
+      expect(response.body).to include('No se puede eliminar: el envío ya se despachó')
+    end
+
     it 'refuses orders with products and explains why' do
       order = create(:sale_order)
       create(:sale_order_item, sale_order: order)
