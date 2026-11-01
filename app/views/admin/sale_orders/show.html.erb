@@ -361,41 +361,11 @@
     <%= render "admin/payments/payment_table", payments: @sale_order.payments %>
   </turbo-frame>
 
-  <%# Envío que eligió el cliente en la tienda (snapshot del checkout) %>
-  <% if (requested = @sale_order.order_shipping_address) %>
-    <div class="card border-0 shadow-sm mb-3" id="requested-shipping">
-      <div class="card-body py-3">
-        <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
-          <div>
-            <div class="small text-muted text-uppercase fw-semibold mb-1">Envío elegido por el cliente</div>
-            <div class="fw-bold"><i class="fa-solid fa-truck text-primary me-1"></i><%= requested.shipping_method_name %></div>
-            <div class="small text-muted mt-1">
-              <%= requested.full_name %> · <%= [requested.line1, requested.line2.presence, requested.city, requested.state, requested.postal_code].compact.join(', ') %>
-            </div>
-          </div>
-          <div class="text-end">
-            <div class="small text-muted">Costo cobrado</div>
-            <div class="fw-bold"><%= number_to_currency(@sale_order.shipping_cost) %></div>
-          </div>
-        </div>
-      </div>
-    </div>
-  <% end %>
-
   <%# Sección de envío %>
   <turbo-frame id="shipment_modal"></turbo-frame>
 
   <turbo-frame id="shipment_info">
-    <% if @sale_order.shipment.present? %>
-      <%= render "admin/shipments/info", sale_order: @sale_order %>
-    <% else %>
-      <div class="card border-0 shadow-sm mb-4">
-        <div class="card-body text-center py-4">
-          <i class="fa-solid fa-truck-fast fa-2x text-muted mb-2"></i>
-          <p class="text-muted mb-0">No hay envío asignado</p>
-        </div>
-      </div>
-    <% end %>
+    <%= render "admin/shipments/info", sale_order: @sale_order %>
   </turbo-frame>
 
   <turbo-frame id="shipment_button">
