@@ -138,11 +138,7 @@ module Admin
 
       # Auto-crear shipment en pending si no existe
       if @sale_order.shipment.blank?
-        order_base = @sale_order.order_date || Time.zone.today
-        @sale_order.create_shipment!(
-          { carrier: 'Por asignar', estimated_delivery: order_base + 7, status: :pending }
-            .merge(@sale_order.requested_shipment_attributes)
-        )
+        @sale_order.create_shipment!(@sale_order.initial_shipment_attributes)
         @sale_order.reload
       end
 
