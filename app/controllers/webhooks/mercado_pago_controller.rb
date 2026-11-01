@@ -21,10 +21,12 @@ module Webhooks
 
     private
 
-    # Solo interesan los pagos; otros temas (merchant_order, etc.) se aceptan
-    # con 200 para que Mercado Pago no los reintente.
+    # Solo los Webhooks de pagos (type=payment), que vienen firmados. Los
+    # avisos IPN viejos (topic=payment, merchant_order...) no traen firma y
+    # Mercado Pago los manda en paralelo: se aceptan con 200 sin procesar para
+    # que no los reintente; el Webhook firmado del mismo pago basta.
     def payment_notification?
-      (params[:type] || params[:topic]).to_s == 'payment'
+      params[:type].to_s == 'payment'
     end
   end
 end

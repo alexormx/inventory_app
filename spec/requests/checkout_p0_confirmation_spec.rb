@@ -52,7 +52,10 @@ RSpec.describe 'Checkout confirmation', type: :request do
     expect(Nokogiri::HTML(response.body).at_css('#site-header')['data-turbo-permanent']).to be_nil
   end
 
-  it 'does not render mutable bank configuration as historical order data' do
+  # Los datos bancarios son configuración vigente: se muestran como
+  # instrucciones mientras el pago está pendiente, nunca como historial de un
+  # pedido ya pagado.
+  it 'shows current bank details only while the payment is pending' do
     create(
       :payment_method,
       code: 'efectivo',
@@ -60,6 +63,10 @@ RSpec.describe 'Checkout confirmation', type: :request do
       bank_name: 'Banco mutable'
     )
 
+    get checkout_thank_you_path(order_id: order.id)
+    expect(response.body).to include('CUENTA-MUTABLE-123', 'Banco mutable')
+
+    order.payments.last.update!(status: 'Completed')
     get checkout_thank_you_path(order_id: order.id)
 
     expect(response).to have_http_status(:ok)

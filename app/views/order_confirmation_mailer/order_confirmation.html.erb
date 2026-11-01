@@ -73,14 +73,26 @@
         <% if @payment %>
           <div class="order-email-summary">
             <h3>Pago</h3>
-            <p><strong>Método:</strong> <%= @payment.payment_method.humanize %></p>
+            <p><strong>Método:</strong> <%= @payment_method_record&.name || @payment.payment_method.humanize %></p>
             <p><strong>Monto registrado:</strong> <%= number_to_currency(@payment.amount, unit: "$") %></p>
             <% case @payment.status %>
             <% when 'Completed' %>
               <p>Tu pago está registrado como completado. Prepararemos el pedido para su envío.</p>
             <% when 'Pending' %>
-              <% if @payment.payment_method == 'transferencia_bancaria' %>
-                <p>Tu transferencia está pendiente. Usa únicamente los datos de pago que confirmaste al finalizar la compra e incluye el número de pedido <strong><%= @sale_order.id %></strong> como referencia.</p>
+              <% if @payment.payment_method == 'mercado_pago' %>
+                <p>Completa tu pago con Mercado Pago. Si elegiste OXXO o SPEI, te enviaremos la ficha con la referencia en otro correo en cuanto se genere.</p>
+                <p style="text-align: center;"><a class="btn" href="<%= order_url(@sale_order) %>" style="color: #fff;">Ver mi pedido y pagar</a></p>
+              <% elsif @payment_method_record&.account_number.present? %>
+                <p>Realiza tu pago con estos datos e incluye el número de pedido <strong><%= @sale_order.id %></strong> como referencia:</p>
+                <div class="order-email-address" style="text-align: left;">
+                  <% if @payment_method_record.bank_name.present? %><div><strong>Banco:</strong> <%= @payment_method_record.bank_name %></div><% end %>
+                  <div><strong><%= @payment_method_record.clabe_or_card_label %>:</strong> <%= @payment_method_record.account_number %></div>
+                  <% if @payment_method_record.account_holder.present? %><div><strong>Beneficiario:</strong> <%= @payment_method_record.account_holder %></div><% end %>
+                  <div><strong>Monto:</strong> <%= number_to_currency(@payment.amount, unit: "$") %></div>
+                  <% if @payment_method_record.instructions.present? %><div style="margin-top: 8px;"><%= @payment_method_record.instructions %></div><% end %>
+                </div>
+              <% elsif @payment.payment_method == 'transferencia_bancaria' %>
+                <p>Tu transferencia está pendiente. Contáctanos para recibir los datos de pago e incluye el número de pedido <strong><%= @sale_order.id %></strong> como referencia.</p>
               <% else %>
                 <p>Tu pago está pendiente. Sigue las instrucciones confirmadas al finalizar la compra o contáctanos indicando el número de pedido <strong><%= @sale_order.id %></strong>.</p>
               <% end %>

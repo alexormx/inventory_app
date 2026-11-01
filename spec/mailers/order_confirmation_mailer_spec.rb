@@ -103,7 +103,9 @@ RSpec.describe OrderConfirmationMailer, type: :mailer do
         expect(mail.text_part.body.encoded).to include('$110.00')
       end
 
-      it 'uses persisted customer prices and Payment data without current payment settings' do
+      # Antes el correo omitía los datos de pago; ahora los incluye para que
+      # el cliente sepa cómo pagar (precios siguen saliendo del pedido).
+      it 'uses persisted customer prices and includes how to pay' do
         create(
           :payment_method,
           code: "transferencia_bancaria",
@@ -117,9 +119,10 @@ RSpec.describe OrderConfirmationMailer, type: :mailer do
 
         expect(html).to include('$50.00', '$100.00', '$110.00')
         expect(text).to include('$50.00', '$100.00', '$110.00')
-        expect(html).to include('Transferencia bancaria', 'pendiente')
-        expect(html).not_to include('$20.00', '$999.00', 'PLACEHOLDER')
-        expect(text).not_to include('$20.00', '$999.00', 'PLACEHOLDER')
+        expect(html).to include('PLACEHOLDER-ACCOUNT-NUMBER', 'PLACEHOLDER-INSTRUCTIONS', sale_order.id)
+        expect(text).to include('PLACEHOLDER-ACCOUNT-NUMBER')
+        expect(html).not_to include('$20.00', '$999.00')
+        expect(text).not_to include('$20.00', '$999.00')
       end
 
       it 'includes shipping address' do
