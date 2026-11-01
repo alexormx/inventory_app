@@ -59,7 +59,13 @@ Se guarda en `payments.provider_ticket_url`, se manda por correo una vez
 
     heroku run rake 'mercado_pago:resync[PAYMENT_ID]'
 
+## Pedidos sin pagar (OXXO/SPEI)
+
+Decisión del dueño (2026-11-01): **no hay vencimiento automático**. Un pedido
+con pago pendiente conserva sus piezas apartadas hasta que el admin lo cancele
+o lo elimine a mano. Las alertas del admin ya señalan los pedidos `Pending` con
+más de 30 días (`SaleOrders::Alerts::STALE_PENDING_AFTER`).
+
 ## Pendiente (siguientes PRs)
 
-- Vencimiento del apartado de inventario para pagos OXXO/SPEI no realizados.
 - Datos de Mercado Pago y reembolsos en el admin del pedido.
