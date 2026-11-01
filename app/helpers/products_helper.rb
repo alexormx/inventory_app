@@ -79,14 +79,14 @@ module ProductsHelper
                 on_hand_override
               end
     pending_split = if quantity && condition_key.present? && valid_condition
-                      product.split_immediate_and_pending(quantity, condition: condition)
+                      # Conteos ya calculados (mini carrito en lote) se reutilizan.
+                      known = { on_hand: on_hand_override, in_transit: in_transit_override }.compact
+                      product.split_immediate_and_pending(quantity, condition: condition, **known)
                     elsif quantity && valid_condition
                       product.split_immediate_and_pending(quantity)
                     end
     base_classes = 'badge rounded-pill fw-normal'
     orderable_condition = valid_condition && (condition_key.blank? || condition_key == 'brand_new')
-    preorder_eta = SiteSetting.get('preorder_eta_days', 60).to_i
-    backorder_eta = SiteSetting.get('backorder_eta_days', 60).to_i
     in_transit = nil
     in_transit_eta = nil
     unless on_hand.positive?
@@ -119,6 +119,8 @@ module ProductsHelper
                               elsif in_transit.positive?
                                 ['En tránsito', 'badge-incoming', 'En tránsito desde proveedor · Fecha de llegada por confirmar']
                               elsif orderable_condition && product.preorder_available
+                                # Solo aquí se consulta el ajuste (antes, 2 consultas por insignia).
+                                preorder_eta = SiteSetting.get('preorder_eta_days', 60).to_i
                                 if product.respond_to?(:launch_date) && product.launch_date.present?
                                   estimated_date = begin
                                     (product.launch_date + preorder_eta.days)
@@ -137,6 +139,7 @@ module ProductsHelper
                                 end
                                 ['Preventa', 'bg-warning text-dark', tip]
                               elsif orderable_condition && product.backorder_allowed
+                                backorder_eta = SiteSetting.get('backorder_eta_days', 60).to_i
                                 ['Sobre pedido', 'bg-info text-dark', "Se solicitará al proveedor. Disponible aprox en #{backorder_eta} días tras confirmar"]
                               else
                                 ['Fuera de stock', 'bg-secondary', 'No disponible actualmente']

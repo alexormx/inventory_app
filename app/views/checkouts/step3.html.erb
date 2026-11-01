@@ -58,18 +58,25 @@
           <% payment_methods = PaymentMethod.for_checkout(user: current_user).ordered %>
 
           <% if payment_methods.any? %>
-            <div class="d-flex flex-column gap-2"
+            <div class="d-flex flex-column gap-2 pm-options"
                  data-controller="selectable-cards"
                  data-action="change->selectable-cards#select"
-                 data-selectable-cards-active-class-value="border-primary border-2 bg-primary bg-opacity-10">
+                 data-selectable-cards-active-class-value="is-selected">
               <% payment_methods.each_with_index do |pm, idx| %>
-                <label class="list-group-item list-group-item-action rounded border p-3 <%= 'border-primary border-2 bg-primary bg-opacity-10' if idx == 0 %>" style="cursor: pointer;">
+                <% brand = payment_method_brand(pm) %>
+                <label class="pm-option pm-option--<%= brand.key %> rounded p-3 <%= 'is-selected' if idx == 0 %>" style="cursor: pointer;">
                   <div class="d-flex align-items-start">
-                    <input type="radio" name="payment_method" value="<%= pm.code %>" class="form-check-input me-3 mt-1" required <%= 'checked' if idx == 0 %>>
-                    <div class="flex-grow-1">
-                      <strong><%= pm.name %></strong>
+                    <input type="radio" name="payment_method" value="<%= pm.code %>" class="form-check-input me-3 mt-2" required <%= 'checked' if idx == 0 %>>
+                    <div class="flex-grow-1 min-w-0">
+                      <div class="d-flex align-items-center gap-2">
+                        <span class="pm-option__mark" aria-hidden="true"><i class="<%= brand.icon %>"></i></span>
+                        <div class="min-w-0">
+                          <strong class="pm-option__name d-block"><%= pm.name %></strong>
+                          <% if brand.tagline %><span class="small text-muted"><%= brand.tagline %></span><% end %>
+                        </div>
+                      </div>
                       <% if pm.account_number.present? || pm.instructions.present? %>
-                        <div class="mt-2 p-2 bg-light rounded small">
+                        <div class="pm-option__details mt-2 p-2 rounded small">
                           <% if pm.bank_name.present? && pm.account_holder.present? %>
                             <div class="text-muted mb-1">
                               <i class="fa fa-university me-1"></i><%= pm.bank_name %> • <%= pm.account_holder %>

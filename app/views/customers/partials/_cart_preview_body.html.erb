@@ -9,6 +9,12 @@
   <button type="button" class="btn-close cart-preview-close" data-cart-preview-close aria-label="Cerrar mini carrito"></button>
 </div>
 <% if cart_obj.items.any? %>
+  <%# Existencias de todas las líneas en 2 consultas (antes ~4 por línea, en
+      cada página de la tienda). Mismas reglas que Product#current_on_hand e
+      #in_transit_count. %>
+  <% preview_ids = cart_obj.items.map { |item| item[:product].id }.uniq %>
+  <% on_hand_by = Inventory.customer_on_hand.where(product_id: preview_ids).group(:product_id, :item_condition).count %>
+  <% in_transit_by = Inventory.customer_in_transit.where(product_id: preview_ids).group(:product_id, :item_condition).count %>
   <div class="cart-preview-scroll">
   <ul class="list-unstyled mb-2">
     <% cart_obj.items.each do |item| %>
@@ -32,8 +38,8 @@
               <i class="fas fa-gem text-warning" title="<%= item[:label] %>"></i>
             <% end %>
           </div>
-          <% on_hand = product.current_on_hand(condition: condition) %>
-          <% in_transit = product.in_transit_count(condition: condition) %>
+          <% on_hand = on_hand_by.fetch([product.id, condition.to_s], 0) %>
+          <% in_transit = in_transit_by.fetch([product.id, condition.to_s], 0) %>
           <% available_count = on_hand + in_transit %>
           <div class="d-flex flex-wrap align-items-center gap-1 mb-1">
             <% if collectible %>
