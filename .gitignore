@@ -53,3 +53,6 @@ dump.rdb
 
 # graphify knowledge graph (local tooling)
 /graphify-out/
+
+# Bocetos del brainstorming
+.superpowers/
