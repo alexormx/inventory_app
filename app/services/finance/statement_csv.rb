@@ -17,7 +17,8 @@ module Finance
     def call
       body = CSV.generate do |csv|
         csv << ['Concepto', *@result.periods.map(&:label), @result.history ? 'Total' : 'Total año']
-        MonthlyStatement::ROW_LABELS.each do |key, label|
+        MonthlyStatement::ROW_KEYS.each do |key|
+          label = MonthlyStatement.row_label(key, history: @result.history)
           csv << [label, *@result.rows.fetch(key).map { |v| cell(v) }, cell(@result.totals[key])]
         end
       end

@@ -176,6 +176,17 @@ RSpec.describe Finance::MonthlyStatement do
     expect(rows[:cashflow][3]).to eq(-30)
   end
 
+  describe '.row_label' do
+    it 'usa ROW_LABELS y en el histórico cambia utilidad y flujo a "del año"' do
+      expect(described_class.row_label(:profit, history: false)).to eq('Utilidad del mes')
+      expect(described_class.row_label(:cashflow, history: false)).to eq('Flujo del mes')
+      expect(described_class.row_label(:profit, history: true)).to eq('Utilidad del año')
+      expect(described_class.row_label(:cashflow, history: true)).to eq('Flujo del año')
+      expect(described_class.row_label(:inventory, history: true)).to eq('Inventario a costo')
+      expect(described_class.row_label(:margin, history: false)).to eq('Margen')
+    end
+  end
+
   describe '.first_operation_on' do
     it 'toma el mínimo entre ventas, pagos, compras no canceladas y altas manuales' do
       sale(price: 10, cost: 0, on: Date.new(2025, 3, 1))

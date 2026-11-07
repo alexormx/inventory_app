@@ -17,6 +17,7 @@ module Finance
       advances: 'Anticipos por entregar', inventory: 'Inventario a costo'
     }.freeze
     ROW_KEYS = ROW_LABELS.keys.freeze
+    HISTORY_LABELS = { profit: 'Utilidad del año', cashflow: 'Flujo del año' }.freeze
 
     MONTH_LABELS = %w[Ene Feb Mar Abr May Jun Jul Ago Sep Oct Nov Dic].freeze
     FLOW_KEYS = PeriodFlows::KEYS
@@ -30,6 +31,11 @@ module Finance
     end
 
     Result = Data.define(:periods, :rows, :deltas, :totals, :year, :first_year, :history)
+
+    # Etiqueta de una fila; en la vista histórica las filas del periodo dicen "del año".
+    def self.row_label(key, history:)
+      (history && HISTORY_LABELS[key]) || ROW_LABELS.fetch(key)
+    end
 
     # Primera fecha con alguna operación: conclusión de venta, pago recibido,
     # orden de compra no cancelada o alta manual de inventario.

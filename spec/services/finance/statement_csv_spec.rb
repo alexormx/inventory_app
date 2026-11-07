@@ -31,6 +31,29 @@ RSpec.describe Finance::StatementCsv do
     expect(count[3]).to eq('1')
   end
 
+  it 'vista histórica: etiquetas anuales y valores por año' do
+    order = create(:sale_order)
+    order.update_columns(total_order_value: 100, status: 'Delivered', order_date: Date.new(2025, 3, 10))
+    item = create(:sale_order_item, sale_order: order, product: product, quantity: 1, unit_cost: 100,
+                                    unit_final_price: 100, total_line_cost: 100)
+    item.update_columns(total_line_cost: 100, unit_acquisition_cost: 60)
+    order.update_columns(total_order_value: 100)
+    payment = create(:payment, sale_order: order, amount: 100)
+    payment.update_columns(paid_at: Date.new(2025, 3, 10), status: 'Completed')
+
+    csv = described_class.new(Finance::MonthlyStatement.new(year: nil).call).call
+    table = CSV.parse(csv.delete_prefix("\uFEFF"))
+    expect(table.first).to eq(%w[Concepto 2025 2026 Total])
+    labels = table.drop(1).map(&:first)
+    expect(labels).to include('Utilidad del año', 'Flujo del año')
+    expect(labels).not_to include('Utilidad del mes', 'Flujo del mes')
+
+    profit = table.find { |row| row.first == 'Utilidad del año' }
+    expect(profit[1..3]).to eq(['40.0', '0.0', '40.0'])
+    cashflow = table.find { |row| row.first == 'Flujo del año' }
+    expect(cashflow[1]).to eq('100.0')
+  end
+
   it 'vista histórica cierra con "Total"' do
     csv = described_class.new(Finance::MonthlyStatement.new(year: nil).call).call
     headers = CSV.parse(csv.delete_prefix("\uFEFF")).first
