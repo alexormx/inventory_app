@@ -68,7 +68,7 @@ RSpec.describe 'admin/partials/_sidebar.html.erb', type: :view do
 
       expect(labels & sub_links).to be_empty
       expect(labels).not_to include('Variables del sistema')
-      expect(labels.size).to be <= 22
+      expect(labels.size).to be <= 23
     end
 
     it 'shows the sub-links of the section being visited' do

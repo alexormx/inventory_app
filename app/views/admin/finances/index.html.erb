@@ -1,0 +1,95 @@
+<% result = @result
+   history = result.history
+   year = result.year
+   today_year = Time.zone.today.year
+   csv_params = history ? { view: 'history' } : { year: year }
+   groups = [
+     ['Utilidad', %i[sales sales_count discounts sale_refunds cogs profit margin profit_cumulative]],
+     ['Flujo', %i[cash_in purchases refunds cashflow cashflow_cumulative]],
+     ['Saldos al cierre', %i[advances inventory]]
+   ]
+   subtract_keys = %i[discounts sale_refunds cogs purchases refunds]
+   bold_keys = %i[profit cashflow]
+   colspan = result.periods.size + 2
+   cell = lambda do |key, value|
+     if value.nil? then ''
+     elsif key == :sales_count then value.to_s
+     elsif key == :margin then number_to_percentage(value * 100, precision: 1)
+     else fmt_currency(value)
+     end
+   end %>
+<style>
+  .finances-table th.finances-label, .finances-table td.finances-label { position: sticky; left: 0; background: var(--bs-body-bg, #fff); z-index: 1; white-space: nowrap; }
+  .finances-table .finances-group th { background: var(--bs-tertiary-bg, #f1f3f5); }
+  .finances-table td.num { text-align: right; white-space: nowrap; }
+  .finances-table .current-col { background: rgba(13, 110, 253, .06); }
+</style>
+<div class="container-fluid py-3">
+  <h1 class="h3 mb-3">Finanzas · <%= history ? 'Todo el histórico' : year %></h1>
+
+  <div class="d-flex flex-wrap align-items-center gap-3 mb-3">
+    <% unless history %>
+      <% if year > result.first_year %>
+        <%= link_to "◀ #{year - 1}", admin_finances_path(year: year - 1) %>
+      <% end %>
+      <strong><%= year %></strong>
+      <% if year < today_year %>
+        <%= link_to "#{year + 1} ▶", admin_finances_path(year: year + 1) %>
+      <% end %>
+    <% end %>
+    <% if history %>
+      <%= link_to 'Ver por meses', admin_finances_path %>
+    <% else %>
+      <%= link_to 'Todo el histórico', admin_finances_path(view: 'history') %>
+    <% end %>
+    <%= link_to '⬇ CSV', admin_finances_path(csv_params.merge(format: :csv)), class: 'btn btn-sm btn-outline-secondary' %>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-sm table-bordered align-middle finances-table">
+      <thead>
+        <tr>
+          <th class="finances-label"></th>
+          <% result.periods.each do |period| %>
+            <th class="text-end <%= 'current-col' if period.current? %>">
+              <%= period.label %>
+              <% if period.current? %><span class="badge text-bg-primary">en curso</span><% end %>
+            </th>
+          <% end %>
+          <th class="text-end"><%= history ? 'Total' : 'Total año' %></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% groups.each do |title, keys| %>
+          <tr class="finances-group"><th class="finances-label" colspan="<%= colspan %>"><%= title %></th></tr>
+          <% keys.each do |key| %>
+            <% label = Finance::MonthlyStatement.row_label(key, history: history) %>
+            <% label = "− #{label}" if subtract_keys.include?(key) %>
+            <% bold = bold_keys.include?(key) %>
+            <tr class="<%= 'fw-bold' if bold %>">
+              <th scope="row" class="finances-label <%= 'fw-bold' if bold %>"><%= label %></th>
+              <% result.periods.each_with_index do |period, i| %>
+                <% value = result.rows.fetch(key)[i] %>
+                <% tone = bold && !value.nil? ? (value >= 0 ? 'text-success' : 'text-danger') : '' %>
+                <td class="num <%= tone %> <%= 'current-col' if period.current? %>">
+                  <%= cell.call(key, value) %>
+                  <% delta = bold ? result.deltas[key][i] : nil %>
+                  <% if delta %>
+                    <small class="d-block fw-normal <%= delta >= 0 ? 'text-success' : 'text-danger' %>">
+                      <%= delta >= 0 ? '▲' : '▼' %> <%= fmt_currency(delta.abs) %>
+                    </small>
+                  <% end %>
+                </td>
+              <% end %>
+              <% total = result.totals[key] %>
+              <% total_tone = bold && !total.nil? ? (total >= 0 ? 'text-success' : 'text-danger') : '' %>
+              <td class="num <%= total_tone %>"><%= cell.call(key, total) %></td>
+            </tr>
+          <% end %>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="text-muted small mt-3">Finanzas cuenta cada venta en el mes en que el cliente termina de pagar; el Panel de control la cuenta en la fecha de la orden, por eso sus cifras pueden diferir.</p>
+</div>

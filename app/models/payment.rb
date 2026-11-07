@@ -10,6 +10,7 @@ class Payment < ApplicationRecord
   validates :status, presence: true, inclusion: { in: %w[Pending Completed Failed Refunded] }
 
   before_save :set_paid_at_if_completed
+  before_save :set_refunded_at_if_refunded
   after_commit :update_sale_order_status_if_fully_paid
 
   private
@@ -20,6 +21,11 @@ class Payment < ApplicationRecord
 
   def set_paid_at_if_completed
     self.paid_at = Time.current if status == 'Completed' && paid_at.blank?
+  end
+
+  def set_refunded_at_if_refunded
+    self.refunded_at = nil if will_save_change_to_status? && status != 'Refunded'
+    self.refunded_at ||= Time.zone.today if status == 'Refunded'
   end
 
   def update_sale_order_status_if_fully_paid

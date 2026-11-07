@@ -452,6 +452,10 @@
         285
       ],
       "note": "False positive: endpoint is admin-only (admin/* controllers and api/v1 behind authenticate_with_token! requiring user.admin?). Admins are authorized to access every record, so the find is intentionally unscoped."
+    },
+    {
+      "fingerprint": "9ff7d7acdd41f33e1a10608504f69a8d4689630317020337e7b9492027ba4a0c",
+      "note": "False positive: Finance::MonthlyStatement.first_operation_on interpolates only internal SQL (SaleRecognition.sql, quoted status constants, Finance.local_date_sql with a fixed column and quoted tz), no user input"
     }
   ],
   "updated": "2026-06-13 22:37:39 -0500",

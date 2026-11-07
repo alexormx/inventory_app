@@ -130,6 +130,7 @@ Rails.application.routes.draw do
 
     # Admin Dashboard
     get 'dashboard', to: 'dashboard#index', as: :dashboard
+    get 'finances', to: 'finances#index', as: :finances
     get 'dashboard/profitable', to: 'dashboard#profitable', as: :dashboard_profitable
     get 'dashboard/inventory_top', to: 'dashboard#inventory_top', as: :dashboard_inventory_top
     get 'dashboard/categories_rank', to: 'dashboard#categories_rank', as: :dashboard_categories_rank
