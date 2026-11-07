@@ -14,6 +14,15 @@ RSpec.describe Payment, 'refunded_at' do
     expect(payment.reload.refunded_at).to eq(Date.new(2026, 1, 5))
   end
 
+  it 'limpia refunded_at al salir de Refunded y usa la nueva fecha en un segundo reembolso' do
+    travel_to(Time.zone.local(2026, 3, 31, 12)) { payment.update!(status: 'Refunded') }
+    payment.update!(status: 'Completed')
+    expect(payment.reload.refunded_at).to be_nil
+
+    travel_to(Time.zone.local(2026, 5, 10, 12)) { payment.update!(status: 'Refunded') }
+    expect(payment.reload.refunded_at).to eq(Date.new(2026, 5, 10))
+  end
+
   it 'deja refunded_at vacío en pagos no reembolsados' do
     expect(payment.refunded_at).to be_nil
   end

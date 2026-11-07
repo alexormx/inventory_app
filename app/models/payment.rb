@@ -24,6 +24,7 @@ class Payment < ApplicationRecord
   end
 
   def set_refunded_at_if_refunded
+    self.refunded_at = nil if will_save_change_to_status? && status != 'Refunded'
     self.refunded_at ||= Time.zone.today if status == 'Refunded'
   end
 
