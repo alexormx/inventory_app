@@ -61,8 +61,11 @@
         <%= admin_sidebar_link 'Pedidos WhatsApp', admin_whatsapp_requests_path, icon: 'comment-dots', section: true,
                                badge: badges[:whatsapp] %>
       </li>
-      <li class="nav-item px-2 mb-1">
+      <li class="nav-item px-2">
         <%= admin_sidebar_link 'Cuentas por cobrar', admin_receivables_path, icon: 'hand-holding-dollar' %>
+      </li>
+      <li class="nav-item px-2 mb-1">
+        <%= admin_sidebar_link 'Finanzas', admin_finances_path, icon: 'scale-balanced' %>
       </li>
 
       <li class="sidebar-section-title px-3 pt-3 pb-1">Compras</li>
