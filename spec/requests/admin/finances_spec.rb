@@ -55,7 +55,7 @@ RSpec.describe 'Admin Finanzas', type: :request do
 
       expect(response).to have_http_status(:ok)
       expect(page.css('thead th').map { |th| th.text.squish }).to include(a_string_starting_with('2600'))
-      expect(response.body).to include('Utilidad del año', 'Ver por meses')
+      expect(response.body).to include('Utilidad del año', 'Por meses')
     end
 
     it 'acota años inválidos sin error' do
