@@ -47,6 +47,10 @@ module Collectibles
         # Generar SKU si no se proporciona
         @product.product_sku = generate_sku(@product) if @product.product_sku.blank?
 
+        # El precio de referencia del producto es opcional en el form: si viene
+        # vacío, toma el precio de venta de la pieza.
+        @product.selling_price ||= @params.dig(:inventory, :selling_price).presence
+
         # Defaults requeridos por Product que el form de quick_add no expone
         @product.maximum_discount ||= 0
         @product.minimum_price    ||= @product.selling_price
