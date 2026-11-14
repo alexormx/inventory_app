@@ -95,7 +95,10 @@ module Admin
       else
         flash.now[:alert] = result[:errors].join(', ')
         @product = result[:product] || Product.new(collectible_params[:product] || {})
-        @inventory = Inventory.new(collectible_params[:inventory] || {})
+        # Las fotos no son atributos de Inventory (y un archivo no se puede
+        # re-mostrar en el formulario): se quitan antes de reconstruirlo.
+        inventory_attrs = (collectible_params[:inventory] || {}).except(:three_quarter_image, :piece_images)
+        @inventory = Inventory.new(inventory_attrs)
         @categories = Product.distinct.pluck(:category).compact.sort
         @brands = Product.distinct.pluck(:brand).compact.sort
         render :quick_add, status: :unprocessable_entity
